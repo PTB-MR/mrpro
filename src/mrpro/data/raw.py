@@ -301,13 +301,22 @@ class KData():
         # Sort k-space data into (dim4, ncoils, k2, k1, k0)
         kdim_labels = ("kspace_encode_step_1", "kspace_encode_step_2", "average", "slice", "contrast", "phase", "repetition", "set")
         kdim_num = np.asarray([len(np.unique(getattr(kheader.acq_info, acq_label))) for acq_label in kdim_labels])
+        
+        # Ensure each dim4 covers the same number of k2 and k1 points
+        for idx, acq_label in enumerate(kdim_labels[2:]):
+            label_values = np.unique(getattr(kheader.acq_info, acq_label))
+            for ind in range(len(label_values)):
+                cidx_curr_label = np.where(getattr(kheader.acq_info, acq_label) == label_values[ind])[0]
+                kdim_label_k1 = len(np.unique(kheader.acq_info.kspace_encode_step_1[cidx_curr_label]))
+                kdim_label_k2 = len(np.unique(kheader.acq_info.kspace_encode_step_2[cidx_curr_label]))
+                assert kdim_label_k1 == kdim_num[0], f'{acq_label} has {kdim_label_k1} k1 points instead of {kdim_num[0]}'
+                assert kdim_label_k2 == kdim_num[1], f'{acq_label} has {kdim_label_k2} k2 points instead of {kdim_num[1]}'
+            
         sort_ki = np.stack((kheader.acq_info.kspace_encode_step_1, kheader.acq_info.kspace_encode_step_2, kheader.acq_info.average, 
                                     kheader.acq_info.slice, kheader.acq_info.contrast, kheader.acq_info.phase, 
                                     kheader.acq_info.repetition, kheader.acq_info.set), axis=0)
         sort_idx = np.lexsort(sort_ki)
 
-        #TODO: Ensure each dim4 covers the same ky-kz positions
-        
         new_shape = (np.prod(kdim_num[2:]), kdim_num[1], kdim_num[0],)
         kdata = torch.reshape(kdata[sort_idx, :, :], new_shape + kdata.shape[1:])
         kdata = torch.moveaxis(kdata, (0,1,2,3,4), (0,2,3,1,4))
