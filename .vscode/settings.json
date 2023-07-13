@@ -1,0 +1,12 @@
+{
+    "autoDocstring.docstringFormat": "numpy-notypes",
+    "python.languageServer": "Pylance",
+    "python.formatting.provider": "black",
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./tests",
+        "-p",
+        "test_*.py"
+    ],
+}
