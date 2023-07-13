@@ -157,7 +157,12 @@ def bitmask_flag_to_strings(flag: int):
         
 class KHeader():
     __slots__ = ("protocol_name", "pat_pos", "meas_id", "institution", "receiver_noise_bwdth", "b0", "model", "vendor",
-    "elimits", "acc_factor", "rec_matrix", "rec_fov", "enc_matrix", "enc_fov", "etl", "num_coils", "acq_info")
+    "elimits", "acc_factor", "rec_matrix", "rec_fov", "enc_matrix", "enc_fov", "etl", "num_coils", "acq_info", "calib_mode",
+    "interleave_dim", "multiband", "traj_type", "traj_description", "device_id", "device_sn", "coil_label", "station_name",
+    "h1freq", "ref_frame_uid", "series_num", "meas_depend", "ref_im_seq", "rel_table_pos", "seq_name", "series_date",
+    "series_description", "series_uid", "series_time", "te", "ti", "tr_siemens", "fa", "tr", "seq_type", "diffusion",
+    "diffusion_dim", "diffusion_scheme", "accession_number", "body_part", "ref_physician", "study_date", "study_description",
+    "study_id", "study_uid", "study_time")
 
     def __init__(self) -> None:
         pass
@@ -173,6 +178,12 @@ class KHeader():
         self.rec_fov = return_par_matrix_tensor(enc.reconSpace.fieldOfView_mm)
         self.rec_matrix = return_par_matrix_tensor(enc.reconSpace.matrixSize)
         self.acc_factor = return_acc_factor_tensor(enc.parallelImaging.accelerationFactor)
+        self.calib_mode = enc.parallelImaging.calibrationMode.value
+        self.interleave_dim = enc.parallelImaging.interleavingDimension.value
+        self.multiband = enc.parallelImaging.multiband
+        self.traj_type = enc.trajectory.value
+        self.traj_description = enc.trajectoryDescription
+        
         
         self.elimits = ELimits()
         for climit in self.elimits.__slots__:
@@ -181,15 +192,53 @@ class KHeader():
         # AcquisitionSystemInformation
         self.vendor = header.acquisitionSystemInformation.systemVendor
         self.model = header.acquisitionSystemInformation.systemModel
+        self.station_name = header.acquisitionSystemInformation.stationName
+        self.device_id = header.acquisitionSystemInformation.deviceID
+        self.device_sn = header.acquisitionSystemInformation.deviceSerialNumber
+        self.coil_label = return_coil_label_dict(header.acquisitionSystemInformation.coilLabel)
         self.b0 = header.acquisitionSystemInformation.systemFieldStrength_T
         self.receiver_noise_bwdth = header.acquisitionSystemInformation.relativeReceiverNoiseBandwidth
         self.institution = header.acquisitionSystemInformation.institutionName
         self.num_coils = header.acquisitionSystemInformation.receiverChannels
         
+        # ExperimentalConditions
+        self.h1freq = header.experimentalConditions.H1resonanceFrequency_Hz
+        
         # MeasurementInformation
+        self.ref_frame_uid = header.measurementInformation.frameOfReferenceUID
+        self.series_num = header.measurementInformation.initialSeriesNumber
+        self.meas_depend = header.measurementInformation.measurementDependency
         self.meas_id = header.measurementInformation.measurementID
         self.pat_pos = header.measurementInformation.patientPosition.value
         self.protocol_name  = header.measurementInformation.protocolName
+        self.ref_im_seq = header.measurementInformation.referencedImageSequence
+        self.rel_table_pos = header.measurementInformation.relativeTablePosition
+        self.seq_name = header.measurementInformation.sequenceName
+        self.series_date = header.measurementInformation.seriesDate
+        self.series_description = header.measurementInformation.seriesDescription
+        self.series_uid = header.measurementInformation.seriesInstanceUIDRoot
+        self.series_time = header.measurementInformation.seriesTime
+        
+        # SequenceParameters
+        self.te = header.sequenceParameters.TE
+        self.ti = header.sequenceParameters.TI
+        self.tr_siemens = header.sequenceParameters.TR
+        self.fa = header.sequenceParameters.flipAngle_deg
+        self.tr = header.sequenceParameters.echo_spacing
+        self.seq_type = header.sequenceParameters.sequence_type
+        self.diffusion = header.sequenceParameters.diffusion
+        self.diffusion_dim = header.sequenceParameters.diffusionDimension
+        self.diffusion_scheme = header.sequenceParameters.diffusionScheme
+        
+        # StudyInformation
+        self.accession_number = header.studyInformation.accessionNumber
+        self.body_part = header.studyInformation.bodyPartExamined
+        self.ref_physician = header.studyInformation.referringPhysicianName
+        self.study_date = header.studyInformation.studyDate
+        self.study_description = header.studyInformation.studyDescription
+        self.study_id = header.studyInformation.studyID
+        self.study_uid = header.studyInformation.studyInstanceUID
+        self.study_time = header.studyInformation.studyTime
 
 class KData():
     def __init__(self,
