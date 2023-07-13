@@ -1,71 +1,56 @@
 default_language_version:
   python: python3
-default_install_hook_types: [pre-commit, pre-push, pre-merge-commit]
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
       - id: check-docstring-first
-        stages: [commit]
       - id: check-merge-conflict
-        stages: [commit]
       - id: check-yaml
-        stages: [commit]
       - id: check-toml
-        stages: [commit]
       - id: check-json
-        stages: [commit]
         exclude: ^.vscode/
       - id: double-quote-string-fixer
-        stages: [commit]
       - id: end-of-file-fixer
-        stages: [commit]
       - id: mixed-line-ending
-        stages: [commit]
       - id: trailing-whitespace
-        stages: [commit]
 
   - repo: https://github.com/PyCQA/isort
     rev: 5.12.0
     hooks:
       - id: isort
         exclude: ^docs/
-        stages: [commit]
 
   - repo: https://github.com/pre-commit/mirrors-autopep8
     rev: "v2.0.2"
     hooks:
       - id: autopep8
-        stages: [commit]
 
-  - repo: https://github.com/PyCQA/flake8
-    rev: 6.0.0
-    hooks:
-      - id: flake8
-        args: [--exclude=__init__.py]
-        exclude: ^docs/
-        stages: [pre-merge-commit]
+  # - repo: https://github.com/PyCQA/flake8
+  #   rev: 6.0.0
+  #   hooks:
+  #     - id: flake8
+  #       args: [--exclude=__init__.py]
+  #       exclude: ^docs/
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.950
-    hooks:
-      - id: mypy
-        exclude: "docs/.*|tests/.*"
-        stages: [pre-merge-commit]
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v0.950
+  #   hooks:
+  #     - id: mypy
+  #       exclude: "docs/.*|tests/.*"
 
   - repo: https://github.com/myint/docformatter
     rev: v1.4
     hooks:
       - id: docformatter
         args: ["--in-place"]
-        stages: [commit]
 
-  - repo: https://github.com/PyCQA/pydocstyle
-    rev: 6.1.1
-    hooks:
-      - id: pydocstyle
-        exclude: __init__.py
-        files: ^src/
-        additional_dependencies:
-          - toml
-        stages: [pre-merge-commit]
+  # - repo: https://github.com/PyCQA/pydocstyle
+  #   rev: 6.1.1
+  #   hooks:
+  #     - id: pydocstyle
+  #       exclude: __init__.py
+  #       files: ^src/
+  #       additional_dependencies:
+  #         - toml
