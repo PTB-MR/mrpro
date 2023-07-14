@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "MRpro"
+version = "0.0.1"
+description = "MR image reconstruction and processing package specifically developed for PyTorch."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+keywords = ["MRI, reconstruction, processing, PyTorch"]
+authors = [
+    { name = "Christoph Kolbitsch", email = "christoph.kolbitsch@ptb.de" },
+]
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
+]
+dependencies = [
+    "numpy",
+    "torch",
+    "torchio",
+    "ismrmrd",
+]
+
+[project.optional-dependencies]
+test = ["coverage", "codecov", "pre-commit"]
+lint = ["mypy", "flake8", "isort", "pre-commit", "autopep8", "pydocstyle"]
+docs = ["sphinx", "sphinx_rtd_theme"]
+
+[project.urls]
+"repository" = "https://github.com/PTB-MR/mrpro"
+
+# MyPy section
+[tool.mypy]
+warn_return_any = "False"
+check_untyped_defs = "True"
+warn_no_return = "True"
+warn_unreachable = "True"
+exclude = ["docs"]
+
+# Black section
+[tool.black]
+line-length = 79
+target-version = ['py310']
+exclude = '''
+/(
+    \.git
+  | \.mypy_cache
+  | \.venv
+  | _build
+  | build
+  | dist
+)/
+'''
+
+# Isort section
+[tool.isort]
+profile = "black"
+line_length = 79
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+force_single_line = "True"
+
+[tool.pydocstyle]
+convention = "numpy"
+add_ignore = ["D107", "D205", "D415"]
