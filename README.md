@@ -37,4 +37,3 @@ Further extensions that might be useful:
 - GitHub Copilot (GitHub - **fee-based** )
 
 ### *Note that this project uses a pyproject.toml instead of setup.py file*
-
