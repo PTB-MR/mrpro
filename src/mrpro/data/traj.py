@@ -1,4 +1,4 @@
-"""Data classes for MR raw data."""
+"""K-space trajectories."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
