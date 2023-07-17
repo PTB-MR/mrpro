@@ -85,6 +85,7 @@ class ELimits():
 
 
 class AcqInfo():
+    """Acquisiton Info Information about each readout."""
     __slots__ = ('acquisition_time_stamp',
                  'active_channels',
                  'available_channels',
