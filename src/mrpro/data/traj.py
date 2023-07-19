@@ -17,7 +17,7 @@ from abc import abstractmethod
 
 import torch
 
-from mrpro.data.raw import KHeader
+from mrpro.data import KHeader
 
 
 class KTrajectory(ABC):
