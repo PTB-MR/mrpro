@@ -1,0 +1,16 @@
+{
+    "recommendations": [
+        "njpwerner.autodocstring",
+        "aaron-bond.better-comments",
+        "editorconfig.editorconfig",
+        "tamasfe.even-better-toml",
+        "ms-python.isort",
+        "ms-toolsai.jupyter",
+        "davidanson.vscode-markdownlint",
+        "ms-python.vscode-pylance",
+        "ms-python.python",
+        "kevinrose.vsc-python-indent",
+        "njqdev.vscode-python-typehint",
+        "ms-vscode-remote.remote-ssh"
+    ]
+}
