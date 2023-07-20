@@ -1,7 +1,7 @@
 {
     "autoDocstring.docstringFormat": "numpy-notypes",
     "python.languageServer": "Pylance",
-    "python.formatting.provider": "autopep8",
+    "python.formatting.provider": "black",
     "python.testing.unittestArgs": [
         "-v",
         "-s",
