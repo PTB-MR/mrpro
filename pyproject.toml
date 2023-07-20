@@ -20,12 +20,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3 :: Only",
 ]
-dependencies = [
-    "numpy",
-    "torch",
-    "torchio",
-    "ismrmrd",
-]
+dependencies = ["numpy", "torch", "torchio", "ismrmrd"]
 
 [project.optional-dependencies]
 test = ["coverage", "codecov", "pre-commit"]
@@ -45,7 +40,8 @@ exclude = ["docs"]
 
 # Black section
 [tool.black]
-line-length = 79
+line-length = 120
+skip-string-normalization = "True"
 target-version = ['py310']
 exclude = '''
 /(
@@ -61,7 +57,8 @@ exclude = '''
 # Isort section
 [tool.isort]
 profile = "black"
-line_length = 79
+skip = ["__init__.py"]
+line_length = 120
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 force_single_line = "True"
 
