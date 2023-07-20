@@ -14,22 +14,23 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
-from typing import Any
 
 import ismrmrd
 import numpy as np
 import torch
 
+from mrpro.data import AcqFlags
 from mrpro.data import KHeader
-from mrpro.data.raw import bitmask_flag_to_strings
 from mrpro.data.traj import KTrajectory
 
 
 class KData:
     def __init__(
-        self, header: KHeader, data: torch.Tensor, traj: torch.Tensor
+        self,
+        header: KHeader,
+        data: torch.Tensor,
+        traj: torch.Tensor,
     ) -> None:
         self.header: KHeader = header
         self._data: torch.Tensor = data
@@ -37,13 +38,10 @@ class KData:
 
     @classmethod
     def from_file(
-        cls, filename: str | Path, ktrajectory_calculator: KTrajectory
+        cls,
+        filename: str | Path,
+        ktrajectory_calculator: KTrajectory,
     ) -> KData:
-        # Check file is valid
-        if not os.path.isfile(filename):
-            print('%s is not a valid file' % filename)
-            raise SystemExit
-
         # Read header
         dset = ismrmrd.Dataset(filename, 'dataset', create_if_needed=False)
         hdr_xml = dset.read_xml_header()
@@ -55,18 +53,8 @@ class KData:
             acqs = mrd['dataset'].acquisitions[:]
 
         # Get indices for imaging data
-        im_idx = []
-        unique_acq_flags = set()
-        for idx, acq in enumerate(acqs):
-            for el in bitmask_flag_to_strings(acq.flags):
-                unique_acq_flags.add(el)
-            if 'ACQ_IS_NOISE_MEASUREMENT' not in bitmask_flag_to_strings(
-                acq.flags
-            ):
-                im_idx.append(idx)
-
-        kheader = KHeader()
-        kheader.from_ismrmrd_header(hdr, len(im_idx))
+        im_idx = [idx for idx, acq in enumerate(acqs) if not (AcqFlags.ACQ_IS_NOISE_MEASUREMENT & acq.flags)]
+        kheader = KHeader.from_ismrmrd_header(hdr, len(im_idx))
 
         # Get k-space data
         kdata = torch.zeros(
@@ -77,11 +65,11 @@ class KData:
             ),
             dtype=torch.complex64,
         )
-        for idx in range(len(im_idx)):
-            acq = acqs[im_idx[idx]]
-            kdata[idx, :, :] = torch.tensor(acq.data, dtype=torch.complex64)
+        for new_idx, orig_idx in enumerate(im_idx):
+            acq = acqs[orig_idx]
+            kdata[new_idx, :, :] = torch.tensor(acq.data, dtype=torch.complex64)
             # TODO: Make this faster
-            kheader.acq_info.from_ismrmrd_acq_header(idx, acq)
+            kheader.acq_info.read_ismrmrd_acq_header(new_idx, acq)
 
         # Calculate trajectory
         ktraj = ktrajectory_calculator.calc_traj(kheader)
@@ -99,33 +87,15 @@ class KData:
             'repetition',
             'set',
         )
-        kdim_num = np.asarray(
-            [
-                len(np.unique(getattr(kheader.acq_info, acq_label)))
-                for acq_label in kdim_labels
-            ]
-        )
+        kdim_num = np.asarray([len(np.unique(getattr(kheader.acq_info, acq_label))) for acq_label in kdim_labels])
 
         # Ensure each dim4 covers the same number of k2 and k1 points
-        for idx, acq_label in enumerate(kdim_labels[2:]):
+        for orig_idx, acq_label in enumerate(kdim_labels[2:]):
             label_values = np.unique(getattr(kheader.acq_info, acq_label))
             for ind in range(len(label_values)):
-                cidx_curr_label = tuple(
-                    np.where(
-                        getattr(kheader.acq_info, acq_label)
-                        == label_values[ind]
-                    )[0]
-                )
-                kdim_label_k1 = len(
-                    np.unique(
-                        kheader.acq_info.kspace_encode_step_1[cidx_curr_label]
-                    )
-                )
-                kdim_label_k2 = len(
-                    np.unique(
-                        kheader.acq_info.kspace_encode_step_2[cidx_curr_label]
-                    )
-                )
+                cidx_curr_label = tuple(np.where(getattr(kheader.acq_info, acq_label) == label_values[ind])[0])
+                kdim_label_k1 = len(np.unique(kheader.acq_info.kspace_encode_step_1[cidx_curr_label]))
+                kdim_label_k2 = len(np.unique(kheader.acq_info.kspace_encode_step_2[cidx_curr_label]))
                 assert (
                     kdim_label_k1 == kdim_num[0]
                 ), f"""{acq_label} has
@@ -155,27 +125,22 @@ class KData:
             kdim_num[1],
             kdim_num[0],
         )
-        kdata = torch.reshape(
-            kdata[sort_idx, :, :], new_shape + kdata.shape[1:]
-        )
+        kdata = torch.reshape(kdata[sort_idx, :, :], new_shape + kdata.shape[1:])
         kdata = torch.moveaxis(kdata, (0, 1, 2, 3, 4), (0, 2, 3, 1, 4))
 
-        ktraj = torch.reshape(
-            ktraj[sort_idx, :, :], new_shape + ktraj.shape[1:]
-        )
+        ktraj = torch.reshape(ktraj[sort_idx, :, :], new_shape + ktraj.shape[1:])
         ktraj = torch.moveaxis(ktraj, (0, 1, 2, 3, 4), (0, 2, 3, 1, 4))
 
         for slot in kheader.acq_info.__slots__:
             curr_attr = getattr(kheader.acq_info, slot)
             # TODO: Check for correct dimensionality in test function!
-            if curr_attr.ndim == 2:
-                curr_shape: Any = new_shape + (curr_attr.shape[1],)
-            else:
-                curr_shape = new_shape
+            curr_new_shape: tuple[int, ...] = new_shape
+            if curr_attr.ndim != 1:
+                curr_new_shape = curr_new_shape + (curr_attr.shape[1],)
             setattr(
                 kheader.acq_info,
                 slot,
-                torch.reshape(curr_attr[sort_idx, ...], curr_shape),
+                torch.reshape(curr_attr[sort_idx, ...], curr_new_shape),
             )
 
         return cls(kheader, kdata, ktraj)

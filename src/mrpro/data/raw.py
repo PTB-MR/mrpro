@@ -14,32 +14,8 @@
 
 from __future__ import annotations
 
-import re
-
 import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
 import torch
-
-from mrpro.data import ACQ_FLAGS
-
-
-class ELimits:
-    """Encoding limits Each encoding limit is described as [min, max,
-    center]"""
-
-    __slots__ = (
-        'kspace_encoding_step_1',
-        'kspace_encoding_step_2',
-        'average',
-        'slice',
-        'contrast',
-        'phase',
-        'repetition',
-        'set',
-        'segment',
-    )
-
-    def __init__(self) -> None:
-        pass
 
 
 def _return_par_tensor(par, array_attr) -> torch.Tensor | None:
@@ -67,23 +43,21 @@ def return_par_enc_limits_tensor(
 def return_acc_factor_tensor(
     par: ismrmrdschema.accelerationFactorType,
 ) -> torch.Tensor | None:
-    return _return_par_tensor(
-        par, array_attr=('kspace_encoding_step_1', 'kspace_encoding_step_2')
-    )
+    return _return_par_tensor(par, array_attr=('kspace_encoding_step_1', 'kspace_encoding_step_2'))
 
 
-def bitmask_flag_to_strings(flag: int):
-    if flag > 0:
-        bmask = '{0:064b}'.format(flag)
-        bitmask_idx = [m.start() + 1 for m in re.finditer('1', bmask[::-1])]
-    else:
-        bitmask_idx = [
-            0,
-        ]
-    flag_strings = []
-    for knd in range(len(bitmask_idx)):
-        flag_strings.append(ACQ_FLAGS[bitmask_idx[knd]])
-    return flag_strings
+# def bitmask_flag_to_strings(flag: int):
+#     if flag > 0:
+#         bmask = '{0:064b}'.format(flag)
+#         bitmask_idx = [m.start() + 1 for m in re.finditer('1', bmask[::-1])]
+#     else:
+#         bitmask_idx = [
+#             0,
+#         ]
+#     flag_strings = []
+#     for knd in range(len(bitmask_idx)):
+#         flag_strings.append(AcqFlags[bitmask_idx[knd]])
+#     return flag_strings
 
 
 def return_coil_label_dict(
