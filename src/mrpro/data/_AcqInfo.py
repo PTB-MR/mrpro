@@ -75,7 +75,7 @@ class AcqInfo:
             """Stacks the attribute from each acq in acqs."""
 
             if name in dir(acqs[0].idx):
-                # If the attribute s in idx, we get it from there
+                # If the attribute is in idx, we get it from there
                 def get_attribute(acq): return getattr(acq.idx, name)
             else:
                 # Otherwise we get it from the acquisition itself
