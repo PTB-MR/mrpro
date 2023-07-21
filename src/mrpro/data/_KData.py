@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+from dataclasses import fields
 from pathlib import Path
 
 import ismrmrd
@@ -21,6 +22,7 @@ import numpy as np
 import torch
 
 from mrpro.data import AcqFlags
+from mrpro.data import AcqInfo
 from mrpro.data import KHeader
 from mrpro.data.traj import KTrajectory
 
@@ -42,34 +44,17 @@ class KData:
         filename: str | Path,
         ktrajectory_calculator: KTrajectory,
     ) -> KData:
-        # Read header
-        dset = ismrmrd.Dataset(filename, 'dataset', create_if_needed=False)
-        hdr_xml = dset.read_xml_header()
-        hdr = ismrmrd.xsd.CreateFromDocument(hdr_xml)
-        dset.close()
+        # Read Data
+        with ismrmrd.File(filename, 'r') as file:
+            ds = file['dataset']
+            ismrmrd_header = ds.header
+            acquisitions = ds.acquisitions[:]
 
-        # Read k-space data
-        with ismrmrd.File(filename) as mrd:
-            acqs = mrd['dataset'].acquisitions[:]
-
-        # Get indices for imaging data
-        im_idx = [idx for idx, acq in enumerate(acqs) if not (AcqFlags.ACQ_IS_NOISE_MEASUREMENT & acq.flags)]
-        kheader = KHeader.from_ismrmrd_header(hdr, len(im_idx))
-
-        # Get k-space data
-        kdata = torch.zeros(
-            (
-                len(im_idx),
-                kheader.num_coils,
-                acqs[im_idx[0]].number_of_samples,
-            ),
-            dtype=torch.complex64,
-        )
-        for new_idx, orig_idx in enumerate(im_idx):
-            acq = acqs[orig_idx]
-            kdata[new_idx, :, :] = torch.tensor(acq.data, dtype=torch.complex64)
-            # TODO: Make this faster
-            kheader.acq_info.read_ismrmrd_acq_header(new_idx, acq)
+        # Noise data must be handles seperatly
+        acquisitions = list(filter(lambda acq: not (AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value & acq.flags), acquisitions))
+        acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
+        kheader = KHeader.from_ismrmrd(ismrmrd_header, acqinfo)
+        kdata = torch.stack([acq.data for acq in acquisitions], dtype=torch.complex64)
 
         # Calculate trajectory
         ktraj = ktrajectory_calculator.calc_traj(kheader)
@@ -131,7 +116,8 @@ class KData:
         ktraj = torch.reshape(ktraj[sort_idx, :, :], new_shape + ktraj.shape[1:])
         ktraj = torch.moveaxis(ktraj, (0, 1, 2, 3, 4), (0, 2, 3, 1, 4))
 
-        for slot in kheader.acq_info.__slots__:
+        for field in fields(kheader.acq_info):
+            slot = field.name
             curr_attr = getattr(kheader.acq_info, slot)
             # TODO: Check for correct dimensionality in test function!
             curr_new_shape: tuple[int, ...] = new_shape
