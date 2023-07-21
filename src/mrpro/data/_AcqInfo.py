@@ -14,112 +14,75 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from dataclasses import fields
+
 import ismrmrd
 import torch
 
 
+@dataclass(slots=True)
 class AcqInfo:
     """Acquisiton Info Information about each readout."""
 
-    __slots__ = (
-        'acquisition_time_stamp',
-        'active_channels',
-        'available_channels',
-        'average',
-        'center_sample',
-        'channel_mask',
-        'contrast',
-        'discard_post',
-        'discard_pre',
-        'encoding_space_ref',
-        'flags',
-        'kspace_encode_step_1',
-        'kspace_encode_step_2',
-        'measurement_uid',
-        'number_of_samples',
-        'patient_table_position',
-        'phase',
-        'phase_dir',
-        'physiology_time_stamp',
-        'position',
-        'read_dir',
-        'repetition',
-        'sample_time_us',
-        'scan_counter',
-        'segment',
-        'set',
-        'slice',
-        'slice_dir',
-        'trajectory_dimensions',
-        'user_float',
-        'user_int',
-        'version',
-    )
+    acquisition_time_stamp: torch.Tensor
+    active_channels: torch.Tensor
+    available_channels: torch.Tensor
+    average: torch.Tensor
+    center_sample: torch.Tensor
+    channel_mask: torch.Tensor
+    contrast: torch.Tensor
+    discard_post: torch.Tensor
+    discard_pre: torch.Tensor
+    encoding_space_ref: torch.Tensor
+    flags: torch.Tensor
+    kspace_encode_step_1: torch.Tensor
+    kspace_encode_step_2: torch.Tensor
+    measurement_uid: torch.Tensor
+    number_of_samples: torch.Tensor
+    patient_table_position: torch.Tensor
+    phase: torch.Tensor
+    phase_dir: torch.Tensor
+    physiology_time_stamp: torch.Tensor
+    position: torch.Tensor
+    read_dir: torch.Tensor
+    repetition: torch.Tensor
+    sample_time_us: torch.Tensor
+    scan_counter: torch.Tensor
+    segment: torch.Tensor
+    set: torch.Tensor
+    slice: torch.Tensor
+    slice_dir: torch.Tensor
+    trajectory_dimensions: torch.Tensor
+    user_float: torch.Tensor
+    user_int: torch.Tensor
+    version: torch.Tensor
 
-    def __init__(self, num_acq: int) -> None:
-        self.acquisition_time_stamp = torch.zeros((num_acq,), dtype=torch.int64)
-        self.active_channels = torch.zeros((num_acq,), dtype=torch.int64)
-        self.available_channels = torch.zeros((num_acq,), dtype=torch.int64)
-        self.average = torch.zeros((num_acq,), dtype=torch.int64)
-        self.center_sample = torch.zeros((num_acq,), dtype=torch.int64)
-        self.channel_mask = torch.zeros((num_acq, ismrmrd.constants.CHANNEL_MASKS), dtype=torch.int64)
-        self.contrast = torch.zeros((num_acq,), dtype=torch.int64)
-        self.discard_post = torch.zeros((num_acq,), dtype=torch.int64)
-        self.discard_pre = torch.zeros((num_acq,), dtype=torch.int64)
-        self.encoding_space_ref = torch.zeros((num_acq,), dtype=torch.int64)
-        self.flags = torch.zeros((num_acq,), dtype=torch.int64)
-        self.kspace_encode_step_1 = torch.zeros((num_acq,), dtype=torch.int64)
-        self.kspace_encode_step_2 = torch.zeros((num_acq,), dtype=torch.int64)
-        self.measurement_uid = torch.zeros((num_acq,), dtype=torch.int64)
-        self.number_of_samples = torch.zeros((num_acq,), dtype=torch.int64)
-        self.patient_table_position = torch.zeros((num_acq, ismrmrd.constants.POSITION_LENGTH), dtype=torch.float32)
-        self.phase = torch.zeros((num_acq,), dtype=torch.int64)
-        self.phase_dir = torch.zeros((num_acq, ismrmrd.constants.DIRECTION_LENGTH), dtype=torch.float32)
-        self.physiology_time_stamp = torch.zeros((num_acq, ismrmrd.constants.PHYS_STAMPS), dtype=torch.float32)
-        self.position = torch.zeros((num_acq, ismrmrd.constants.DIRECTION_LENGTH), dtype=torch.float32)
-        self.read_dir = torch.zeros((num_acq, ismrmrd.constants.DIRECTION_LENGTH), dtype=torch.float32)
-        self.repetition = torch.zeros((num_acq,), dtype=torch.int64)
-        self.sample_time_us = torch.zeros((num_acq,), dtype=torch.int64)
-        self.scan_counter = torch.zeros((num_acq,), dtype=torch.int64)
-        self.segment = torch.zeros((num_acq,), dtype=torch.int64)
-        self.set = torch.zeros((num_acq,), dtype=torch.int64)
-        self.slice = torch.zeros((num_acq,), dtype=torch.int64)
-        self.slice_dir = torch.zeros((num_acq, ismrmrd.constants.DIRECTION_LENGTH), dtype=torch.float32)
-        self.trajectory_dimensions = torch.zeros((num_acq,), dtype=torch.int64)
-        self.user_float = torch.zeros((num_acq, ismrmrd.constants.USER_FLOATS), dtype=torch.float32)
-        self.user_int = torch.zeros((num_acq, ismrmrd.constants.USER_INTS), dtype=torch.int64)
-        self.version = torch.zeros((num_acq,), dtype=torch.int64)
+    @classmethod
+    def from_ismrmrd_acquisitions(
+        cls,
+        acquisitions: list[ismrmrd.Acquisition],
+    ) -> AcqInfo:
+        """Reads the header of a list of acquisition and stores the
+        information.
 
-    def read_ismrmrd_acq_header(
-        self,
-        to_index: int,
-        acq: ismrmrd.Acquisition,
-    ) -> None:
-        """Reads the header of a single acquisition and stores the information
-        at the given index.
-
-        Parameters
+        Parameters:
         ----------
-        to_index
-            Index of the acquisition
-        acq
-            Acquisition to read
+        acquisitions: list of ismrmrd acquisistions to read from
         """
-        for slot in self.__slots__:
-            curr_attr = getattr(self, slot)
-            if slot in (
-                'kspace_encode_step_1',
-                'kspace_encode_step_2',
-                'average',
-                'slice',
-                'contrast',
-                'phase',
-                'repetition',
-                'set',
-                'segment',
-            ):
-                curr_attr[to_index, ...] = torch.tensor(getattr(acq.idx, slot), dtype=curr_attr.dtype)
 
+        def get_tensor(name, acqs):
+            """Stacks the attribute from each acq in acqs."""
+
+            if name in dir(acqs[0].idx):
+                # If the attribute s in idx, we get it from there
+                def get_attribute(acq): return getattr(acq.idx, name)
             else:
-                curr_attr[to_index, ...] = torch.tensor(getattr(acq, slot), dtype=curr_attr.dtype)
-            setattr(self, slot, curr_attr)
+                # Otherwise we get it from the acquisition itself
+                def get_attribute(acq): return getattr(acq, name)
+
+            values = map(get_attribute, acqs)
+            return torch.tensor(values)
+
+        attributes = {field.name: get_tensor(field.name, acquisitions) for field in fields(cls)}
+        return cls(**attributes)
