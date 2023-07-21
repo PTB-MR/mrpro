@@ -76,52 +76,46 @@ class KHeader:
     diffusion_scheme: str
     accession_number: str
     body_part: str
-    ref_physician: str
-    study_date: str
-    study_description: str
-    study_id: str
-    study_uid: str
-    study_time: str
+    ref_physician: str | None = None
+    study_date: str | None = None
+    study_description: str | None = None
+    study_id: str | None = None
+    study_uid: str | None = None
+    study_time: str | None = None
 
     @classmethod
-    def from_ismrmrd_header(
+    def from_ismrmrd(
         cls,
         header: ismrmrdschema.ismrmrdHeader,
-        num_acq: int,
+        acq_info: AcqInfo,
     ) -> KHeader:
         if len(header.encoding) != 1:
             raise NotImplementedError('Multiple encodings not supported')
 
         enc: ismrmrdschema.encodingType = header.encoding[0]
-        encoding_limits = EncodingLimits.from_ismrmrd_encodingLimitsType(
-            enc.encodingLimits)
+        encoding_limits = EncodingLimits.from_ismrmrd_encodingLimitsType(enc.encodingLimits)
 
-        instance = cls(
+        parameters = dict(
             echo_train_length=enc.echoTrainLength,
             recon_fov=return_par_matrix_tensor(enc.reconSpace.fieldOfView_mm),
             recon_matrix=return_par_matrix_tensor(enc.reconSpace.matrixSize),
-            acc_factor=return_acc_factor_tensor(
-                enc.parallelImaging.accelerationFactor),
+            acc_factor=return_acc_factor_tensor(enc.parallelImaging.accelerationFactor),
             calib_mode=enc.parallelImaging.calibrationMode.value,
             interleave_dim=enc.parallelImaging.interleavingDimension.value,
             multiband=enc.parallelImaging.multiband,
             traj_type=enc.trajectory.value,
             traj_description=enc.trajectoryDescription,
-            encoding_fov=return_par_matrix_tensor(
-                enc.encodedSpace.fieldOfView_mm),
-            encoding_matrix=return_par_matrix_tensor(
-                enc.encodedSpace.matrixSize),
+            encoding_fov=return_par_matrix_tensor(enc.encodedSpace.fieldOfView_mm),
+            encoding_matrix=return_par_matrix_tensor(enc.encodedSpace.matrixSize),
             encoding_limits=encoding_limits,
             vendor=header.acquisitionSystemInformation.systemVendor,
             model=header.acquisitionSystemInformation.systemModel,
             station_name=header.acquisitionSystemInformation.stationName,
             device_id=header.acquisitionSystemInformation.deviceID,
             device_sn=header.acquisitionSystemInformation.deviceSerialNumber,
-            coil_label=return_coil_label_dict(
-                header.acquisitionSystemInformation.coilLabel),
+            coil_label=return_coil_label_dict(header.acquisitionSystemInformation.coilLabel),
             b0=header.acquisitionSystemInformation.systemFieldStrength_T,
-            receiver_noise_bwdth=(
-                header.acquisitionSystemInformation.relativeReceiverNoiseBandwidth),
+            receiver_noise_bwdth=header.acquisitionSystemInformation.relativeReceiverNoiseBandwidth,
             institution=header.acquisitionSystemInformation.institutionName,
             num_coils=header.acquisitionSystemInformation.receiverChannels,
             h1freq=header.experimentalConditions.H1resonanceFrequency_Hz,
@@ -132,12 +126,10 @@ class KHeader:
             pat_pos=header.measurementInformation.patientPosition.value,
             protocol_name=header.measurementInformation.protocolName,
             ref_im_seq=header.measurementInformation.referencedImageSequence,
-            rel_table_pos=(
-                header.measurementInformation.relativeTablePosition),
+            rel_table_pos=header.measurementInformation.relativeTablePosition,
             seq_name=header.measurementInformation.sequenceName,
             series_date=header.measurementInformation.seriesDate,
-            series_description=(
-                header.measurementInformation.seriesDescription),
+            series_description=header.measurementInformation.seriesDescription,
             series_uid=header.measurementInformation.seriesInstanceUIDRoot,
             series_time=header.measurementInformation.seriesTime,
             te=header.sequenceParameters.TE,
@@ -149,14 +141,19 @@ class KHeader:
             diffusion=header.sequenceParameters.diffusion,
             diffusion_dim=header.sequenceParameters.diffusionDimension,
             diffusion_scheme=header.sequenceParameters.diffusionScheme,
-            accession_number=header.studyInformation.accessionNumber,
-            body_part=header.studyInformation.bodyPartExamined,
-            ref_physician=header.studyInformation.referringPhysicianName,
-            study_date=header.studyInformation.studyDate,
-            study_description=header.studyInformation.studyDescription,
-            study_id=header.studyInformation.studyID,
-            study_uid=header.studyInformation.studyInstanceUID,
-            study_time=header.studyInformation.studyTime,
-            acq_info=AcqInfo(num_acq),
+            acq_info=acq_info,
         )
-        return instance
+        if header.studyInformation is not None:
+            study_parameters = dict(
+                accession_number=header.studyInformation.accessionNumber,
+                body_part=header.studyInformation.bodyPartExamined,
+                ref_physician=header.studyInformation.referringPhysicianName,
+                study_date=header.studyInformation.studyDate,
+                study_description=header.studyInformation.studyDescription,
+                study_id=header.studyInformation.studyID,
+                study_uid=header.studyInformation.studyInstanceUID,
+                study_time=header.studyInformation.studyTime,
+            )
+            parameters.update(study_parameters)
+
+        return cls(**parameters)
