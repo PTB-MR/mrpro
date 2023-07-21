@@ -44,7 +44,7 @@ class KData:
         filename: str | Path,
         ktrajectory_calculator: KTrajectory,
     ) -> KData:
-        # Read Data
+        # Read header information and data
         with ismrmrd.File(filename, 'r') as file:
             ds = file['dataset']
             ismrmrd_header = ds.header
