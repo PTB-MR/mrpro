@@ -50,7 +50,7 @@ class KData:
             ismrmrd_header = ds.header
             acquisitions = ds.acquisitions[:]
 
-        # Noise data must be handled seperately
+        # Noise data must be handled separately
         acquisitions = list(filter(lambda acq: not (AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value & acq.flags), acquisitions))
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
         kheader = KHeader.from_ismrmrd(ismrmrd_header, acqinfo)
