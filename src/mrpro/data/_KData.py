@@ -54,7 +54,7 @@ class KData:
         acquisitions = list(filter(lambda acq: not (AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value & acq.flags), acquisitions))
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
         kheader = KHeader.from_ismrmrd(ismrmrd_header, acqinfo)
-        kdata = torch.stack([acq.data for acq in acquisitions], dtype=torch.complex64)
+        kdata = torch.stack([acq.data for acq in acquisitions]).to(torch.complex64)
 
         # Calculate trajectory
         ktraj = ktrajectory_calculator.calc_traj(kheader)
