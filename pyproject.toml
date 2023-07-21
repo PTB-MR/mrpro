@@ -20,7 +20,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3 :: Only",
 ]
-dependencies = ["numpy", "torch", "torchio", "ismrmrd"]
+dependencies = ["numpy>=1.23,<2.0", "torch>=2.0,<3.0", "torchio", "ismrmrd"]
 
 [project.optional-dependencies]
 test = ["coverage", "codecov", "pre-commit"]
