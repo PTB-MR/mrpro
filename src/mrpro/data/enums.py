@@ -1,4 +1,4 @@
-"""Class for acquisition flags."""
+"""All acquisition enums."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -14,10 +14,11 @@
 
 from enum import Flag
 from enum import auto
+from enum import Enum
 
 
 class AcqFlags(Flag):
-    ACQ_NO_FLAG = auto()
+    ACQ_NO_FLAG = 0
     ACQ_FIRST_IN_ENCODE_STEP1 = auto()
     ACQ_LAST_IN_ENCODE_STEP1 = auto()
     ACQ_FIRST_IN_ENCODE_STEP2 = auto()
@@ -55,3 +56,55 @@ class AcqFlags(Flag):
     ACQ_USER6 = auto()
     ACQ_USER7 = auto()
     ACQ_USER8 = auto()
+
+
+class InterleavingDimension(Enum):
+    PHASE = "phase"
+    REPETITION = "repetition"
+    CONTRAST = "contrast"
+    AVERAGE = "average"
+    OTHER = "other"
+
+
+class MultibandCalibration(Enum):
+    SEPARABLE2_D = "separable2D"
+    FULL3_D = "full3D"
+    OTHER = "other"
+
+
+class PatientPosition(Enum):
+    HFP = "HFP"
+    HFS = "HFS"
+    HFDR = "HFDR"
+    HFDL = "HFDL"
+    FFP = "FFP"
+    FFS = "FFS"
+    FFDR = "FFDR"
+    FFDL = "FFDL"
+    OTHER = "OTHER"
+
+
+class TrajectoryType(Enum):
+    CARTESIAN = "cartesian"
+    EPI = "epi"
+    RADIAL = "radial"
+    GOLDENANGLE = "goldenangle"
+    SPIRAL = "spiral"
+    OTHER = "other"
+
+
+class WaveformInformation(Enum):
+    ECG = "ecg"
+    PULSE = "pulse"
+    RESPIRATORY = "respiratory"
+    TRIGGER = "trigger"
+    GRADIENTWAVEFORM = "gradientwaveform"
+    OTHER = "other"
+
+
+class CalibrationMode(Enum):
+    EMBEDDED = "embedded"
+    INTERLEAVED = "interleaved"
+    SEPARATE = "separate"
+    EXTERNAL = "external"
+    OTHER = "other"
