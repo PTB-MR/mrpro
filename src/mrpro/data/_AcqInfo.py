@@ -15,10 +15,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from dataclasses import fields
 
 import ismrmrd
 import torch
+
+from mrpro.data._utils import rgetattr
 
 
 @dataclass(slots=True)
@@ -52,6 +53,7 @@ class AcqInfo:
     segment: torch.Tensor
     set: torch.Tensor
     slice: torch.Tensor
+    user: torch.Tensor
     slice_dir: torch.Tensor
     trajectory_dimensions: torch.Tensor
     user_float: torch.Tensor
@@ -68,21 +70,56 @@ class AcqInfo:
 
         Parameters:
         ----------
-        acquisitions: list of ismrmrd acquisistions to read from
+        acquisitions: list of ismrmrd acquisistions to read from. Needs at least one acquisition.
         """
 
-        def get_tensor(name, acqs):
-            """Stacks the attribute from each acq in acqs."""
+        if len(acquisitions) == 0:
+            raise ValueError('Acquisition list must not be empty.')
 
-            if name in dir(acqs[0].idx):
-                # If the attribute is in idx, we get it from there
-                def get_attribute(acq): return getattr(acq.idx, name)
-            else:
-                # Otherwise we get it from the acquisition itself
-                def get_attribute(acq): return getattr(acq, name)
-
-            values = map(get_attribute, acqs)
+        def get_tensor(name) -> torch.Tensor:
+            """
+            Stacks the attribute from each acquisitions into a tensor.
+            Parameters:
+            ----------
+            name: name of the attribute to stack. Will be resolved recursively,
+                  e.g. 'idx.kspace_encode_step_1' will be resolved to acquisition.idx.kspace_encode_step_1
+            """
+            values = list(map(lambda acq: rgetattr(acq, name), acquisitions))
             return torch.tensor(values)
 
-        attributes = {field.name: get_tensor(field.name, acquisitions) for field in fields(cls)}
+        attributes = dict(
+            kspace_encode_step_1=get_tensor('idx.kspace_encode_step_1'),
+            kspace_encode_step_2=get_tensor('idx.kspace_encode_step_2'),
+            average=get_tensor('idx.average'),
+            slice=get_tensor('idx.slice'),
+            contrast=get_tensor('idx.contrast'),
+            phase=get_tensor('idx.phase'),
+            repetition=get_tensor('idx.repetition'),
+            set=get_tensor('idx.set'),
+            segment=get_tensor('idx.segment'),
+            user=get_tensor('idx.user'),
+            user_float=get_tensor('user_float'),
+            user_int=get_tensor('user_int'),
+            acquisition_time_stamp=get_tensor('acquisition_time_stamp'),
+            flags=get_tensor('flags'),
+            measurement_uid=get_tensor('measurement_uid'),
+            scan_counter=get_tensor('scan_counter'),
+            physiology_time_stamp=get_tensor('physiology_time_stamp'),
+            active_channels=get_tensor('active_channels'),
+            number_of_samples=get_tensor('number_of_samples'),
+            available_channels=get_tensor('available_channels'),
+            channel_mask=get_tensor('channel_mask'),
+            discard_pre=get_tensor('discard_pre'),
+            discard_post=get_tensor('discard_post'),
+            center_sample=get_tensor('center_sample'),
+            encoding_space_ref=get_tensor('encoding_space_ref'),
+            trajectory_dimensions=get_tensor('trajectory_dimensions'),
+            sample_time_us=get_tensor('sample_time_us'),
+            position=get_tensor('position'),
+            read_dir=get_tensor('read_dir'),
+            phase_dir=get_tensor('phase_dir'),
+            slice_dir=get_tensor('slice_dir'),
+            patient_table_position=get_tensor('patient_table_position'),
+            version=get_tensor('version'),
+        )
         return cls(**attributes)
