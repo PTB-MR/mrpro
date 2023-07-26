@@ -9,4 +9,13 @@
         "-p",
         "test_*.py"
     ],
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "mypy-type-checker.importStrategy": "fromEnvironment",
 }
