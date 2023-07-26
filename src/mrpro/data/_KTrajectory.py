@@ -11,6 +11,7 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+from __future__ import annotations
 
 import dataclasses
 from abc import ABC
@@ -19,7 +20,7 @@ from abc import abstractmethod
 import numpy as np
 import torch
 
-from mrpro.data import KHeader
+from mrpro.data._KHeader import KHeader
 
 
 class KTrajectory(ABC):
@@ -56,10 +57,9 @@ class KTrajectory(ABC):
         ...
 
 
-class DummyTrajectroy(KTrajectory):
+class DummyTrajectory(KTrajectory):
     """Dummy trajectory that returns zeros."""
 
-    @abstractmethod
     def calc_traj(self, header: KHeader) -> torch.Tensor:
         """Calculate the trajectory for the given header.
 
