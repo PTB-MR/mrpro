@@ -1,4 +1,4 @@
-"""Data class for MR raw data."""
+"""MR raw data / k-space data class."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -14,17 +14,32 @@
 
 from __future__ import annotations
 
-from dataclasses import fields
+import dataclasses
+import datetime
 from pathlib import Path
 
+import h5py
 import ismrmrd
 import numpy as np
 import torch
+from einops import rearrange
 
-from mrpro.data import AcqFlags
 from mrpro.data import AcqInfo
 from mrpro.data import KHeader
-from mrpro.data.traj import KTrajectory
+from mrpro.data._EncodingLimits import Limits
+from mrpro.data._KTrajectory import KTrajectory
+from mrpro.data.enums import AcqFlags
+
+KDIM_SORT_LABELS = (
+    'kspace_encode_step_1',
+    'kspace_encode_step_2',
+    'average',
+    'slice',
+    'contrast',
+    'phase',
+    'repetition',
+    'set',
+)
 
 
 class KData:
@@ -40,94 +55,78 @@ class KData:
 
     @classmethod
     def from_file(
-        cls,
-        filename: str | Path,
-        ktrajectory_calculator: KTrajectory,
+        cls, filename: str | Path, ktrajectory: KTrajectory, header_overwrites: dict[str, object] | None = None
     ) -> KData:
-        # Read header information and data
+        """Load k-space data from an ISMRMRD file.
+
+        Parameters:
+        ----------
+            filename: Path to the ISMRMRD file
+            ktrajectory: KTrajectory defining the trajectory to use # TODO: Maybe provide a default based on the header?
+            header_overwrites: Dictionary of key-value pairs to overwrite the header
+        """
+        # Can raise FileNotFoundError
         with ismrmrd.File(filename, 'r') as file:
             ds = file['dataset']
             ismrmrd_header = ds.header
             acquisitions = ds.acquisitions[:]
+            try:
+                mtime: int = h5py.h5g.get_objinfo(ds['data']._contents.id).mtime
+            except AttributeError:
+                mtime = 0
+            modification_time = datetime.datetime.fromtimestamp(mtime)
 
         # Noise data must be handled separately
         acquisitions = list(filter(lambda acq: not (AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value & acq.flags), acquisitions))
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
-        kheader = KHeader.from_ismrmrd(ismrmrd_header, acqinfo)
-        kdata = torch.stack([acq.data for acq in acquisitions]).to(torch.complex64)
+
+        # Raises ValueError if required fields are missing in the header
+        kheader = KHeader.from_ismrmrd(
+            ismrmrd_header,
+            acqinfo,
+            defaults={
+                'datetime': modification_time,  # use the modification time of the dataset as fallback
+                'trajectory': ktrajectory,
+            },
+            overwrite=header_overwrites,
+        )
+        kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
+
+        # Fill k0 limits if they were set to zero / not set in the header
+        if kheader.encoding_limits.kspace_encoding_step_0.length == 1:
+            kheader.encoding_limits.kspace_encoding_step_0 = Limits(0, kdata.shape[-1] - 1, kdata.shape[-1] // 2)
 
         # Calculate trajectory
-        ktraj = ktrajectory_calculator.calc_traj(kheader)
+        ktraj = ktrajectory.calc_traj(kheader)
 
         # TODO: Check for partial Fourier and reflected readouts
 
-        # Sort k-space data into (dim4, ncoils, k2, k1, k0)
-        kdim_labels = (
-            'kspace_encode_step_1',
-            'kspace_encode_step_2',
-            'average',
-            'slice',
-            'contrast',
-            'phase',
-            'repetition',
-            'set',
-        )
-        kdim_num = np.asarray([len(np.unique(getattr(kheader.acq_info, acq_label))) for acq_label in kdim_labels])
+        # Sort kdata and acq_info into ("all other dim", coils, k2, k1, k0) / ("all other dim", k2, k1, acq_info_dims)
+        # Fist, ensure each the non k1/k2 dimensions covers the same number of k1 and k2 points
+        unique_idxs = {label: np.unique(getattr(kheader.acq_info, label)) for label in KDIM_SORT_LABELS}
+        num_k1 = len(unique_idxs['kspace_encode_step_1'])
+        num_k2 = len(unique_idxs['kspace_encode_step_2'])
 
-        # Ensure each dim4 covers the same number of k2 and k1 points
-        for orig_idx, acq_label in enumerate(kdim_labels[2:]):
-            label_values = np.unique(getattr(kheader.acq_info, acq_label))
-            for ind in range(len(label_values)):
-                cidx_curr_label = tuple(np.where(getattr(kheader.acq_info, acq_label) == label_values[ind])[0])
-                kdim_label_k1 = len(np.unique(kheader.acq_info.kspace_encode_step_1[cidx_curr_label]))
-                kdim_label_k2 = len(np.unique(kheader.acq_info.kspace_encode_step_2[cidx_curr_label]))
-                assert (
-                    kdim_label_k1 == kdim_num[0]
-                ), f"""{acq_label} has
-                {kdim_label_k1} k1 points instead of {kdim_num[0]}"""
-                assert (
-                    kdim_label_k2 == kdim_num[1]
-                ), f"""{acq_label} has
-                {kdim_label_k2} k2 points instead of {kdim_num[1]}"""
-
-        sort_ki = np.stack(
-            (
-                kheader.acq_info.kspace_encode_step_1,
-                kheader.acq_info.kspace_encode_step_2,
-                kheader.acq_info.average,
-                kheader.acq_info.slice,
-                kheader.acq_info.contrast,
-                kheader.acq_info.phase,
-                kheader.acq_info.repetition,
-                kheader.acq_info.set,
-            ),
-            axis=0,
-        )
+        for label, idxs in unique_idxs.items():
+            if label in ('kspace_encode_step_1', 'kspace_encode_step_2'):
+                continue
+            for idx in idxs:
+                idx_matches_in_current_label = torch.nonzero(getattr(kheader.acq_info, label) == idx)
+                current_num_k1 = len(torch.unique(kheader.acq_info.kspace_encode_step_1[idx_matches_in_current_label]))
+                current_num_k2 = len(torch.unique(kheader.acq_info.kspace_encode_step_2[idx_matches_in_current_label]))
+                if current_num_k1 != num_k1:
+                    raise ValueError(f'Number of k1 points in {label}: {current_num_k1}. Expected: {num_k1}')
+                if current_num_k2 != num_k2:
+                    raise ValueError(f'Number of k2 points in {label}: {current_num_k2}. Expected: {num_k2}')
+        # using np.lexsort as it looks a bit more familiar than looping and torch.argsort(..., stable=True)
+        sort_ki = np.stack([getattr(kheader.acq_info, label) for label in KDIM_SORT_LABELS], axis=0)
         sort_idx = np.lexsort(sort_ki)
 
-        new_shape = (
-            np.prod(kdim_num[2:]),
-            kdim_num[1],
-            kdim_num[0],
-        )
-        kdata = torch.reshape(kdata[sort_idx, :, :], new_shape + kdata.shape[1:])
-        kdata = torch.moveaxis(kdata, (0, 1, 2, 3, 4), (0, 2, 3, 1, 4))
-
-        ktraj = torch.reshape(ktraj[sort_idx, :, :], new_shape + ktraj.shape[1:])
-        ktraj = torch.moveaxis(ktraj, (0, 1, 2, 3, 4), (0, 2, 3, 1, 4))
-
-        for field in fields(kheader.acq_info):
-            slot = field.name
-            curr_attr = getattr(kheader.acq_info, slot)
-            # TODO: Check for correct dimensionality in test function!
-            curr_new_shape: tuple[int, ...] = new_shape
-            if curr_attr.ndim != 1:
-                curr_new_shape = curr_new_shape + (curr_attr.shape[1],)
-            setattr(
-                kheader.acq_info,
-                slot,
-                torch.reshape(curr_attr[sort_idx, ...], curr_new_shape),
-            )
+        kdata = rearrange(kdata[sort_idx], '(other k2 k1) coil k0 -> other coil k2 k1 k0', k1=num_k1, k2=num_k2)
+        for field in dataclasses.fields(kheader.acq_info):
+            current = getattr(kheader.acq_info, field.name)
+            reshaped = rearrange(current[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=num_k1, k2=num_k2)
+            setattr(kheader.acq_info, field.name, reshaped)
 
         return cls(kheader, kdata, ktraj)
 
@@ -135,14 +134,6 @@ class KData:
     def traj(self) -> torch.Tensor:
         return self._traj
 
-    @traj.setter
-    def traj(self, value: torch.Tensor):
-        self._traj = value
-
     @property
     def data(self) -> torch.Tensor:
         return self._data
-
-    @data.setter
-    def data(self, value: torch.Tensor):
-        self._data = value

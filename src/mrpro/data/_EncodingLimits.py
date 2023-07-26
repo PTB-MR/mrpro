@@ -24,14 +24,14 @@ from ismrmrd.xsd.ismrmrdschema.ismrmrd import limitType
 class Limits:
     """Limits dataclass with min, max, and center attributes."""
 
-    min: int
-    max: int
-    center: int
+    min: int = 0
+    max: int = 0
+    center: int = 0
 
     @classmethod
     def from_ismrmrd(cls, limitType: limitType) -> Limits:
         if limitType is None:
-            return cls(0, 0, 0)
+            return cls()
         return cls(*dataclasses.astuple(limitType))
 
     @property
@@ -43,24 +43,25 @@ class Limits:
 class EncodingLimits:
     """Encoding limits dataclass with limits for each attribute."""
 
-    kspace_encoding_step_0: Limits = dataclasses.field(default_factory=lambda: Limits(0, 0, 0))
-    kspace_encoding_step_1: Limits = dataclasses.field(default_factory=lambda: Limits(0, 0, 0))
-    kspace_encoding_step_2: Limits = dataclasses.field(default_factory=lambda: Limits(0, 0, 0))
-    average: Limits = dataclasses.field(default_factory=lambda: Limits(0, 0, 0))
-    slice: Limits = dataclasses.field(default_factory=lambda: Limits(0, 0, 0))
-    contrast: Limits = dataclasses.field(default_factory=lambda: Limits(0, 0, 0))
-    phase: Limits = dataclasses.field(default_factory=lambda: Limits(0, 0, 0))
-    repetition: Limits = dataclasses.field(default_factory=lambda: Limits(0, 0, 0))
-    set: Limits = dataclasses.field(default_factory=lambda: Limits(0, 0, 0))
-    segment: Limits = dataclasses.field(default_factory=lambda: Limits(0, 0, 0))
-    user_0: Limits = dataclasses.field(default_factory=lambda: Limits(0, 0, 0))
-    user_1: Limits = dataclasses.field(default_factory=lambda: Limits(0, 0, 0))
-    user_2: Limits = dataclasses.field(default_factory=lambda: Limits(0, 0, 0))
-    user_3: Limits = dataclasses.field(default_factory=lambda: Limits(0, 0, 0))
-    user_4: Limits = dataclasses.field(default_factory=lambda: Limits(0, 0, 0))
-    user_5: Limits = dataclasses.field(default_factory=lambda: Limits(0, 0, 0))
-    user_6: Limits = dataclasses.field(default_factory=lambda: Limits(0, 0, 0))
-    user_7: Limits = dataclasses.field(default_factory=lambda: Limits(0, 0, 0))
+    # replace with default with dataclasses.field(default_factory=Limits)
+    kspace_encoding_step_0: Limits = dataclasses.field(default_factory=Limits)
+    kspace_encoding_step_1: Limits = dataclasses.field(default_factory=Limits)
+    kspace_encoding_step_2: Limits = dataclasses.field(default_factory=Limits)
+    average: Limits = dataclasses.field(default_factory=Limits)
+    slice: Limits = dataclasses.field(default_factory=Limits)
+    contrast: Limits = dataclasses.field(default_factory=Limits)
+    phase: Limits = dataclasses.field(default_factory=Limits)
+    repetition: Limits = dataclasses.field(default_factory=Limits)
+    set: Limits = dataclasses.field(default_factory=Limits)
+    segment: Limits = dataclasses.field(default_factory=Limits)
+    user_0: Limits = dataclasses.field(default_factory=Limits)
+    user_1: Limits = dataclasses.field(default_factory=Limits)
+    user_2: Limits = dataclasses.field(default_factory=Limits)
+    user_3: Limits = dataclasses.field(default_factory=Limits)
+    user_4: Limits = dataclasses.field(default_factory=Limits)
+    user_5: Limits = dataclasses.field(default_factory=Limits)
+    user_6: Limits = dataclasses.field(default_factory=Limits)
+    user_7: Limits = dataclasses.field(default_factory=Limits)
 
     @classmethod
     def from_ismrmrd_encodingLimitsType(
