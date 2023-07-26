@@ -12,7 +12,10 @@ license = { file = "LICENSE" }
 keywords = ["MRI, reconstruction, processing, PyTorch"]
 authors = [
     { name = "Christoph Kolbitsch", email = "christoph.kolbitsch@ptb.de" },
+    { name = "Patrick Schuenke", email="patrick.schuenke@ptb.de"},
+    { name = "Felix Zimmermann", email = "felix.zimmermann89@ptb.de"}
 ]
+
 classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.10",
@@ -20,10 +23,15 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3 :: Only",
 ]
-dependencies = ["numpy>=1.23,<2.0", "torch>=2.0,<3.0", "torchio", "ismrmrd"]
+dependencies = ["numpy>=1.23,<2.0", "torch>=2.0,<3.0", "torchio", "ismrmrd", "einops"]
 
 [project.optional-dependencies]
-test = ["coverage", "codecov", "pre-commit"]
+test = [
+    "coverage",
+    "codecov",
+    "pre-commit",
+    "pytest",
+]
 lint = ["mypy", "flake8", "isort", "pre-commit", "autopep8", "pydocstyle"]
 docs = ["sphinx", "sphinx_rtd_theme"]
 
@@ -37,6 +45,9 @@ check_untyped_defs = "True"
 warn_no_return = "True"
 warn_unreachable = "True"
 exclude = ["docs"]
+
+[mypy-ismrmrd]
+ignore_missing_imports = true
 
 # Black section
 [tool.black]
