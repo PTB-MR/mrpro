@@ -12,9 +12,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from enum import Enum
 from enum import Flag
 from enum import auto
-from enum import Enum
 
 
 class AcqFlags(Flag):
@@ -59,52 +59,52 @@ class AcqFlags(Flag):
 
 
 class InterleavingDimension(Enum):
-    PHASE = "phase"
-    REPETITION = "repetition"
-    CONTRAST = "contrast"
-    AVERAGE = "average"
-    OTHER = "other"
+    PHASE = 'phase'
+    REPETITION = 'repetition'
+    CONTRAST = 'contrast'
+    AVERAGE = 'average'
+    OTHER = 'other'
 
 
 class MultibandCalibration(Enum):
-    SEPARABLE2_D = "separable2D"
-    FULL3_D = "full3D"
-    OTHER = "other"
+    SEPARABLE2_D = 'separable2D'
+    FULL3_D = 'full3D'
+    OTHER = 'other'
 
 
 class PatientPosition(Enum):
-    HFP = "HFP"
-    HFS = "HFS"
-    HFDR = "HFDR"
-    HFDL = "HFDL"
-    FFP = "FFP"
-    FFS = "FFS"
-    FFDR = "FFDR"
-    FFDL = "FFDL"
-    OTHER = "OTHER"
+    HFP = 'HFP'
+    HFS = 'HFS'
+    HFDR = 'HFDR'
+    HFDL = 'HFDL'
+    FFP = 'FFP'
+    FFS = 'FFS'
+    FFDR = 'FFDR'
+    FFDL = 'FFDL'
+    OTHER = 'OTHER'
 
 
 class TrajectoryType(Enum):
-    CARTESIAN = "cartesian"
-    EPI = "epi"
-    RADIAL = "radial"
-    GOLDENANGLE = "goldenangle"
-    SPIRAL = "spiral"
-    OTHER = "other"
+    CARTESIAN = 'cartesian'
+    EPI = 'epi'
+    RADIAL = 'radial'
+    GOLDENANGLE = 'goldenangle'
+    SPIRAL = 'spiral'
+    OTHER = 'other'
 
 
 class WaveformInformation(Enum):
-    ECG = "ecg"
-    PULSE = "pulse"
-    RESPIRATORY = "respiratory"
-    TRIGGER = "trigger"
-    GRADIENTWAVEFORM = "gradientwaveform"
-    OTHER = "other"
+    ECG = 'ecg'
+    PULSE = 'pulse'
+    RESPIRATORY = 'respiratory'
+    TRIGGER = 'trigger'
+    GRADIENTWAVEFORM = 'gradientwaveform'
+    OTHER = 'other'
 
 
 class CalibrationMode(Enum):
-    EMBEDDED = "embedded"
-    INTERLEAVED = "interleaved"
-    SEPARATE = "separate"
-    EXTERNAL = "external"
-    OTHER = "other"
+    EMBEDDED = 'embedded'
+    INTERLEAVED = 'interleaved'
+    SEPARATE = 'separate'
+    EXTERNAL = 'external'
+    OTHER = 'other'
