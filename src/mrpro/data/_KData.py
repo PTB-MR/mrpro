@@ -49,7 +49,7 @@ class KData:
         data: torch.Tensor,
         traj: torch.Tensor,
     ) -> None:
-        self.header: KHeader = header
+        self._header: KHeader = header
         self._data: torch.Tensor = data
         self._traj: torch.Tensor = traj
 
@@ -64,6 +64,7 @@ class KData:
             filename: Path to the ISMRMRD file
             ktrajectory: KTrajectory defining the trajectory to use # TODO: Maybe provide a default based on the header?
             header_overwrites: Dictionary of key-value pairs to overwrite the header
+            dataset: Name of the dataset to load (siemens_to_ismrmrd creates dataset, dataset_1, dataset_2, ...)
         """
         # Can raise FileNotFoundError
         with ismrmrd.File(filename, 'r') as file:
@@ -96,9 +97,6 @@ class KData:
         if kheader.encoding_limits.kspace_encoding_step_0.length == 1:
             kheader.encoding_limits.kspace_encoding_step_0 = Limits(0, kdata.shape[-1] - 1, kdata.shape[-1] // 2)
 
-        # Calculate trajectory
-        ktraj = ktrajectory.calc_traj(kheader)
-
         # TODO: Check for partial Fourier and reflected readouts
 
         # Sort kdata and acq_info into ("all other dim", coils, k2, k1, k0) / ("all other dim", k2, k1, acq_info_dims)
@@ -128,6 +126,19 @@ class KData:
             reshaped = rearrange(current[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=num_k1, k2=num_k2)
             setattr(kheader.acq_info, field.name, reshaped)
 
+        # Calculate trajectory and check for shape mismatches
+        ktraj = ktrajectory.calc_traj(kheader)
+        if ktraj.shape[0] != 1 and ktraj.shape[0] != kdata.shape[0]:  # allow broadcasting in "other" dimensions
+            raise ValueError(
+                'shape mismatch between ktrajectory and kdata:\n'
+                f'{ktraj.shape[0]} not broadcastable to {kdata.shape[0]}'
+            )
+        if ktraj.shape[2:] != kdata.shape[2:]:
+            raise ValueError(
+                'shape mismatch between kdata and ktrajectory in (k2, k1, k0) dimensions:\n'
+                f'{ktraj.shape[2:]} != {kdata.shape[2:]}'
+            )
+
         return cls(kheader, kdata, ktraj)
 
     @property
@@ -137,3 +148,7 @@ class KData:
     @property
     def data(self) -> torch.Tensor:
         return self._data
+
+    @property
+    def header(self) -> KHeader:
+        return self._header
