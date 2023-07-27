@@ -12,8 +12,8 @@ license = { file = "LICENSE" }
 keywords = ["MRI, reconstruction, processing, PyTorch"]
 authors = [
     { name = "Christoph Kolbitsch", email = "christoph.kolbitsch@ptb.de" },
-    { name = "Patrick Schuenke", email="patrick.schuenke@ptb.de"},
-    { name = "Felix Zimmermann", email = "felix.zimmermann89@ptb.de"}
+    { name = "Patrick Schuenke", email = "patrick.schuenke@ptb.de" },
+    { name = "Felix Zimmermann", email = "felix.zimmermann89@ptb.de" },
 ]
 
 classifiers = [
@@ -23,15 +23,16 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3 :: Only",
 ]
-dependencies = ["numpy>=1.23,<2.0", "torch>=2.0,<3.0", "torchio", "ismrmrd", "einops"]
+dependencies = [
+    "numpy>=1.23,<2.0",
+    "torch>=2.0,<3.0",
+    "torchio",
+    "ismrmrd",
+    "einops",
+]
 
 [project.optional-dependencies]
-test = [
-    "coverage",
-    "codecov",
-    "pre-commit",
-    "pytest",
-]
+test = ["coverage", "codecov", "pre-commit", "pytest"]
 lint = ["mypy", "flake8", "isort", "pre-commit", "autopep8", "pydocstyle"]
 docs = ["sphinx", "sphinx_rtd_theme"]
 
@@ -75,4 +76,15 @@ force_single_line = "True"
 
 [tool.pydocstyle]
 convention = "numpy"
-add_ignore = ["D107", "D205", "D415"]
+add_ignore = [
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+    "D202",
+]
+# select = ["D200", "D201", "D205", "D206", "D207", "D208", "D214", "D215", "D409"]
