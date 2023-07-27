@@ -1,4 +1,4 @@
-"""Utility Functions for Data Handling."""
+"""Utility functions for data handling."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #

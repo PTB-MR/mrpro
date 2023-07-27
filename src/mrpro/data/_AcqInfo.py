@@ -1,4 +1,4 @@
-"""Class for acquisition information of individual readouts."""
+"""Acquisition information dataclass."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -24,7 +24,7 @@ from mrpro.data._utils import rgetattr
 
 @dataclass(slots=True)
 class AcqInfo:
-    """Acquisiton Info Information about each readout."""
+    """Acquisiton information for each readout."""
 
     acquisition_time_stamp: torch.Tensor
     active_channels: torch.Tensor
