@@ -24,15 +24,15 @@ import numpy as np
 import torch
 from einops import rearrange
 
-from mrpro.data import AcqInfo
 from mrpro.data import KHeader
+from mrpro.data._AcqInfo import AcqInfo
 from mrpro.data._EncodingLimits import Limits
 from mrpro.data._KTrajectory import KTrajectory
 from mrpro.data.enums import AcqFlags
 
 KDIM_SORT_LABELS = (
-    'kspace_encode_step_1',
-    'kspace_encode_step_2',
+    'k1',
+    'k2',
     'average',
     'slice',
     'contrast',
@@ -55,20 +55,28 @@ class KData:
 
     @classmethod
     def from_file(
-        cls, filename: str | Path, ktrajectory: KTrajectory, header_overwrites: dict[str, object] | None = None
+        cls,
+        filename: str | Path,
+        ktrajectory: KTrajectory,
+        header_overwrites: dict[str, object] | None = None,
+        dataset_idx: int = -1,
     ) -> KData:
         """Load k-space data from an ISMRMRD file.
 
-        Parameters:
+        Parameters
         ----------
-            filename: Path to the ISMRMRD file
-            ktrajectory: KTrajectory defining the trajectory to use # TODO: Maybe provide a default based on the header?
-            header_overwrites: Dictionary of key-value pairs to overwrite the header
-            dataset: Name of the dataset to load (siemens_to_ismrmrd creates dataset, dataset_1, dataset_2, ...)
+            filename:
+                Path to the ISMRMRD file
+            ktrajectory:
+                KTrajectory defining the trajectory to use # TODO: Maybe provide a default based on the header?
+            header_overwrites:
+                Dictionary of key-value pairs to overwrite the header
+            dataset_idx: Index of the dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
         """
+
         # Can raise FileNotFoundError
         with ismrmrd.File(filename, 'r') as file:
-            ds = file['dataset']
+            ds = file[list(file.keys())[dataset_idx]]
             ismrmrd_header = ds.header
             acquisitions = ds.acquisitions[:]
             try:
@@ -94,40 +102,50 @@ class KData:
         kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 
         # Fill k0 limits if they were set to zero / not set in the header
-        if kheader.encoding_limits.kspace_encoding_step_0.length == 1:
-            kheader.encoding_limits.kspace_encoding_step_0 = Limits(0, kdata.shape[-1] - 1, kdata.shape[-1] // 2)
+        if kheader.encoding_limits.k0.length == 1:
+            kheader.encoding_limits.k0 = Limits(0, kdata.shape[-1] - 1, kdata.shape[-1] // 2)
 
         # TODO: Check for partial Fourier and reflected readouts
 
         # Sort kdata and acq_info into ("all other dim", coils, k2, k1, k0) / ("all other dim", k2, k1, acq_info_dims)
         # Fist, ensure each the non k1/k2 dimensions covers the same number of k1 and k2 points
-        unique_idxs = {label: np.unique(getattr(kheader.acq_info, label)) for label in KDIM_SORT_LABELS}
-        num_k1 = len(unique_idxs['kspace_encode_step_1'])
-        num_k2 = len(unique_idxs['kspace_encode_step_2'])
+        unique_idxs = {label: np.unique(getattr(kheader.acq_info.idx, label)) for label in KDIM_SORT_LABELS}
+        num_k1 = len(unique_idxs['k1'])
+        num_k2 = len(unique_idxs['k2'])
 
         for label, idxs in unique_idxs.items():
-            if label in ('kspace_encode_step_1', 'kspace_encode_step_2'):
+            if label in ('k1', 'k2'):
                 continue
             for idx in idxs:
-                idx_matches_in_current_label = torch.nonzero(getattr(kheader.acq_info, label) == idx)
-                current_num_k1 = len(torch.unique(kheader.acq_info.kspace_encode_step_1[idx_matches_in_current_label]))
-                current_num_k2 = len(torch.unique(kheader.acq_info.kspace_encode_step_2[idx_matches_in_current_label]))
+                idx_matches = torch.nonzero(getattr(kheader.acq_info.idx, label) == idx)
+                current_num_k1 = len(torch.unique(kheader.acq_info.idx.k1[idx_matches]))
+                current_num_k2 = len(torch.unique(kheader.acq_info.idx.k2[idx_matches]))
                 if current_num_k1 != num_k1:
                     raise ValueError(f'Number of k1 points in {label}: {current_num_k1}. Expected: {num_k1}')
                 if current_num_k2 != num_k2:
                     raise ValueError(f'Number of k2 points in {label}: {current_num_k2}. Expected: {num_k2}')
+
         # using np.lexsort as it looks a bit more familiar than looping and torch.argsort(..., stable=True)
-        sort_ki = np.stack([getattr(kheader.acq_info, label) for label in KDIM_SORT_LABELS], axis=0)
+        sort_ki = np.stack([getattr(kheader.acq_info.idx, label) for label in KDIM_SORT_LABELS], axis=0)
         sort_idx = np.lexsort(sort_ki)
 
         kdata = rearrange(kdata[sort_idx], '(other k2 k1) coil k0 -> other coil k2 k1 k0', k1=num_k1, k2=num_k2)
+
+        def reshape_acq_data(data):
+            return rearrange(data[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=num_k1, k2=num_k2)
+
         for field in dataclasses.fields(kheader.acq_info):
             current = getattr(kheader.acq_info, field.name)
-            reshaped = rearrange(current[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=num_k1, k2=num_k2)
-            setattr(kheader.acq_info, field.name, reshaped)
+            if isinstance(current, torch.Tensor):
+                setattr(kheader.acq_info, field.name, reshape_acq_data(current))
+            elif dataclasses.is_dataclass(current):
+                for subfield in dataclasses.fields(current):
+                    subcurrent = getattr(current, subfield.name)
+                    setattr(current, subfield.name, reshape_acq_data(subcurrent))
 
         # Calculate trajectory and check for shape mismatches
         ktraj = ktrajectory.calc_traj(kheader)
+
         if ktraj.shape[0] != 1 and ktraj.shape[0] != kdata.shape[0]:  # allow broadcasting in "other" dimensions
             raise ValueError(
                 'shape mismatch between ktrajectory and kdata:\n'

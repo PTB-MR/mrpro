@@ -91,13 +91,18 @@ class KHeader:
     ) -> KHeader:
         """Create an Header fom ISMRMRD Data.
 
-        Parameters:
-        --------
-        header: ismrmrdHeader
-        acq_info: Parsed acquisition information
-        defaults: Dictionary of values to be used if information is missing in ismrmrdHeader header
-        overwrite: Dictionary of values to be used independent of ismrmrdHeader
-        encoding_number: As ismrmrdHeader can contain multiple encodings, selects which to consider.
+        Parameters
+        ----------
+        header:
+            ISMRMRD header
+        acq_info:
+            Acquisition information
+        defaults:
+            Dictionary of values to be used if information is missing in header
+        overwrite:
+            Dictionary of values to be used independent of header
+        encoding_number:
+            As ismrmrdHeader can contain multiple encodings, selects which to consider.
         """
 
         # Conversion functions for units

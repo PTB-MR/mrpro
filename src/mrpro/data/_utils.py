@@ -29,10 +29,7 @@ def return_coil_label_dict(
 
 
 def rgetattr(obj, attr, *args):
-    """Recursive getattr for nested attributes.
-
-    Parameters
-    """
+    """Recursive getattr for nested attributes."""
     return functools.reduce(
         lambda obj, attr: getattr(obj, attr, *args),
         [obj] + attr.split('.'),

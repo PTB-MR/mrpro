@@ -42,12 +42,15 @@ class Limits:
 
 @dataclass(slots=True)
 class EncodingLimits:
-    """Encoding limits dataclass with limits for each attribute."""
+    """Encoding limits dataclass with limits for each attribute.
 
-    # replace with default with dataclasses.field(default_factory=Limits)
-    kspace_encoding_step_0: Limits = dataclasses.field(default_factory=Limits)
-    kspace_encoding_step_1: Limits = dataclasses.field(default_factory=Limits)
-    kspace_encoding_step_2: Limits = dataclasses.field(default_factory=Limits)
+    Reference: Magnetic Resonance in Medicine, 29 Jan 2016, 77(1):411-421,
+    DOI: 10.1002/mrm.26089 (Fig. 3)
+    """
+
+    k0: Limits = dataclasses.field(default_factory=Limits)
+    k1: Limits = dataclasses.field(default_factory=Limits)
+    k2: Limits = dataclasses.field(default_factory=Limits)
     average: Limits = dataclasses.field(default_factory=Limits)
     slice: Limits = dataclasses.field(default_factory=Limits)
     contrast: Limits = dataclasses.field(default_factory=Limits)
@@ -69,6 +72,7 @@ class EncodingLimits:
         cls,
         encodingLimits: encodingLimitsType,
     ):
+        """Generate EncodingLimits from ismrmrd.encodingLimitsType."""
         values = {
             field.name: Limits.from_ismrmrd(getattr(encodingLimits, field.name))
             for field in dataclasses.fields(encodingLimits)

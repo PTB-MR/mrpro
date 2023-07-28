@@ -43,13 +43,14 @@ class SpatialDimension(Generic[T]):
 
     @classmethod
     def from_xyz(cls, data: XYZ[T], conversion: Callable[[T], T] | None = None) -> SpatialDimension[T]:
-        """Create a SpatialDimension from something with (.x .y .z) parameters
-        that are either float, int or Any.
+        """Create a SpatialDimension from something with (.x .y .z) parameters.
 
-        Parameters:
-        --------
-        data: should implement .x .y .z. For example ismrmrd's matrixSizeType.
-        conversion (optional): will be called for each value to convert it
+        Parameters
+        ----------
+        data:
+            should implement .x .y .z. For example ismrmrd's matrixSizeType.
+        conversion,  optional:
+            will be called for each value to convert it
         """
         if conversion is not None:
             return cls(conversion(data.x), conversion(data.y), conversion(data.z))
@@ -57,15 +58,18 @@ class SpatialDimension(Generic[T]):
 
     @classmethod
     def from_array(
-        cls, data: ArrayLike, conversion: Callable[[torch.Tensor], torch.Tensor] | None = None
+        cls,
+        data: ArrayLike,
+        conversion: Callable[[torch.Tensor], torch.Tensor] | None = None,
     ) -> SpatialDimension[torch.Tensor]:
-        """Create a SpatialDimension from something with an arraylike
-        interface.
+        """Create a SpatialDimension from an arraylike interface.
 
-        Parameters:
-        --------
-        data: shape (..., 3)
-        conversion (optional): will be called for each value to convert it
+        Parameters
+        ----------
+        data:
+            shape (..., 3)
+        conversion, optional:
+            will be called for each value to convert it, by default None
         """
         if not isinstance(data, (np.ndarray, torch.Tensor)):
             data = np.asarray(data)
