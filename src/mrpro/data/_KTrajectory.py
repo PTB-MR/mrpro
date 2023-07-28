@@ -35,16 +35,15 @@ class KTrajectory(ABC):
             [
                 getattr(limits, field.name).length
                 for field in dataclasses.fields(limits)
-                if field.name
-                not in ('kspace_encoding_step_0', 'kspace_encoding_step_1', 'kspace_encoding_step_2', 'segment')
+                if field.name not in ('k0', 'k1', 'k2', 'segment')
             ]
         )
         shape = (
             other_dim,
             3,
-            limits.kspace_encoding_step_2.length,
-            limits.kspace_encoding_step_1.length,
-            limits.kspace_encoding_step_0.length,
+            limits.k2.length,
+            limits.k1.length,
+            limits.k0.length,
         )
         return shape
 

@@ -32,8 +32,6 @@ class TrajectoryDescription:
 
     @classmethod
     def from_ismrmrd(cls, trajectoryDescription: trajectoryDescriptionType) -> TrajectoryDescription:
-        """Create a TrajectoryDescription from a ismrmrd
-        trajectoryDescriptionType."""
         return cls(
             userParameterLong={p.name: int(p.value) for p in trajectoryDescription.userParameterLong},
             userParameterDouble={p.name: float(p.value) for p in trajectoryDescription.userParameterDouble},
