@@ -17,44 +17,52 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import ismrmrd
+import numpy as np
 import torch
 
-from mrpro.data._utils import rgetattr
+from mrpro.data._SpatialDimension import SpatialDimension
+
+
+@dataclass(slots=True)
+class AcqIdx:
+    """Acquisition index for each readout."""
+
+    k1: torch.Tensor
+    k2: torch.Tensor
+    average: torch.Tensor
+    slice: torch.Tensor
+    contrast: torch.Tensor
+    phase: torch.Tensor
+    repetition: torch.Tensor
+    set: torch.Tensor
+    segment: torch.Tensor
+    user: torch.Tensor
 
 
 @dataclass(slots=True)
 class AcqInfo:
     """Acquisiton information for each readout."""
 
+    idx: AcqIdx
     acquisition_time_stamp: torch.Tensor
     active_channels: torch.Tensor
     available_channels: torch.Tensor
-    average: torch.Tensor
     center_sample: torch.Tensor
     channel_mask: torch.Tensor
-    contrast: torch.Tensor
     discard_post: torch.Tensor
     discard_pre: torch.Tensor
     encoding_space_ref: torch.Tensor
     flags: torch.Tensor
-    kspace_encode_step_1: torch.Tensor
-    kspace_encode_step_2: torch.Tensor
     measurement_uid: torch.Tensor
     number_of_samples: torch.Tensor
-    patient_table_position: torch.Tensor
-    phase: torch.Tensor
-    phase_dir: torch.Tensor
+    patient_table_position: SpatialDimension[torch.Tensor]
+    phase_dir: SpatialDimension[torch.Tensor]
     physiology_time_stamp: torch.Tensor
-    position: torch.Tensor
-    read_dir: torch.Tensor
-    repetition: torch.Tensor
+    position: SpatialDimension[torch.Tensor]
+    read_dir: SpatialDimension[torch.Tensor]
     sample_time_us: torch.Tensor
     scan_counter: torch.Tensor
-    segment: torch.Tensor
-    set: torch.Tensor
-    slice: torch.Tensor
-    user: torch.Tensor
-    slice_dir: torch.Tensor
+    slice_dir: SpatialDimension[torch.Tensor]
     trajectory_dimensions: torch.Tensor
     user_float: torch.Tensor
     user_int: torch.Tensor
@@ -65,61 +73,83 @@ class AcqInfo:
         cls,
         acquisitions: list[ismrmrd.Acquisition],
     ) -> AcqInfo:
-        """Reads the header of a list of acquisition and stores the
-        information.
+        """Read the header of a list of acquisition and store information.
 
-        Parameters:
+        Parameters
         ----------
-        acquisitions: list of ismrmrd acquisistions to read from. Needs at least one acquisition.
+        acquisitions:
+            list of ismrmrd acquisistions to read from. Needs at least one acquisition.
         """
+
+        # Idea: create array of structs, then a struct of arrays,
+        # convert it into tensors to store in our dataclass.
+        # TODO: there might be a faster way to do this.
 
         if len(acquisitions) == 0:
             raise ValueError('Acquisition list must not be empty.')
 
-        def get_tensor(name) -> torch.Tensor:
-            """
-            Stacks the attribute from each acquisitions into a tensor.
-            Parameters:
-            ----------
-            name: name of the attribute to stack. Will be resolved recursively,
-                  e.g. 'idx.kspace_encode_step_1' will be resolved to acquisition.idx.kspace_encode_step_1
-            """
-            values = list(map(lambda acq: rgetattr(acq, name), acquisitions))
-            return torch.tensor(values)
-
-        attributes = dict(
-            kspace_encode_step_1=get_tensor('idx.kspace_encode_step_1'),
-            kspace_encode_step_2=get_tensor('idx.kspace_encode_step_2'),
-            average=get_tensor('idx.average'),
-            slice=get_tensor('idx.slice'),
-            contrast=get_tensor('idx.contrast'),
-            phase=get_tensor('idx.phase'),
-            repetition=get_tensor('idx.repetition'),
-            set=get_tensor('idx.set'),
-            segment=get_tensor('idx.segment'),
-            user=get_tensor('idx.user'),
-            user_float=get_tensor('user_float'),
-            user_int=get_tensor('user_int'),
-            acquisition_time_stamp=get_tensor('acquisition_time_stamp'),
-            flags=get_tensor('flags'),
-            measurement_uid=get_tensor('measurement_uid'),
-            scan_counter=get_tensor('scan_counter'),
-            physiology_time_stamp=get_tensor('physiology_time_stamp'),
-            active_channels=get_tensor('active_channels'),
-            number_of_samples=get_tensor('number_of_samples'),
-            available_channels=get_tensor('available_channels'),
-            channel_mask=get_tensor('channel_mask'),
-            discard_pre=get_tensor('discard_pre'),
-            discard_post=get_tensor('discard_post'),
-            center_sample=get_tensor('center_sample'),
-            encoding_space_ref=get_tensor('encoding_space_ref'),
-            trajectory_dimensions=get_tensor('trajectory_dimensions'),
-            sample_time_us=get_tensor('sample_time_us'),
-            position=get_tensor('position'),
-            read_dir=get_tensor('read_dir'),
-            phase_dir=get_tensor('phase_dir'),
-            slice_dir=get_tensor('slice_dir'),
-            patient_table_position=get_tensor('patient_table_position'),
-            version=get_tensor('version'),
+        # Creating the dtype first and casting to bytes
+        # is a workaround for a bug in cpython > 3.12 causing a warning
+        # is np.array(AcquisitionHeader) is called directly.
+        # also, this needs to check the dtyoe only once.
+        acquisition_head_dtype = np.dtype(ismrmrd.AcquisitionHeader)
+        headers = np.frombuffer(
+            np.array([memoryview(a._head).cast('B') for a in acquisitions]), dtype=acquisition_head_dtype
         )
-        return cls(**attributes)
+
+        idx = headers['idx']
+
+        def tensor(data):
+            # we have to convert first as pytoch cant create tensors from np.uint16 arrays
+            # we use int32 for uint16 and int64 for uint32 to fit largest values.
+            match data.dtype:
+                case np.uint16:
+                    data = data.astype(np.int32)
+                case np.uint32 | np.uint64:
+                    data = data.astype(np.int64)
+
+            return torch.tensor(data).squeeze()
+
+        def spatialdimension(data):
+            # all spatial dimensions are float32
+            return SpatialDimension[torch.Tensor].from_array(torch.tensor(data.astype(np.float32)))
+
+        acq_idx = AcqIdx(
+            k1=tensor(idx['kspace_encode_step_1']),
+            k2=tensor(idx['kspace_encode_step_2']),
+            average=tensor(idx['average']),
+            slice=tensor(idx['slice']),
+            contrast=tensor(idx['contrast']),
+            phase=tensor(idx['phase']),
+            repetition=tensor(idx['repetition']),
+            set=tensor(idx['set']),
+            segment=tensor(idx['segment']),
+            user=tensor(idx['user']),
+        )
+        acq_info = cls(
+            idx=acq_idx,
+            acquisition_time_stamp=tensor(headers['acquisition_time_stamp']),
+            active_channels=tensor(headers['active_channels']),
+            available_channels=tensor(headers['available_channels']),
+            center_sample=tensor(headers['center_sample']),
+            channel_mask=tensor(headers['channel_mask']),
+            discard_post=tensor(headers['discard_post']),
+            discard_pre=tensor(headers['discard_pre']),
+            encoding_space_ref=tensor(headers['encoding_space_ref']),
+            flags=tensor(headers['flags']),
+            measurement_uid=tensor(headers['measurement_uid']),
+            number_of_samples=tensor(headers['number_of_samples']),
+            patient_table_position=spatialdimension(headers['patient_table_position']),
+            phase_dir=spatialdimension(headers['phase_dir']),
+            physiology_time_stamp=tensor(headers['physiology_time_stamp']),
+            position=spatialdimension(headers['position']),
+            read_dir=spatialdimension(headers['read_dir']),
+            sample_time_us=tensor(headers['sample_time_us']),
+            scan_counter=tensor(headers['scan_counter']),
+            slice_dir=spatialdimension(headers['slice_dir']),
+            trajectory_dimensions=tensor(headers['trajectory_dimensions']),
+            user_float=tensor(headers['user_float']),
+            user_int=tensor(headers['user_int']),
+            version=tensor(headers['version']),
+        )
+        return acq_info

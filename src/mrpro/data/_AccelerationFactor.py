@@ -1,4 +1,4 @@
-"""Acceleration factor dataclass."""
+"""Acceleration factor dataclass (DEPRECATED)."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -23,14 +23,14 @@ from ismrmrd.xsd.ismrmrdschema.ismrmrd import accelerationFactorType
 class AccelerationFactor:
     """Acceleration Factor."""
 
-    kspace_encoding_step_1: float
-    kspace_encoding_step_2: float
+    k1: float
+    k2: float
 
     @property
     def overall(self) -> float:
-        return self.kspace_encoding_step_1 * self.kspace_encoding_step_2
+        return self.k1 * self.k2
 
     @classmethod
     def from_ismrmrd(cls, data: accelerationFactorType) -> AccelerationFactor:
         """Create a AccelerationFactor from ismrmrd accelerationFactorType."""
-        return cls(data.kspace_encoding_step_1, data.kspace_encoding_step_1)
+        return cls(data.k1, data.k1)

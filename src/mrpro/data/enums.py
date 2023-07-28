@@ -18,6 +18,14 @@ from enum import auto
 
 
 class AcqFlags(Flag):
+    """Acquisition flags.
+
+    Reference:
+    https://github.com/ismrmrd/ismrmrd/blob/master/include/ismrmrd/ismrmrd.h
+    NOTE: values in enum ISMRMRD_AcquisitionFlags start at 1 and not 0, but
+    1 << (val-1) is used in 'ismrmrd_is_flag_set' function to calc bitmask value.
+    """
+
     ACQ_NO_FLAG = 0
     ACQ_FIRST_IN_ENCODE_STEP1 = auto()
     ACQ_LAST_IN_ENCODE_STEP1 = auto()
