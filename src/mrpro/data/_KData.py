@@ -85,8 +85,9 @@ class KData:
                 mtime = 0
             modification_time = datetime.datetime.fromtimestamp(mtime)
 
-        # Noise data must be handled separately
-        acquisitions = list(filter(lambda acq: not (AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value & acq.flags), acquisitions))
+        # Noise data etc must be handled separately #TODO: check which flags we also need to add.
+        ignore_flags = AcqFlags.ACQ_IS_NOISE_MEASUREMENT | AcqFlags.ACQ_IS_SURFACECOILCORRECTIONSCAN_DATA
+        acquisitions = list(filter(lambda acq: not (ignore_flags.value & acq.flags), acquisitions))
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
 
         # Raises ValueError if required fields are missing in the header
