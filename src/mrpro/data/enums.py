@@ -56,6 +56,12 @@ class AcqFlags(Flag):
     ACQ_IS_DUMMYSCAN_DATA = auto()
     ACQ_IS_RTFEEDBACK_DATA = auto()
     ACQ_IS_SURFACECOILCORRECTIONSCAN_DATA = auto()
+    ACQ_IS_PHASE_STABILIZATION_REFERENCE = auto()
+    ACQ_IS_PHASE_STABILIZATION = 30 << 1
+    ACQ_COMPRESSION1 = 52 << 1  # 53 (on purpose!)
+    ACQ_COMPRESSION2 = auto()
+    ACQ_COMPRESSION3 = auto()
+    ACQ_COMPRESSION4 = auto()
     ACQ_USER1 = auto()
     ACQ_USER2 = auto()
     ACQ_USER3 = auto()
