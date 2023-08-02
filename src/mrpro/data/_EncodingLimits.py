@@ -77,4 +77,10 @@ class EncodingLimits:
             field.name: Limits.from_ismrmrd(getattr(encodingLimits, field.name))
             for field in dataclasses.fields(encodingLimits)
         }
+
+        # adjust from ISMRMRD to MRPro naming convention
+        values['k0'] = values.pop('kspace_encoding_step_0')
+        values['k1'] = values.pop('kspace_encoding_step_1')
+        values['k2'] = values.pop('kspace_encoding_step_2')
+
         return cls(**values)
