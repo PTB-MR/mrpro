@@ -14,9 +14,9 @@
 
 from __future__ import annotations
 
-import dataclasses
 from dataclasses import dataclass
 
+from mrpro.data._KHeader import KHeader
 from mrpro.data._SpatialDimension import SpatialDimension
 
 
@@ -31,9 +31,27 @@ class IHeader:
     """
 
     # ToDo: decide which attributes to store in the header
-    fov: SpatialDimension[float]
-    te: list[float]
-    ti: list[float]
-    fa: list[float]
-    tr: list[float]
-    misc: dict = dataclasses.field(default_factory=dict)  # do not use {} here!
+    # ToDo: decide on types. Allow None ?
+    fov: SpatialDimension[float] | None
+    te: list[float] | None
+    ti: list[float] | None
+    fa: list[float] | None
+    tr: list[float] | None
+
+    @classmethod
+    def from_kheader(cls, kheader: KHeader):
+        """Create IHeader object from KHeader object.
+
+        Parameters
+        ----------
+        kheader
+            MR raw data header (KHeader) containing required meta data.
+        """
+
+        return cls(
+            fov=kheader.encoding_fov,  # rename to fov
+            te=kheader.te,
+            ti=kheader.ti,
+            fa=kheader.fa,
+            tr=kheader.tr,
+        )
