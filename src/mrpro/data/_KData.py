@@ -44,6 +44,10 @@ KDIM_SORT_LABELS = (
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class KData:
+    header: KHeader
+    data: torch.Tensor
+    traj: torch.Tensor
+
     @classmethod
     def from_file(
         cls,
