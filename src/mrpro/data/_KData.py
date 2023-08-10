@@ -42,16 +42,11 @@ KDIM_SORT_LABELS = (
 )
 
 
+@dataclasses.dataclass(slots=True, frozen=True)
 class KData:
-    def __init__(
-        self,
-        header: KHeader,
-        data: torch.Tensor,
-        traj: torch.Tensor,
-    ) -> None:
-        self._header: KHeader = header
-        self._data: torch.Tensor = data
-        self._traj: torch.Tensor = traj
+    header: KHeader
+    data: torch.Tensor
+    traj: torch.Tensor
 
     @classmethod
     def from_file(
@@ -159,15 +154,3 @@ class KData:
             )
 
         return cls(kheader, kdata, ktraj)
-
-    @property
-    def traj(self) -> torch.Tensor:
-        return self._traj
-
-    @property
-    def data(self) -> torch.Tensor:
-        return self._data
-
-    @property
-    def header(self) -> KHeader:
-        return self._header
