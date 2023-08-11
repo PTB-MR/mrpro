@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 from pathlib import Path
 
 import pydicom
@@ -23,27 +24,12 @@ from mrpro.data._IHeader import IHeader
 from mrpro.data._KHeader import KHeader
 
 
+@dataclasses.dataclass(slots=True, frozen=True)
 class IData:
-    def __init__(self, header: IHeader, data: torch.Tensor):
-        """MR image data (IData) class.
+    """MR image data (IData) class."""
 
-        Parameters
-        ----------
-        header
-            Image header containing meta data about the image.
-        data
-            Image data as complex torch.Tensor with shape (all_other, coils, z, x, y).
-        """
-        self._header: IHeader = header
-        self._data: torch.Tensor = data
-
-    @property
-    def data(self) -> torch.Tensor:
-        return self._data
-
-    @property
-    def header(self) -> IHeader:
-        return self._header
+    header: IHeader
+    data: torch.Tensor
 
     @classmethod
     def from_tensor_and_kheader(cls, data: torch.Tensor, kheader: KHeader) -> IData:
