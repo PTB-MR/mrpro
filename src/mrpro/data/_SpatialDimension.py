@@ -56,9 +56,8 @@ class SpatialDimension(Generic[T]):
             return cls(conversion(data.x), conversion(data.y), conversion(data.z))
         return cls(data.x, data.y, data.z)
 
-    @classmethod
+    @staticmethod
     def from_array(
-        cls,
         data: ArrayLike,
         conversion: Callable[[torch.Tensor], torch.Tensor] | None = None,
     ) -> SpatialDimension[torch.Tensor]:
@@ -85,4 +84,4 @@ class SpatialDimension(Generic[T]):
             x = conversion(x)
             y = conversion(y)
             z = conversion(z)
-        return cls(x, y, z)
+        return SpatialDimension(x, y, z)
