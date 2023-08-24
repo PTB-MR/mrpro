@@ -48,7 +48,7 @@ warn_unreachable = "True"
 exclude = ["docs"]
 
 [[tool.mypy.overrides]]
-module = ["ismrmrd.*", "h5py"]
+module = ["ismrmrd.*", "h5py", "scipy.*"]
 ignore_missing_imports = true
 
 # Black section
