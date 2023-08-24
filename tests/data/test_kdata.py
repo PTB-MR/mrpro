@@ -13,6 +13,7 @@
 #   limitations under the License.
 
 import generate_shepp_logan_dataset
+import pytest
 
 from mrpro.data import KData
 from mrpro.data._KTrajectory import DummyTrajectory
@@ -20,10 +21,20 @@ from mrpro.data._KTrajectory import DummyTrajectory
 
 def test_KData_from_file(tmp_path):
     # Create an example ismrmrd data set
-    print(tmp_path)
     ismrmrd_filename = tmp_path / 'ismrmrd.h5'
-    print(ismrmrd_filename)
     generate_shepp_logan_dataset.create(filename=ismrmrd_filename)
 
     k = KData.from_file(ismrmrd_filename, DummyTrajectory())
     assert k is not None
+
+
+@pytest.mark.parametrize('field,value', [('b0', 11.3), ('tr', [24.3,])])
+def test_KData_modify_header(tmp_path, field, value):
+    # Create an example ismrmrd data set
+    ismrmrd_filename = tmp_path / 'ismrmrd.h5'
+    generate_shepp_logan_dataset.create(filename=ismrmrd_filename)
+
+    # Overwrite some parameters
+    par_dict = {field: value}
+    k = KData.from_file(ismrmrd_filename, DummyTrajectory(), header_overwrites=par_dict)
+    assert getattr(k.header, field) == value
