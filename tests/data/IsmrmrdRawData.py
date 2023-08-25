@@ -71,13 +71,13 @@ def analytic_2d_kspace(ky: np.ndarray, kx: np.ndarray, phantom: EllipsePhantom):
     return (kdat)
 
 
-def analytic_kspace_image(ky: np.ndarray, kx: np.ndarray, ny: int, nx: int, phantom: EllipsePhantom):
+def analytic_kspace_image(ky: np.ndarray, kx: np.ndarray, nky: int, nkx: int, phantom: EllipsePhantom):
     # Create analytic k-space
     ktrue = analytic_2d_kspace(ky, kx, phantom)
 
     # Create fully sampled k-space and apply fft for reference image
-    kx_idx = range(-nx//2, nx//2)
-    ky_idx = range(-ny//2, ny//2)
+    kx_idx = range(-nkx//2, nkx//2)
+    ky_idx = range(-nky//2, nky//2)
     [kx, ky] = np.meshgrid(kx_idx, ky_idx)
     kfull = analytic_2d_kspace(ky, kx, phantom)
     imref = k2i(kfull)
@@ -136,7 +136,7 @@ class IsmrmrdRawData():
     acceleration
         undersampling along phase encoding (ky), by default 1
     noise_level
-        scaling factor for noise level, by default 0.05
+        scaling factor for noise level, by default 0.00005
     trajectory_type
         cartesian, by default cartesian
     sampling_order
@@ -151,7 +151,7 @@ class IsmrmrdRawData():
     oversampling: int = 2
     repetitions: int = 1
     acceleration: int = 1
-    noise_level: float = 0.05
+    noise_level: float = 0.00005
     trajectory_type:  str = 'cartesian'
     sampling_order: str = 'linear'
     phantom: EllipsePhantom = EllipsePhantom()
@@ -172,7 +172,7 @@ class IsmrmrdRawData():
         [kx, ky] = np.meshgrid(kx_idx, ky_idx)
 
         # Create analytic k-space and reference image
-        ktrue, self.imref = analytic_kspace_image(ky, kx, ny, nx, self.phantom)
+        ktrue, self.imref = analytic_kspace_image(ky, kx, nky, nkx, self.phantom)
 
         # Multi-coil acquisition
         # TODO: proper application of coils
