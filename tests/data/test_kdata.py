@@ -12,29 +12,46 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import generate_shepp_logan_dataset
 import pytest
+from IsmrmrdRawData import IsmrmrdRawData
 
 from mrpro.data import KData
 from mrpro.data._KTrajectory import DummyTrajectory
 
 
-def test_KData_from_file(tmp_path):
-    # Create an example ismrmrd data set
-    ismrmrd_filename = tmp_path / 'ismrmrd.h5'
-    generate_shepp_logan_dataset.create(filename=ismrmrd_filename)
+@pytest.fixture(scope='session')
+def ismrmrd_cart(tmp_path_factory):
+    # Fully sampled cartesian data set
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdat = IsmrmrdRawData(filename=ismrmrd_filename)
+    ismrmrd_kdat.create()
+    return (ismrmrd_kdat)
 
-    k = KData.from_file(ismrmrd_filename, DummyTrajectory())
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_us4(tmp_path_factory):
+    # Undersampled cartesian data set
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdat = IsmrmrdRawData(filename=ismrmrd_filename, acceleration=4)
+    ismrmrd_kdat.create()
+    return (ismrmrd_kdat)
+
+
+def test_KData_from_file(ismrmrd_cart):
+    k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     assert k is not None
+
+# Expected to fail with DummyTrajectory
+
+
+def test_KData_from_file_undersampled(ismrmrd_cart_us4):
+    with pytest.raises(ValueError):
+        KData.from_file(ismrmrd_cart_us4.filename, DummyTrajectory())
 
 
 @pytest.mark.parametrize('field,value', [('b0', 11.3), ('tr', [24.3,])])
-def test_KData_modify_header(tmp_path, field, value):
-    # Create an example ismrmrd data set
-    ismrmrd_filename = tmp_path / 'ismrmrd.h5'
-    generate_shepp_logan_dataset.create(filename=ismrmrd_filename)
-
+def test_KData_modify_header(ismrmrd_cart, field, value):
     # Overwrite some parameters
     par_dict = {field: value}
-    k = KData.from_file(ismrmrd_filename, DummyTrajectory(), header_overwrites=par_dict)
+    k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory(), header_overwrites=par_dict)
     assert getattr(k.header, field) == value
