@@ -21,7 +21,31 @@ import numpy as np
 import scipy.special as sp_special
 
 
-def create_analytic_2d_kspace(ky: np.ndarray, kx: np.ndarray):
+@dataclass(slots=True)
+class ellipse_pars():
+    centre_x: float
+    centre_y: float
+    radius_x: float
+    radius_y: float
+    intensity: float
+
+
+class EllipsePhantom():
+    def __init__(self):
+        # Create three circles with different intensity
+        self.ellipses: list[ellipse_pars] = [ellipse_pars(centre_x=0.2, centre_y=0.2,
+                                                          radius_x=0.2, radius_y=0.2, intensity=1),
+                                             ellipse_pars(centre_x=0.1, centre_y=-0.1,
+                                                          radius_x=0.2, radius_y=0.2, intensity=2),
+                                             ellipse_pars(centre_x=-0.2, centre_y=0.1, radius_x=0.3,
+                                                          radius_y=0.3, intensity=4)]
+
+
+def k2i(kdat, axes=(0, 1)):
+    return (np.fft.fftshift(np.fft.fftn(np.fft.fftshift(kdat, axes=axes), axes=axes), axes=axes))
+
+
+def analytic_2d_kspace(ky: np.ndarray, kx: np.ndarray, phantom: EllipsePhantom):
     """Create 2D analytic kspace data based on given k-space locations.
 
     Parameters
@@ -35,19 +59,30 @@ def create_analytic_2d_kspace(ky: np.ndarray, kx: np.ndarray):
     if kx.shape != ky.shape:
         raise ValueError(f'shape mismatch between kx {kx.shape} and ky {ky.shape}')
 
-    # Create k-space data for three circles of different intensity
-    par = [[0.2, 0.2, 0.2, 0.2], [0.1, -0.1, 0.2, 0.2], [-0.2, 0.1, 0.3, 0.3]]
-    intensity = [1, 2, 4]
-
     kdat = 0
-    for ind, ipar in enumerate(par):
-        arg = np.sqrt(ipar[2] ** 2 * kx ** 2 + ipar[3] ** 2 * ky ** 2)
+    for el in phantom.ellipses:
+        arg = np.sqrt(el.radius_x ** 2 * kx ** 2 + el.radius_y ** 2 * ky ** 2)
         arg[arg < 1e-6] = 1e-6  # avoid zeros
 
-        cdat = ipar[2] * ipar[3] * 0.5 * sp_special.jv(1, np.pi * arg) / arg
-        kdat += (np.exp(1j * 2 * np.pi * (ipar[0] * kx + ipar[1] * ky)) * cdat * intensity[ind]).astype(np.complex64)
+        cdat = el.radius_x * el.radius_y * 0.5 * sp_special.jv(1, np.pi * arg) / arg
+        kdat += (np.exp(1j * 2 * np.pi * (el.centre_x * kx + el.centre_y * ky))
+                 * cdat * el.intensity).astype(np.complex64)
 
     return (kdat)
+
+
+def analytic_kspace_image(ky: np.ndarray, kx: np.ndarray, ny: int, nx: int, phantom: EllipsePhantom):
+    # Create analytic k-space
+    ktrue = analytic_2d_kspace(ky, kx, phantom)
+
+    # Create fully sampled k-space and apply fft for reference image
+    kx_idx = range(-nx//2, nx//2)
+    ky_idx = range(-ny//2, ny//2)
+    [kx, ky] = np.meshgrid(kx_idx, ky_idx)
+    kfull = analytic_2d_kspace(ky, kx, phantom)
+    imref = k2i(kfull)
+
+    return (ktrue, imref)
 
 
 def calc_phase_encoding_steps(nky: int, acceleration: int = 1, sampling_order: str = 'linear'):
@@ -100,12 +135,14 @@ class IsmrmrdRawData():
         number of repetitions, by default 1
     acceleration
         undersampling along phase encoding (ky), by default 1
+    noise_level
+        scaling factor for noise level, by default 0.05
     trajectory_type
         cartesian, by default cartesian
     sampling_order
         order how phase encoding points (ky) are obtained, by default linear
-    noise_level
-        scaling factor for noise level, by default 0.05
+    phantom
+        phantom with different ellipses
     """
 
     filename: str | os.PathLike
@@ -117,6 +154,8 @@ class IsmrmrdRawData():
     noise_level: float = 0.05
     trajectory_type:  str = 'cartesian'
     sampling_order: str = 'linear'
+    phantom: EllipsePhantom = EllipsePhantom()
+    imref: np.ndarray | None = None
 
     def create(self):
         """Create ismrmrd raw data file."""
@@ -131,7 +170,9 @@ class IsmrmrdRawData():
         ky_idx = calc_phase_encoding_steps(nky, self.acceleration, self.sampling_order)
         kx_idx = range(-nkx//2, nkx//2)
         [kx, ky] = np.meshgrid(kx_idx, ky_idx)
-        ktrue = create_analytic_2d_kspace(ky, kx)
+
+        # Create analytic k-space and reference image
+        ktrue, self.imref = analytic_kspace_image(ky, kx, ny, nx, self.phantom)
 
         # Multi-coil acquisition
         # TODO: proper application of coils
