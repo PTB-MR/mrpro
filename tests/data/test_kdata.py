@@ -25,7 +25,16 @@ from mrpro.data._KTrajectory import DummyTrajectory
 def ismrmrd_cart(tmp_path_factory):
     # Fully sampled cartesian data set
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
-    ismrmrd_kdat = IsmrmrdRawData(filename=ismrmrd_filename, noise_level=0.0)
+    ismrmrd_kdat = IsmrmrdRawData(filename=ismrmrd_filename, noise_level=0.0, repetitions=3)
+    ismrmrd_kdat.create()
+    return (ismrmrd_kdat)
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_invalid_reps(tmp_path_factory):
+    # Fully sampled cartesian data set
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdat = IsmrmrdRawData(filename=ismrmrd_filename, noise_level=0.0, repetitions=3, flag_invalid_reps=True)
     ismrmrd_kdat.create()
     return (ismrmrd_kdat)
 
@@ -56,6 +65,12 @@ def test_KData_from_file_undersampled(ismrmrd_cart_us4):
     # Expected to fail with DummyTrajectory
     with pytest.raises(ValueError):
         KData.from_file(ismrmrd_cart_us4.filename, DummyTrajectory())
+
+
+def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
+    # Multiple repetitions with different number of phase encoding lines
+    with pytest.raises(ValueError, match='Number of k1 points in repetition: 128. Expected: 256'):
+        KData.from_file(ismrmrd_cart_invalid_reps.filename, DummyTrajectory())
 
 
 @pytest.mark.parametrize('field,value', [('b0', 11.3), ('tr', [24.3,])])

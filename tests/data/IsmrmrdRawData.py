@@ -133,6 +133,8 @@ class IsmrmrdRawData():
         oversampling along readout (kx) direction, by default 2
     repetitions
         number of repetitions, by default 1
+    flag_invalid_reps
+        flag to indicate that number of phase encoding steps are different for repetitions, by default False
     acceleration
         undersampling along phase encoding (ky), by default 1
     noise_level
@@ -150,6 +152,7 @@ class IsmrmrdRawData():
     ncoils: int = 8
     oversampling: int = 2
     repetitions: int = 1
+    flag_invalid_reps: bool = False
     acceleration: int = 1
     noise_level: float = 0.00005
     trajectory_type:  str = 'cartesian'
@@ -303,23 +306,24 @@ class IsmrmrdRawData():
             K = ktrue + noise
             acq.idx.repetition = rep
             for idx, line in enumerate(ky_idx):
-                # Set some fields in the header
-                line_idx = line + nky//2
-                acq.scan_counter = counter
-                acq.idx.kspace_encode_step_1 = line_idx
-                acq.clearAllFlags()
-                if line == 0:
-                    acq.setFlag(ismrmrd.ACQ_FIRST_IN_ENCODE_STEP1)
-                    acq.setFlag(ismrmrd.ACQ_FIRST_IN_SLICE)
-                    acq.setFlag(ismrmrd.ACQ_FIRST_IN_REPETITION)
-                elif line == nky - 1:
-                    acq.setFlag(ismrmrd.ACQ_LAST_IN_ENCODE_STEP1)
-                    acq.setFlag(ismrmrd.ACQ_LAST_IN_SLICE)
-                    acq.setFlag(ismrmrd.ACQ_LAST_IN_REPETITION)
-                # set the data and append
-                acq.data[:] = K[:, idx, :]
-                dset.append_acquisition(acq)
-                counter += 1
+                if not self.flag_invalid_reps or rep == 0 or idx < len(ky_idx)//2:  # fewer lines for rep > 0
+                    # Set some fields in the header
+                    line_idx = line + nky//2
+                    acq.scan_counter = counter
+                    acq.idx.kspace_encode_step_1 = line_idx
+                    acq.clearAllFlags()
+                    if line == 0:
+                        acq.setFlag(ismrmrd.ACQ_FIRST_IN_ENCODE_STEP1)
+                        acq.setFlag(ismrmrd.ACQ_FIRST_IN_SLICE)
+                        acq.setFlag(ismrmrd.ACQ_FIRST_IN_REPETITION)
+                    elif line == nky - 1:
+                        acq.setFlag(ismrmrd.ACQ_LAST_IN_ENCODE_STEP1)
+                        acq.setFlag(ismrmrd.ACQ_LAST_IN_SLICE)
+                        acq.setFlag(ismrmrd.ACQ_LAST_IN_REPETITION)
+                    # set the data and append
+                    acq.data[:] = K[:, idx, :]
+                    dset.append_acquisition(acq)
+                    counter += 1
 
         # Clean up
         dset.close()
