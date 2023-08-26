@@ -42,6 +42,19 @@ class EllipsePhantom():
 
 
 def k2i(kdat, axes=(0, 1)):
+    """FFT from k-space to image space.
+
+    Parameters
+    ----------
+    kdat
+        k-space data on Cartesian grid
+    axes, optional
+        axes along which FFT is applied, by default (0, 1)
+
+    Returns
+    -------
+        FFT of kdat
+    """
     return (np.fft.fftshift(np.fft.fftn(np.fft.fftshift(kdat, axes=axes), axes=axes), axes=axes))
 
 
@@ -72,6 +85,26 @@ def analytic_2d_kspace(ky: np.ndarray, kx: np.ndarray, phantom: EllipsePhantom):
 
 
 def analytic_kspace_image(ky: np.ndarray, kx: np.ndarray, nky: int, nkx: int, phantom: EllipsePhantom):
+    """Calculate analytic k-space data and corresponding ground truth image
+    data.
+
+    Parameters
+    ----------
+    ky
+        ky k-space positions
+    kx
+        kx k-space positions
+    nky
+        number of points along ky direction of k-space
+    nkx
+        number of points along kx direction of k-space
+    phantom
+        parameters of numerical phantom
+
+    Returns
+    -------
+        k-space data and corresponding ground truth image data
+    """
     # Create analytic k-space
     ktrue = analytic_2d_kspace(ky, kx, phantom)
 
