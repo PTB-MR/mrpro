@@ -32,12 +32,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = ["coverage", "codecov", "pre-commit", "pytest"]
+test = ["coverage", "codecov", "pre-commit", "pytest", "pytest-cov"]
 lint = ["mypy", "flake8", "isort", "pre-commit", "autopep8", "pydocstyle"]
 docs = ["sphinx", "sphinx_rtd_theme"]
 
 [project.urls]
 "repository" = "https://github.com/PTB-MR/mrpro"
+
+# PyTest section
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--cov=mrpro", "--cov-report=term-missing", "--cov-branch"]
 
 # MyPy section
 [tool.mypy]
