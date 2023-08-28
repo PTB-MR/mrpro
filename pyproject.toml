@@ -42,7 +42,12 @@ docs = ["sphinx", "sphinx_rtd_theme"]
 # PyTest section
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = ["--cov=mrpro", "--cov-report=term-missing", "--cov-branch"]
+addopts = [
+    "--cov=mrpro",
+    "--cov-report=term-missing",
+    "--cov-branch",
+    "--cov-report=xml",
+]
 
 # MyPy section
 [tool.mypy]
