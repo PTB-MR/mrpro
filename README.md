@@ -1,11 +1,12 @@
 # MRpro
+
 MR image reconstruction and processing package specifically developed for PyTorch.
 
 This package supports ismrmrd-format for MR raw data. All data containers utilize PyTorch-tensors to ensure easy integration in PyTorch-based network schemes.
 
 ![Python](https://img.shields.io/badge/python-3.10+-blue)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-
+![Coverage Bagde](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ckolbPTB/48e334a10caf60e6708d7c712e56d241/raw/coverage.json)
 
 ## Installation for developers
 

@@ -32,13 +32,18 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = ["coverage", "codecov", "pre-commit", "pytest"]
+test = ["coverage", "codecov", "pre-commit", "pytest", "pytest-cov"]
 lint = ["mypy", "flake8", "isort", "pre-commit", "autopep8", "pydocstyle"]
 docs = ["sphinx", "sphinx_rtd_theme"]
 
 [project.urls]
 "repository" = "https://github.com/PTB-MR/mrpro"
 
+# PyTest section
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+# MyPy section
 [tool.mypy]
 warn_return_any = "False"
 check_untyped_defs = "True"
@@ -91,3 +96,9 @@ add_ignore = [
 [tool.codespell]
 builtin = "en-GB_to_en-US"
 ignore-words-list = "te,TE"
+
+[tool.coverage.paths]
+source = [
+    "src",
+    "*/site-packages",
+]
