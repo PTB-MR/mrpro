@@ -19,6 +19,7 @@ from pathlib import Path
 
 import pydicom
 import torch
+from einops import rearrange
 
 from mrpro.data._IHeader import IHeader
 from mrpro.data._KHeader import KHeader
@@ -87,7 +88,10 @@ class IData:
         ti = None if not _ti else _ti.value
         fa = None if not _fa else _fa.value
 
-        # ToDo: bring into correct shape
-        data = ds.pixel_array
+        # ensure data is single precision and complex valued
+        idata = torch.as_tensor(ds.pixel_array, dtype=torch.complex64)
 
-        return cls(data=data, header=IHeader(None, te, ti, fa, tr))
+        # pixel array is in the shape (x,y). reformat to (1,coil=1,z=1,y,x)
+        idata = rearrange(idata[None, ...], '(other coil z) x y -> other coil z y x', coil=1, z=1)
+
+        return cls(data=idata, header=IHeader(None, te, ti, fa, tr))

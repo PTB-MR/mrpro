@@ -31,7 +31,9 @@ class DicomImageData():
         """Create dicom image file."""
 
         # Create random image
-        self.imref = np.random.randn(self.matrix_size, self.matrix_size).astype(np.uint16)
+        self.imref = np.abs(np.random.randn(self.matrix_size, self.matrix_size))
+        self.imref /= np.max(self.imref)*2.0  # 2.0 to make sure we are far off any uint16 conversion rounding errors
+        self.imref = (self.imref*2**16).astype(np.uint16)
 
         # Metadata
         fileMeta = pydicom.Dataset()
@@ -49,6 +51,10 @@ class DicomImageData():
 
         ds.PixelSpacing = [1, 1]  # in mm
         ds.SliceThickness = 1  # in mm
+
+        ds.FlipAngle = 15.0
+        ds.EchoTime = 3.7
+        ds.RepetitionTime = 25.2
 
         ds.BitsAllocated = 16
         ds.PixelRepresentation = 1

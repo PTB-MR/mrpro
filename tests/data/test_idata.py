@@ -31,4 +31,4 @@ def dcm_2d(tmp_path_factory):
 def test_IData_from_dcm_file(dcm_2d):
     # Read in data from file
     i = IData.from_single_dicom(dcm_2d.filename)
-    np.testing.assert_almost_equal(i.data[0, 0, 0, ...], np.moveaxis(dcm_2d.imref, (0, 1), (1, 0)))
+    np.testing.assert_almost_equal(np.abs(i.data[0, 0, 0, ...]), np.moveaxis(dcm_2d.imref, (0, 1), (1, 0)))
