@@ -27,9 +27,29 @@ from mrpro.data._KHeader import KHeader
 class KTrajectory(ABC):
     """Base class for k-space trajectories."""
 
+    @abstractmethod
+    def calc_traj(self, header: KHeader) -> torch.Tensor:
+        """Calculate the trajectory for the given header.
+
+        The shape should broadcastable to (prod(all_other_dimensions),
+        3, k2, k1, k0)
+        """
+        ...
+
+
+class DummyTrajectory(KTrajectory):
+    """
+    Simple Dummy trajectory that returns zeros.
+    Shape will not fit to all data.
+    Only used until we implement proper trajectories
+    """
+
     @staticmethod
     def _get_shape(header: KHeader) -> tuple[int, ...]:
-        """Get the shape of the trajectory for the given header."""
+        """
+        Get the shape of a basic dummy trajectory for the given header.
+        Assumes fully sampled data. Do not use outside of testing.
+        """
         limits = header.encoding_limits
         other_dim = np.prod(
             [
@@ -47,18 +67,6 @@ class KTrajectory(ABC):
         )
         return shape
 
-    @abstractmethod
-    def calc_traj(self, header: KHeader) -> torch.Tensor:
-        """Calculate the trajectory for the given header.
-
-        The shape should broadcastable to (prod(all_other_dimensions),
-        3, k2, k1, k0)
-        """
-        ...
-
-
-class DummyTrajectory(KTrajectory):
-    """Dummy trajectory that returns zeros."""
 
     def calc_traj(self, header: KHeader) -> torch.Tensor:
         """Calculate the trajectory for the given header.
