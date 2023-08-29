@@ -58,7 +58,9 @@ def test_KData_kspace(ismrmrd_cart):
     # Read in data and verify k-space by comparing reconstructed image
     k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     irec = k2i(k.data, axes=(3, 4))
-    np.testing.assert_almost_equal(irec[0, 0, 0, ...], ismrmrd_cart.imref)
+    idiff = np.mean(np.abs(irec[0, 0, 0, ...] - ismrmrd_cart.imref))
+    imean = 0.5*np.mean(np.abs(irec[0, 0, 0, ...]) + np.abs(ismrmrd_cart.imref))
+    assert idiff <= imean*0.05
 
 
 def test_KData_from_file_undersampled(ismrmrd_cart_us4):

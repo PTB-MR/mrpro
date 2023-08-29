@@ -12,8 +12,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
 from dataclasses import dataclass
+from pathlib import Path
 
 import ismrmrd
 import ismrmrd.xsd
@@ -34,11 +34,64 @@ class EllipsePhantom():
     def __init__(self):
         # Create three circles with different intensity
         self.ellipses: list[ellipse_pars] = [ellipse_pars(centre_x=0.2, centre_y=0.2,
-                                                          radius_x=0.2, radius_y=0.2, intensity=1),
+                                                          radius_x=0.1, radius_y=0.25, intensity=1),
                                              ellipse_pars(centre_x=0.1, centre_y=-0.1,
-                                                          radius_x=0.2, radius_y=0.2, intensity=2),
-                                             ellipse_pars(centre_x=-0.2, centre_y=0.1, radius_x=0.3,
-                                                          radius_y=0.3, intensity=4)]
+                                                          radius_x=0.3, radius_y=0.1, intensity=2),
+                                             ellipse_pars(centre_x=-0.2, centre_y=0.2,
+                                                          radius_x=0.18, radius_y=0.25, intensity=4)]
+
+    def kspace(self, ky: np.ndarray, kx: np.ndarray):
+        """Create 2D analytic kspace data based on given k-space locations.
+
+        For a corresponding image with 256 x 256 voxel, the k-space locations should be defined within [-128, 127]
+
+        The Fourier representation of ellipses can be analytically described by Bessel functions. Further information
+        and derivations can be found e.g. here: https://doi.org/10.1002/mrm.21292
+
+        Parameters
+        ----------
+        ky
+            k-space locations in ky
+        kx
+            k-space loations in kx. Same shape as ky.
+        """
+        # kx and ky have to be of same shape
+        if kx.shape != ky.shape:
+            raise ValueError(f'shape mismatch between kx {kx.shape} and ky {ky.shape}')
+
+        kdat = 0
+        for el in self.ellipses:
+            arg = np.sqrt((el.radius_x * 2) ** 2 * kx ** 2 + (el.radius_y * 2) ** 2 * ky ** 2)
+            arg[arg < 1e-6] = 1e-6  # avoid zeros
+
+            cdat = 2 * 2 * el.radius_x * el.radius_y * 0.5 * sp_special.jv(1, np.pi * arg) / arg
+            kdat += (np.exp(1j * 2 * np.pi * (el.centre_x * kx + el.centre_y * ky))
+                     * cdat * el.intensity).astype(np.complex64)
+        return (kdat)
+
+    def image_space(self, nx: int, ny: int):
+        """Create image representation of phantom.
+
+        Parameters
+        ----------
+        nx
+            Number of voxel along x direction
+        ny
+            Number of voxel along y direction
+        """
+        # Calculate image representation of phantom
+        ix_idx = range(-nx//2, nx//2)
+        iy_idx = range(-ny//2, ny//2)
+        [ix, iy] = np.meshgrid(ix_idx, iy_idx)
+
+        idat = np.zeros((ny, nx), dtype=np.complex64)
+        for el in self.ellipses:
+            curr_el = np.zeros_like(idat)
+            curr_el[((ix/nx - el.centre_x)**2/el.radius_x**2 +
+                     (iy/ny - el.centre_y)**2/el.radius_y**2) <= 1] = el.intensity
+            idat += curr_el
+
+        return (idat)
 
 
 def k2i(kdat, axes=(0, 1)):
@@ -56,66 +109,6 @@ def k2i(kdat, axes=(0, 1)):
         FFT of kdat
     """
     return (np.fft.fftshift(np.fft.fftn(np.fft.fftshift(kdat, axes=axes), axes=axes), axes=axes))
-
-
-def analytic_2d_kspace(ky: np.ndarray, kx: np.ndarray, phantom: EllipsePhantom):
-    """Create 2D analytic kspace data based on given k-space locations.
-
-    Parameters
-    ----------
-    ky
-        k-space locations in ky
-    kx
-        k-space loations in kx. Same shape as ky.
-    """
-    # kx and ky have to be of same shape
-    if kx.shape != ky.shape:
-        raise ValueError(f'shape mismatch between kx {kx.shape} and ky {ky.shape}')
-
-    kdat = 0
-    for el in phantom.ellipses:
-        arg = np.sqrt(el.radius_x ** 2 * kx ** 2 + el.radius_y ** 2 * ky ** 2)
-        arg[arg < 1e-6] = 1e-6  # avoid zeros
-
-        cdat = el.radius_x * el.radius_y * 0.5 * sp_special.jv(1, np.pi * arg) / arg
-        kdat += (np.exp(1j * 2 * np.pi * (el.centre_x * kx + el.centre_y * ky))
-                 * cdat * el.intensity).astype(np.complex64)
-
-    return (kdat)
-
-
-def analytic_kspace_image(ky: np.ndarray, kx: np.ndarray, nky: int, nkx: int, phantom: EllipsePhantom):
-    """Calculate analytic k-space data and corresponding ground truth image
-    data.
-
-    Parameters
-    ----------
-    ky
-        ky k-space positions
-    kx
-        kx k-space positions
-    nky
-        number of points along ky direction of k-space
-    nkx
-        number of points along kx direction of k-space
-    phantom
-        parameters of numerical phantom
-
-    Returns
-    -------
-        k-space data and corresponding ground truth image data
-    """
-    # Create analytic k-space
-    ktrue = analytic_2d_kspace(ky, kx, phantom)
-
-    # Create fully sampled k-space and apply fft for reference image
-    kx_idx = range(-nkx//2, nkx//2)
-    ky_idx = range(-nky//2, nky//2)
-    [kx, ky] = np.meshgrid(kx_idx, ky_idx)
-    kfull = analytic_2d_kspace(ky, kx, phantom)
-    imref = k2i(kfull)
-
-    return (ktrue, imref)
 
 
 def calc_phase_encoding_steps(nky: int, acceleration: int = 1, sampling_order: str = 'linear'):
@@ -147,9 +140,8 @@ def calc_phase_encoding_steps(nky: int, acceleration: int = 1, sampling_order: s
     return (ky)
 
 
-@dataclass(slots=True)
 class IsmrmrdRawData():
-    """Dataclass of a ISMRMR raw data object.
+    """ISMRMR raw data object.
 
     This is based on
     https://github.com/ismrmrd/ismrmrd-python-tools/blob/master/generate_cartesian_shepp_logan_dataset.py
@@ -180,18 +172,23 @@ class IsmrmrdRawData():
         phantom with different ellipses
     """
 
-    filename: str | os.PathLike
-    matrix_size: int = 256
-    ncoils: int = 8
-    oversampling: int = 2
-    repetitions: int = 1
-    flag_invalid_reps: bool = False
-    acceleration: int = 1
-    noise_level: float = 0.00005
-    trajectory_type:  str = 'cartesian'
-    sampling_order: str = 'linear'
-    phantom: EllipsePhantom = EllipsePhantom()
-    imref: np.ndarray | None = None
+    def __init__(self, filename: str | Path, matrix_size: int = 256, ncoils: int = 8, oversampling: int = 2,
+                 repetitions: int = 1, flag_invalid_reps: bool = False, acceleration: int = 1,
+                 noise_level: float = 0.00005, trajectory_type:  str = 'cartesian', sampling_order: str = 'linear',
+                 phantom: EllipsePhantom = EllipsePhantom()):
+
+        self.filename: str | Path = filename
+        self. matrix_size: int = matrix_size
+        self.ncoils: int = ncoils
+        self.oversampling: int = oversampling
+        self.repetitions: int = repetitions
+        self.flag_invalid_reps: bool = flag_invalid_reps
+        self.acceleration: int = acceleration
+        self.noise_level: float = noise_level
+        self.trajectory_type:  str = trajectory_type
+        self.sampling_order: str = sampling_order
+        self.phantom: EllipsePhantom = phantom
+        self.imref: np.ndarray
 
     def create(self):
         """Create ismrmrd raw data file."""
@@ -208,7 +205,8 @@ class IsmrmrdRawData():
         [kx, ky] = np.meshgrid(kx_idx, ky_idx)
 
         # Create analytic k-space and reference image
-        ktrue, self.imref = analytic_kspace_image(ky, kx, nky, nkx, self.phantom)
+        ktrue = self.phantom.kspace(ky, kx)
+        self.imref = self.phantom.image_space(nkx, nky)
 
         # Multi-coil acquisition
         # TODO: proper application of coils
