@@ -13,11 +13,13 @@
 #   limitations under the License.
 
 from pathlib import Path
+from typing import Literal
 
 import ismrmrd
 import ismrmrd.xsd
 import numpy as np
-from Phantoms import EllipsePhantom
+import scipy as sp
+from phantoms import EllipsePhantom
 
 ISMRMRD_TRAJECTORY_TYPE = (
     'cartesian',
@@ -29,24 +31,25 @@ ISMRMRD_TRAJECTORY_TYPE = (
 )
 
 
-def k2i(kdat, axes=(0, 1)):
-    """FFT from k-space to image space.
+def k2i(kdat, axes=(-1, -2)):
+    """IFFT from k-space to image space.
 
     Parameters
     ----------
     kdat
         k-space data on Cartesian grid
     axes, optional
-        axes along which FFT is applied, by default (0, 1)
+        axes along which iFFT is applied, by default last two dimensions (-1, -2)
 
     Returns
     -------
         FFT of kdat
     """
-    return (np.fft.fftshift(np.fft.fftn(np.fft.fftshift(kdat, axes=axes), axes=axes), axes=axes))
+    return sp.fft.fftshift(sp.fft.ifftn(sp.fft.ifftshift(kdat, axes=axes), axes=axes, norm='ortho'), axes=axes)
 
 
-def calc_phase_encoding_steps(nky: int, acceleration: int = 1, sampling_order: str = 'linear'):
+def calc_phase_encoding_steps(nky: int, acceleration: int = 1,
+                              sampling_order: Literal['linear', 'low_high', 'high_low'] = 'linear'):
     """Calculate nky phase encoding points.
 
     Parameters
@@ -65,14 +68,15 @@ def calc_phase_encoding_steps(nky: int, acceleration: int = 1, sampling_order: s
 
     if sampling_order == 'linear':
         ky = np.sort(ky)
-    elif sampling_order == 'low_high' or sampling_order == 'high_low':
+    elif sampling_order == 'low_high':
         idx = np.argsort(np.abs(ky), kind='stable')
+        ky = ky[idx]
+    elif sampling_order == 'high_low':
+        idx = np.argsort(-np.abs(ky), kind='stable')
         ky = ky[idx]
     else:
         raise ValueError(f'sampling order {sampling_order} not supported.')
-    if sampling_order == 'high_low':
-        ky = ky[::-1]
-    return (ky)
+    return ky
 
 
 class IsmrmrdRawData():
@@ -109,11 +113,12 @@ class IsmrmrdRawData():
 
     def __init__(self, filename: str | Path, matrix_size: int = 256, ncoils: int = 8, oversampling: int = 2,
                  repetitions: int = 1, flag_invalid_reps: bool = False, acceleration: int = 1,
-                 noise_level: float = 0.00005, trajectory_type:  str = 'cartesian', sampling_order: str = 'linear',
+                 noise_level: float = 0.00005, trajectory_type:  str = 'cartesian',
+                 sampling_order: Literal['linear', 'low_high', 'high_low'] = 'linear',
                  phantom: EllipsePhantom = EllipsePhantom()):
 
         self.filename: str | Path = filename
-        self. matrix_size: int = matrix_size
+        self.matrix_size: int = matrix_size
         self.ncoils: int = ncoils
         self.oversampling: int = oversampling
         self.repetitions: int = repetitions
@@ -121,12 +126,9 @@ class IsmrmrdRawData():
         self.acceleration: int = acceleration
         self.noise_level: float = noise_level
         self.trajectory_type:  str = trajectory_type
-        self.sampling_order: str = sampling_order
+        self.sampling_order: Literal['linear', 'low_high', 'high_low'] = sampling_order
         self.phantom: EllipsePhantom = phantom
         self.imref: np.ndarray
-
-    def create(self):
-        """Create ismrmrd raw data file."""
 
         # The number of points in x,y,kx,ky
         nx = self.matrix_size
@@ -223,19 +225,6 @@ class IsmrmrdRawData():
         limits_rep.center = round(self.repetitions / 2)
         limits_rep.maximum = self.repetitions - 1
         limits.repetition = limits_rep
-
-        limits_rest = ismrmrd.xsd.limitType()
-        limits_rest.minimum = 0
-        limits_rest.center = 0
-        limits_rest.maximum = 0
-        limits.kspace_encoding_step_0 = limits_rest
-        limits.slice = limits_rest
-        limits.average = limits_rest
-        limits.contrast = limits_rest
-        limits.kspaceEncodingStep2 = limits_rest
-        limits.phase = limits_rest
-        limits.segment = limits_rest
-        limits.set = limits_rest
 
         encoding.encodingLimits = limits
         header.encoding.append(encoding)

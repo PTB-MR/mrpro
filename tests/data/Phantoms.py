@@ -19,7 +19,7 @@ import scipy.special as sp_special
 
 
 @dataclass(slots=True)
-class ellipse_pars():
+class EllipsePars():
     centre_x: float
     centre_y: float
     radius_x: float
@@ -30,12 +30,12 @@ class ellipse_pars():
 class EllipsePhantom():
     def __init__(self):
         # Create three circles with different intensity
-        self.ellipses: list[ellipse_pars] = [ellipse_pars(centre_x=0.2, centre_y=0.2,
-                                                          radius_x=0.1, radius_y=0.25, intensity=1),
-                                             ellipse_pars(centre_x=0.1, centre_y=-0.1,
-                                                          radius_x=0.3, radius_y=0.1, intensity=2),
-                                             ellipse_pars(centre_x=-0.2, centre_y=0.2,
-                                                          radius_x=0.18, radius_y=0.25, intensity=4)]
+        self.ellipses: list[EllipsePars] = [EllipsePars(centre_x=0.2, centre_y=0.2,
+                                                        radius_x=0.1, radius_y=0.25, intensity=1),
+                                            EllipsePars(centre_x=0.1, centre_y=-0.1,
+                                                        radius_x=0.3, radius_y=0.1, intensity=2),
+                                            EllipsePars(centre_x=-0.2, centre_y=0.2,
+                                                        radius_x=0.18, radius_y=0.25, intensity=4)]
 
     def kspace(self, ky: np.ndarray, kx: np.ndarray):
         """Create 2D analytic kspace data based on given k-space locations.
@@ -56,15 +56,19 @@ class EllipsePhantom():
         if kx.shape != ky.shape:
             raise ValueError(f'shape mismatch between kx {kx.shape} and ky {ky.shape}')
 
-        kdat = 0
+        kdat = np.zeros_like(kx).astype(np.complex64)
         for el in self.ellipses:
             arg = np.sqrt((el.radius_x * 2) ** 2 * kx ** 2 + (el.radius_y * 2) ** 2 * ky ** 2)
             arg[arg < 1e-6] = 1e-6  # avoid zeros
 
             cdat = 2 * 2 * el.radius_x * el.radius_y * 0.5 * sp_special.jv(1, np.pi * arg) / arg
-            kdat += (np.exp(1j * 2 * np.pi * (el.centre_x * kx + el.centre_y * ky))
+            kdat += (np.exp(-1j * 2 * np.pi * (el.centre_x * kx + el.centre_y * ky))
                      * cdat * el.intensity).astype(np.complex64)
-        return (kdat)
+
+        # Scale k-space data by factor 1/sqrt(number of points) to ensure correct scaling after FFT with
+        # normalisation "ortho". See e.g.
+        kdat *= np.sqrt(kdat.size)
+        return kdat
 
     def image_space(self, nx: int, ny: int):
         """Create image representation of phantom.
@@ -88,4 +92,4 @@ class EllipsePhantom():
                      (iy/ny - el.centre_y)**2/el.radius_y**2) <= 1] = el.intensity
             idat += curr_el
 
-        return (idat)
+        return idat
