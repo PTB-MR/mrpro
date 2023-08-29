@@ -38,16 +38,16 @@ class KTrajectory(ABC):
 
 
 class DummyTrajectory(KTrajectory):
-    """
-    Simple Dummy trajectory that returns zeros.
-    Shape will not fit to all data.
-    Only used until we implement proper trajectories
+    """Simple Dummy trajectory that returns zeros.
+
+    Shape will not fit to all data. Only used until we implement proper
+    trajectories
     """
 
     @staticmethod
     def _get_shape(header: KHeader) -> tuple[int, ...]:
-        """
-        Get the shape of a basic dummy trajectory for the given header.
+        """Get the shape of a basic dummy trajectory for the given header.
+
         Assumes fully sampled data. Do not use outside of testing.
         """
         limits = header.encoding_limits
@@ -66,7 +66,6 @@ class DummyTrajectory(KTrajectory):
             limits.k0.length,
         )
         return shape
-
 
     def calc_traj(self, header: KHeader) -> torch.Tensor:
         """Calculate the trajectory for the given header.
