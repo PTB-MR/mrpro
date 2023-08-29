@@ -56,10 +56,7 @@ class IData:
             Path to DICOM file.
         """
 
-        def rget_item(
-            dataset: pydicom.Dataset,
-            tag: pydicom.tag.Tag,
-        ) -> pydicom.DataElement:
+        def rget_item(dataset: pydicom.Dataset, tag: pydicom.tag.TagType) -> pydicom.DataElement | None:
             for ds_element in dataset:
                 if ds_element.tag == tag:
                     return ds_element
@@ -68,6 +65,7 @@ class IData:
                         ret = rget_item(seq_element, tag)
                         if ret is not None and ret.tag == tag:
                             return ret
+            return None
 
         fpath = Path(fpath)
         if not fpath.is_file():

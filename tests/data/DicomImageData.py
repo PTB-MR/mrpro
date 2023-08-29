@@ -13,26 +13,34 @@
 #   limitations under the License.
 
 import os
-from dataclasses import dataclass
 
 import numpy as np
 import pydicom
 import pydicom._storage_sopclass_uids
+from phantoms import EllipsePhantom
 
 
-@dataclass(slots=True)
-class DicomImageData():
+class Dicom2DImageData():
+    """2D Dicom Image Data.
 
-    filename: str | os.PathLike
-    matrix_size: int = 256
-    imref: np.ndarray | None = None
+    Parameters
+    ----------
+    filename
+        full path and filename
+    matrix_size
+        size of image matrix, by default 256
+    phantom
+        phantom with different ellipses
+    """
 
-    def create_2d_file(self):
-        """Create dicom image file."""
+    def __init__(self, filename: str | os.PathLike, matrix_size: int = 256, phantom: EllipsePhantom = EllipsePhantom()):
 
-        # Create random image
-        self.imref = np.abs(np.random.randn(self.matrix_size, self.matrix_size))
-        self.imref /= np.max(self.imref)*2.0  # 2.0 to make sure we are far off any uint16 conversion rounding errors
+        self.filename: str | os.PathLike = filename
+        self.matrix_size: int = matrix_size
+        self.phantom: EllipsePhantom = phantom
+
+        # Create image
+        self.imref = self.phantom.image_space(matrix_size, matrix_size)
         self.imref = (self.imref*2**16).astype(np.uint16)
 
         # Metadata

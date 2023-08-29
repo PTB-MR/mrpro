@@ -14,7 +14,7 @@
 
 import numpy as np
 import pytest
-from DicomImageData import DicomImageData
+from DicomImageData import Dicom2DImageData
 
 from mrpro.data import IData
 
@@ -23,8 +23,7 @@ from mrpro.data import IData
 def dcm_2d(tmp_path_factory):
     # Single 2D dicom image
     dcm_filename = tmp_path_factory.mktemp('mrpro') / 'dicom_2d.h5'
-    dcm_idat = DicomImageData(filename=dcm_filename)
-    dcm_idat.create_2d_file()
+    dcm_idat = Dicom2DImageData(filename=dcm_filename)
     return (dcm_idat)
 
 
