@@ -19,6 +19,15 @@ import ismrmrd.xsd
 import numpy as np
 from Phantoms import EllipsePhantom
 
+ISMRMRD_TRAJECTORY_TYPE = (
+    'cartesian',
+    'epi',
+    'radial',
+    'goldenangle',
+    'spiral',
+    'other'
+)
+
 
 def k2i(kdat, axes=(0, 1)):
     """FFT from k-space to image space.
@@ -165,7 +174,10 @@ class IsmrmrdRawData():
 
         # Encoding
         encoding = ismrmrd.xsd.encodingType()
-        encoding.trajectory = ismrmrd.xsd.trajectoryType('cartesian')
+        if self.trajectory_type in ISMRMRD_TRAJECTORY_TYPE:
+            encoding.trajectory = ismrmrd.xsd.trajectoryType(self.trajectory_type)
+        else:
+            encoding.trajectory = ismrmrd.xsd.trajectoryType('other')
 
         # encoded and recon spaces
         efov = ismrmrd.xsd.fieldOfViewMm()
