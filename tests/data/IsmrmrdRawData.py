@@ -19,7 +19,7 @@ import ismrmrd
 import ismrmrd.xsd
 import numpy as np
 import scipy as sp
-from phantoms import EllipsePhantom
+from Phantoms import EllipsePhantom
 
 ISMRMRD_TRAJECTORY_TYPE = (
     'cartesian',
@@ -27,7 +27,7 @@ ISMRMRD_TRAJECTORY_TYPE = (
     'radial',
     'goldenangle',
     'spiral',
-    'other'
+    'other',
 )
 
 
@@ -48,8 +48,11 @@ def k2i(kdat, axes=(-1, -2)):
     return sp.fft.fftshift(sp.fft.ifftn(sp.fft.ifftshift(kdat, axes=axes), axes=axes, norm='ortho'), axes=axes)
 
 
-def calc_phase_encoding_steps(nky: int, acceleration: int = 1,
-                              sampling_order: Literal['linear', 'low_high', 'high_low'] = 'linear'):
+def calc_phase_encoding_steps(
+    nky: int,
+    acceleration: int = 1,
+    sampling_order: Literal['linear', 'low_high', 'high_low'] = 'linear',
+):
     """Calculate nky phase encoding points.
 
     Parameters
@@ -62,8 +65,8 @@ def calc_phase_encoding_steps(nky: int, acceleration: int = 1,
         order how phase encoding points are sampled, by default "linear"
     """
     # Always include k-space centre and more points on the negative side of k-space
-    ky_pos = np.arange(0, nky//2, acceleration)
-    ky_neg = -np.arange(acceleration, nky//2+1, acceleration)
+    ky_pos = np.arange(0, nky // 2, acceleration)
+    ky_neg = -np.arange(acceleration, nky // 2 + 1, acceleration)
     ky = np.concatenate((ky_neg, ky_pos), axis=0)
 
     if sampling_order == 'linear':
@@ -79,7 +82,7 @@ def calc_phase_encoding_steps(nky: int, acceleration: int = 1,
     return ky
 
 
-class IsmrmrdRawData():
+class IsmrmrdRawData:
     """ISMRMR raw data object.
 
     This is based on
@@ -111,12 +114,20 @@ class IsmrmrdRawData():
         phantom with different ellipses
     """
 
-    def __init__(self, filename: str | Path, matrix_size: int = 256, ncoils: int = 8, oversampling: int = 2,
-                 repetitions: int = 1, flag_invalid_reps: bool = False, acceleration: int = 1,
-                 noise_level: float = 0.00005, trajectory_type:  str = 'cartesian',
-                 sampling_order: Literal['linear', 'low_high', 'high_low'] = 'linear',
-                 phantom: EllipsePhantom = EllipsePhantom()):
-
+    def __init__(
+        self,
+        filename: str | Path,
+        matrix_size: int = 256,
+        ncoils: int = 8,
+        oversampling: int = 2,
+        repetitions: int = 1,
+        flag_invalid_reps: bool = False,
+        acceleration: int = 1,
+        noise_level: float = 0.00005,
+        trajectory_type: str = 'cartesian',
+        sampling_order: Literal['linear', 'low_high', 'high_low'] = 'linear',
+        phantom: EllipsePhantom = EllipsePhantom(),
+    ):
         self.filename: str | Path = filename
         self.matrix_size: int = matrix_size
         self.ncoils: int = ncoils
@@ -125,7 +136,7 @@ class IsmrmrdRawData():
         self.flag_invalid_reps: bool = flag_invalid_reps
         self.acceleration: int = acceleration
         self.noise_level: float = noise_level
-        self.trajectory_type:  str = trajectory_type
+        self.trajectory_type: str = trajectory_type
         self.sampling_order: Literal['linear', 'low_high', 'high_low'] = sampling_order
         self.phantom: EllipsePhantom = phantom
         self.imref: np.ndarray
@@ -133,12 +144,12 @@ class IsmrmrdRawData():
         # The number of points in x,y,kx,ky
         nx = self.matrix_size
         ny = self.matrix_size
-        nkx = self.oversampling*nx
+        nkx = self.oversampling * nx
         nky = ny
 
         # Create Cartesian grid for k-space locations
         ky_idx = calc_phase_encoding_steps(nky, self.acceleration, self.sampling_order)
-        kx_idx = range(-nkx//2, nkx//2)
+        kx_idx = range(-nkx // 2, nkx // 2)
         [kx, ky] = np.meshgrid(kx_idx, ky_idx)
 
         # Create analytic k-space and reference image
@@ -167,9 +178,15 @@ class IsmrmrdRawData():
 
         # Sequence Information
         seq = ismrmrd.xsd.sequenceParametersType()
-        seq.TR = [89.6,]
-        seq.TE = [2.3,]
-        seq.TI = [0.0,]
+        seq.TR = [
+            89.6,
+        ]
+        seq.TE = [
+            2.3,
+        ]
+        seq.TI = [
+            0.0,
+        ]
         seq.flipAngle_deg = 12.0
         seq.echo_spacing = 5.6
         header.sequenceParameters = seq
@@ -183,7 +200,7 @@ class IsmrmrdRawData():
 
         # encoded and recon spaces
         efov = ismrmrd.xsd.fieldOfViewMm()
-        efov.x = self.oversampling*256
+        efov.x = self.oversampling * 256
         efov.y = 256
         efov.z = 5
         rfov = ismrmrd.xsd.fieldOfViewMm()
@@ -216,7 +233,7 @@ class IsmrmrdRawData():
 
         limits1 = ismrmrd.xsd.limitType()
         limits1.minimum = 0
-        limits1.center = round(ny/2)
+        limits1.center = round(ny / 2)
         limits1.maximum = ny - 1
         limits.kspace_encoding_step_1 = limits1
 
@@ -236,7 +253,7 @@ class IsmrmrdRawData():
         acq.resize(nkx, self.ncoils)
         acq.version = 1
         acq.available_channels = self.ncoils
-        acq.center_sample = round(nkx/2)
+        acq.center_sample = round(nkx / 2)
         acq.read_dir[0] = 1.0
         acq.phase_dir[1] = 1.0
         acq.slice_dir[2] = 1.0
@@ -258,15 +275,17 @@ class IsmrmrdRawData():
         # Loop over the repetitions, add noise and write to disk
         # simulating a T-SENSE type scan
         for rep in range(self.repetitions):
-            noise = self.noise_level * (np.random.randn(self.ncoils, nky//self.acceleration,
-                                        nkx) + 1j * np.random.randn(self.ncoils, nky//self.acceleration, nkx))
+            noise = self.noise_level * (
+                np.random.randn(self.ncoils, nky // self.acceleration, nkx)
+                + 1j * np.random.randn(self.ncoils, nky // self.acceleration, nkx)
+            )
             # Here's where we would make the noise correlated
             K = ktrue + noise
             acq.idx.repetition = rep
             for idx, line in enumerate(ky_idx):
-                if not self.flag_invalid_reps or rep == 0 or idx < len(ky_idx)//2:  # fewer lines for rep > 0
+                if not self.flag_invalid_reps or rep == 0 or idx < len(ky_idx) // 2:  # fewer lines for rep > 0
                     # Set some fields in the header
-                    line_idx = line + nky//2
+                    line_idx = line + nky // 2
                     acq.scan_counter = counter
                     acq.idx.kspace_encode_step_1 = line_idx
                     acq.clearAllFlags()
