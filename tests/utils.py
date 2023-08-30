@@ -15,15 +15,6 @@
 import numpy as np
 import scipy as sp
 
-ISMRMRD_TRAJECTORY_TYPE = (
-    'cartesian',
-    'epi',
-    'radial',
-    'goldenangle',
-    'spiral',
-    'other',
-)
-
 
 def kspace_to_image(kdat, axes=(-1, -2)):
     """IFFT from k-space to image space.
