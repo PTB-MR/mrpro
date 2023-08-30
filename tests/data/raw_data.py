@@ -19,7 +19,8 @@ import ismrmrd
 import ismrmrd.xsd
 import numpy as np
 import scipy as sp
-from Phantoms import EllipsePhantom
+
+from mrpro.phantoms import EllipsePhantom
 
 ISMRMRD_TRAJECTORY_TYPE = (
     'cartesian',
@@ -31,7 +32,7 @@ ISMRMRD_TRAJECTORY_TYPE = (
 )
 
 
-def k2i(kdat, axes=(-1, -2)):
+def kspace_to_image(kdat, axes=(-1, -2)):
     """IFFT from k-space to image space.
 
     Parameters
@@ -82,8 +83,8 @@ def calc_phase_encoding_steps(
     return ky
 
 
-class IsmrmrdRawData:
-    """ISMRMR raw data object.
+class MRDRawData:
+    """Raw data in MRD format for testing.
 
     This is based on
     https://github.com/ismrmrd/ismrmrd-python-tools/blob/master/generate_cartesian_shepp_logan_dataset.py
@@ -233,13 +234,13 @@ class IsmrmrdRawData:
 
         limits1 = ismrmrd.xsd.limitType()
         limits1.minimum = 0
-        limits1.center = round(ny / 2)
+        limits1.center = ny // 2
         limits1.maximum = ny - 1
         limits.kspace_encoding_step_1 = limits1
 
         limits_rep = ismrmrd.xsd.limitType()
         limits_rep.minimum = 0
-        limits_rep.center = round(self.repetitions / 2)
+        limits_rep.center = self.repetitions // 2
         limits_rep.maximum = self.repetitions - 1
         limits.repetition = limits_rep
 

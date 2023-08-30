@@ -1,4 +1,4 @@
-"""Numerical phantoms."""
+"""Numerical phantom with ellipses."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -12,30 +12,30 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from dataclasses import dataclass
-
 import numpy as np
 import scipy.special as sp_special
 
-
-@dataclass(slots=True)
-class EllipsePars():
-    centre_x: float
-    centre_y: float
-    radius_x: float
-    radius_y: float
-    intensity: float
+from mrpro.phantoms.phantom_elements import EllipsePars
 
 
-class EllipsePhantom():
-    def __init__(self):
-        # Create three circles with different intensity
-        self.ellipses: list[EllipsePars] = [EllipsePars(centre_x=0.2, centre_y=0.2,
-                                                        radius_x=0.1, radius_y=0.25, intensity=1),
-                                            EllipsePars(centre_x=0.1, centre_y=-0.1,
-                                                        radius_x=0.3, radius_y=0.1, intensity=2),
-                                            EllipsePars(centre_x=-0.2, centre_y=0.2,
-                                                        radius_x=0.18, radius_y=0.25, intensity=4)]
+class EllipsePhantom:
+    """Numerical phantom as the sum of different ellipses.
+
+    Parameters
+    ----------
+        ellipses
+            ellipses defined by their center, radii and intensity
+    """
+
+    def __init__(
+        self,
+        ellipses: list[EllipsePars] = [
+            EllipsePars(center_x=0.2, center_y=0.2, radius_x=0.1, radius_y=0.25, intensity=1),
+            EllipsePars(center_x=0.1, center_y=-0.1, radius_x=0.3, radius_y=0.1, intensity=2),
+            EllipsePars(center_x=-0.2, center_y=0.2, radius_x=0.18, radius_y=0.25, intensity=4),
+        ],
+    ):
+        self.ellipses: list[EllipsePars] = ellipses
 
     def kspace(self, ky: np.ndarray, kx: np.ndarray):
         """Create 2D analytic kspace data based on given k-space locations.
@@ -58,15 +58,16 @@ class EllipsePhantom():
 
         kdat = np.zeros_like(kx).astype(np.complex64)
         for el in self.ellipses:
-            arg = np.sqrt((el.radius_x * 2) ** 2 * kx ** 2 + (el.radius_y * 2) ** 2 * ky ** 2)
+            arg = np.sqrt((el.radius_x * 2) ** 2 * kx**2 + (el.radius_y * 2) ** 2 * ky**2)
             arg[arg < 1e-6] = 1e-6  # avoid zeros
 
             cdat = 2 * 2 * el.radius_x * el.radius_y * 0.5 * sp_special.jv(1, np.pi * arg) / arg
-            kdat += (np.exp(-1j * 2 * np.pi * (el.centre_x * kx + el.centre_y * ky))
-                     * cdat * el.intensity).astype(np.complex64)
+            kdat += (np.exp(-1j * 2 * np.pi * (el.center_x * kx + el.center_y * ky)) * cdat * el.intensity).astype(
+                np.complex64
+            )
 
         # Scale k-space data by factor 1/sqrt(number of points) to ensure correct scaling after FFT with
-        # normalisation "ortho". See e.g.
+        # normalization "ortho". See e.g. https://docs.scipy.org/doc/scipy/tutorial/fft.html
         kdat *= np.sqrt(kdat.size)
         return kdat
 
@@ -81,15 +82,16 @@ class EllipsePhantom():
             Number of voxel along y direction
         """
         # Calculate image representation of phantom
-        ix_idx = range(-nx//2, nx//2)
-        iy_idx = range(-ny//2, ny//2)
+        ix_idx = range(-nx // 2, nx // 2)
+        iy_idx = range(-ny // 2, ny // 2)
         [ix, iy] = np.meshgrid(ix_idx, iy_idx)
 
         idat = np.zeros((ny, nx), dtype=np.complex64)
         for el in self.ellipses:
             curr_el = np.zeros_like(idat)
-            curr_el[((ix/nx - el.centre_x)**2/el.radius_x**2 +
-                     (iy/ny - el.centre_y)**2/el.radius_y**2) <= 1] = el.intensity
+            curr_el[
+                ((ix / nx - el.center_x) ** 2 / el.radius_x**2 + (iy / ny - el.center_y) ** 2 / el.radius_y**2) <= 1
+            ] = el.intensity
             idat += curr_el
 
         return idat
