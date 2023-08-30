@@ -41,7 +41,7 @@ class AcqIdx:
 
 @dataclass(slots=True)
 class AcqInfo:
-    """Acquisiton information for each readout."""
+    """Acquisition information for each readout."""
 
     idx: AcqIdx
     acquisition_time_stamp: torch.Tensor
