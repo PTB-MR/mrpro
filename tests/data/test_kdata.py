@@ -12,13 +12,13 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import numpy as np
 import pytest
-from raw_data import MRDRawData
-from raw_data import kspace_to_image
 
 from mrpro.data import KData
 from mrpro.data._KTrajectory import DummyTrajectory
+from tests.data._MRDRawData import MRDRawData
+from tests.utils import kspace_to_image
+from tests.utils import rel_image_diff
 
 
 @pytest.fixture(scope='session')
@@ -46,14 +46,12 @@ def test_KData_from_file(ismrmrd_cart):
 def test_KData_kspace(ismrmrd_cart):
     # Read in data and verify k-space by comparing reconstructed image
     k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
-    irec = kspace_to_image(k.data, axes=(-1, -2))
+    irec = kspace_to_image(k.data)
 
     # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
     # differences along the edges of the elliptic objects.
-    idiff = np.mean(np.abs(irec[0, 0, 0, ...] - ismrmrd_cart.imref))
-    imean = 0.5 * np.mean(np.abs(irec[0, 0, 0, ...]) + np.abs(ismrmrd_cart.imref))
-    assert idiff <= imean * 0.05
+    assert rel_image_diff(irec[0, 0, 0, ...], ismrmrd_cart.imref) <= 0.05
 
 
 @pytest.mark.parametrize(

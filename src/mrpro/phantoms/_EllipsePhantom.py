@@ -37,7 +37,7 @@ class EllipsePhantom:
     ):
         self.ellipses: list[EllipsePars] = ellipses
 
-    def kspace(self, ky: np.ndarray, kx: np.ndarray):
+    def kspace(self, kx: np.ndarray, ky: np.ndarray):
         """Create 2D analytic kspace data based on given k-space locations.
 
         For a corresponding image with 256 x 256 voxel, the k-space locations should be defined within [-128, 127]
@@ -47,10 +47,10 @@ class EllipsePhantom:
 
         Parameters
         ----------
-        ky
-            k-space locations in ky
         kx
-            k-space loations in kx. Same shape as ky.
+            k-space locations in kx
+        ky
+            k-space loations in ky. Same shape as kx.
         """
         # kx and ky have to be of same shape
         if kx.shape != ky.shape:

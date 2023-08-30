@@ -18,7 +18,6 @@ from typing import Literal
 import ismrmrd
 import ismrmrd.xsd
 import numpy as np
-import scipy as sp
 
 from mrpro.phantoms import EllipsePhantom
 
@@ -30,57 +29,6 @@ ISMRMRD_TRAJECTORY_TYPE = (
     'spiral',
     'other',
 )
-
-
-def kspace_to_image(kdat, axes=(-1, -2)):
-    """IFFT from k-space to image space.
-
-    Parameters
-    ----------
-    kdat
-        k-space data on Cartesian grid
-    axes, optional
-        axes along which iFFT is applied, by default last two dimensions (-1, -2)
-
-    Returns
-    -------
-        FFT of kdat
-    """
-    return sp.fft.fftshift(sp.fft.ifftn(sp.fft.ifftshift(kdat, axes=axes), axes=axes, norm='ortho'), axes=axes)
-
-
-def calc_phase_encoding_steps(
-    nky: int,
-    acceleration: int = 1,
-    sampling_order: Literal['linear', 'low_high', 'high_low'] = 'linear',
-):
-    """Calculate nky phase encoding points.
-
-    Parameters
-    ----------
-    nky
-        number of phase encoding points before undersampling
-    acceleration, optional
-        undersampling factor, by default 1
-    sampling_order, optional
-        order how phase encoding points are sampled, by default "linear"
-    """
-    # Always include k-space centre and more points on the negative side of k-space
-    ky_pos = np.arange(0, nky // 2, acceleration)
-    ky_neg = -np.arange(acceleration, nky // 2 + 1, acceleration)
-    ky = np.concatenate((ky_neg, ky_pos), axis=0)
-
-    if sampling_order == 'linear':
-        ky = np.sort(ky)
-    elif sampling_order == 'low_high':
-        idx = np.argsort(np.abs(ky), kind='stable')
-        ky = ky[idx]
-    elif sampling_order == 'high_low':
-        idx = np.argsort(-np.abs(ky), kind='stable')
-        ky = ky[idx]
-    else:
-        raise ValueError(f'sampling order {sampling_order} not supported.')
-    return ky
 
 
 class MRDRawData:
@@ -149,12 +97,12 @@ class MRDRawData:
         nky = ny
 
         # Create Cartesian grid for k-space locations
-        ky_idx = calc_phase_encoding_steps(nky, self.acceleration, self.sampling_order)
+        ky_idx = self._calc_phase_encoding_steps(nky, self.acceleration, self.sampling_order)
         kx_idx = range(-nkx // 2, nkx // 2)
         [kx, ky] = np.meshgrid(kx_idx, ky_idx)
 
         # Create analytic k-space and reference image
-        ktrue = self.phantom.kspace(ky, kx)
+        ktrue = self.phantom.kspace(kx, ky)
         self.imref = self.phantom.image_space(nkx, nky)
 
         # Multi-coil acquisition
@@ -305,3 +253,37 @@ class MRDRawData:
 
         # Clean up
         dset.close()
+
+    @staticmethod
+    def _calc_phase_encoding_steps(
+        nky: int,
+        acceleration: int = 1,
+        sampling_order: Literal['linear', 'low_high', 'high_low'] = 'linear',
+    ):
+        """Calculate nky phase encoding points.
+
+        Parameters
+        ----------
+        nky
+            number of phase encoding points before undersampling
+        acceleration, optional
+            undersampling factor, by default 1
+        sampling_order, optional
+            order how phase encoding points are sampled, by default "linear"
+        """
+        # Always include k-space center and more points on the negative side of k-space
+        ky_pos = np.arange(0, nky // 2, acceleration)
+        ky_neg = -np.arange(acceleration, nky // 2 + 1, acceleration)
+        ky = np.concatenate((ky_neg, ky_pos), axis=0)
+
+        if sampling_order == 'linear':
+            ky = np.sort(ky)
+        elif sampling_order == 'low_high':
+            idx = np.argsort(np.abs(ky), kind='stable')
+            ky = ky[idx]
+        elif sampling_order == 'high_low':
+            idx = np.argsort(-np.abs(ky), kind='stable')
+            ky = ky[idx]
+        else:
+            raise ValueError(f'sampling order {sampling_order} not supported.')
+        return ky
