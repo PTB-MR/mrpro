@@ -39,7 +39,6 @@ docs = ["sphinx", "sphinx_rtd_theme"]
 [project.urls]
 "repository" = "https://github.com/PTB-MR/mrpro"
 
-# MyPy section
 [tool.mypy]
 warn_return_any = "False"
 check_untyped_defs = "True"
@@ -51,7 +50,6 @@ exclude = ["docs"]
 module = ["ismrmrd.*", "h5py", "scipy.*"]
 ignore_missing_imports = true
 
-# Black section
 [tool.black]
 line-length = 120
 skip-string-normalization = "True"
@@ -67,13 +65,13 @@ exclude = '''
 )/
 '''
 
-# Isort section
 [tool.isort]
 profile = "black"
 skip = ["__init__.py"]
 line_length = 120
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 force_single_line = "True"
+
 
 [tool.pydocstyle]
 convention = "numpy"
@@ -89,3 +87,7 @@ add_ignore = [
     "D202",
 ]
 # select = ["D200", "D201", "D205", "D206", "D207", "D208", "D214", "D215", "D409"]
+
+[tool.codespell]
+builtin = "clear,en-GB_to_en-US"
+ignore-words-list = "te,TE"
