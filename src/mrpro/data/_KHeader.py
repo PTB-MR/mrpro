@@ -89,7 +89,7 @@ class KHeader:
         overwrite: dict | None = None,
         encoding_number: int = 0,
     ) -> KHeader:
-        """Create an Header fom ISMRMRD Data.
+        """Create an Header from ISMRMRD Data.
 
         Parameters
         ----------

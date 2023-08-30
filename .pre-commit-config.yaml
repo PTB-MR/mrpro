@@ -2,7 +2,7 @@ default_language_version:
   python: python3
 
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
+  - repo: 'https://github.com/pre-commit/pre-commit-hooks'
     rev: v4.4.0
     hooks:
       - id: check-docstring-first
@@ -16,42 +16,45 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
 
-  - repo: https://github.com/PyCQA/isort
+  - repo: 'https://github.com/PyCQA/isort'
     rev: 5.12.0
     hooks:
       - id: isort
         exclude: ^docs/
 
-  - repo: https://github.com/pre-commit/mirrors-autopep8
-    rev: "v2.0.2"
+  - repo: 'https://github.com/psf/black'
+    rev: 23.7.0
     hooks:
-      - id: autopep8
+      - id: black
+        language_version: python3.10
 
-  - repo: https://github.com/PyCQA/flake8
+  - repo: 'https://github.com/PyCQA/flake8'
     rev: 6.1.0
     hooks:
       - id: flake8
-        args: [--exclude=__init__.py]
+        args:
+          - '--exclude=__init__.py'
         exclude: ^docs/
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
+  - repo: 'https://github.com/pre-commit/mirrors-mypy'
     rev: v1.5.1
     hooks:
       - id: mypy
         additional_dependencies:
           - numpy
           - torch
-          - --index-url=https://download.pytorch.org/whl/cpu
-          - --extra-index-url=https://pypi.python.org/simple
-        exclude: "docs/.*|tests/.*"
+          - '--index-url=https://download.pytorch.org/whl/cpu'
+          - '--extra-index-url=https://pypi.python.org/simple'
+        exclude: docs/.*|tests/.*
 
-  - repo: https://github.com/myint/docformatter
+  - repo: 'https://github.com/myint/docformatter'
     rev: v1.7.5
     hooks:
       - id: docformatter
-        args: ["--in-place"]
+        args:
+          - '--in-place'
 
-  - repo: https://github.com/PyCQA/pydocstyle
+  - repo: 'https://github.com/PyCQA/pydocstyle'
     rev: 6.3.0
     hooks:
       - id: pydocstyle
@@ -60,9 +63,17 @@ repos:
         additional_dependencies:
           - tomli
 
-  - repo: https://github.com/asottile/pyupgrade
+  - repo: 'https://github.com/asottile/pyupgrade'
     rev: v3.10.1
     hooks:
-    -   id: pyupgrade
-        args: ["--py310-plus"]
+      - id: pyupgrade
+        args:
+          - '--py310-plus'
         exclude: ^docs/
+
+  - repo: 'https://github.com/codespell-project/codespell'
+    rev: v2.2.4
+    hooks:
+      - id: codespell
+        additional_dependencies:
+          - tomli
