@@ -89,5 +89,5 @@ add_ignore = [
 # select = ["D200", "D201", "D205", "D206", "D207", "D208", "D214", "D215", "D409"]
 
 [tool.codespell]
-builtin = "clear,en-GB_to_en-US"
+builtin = "en-GB_to_en-US"
 ignore-words-list = "te,TE"
