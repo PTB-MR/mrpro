@@ -31,8 +31,8 @@ ISMRMRD_TRAJECTORY_TYPE = (
 )
 
 
-class MRDRawData:
-    """Raw data in MRD format for testing.
+class IsmrmrdRawTestData:
+    """Raw data in ISMRMRD format for testing.
 
     This is based on
     https://github.com/ismrmrd/ismrmrd-python-tools/blob/master/generate_cartesian_shepp_logan_dataset.py
@@ -127,15 +127,9 @@ class MRDRawData:
 
         # Sequence Information
         seq = ismrmrd.xsd.sequenceParametersType()
-        seq.TR = [
-            89.6,
-        ]
-        seq.TE = [
-            2.3,
-        ]
-        seq.TI = [
-            0.0,
-        ]
+        seq.TR = [89.6]
+        seq.TE = [2.3]
+        seq.TI = [0.0]
         seq.flipAngle_deg = 12.0
         seq.echo_spacing = 5.6
         header.sequenceParameters = seq
@@ -147,7 +141,7 @@ class MRDRawData:
         else:
             encoding.trajectory = ismrmrd.xsd.trajectoryType('other')
 
-        # encoded and recon spaces
+        # Encoded and recon spaces
         efov = ismrmrd.xsd.fieldOfViewMm()
         efov.x = self.oversampling * 256
         efov.y = 256
@@ -222,7 +216,6 @@ class MRDRawData:
             counter += 1  # increment the scan counter
 
         # Loop over the repetitions, add noise and write to disk
-        # simulating a T-SENSE type scan
         for rep in range(self.repetitions):
             noise = self.noise_level * (
                 np.random.randn(self.ncoils, nky // self.acceleration, nkx)
@@ -246,7 +239,7 @@ class MRDRawData:
                         acq.setFlag(ismrmrd.ACQ_LAST_IN_ENCODE_STEP1)
                         acq.setFlag(ismrmrd.ACQ_LAST_IN_SLICE)
                         acq.setFlag(ismrmrd.ACQ_LAST_IN_REPETITION)
-                    # set the data and append
+                    # Set the data and append
                     acq.data[:] = K[:, idx, :]
                     dset.append_acquisition(acq)
                     counter += 1
