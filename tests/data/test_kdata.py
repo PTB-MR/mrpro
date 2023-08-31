@@ -16,7 +16,7 @@ import pytest
 
 from mrpro.data import KData
 from mrpro.data._KTrajectory import DummyTrajectory
-from tests.data._MRDRawData import MRDRawData
+from tests.data._IsmrmrdRawTestData import IsmrmrdRawTestData
 from tests.utils import kspace_to_image
 from tests.utils import rel_image_diff
 
@@ -25,7 +25,7 @@ from tests.utils import rel_image_diff
 def ismrmrd_cart(tmp_path_factory):
     # Fully sampled cartesian data set
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
-    ismrmrd_kdat = MRDRawData(filename=ismrmrd_filename, noise_level=0.0, repetitions=3)
+    ismrmrd_kdat = IsmrmrdRawTestData(filename=ismrmrd_filename, noise_level=0.0, repetitions=3)
     return ismrmrd_kdat
 
 
@@ -33,7 +33,7 @@ def ismrmrd_cart(tmp_path_factory):
 def ismrmrd_cart_invalid_reps(tmp_path_factory):
     # Fully sampled cartesian data set
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
-    ismrmrd_kdat = MRDRawData(filename=ismrmrd_filename, noise_level=0.0, repetitions=3, flag_invalid_reps=True)
+    ismrmrd_kdat = IsmrmrdRawTestData(filename=ismrmrd_filename, noise_level=0.0, repetitions=3, flag_invalid_reps=True)
     return ismrmrd_kdat
 
 
@@ -41,6 +41,12 @@ def test_KData_from_file(ismrmrd_cart):
     # Read in data from file
     k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     assert k is not None
+
+
+def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
+    # Multiple repetitions with different number of phase encoding lines is not supported
+    with pytest.raises(ValueError, match='Number of k1 points in repetition: 128. Expected: 256'):
+        KData.from_file(ismrmrd_cart_invalid_reps.filename, DummyTrajectory())
 
 
 def test_KData_kspace(ismrmrd_cart):
@@ -58,12 +64,7 @@ def test_KData_kspace(ismrmrd_cart):
     'field,value',
     [
         ('b0', 11.3),
-        (
-            'tr',
-            [
-                24.3,
-            ],
-        ),
+        ('tr', [24.3]),
     ],
 )
 def test_KData_modify_header(ismrmrd_cart, field, value):

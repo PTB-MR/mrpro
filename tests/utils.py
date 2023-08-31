@@ -34,7 +34,7 @@ def kspace_to_image(kdat, axes=(-1, -2)):
 
 
 def rel_image_diff(im1, im2):
-    """Calculate relative difference between two images.
+    """Calculate mean absolute relative difference between two images.
 
     Parameters
     ----------
@@ -45,7 +45,7 @@ def rel_image_diff(im1, im2):
 
     Returns
     -------
-        relative difference between images
+        mean absolute relative difference between images
     """
     idiff = np.mean(np.abs(im1 - im2))
     imean = 0.5 * np.mean(np.abs(im1) + np.abs(im2))
