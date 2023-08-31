@@ -17,40 +17,44 @@ import pytest
 from mrpro.data import KData
 from mrpro.data._KTrajectory import DummyTrajectory
 from tests.data._IsmrmrdRawTestData import IsmrmrdRawTestData
+from tests.phantoms.test_phantoms import ph_ellipse
 from tests.utils import kspace_to_image
 from tests.utils import rel_image_diff
 
 
 @pytest.fixture(scope='session')
-def ismrmrd_cart(tmp_path_factory):
-    # Fully sampled cartesian data set
+def ismrmrd_cart(ph_ellipse, tmp_path_factory):
+    """Fully sampled cartesian data set."""
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
-    ismrmrd_kdat = IsmrmrdRawTestData(filename=ismrmrd_filename, noise_level=0.0, repetitions=3)
+    ismrmrd_kdat = IsmrmrdRawTestData(
+        filename=ismrmrd_filename, noise_level=0.0, repetitions=3, phantom=ph_ellipse.phantom
+    )
     return ismrmrd_kdat
 
 
 @pytest.fixture(scope='session')
 def ismrmrd_cart_invalid_reps(tmp_path_factory):
-    # Fully sampled cartesian data set
+    """Fully sampled cartesian data set."""
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
     ismrmrd_kdat = IsmrmrdRawTestData(filename=ismrmrd_filename, noise_level=0.0, repetitions=3, flag_invalid_reps=True)
     return ismrmrd_kdat
 
 
 def test_KData_from_file(ismrmrd_cart):
-    # Read in data from file
+    """Read in data from file."""
     k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     assert k is not None
 
 
 def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
-    # Multiple repetitions with different number of phase encoding lines is not supported
+    """Multiple repetitions with different number of phase encoding lines is
+    not supported."""
     with pytest.raises(ValueError, match='Number of k1 points in repetition: 128. Expected: 256'):
         KData.from_file(ismrmrd_cart_invalid_reps.filename, DummyTrajectory())
 
 
 def test_KData_kspace(ismrmrd_cart):
-    # Read in data and verify k-space by comparing reconstructed image
+    """Read in data and verify k-space by comparing reconstructed image."""
     k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     irec = kspace_to_image(k.data)
 
@@ -68,7 +72,7 @@ def test_KData_kspace(ismrmrd_cart):
     ],
 )
 def test_KData_modify_header(ismrmrd_cart, field, value):
-    # Overwrite some parameters in the header
+    """Overwrite some parameters in the header."""
     par_dict = {field: value}
     k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory(), header_overwrites=par_dict)
     assert getattr(k.header, field) == value

@@ -13,38 +13,44 @@
 #   limitations under the License.
 
 import numpy as np
+import pytest
 
-from mrpro.phantoms import EllipsePars
-from mrpro.phantoms import EllipsePhantom
+from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData
 from tests.utils import kspace_to_image
 from tests.utils import rel_image_diff
 
 
-def test_EllipsePhantom():
-    # Define image size and k-space matrix
-    nx = 512
-    ny = 256
-    [kx, ky] = np.meshgrid(range(-nx // 2, nx // 2), range(-ny // 2, ny // 2))
+@pytest.fixture(scope='session')
+def ph_ellipse():
+    return EllipsePhantomTestData()
 
-    # Define five ellipses
-    test_ellipses = [
-        EllipsePars(center_x=0.1, center_y=0.0, radius_x=0.1, radius_y=0.25, intensity=1),
-        EllipsePars(center_x=0.3, center_y=0.3, radius_x=0.1, radius_y=0.1, intensity=2),
-        EllipsePars(center_x=0.1, center_y=0.1, radius_x=0.1, radius_y=0.1, intensity=3),
-        EllipsePars(center_x=-0.2, center_y=-0.2, radius_x=0.1, radius_y=0.1, intensity=4),
-        EllipsePars(center_x=-0.3, center_y=-0.3, radius_x=0.1, radius_y=0.1, intensity=5),
-    ]
 
-    # Create phantom
-    ph = EllipsePhantom(test_ellipses)
+def test_image_space(ph_ellipse):
+    """Check if image space has correct shape."""
+    im = ph_ellipse.phantom.image_space(ph_ellipse.nx, ph_ellipse.ny)
+    assert im.shape == (ph_ellipse.ny, ph_ellipse.nx)
 
-    # Get image and k-space representation of phantom
-    im = ph.image_space(nx, ny)
-    kdat = ph.kspace(kx, ky)
 
-    # Reconstruct and compare
+def test_kspace_correct_shape(ph_ellipse):
+    """Check if kspace has correct shape."""
+    kdat = ph_ellipse.phantom.kspace(ph_ellipse.kx, ph_ellipse.ky)
+    assert kdat.shape == (ph_ellipse.ny, ph_ellipse.nx)
+
+
+def test_kspace_raises_error(ph_ellipse):
+    """Check if kspace raises error if kx and ky have different shapes."""
+    [kx_, _] = np.meshgrid(
+        range(-ph_ellipse.nx // 2, ph_ellipse.nx // 2), range(-ph_ellipse.ny // 2, ph_ellipse.ny // 2 + 1)
+    )
+    with pytest.raises(ValueError):
+        ph_ellipse.phantom.kspace(kx_, ph_ellipse.ky)
+
+
+def test_kspace_image_match(ph_ellipse):
+    """Check if fft of kspace matches image."""
+    im = ph_ellipse.phantom.image_space(ph_ellipse.nx, ph_ellipse.ny)
+    kdat = ph_ellipse.phantom.kspace(ph_ellipse.kx, ph_ellipse.ky)
     irec = kspace_to_image(kdat)
-
     # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
     # differences along the edges of the elliptic objects.
