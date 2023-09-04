@@ -17,18 +17,26 @@ import pytest
 
 from mrpro.data import IData
 from tests.data import Dicom2DTestImage
+from tests.data.conftest import random_kheader_and_data
 from tests.phantoms.test_phantoms import ph_ellipse
 
 
 @pytest.fixture(scope='session')
 def dcm_2d(ph_ellipse, tmp_path_factory):
-    # Single 2D dicom image
+    """Single 2D dicom image."""
     dcm_filename = tmp_path_factory.mktemp('mrpro') / 'dicom_2d.h5'
     dcm_idat = Dicom2DTestImage(filename=dcm_filename, phantom=ph_ellipse.phantom)
     return dcm_idat
 
 
 def test_IData_from_dcm_file(dcm_2d):
-    # Read in data from file
-    i = IData.from_single_dicom(dcm_2d.filename)
-    np.testing.assert_almost_equal(np.abs(i.data[0, 0, 0, ...]), np.moveaxis(dcm_2d.imref, (0, 1), (1, 0)))
+    """IData from single dicom file."""
+    idat = IData.from_single_dicom(dcm_2d.filename)
+    np.testing.assert_almost_equal(np.abs(idat.data[0, 0, 0, ...]), np.moveaxis(dcm_2d.imref, (0, 1), (1, 0)))
+
+
+def test_IData_from_kheader_and_tensor(random_kheader_and_data):
+    """IData from KHeader and data tensor."""
+    kheader, data = random_kheader_and_data
+    idat = IData.from_tensor_and_kheader(data=data, kheader=kheader)
+    assert idat.header.te == kheader.te

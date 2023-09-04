@@ -6,6 +6,8 @@ from ismrmrd import xsd
 from xsdata.models.datatype import XmlDate
 from xsdata.models.datatype import XmlTime
 
+from mrpro.data import AcqInfo
+from mrpro.data import KHeader
 from mrpro.data.enums import AcqFlags
 from tests.data import RandomGenerator
 
@@ -55,7 +57,7 @@ def generate_random_trajectory(generator: RandomGenerator, shape=(256, 2)):
     return generator.float32_tensor(shape)
 
 
-def generate_random_kdata(
+def generate_random_data(
     generator: RandomGenerator,
     shape=(32, 256),
 ):
@@ -66,7 +68,7 @@ def generate_random_kdata(
 def random_acquisition(request):
     seed, Ncoils, Nsamples = request.param['seed'], request.param['Ncoils'], request.param['Nsamples']
     generator = RandomGenerator(seed)
-    kdata = generate_random_kdata(generator, (Ncoils, Nsamples))
+    kdata = generate_random_data(generator, (Ncoils, Nsamples))
     traj = generate_random_trajectory(generator, (Nsamples, 2))
     header = generate_random_acquisition_properties(generator)
     header['flags'] &= ~AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value
@@ -77,7 +79,7 @@ def random_acquisition(request):
 def random_noise_acquisition(request):
     seed, Ncoils, Nsamples = request.param['seed'], request.param['Ncoils'], request.param['Nsamples']
     generator = RandomGenerator(seed)
-    kdata = generate_random_kdata(generator, (Ncoils, Nsamples))
+    kdata = generate_random_data(generator, (Ncoils, Nsamples))
     traj = generate_random_trajectory(generator, (Nsamples, 2))
     header = generate_random_acquisition_properties(generator)
     header['flags'] |= AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value
@@ -85,7 +87,7 @@ def random_noise_acquisition(request):
 
 
 @pytest.fixture(params=({'seed': 0},))
-def full_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
+def random_full_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
     """Generate a full header, i.e. all values used in
     KHeader.from_ismrmrd_header() are set."""
 
@@ -154,3 +156,40 @@ def random_ismrmrd_file(random_acquisition, random_noise_acquisition, full_heade
         dataset.close()
 
         yield file.name
+
+
+@pytest.fixture()
+def random_acq_info(random_acquisition):
+    """Random (not necessarily valid) AcqInfo."""
+    acq_info = AcqInfo.from_ismrmrd_acquisitions(
+        [
+            random_acquisition,
+        ]
+    )
+    return acq_info
+
+
+@pytest.fixture(params=({'seed': 0},))
+def random_kheader(request, random_full_ismrmrd_header, random_acq_info):
+    """Random (not necessarily valid) KHeader."""
+    seed = request.param['seed']
+    generator = RandomGenerator(seed)
+    ktraj = generate_random_trajectory(generator)
+    kheader = KHeader.from_ismrmrd(random_full_ismrmrd_header, acq_info=random_acq_info, defaults={'trajectory': ktraj})
+    return kheader
+
+
+@pytest.fixture(params=({'seed': 0, 'Nd4': 2, 'Ncoils': 16, 'Nz': 32, 'Ny': 128, 'Nx': 256},))
+def random_kheader_and_data(request, random_kheader):
+    seed, Nd4, Ncoils, Nz, Ny, Nx = (
+        request.param['seed'],
+        request.param['Nd4'],
+        request.param['Ncoils'],
+        request.param['Nz'],
+        request.param['Ny'],
+        request.param['Nx'],
+    )
+    generator = RandomGenerator(seed)
+    data = generate_random_data(generator, (Nd4, Ncoils, Nz, Ny, Nx))
+    kheader = random_kheader
+    return (kheader, data)
