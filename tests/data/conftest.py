@@ -7,7 +7,7 @@ from xsdata.models.datatype import XmlDate
 from xsdata.models.datatype import XmlTime
 
 from mrpro.data.enums import AcqFlags
-from tests.data._RandomGenerator import RandomGenerator
+from tests.data import RandomGenerator
 
 
 def generate_random_encodingcounter_properties(generator: RandomGenerator):

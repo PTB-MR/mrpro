@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 
 from mrpro.data import IData
-from tests.data._Dicom2DTestImage import Dicom2DTestImage
+from tests.data import Dicom2DTestImage
 from tests.phantoms.test_phantoms import ph_ellipse
 
 
