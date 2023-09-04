@@ -1,4 +1,4 @@
-"""Create dicom image datasets."""
+"""Create 2D dicom image datasets for testing."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -17,11 +17,12 @@ import os
 import numpy as np
 import pydicom
 import pydicom._storage_sopclass_uids
-from phantoms import EllipsePhantom
+
+from mrpro.phantoms import EllipsePhantom
 
 
-class Dicom2DImageData():
-    """2D Dicom Image Data.
+class Dicom2DTestImage:
+    """2D Dicom image for testing.
 
     Parameters
     ----------
@@ -34,14 +35,13 @@ class Dicom2DImageData():
     """
 
     def __init__(self, filename: str | os.PathLike, matrix_size: int = 256, phantom: EllipsePhantom = EllipsePhantom()):
-
         self.filename: str | os.PathLike = filename
         self.matrix_size: int = matrix_size
         self.phantom: EllipsePhantom = phantom
 
         # Create image
         self.imref = self.phantom.image_space(matrix_size, matrix_size)
-        self.imref = (self.imref*2**16).astype(np.uint16)
+        self.imref = (self.imref * 2**16).astype(np.uint16)
 
         # Metadata
         fileMeta = pydicom.Dataset()

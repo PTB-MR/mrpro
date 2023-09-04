@@ -14,17 +14,18 @@
 
 import numpy as np
 import pytest
-from DicomImageData import Dicom2DImageData
 
 from mrpro.data import IData
+from tests.data._Dicom2DTestImage import Dicom2DTestImage
+from tests.phantoms.test_phantoms import ph_ellipse
 
 
 @pytest.fixture(scope='session')
-def dcm_2d(tmp_path_factory):
+def dcm_2d(ph_ellipse, tmp_path_factory):
     # Single 2D dicom image
     dcm_filename = tmp_path_factory.mktemp('mrpro') / 'dicom_2d.h5'
-    dcm_idat = Dicom2DImageData(filename=dcm_filename)
-    return (dcm_idat)
+    dcm_idat = Dicom2DTestImage(filename=dcm_filename, phantom=ph_ellipse.phantom)
+    return dcm_idat
 
 
 def test_IData_from_dcm_file(dcm_2d):
