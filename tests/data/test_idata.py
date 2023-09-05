@@ -17,7 +17,8 @@ import pytest
 
 from mrpro.data import IData
 from tests.data import Dicom2DTestImage
-from tests.data.conftest import random_kheader_and_data
+from tests.data.conftest import random_kheader
+from tests.data.conftest import random_test_data
 from tests.phantoms.test_phantoms import ph_ellipse
 
 
@@ -35,8 +36,8 @@ def test_IData_from_dcm_file(dcm_2d):
     np.testing.assert_almost_equal(np.abs(idat.data[0, 0, 0, ...]), np.moveaxis(dcm_2d.imref, (0, 1), (1, 0)))
 
 
-def test_IData_from_kheader_and_tensor(random_kheader_and_data):
+def test_IData_from_kheader_and_tensor(random_kheader, random_test_data):
     """IData from KHeader and data tensor."""
-    kheader, data = random_kheader_and_data
-    idat = IData.from_tensor_and_kheader(data=data, kheader=kheader)
+    kheader = random_kheader
+    idat = IData.from_tensor_and_kheader(data=random_test_data, kheader=kheader)
     assert idat.header.te == kheader.te

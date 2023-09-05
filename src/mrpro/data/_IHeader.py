@@ -68,11 +68,13 @@ class IHeader:
             # iterall is recursive, so it will find all items with the given name
             return [item.value for item in dicom_dataset.iterall() if item.tag == Tag(name)]
 
-        # ToDo: Decide on how to handle missing values: Empty List or None
         fa = getItems('FlipAngle')
         ti = getItems('InversionTime')
         tr = getItems('RepetitionTime')
         # at least one dicom example has no 'EchoTime' but 'EffectiveEchoTime'
         te = getItems('EchoTime') or getItems('EffectiveEchoTime')
-        fov = None  # ToDo: get from dicom_dataset
+        fov_x_mm = float(getItems('Rows')[0]) * getItems('PixelSpacing')[0][0]
+        fov_y_mm = float(getItems('Columns')[0]) * getItems('PixelSpacing')[0][1]
+        fov_z_mm = float(getItems('SliceThickness')[0])
+        fov = SpatialDimension(fov_x_mm / 1000.0, fov_y_mm / 1000.0, fov_z_mm / 1000.0)
         return cls(fov=fov, te=te, ti=ti, fa=fa, tr=tr)

@@ -161,11 +161,7 @@ def random_ismrmrd_file(random_acquisition, random_noise_acquisition, full_heade
 @pytest.fixture()
 def random_acq_info(random_acquisition):
     """Random (not necessarily valid) AcqInfo."""
-    acq_info = AcqInfo.from_ismrmrd_acquisitions(
-        [
-            random_acquisition,
-        ]
-    )
+    acq_info = AcqInfo.from_ismrmrd_acquisitions([random_acquisition])
     return acq_info
 
 
@@ -180,7 +176,7 @@ def random_kheader(request, random_full_ismrmrd_header, random_acq_info):
 
 
 @pytest.fixture(params=({'seed': 0, 'Nd4': 2, 'Ncoils': 16, 'Nz': 32, 'Ny': 128, 'Nx': 256},))
-def random_kheader_and_data(request, random_kheader):
+def random_test_data(request):
     seed, Nd4, Ncoils, Nz, Ny, Nx = (
         request.param['seed'],
         request.param['Nd4'],
@@ -190,6 +186,5 @@ def random_kheader_and_data(request, random_kheader):
         request.param['Nx'],
     )
     generator = RandomGenerator(seed)
-    data = generate_random_data(generator, (Nd4, Ncoils, Nz, Ny, Nx))
-    kheader = random_kheader
-    return (kheader, data)
+    test_data = generate_random_data(generator, (Nd4, Ncoils, Nz, Ny, Nx))
+    return test_data
