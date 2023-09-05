@@ -28,12 +28,11 @@ class IHeader:
     """MR image data header."""
 
     # ToDo: decide which attributes to store in the header
-    # ToDo: decide on types. Allow None ? Or use empty list ?
-    fov: SpatialDimension[float] | None
-    te: list[float] | None
-    ti: list[float] | None
-    fa: list[float] | None
-    tr: list[float] | None
+    fov: SpatialDimension[float]
+    te: list[float]
+    ti: list[float]
+    fa: list[float]
+    tr: list[float]
 
     @classmethod
     def from_kheader(cls, kheader: KHeader):
