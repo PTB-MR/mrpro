@@ -42,7 +42,7 @@ class IData:
         data
             torch.Tensor containing image data with dimensions (broadcastable to) (all_other, coils, z, x, y).
         kheader
-            MR raw data header (KHeader) containing required meta data for the image header (IHeder).
+            MR raw data header (KHeader) containing required meta data for the image header (IHeader).
         """
         header = IHeader.from_kheader(kheader)
         return cls(header=header, data=data)
