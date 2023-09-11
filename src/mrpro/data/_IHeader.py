@@ -45,7 +45,7 @@ class IHeader:
         """
 
         return cls(
-            fov=kheader.encoding_fov,
+            fov=kheader.recon_fov,
             te=kheader.te,
             ti=kheader.ti,
             fa=kheader.fa,
