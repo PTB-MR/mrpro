@@ -18,23 +18,14 @@ This package supports ismrmrd-format for MR raw data. All data containers utiliz
 
 ## Recommended IDE and Extensions
 
-We recommend to use [Microsoft Visual Studio Code](https://code.visualstudio.com/download) with the following extensions:
+We recommend to use [Microsoft Visual Studio Code](https://code.visualstudio.com/download).
 
-- Python (Microsoft)
-- Pylance (Microsoft)
-- isort (Microsoft)
-- Python Indent (Kevin Rose)
-- Python Type Hint (njqdev)
-- Editorconfig for VS Code (EditorConfig)
-- Mypy (Martan Gover)
-- autoDocstring (Nils Werner)
-- markdownlint (David Anson)
-- Even Better TOML (tamasfe)
+A list of recommended extensions for VSCode is given in the [.vscode/extensions.json](.vscode\extensions.json)
 
 Further extensions that might be useful:
 
 - IntelliCode (Microsoft)
 - Remote - SHH (Microsoft)
 - GitHub Copilot (GitHub - **fee-based** )
-
-### *Note that this project uses a pyproject.toml instead of setup.py file*
+- Git Graph (mhutchie)
+- GitLens (GitKraken)
