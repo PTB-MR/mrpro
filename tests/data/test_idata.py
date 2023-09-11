@@ -38,6 +38,5 @@ def test_IData_from_dcm_file(dcm_2d):
 
 def test_IData_from_kheader_and_tensor(random_kheader, random_test_data):
     """IData from KHeader and data tensor."""
-    kheader = random_kheader
-    idat = IData.from_tensor_and_kheader(data=random_test_data, kheader=kheader)
-    assert idat.header.te == kheader.te
+    idat = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
+    assert idat.header.te == random_kheader.te
