@@ -12,7 +12,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
+from pathlib import Path
 
 import numpy as np
 import pydicom
@@ -34,8 +34,8 @@ class Dicom2DTestImage:
         phantom with different ellipses
     """
 
-    def __init__(self, filename: str | os.PathLike, matrix_size: int = 256, phantom: EllipsePhantom = EllipsePhantom()):
-        self.filename: str | os.PathLike = filename
+    def __init__(self, filename: str | Path, matrix_size: int = 256, phantom: EllipsePhantom = EllipsePhantom()):
+        self.filename: str | Path = filename
         self.matrix_size: int = matrix_size
         self.phantom: EllipsePhantom = phantom
 
