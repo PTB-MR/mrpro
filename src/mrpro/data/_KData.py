@@ -24,10 +24,10 @@ import numpy as np
 import torch
 from einops import rearrange
 
+from mrpro.data import AcqInfo
 from mrpro.data import KHeader
-from mrpro.data._AcqInfo import AcqInfo
+from mrpro.data import KTrajectory
 from mrpro.data._EncodingLimits import Limits
-from mrpro.data._KTrajectory import KTrajectory
 from mrpro.data.enums import AcqFlags
 
 KDIM_SORT_LABELS = (

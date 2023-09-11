@@ -29,6 +29,7 @@ dependencies = [
     "torchio",
     "ismrmrd",
     "einops",
+    "pydicom",
 ]
 
 [project.optional-dependencies]
