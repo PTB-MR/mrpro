@@ -19,8 +19,8 @@ from dataclasses import dataclass
 from pydicom.dataset import Dataset
 from pydicom.tag import Tag
 
-from mrpro.data._KHeader import KHeader
-from mrpro.data._SpatialDimension import SpatialDimension
+from mrpro.data import KHeader
+from mrpro.data import SpatialDimension
 
 
 @dataclass(slots=True)

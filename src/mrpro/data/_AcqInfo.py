@@ -20,7 +20,7 @@ import ismrmrd
 import numpy as np
 import torch
 
-from mrpro.data._SpatialDimension import SpatialDimension
+from mrpro.data import SpatialDimension
 
 
 @dataclass(slots=True)

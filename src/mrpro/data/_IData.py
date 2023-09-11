@@ -22,8 +22,8 @@ import torch
 from einops import rearrange
 from pydicom import dcmread
 
-from mrpro.data._IHeader import IHeader
-from mrpro.data._KHeader import KHeader
+from mrpro.data import IHeader
+from mrpro.data import KHeader
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
