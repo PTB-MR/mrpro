@@ -1,16 +1,17 @@
 {
     "recommendations": [
-        "njpwerner.autodocstring",
         "aaron-bond.better-comments",
-        "editorconfig.editorconfig",
-        "tamasfe.even-better-toml",
-        "ms-python.isort",
-        "ms-toolsai.jupyter",
         "davidanson.vscode-markdownlint",
-        "ms-python.vscode-pylance",
-        "ms-python.python",
+        "editorconfig.editorconfig",
         "kevinrose.vsc-python-indent",
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-toolsai.jupyter",
+        "ms-vscode-remote.remote-ssh",
         "njqdev.vscode-python-typehint",
-        "ms-vscode-remote.remote-ssh"
+        "njpwerner.autodocstring",
+        "tamasfe.even-better-toml"
     ]
 }
