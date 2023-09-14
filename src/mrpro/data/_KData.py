@@ -26,9 +26,9 @@ from einops import rearrange
 
 from mrpro.data import AcqInfo
 from mrpro.data import KHeader
-from mrpro.data import KTrajectory
 from mrpro.data._EncodingLimits import Limits
 from mrpro.data.enums import AcqFlags
+from mrpro.data.traj_calculators import KTrajectory
 
 KDIM_SORT_LABELS = (
     'k1',
