@@ -43,6 +43,7 @@ docs = ["sphinx", "sphinx_rtd_theme"]
 # PyTest section
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+filterwarnings = ["error"]
 
 # MyPy section
 [tool.mypy]
@@ -99,7 +100,4 @@ builtin = "en-GB_to_en-US"
 ignore-words-list = "te,TE"
 
 [tool.coverage.paths]
-source = [
-    "src",
-    "*/site-packages",
-]
+source = ["src", "*/site-packages"]
