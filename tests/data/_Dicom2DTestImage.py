@@ -41,10 +41,10 @@ class Dicom2DTestImage:
 
         # Create image
         self.imref = self.phantom.image_space(matrix_size, matrix_size)
-        self.imref = (self.imref * 2**16).astype(np.uint16)
+        self.imref = np.abs(self.imref * 2**16).astype(np.uint16)
 
         # Metadata
-        fileMeta = pydicom.Dataset()
+        fileMeta = pydicom.dataset.FileMetaDataset()
         fileMeta.MediaStorageSOPClassUID = pydicom._storage_sopclass_uids.MRImageStorage
         fileMeta.MediaStorageSOPInstanceUID = pydicom.uid.generate_uid()
         fileMeta.TransferSyntaxUID = pydicom.uid.ExplicitVRLittleEndian
