@@ -10,3 +10,4 @@ from mrpro.data._KHeader import KHeader
 from mrpro.data._KData import KData
 from mrpro.data._IHeader import IHeader
 from mrpro.data._IData import IData
+from mrpro.data._DcfData import DcfData
