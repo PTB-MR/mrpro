@@ -1,4 +1,4 @@
-"""K-space trajectory classes."""
+"""K-space trajectory base class."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -29,10 +29,10 @@ class KTrajectory(ABC):
 
     @abstractmethod
     def calc_traj(self, header: KHeader) -> torch.Tensor:
-        """Calculate the trajectory for the given header.
+        """Calculate the trajectory for given KHeader.
 
-        The shape should broadcastable to (prod(all_other_dimensions),
-        3, k2, k1, k0)
+        The shape of the calculated trajectory must be broadcastable to
+        (prod(all_other_dimensions), 3, k2, k1, k0)
         """
         ...
 
@@ -40,13 +40,12 @@ class KTrajectory(ABC):
 class DummyTrajectory(KTrajectory):
     """Simple Dummy trajectory that returns zeros.
 
-    Shape will not fit to all data. Only used until we implement proper
-    trajectories
+    Shape will not fit to all data. Only used as dummy for testing.
     """
 
     @staticmethod
     def _get_shape(header: KHeader) -> tuple[int, ...]:
-        """Get the shape of a basic dummy trajectory for the given header.
+        """Get the shape of a basic dummy trajectory for the given KHeader.
 
         Assumes fully sampled data. Do not use outside of testing.
         """
@@ -68,9 +67,5 @@ class DummyTrajectory(KTrajectory):
         return shape
 
     def calc_traj(self, header: KHeader) -> torch.Tensor:
-        """Calculate the trajectory for the given header.
-
-        The shape should broadcastable to (prod(all_other_dimensions),
-        3, k2, k1, k0)
-        """
+        """Calculate dummy trajectory for given KHeader."""
         return torch.zeros(self._get_shape(header))
