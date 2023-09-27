@@ -30,6 +30,7 @@ dependencies = [
     "ismrmrd",
     "einops",
     "pydicom",
+    "psutil",
 ]
 
 [project.optional-dependencies]
