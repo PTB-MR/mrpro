@@ -31,7 +31,7 @@ from mrpro.data import enums
 
 if TYPE_CHECKING:
     # avoid circular imports by importing onlz when type checking
-    from mrpro.data.traj_calculators import KTrajectory
+    from mrpro.data.traj_calculators import KTrajectoryCalculator
 
 UNKNOWN = 'unknown'
 
@@ -46,7 +46,7 @@ class KHeader:
     is not guaranteed to be correct or tested.
     """
 
-    trajectory: KTrajectory
+    trajectory: KTrajectoryCalculator
     b0: float
     encoding_limits: EncodingLimits
     # acc_factor: AccelerationFactor # TODO: decide if we want to keep this

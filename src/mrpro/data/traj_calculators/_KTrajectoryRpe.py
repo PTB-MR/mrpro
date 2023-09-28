@@ -15,14 +15,13 @@
 from __future__ import annotations
 
 import torch
-from einops import rearrange
-from einops import repeat
 
-from mrpro.data._KHeader import KHeader
-from mrpro.data.traj_calculators._KTrajectory import KTrajectory
+from mrpro.data import KHeader
+from mrpro.data import KTrajectory
+from mrpro.data.traj_calculators import KTrajectoryCalculator
 
 
-class KTrajectoryRpe(KTrajectory):
+class KTrajectoryRpe(KTrajectoryCalculator):
     """Radial phase encoding trajectory.
 
     Frequency encoding along kx is carried out in a standard Cartesian way. The phase encoding points along ky and kz
@@ -83,36 +82,13 @@ class KTrajectoryRpe(KTrajectory):
             krad[curr_angle_idx] = curr_krad
         return krad
 
-    def _combine_to_3d_traj(self, krad: torch.Tensor, kang: torch.Tensor, k0: torch.Tensor) -> torch.Tensor:
-        """Combine k-space points along three directions to 3D tensor.
-
-        Parameters
-        ----------
-        krad
-            k-space points along radial phase encoding lines
-        kang
-            Angles of phase encoding lines
-        k0
-            k-space points along readoud
-
-        Returns
-        -------
-            3D k-space trajectory
-        """
-        k1 = repeat(krad * torch.cos(kang), '...->... k0', k0=k0.shape[-1])
-        k2 = repeat(krad * torch.sin(kang), '...->... k0', k0=k0.shape[-1])
-        k0 = k0.expand(k1.shape)
-        return rearrange([k0, k1, k2], 'dir other k2 k1 k0->other dir k2 k1 k0')
-
-    def _k0_traj(self, num_samples: torch.Tensor, center_sample: torch.Tensor):
+    def _k0(self, kheader: KHeader):
         """Calculate the trajectory along one readout (k0 dimension).
 
         Parameters
         ----------
-        num_samples
-            Number of k-space samples along each readout
-        center_sample
-            K-space center sample position along readout
+        kheader
+            MR raw data header (KHeader) containing required meta data
 
         Returns
         -------
@@ -126,6 +102,10 @@ class KTrajectoryRpe(KTrajectory):
             Center sample has to be the same for each readout
         """
         # Verify that each readout has the same number of samples and same center sample
+
+        num_samples = kheader.acq_info.number_of_samples
+        center_sample = kheader.acq_info.center_sample
+
         if len(torch.unique(num_samples)) > 1:
             raise ValueError('RPE trajectory can only be calculated if each acquisition has the same number of samples')
         if len(torch.unique(center_sample)) > 1:
@@ -137,7 +117,38 @@ class KTrajectoryRpe(KTrajectory):
         k0 *= 2 * torch.pi / nk0
         return k0
 
-    def calc_traj(self, kheader: KHeader) -> torch.Tensor:
+    def _kang(self, kheader):
+        """Calculate the angles of the phase encoding lines.
+
+        Parameters
+        ----------
+        kheader
+            MR raw data header (KHeader) containing required meta data
+
+        Returns
+        -------
+            Angles of phase encoding lines
+        """
+        return kheader.acq_info.idx.k2 * self.angle
+
+    def _krad(self, kheader):
+        """Calculate the k-space locations along the phase encoding lines.
+
+        Parameters
+        ----------
+        kheader
+            MR raw data header (KHeader) containing required meta data
+
+        Returns
+        -------
+            k-space locations along the phase encoding lines
+        """
+        krad = (kheader.acq_info.idx.k1 - kheader.encoding_limits.k1.center).to(torch.float32)
+        krad = self._apply_shifts_between_rpe_lines(krad, kheader.acq_info.idx.k2)
+        krad *= 2 * torch.pi / kheader.encoding_limits.k1.max
+        return krad
+
+    def __call__(self, kheader: KHeader) -> KTrajectory:
         """Calculate radial phase encoding trajectory for given KHeader.
 
         Parameters
@@ -149,15 +160,17 @@ class KTrajectoryRpe(KTrajectory):
         -------
             radial phase encoding trajectory for given KHeader
         """
-        # Calculate points along readout
-        k0 = self._k0_traj(kheader.acq_info.number_of_samples, kheader.acq_info.center_sample)
+
+        # Trajectory along readout
+        k0 = self._k0(kheader)
 
         # Angles of phase encoding lines
-        kang = kheader.acq_info.idx.k2 * self.angle
+        kang = self._kang(kheader)
 
         # K-space locations along phase encoding lines
-        krad = (kheader.acq_info.idx.k1 - kheader.encoding_limits.k1.center).to(torch.float32)
-        krad = self._apply_shifts_between_rpe_lines(krad, kheader.acq_info.idx.k2)
-        krad *= 2 * torch.pi / kheader.encoding_limits.k1.max
+        krad = self._krad(kheader)
 
-        return self._combine_to_3d_traj(krad, kang, k0)
+        kx = (krad * torch.cos(kang))[..., None]
+        ky = (krad * torch.sin(kang))[..., None]
+        kz = k0[None, None, None, :]
+        return KTrajectory(kx, ky, kz)
