@@ -13,6 +13,7 @@
 #   limitations under the License.
 
 from __future__ import annotations
+from mrpro.data._KTrajectory import KTrajectory
 
 import dataclasses
 from abc import ABC
@@ -24,11 +25,11 @@ import torch
 from mrpro.data._KHeader import KHeader
 
 
-class KTrajectory(ABC):
+class KTrajectoryCalculator(ABC):
     """Base class for k-space trajectories."""
 
     @abstractmethod
-    def calc_traj(self, header: KHeader) -> torch.Tensor:
+    def __call__(self, header: KHeader) -> KTrajectory:
         """Calculate the trajectory for given KHeader.
 
         The shape of the calculated trajectory must be broadcastable to
@@ -37,35 +38,13 @@ class KTrajectory(ABC):
         ...
 
 
-class DummyTrajectory(KTrajectory):
+class DummyTrajectory(KTrajectoryCalculator):
     """Simple Dummy trajectory that returns zeros.
 
     Shape will not fit to all data. Only used as dummy for testing.
     """
 
-    @staticmethod
-    def _get_shape(header: KHeader) -> tuple[int, ...]:
-        """Get the shape of a basic dummy trajectory for the given KHeader.
-
-        Assumes fully sampled data. Do not use outside of testing.
-        """
-        limits = header.encoding_limits
-        other_dim = np.prod(
-            [
-                getattr(limits, field.name).length
-                for field in dataclasses.fields(limits)
-                if field.name not in ('k0', 'k1', 'k2', 'segment')
-            ]
-        )
-        shape = (
-            other_dim,
-            3,
-            limits.k2.length,
-            limits.k1.length,
-            limits.k0.length,
-        )
-        return shape
-
-    def calc_traj(self, header: KHeader) -> torch.Tensor:
+    def __call__(self, header: KHeader) -> KTrajectory:
         """Calculate dummy trajectory for given KHeader."""
-        return torch.zeros(self._get_shape(header))
+        kx = ky = kz = torch.zeros(1, 1, 1, header.encoding_limits.k0.length)
+        return KTrajectory(kx, ky, kz)

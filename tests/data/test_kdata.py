@@ -15,7 +15,7 @@
 import pytest
 
 from mrpro.data import KData
-from mrpro.data.traj_calculators._KTrajectory import DummyTrajectory
+from mrpro.data.traj_calculators._KTrajectoryCalculator import DummyTrajectory
 from tests.data import IsmrmrdRawTestData
 from tests.phantoms.test_phantoms import ph_ellipse
 from tests.utils import kspace_to_image
