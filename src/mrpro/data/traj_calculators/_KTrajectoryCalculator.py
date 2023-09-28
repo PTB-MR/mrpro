@@ -13,16 +13,14 @@
 #   limitations under the License.
 
 from __future__ import annotations
-from mrpro.data._KTrajectory import KTrajectory
 
-import dataclasses
 from abc import ABC
 from abc import abstractmethod
 
-import numpy as np
 import torch
 
 from mrpro.data._KHeader import KHeader
+from mrpro.data._KTrajectory import KTrajectory
 
 
 class KTrajectoryCalculator(ABC):

@@ -13,14 +13,16 @@
 #   limitations under the License.
 
 from __future__ import annotations
+
 from dataclasses import dataclass
-import torch
+
 import numpy as np
+import torch
 
 
 @dataclass(slots=True)
 class KTrajectory:
-    """k-space trajectory"""
+    """K-space trajectory."""
 
     kx: torch.Tensor
     ky: torch.Tensor
@@ -33,7 +35,7 @@ class KTrajectory:
         return tuple(shape)
 
     def as_tensor(self, stack_dim=0):
-        """A tensor representation of the trajectory.
+        """Tensor representation of the trajectory.
 
         Parameters
         ----------
@@ -60,6 +62,6 @@ class KTrajectory:
         try:
             shape = self.broadcasted_shape
             if len(shape) != 4:
-                raise ValueError("The k-space trajectory tensors should each have 4 dimensions.")
+                raise ValueError('The k-space trajectory tensors should each have 4 dimensions.')
         except ValueError:
-            raise ValueError("The k-space trajectory dimensions must be broadcastable.")
+            raise ValueError('The k-space trajectory dimensions must be broadcastable.')
