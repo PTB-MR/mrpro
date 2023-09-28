@@ -13,9 +13,11 @@
 #   limitations under the License.
 
 from __future__ import annotations
+
 import dataclasses
 from concurrent.futures import ThreadPoolExecutor
 from itertools import product
+
 import numpy as np
 import torch
 from scipy.spatial import ConvexHull
@@ -108,7 +110,8 @@ class DcfData:
         for i, k in enumerate(ks):
             if any(all(k.shape[ax] == 1 for ax in two_axes) for two_axes in [(-1, -2), (-1, -3), (-2, -3)]):
                 # Found a direction with at least two singleton dimensions, i.e. we have a 2D trajectory in 3D space
-                # Remove this direction from the list of k-space points and calculate dcf for the remaining 2D trajectory
+                # Remove this direction from the list of k-space points and
+                # calculate dcf for the remaining 2D trajectory
                 ks.pop(i)
                 new_traj = torch.stack(torch.broadcast_tensors(*ks), 1)
                 dcf = torch.stack([DcfData._dcf_using_voronoi(t) for t in new_traj])
