@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import dataclasses
+import itertools
 from functools import partial
 from multiprocessing import Pool
 
@@ -28,11 +29,12 @@ from scipy.spatial import Voronoi
 
 # Calculate volume/area of voronoi cells
 def calc_voronoi_volume_area(points_to_regions, verts, v_cell, idx):
-    dcf_vol = np.zeros((len(idx),))
-    for i in range(len(idx)):
-        cell = v_cell[points_to_regions[idx[i]]]
+    """Calculate volume/area of voronoi cells."""
+    dcf_vol = np.zeros_like(idx, dtype=np.float64)
+    for n, id in enumerate(idx):
+        cell = v_cell[points_to_regions[id]]
         vertices = [verts[j] for j in cell]
-        dcf_vol[i] = ConvexHull(vertices).volume
+        dcf_vol[n] = ConvexHull(vertices).volume
     return dcf_vol
 
 
@@ -59,7 +61,7 @@ class DcfData:
             density compensation values (1, k2, k1, k0)
         """
         # 2D and 3D trajectories supported
-        if traj.shape[0] != 2 and traj.shape[0] != 3:
+        if traj.shape[0] not in (2, 3):
             raise ValueError('Only 2D or 3D trajectories supported.')
 
         # Calculate dcf only for unique k-space positions
@@ -68,23 +70,14 @@ class DcfData:
         traj = traj.reshape(traj_dim[0], -1)
         traj_unique, inverse, counts = np.unique(traj, return_inverse=True, return_counts=True, axis=1)
 
-        # Especially in 3D errors in the calculation of the convex hull can occur for points at the edge. To avoid this,
+        # Especially in 3D, errors in the calculation of the convex hull can occur for edge points. To avoid this,
         # the corner points of a cube bounding box are added here. The bouding box is chosen very large to ensure these
         # edge points of the trajectory can still be accurately detected in the outlier detection further down.
         furthest_corner = np.max(np.abs(traj_unique))
-        if traj.shape[0] == 2:  # 2D
-            corner_points = np.asarray([[-1, -1], [-1, 1], [1, -1], [1, 1]]) * furthest_corner * 10
-        else:
-            corner_points = (
-                np.asarray(
-                    [[-1, -1, -1], [-1, -1, 1], [-1, 1, -1], [-1, 1, 1], [1, -1, -1], [1, -1, 1], [1, 1, -1], [1, 1, 1]]
-                )
-                * furthest_corner
-                * 10
-            )
+        corner_points = np.array(list(itertools.product([-1, 1], repeat=traj.shape[0]))) * furthest_corner * 10
         traj_unique = np.concatenate((traj_unique, corner_points.transpose()), axis=1)
 
-        # Carry out voronoi teselation
+        # Carry out voronoi tessellation
         vdiagram = Voronoi(traj_unique.transpose())
 
         # List of regions is now an array so we have fixed indices
