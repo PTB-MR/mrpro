@@ -13,29 +13,15 @@
 #   limitations under the License.
 
 from __future__ import annotations
-
 import dataclasses
-import itertools
-from functools import partial
-from multiprocessing import Pool
-
+from concurrent.futures import ThreadPoolExecutor
+from itertools import product
 import numpy as np
-import psutil
 import torch
-from einops import repeat
 from scipy.spatial import ConvexHull
 from scipy.spatial import Voronoi
 
-
-# Calculate volume/area of voronoi cells
-def calc_voronoi_volume_area(points_to_regions, verts, v_cell, idx):
-    """Calculate volume/area of voronoi cells."""
-    dcf_vol = np.zeros_like(idx, dtype=np.float64)
-    for n, id in enumerate(idx):
-        cell = v_cell[points_to_regions[id]]
-        vertices = [verts[j] for j in cell]
-        dcf_vol[n] = ConvexHull(vertices).volume
-    return dcf_vol
+from mrpro.data import KTrajectory
 
 
 @dataclasses.dataclass(slots=True, frozen=False)
@@ -60,49 +46,35 @@ class DcfData:
         -------
             density compensation values (1, k2, k1, k0)
         """
+        UNIQUE_ROUNDING_DECIMALS = 15
+
         # 2D and 3D trajectories supported
-        if traj.shape[0] not in (2, 3):
-            raise ValueError('Only 2D or 3D trajectories supported.')
+
+        dim = traj.shape[0]
+        if dim not in (2, 3):
+            raise ValueError(f'Only 2D or 3D trajectories supported, not {dim}D.')
 
         # Calculate dcf only for unique k-space positions
         traj_dim = traj.shape
-        traj = np.round(traj.numpy(), decimals=15)
-        traj = traj.reshape(traj_dim[0], -1)
+        traj = np.round(traj.numpy(), decimals=UNIQUE_ROUNDING_DECIMALS)
+        traj = traj.reshape(dim, -1)
         traj_unique, inverse, counts = np.unique(traj, return_inverse=True, return_counts=True, axis=1)
 
         # Especially in 3D, errors in the calculation of the convex hull can occur for edge points. To avoid this,
         # the corner points of a cube bounding box are added here. The bouding box is chosen very large to ensure these
         # edge points of the trajectory can still be accurately detected in the outlier detection further down.
         furthest_corner = np.max(np.abs(traj_unique))
-        corner_points = np.array(list(itertools.product([-1, 1], repeat=traj.shape[0]))) * furthest_corner * 10
-        traj_unique = np.concatenate((traj_unique, corner_points.transpose()), axis=1)
+        corner_points = np.array(list(product([-1, 1], repeat=dim))) * furthest_corner * 10
+        traj_extendend = np.concatenate((traj_unique, corner_points.transpose()), axis=1)
 
         # Carry out voronoi tessellation
-        vdiagram = Voronoi(traj_unique.transpose())
+        vdiagram = Voronoi(traj_extendend.transpose())
+        regions = [vdiagram.regions[r] for r in vdiagram.point_region[: -len(corner_points)]]  # Ignore corner points
+        vertices = [vdiagram.vertices[region] for region in regions]
 
-        # List of regions is now an array so we have fixed indices
-        v_cell = np.array(vdiagram.regions, dtype=object)
-
-        # Calculate area (2D) or volume (3D) of each voronoi cell but not the corner points added above
-        dcf = np.zeros(len(vdiagram.points) - len(corner_points), dtype=np.float64) - 10
-
-        # Split vertices for different workers (without the added corner points)
-        num_cpu = psutil.cpu_count(logical=False)
-        idx_cpu = []
-        for ind in range(num_cpu):
-            idx_cpu.append(np.asarray(range(ind, len(vdiagram.points) - len(corner_points), num_cpu)))
-
-        # Open Pool
-        pool = Pool(processes=num_cpu)
-        results = pool.starmap(
-            partial(calc_voronoi_volume_area, vdiagram.point_region, vdiagram.vertices, v_cell), zip(iter(idx_cpu))
-        )
-        pool.close()  # shut down the pool
-
-        # Sort in results from different cpus
-        for ind in range(num_cpu):
-            cidx = idx_cpu[ind]
-            dcf[cidx] = results[ind]
+        # Calculate volume/area of voronoi cells
+        future = ThreadPoolExecutor(max_workers=torch.get_num_threads()).map(lambda v: ConvexHull(v).volume, vertices)
+        dcf = np.array(list(future))
 
         # Get outliers (i.e. voronoi cell which are unbound) and set them to a reasonable value
         # Outliers are defined as values larger than 1.5 * inter quartile range of the values
@@ -111,34 +83,19 @@ class DcfData:
         q1, q3 = np.percentile(dcf_sorted, [25, 75])
         iqr = q3 - q1
         upper_bound = q3 + 1.5 * iqr
-        idx_outlier = np.where(dcf > upper_bound)
-        dcf_sorted_without_outliers = np.sort(np.delete(dcf, idx_outlier))
-        max_idx = int(len(dcf_sorted_without_outliers) * 0.99)
-        outlier_val = np.average(dcf_sorted_without_outliers[max_idx:])
-        dcf[idx_outlier] = outlier_val
+        idx_outliers = np.nonzero(dcf > upper_bound)
+        num_outliers = len(idx_outliers[0])
+        high_values_start = int(0.99 * (len(dcf_sorted) - num_outliers))
+        fill_value = np.average(dcf_sorted[high_values_start:-num_outliers])
+        dcf[idx_outliers] = fill_value
 
         # Sort dcf values back into the original order (i.e. before calling unique)
-        dcf = np.reshape((dcf / counts)[inverse], (1,) + traj_dim[1:])
+        dcf = np.reshape((dcf / counts)[inverse], traj_dim[1:])
 
         return torch.tensor(dcf, dtype=torch.float32)
 
-    @staticmethod
-    def _voronoi_dcf_for_each_d4(traj: torch.Tensor) -> torch.Tensor:
-        """Loop over all entries in d4 and calculate voronoi dcf.
-
-        Parameters
-        ----------
-        traj
-            torch.Tensor containing k-space points (d4, 2 or 3, k2, k1, k0).
-        """
-        # Calculate dcf for each dynamic, phase, average...
-        dcf = torch.zeros((traj.shape[0], 1) + traj.shape[2:], dtype=torch.float32)
-        for ind in range(traj.shape[0]):
-            dcf[ind, ...] = DcfData._dcf_using_voronoi(traj[ind, ...])
-        return dcf
-
     @classmethod
-    def from_traj_voronoi(cls, traj: torch.Tensor) -> DcfData:
+    def from_traj_voronoi(cls, traj: KTrajectory) -> DcfData:
         """Calculate dcf using voronoi approach for 2D or 3D trajectories.
 
         Parameters
@@ -146,27 +103,19 @@ class DcfData:
         traj
             torch.Tensor containing k-space points (d4, 2 or 3, k2, k1, k0).
         """
-        if traj.shape[1] != 2 and traj.shape[1] != 3:
-            raise ValueError('Trajectoy has to be 2D or 3D')
-        return cls(data=DcfData._voronoi_dcf_for_each_d4(traj))
 
-    @classmethod
-    def from_rpe_traj_voronoi(cls, traj: torch.Tensor) -> DcfData:
-        """Calculate dcf using voronoi approach for RPE trajectories.
+        ks = [traj.kx, traj.ky, traj.kz]
+        for i, k in enumerate(ks):
+            if any(all(k.shape[ax] == 1 for ax in two_axes) for two_axes in [(-1, -2), (-1, -3), (-2, -3)]):
+                # Found a direction with at least two singleton dimensions, i.e. we have a 2D trajectory in 3D space
+                # Remove this direction from the list of k-space points and calculate dcf for the remaining 2D trajectory
+                ks.pop(i)
+                new_traj = torch.stack(torch.broadcast_tensors(*ks), 1)
+                dcf = torch.stack([DcfData._dcf_using_voronoi(t) for t in new_traj])
+                dcf = dcf.expand(traj.broadcasted_shape)
+                break
+        else:
+            # Full 3D trajectory
+            dcf = torch.stack([DcfData._dcf_using_voronoi(t) for t in traj.as_tensor(1)])
 
-        For RPE the trajectoy is the same for each readout/frequency encoding position (k0), therefore it is
-        calculated in 2D for one k0 position and replicated. This is faster than calculating the trajectory in 3D.
-
-        Parameters
-        ----------
-        traj
-            torch.Tensor containing k-space points (d4, 3, k2, k1, k0).
-        """
-        if traj.shape[1] != 3:
-            raise ValueError('Trajectoy has to be 3D')
-
-        # Calculate trajectory in k1-k2 phase encoding plane for one frequency encoding "slice" and then copy to all
-        # other frequency encoding positions.
-        dcf = DcfData._voronoi_dcf_for_each_d4(traj[:, 1:, :, :, None, 0])
-        dcf = repeat(dcf, 'd4 dim k2 k1 k0->d4 dim k2 k1 (k0 nk0)', nk0=traj.shape[4])
         return cls(data=dcf)
