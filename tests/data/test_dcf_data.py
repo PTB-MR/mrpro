@@ -26,7 +26,7 @@ def example_traj_rpe(nkr, nka, nk0):
     kx = (torch.cos(kang[:, None]) * krad[None, :])[None, :, :, None]
     ky = (torch.sin(kang[:, None]) * krad[None, :])[None, :, :, None]
     kz = (torch.linspace(-nk0 // 2, nk0 // 2 - 1, nk0) / nk0)[None, None, None, :]
-    ktraj = KTrajectory(kx, ky, kz)
+    ktraj = KTrajectory(kz, ky, kx)
     return ktraj
 
 
@@ -37,7 +37,7 @@ def example_traj_rad_2d(nkr, nka):
     kx = (torch.cos(kang[:, None]) * krad[None, :])[None, None, :, :]
     ky = (torch.sin(kang[:, None]) * krad[None, :])[None, None, :, :]
     kz = torch.zeros(1, 1, 1, 1)
-    ktraj = KTrajectory(kx, ky, kz)
+    ktraj = KTrajectory(kz, ky, kx)
     return ktraj
 
 
