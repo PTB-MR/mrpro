@@ -82,7 +82,7 @@ class KTrajectoryRpe(KTrajectoryCalculator):
             krad[curr_angle_idx] = curr_krad
         return krad
 
-    def _k0(self, kheader: KHeader):
+    def _kfreq(self, kheader: KHeader):
         """Calculate the trajectory along one readout (k0 dimension).
 
         Parameters
@@ -162,7 +162,7 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         """
 
         # Trajectory along readout
-        k0 = self._k0(kheader)
+        kfreq = self._kfreq(kheader)
 
         # Angles of phase encoding lines
         kang = self._kang(kheader)
@@ -172,5 +172,5 @@ class KTrajectoryRpe(KTrajectoryCalculator):
 
         kx = (krad * torch.cos(kang))[..., None]
         ky = (krad * torch.sin(kang))[..., None]
-        kz = k0[None, None, None, :]
-        return KTrajectory(kx, ky, kz)
+        kz = kfreq[None, None, None, :]
+        return KTrajectory(kz, ky, kx)

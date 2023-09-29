@@ -62,7 +62,27 @@ def test_dcf_2d_rad_traj_voronoi():
     torch.testing.assert_close(dcf_analytical[:, :, :, 1:-1], dcf.data[:, :, :, 1:-1])
 
 
-def test_dcf_3d_cart_traj_voronoi():
+def test_dcf_3d_cart_traj_broadcast_voronoi():
+    """Compare voronoi-based dcf calculation for 3D regular Cartesian
+    trajectory to analytical solution which is 1 for each k-space point."""
+    # 3D trajectory with points on Cartesian grid with step size of 1
+    nk0 = 20
+    nk1 = 16
+    nk2 = 40
+    kx = torch.linspace(-nk0 // 2, nk0 // 2 - 1, nk0)[None, None, None, :]
+    ky = torch.linspace(-nk1 // 2, nk1 // 2 - 1, nk1)[None, None, :, None]
+    kz = torch.linspace(-nk2 // 2, nk2 // 2 - 1, nk2)[None, :, None, None]
+    ktraj = KTrajectory(kx, ky, kz)
+
+    # Analytical dcf
+    dcf_analytical = torch.ones((1, nk2, nk1, nk0))
+    dcf = DcfData.from_traj_voronoi(ktraj)
+    # Do not test outer points because they have to be approximated and cannot be calculated
+    # accurately using voronoi
+    torch.testing.assert_close(dcf.data[:, 1:-1, 1:-1, 1:-1], dcf_analytical[:, 1:-1, 1:-1, 1:-1])
+
+
+def test_dcf_3d_cart_full_traj_voronoi():
     """Compare voronoi-based dcf calculation for 3D regular Cartesian
     trajectory to analytical solution which is 1 for each k-space point."""
     # 3D trajectory with points on Cartesian grid with step size of 1
@@ -75,7 +95,7 @@ def test_dcf_3d_cart_traj_voronoi():
         torch.linspace(-nk0 // 2, nk0 // 2 - 1, nk0),
         indexing='xy',
     )
-    ktraj = KTrajectory(kx[None, ...], ky[None, ...], kz[None, ...])
+    ktraj = KTrajectory(kz[None, ...], ky[None, ...], kx[None, ...], repeat_detection_tolerance=None)
 
     # Analytical dcf
     dcf_analytical = torch.ones((1, nk2, nk1, nk0))
@@ -93,3 +113,6 @@ def test_dcf_rpe_traj_voronoi():
     nk0 = 20
     ktraj = example_traj_rpe(nkr, nka, nk0)
     dcf = DcfData.from_traj_voronoi(ktraj)
+
+    # TODO: Test against analytical solution
+    assert dcf.data.shape == (1, nka, nkr, nk0)

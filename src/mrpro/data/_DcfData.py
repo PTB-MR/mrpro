@@ -103,10 +103,10 @@ class DcfData:
         Parameters
         ----------
         traj
-            torch.Tensor containing k-space points (d4, 2 or 3, k2, k1, k0).
+            torch.Tensor containing k-space points (other, 2 or 3, k2, k1, k0).
         """
 
-        ks = [traj.kx, traj.ky, traj.kz]
+        ks = [traj.kz, traj.ky, traj.kx]
         for i, k in enumerate(ks):
             if any(all(k.shape[ax] == 1 for ax in two_axes) for two_axes in [(-1, -2), (-1, -3), (-2, -3)]):
                 # Found a direction with at least two singleton dimensions, i.e. we have a 2D trajectory in 3D space

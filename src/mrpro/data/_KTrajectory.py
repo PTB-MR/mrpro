@@ -31,7 +31,6 @@ class KTrajectory:
         kx changes along k0 and is Frequency Encoding
         ky changes along k2 and is Phase Encoding
         kz is zero(1,1,1,1)
-
     """
 
     kz: torch.Tensor  # (other,k2,k1,k0) #Phase Encoding direction, k2 if Cartesian
@@ -58,7 +57,7 @@ class KTrajectory:
     def __init__(
         self, kz: torch.Tensor, ky: torch.Tensor, kx: torch.Tensor, repeat_detection_tolerance: float | None = 1e-8
     ):
-        """K-Space Trajectory dataclass
+        """K-Space Trajectory dataclass.
 
         Reduces repeated dimensions to singletons if repeat_detection_tolerance
         is not set to None.
@@ -104,19 +103,14 @@ class KTrajectory:
         repeat_detection_tolerance:
             detects if broadcasting can be used, i.e. if dimensions are repeated.
             Set to None to disable.
-
         """
 
-        split_ks = torch.split(tensor, 1, dim=stack_dim)
-
-        if repeat_detection_tolerance is not None:
-            split_ks = (KTrajectory._remove_repeat(tensor, repeat_detection_tolerance) for tensor in split_ks)
-
-        return cls(*split_ks)
+        kz, ky, kx = torch.split(tensor, 1, dim=stack_dim)
+        return cls(kz, ky, kx, repeat_detection_tolerance=repeat_detection_tolerance)
 
     @staticmethod
-    def _remove_repeat(tensor: torch.Tensor, tol: float):
-        """Replace dimensions with all equal values with singletons
+    def _remove_repeat(tensor: torch.Tensor, tol: float) -> torch.Tensor:
+        """Replace dimensions with all equal values with singletons.
 
         Parameters
         ----------
@@ -124,14 +118,12 @@ class KTrajectory:
             The tensor. Must be real
         tol:
             The tolerance
-
-
         """
         # TODO: Move to utilities
 
         def can_be_singleton(dim: int) -> bool:
             # If the distance between min and max is smaller than the tolerance, all values are the same.
-            return torch.all((tensor.amax(dim=dim) - tensor.amin(dim=dim)) <= tol).item()
+            return bool(torch.all((tensor.amax(dim=dim) - tensor.amin(dim=dim)) <= tol).item())
 
         take_first = slice(0, 1)
         take_all = slice(None)

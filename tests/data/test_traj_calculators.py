@@ -29,7 +29,7 @@ def valid_rpe_kheader(monkeypatch, random_kheader):
     nk1 = 20
     nk2 = 10
 
-    # List of k1 and k2 indices in the shape (d4, k2, k1)
+    # List of k1 and k2 indices in the shape (other, k2, k1)
     k1 = torch.linspace(0, nk1 - 1, nk1, dtype=torch.int32)
     k2 = torch.linspace(0, nk2 - 1, nk2, dtype=torch.int32)
     idx_k1, idx_k2 = torch.meshgrid(k1, k2, indexing='xy')
