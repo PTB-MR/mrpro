@@ -30,8 +30,8 @@ class KTrajectoryCalculator(ABC):
     def __call__(self, header: KHeader) -> KTrajectory:
         """Calculate the trajectory for given KHeader.
 
-        The shape of the calculated trajectory must be broadcastable to
-        (prod(all_other_dimensions), 3, k2, k1, k0)
+        The shapes of kz, ky and kx of the calculated trajectory must be
+        broadcastable to (prod(all_other_dimensions), k2, k1, k0).
         """
         ...
 
@@ -39,10 +39,11 @@ class KTrajectoryCalculator(ABC):
 class DummyTrajectory(KTrajectoryCalculator):
     """Simple Dummy trajectory that returns zeros.
 
-    Shape will not fit to all data. Only used as dummy for testing.
+    Shape will fit to all data. Only used as dummy for testing.
     """
 
     def __call__(self, header: KHeader) -> KTrajectory:
         """Calculate dummy trajectory for given KHeader."""
-        kx = ky = kz = torch.zeros(1, 1, 1, header.encoding_limits.k0.length)
-        return KTrajectory(kx, ky, kz)
+        kx = torch.zeros(1, 1, 1, header.encoding_limits.k0.length)
+        ky = kz = torch.zeros(1, 1, 1, 1)
+        return KTrajectory(kz, ky, kx)
