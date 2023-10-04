@@ -1,4 +1,4 @@
-"""Tests for KTrajectory classes."""
+"""Tests for KTrajectory Calculator classes."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
