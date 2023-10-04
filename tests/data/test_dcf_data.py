@@ -23,9 +23,9 @@ def example_traj_rpe(nkr, nka, nk0):
     """Create RPE trajectory with uniform angular gap."""
     krad = torch.linspace(-nkr // 2, nkr // 2 - 1, nkr) / nkr
     kang = torch.linspace(0, nka - 1, nka) * (torch.pi / nka)
-    kx = (torch.cos(kang[:, None]) * krad[None, :])[None, :, :, None]
-    ky = (torch.sin(kang[:, None]) * krad[None, :])[None, :, :, None]
-    kz = (torch.linspace(-nk0 // 2, nk0 // 2 - 1, nk0) / nk0)[None, None, None, :]
+    kz = (torch.sin(kang[:, None]) * krad[None, :])[None, :, :, None]
+    ky = (torch.cos(kang[:, None]) * krad[None, :])[None, :, :, None]
+    kx = (torch.linspace(-nk0 // 2, nk0 // 2 - 1, nk0) / nk0)[None, None, None, :]
     ktraj = KTrajectory(kz, ky, kx)
     return ktraj
 
@@ -34,9 +34,9 @@ def example_traj_rad_2d(nkr, nka):
     """Create 2D radial trajectory with uniform angular gap."""
     krad = torch.linspace(-nkr // 2, nkr // 2 - 1, nkr) / nkr
     kang = torch.linspace(0, nka - 1, nka) * (torch.pi / nka)
-    kx = (torch.cos(kang[:, None]) * krad[None, :])[None, None, :, :]
-    ky = (torch.sin(kang[:, None]) * krad[None, :])[None, None, :, :]
     kz = torch.zeros(1, 1, 1, 1)
+    ky = (torch.sin(kang[:, None]) * krad[None, :])[None, None, :, :]
+    kx = (torch.cos(kang[:, None]) * krad[None, :])[None, None, :, :]
     ktraj = KTrajectory(kz, ky, kx)
     return ktraj
 
@@ -113,6 +113,4 @@ def test_dcf_rpe_traj_voronoi():
     nk0 = 20
     ktraj = example_traj_rpe(nkr, nka, nk0)
     dcf = DcfData.from_traj_voronoi(ktraj)
-
-    # TODO: Test against analytical solution
     assert dcf.data.shape == (1, nka, nkr, nk0)

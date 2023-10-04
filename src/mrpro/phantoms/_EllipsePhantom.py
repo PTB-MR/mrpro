@@ -50,7 +50,7 @@ class EllipsePhantom:
         ky
             k-space locations in ky
         kx
-            k-space loations in kx (Frequency Encoding Direction). Same shape as ky.
+            k-space locations in kx (frequency encoding direction). Same shape as ky.
         """
         # kx and ky have to be of same shape
         if kx.shape != ky.shape:

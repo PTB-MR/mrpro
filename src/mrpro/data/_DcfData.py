@@ -51,11 +51,11 @@ class DcfData:
         )
 
         # For a sorted trajectory: x0 x1 x2 ... xN
-        # We assign the point at x0 the area (x1-x0) / 2 * 2
-        # We assign the point at x1 the area (x1-x0) / 2  + (x2-x1) / 2
-        # We assign the pint at xN the area (xN-XN-1) / 2 * 2
-        # This is done by central differences (-1,0,1). As the be complicated,
-        # we just append/prepend the correct values afterwards.
+        # we assign the point at x1 the area (x1 - x0) / 2  + (x2 - x1) / 2,
+        # this is done by central differences (-1,0,1).
+        # For the edges, we append/prepend the values afterwards, such that:
+        # we assign the point at x0 the area (x1 - x0) / 2 + (x1 - x0) / 2, and
+        # we assign the point at xN the area (xN - xN-1) / 2 + (xN - xN-1) / 2.
 
         kernel = torch.tensor([-1 / 2, 0, 1 / 2], dtype=torch.float32, device=traj.device).reshape(1, 1, 3)
         central_diff = torch.nn.functional.conv1d(traj_sorted[None, None, :], kernel)[0, 0]
@@ -64,7 +64,7 @@ class DcfData:
         central_diff = torch.cat((first[None], central_diff, last[None]), -1)
 
         # Repeated points are reduced by the number of repeats
-        dcf = torch.nan_to_num(1 / (central_diff * counts))[inverse]
+        dcf = torch.nan_to_num(central_diff / counts)[inverse]
         return dcf
 
     @staticmethod
@@ -96,7 +96,7 @@ class DcfData:
         traj_unique, inverse, counts = np.unique(traj, return_inverse=True, return_counts=True, axis=1)
 
         # Especially in 3D, errors in the calculation of the convex hull can occur for edge points. To avoid this,
-        # the corner points of a cube bounding box are added here. The bouding box is chosen very large to ensure these
+        # the corner points of a cube bounding box are added here. The bounding box is chosen very large to ensure these
         # edge points of the trajectory can still be accurately detected in the outlier detection further down.
         furthest_corner = np.max(np.abs(traj_unique))
         corner_points = np.array(list(product([-1, 1], repeat=dim))) * furthest_corner * 10
