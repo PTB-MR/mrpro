@@ -15,8 +15,9 @@
 import numpy as np
 import pytest
 import torch
-from tests.data import RandomGenerator
+
 from mrpro.data import KTrajectory
+from tests.data import RandomGenerator
 
 
 @pytest.fixture(params=({'seed': 0},))
