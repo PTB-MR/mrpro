@@ -78,10 +78,10 @@ class KTrajectory:
 
         try:
             shape = self.broadcasted_shape
-            if len(shape) != 4:
-                raise ValueError('The k-space trajectory tensors should each have 4 dimensions.')
         except ValueError:
             raise ValueError('The k-space trajectory dimensions must be broadcastable.')
+        if len(shape) != 4:
+            raise ValueError('The k-space trajectory tensors should each have 4 dimensions.')
 
     @classmethod
     def from_tensor(
@@ -105,7 +105,7 @@ class KTrajectory:
             Set to None to disable.
         """
 
-        kz, ky, kx = torch.split(tensor, 1, dim=stack_dim)
+        kz, ky, kx = torch.unbind(tensor, dim=stack_dim)
         return cls(kz, ky, kx, repeat_detection_tolerance=repeat_detection_tolerance)
 
     @staticmethod
