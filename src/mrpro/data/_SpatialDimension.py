@@ -35,11 +35,11 @@ class XYZ(Protocol[T]):
 
 @dataclass(slots=True)
 class SpatialDimension(Generic[T]):
-    """Spatial dataclass."""
+    """Spatial dataclass of float/int/tensors (z, y, x)"""
 
-    x: T
-    y: T
     z: T
+    y: T
+    x: T
 
     @classmethod
     def from_xyz(cls, data: XYZ[T], conversion: Callable[[T], T] | None = None) -> SpatialDimension[T]:
@@ -53,11 +53,11 @@ class SpatialDimension(Generic[T]):
             will be called for each value to convert it
         """
         if conversion is not None:
-            return cls(conversion(data.x), conversion(data.y), conversion(data.z))
-        return cls(data.x, data.y, data.z)
+            return cls(conversion(data.z), conversion(data.y), conversion(data.x))
+        return cls(data.z, data.y, data.x)
 
     @staticmethod
-    def from_array(
+    def from_array_xyz(
         data: ArrayLike,
         conversion: Callable[[torch.Tensor], torch.Tensor] | None = None,
     ) -> SpatialDimension[torch.Tensor]:
@@ -66,7 +66,7 @@ class SpatialDimension(Generic[T]):
         Parameters
         ----------
         data:
-            shape (..., 3)
+            shape (..., 3) in the order (x,y,z)
         conversion, optional:
             will be called for each value to convert it, by default None
         """
@@ -84,4 +84,4 @@ class SpatialDimension(Generic[T]):
             x = conversion(x)
             y = conversion(y)
             z = conversion(z)
-        return SpatialDimension(x, y, z)
+        return SpatialDimension(z, y, x)
