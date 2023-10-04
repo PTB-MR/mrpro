@@ -60,9 +60,9 @@ def test_KTrajectoryRpe_golden(valid_rpe_kheader):
     ktrajectory = KTrajectoryRpe(angle=torch.pi * 0.618034)
     ktraj = ktrajectory(valid_rpe_kheader)
     valid_shape = rpe_traj_shape(valid_rpe_kheader)
-    assert ktraj.kx.shape == valid_shape[0]
+    assert ktraj.kz.shape == valid_shape[0]
     assert ktraj.ky.shape == valid_shape[1]
-    assert ktraj.kz.shape == valid_shape[2]
+    assert ktraj.kx.shape == valid_shape[2]
 
 
 def test_KTrajectoryRpe_uniform(valid_rpe_kheader):
