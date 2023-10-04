@@ -76,6 +76,3 @@ def test_KData_modify_header(ismrmrd_cart, field, value):
     par_dict = {field: value}
     k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory(), header_overwrites=par_dict)
     assert getattr(k.header, field) == value
-
-def test_failure():
-    assert 1==0

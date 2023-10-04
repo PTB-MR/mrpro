@@ -55,11 +55,10 @@ jobs:
           message: ${{ steps.coverageComment.outputs.coverage }}
           color: ${{ steps.coverageComment.outputs.color }}
           namedLogo: python
-      
+
       - name: Set pipeline status
         run: |
           if [[ ${{ steps.coverageComment.outputs.errors }} -ne 0 || ${{ steps.coverageComment.outputs.failures }} -ne 0 ]]; then
             echo "Errors or failures detected, marking pipeline as failure."
             exit 1
           fi
-
