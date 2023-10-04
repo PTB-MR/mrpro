@@ -1,4 +1,4 @@
-"""smap utility function"""
+"""Smap utility function."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -12,8 +12,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from collections.abc import Callable
+
 import torch
-from typing import Callable
 
 
 def smap(
