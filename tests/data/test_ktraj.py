@@ -44,7 +44,7 @@ def cartesian_grid(request):
 
 
 def test_ktraj_repeat_detection_tol(cartesian_grid):
-    """Test the automatic detection of repeated values"""
+    """Test the automatic detection of repeated values."""
     nk0 = 10
     nk1 = 20
     nk2 = 30
@@ -58,7 +58,7 @@ def test_ktraj_repeat_detection_tol(cartesian_grid):
 
 
 def test_ktraj_repeat_detection_exact(cartesian_grid):
-    """Test the automatic detection of repeated values"""
+    """Test the automatic detection of repeated values."""
     nk0 = 10
     nk1 = 20
     nk2 = 30
@@ -91,7 +91,7 @@ def test_ktraj_tensor_conversion(cartesian_grid):
 
 
 def test_ktraj_raise_not_broadcastable():
-    """Non broadcastable shapes should raise"""
+    """Non broadcastable shapes should raise."""
     kx = ky = torch.arange(1 * 2 * 3 * 4).reshape(1, 2, 3, 4)
     kz = torch.arange(1 * 2 * 3 * 100).reshape(1, 2, 3, 100)
     with pytest.raises(ValueError):
@@ -99,7 +99,7 @@ def test_ktraj_raise_not_broadcastable():
 
 
 def test_ktraj_raise_wrong_dim():
-    """Wrong number of dimensions after broadcasting should raise"""
+    """Wrong number of dimensions after broadcasting should raise."""
     kx = ky = kz = torch.arange(1 * 2 * 3).reshape(1, 2, 3)
     with pytest.raises(ValueError):
         ktraj = KTrajectory(kz, ky, kx)
