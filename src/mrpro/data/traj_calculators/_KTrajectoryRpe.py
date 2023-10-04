@@ -170,7 +170,7 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         # K-space locations along phase encoding lines
         krad = self._krad(kheader)
 
-        kz = (krad * torch.cos(kang))[..., None]
-        ky = (krad * torch.sin(kang))[..., None]
+        kz = (krad * torch.sin(kang))[..., None]
+        ky = (krad * torch.cos(kang))[..., None]
         kx = kfreq[None, None, None, :]
         return KTrajectory(kz, ky, kx)

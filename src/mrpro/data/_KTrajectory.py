@@ -33,9 +33,9 @@ class KTrajectory:
         kz is zero(1,1,1,1)
     """
 
-    kz: torch.Tensor  # (other,k2,k1,k0) #Phase Encoding direction, k2 if Cartesian
-    ky: torch.Tensor  # (other,k2,k1,k0) #Phase Encoding direction, k1 if Cartesian
-    kx: torch.Tensor  # (other,k2,k1,k0) #Frequency Encoding direction, k0 if Cartesian
+    kz: torch.Tensor  # (other,k2,k1,k0) #phase encoding direction, k2 if Cartesian
+    ky: torch.Tensor  # (other,k2,k1,k0) #phase encoding direction, k1 if Cartesian
+    kx: torch.Tensor  # (other,k2,k1,k0) #frequency encoding direction, k0 if Cartesian
 
     @property
     def broadcasted_shape(self) -> tuple[int, ...]:

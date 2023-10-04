@@ -140,10 +140,21 @@ class KData:
                     subcurrent = getattr(current, subfield.name)
                     setattr(current, subfield.name, reshape_acq_data(subcurrent))
 
-        # Calculate trajectory
+        # Calculate trajectory and check if it matches the kdata shape
         if isinstance(ktrajectory, KTrajectoryCalculator):
             ktraj = ktrajectory(kheader)
-        else:
+        elif isinstance(ktrajectory, KTrajectory):
             ktraj = ktrajectory
+        else:
+            raise TypeError(f'ktrajectory must be a KTrajectory or KTrajectoryCalculator, not {type(ktrajectory)}')
+
+        try:
+            shape = ktraj.broadcasted_shape
+            torch.broadcast_shapes(kdata.shape, shape)
+        except RuntimeError:
+            raise ValueError(
+                f'Broadcasted shape trajectory do not match kdata: {shape} vs. {kdata.shape}. '
+                'Please check the trajectory.'
+            )
 
         return cls(kheader, kdata, ktraj)
