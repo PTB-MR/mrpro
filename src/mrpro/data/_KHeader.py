@@ -30,7 +30,7 @@ from mrpro.data import TrajectoryDescription
 from mrpro.data import enums
 
 if TYPE_CHECKING:
-    # avoid circular imports by importing onlz when type checking
+    # avoid circular imports by importing only when type checking
     from mrpro.data.traj_calculators import KTrajectoryCalculator
 
 UNKNOWN = 'unknown'
