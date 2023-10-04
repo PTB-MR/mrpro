@@ -112,7 +112,7 @@ class AcqInfo:
 
         def spatialdimension(data):
             # all spatial dimensions are float32
-            return SpatialDimension[torch.Tensor].from_array(torch.tensor(data.astype(np.float32)))
+            return SpatialDimension[torch.Tensor].from_array_xyz(torch.tensor(data.astype(np.float32)))
 
         acq_idx = AcqIdx(
             k1=tensor(idx['kspace_encode_step_1']),
