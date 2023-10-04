@@ -1,4 +1,4 @@
-"""remove_repeat utility function"""
+"""remove_repeat utility function."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
