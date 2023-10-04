@@ -63,7 +63,7 @@ class AcqInfo:
     sample_time_us: torch.Tensor
     scan_counter: torch.Tensor
     slice_dir: SpatialDimension[torch.Tensor]
-    trajectory_dimensions: torch.Tensor
+    trajectory_dimensions: torch.Tensor  # =3. We only support 3D Trajectories: kz always exists.
     user_float: torch.Tensor
     user_int: torch.Tensor
     version: torch.Tensor
@@ -126,6 +126,7 @@ class AcqInfo:
             segment=tensor(idx['segment']),
             user=tensor(idx['user']),
         )
+
         acq_info = cls(
             idx=acq_idx,
             acquisition_time_stamp=tensor(headers['acquisition_time_stamp']),
@@ -147,7 +148,7 @@ class AcqInfo:
             sample_time_us=tensor(headers['sample_time_us']),
             scan_counter=tensor(headers['scan_counter']),
             slice_dir=spatialdimension(headers['slice_dir']),
-            trajectory_dimensions=tensor(headers['trajectory_dimensions']),
+            trajectory_dimensions=tensor(headers['trajectory_dimensions']).fill_(3),  # see above
             user_float=tensor(headers['user_float']),
             user_int=tensor(headers['user_int']),
             version=tensor(headers['version']),
