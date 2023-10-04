@@ -21,11 +21,11 @@ from itertools import product
 
 import numpy as np
 import torch
-from mpro.utils import smap
 from scipy.spatial import ConvexHull
 from scipy.spatial import Voronoi
 
 from mrpro.data import KTrajectory
+from mrpro.utils import smap
 
 UNIQUE_ROUNDING_DECIMALS = 15
 
