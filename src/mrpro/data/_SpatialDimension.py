@@ -35,7 +35,7 @@ class XYZ(Protocol[T]):
 
 @dataclass(slots=True)
 class SpatialDimension(Generic[T]):
-    """Spatial dataclass of float/int/tensors (z, y, x)"""
+    """Spatial dataclass of float/int/tensors (z, y, x)."""
 
     z: T
     y: T
