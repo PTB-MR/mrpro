@@ -18,6 +18,7 @@ from typing import Literal
 import ismrmrd
 import ismrmrd.xsd
 import numpy as np
+import torch
 
 from mrpro.phantoms import EllipsePhantom
 
@@ -88,7 +89,7 @@ class IsmrmrdRawTestData:
         self.trajectory_type: str = trajectory_type
         self.sampling_order: Literal['linear', 'low_high', 'high_low'] = sampling_order
         self.phantom: EllipsePhantom = phantom
-        self.imref: np.ndarray
+        self.imref: torch.Tensor
 
         # The number of points in x,y,kx,ky
         nx = self.matrix_size
@@ -102,7 +103,7 @@ class IsmrmrdRawTestData:
         [kx, ky] = np.meshgrid(kx_idx, ky_idx)
 
         # Create analytic k-space and reference image
-        ktrue = self.phantom.kspace(ky, kx)
+        ktrue = self.phantom.kspace(torch.Tensor(ky), torch.Tensor(kx)).numpy()
         self.imref = self.phantom.image_space(nky, nkx)
 
         # Multi-coil acquisition

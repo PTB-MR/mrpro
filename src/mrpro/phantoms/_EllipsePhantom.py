@@ -13,7 +13,7 @@
 #   limitations under the License.
 
 import numpy as np
-import scipy.special as sp_special
+import torch
 
 from mrpro.phantoms.phantom_elements import EllipsePars
 
@@ -37,7 +37,7 @@ class EllipsePhantom:
     ):
         self.ellipses: list[EllipsePars] = ellipses
 
-    def kspace(self, ky: np.ndarray, kx: np.ndarray):
+    def kspace(self, ky: torch.Tensor, kx: torch.Tensor) -> torch.Tensor:
         """Create 2D analytic kspace data based on given k-space locations.
 
         For a corresponding image with 256 x 256 voxel, the k-space locations should be defined within [-128, 127]
@@ -56,22 +56,22 @@ class EllipsePhantom:
         if kx.shape != ky.shape:
             raise ValueError(f'shape mismatch between kx {kx.shape} and ky {ky.shape}')
 
-        kdat = np.zeros_like(kx).astype(np.complex64)
+        kdat = torch.zeros_like(kx).to(torch.complex64)
         for el in self.ellipses:
-            arg = np.sqrt((el.radius_x * 2) ** 2 * kx**2 + (el.radius_y * 2) ** 2 * ky**2)
+            arg = torch.sqrt((el.radius_x * 2) ** 2 * kx**2 + (el.radius_y * 2) ** 2 * ky**2)
             arg[arg < 1e-6] = 1e-6  # avoid zeros
 
-            cdat = 2 * 2 * el.radius_x * el.radius_y * 0.5 * sp_special.jv(1, np.pi * arg) / arg
-            kdat += (np.exp(-1j * 2 * np.pi * (el.center_x * kx + el.center_y * ky)) * cdat * el.intensity).astype(
-                np.complex64
+            cdat = 2 * 2 * el.radius_x * el.radius_y * 0.5 * torch.special.bessel_j1(torch.pi * arg) / arg
+            kdat += (torch.exp(-1j * 2 * torch.pi * (el.center_x * kx + el.center_y * ky)) * cdat * el.intensity).to(
+                torch.complex64
             )
 
-        # Scale k-space data by factor 1/sqrt(number of points) to ensure correct scaling after FFT with
+        # Scale k-space data by factor sqrt(number of points) to ensure correct scaling after FFT with
         # normalization "ortho". See e.g. https://docs.scipy.org/doc/scipy/tutorial/fft.html
-        kdat *= np.sqrt(kdat.size)
+        kdat *= np.sqrt(torch.numel(kdat))
         return kdat
 
-    def image_space(self, ny: int, nx: int):
+    def image_space(self, ny: int, nx: int) -> torch.Tensor:
         """Create image representation of phantom.
 
         Parameters
@@ -82,13 +82,13 @@ class EllipsePhantom:
             Number of voxel along x direction
         """
         # Calculate image representation of phantom
-        ix_idx = range(-nx // 2, nx // 2)
-        iy_idx = range(-ny // 2, ny // 2)
-        [ix, iy] = np.meshgrid(ix_idx, iy_idx)
+        ix, iy = torch.meshgrid(
+            torch.linspace(-nx // 2, nx // 2 - 1, nx), torch.linspace(-ny // 2, ny // 2 - 1, ny), indexing='xy'
+        )
 
-        idat = np.zeros((ny, nx), dtype=np.complex64)
+        idat = torch.zeros((ny, nx), dtype=torch.complex64)
         for el in self.ellipses:
-            curr_el = np.zeros_like(idat)
+            curr_el = torch.zeros_like(idat)
             curr_el[
                 ((ix / nx - el.center_x) ** 2 / el.radius_x**2 + (iy / ny - el.center_y) ** 2 / el.radius_y**2) <= 1
             ] = el.intensity

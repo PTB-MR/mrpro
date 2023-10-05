@@ -12,8 +12,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import numpy as np
 import pytest
+import torch
 
 from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData
 from tests.utils import kspace_to_image
@@ -39,8 +39,10 @@ def test_kspace_correct_shape(ph_ellipse):
 
 def test_kspace_raises_error(ph_ellipse):
     """Check if kspace raises error if kx and ky have different shapes."""
-    [kx_, _] = np.meshgrid(
-        range(-ph_ellipse.nx // 2, ph_ellipse.nx // 2), range(-ph_ellipse.ny // 2, ph_ellipse.ny // 2 + 1)
+    [kx_, _] = torch.meshgrid(
+        torch.linspace(-ph_ellipse.nx // 2, ph_ellipse.nx // 2, ph_ellipse.nx + 1),
+        torch.linspace(-ph_ellipse.ny // 2, ph_ellipse.ny // 2 + 1, ph_ellipse.ny),
+        indexing='xy',
     )
     with pytest.raises(ValueError):
         ph_ellipse.phantom.kspace(ph_ellipse.ky, kx_)

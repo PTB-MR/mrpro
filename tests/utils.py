@@ -12,25 +12,24 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import numpy as np
-import scipy as sp
+import torch
 
 
-def kspace_to_image(kdat, axes=(-1, -2)):
+def kspace_to_image(kdat, dim=(-1, -2)):
     """IFFT from k-space to image space.
 
     Parameters
     ----------
     kdat
         k-space data on Cartesian grid
-    axes, optional
-        axes along which iFFT is applied, by default last two dimensions (-1, -2)
+    dim, optional
+        dim along which iFFT is applied, by default last two dimensions (-1, -2)
 
     Returns
     -------
         FFT of kdat
     """
-    return sp.fft.fftshift(sp.fft.ifftn(sp.fft.ifftshift(kdat, axes=axes), axes=axes, norm='ortho'), axes=axes)
+    return torch.fft.fftshift(torch.fft.ifftn(torch.fft.ifftshift(kdat, dim=dim), dim=dim, norm='ortho'), dim=dim)
 
 
 def rel_image_diff(im1, im2):
@@ -47,8 +46,8 @@ def rel_image_diff(im1, im2):
     -------
         mean absolute relative difference between images
     """
-    idiff = np.mean(np.abs(im1 - im2))
-    imean = 0.5 * np.mean(np.abs(im1) + np.abs(im2))
+    idiff = torch.mean(torch.abs(im1 - im2))
+    imean = 0.5 * torch.mean(torch.abs(im1) + torch.abs(im2))
     if imean == 0:
         raise ValueError('average of images should be larger than 0')
-    return np.divide(idiff, imean)
+    return idiff / imean

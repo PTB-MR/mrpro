@@ -17,6 +17,7 @@ from pathlib import Path
 import numpy as np
 import pydicom
 import pydicom._storage_sopclass_uids
+import torch
 
 from mrpro.phantoms import EllipsePhantom
 
@@ -41,7 +42,7 @@ class Dicom2DTestImage:
 
         # Create image
         self.imref = self.phantom.image_space(matrix_size, matrix_size)
-        self.imref = np.abs(self.imref * 2**16).astype(np.uint16)
+        self.imref = torch.abs(self.imref * 2**16).to(torch.int16)
 
         # Metadata
         fileMeta = pydicom.dataset.FileMetaDataset()
@@ -69,7 +70,7 @@ class Dicom2DTestImage:
         ds.SamplesPerPixel = 1
         ds.PhotometricInterpretation = 'MONOCHROME2'
         ds.BitsStored = 16
-        ds.PixelData = self.imref.tobytes()
+        ds.PixelData = self.imref.numpy().astype(np.uint16).tobytes()
 
         # Save
         ds.save_as(self.filename, write_like_original=False)
