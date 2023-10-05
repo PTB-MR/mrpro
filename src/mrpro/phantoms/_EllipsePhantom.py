@@ -56,15 +56,13 @@ class EllipsePhantom:
         if kx.shape != ky.shape:
             raise ValueError(f'shape mismatch between kx {kx.shape} and ky {ky.shape}')
 
-        kdat = torch.zeros_like(kx).to(torch.complex64)
+        kdat = torch.zeros_like(kx, dtype=torch.complex64)
         for el in self.ellipses:
             arg = torch.sqrt((el.radius_x * 2) ** 2 * kx**2 + (el.radius_y * 2) ** 2 * ky**2)
             arg[arg < 1e-6] = 1e-6  # avoid zeros
 
             cdat = 2 * 2 * el.radius_x * el.radius_y * 0.5 * torch.special.bessel_j1(torch.pi * arg) / arg
-            kdat += (torch.exp(-1j * 2 * torch.pi * (el.center_x * kx + el.center_y * ky)) * cdat * el.intensity).to(
-                torch.complex64
-            )
+            kdat += torch.exp(-1j * 2 * torch.pi * (el.center_x * kx + el.center_y * ky)) * cdat * el.intensity
 
         # Scale k-space data by factor sqrt(number of points) to ensure correct scaling after FFT with
         # normalization "ortho". See e.g. https://docs.scipy.org/doc/scipy/tutorial/fft.html

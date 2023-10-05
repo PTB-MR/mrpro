@@ -33,8 +33,9 @@ def dcm_2d(ph_ellipse, tmp_path_factory):
 def test_IData_from_dcm_file(dcm_2d):
     """IData from single dicom file."""
     idat = IData.from_single_dicom(dcm_2d.filename)
-    im = torch.abs(idat.data[0, 0, 0, ...])
-    torch.testing.assert_close(im, torch.movedim(dcm_2d.imref.to(im.dtype), (0, 1), (1, 0)))
+    # IData uses complex values but dicom only supports real values
+    im = torch.real(idat.data[0, 0, 0, ...])
+    torch.testing.assert_close(im, dcm_2d.imref)
 
 
 def test_IData_from_kheader_and_tensor(random_kheader, random_test_data):

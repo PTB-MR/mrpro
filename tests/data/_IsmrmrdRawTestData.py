@@ -19,6 +19,7 @@ import ismrmrd
 import ismrmrd.xsd
 import numpy as np
 import torch
+from einops import repeat
 
 from mrpro.phantoms import EllipsePhantom
 
@@ -103,12 +104,12 @@ class IsmrmrdRawTestData:
         [kx, ky] = np.meshgrid(kx_idx, ky_idx)
 
         # Create analytic k-space and reference image
-        ktrue = self.phantom.kspace(torch.Tensor(ky), torch.Tensor(kx)).numpy()
+        ktrue = self.phantom.kspace(torch.Tensor(ky), torch.Tensor(kx))
         self.imref = self.phantom.image_space(nky, nkx)
 
         # Multi-coil acquisition
         # TODO: proper application of coils
-        ktrue = np.tile(ktrue[None, ...], (self.ncoils, 1, 1))
+        ktrue = repeat(ktrue, '... -> coils ... ', coils=self.ncoils)
 
         # Open the dataset
         dset = ismrmrd.Dataset(self.filename, 'dataset', create_if_needed=True)
@@ -206,22 +207,19 @@ class IsmrmrdRawTestData:
         counter = 0
 
         # Write out a few noise scans
-        for n in range(32):
-            noise = self.noise_level * (np.random.randn(self.ncoils, nkx) + 1j * np.random.randn(self.ncoils, nkx))
+        for _ in range(32):
+            noise = self.noise_level * torch.randn(self.ncoils, nkx, dtype=torch.complex64)
             # here's where we would make the noise correlated
             acq.scan_counter = counter
             acq.clearAllFlags()
             acq.setFlag(ismrmrd.ACQ_IS_NOISE_MEASUREMENT)
-            acq.data[:] = noise
+            acq.data[:] = noise.numpy()
             dset.append_acquisition(acq)
             counter += 1  # increment the scan counter
 
         # Loop over the repetitions, add noise and write to disk
         for rep in range(self.repetitions):
-            noise = self.noise_level * (
-                np.random.randn(self.ncoils, nky // self.acceleration, nkx)
-                + 1j * np.random.randn(self.ncoils, nky // self.acceleration, nkx)
-            )
+            noise = self.noise_level * torch.randn(self.ncoils, nky // self.acceleration, nkx, dtype=torch.complex64)
             # Here's where we would make the noise correlated
             K = ktrue + noise
             acq.idx.repetition = rep
@@ -241,7 +239,7 @@ class IsmrmrdRawTestData:
                         acq.setFlag(ismrmrd.ACQ_LAST_IN_SLICE)
                         acq.setFlag(ismrmrd.ACQ_LAST_IN_REPETITION)
                     # Set the data and append
-                    acq.data[:] = K[:, idx, :]
+                    acq.data[:] = K[:, idx, :].numpy()
                     dset.append_acquisition(acq)
                     counter += 1
 

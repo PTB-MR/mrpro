@@ -60,7 +60,7 @@ class IData:
         ds = dcmread(filename)
         # Image data is 2D np.array of Uint16, which cannot directly be converted to tensor
         idata = torch.as_tensor(ds.pixel_array.astype(np.complex64))
-        idata = rearrange(idata[None, ...], '(other coil z) x y -> other coil z y x', other=1, coil=1, z=1)
+        idata = rearrange(idata[None, ...], '(other coil z) y x -> other coil z y x', other=1, coil=1, z=1)
 
         header = IHeader.from_dicom(ds)
         return cls(data=idata, header=header)
