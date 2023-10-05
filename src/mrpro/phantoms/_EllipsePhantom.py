@@ -37,7 +37,7 @@ class EllipsePhantom:
     ):
         self.ellipses: list[EllipsePars] = ellipses
 
-    def kspace(self, kx: np.ndarray, ky: np.ndarray):
+    def kspace(self, ky: np.ndarray, kx: np.ndarray):
         """Create 2D analytic kspace data based on given k-space locations.
 
         For a corresponding image with 256 x 256 voxel, the k-space locations should be defined within [-128, 127]
@@ -47,10 +47,10 @@ class EllipsePhantom:
 
         Parameters
         ----------
-        kx
-            k-space locations in kx
         ky
-            k-space loations in ky. Same shape as kx.
+            k-space locations in ky
+        kx
+            k-space locations in kx (frequency encoding direction). Same shape as ky.
         """
         # kx and ky have to be of same shape
         if kx.shape != ky.shape:
@@ -71,15 +71,15 @@ class EllipsePhantom:
         kdat *= np.sqrt(kdat.size)
         return kdat
 
-    def image_space(self, nx: int, ny: int):
+    def image_space(self, ny: int, nx: int):
         """Create image representation of phantom.
 
         Parameters
         ----------
-        nx
-            Number of voxel along x direction
         ny
             Number of voxel along y direction
+        nx
+            Number of voxel along x direction
         """
         # Calculate image representation of phantom
         ix_idx = range(-nx // 2, nx // 2)

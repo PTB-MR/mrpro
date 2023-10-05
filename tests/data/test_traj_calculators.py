@@ -1,4 +1,4 @@
-"""Tests for KTrajectory classes."""
+"""Tests for KTrajectory Calculator classes."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -29,7 +29,7 @@ def valid_rpe_kheader(monkeypatch, random_kheader):
     nk1 = 20
     nk2 = 10
 
-    # List of k1 and k2 indices in the shape (d4, k2, k1)
+    # List of k1 and k2 indices in the shape (other, k2, k1)
     k1 = torch.linspace(0, nk1 - 1, nk1, dtype=torch.int32)
     k2 = torch.linspace(0, nk2 - 1, nk2, dtype=torch.int32)
     idx_k1, idx_k2 = torch.meshgrid(k1, k2, indexing='xy')
@@ -51,40 +51,47 @@ def rpe_traj_shape(valid_rpe_kheader):
     nk0 = valid_rpe_kheader.acq_info.number_of_samples[0, 0, 0]
     nk1 = valid_rpe_kheader.acq_info.idx.k1.shape[2]
     nk2 = valid_rpe_kheader.acq_info.idx.k1.shape[1]
-    return torch.Size([1, 3, nk2, nk1, nk0])
+    nother = 1
+    return (torch.Size([nother, nk2, nk1, 1]), torch.Size([nother, nk2, nk1, 1]), torch.Size([nother, 1, 1, nk0]))
 
 
 def test_KTrajectoryRpe_golden(valid_rpe_kheader):
     """Calculate RPE trajectory with golden angle."""
     ktrajectory = KTrajectoryRpe(angle=torch.pi * 0.618034)
-    ktraj = ktrajectory.calc_traj(valid_rpe_kheader)
-    assert ktraj.shape == rpe_traj_shape(valid_rpe_kheader)
+    ktraj = ktrajectory(valid_rpe_kheader)
+    valid_shape = rpe_traj_shape(valid_rpe_kheader)
+    assert ktraj.kz.shape == valid_shape[0]
+    assert ktraj.ky.shape == valid_shape[1]
+    assert ktraj.kx.shape == valid_shape[2]
 
 
 def test_KTrajectoryRpe_uniform(valid_rpe_kheader):
     """Calculate RPE trajectory with uniform angle."""
     num_rpe_lines = valid_rpe_kheader.acq_info.idx.k1.shape[1]
     ktrajectory1 = KTrajectoryRpe(angle=torch.pi / num_rpe_lines, shift_between_rpe_lines=torch.tensor([0]))
-    ktraj1 = ktrajectory1.calc_traj(valid_rpe_kheader)
+    ktraj1 = ktrajectory1(valid_rpe_kheader)
     # Calculate trajectory with half the angular gap such that every second line should be the same as above
     ktrajectory2 = KTrajectoryRpe(angle=torch.pi / (2 * num_rpe_lines), shift_between_rpe_lines=torch.tensor([0]))
-    ktraj2 = ktrajectory2.calc_traj(valid_rpe_kheader)
-    torch.testing.assert_close(ktraj1[:, :, : num_rpe_lines // 2, :, :], ktraj2[:, :, ::2, :, :])
+    ktraj2 = ktrajectory2(valid_rpe_kheader)
+
+    torch.testing.assert_close(ktraj1.kx[:, : num_rpe_lines // 2, :, :], ktraj2.kx[:, ::2, :, :])
+    torch.testing.assert_close(ktraj1.ky[:, : num_rpe_lines // 2, :, :], ktraj2.ky[:, ::2, :, :])
+    torch.testing.assert_close(ktraj1.kz[:, : num_rpe_lines // 2, :, :], ktraj2.kz[:, ::2, :, :])
 
 
 def test_KTrajectoryRpe_shift(valid_rpe_kheader):
     """Evaluate radial shifts for RPE trajectory."""
     ktrajectory1 = KTrajectoryRpe(angle=torch.pi * 0.618034, shift_between_rpe_lines=torch.tensor([0.25]))
-    ktraj1 = ktrajectory1.calc_traj(valid_rpe_kheader)
+    ktraj1 = ktrajectory1(valid_rpe_kheader)
     ktrajectory2 = KTrajectoryRpe(
         angle=torch.pi * 0.618034, shift_between_rpe_lines=torch.tensor([0.25, 0.25, 0.25, 0.25])
     )
-    ktraj2 = ktrajectory2.calc_traj(valid_rpe_kheader)
-    torch.testing.assert_close(ktraj1, ktraj2)
+    ktraj2 = ktrajectory2(valid_rpe_kheader)
+    torch.testing.assert_close(ktraj1.as_tensor(), ktraj2.as_tensor())
 
 
 def test_KTrajectorySunflowerGoldenRpe(valid_rpe_kheader):
     """Calculate RPE Sunflower trajectory."""
     ktrajectory = KTrajectorySunflowerGoldenRpe(rad_us_factor=2)
-    ktraj = ktrajectory.calc_traj(valid_rpe_kheader)
-    assert ktraj.shape == rpe_traj_shape(valid_rpe_kheader)
+    ktraj = ktrajectory(valid_rpe_kheader)
+    assert ktraj.broadcasted_shape == np.broadcast_shapes(*rpe_traj_shape(valid_rpe_kheader))
