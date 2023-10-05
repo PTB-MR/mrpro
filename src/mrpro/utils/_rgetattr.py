@@ -1,4 +1,4 @@
-"""Utility functions for data handling."""
+"""Recursive getattr."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -12,20 +12,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from __future__ import annotations
-
 import functools
-
-import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
-
-
-def return_coil_label_dict(
-    coil_label: list[ismrmrdschema.coilLabelType],
-) -> dict:
-    coil_label_dict = {}
-    for idx, label in enumerate(coil_label):
-        coil_label_dict[idx] = [label.coilNumber, label.coilName]
-    return coil_label_dict
 
 
 def rgetattr(obj, attr, *args):
