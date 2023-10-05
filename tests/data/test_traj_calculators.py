@@ -16,8 +16,10 @@ import numpy as np
 import pytest
 import torch
 
+from mrpro.data.traj_calculators import KTrajectoryPulseq
 from mrpro.data.traj_calculators import KTrajectoryRpe
 from mrpro.data.traj_calculators import KTrajectorySunflowerGoldenRpe
+from tests.data._PulseqRadialTestSeq import PulseqRadialTestSeq
 from tests.data.conftest import random_kheader
 
 
@@ -95,3 +97,19 @@ def test_KTrajectorySunflowerGoldenRpe(valid_rpe_kheader):
     ktrajectory = KTrajectorySunflowerGoldenRpe(rad_us_factor=2)
     ktraj = ktrajectory(valid_rpe_kheader)
     assert ktraj.broadcasted_shape == np.broadcast_shapes(*rpe_traj_shape(valid_rpe_kheader))
+
+
+@pytest.fixture(scope='session')
+def pulseqtestdata(tmp_path_factory):
+    seq_filename = tmp_path_factory.mktemp('mrpro') / 'radial.seq'
+    seq = PulseqRadialTestSeq(seq_filename, Nx=256, Nspokes=10)
+    return seq
+
+
+def test_KTrajectoryPulseq_validseq_random_header(pulseqtestdata, random_header):
+    """Test pulseq File reader with valid seq File."""
+    # TODO: Test with valid header
+    # TODO: Test with invalid seq file
+    ktrajectory = KTrajectoryPulseq(pulseqtestdata.seq_filename)
+    traj = ktrajectory(random_header)
+    torch.testing.assert_close(traj.as_tensor(), pulseqtestdata.traj_analytical.as_tensor())
