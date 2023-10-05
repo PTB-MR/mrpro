@@ -175,16 +175,16 @@ def random_kheader(request, random_full_ismrmrd_header, random_acq_info):
     return kheader
 
 
-@pytest.fixture(params=({'seed': 0, 'Nd4': 2, 'Ncoils': 16, 'Nz': 32, 'Ny': 128, 'Nx': 256},))
+@pytest.fixture(params=({'seed': 0, 'Nother': 2, 'Ncoils': 16, 'Nz': 32, 'Ny': 128, 'Nx': 256},))
 def random_test_data(request):
-    seed, Nd4, Ncoils, Nz, Ny, Nx = (
+    seed, Nother, Ncoils, Nz, Ny, Nx = (
         request.param['seed'],
-        request.param['Nd4'],
+        request.param['Nother'],
         request.param['Ncoils'],
         request.param['Nz'],
         request.param['Ny'],
         request.param['Nx'],
     )
     generator = RandomGenerator(seed)
-    test_data = generate_random_data(generator, (Nd4, Ncoils, Nz, Ny, Nx))
+    test_data = generate_random_data(generator, (Nother, Ncoils, Nz, Ny, Nx))
     return test_data

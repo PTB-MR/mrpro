@@ -17,8 +17,8 @@ from __future__ import annotations
 import numpy as np
 import torch
 
-from mrpro.data._KHeader import KHeader
-from mrpro.data.traj_calculators._KTrajectoryRpe import KTrajectoryRpe
+from mrpro.data import KHeader
+from mrpro.data.traj_calculators import KTrajectoryRpe
 
 
 class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
@@ -70,27 +70,34 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
         fov_scaling = (num_rad_full - self.rad_us_factor) / (num_rad_full - 1)
         return krad * fov_scaling
 
-    def calc_traj(self, kheader: KHeader) -> torch.Tensor:
-        """Calculate sunflower golden angle RPE trajectory for given KHeader.
+    def _kang(self, kheader):
+        """Calculate the angles of the phase encoding lines.
 
         Parameters
         ----------
         kheader
-           MR raw data header (KHeader) containing required meta data.
+            MR raw data header (KHeader) containing required meta data
 
         Returns
         -------
-            sunflower golden angle radial phase encoding trajectory for given KHeader
+            Angles of phase encoding lines
         """
-        # Calculate points along readout
-        k0 = self._k0_traj(kheader.acq_info.number_of_samples, kheader.acq_info.center_sample)
+        return (kheader.acq_info.idx.k2 * self.angle) % torch.pi
 
-        # Angles of phase encoding lines
-        kang = (kheader.acq_info.idx.k2 * self.angle) % torch.pi
+    def _krad(self, kheader):
+        """Calculate the k-space locations along the phase encoding lines.
 
-        # K-space locations along phase encoding lines
+        Parameters
+        ----------
+        kheader
+            MR raw data header (KHeader) containing required meta data
+
+        Returns
+        -------
+            k-space locations along the phase encoding lines
+        """
+        kang = self._kang(kheader)
         krad = (kheader.acq_info.idx.k1 - kheader.encoding_limits.k1.center).to(torch.float32)
         krad = self._apply_sunflower_shift_between_rpe_lines(krad, kang, kheader)
         krad *= 2 * torch.pi / kheader.encoding_limits.k1.max
-
-        return self._combine_to_3d_traj(krad, kang, k0)
+        return krad

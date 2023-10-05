@@ -27,13 +27,13 @@ def ph_ellipse():
 
 def test_image_space(ph_ellipse):
     """Check if image space has correct shape."""
-    im = ph_ellipse.phantom.image_space(ph_ellipse.nx, ph_ellipse.ny)
+    im = ph_ellipse.phantom.image_space(ph_ellipse.ny, ph_ellipse.nx)
     assert im.shape == (ph_ellipse.ny, ph_ellipse.nx)
 
 
 def test_kspace_correct_shape(ph_ellipse):
     """Check if kspace has correct shape."""
-    kdat = ph_ellipse.phantom.kspace(ph_ellipse.kx, ph_ellipse.ky)
+    kdat = ph_ellipse.phantom.kspace(ph_ellipse.ky, ph_ellipse.kx)
     assert kdat.shape == (ph_ellipse.ny, ph_ellipse.nx)
 
 
@@ -43,13 +43,13 @@ def test_kspace_raises_error(ph_ellipse):
         range(-ph_ellipse.nx // 2, ph_ellipse.nx // 2), range(-ph_ellipse.ny // 2, ph_ellipse.ny // 2 + 1)
     )
     with pytest.raises(ValueError):
-        ph_ellipse.phantom.kspace(kx_, ph_ellipse.ky)
+        ph_ellipse.phantom.kspace(ph_ellipse.ky, kx_)
 
 
 def test_kspace_image_match(ph_ellipse):
     """Check if fft of kspace matches image."""
-    im = ph_ellipse.phantom.image_space(ph_ellipse.nx, ph_ellipse.ny)
-    kdat = ph_ellipse.phantom.kspace(ph_ellipse.kx, ph_ellipse.ky)
+    im = ph_ellipse.phantom.image_space(ph_ellipse.ny, ph_ellipse.nx)
+    kdat = ph_ellipse.phantom.kspace(ph_ellipse.ky, ph_ellipse.kx)
     irec = kspace_to_image(kdat)
     # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high

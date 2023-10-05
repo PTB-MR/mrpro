@@ -102,8 +102,8 @@ class IsmrmrdRawTestData:
         [kx, ky] = np.meshgrid(kx_idx, ky_idx)
 
         # Create analytic k-space and reference image
-        ktrue = self.phantom.kspace(kx, ky)
-        self.imref = self.phantom.image_space(nkx, nky)
+        ktrue = self.phantom.kspace(ky, kx)
+        self.imref = self.phantom.image_space(nky, nkx)
 
         # Multi-coil acquisition
         # TODO: proper application of coils
