@@ -23,13 +23,13 @@ class EllipsePhantomTestData:
 
     Parameters
     ----------
-    nx
-        number of voxels along x
     ny
         number of voxels along y
+    nx
+        number of voxels along x
     """
 
-    def __init__(self, nx: int = 512, ny: int = 256):
+    def __init__(self, ny: int = 512, nx: int = 256):
         # Define image size and k-space matrix
         self.nx: int = nx
         self.ny: int = ny

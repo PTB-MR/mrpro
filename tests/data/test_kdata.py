@@ -13,9 +13,11 @@
 #   limitations under the License.
 
 import pytest
+import torch
 
 from mrpro.data import KData
-from mrpro.data.traj_calculators._KTrajectory import DummyTrajectory
+from mrpro.data import KTrajectory
+from mrpro.data.traj_calculators._KTrajectoryCalculator import DummyTrajectory
 from tests.data import IsmrmrdRawTestData
 from tests.phantoms.test_phantoms import ph_ellipse
 from tests.utils import kspace_to_image
@@ -46,6 +48,14 @@ def test_KData_from_file(ismrmrd_cart):
     assert k is not None
 
 
+def test_KData_raise_wrong_ktraj_shape(ismrmrd_cart):
+    """Wrong KTrajectory shape raises exception."""
+    kx = ky = kz = torch.zeros(1, 2, 3, 4)
+    ktraj = KTrajectory(kz, ky, kx, repeat_detection_tolerance=None)
+    with pytest.raises(ValueError):
+        _ = KData.from_file(ismrmrd_cart.filename, ktraj)
+
+
 def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
     """Multiple repetitions with different number of phase encoding lines is
     not supported."""
@@ -64,13 +74,7 @@ def test_KData_kspace(ismrmrd_cart):
     assert rel_image_diff(irec[0, 0, 0, ...], ismrmrd_cart.imref) <= 0.05
 
 
-@pytest.mark.parametrize(
-    'field,value',
-    [
-        ('b0', 11.3),
-        ('tr', [24.3]),
-    ],
-)
+@pytest.mark.parametrize('field,value', [('b0', 11.3), ('tr', [24.3])])
 def test_KData_modify_header(ismrmrd_cart, field, value):
     """Overwrite some parameters in the header."""
     par_dict = {field: value}

@@ -26,9 +26,10 @@ from einops import rearrange
 
 from mrpro.data import AcqInfo
 from mrpro.data import KHeader
-from mrpro.data._EncodingLimits import Limits
+from mrpro.data import KTrajectory
+from mrpro.data import Limits
 from mrpro.data.enums import AcqFlags
-from mrpro.data.traj_calculators import KTrajectory
+from mrpro.data.traj_calculators import KTrajectoryCalculator
 
 KDIM_SORT_LABELS = (
     'k1',
@@ -46,13 +47,13 @@ KDIM_SORT_LABELS = (
 class KData:
     header: KHeader
     data: torch.Tensor
-    traj: torch.Tensor
+    traj: KTrajectory
 
     @classmethod
     def from_file(
         cls,
         filename: str | Path,
-        ktrajectory: KTrajectory,
+        ktrajectory: KTrajectoryCalculator | KTrajectory,
         header_overwrites: dict[str, object] | None = None,
         dataset_idx: int = -1,
     ) -> KData:
@@ -139,18 +140,21 @@ class KData:
                     subcurrent = getattr(current, subfield.name)
                     setattr(current, subfield.name, reshape_acq_data(subcurrent))
 
-        # Calculate trajectory and check for shape mismatches
-        ktraj = ktrajectory.calc_traj(kheader)
+        # Calculate trajectory and check if it matches the kdata shape
+        if isinstance(ktrajectory, KTrajectoryCalculator):
+            ktraj = ktrajectory(kheader)
+        elif isinstance(ktrajectory, KTrajectory):
+            ktraj = ktrajectory
+        else:
+            raise TypeError(f'ktrajectory must be a KTrajectory or KTrajectoryCalculator, not {type(ktrajectory)}')
 
-        if ktraj.shape[0] != 1 and ktraj.shape[0] != kdata.shape[0]:  # allow broadcasting in "other" dimensions
+        try:
+            shape = ktraj.broadcasted_shape
+            torch.broadcast_shapes(kdata.shape, shape)
+        except RuntimeError:
             raise ValueError(
-                'shape mismatch between ktrajectory and kdata:\n'
-                f'{ktraj.shape[0]} not broadcastable to {kdata.shape[0]}'
-            )
-        if ktraj.shape[2:] != kdata.shape[2:]:
-            raise ValueError(
-                'shape mismatch between kdata and ktrajectory in (k2, k1, k0) dimensions:\n'
-                f'{ktraj.shape[2:]} != {kdata.shape[2:]}'
+                f'Broadcasted shape trajectory do not match kdata: {shape} vs. {kdata.shape}. '
+                'Please check the trajectory.'
             )
 
         return cls(kheader, kdata, ktraj)
