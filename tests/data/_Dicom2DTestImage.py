@@ -17,6 +17,8 @@ from pathlib import Path
 import numpy as np
 import pydicom
 import pydicom._storage_sopclass_uids
+import torch
+from einops import rearrange
 
 from mrpro.phantoms import EllipsePhantom
 
@@ -28,20 +30,30 @@ class Dicom2DTestImage:
     ----------
     filename
         full path and filename
-    matrix_size
-        size of image matrix, by default 256
+    matrix_size_y
+        size of image matrix along y, by default 128
+    matrix_size_x
+        size of image matrix along x, by default 256
     phantom
         phantom with different ellipses
     """
 
-    def __init__(self, filename: str | Path, matrix_size: int = 256, phantom: EllipsePhantom = EllipsePhantom()):
+    def __init__(
+        self,
+        filename: str | Path,
+        matrix_size_y: int = 128,
+        matrix_size_x: int = 256,
+        phantom: EllipsePhantom = EllipsePhantom(),
+    ):
         self.filename: str | Path = filename
-        self.matrix_size: int = matrix_size
+        self.matrix_size_y: int = matrix_size_y
+        self.matrix_size_x: int = matrix_size_x
         self.phantom: EllipsePhantom = phantom
 
         # Create image
-        self.imref = self.phantom.image_space(matrix_size, matrix_size)
-        self.imref = np.abs(self.imref * 2**16).astype(np.uint16)
+        self.imref = torch.abs(self.phantom.image_space(matrix_size_y, matrix_size_x))
+        self.imref /= torch.max(self.imref) * 2  # *2 to make sure we are well within uint16 range later on
+        self.imref = torch.round(self.imref * 2**16)
 
         # Metadata
         fileMeta = pydicom.dataset.FileMetaDataset()
@@ -53,6 +65,9 @@ class Dicom2DTestImage:
         ds = pydicom.Dataset()
         ds.file_meta = fileMeta
 
+        # When accessing the data using ds.pixel_array pydicom will return an image with dimensions (rows columns).
+        # According to the dicom standard rows corresponds to the vertical dimension (i.e. y) and columns corresponds
+        # to the horizontal dimension (i.e. x)
         ds.Rows = self.imref.shape[0]
         ds.Columns = self.imref.shape[1]
         ds.NumberOfFrames = 1
@@ -65,11 +80,11 @@ class Dicom2DTestImage:
         ds.RepetitionTime = 25.2
 
         ds.BitsAllocated = 16
-        ds.PixelRepresentation = 1
+        ds.PixelRepresentation = 0  # uint
         ds.SamplesPerPixel = 1
         ds.PhotometricInterpretation = 'MONOCHROME2'
         ds.BitsStored = 16
-        ds.PixelData = self.imref.tobytes()
+        ds.PixelData = self.imref.numpy().astype(np.uint16).tobytes()
 
         # Save
         ds.save_as(self.filename, write_like_original=False)
