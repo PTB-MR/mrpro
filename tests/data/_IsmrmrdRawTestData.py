@@ -21,6 +21,7 @@ import numpy as np
 import torch
 from einops import repeat
 
+from mrpro.data import SpatialDimension
 from mrpro.phantoms import EllipsePhantom
 
 ISMRMRD_TRAJECTORY_TYPE = (
@@ -105,7 +106,8 @@ class IsmrmrdRawTestData:
 
         # Create analytic k-space and reference image
         ktrue = self.phantom.kspace(torch.Tensor(ky), torch.Tensor(kx))
-        self.imref = self.phantom.image_space(nky, nkx)
+        im_dim = SpatialDimension(z=1, y=nky, x=nkx)
+        self.imref = self.phantom.image_space(im_dim)
 
         # Multi-coil acquisition
         # TODO: proper application of coils

@@ -15,6 +15,7 @@
 import pytest
 import torch
 
+from mrpro.data import SpatialDimension
 from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData
 from tests.utils import kspace_to_image
 from tests.utils import rel_image_diff
@@ -27,8 +28,9 @@ def ph_ellipse():
 
 def test_image_space(ph_ellipse):
     """Check if image space has correct shape."""
-    im = ph_ellipse.phantom.image_space(ph_ellipse.ny, ph_ellipse.nx)
-    assert im.shape == (ph_ellipse.ny, ph_ellipse.nx)
+    im_dim = SpatialDimension(z=1, y=ph_ellipse.ny, x=ph_ellipse.nx)
+    im = ph_ellipse.phantom.image_space(im_dim)
+    assert im.shape[-2:] == (ph_ellipse.ny, ph_ellipse.nx)
 
 
 def test_kspace_correct_shape(ph_ellipse):
@@ -50,10 +52,11 @@ def test_kspace_raises_error(ph_ellipse):
 
 def test_kspace_image_match(ph_ellipse):
     """Check if fft of kspace matches image."""
-    im = ph_ellipse.phantom.image_space(ph_ellipse.ny, ph_ellipse.nx)
+    im_dim = SpatialDimension(z=1, y=ph_ellipse.ny, x=ph_ellipse.nx)
+    im = ph_ellipse.phantom.image_space(im_dim)
     kdat = ph_ellipse.phantom.kspace(ph_ellipse.ky, ph_ellipse.kx)
     irec = kspace_to_image(kdat)
     # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
     # differences along the edges of the elliptic objects.
-    assert rel_image_diff(irec, im) <= 0.05
+    assert rel_image_diff(irec, im[0, 0, 0, :, :]) <= 0.05
