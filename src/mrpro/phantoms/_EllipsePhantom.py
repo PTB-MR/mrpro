@@ -14,7 +14,9 @@
 
 import numpy as np
 import torch
+from einops import repeat
 
+from mrpro.data import SpatialDimension
 from mrpro.phantoms.phantom_elements import EllipsePars
 
 
@@ -69,17 +71,17 @@ class EllipsePhantom:
         kdat *= np.sqrt(torch.numel(kdat))
         return kdat
 
-    def image_space(self, ny: int, nx: int) -> torch.Tensor:
+    def image_space(self, image_dimensions: SpatialDimension[int]) -> torch.Tensor:
         """Create image representation of phantom.
 
         Parameters
         ----------
-        ny
-            Number of voxel along y direction
-        nx
-            Number of voxel along x direction
+        image_dimensions
+            Number of voxels in the image.
+            This is a 2D simulation so the output will be (1 1 1 image_dimensions.y image_dimensions.x)
         """
         # Calculate image representation of phantom
+        ny, nx = image_dimensions.y, image_dimensions.x
         ix, iy = torch.meshgrid(
             torch.linspace(-nx // 2, nx // 2 - 1, nx), torch.linspace(-ny // 2, ny // 2 - 1, ny), indexing='xy'
         )
@@ -92,4 +94,4 @@ class EllipsePhantom:
             ] = el.intensity
             idat += curr_el
 
-        return idat
+        return repeat(idat, 'y x->other coil z y x', other=1, coil=1, z=1)

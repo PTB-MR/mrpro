@@ -19,6 +19,7 @@ import pydicom
 import pydicom._storage_sopclass_uids
 import torch
 
+from mrpro.data import SpatialDimension
 from mrpro.phantoms import EllipsePhantom
 
 
@@ -50,7 +51,9 @@ class Dicom2DTestImage:
         self.phantom: EllipsePhantom = phantom
 
         # Create image
-        self.imref = torch.abs(self.phantom.image_space(matrix_size_y, matrix_size_x))
+        im_dim = SpatialDimension(z=1, y=matrix_size_y, x=matrix_size_x)
+        self.imref = torch.abs(self.phantom.image_space(im_dim))
+        self.imref = self.imref[0, 0, 0, ...]  # we can only store a 2D image in the dicom here
         self.imref /= torch.max(self.imref) * 2  # *2 to make sure we are well within uint16 range later on
         self.imref = torch.round(self.imref * 2**16)
 
