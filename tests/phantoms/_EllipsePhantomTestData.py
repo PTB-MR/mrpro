@@ -12,7 +12,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import numpy as np
+import torch
 
 from mrpro.phantoms import EllipsePars
 from mrpro.phantoms import EllipsePhantom
@@ -33,7 +33,9 @@ class EllipsePhantomTestData:
         # Define image size and k-space matrix
         self.nx: int = nx
         self.ny: int = ny
-        [self.kx, self.ky] = np.meshgrid(range(-self.nx // 2, self.nx // 2), range(-self.ny // 2, self.ny // 2))
+        [self.kx, self.ky] = torch.meshgrid(
+            torch.linspace(-nx // 2, nx // 2 - 1, nx), torch.linspace(-ny // 2, ny // 2 - 1, ny), indexing='xy'
+        )
 
         # Define five ellipses
         self.test_ellipses = [
