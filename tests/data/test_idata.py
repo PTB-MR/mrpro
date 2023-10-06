@@ -19,7 +19,7 @@ from mrpro.data import IData
 from tests.data import Dicom2DTestImage
 from tests.data.conftest import random_kheader
 from tests.data.conftest import random_test_data
-from tests.phantoms.test_phantoms import ph_ellipse
+from tests.phantoms.test_ellipse_phantom import ph_ellipse
 
 
 @pytest.fixture(scope='session')

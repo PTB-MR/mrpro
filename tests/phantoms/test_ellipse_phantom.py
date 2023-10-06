@@ -1,4 +1,4 @@
-"""Tests for Phantoms."""
+"""Tests for ellipse phantom."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
