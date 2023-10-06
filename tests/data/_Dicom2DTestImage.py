@@ -18,7 +18,6 @@ import numpy as np
 import pydicom
 import pydicom._storage_sopclass_uids
 import torch
-from einops import rearrange
 
 from mrpro.phantoms import EllipsePhantom
 
