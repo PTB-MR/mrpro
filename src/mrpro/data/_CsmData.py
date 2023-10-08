@@ -48,15 +48,8 @@ class CsmData(IData):
         niter
             Number if iterations of Walsh method.
         """
-        ncoils, nz, ny, nx = coil_images.shape
-
-        # Compute the sample covariance pointwise
-        coil_cov = torch.zeros((ncoils, ncoils, nz, ny, nx), dtype=coil_images.dtype)
-        for c1_idx in range(ncoils):
-            for c2_idx in range(c1_idx):
-                coil_cov[c1_idx, c2_idx, ...] = coil_images[c1_idx, ...] * torch.conj(coil_images[c2_idx, ...])
-                coil_cov[c2_idx, c1_idx, ...] = torch.conj(coil_cov[c1_idx, c2_idx, ...].clone())
-            coil_cov[c1_idx, c1_idx, ...] = coil_images[c1_idx, ...] * torch.conj(coil_images[c1_idx, ...])
+        # Compute the pointwise covariance between coils
+        coil_cov = torch.einsum('azyx,bzyx->abzyx', coil_images, coil_images.conj())
 
         # Smooth the covariance along y-x for 2D and z-y-x for 3D data
         if coil_images.shape[-3] == 1:
@@ -65,35 +58,22 @@ class CsmData(IData):
         coil_cov = spatial_uniform_filter_3d(coil_cov, filter_width=smoothing_width)
 
         # At each point in the image, find the dominant eigenvector
-        # and corresponding eigenvalue of the signal covariance
-        # matrix using the power method
-        csm_data = torch.zeros((ncoils, nz, ny, nx), dtype=coil_images.dtype)
-        for z in range(nz):
-            for y in range(ny):
-                for x in range(nx):
-                    coil_cov_curr_vox = coil_cov[:, :, z, y, x]
-                    # v needs to be (ncoils, 1) to allow for torch.mm later on
-                    v = torch.sum(coil_cov_curr_vox, dim=0)[:, None]
-                    lam = torch.linalg.norm(v)
-                    if lam != 0:
-                        v = v / lam
+        # of the signal covariance matrix using the power method
+        v = coil_cov.sum(dim=0)
+        for _ in range(niter):
+            v /= v.norm(dim=0)
+            v = torch.einsum('abzyx,bzyx->azyx', coil_cov, v)
+        csm_data = v / v.norm(dim=0)
 
-                        for _ in range(niter):
-                            v = torch.mm(coil_cov_curr_vox, v)
-                            lam = torch.linalg.norm(v)
-                            v = v / lam
-
-                    csm_data[:, z, y, x] = v[:, 0]
-
-        # Make sure there are no inf and nan-values due to very small values in the covariance matrix
-        csm_data[torch.isnan(csm_data) | torch.isinf(csm_data)] = 0
+        # Make sure there are no inf or nan-values due to very small values in the covariance matrix
+        # nan_to_num does not work for complexfloat, boolean indexing not with vmap.
+        csm_data = torch.where(torch.isfinite(csm_data), csm_data, 0.0)
         return csm_data
 
     @classmethod
     def from_idata_walsh(
         cls,
         idata: IData,
-        downsampling_factor: SpatialDimension[int] = SpatialDimension(1, 1, 1),
         smoothing_width: SpatialDimension[int] = SpatialDimension(5, 5, 5),
         niter: int = 3,
     ) -> CsmData:
@@ -108,9 +88,9 @@ class CsmData(IData):
         niter
             Number if iterations of Walsh method.
         """
-        csm_data = torch.zeros_like(idata.data)
-        for ond in range(csm_data.shape[0]):
-            csm_data[ond, ...] = CsmData._iterative_walsh_csm(idata.data[ond, ...], smoothing_width, niter)
+        # TODO: consider increaseing the chunk_size
+        csm_fun = torch.vmap(lambda img: CsmData._iterative_walsh_csm(img, smoothing_width, niter), chunk_size=1)
+        csm_data = csm_fun(idata.data)
 
         return cls(header=idata.header, data=csm_data)
 
