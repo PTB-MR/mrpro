@@ -14,8 +14,8 @@
 
 from __future__ import annotations
 
-import numpy as np
 import torch
+from einops import repeat
 
 from mrpro.data import SpatialDimension
 
@@ -30,16 +30,14 @@ def spatial_uniform_filter_3d(data: torch.Tensor, filter_width: SpatialDimension
     filter_width
         Width of 3D the filter
     """
-    # Ensure (batch z y x)
-    ddim = data.shape
-    data = data.view(-1, *ddim[-3:])
 
     # Create a box-shaped filter kernel
-    filter_width_zyx = [filter_width.z, filter_width.y, filter_width.x]
-    kernel = torch.ones(filter_width_zyx) / np.prod(filter_width_zyx)
-    kernel = kernel.to(dtype=data.dtype)
-    kernel = kernel.view(1, 1, *kernel.size())
+    kernel = torch.ones(1, 1, filter_width.z, filter_width.y, filter_width.x)
+    kernel /= kernel.sum()  # normalize
+    kernel = kernel.to(dtype=data.dtype, device=data.device)
 
-    # Use same filter kernel for each channel
-    kernel = kernel.repeat(data.shape[0], *[1] * (kernel.dim() - 1))
-    return torch.reshape(torch.nn.functional.conv3d(data, weight=kernel, groups=data.shape[0], padding='same'), ddim)
+    # filter by 3D convolution
+    # TODO: consider replacing by 3 1D convolutions for larger kernel sizes.
+    reshaped = repeat(data, '... z y x -> (...) channel z y x', channel=1)  # channel dim required for conv3d
+    output = torch.nn.functional.conv3d(reshaped, weight=kernel, padding='same').view_as(data)
+    return output
