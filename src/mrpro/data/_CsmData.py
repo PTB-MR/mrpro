@@ -59,8 +59,9 @@ class CsmData(IData):
             coil_cov[c1_idx, c1_idx, ...] = coil_images[c1_idx, ...] * torch.conj(coil_images[c1_idx, ...])
 
         # Smooth the covariance along y-x for 2D and z-y-x for 3D data
-        if nz == 1:
-            smoothing_width.z = 1
+        if coil_images.shape[-3] == 1:
+            # 2D case
+            smoothing_width = SpatialDimension(1, smoothing_width.y, smoothing_width.x)
         coil_cov = spatial_uniform_filter_3d(coil_cov, filter_width=smoothing_width)
 
         # At each point in the image, find the dominant eigenvector
