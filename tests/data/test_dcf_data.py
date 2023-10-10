@@ -14,6 +14,7 @@
 
 import math
 
+import pytest
 import torch
 
 from mrpro.data import DcfData
@@ -42,12 +43,11 @@ def example_traj_rad_2d(nkr, nka):
     return ktraj
 
 
-def test_dcf_2d_rad_traj_voronoi():
+@pytest.mark.parametrize('nkr,nka', [(100, 20), (100, 1)])
+def test_dcf_2d_rad_traj_voronoi(nkr, nka):
     """Compare voronoi-based dcf calculation for 2D radial trajectory to
     analytical solution."""
     # 2D radial trajectory
-    nkr = 100
-    nka = 20
     ktraj = example_traj_rad_2d(nkr, nka)
 
     # Analytical dcf
@@ -63,7 +63,8 @@ def test_dcf_2d_rad_traj_voronoi():
     torch.testing.assert_close(dcf_analytical[:, :, :, 1:-1], dcf.data[:, :, :, 1:-1])
 
 
-def test_dcf_3d_cart_traj_broadcast_voronoi():
+@pytest.mark.parametrize('nk2,nk1,nk0', [(40, 16, 20)])
+def test_dcf_3d_cart_traj_broadcast_voronoi(nk2, nk1, nk0):
     """Compare voronoi-based dcf calculation for broadcasted 3D regular
     Cartesian trajectory to analytical solution which is 1 for each k-space
     point."""
@@ -84,13 +85,11 @@ def test_dcf_3d_cart_traj_broadcast_voronoi():
     torch.testing.assert_close(dcf.data[:, 1:-1, 1:-1, 1:-1], dcf_analytical[:, 1:-1, 1:-1, 1:-1])
 
 
-def test_dcf_3d_cart_full_traj_voronoi():
+@pytest.mark.parametrize('nk2,nk1,nk0', [(40, 16, 20)])
+def test_dcf_3d_cart_full_traj_voronoi(nk2, nk1, nk0):
     """Compare voronoi-based dcf calculation for full 3D regular Cartesian
     trajectory to analytical solution which is 1 for each k-space point."""
     # 3D trajectory with points on Cartesian grid with step size of 1
-    nk0 = 20
-    nk1 = 16
-    nk2 = 40
     ky, kz, kx = torch.meshgrid(
         torch.linspace(-nk1 // 2, nk1 // 2 - 1, nk1),
         torch.linspace(-nk2 // 2, nk2 // 2 - 1, nk2),
@@ -154,12 +153,9 @@ def test_dcf_3d_cart_nonuniform_traj_voronoi():
     torch.testing.assert_close(dcf_full.data[:, 1:-1, 1:-1, 1:-1], dcf_broadcast.data[:, 1:-1, 1:-1, 1:-1])
 
 
-def test_dcf_rpe_traj_voronoi():
+@pytest.mark.parametrize('nkr,nka,nk0', [(10, 6, 20), (10, 1, 20), (10, 6, 1)])
+def test_dcf_rpe_traj_voronoi(nkr, nka, nk0):
     """Voronoi-based dcf calculation for RPE trajectory."""
-    # RPE trajectory
-    nkr = 10
-    nka = 6
-    nk0 = 20
     ktraj = example_traj_rpe(nkr, nka, nk0)
     dcf = DcfData.from_traj_voronoi(ktraj)
     assert dcf.data.shape == (1, nka, nkr, nk0)
