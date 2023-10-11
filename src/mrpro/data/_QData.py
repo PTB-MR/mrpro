@@ -15,46 +15,36 @@
 from __future__ import annotations
 
 import dataclasses
-from pathlib import Path
 
-import pydicom
 import torch
 
-from mrpro.data._IHeader import IHeader
+from mrpro.data import IHeader
+from mrpro.data import KHeader
+from mrpro.data import QHeader
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class QData:
     """MR quantitative data (QData) class."""
-    
-    header: IHeader
+
+    header: QHeader
     data: torch.Tensor
-    
+
     @classmethod
-    def from_kdata(cls):
-        pass
-    
-    @classmethod
-    def from_idata(cls):
-        pass
-    
-    @classmethod
-    def from_ismrmrd(cls, fpath: str | Path) -> QData:
-        data = torch.zeros(1)
-        header = IHeader(None, None, None, None, None)
-        
-        return cls(data=data, header=header)
-    
-    @classmethod
-    def from_nifty(cls, fpath: str | Path) -> QData:
-        data = torch.zeros(1)
-        header = IHeader(None, None, None, None, None)
-        
-        return cls(data=data, header=header)
-    
-    @classmethod
-    def from_dicom(cls, fpath: str | Path) -> QData:
-        data = torch.zeros(1)
-        header = IHeader(None, None, None, None, None)
-        
-        return cls(data=data, header=header)
+    def from_tensor_and_header(cls, data: torch.Tensor, header: KHeader | IHeader | QHeader) -> QData:
+        """Create QData object from a tensor and an arbitrary MRpro header.
+
+        Parameters
+        ----------
+        data  # ToDo: add which dimensions?
+            torch.Tensor containing quantitative image data with dimensions (all_other, coils, z, x, y).
+        kheader
+            MRpro header (KHeader, IHeader or QHeader) containing required meta data for the QHeader.
+        """
+        if isinstance(header, KHeader):
+            qheader = QHeader.from_kheader(header)
+        elif isinstance(header, IHeader):
+            qheader = QHeader.from_iheader(header)
+        elif isinstance(header, QHeader):
+            qheader = header
+        return cls(header=qheader, data=data)
