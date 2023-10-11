@@ -65,7 +65,7 @@ class QHeader:
             Dataset object containing the DICOM file.
         """
 
-        def getItems(name):
+        def getItems(name):  # Todo: move to utils and reuse logic in IHeader
             """Get all items with a given name from a pydicom dataset."""
             # iterall is recursive, so it will find all items with the given name
             return [item.value for item in dicom_dataset.iterall() if item.tag == Tag(name)]
