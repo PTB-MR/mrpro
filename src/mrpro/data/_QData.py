@@ -14,6 +14,8 @@
 
 from __future__ import annotations
 
+import dataclasses
+
 import torch
 
 from mrpro.data import IHeader
@@ -21,8 +23,12 @@ from mrpro.data import KHeader
 from mrpro.data import QHeader
 
 
+@dataclasses.dataclass(init=False, slots=True, frozen=True)
 class QData:
     """MR quantitative data (QData) class."""
+
+    data: torch.Tensor
+    header: QHeader
 
     def __init__(self, data: torch.Tensor, header: KHeader | IHeader | QHeader) -> None:
         """Create QData object from a tensor and an arbitrary MRpro header.
@@ -35,10 +41,11 @@ class QData:
             MRpro header containing required meta data for the QHeader.
         """
         if isinstance(header, KHeader):
-            self.header = QHeader.from_kheader(header)
+            qheader = QHeader.from_kheader(header)
         elif isinstance(header, IHeader):
-            self.header = QHeader.from_iheader(header)
+            qheader = QHeader.from_iheader(header)
         elif isinstance(header, QHeader):
-            self.header = header
+            qheader = header
 
-        self.data = data
+        object.__setattr__(self, 'data', data)
+        object.__setattr__(self, 'header', qheader)
