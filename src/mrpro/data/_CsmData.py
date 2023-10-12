@@ -75,6 +75,7 @@ class CsmData(IData):
         idata: IData,
         smoothing_width: SpatialDimension[int] = SpatialDimension(5, 5, 5),
         niter: int = 3,
+        chunk_size_otherdim: int | None = None,
     ) -> CsmData:
         """Create csm object from image data using iterative Walsh method.
 
@@ -86,9 +87,13 @@ class CsmData(IData):
             Width of smoothing filter.
         niter
             Number of iterations of Walsh method.
+        chunk_size_otherdim:
+            How many elements of the other dimensions should be processed at once.
+            Default is None, which means that all elements are processed at once.
         """
-        # TODO: consider increaseing the chunk_size
-        csm_fun = torch.vmap(lambda img: CsmData._iterative_walsh_csm(img, smoothing_width, niter), chunk_size=1)
+        csm_fun = torch.vmap(
+            lambda img: CsmData._iterative_walsh_csm(img, smoothing_width, niter), chunk_size=chunk_size_otherdim
+        )
         csm_data = csm_fun(idata.data)
 
         return cls(header=idata.header, data=csm_data)
