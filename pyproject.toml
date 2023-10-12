@@ -33,7 +33,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = ["coverage", "codecov", "pre-commit", "pytest", "pytest-cov"]
+test = [
+    "coverage",
+    "codecov",
+    "pre-commit",
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+]
 lint = ["mypy", "flake8", "isort", "pre-commit", "autopep8", "pydocstyle"]
 docs = ["sphinx", "sphinx_rtd_theme"]
 
@@ -44,6 +51,7 @@ docs = ["sphinx", "sphinx_rtd_theme"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = ["error"]
+addopts = "-n auto"
 
 # MyPy section
 [tool.mypy]
