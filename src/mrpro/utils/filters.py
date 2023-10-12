@@ -20,7 +20,9 @@ from einops import repeat
 from mrpro.data import SpatialDimension
 
 
-def spatial_uniform_filter_3d(data: torch.Tensor, filter_width: SpatialDimension[int]) -> torch.Tensor:
+def spatial_uniform_filter_3d(
+    data: torch.Tensor, filter_width: SpatialDimension[int] | tuple[int, int, int]
+) -> torch.Tensor:
     """Spatial smoothing using convolution with box function.
 
     Parameters
@@ -28,11 +30,20 @@ def spatial_uniform_filter_3d(data: torch.Tensor, filter_width: SpatialDimension
     data
         Data to be smoothed in the shape (... z y x)
     filter_width
-        Width of 3D the filter
+        Width of 3D the filter as SpatialDimension(z, y, x) or tuple(z, y, x).
+        The filter width is clipped to the data shape.
     """
 
     # Create a box-shaped filter kernel
-    kernel = torch.ones(1, 1, filter_width.z, filter_width.y, filter_width.x)
+    match filter_width:
+        case SpatialDimension(z, y, x) | (z, y, x):
+            z = min(data.shape[-3], z)
+            y = min(data.shape[-2], y)
+            x = min(data.shape[-1], x)
+            kernel = torch.ones(1, 1, z, y, x)
+        case _:
+            raise ValueError(f'Invalid filter width: {filter_width}')
+
     kernel /= kernel.sum()  # normalize
     kernel = kernel.to(dtype=data.dtype, device=data.device)
 
