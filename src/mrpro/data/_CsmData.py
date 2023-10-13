@@ -19,12 +19,13 @@ import dataclasses
 import torch
 
 from mrpro.data import IData
+from mrpro.data import QData
 from mrpro.data import SpatialDimension
 from mrpro.utils.filters import spatial_uniform_filter_3d
 
 
-@dataclasses.dataclass(slots=True, frozen=True)
-class CsmData(IData):
+@dataclasses.dataclass(init=False, slots=True, frozen=True)
+class CsmData(QData):
     """Coil sensitivity map class."""
 
     @staticmethod
