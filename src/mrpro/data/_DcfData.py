@@ -154,25 +154,27 @@ class DcfData:
         for dim in spatial_dims:
             non_singleton_ks = [ax for ax in ks if ax.shape[dim] != 1]
             if len(non_singleton_ks) == 1:
-                # Found a dimension only one non-singleton axes
-                # We can handle this as a 1D trajectory
+                # Found a dimension with only one non-singleton axes in ks
+                # --> Can handle this as a 1D trajectory
                 dcfs.append(smap(DcfData._dcf_1d, non_singleton_ks.pop(), (dim,)))
             elif len(non_singleton_ks) > 0:
-                # A Full Dimension needing voronoi
+                # More than one of the ks is non-singleton
+                # --> A full dimension needing voronoi
                 ks_needing_voronoi |= set(non_singleton_ks)
             else:
-                # A all 1-dimension, we dont need to do anything
+                # A dimension in which each of ks is singleton
+                # --> Don't need to do anything
                 pass
 
         if ks_needing_voronoi:
-            # Any full dimensions needing voronoi
+            # Handle full dimensions needing voronoi
             dcfs.append(smap(DcfData._dcf_2d3d_voronoi, torch.stack(list(ks_needing_voronoi), -4), 4))
 
         if dcfs:
             # Multiply all dcfs together
             dcf = reduce(torch.mul, dcfs)
         else:
-            # only singleton spatial dimensions
+            # Edgecase: Only singleton spatial dimensions
             dcf = torch.ones(*traj.broadcasted_shape[-3:], 1, 1, 1, device=traj.kx.device)
 
         return cls(data=dcf)
