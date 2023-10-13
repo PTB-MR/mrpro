@@ -14,8 +14,6 @@
 
 from __future__ import annotations
 
-import dataclasses
-
 import torch
 
 from mrpro.data import IData
@@ -24,7 +22,6 @@ from mrpro.data import SpatialDimension
 from mrpro.utils.filters import spatial_uniform_filter_3d
 
 
-@dataclasses.dataclass(init=False, slots=True, frozen=True)
 class CsmData(QData):
     """Coil sensitivity map class."""
 
@@ -66,6 +63,9 @@ class CsmData(QData):
         # nan_to_num does not work for complexfloat, boolean indexing not with vmap.
         csm_data = torch.where(torch.isfinite(csm_data), csm_data, 0.0)
         return csm_data
+
+    def test(self):
+        self.aaaa = 1
 
     @classmethod
     def from_idata_walsh(
