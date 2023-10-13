@@ -15,8 +15,12 @@
 from __future__ import annotations
 
 import dataclasses
+from pathlib import Path
 
+import numpy as np
 import torch
+from einops import rearrange
+from pydicom import dcmread
 
 from mrpro.data import IHeader
 from mrpro.data import KHeader
@@ -49,3 +53,21 @@ class QData:
 
         object.__setattr__(self, 'data', data)
         object.__setattr__(self, 'header', qheader)
+
+    @classmethod
+    def from_single_dicom(cls, filename: str | Path) -> QData:
+        """Read single DICOM file and return QData object.
+
+        Parameters
+        ----------
+        filename:
+            Path to DICOM file.
+        """
+
+        ds = dcmread(filename)
+        # Image data is 2D np.array of Uint16, which cannot directly be converted to tensor
+        qdata = torch.as_tensor(ds.pixel_array.astype(np.complex64))
+        qdata = rearrange(qdata[None, ...], '(other coil z) y x -> other coil z y x', other=1, coil=1, z=1)
+
+        header = QHeader.from_dicom(ds)
+        return cls(data=qdata, header=header)

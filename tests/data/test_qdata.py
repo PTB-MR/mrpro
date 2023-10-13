@@ -12,9 +12,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import torch
 
 from mrpro.data import IHeader
 from mrpro.data import QData
+from tests.data.conftest import dcm_2d
 from tests.data.conftest import random_kheader
 from tests.data.conftest import random_test_data
 
@@ -30,3 +32,11 @@ def test_QData_from_iheader_and_tensor(random_kheader, random_test_data):
     iheader_from_kheader = IHeader.from_kheader(random_kheader)
     qdat = QData(data=random_test_data, header=iheader_from_kheader)
     assert qdat.header.fov == iheader_from_kheader.fov
+
+
+def test_QData_from_dcm_file(dcm_2d):
+    """QData from single dicom file."""
+    qdat = QData.from_single_dicom(dcm_2d.filename)
+    # QData uses complex values but dicom only supports real values
+    im = torch.real(qdat.data[0, 0, 0, ...])
+    torch.testing.assert_close(im, dcm_2d.imref)
