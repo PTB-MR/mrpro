@@ -12,15 +12,26 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import dataclasses
+
 import numpy as np
+import pytest
 
 from mrpro.data import CsmData
 from mrpro.data import IData
 from mrpro.data import SpatialDimension
 from mrpro.phantoms.coils import birdcage_2d
 from tests.data.conftest import random_kheader
+from tests.data.conftest import random_test_data
 from tests.phantoms.test_ellipse_phantom import ph_ellipse
 from tests.utils import rel_image_diff
+
+
+def test_CsmData_is_frozen_dataclass(random_test_data, random_kheader):
+    """CsmData inherits frozen dataclass property from QData."""
+    csm = CsmData(data=random_test_data, header=random_kheader)
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        csm.data = random_test_data
 
 
 def test_CsmData_iterative_Walsh(ph_ellipse, random_kheader):

@@ -64,9 +64,6 @@ class CsmData(QData):
         csm_data = torch.where(torch.isfinite(csm_data), csm_data, 0.0)
         return csm_data
 
-    def test(self):
-        self.aaaa = 1
-
     @classmethod
     def from_idata_walsh(
         cls,
