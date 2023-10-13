@@ -13,3 +13,4 @@ from mrpro.data._IData import IData
 from mrpro.data._DcfData import DcfData
 from mrpro.data._QHeader import QHeader
 from mrpro.data._QData import QData
+from mrpro.data._CsmData import CsmData
