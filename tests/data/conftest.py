@@ -9,7 +9,9 @@ from xsdata.models.datatype import XmlTime
 from mrpro.data import AcqInfo
 from mrpro.data import KHeader
 from mrpro.data.enums import AcqFlags
+from tests.data import Dicom2DTestImage
 from tests.data import RandomGenerator
+from tests.phantoms.test_ellipse_phantom import ph_ellipse
 
 
 def generate_random_encodingcounter_properties(generator: RandomGenerator):
@@ -188,3 +190,11 @@ def random_test_data(request):
     generator = RandomGenerator(seed)
     test_data = generate_random_data(generator, (Nother, Ncoils, Nz, Ny, Nx))
     return test_data
+
+
+@pytest.fixture(scope='session')
+def dcm_2d(ph_ellipse, tmp_path_factory):
+    """Single 2D dicom image."""
+    dcm_filename = tmp_path_factory.mktemp('mrpro') / 'dicom_2d.h5'
+    dcm_idat = Dicom2DTestImage(filename=dcm_filename, phantom=ph_ellipse.phantom)
+    return dcm_idat
