@@ -12,22 +12,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import pytest
 import torch
 
 from mrpro.data import IData
-from tests.data import Dicom2DTestImage
+from tests.data.conftest import dcm_2d
 from tests.data.conftest import random_kheader
 from tests.data.conftest import random_test_data
-from tests.phantoms.test_ellipse_phantom import ph_ellipse
-
-
-@pytest.fixture(scope='session')
-def dcm_2d(ph_ellipse, tmp_path_factory):
-    """Single 2D dicom image."""
-    dcm_filename = tmp_path_factory.mktemp('mrpro') / 'dicom_2d.h5'
-    dcm_idat = Dicom2DTestImage(filename=dcm_filename, phantom=ph_ellipse.phantom)
-    return dcm_idat
 
 
 def test_IData_from_dcm_file(dcm_2d):
