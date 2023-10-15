@@ -27,9 +27,11 @@ from einops import rearrange
 from mrpro.data import AcqInfo
 from mrpro.data import KHeader
 from mrpro.data import KTrajectory
+from mrpro.data import KTrajectoryRawShape
 from mrpro.data import Limits
 from mrpro.data.enums import AcqFlags
 from mrpro.data.traj_calculators import KTrajectoryCalculator
+from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 
 KDIM_SORT_LABELS = (
     'k1',
@@ -53,7 +55,7 @@ class KData:
     def from_file(
         cls,
         filename: str | Path,
-        ktrajectory: KTrajectoryCalculator | KTrajectory,
+        ktrajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
         header_overwrites: dict[str, object] | None = None,
         dataset_idx: int = -1,
     ) -> KData:
@@ -141,12 +143,22 @@ class KData:
                     setattr(current, subfield.name, reshape_acq_data(subcurrent))
 
         # Calculate trajectory and check if it matches the kdata shape
-        if isinstance(ktrajectory, KTrajectoryCalculator):
-            ktraj = ktrajectory(kheader)
-        elif isinstance(ktrajectory, KTrajectory):
-            ktraj = ktrajectory
-        else:
-            raise TypeError(f'ktrajectory must be a KTrajectory or KTrajectoryCalculator, not {type(ktrajectory)}')
+        match ktrajectory:
+            case KTrajectoryIsmrmrd():
+                ktraj = ktrajectory(acquisitions).reshape(sort_idx, num_k2, num_k1)
+            case KTrajectoryCalculator():
+                ktraj_calc = ktrajectory(kheader)
+                if isinstance(ktraj_calc, KTrajectoryRawShape):
+                    ktraj = ktraj_calc.reshape(sort_idx, num_k2, num_k1)
+                else:
+                    ktraj = ktraj_calc
+            case KTrajectory():
+                ktraj = ktrajectory
+            case _:
+                raise TypeError(
+                    'ktrajectory must be KTrajectoryIsmrmrd, KTrajectory or KTrajectoryCalculator,'
+                    f'not {type(ktrajectory)}'
+                )
 
         try:
             shape = ktraj.broadcasted_shape
