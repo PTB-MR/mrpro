@@ -7,8 +7,12 @@ Welcome to MRPro's documentation!
 =================================
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 1
+
+   user_guide
+   examples
+   api
+   contributer_guide
 
 
 
