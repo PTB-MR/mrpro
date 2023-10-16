@@ -1,0 +1,37 @@
+mrpro.data.enums
+================
+
+.. automodule:: mrpro.data.enums
+  
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class_template.rst
+   
+      AcqFlags
+      CalibrationMode
+      InterleavingDimension
+      MultibandCalibration
+      PatientPosition
+      TrajectoryType
+      WaveformInformation
+   
+   
+
+   
+   
+   
+
+
+

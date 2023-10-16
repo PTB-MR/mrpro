@@ -1,0 +1,33 @@
+﻿mrpro.phantoms
+==============
+
+.. automodule:: mrpro.phantoms
+  
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :template: module_template.rst
+   :recursive:
+
+   mrpro.phantoms.coils
+   mrpro.phantoms.phantom_elements
+

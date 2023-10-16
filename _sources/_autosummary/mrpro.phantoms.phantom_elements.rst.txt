@@ -1,0 +1,31 @@
+mrpro.phantoms.phantom\_elements
+================================
+
+.. automodule:: mrpro.phantoms.phantom_elements
+  
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class_template.rst
+   
+      EllipsePars
+   
+   
+
+   
+   
+   
+
+
+

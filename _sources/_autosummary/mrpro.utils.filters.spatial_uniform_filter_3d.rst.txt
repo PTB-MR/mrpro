@@ -1,0 +1,6 @@
+mrpro.utils.filters.spatial\_uniform\_filter\_3d
+================================================
+
+.. currentmodule:: mrpro.utils.filters
+
+.. autofunction:: spatial_uniform_filter_3d

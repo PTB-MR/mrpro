@@ -1,0 +1,27 @@
+mrpro.data.enums.MultibandCalibration
+=====================================
+
+.. currentmodule:: mrpro.data.enums
+
+.. autoclass:: MultibandCalibration
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MultibandCalibration.SEPARABLE2_D
+      ~MultibandCalibration.FULL3_D
+      ~MultibandCalibration.OTHER
+   
+   

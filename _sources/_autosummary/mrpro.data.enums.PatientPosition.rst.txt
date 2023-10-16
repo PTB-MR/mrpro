@@ -1,0 +1,33 @@
+mrpro.data.enums.PatientPosition
+================================
+
+.. currentmodule:: mrpro.data.enums
+
+.. autoclass:: PatientPosition
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PatientPosition.HFP
+      ~PatientPosition.HFS
+      ~PatientPosition.HFDR
+      ~PatientPosition.HFDL
+      ~PatientPosition.FFP
+      ~PatientPosition.FFS
+      ~PatientPosition.FFDR
+      ~PatientPosition.FFDL
+      ~PatientPosition.OTHER
+   
+   

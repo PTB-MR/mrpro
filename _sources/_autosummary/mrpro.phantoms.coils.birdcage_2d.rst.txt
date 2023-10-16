@@ -1,0 +1,6 @@
+mrpro.phantoms.coils.birdcage\_2d
+=================================
+
+.. currentmodule:: mrpro.phantoms.coils
+
+.. autofunction:: birdcage_2d

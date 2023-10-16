@@ -1,0 +1,30 @@
+mrpro.phantoms.coils
+====================
+
+.. automodule:: mrpro.phantoms.coils
+  
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+   
+      birdcage_2d
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

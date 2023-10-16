@@ -1,0 +1,30 @@
+mrpro.data.enums.WaveformInformation
+====================================
+
+.. currentmodule:: mrpro.data.enums
+
+.. autoclass:: WaveformInformation
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~WaveformInformation.ECG
+      ~WaveformInformation.PULSE
+      ~WaveformInformation.RESPIRATORY
+      ~WaveformInformation.TRIGGER
+      ~WaveformInformation.GRADIENTWAVEFORM
+      ~WaveformInformation.OTHER
+   
+   

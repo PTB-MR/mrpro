@@ -1,0 +1,68 @@
+mrpro.data.enums.AcqFlags
+=========================
+
+.. currentmodule:: mrpro.data.enums
+
+.. autoclass:: AcqFlags
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~AcqFlags.ACQ_NO_FLAG
+      ~AcqFlags.ACQ_FIRST_IN_ENCODE_STEP1
+      ~AcqFlags.ACQ_LAST_IN_ENCODE_STEP1
+      ~AcqFlags.ACQ_FIRST_IN_ENCODE_STEP2
+      ~AcqFlags.ACQ_LAST_IN_ENCODE_STEP2
+      ~AcqFlags.ACQ_FIRST_IN_AVERAGE
+      ~AcqFlags.ACQ_LAST_IN_AVERAGE
+      ~AcqFlags.ACQ_FIRST_IN_SLICE
+      ~AcqFlags.ACQ_LAST_IN_SLICE
+      ~AcqFlags.ACQ_FIRST_IN_CONTRAST
+      ~AcqFlags.ACQ_LAST_IN_CONTRAST
+      ~AcqFlags.ACQ_FIRST_IN_PHASE
+      ~AcqFlags.ACQ_LAST_IN_PHASE
+      ~AcqFlags.ACQ_FIRST_IN_REPETITION
+      ~AcqFlags.ACQ_LAST_IN_REPETITION
+      ~AcqFlags.ACQ_FIRST_IN_SET
+      ~AcqFlags.ACQ_LAST_IN_SET
+      ~AcqFlags.ACQ_FIRST_IN_SEGMENT
+      ~AcqFlags.ACQ_LAST_IN_SEGMENT
+      ~AcqFlags.ACQ_IS_NOISE_MEASUREMENT
+      ~AcqFlags.ACQ_IS_PARALLEL_CALIBRATION
+      ~AcqFlags.ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING
+      ~AcqFlags.ACQ_IS_REVERSE
+      ~AcqFlags.ACQ_IS_NAVIGATION_DATA
+      ~AcqFlags.ACQ_IS_PHASECORR_DATA
+      ~AcqFlags.ACQ_LAST_IN_MEASUREMENT
+      ~AcqFlags.ACQ_IS_HPFEEDBACK_DATA
+      ~AcqFlags.ACQ_IS_DUMMYSCAN_DATA
+      ~AcqFlags.ACQ_IS_RTFEEDBACK_DATA
+      ~AcqFlags.ACQ_IS_SURFACECOILCORRECTIONSCAN_DATA
+      ~AcqFlags.ACQ_IS_PHASE_STABILIZATION_REFERENCE
+      ~AcqFlags.ACQ_IS_PHASE_STABILIZATION
+      ~AcqFlags.ACQ_COMPRESSION1
+      ~AcqFlags.ACQ_COMPRESSION2
+      ~AcqFlags.ACQ_COMPRESSION3
+      ~AcqFlags.ACQ_COMPRESSION4
+      ~AcqFlags.ACQ_USER1
+      ~AcqFlags.ACQ_USER2
+      ~AcqFlags.ACQ_USER3
+      ~AcqFlags.ACQ_USER4
+      ~AcqFlags.ACQ_USER5
+      ~AcqFlags.ACQ_USER6
+      ~AcqFlags.ACQ_USER7
+      ~AcqFlags.ACQ_USER8
+   
+   
