@@ -1,0 +1,6 @@
+mrpro.phantoms.coils.repeat
+===========================
+
+.. currentmodule:: mrpro.phantoms.coils
+
+.. autofunction:: repeat

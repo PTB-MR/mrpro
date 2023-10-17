@@ -1,0 +1,37 @@
+mrpro.data.IHeader
+==================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: IHeader
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~IHeader.__init__
+      ~IHeader.from_dicom
+      ~IHeader.from_kheader
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~IHeader.fov
+      ~IHeader.te
+      ~IHeader.ti
+      ~IHeader.fa
+      ~IHeader.tr
+   
+   

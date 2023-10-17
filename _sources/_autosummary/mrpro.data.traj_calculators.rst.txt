@@ -13,6 +13,16 @@ mrpro.data.traj\_calculators
 
    
    
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class_template.rst
+   
+      KTrajectoryCalculator
+      KTrajectoryRpe
+      KTrajectorySunflowerGoldenRpe
+   
    
 
    

@@ -13,6 +13,28 @@
 
    
    
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class_template.rst
+   
+      AcqIdx
+      AcqInfo
+      CsmData
+      DcfData
+      EncodingLimits
+      IData
+      IHeader
+      KData
+      KHeader
+      KTrajectory
+      Limits
+      QData
+      QHeader
+      SpatialDimension
+      TrajectoryDescription
+   
    
 
    

@@ -1,0 +1,35 @@
+mrpro.data.Limits
+=================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: Limits
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Limits.__init__
+      ~Limits.from_ismrmrd
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Limits.min
+      ~Limits.max
+      ~Limits.center
+      ~Limits.length
+   
+   

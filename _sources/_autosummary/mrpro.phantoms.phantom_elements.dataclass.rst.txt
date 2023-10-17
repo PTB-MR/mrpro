@@ -1,0 +1,6 @@
+mrpro.phantoms.phantom\_elements.dataclass
+==========================================
+
+.. currentmodule:: mrpro.phantoms.phantom_elements
+
+.. autofunction:: dataclass

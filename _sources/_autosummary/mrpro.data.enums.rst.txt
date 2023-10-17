@@ -21,11 +21,14 @@ mrpro.data.enums
    
       AcqFlags
       CalibrationMode
+      Enum
+      Flag
       InterleavingDimension
       MultibandCalibration
       PatientPosition
       TrajectoryType
       WaveformInformation
+      auto
    
    
 

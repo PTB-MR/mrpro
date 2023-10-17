@@ -1,0 +1,19 @@
+mrpro.data.enums.Flag
+=====================
+
+.. currentmodule:: mrpro.data.enums
+
+.. autoclass:: Flag
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   
+
+   
+   
+   

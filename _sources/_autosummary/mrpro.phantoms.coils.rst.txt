@@ -15,10 +15,19 @@ mrpro.phantoms.coils
       :toctree:
    
       birdcage_2d
+      repeat
    
    
 
    
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class_template.rst
+   
+      SpatialDimension
    
    
 

@@ -1,0 +1,6 @@
+mrpro.utils.remove\_repeat
+==========================
+
+.. currentmodule:: mrpro.utils
+
+.. autofunction:: remove_repeat

@@ -9,6 +9,13 @@ mrpro.phantoms.phantom\_elements
 
    
    
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+   
+      dataclass
+   
    
 
    

@@ -1,0 +1,32 @@
+mrpro.data.DcfData
+==================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: DcfData
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DcfData.__init__
+      ~DcfData.from_traj_voronoi
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~DcfData.data
+   
+   

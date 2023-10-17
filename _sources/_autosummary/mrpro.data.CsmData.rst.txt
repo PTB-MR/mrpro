@@ -1,0 +1,34 @@
+mrpro.data.CsmData
+==================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: CsmData
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~CsmData.__init__
+      ~CsmData.from_idata_walsh
+      ~CsmData.from_single_dicom
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~CsmData.data
+      ~CsmData.header
+   
+   

@@ -14,11 +14,20 @@ mrpro.utils.filters
    .. autosummary::
       :toctree:
    
+      repeat
       spatial_uniform_filter_3d
    
    
 
    
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class_template.rst
+   
+      SpatialDimension
    
    
 

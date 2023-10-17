@@ -1,0 +1,27 @@
+mrpro.phantoms.EllipsePhantom
+=============================
+
+.. currentmodule:: mrpro.phantoms
+
+.. autoclass:: EllipsePhantom
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~EllipsePhantom.__init__
+      ~EllipsePhantom.image_space
+      ~EllipsePhantom.kspace
+   
+   
+
+   
+   
+   

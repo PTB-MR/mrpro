@@ -1,0 +1,60 @@
+mrpro.data.KHeader
+==================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: KHeader
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~KHeader.__init__
+      ~KHeader.from_ismrmrd
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~KHeader.trajectory
+      ~KHeader.b0
+      ~KHeader.encoding_limits
+      ~KHeader.recon_matrix
+      ~KHeader.recon_fov
+      ~KHeader.encoding_matrix
+      ~KHeader.encoding_fov
+      ~KHeader.num_coils
+      ~KHeader.acq_info
+      ~KHeader.datetime
+      ~KHeader.h1_freq
+      ~KHeader.te
+      ~KHeader.ti
+      ~KHeader.fa
+      ~KHeader.tr
+      ~KHeader.echo_spacing
+      ~KHeader.echo_train_length
+      ~KHeader.seq_type
+      ~KHeader.model
+      ~KHeader.vendor
+      ~KHeader.protocol_name
+      ~KHeader.misc
+      ~KHeader.calib_mode
+      ~KHeader.interleave_dim
+      ~KHeader.traj_type
+      ~KHeader.measurement_id
+      ~KHeader.patient_name
+      ~KHeader.trajectory_description
+      ~KHeader.fa_degree
+   
+   

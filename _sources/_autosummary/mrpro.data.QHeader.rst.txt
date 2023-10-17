@@ -1,0 +1,34 @@
+mrpro.data.QHeader
+==================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: QHeader
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~QHeader.__init__
+      ~QHeader.from_dicom
+      ~QHeader.from_iheader
+      ~QHeader.from_kheader
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~QHeader.fov
+   
+   

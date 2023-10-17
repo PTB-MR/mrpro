@@ -1,0 +1,35 @@
+mrpro.data.SpatialDimension
+===========================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: SpatialDimension
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SpatialDimension.__init__
+      ~SpatialDimension.from_array_xyz
+      ~SpatialDimension.from_xyz
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SpatialDimension.z
+      ~SpatialDimension.y
+      ~SpatialDimension.x
+   
+   

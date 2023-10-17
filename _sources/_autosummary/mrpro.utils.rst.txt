@@ -9,6 +9,15 @@
 
    
    
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+   
+      remove_repeat
+      rgetattr
+      smap
+   
    
 
    

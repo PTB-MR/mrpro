@@ -1,0 +1,36 @@
+mrpro.data.KTrajectory
+======================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: KTrajectory
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~KTrajectory.__init__
+      ~KTrajectory.as_tensor
+      ~KTrajectory.from_tensor
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~KTrajectory.kz
+      ~KTrajectory.ky
+      ~KTrajectory.kx
+      ~KTrajectory.broadcasted_shape
+   
+   

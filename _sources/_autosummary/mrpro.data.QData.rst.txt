@@ -1,0 +1,33 @@
+mrpro.data.QData
+================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: QData
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~QData.__init__
+      ~QData.from_single_dicom
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~QData.data
+      ~QData.header
+   
+   
