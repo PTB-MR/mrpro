@@ -2,7 +2,7 @@ mrpro.phantoms.phantom\_elements
 ================================
 
 .. automodule:: mrpro.phantoms.phantom_elements
-  
+
    
    
    

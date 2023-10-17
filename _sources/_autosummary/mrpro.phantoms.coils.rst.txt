@@ -2,7 +2,7 @@ mrpro.phantoms.coils
 ====================
 
 .. automodule:: mrpro.phantoms.coils
-  
+
    
    
    

@@ -2,7 +2,7 @@ mrpro.data.enums
 ================
 
 .. automodule:: mrpro.data.enums
-  
+
    
    
    

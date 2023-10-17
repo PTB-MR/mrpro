@@ -2,7 +2,7 @@ mrpro.utils.filters
 ===================
 
 .. automodule:: mrpro.utils.filters
-  
+
    
    
    

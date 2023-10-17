@@ -2,7 +2,7 @@ mrpro.data.traj\_calculators
 ============================
 
 .. automodule:: mrpro.data.traj_calculators
-  
+
    
    
    
