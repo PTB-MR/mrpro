@@ -3,10 +3,10 @@ name: Sphinx Docs
 on:
   push:
     branches:
-      - documentation
+      - main
   pull_request:
     branches:
-      - documentation
+      - main
 
 permissions:
     contents: write
