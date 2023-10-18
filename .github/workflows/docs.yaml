@@ -37,3 +37,10 @@ jobs:
         publish_branch: github-pages
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./docs/build/html
+      if: github.event_name != 'pull_request'
+
+    - name: Save Documentation
+      uses: actions/upload-artifact@v3
+      with:
+        name: Documentation
+        path: docs/_build/html/
