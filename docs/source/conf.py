@@ -11,19 +11,18 @@
 
 import os
 import sys
+from sphinx_pyproject import SphinxConfig
 
+config = SphinxConfig("../../pyproject.toml", globalns=globals())
 sys.path.insert(0, os.path.abspath('../../src'))  # Source code dir relative to this file
-
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'MRPro'
+project = name
 copyright = '2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin'
-author = 'Christoph Kolbitsch, Patrick Schuenke, Felix Zimmermann, David Schote'
-release = '0.0.1'
-version = '0.0.1'
-
+author = authors
+version = version
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -47,13 +46,13 @@ source_suffix = {'.rst': 'restructuredtext', '.txt': 'restructuredtext', '.md': 
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'pydata_sphinx_theme'
-html_title = 'MRPro'
+html_title = name
 html_show_sphinx = False
 html_static_path = ['_static']
 html_css_files = ['custom.css']
 html_sidebars = {'**': ['search-field', 'sidebar-nav-bs']}
 html_theme_options = {
-    'logo': {'text': 'MRPro'},
+    'logo': {'text': name},
     'pygment_light_style': 'default',
     'pygment_dark_style': 'github-dark',
     'show_toc_level': 3,

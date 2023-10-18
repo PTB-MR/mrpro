@@ -42,7 +42,7 @@ test = [
     "pytest-xdist",
 ]
 lint = ["mypy", "flake8", "isort", "pre-commit", "autopep8", "pydocstyle"]
-docs = ["sphinx", "pydata-sphinx-theme"]
+docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject"]
 
 [project.urls]
 "repository" = "https://github.com/PTB-MR/mrpro"
