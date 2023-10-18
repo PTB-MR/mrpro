@@ -36,7 +36,7 @@ jobs:
       - name: Run PyTest
 
         run: |
-          pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
+          pytest -n 4 --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
 
       - name: Pytest coverage comment
         id: coverageComment

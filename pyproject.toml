@@ -51,7 +51,7 @@ docs = ["sphinx", "sphinx_rtd_theme"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = ["error"]
-addopts = "-n auto"
+# addopts = "-n auto" # TODO: debug vscode missing tests if enabled
 
 # MyPy section
 [tool.mypy]
