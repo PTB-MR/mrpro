@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath('../../src'))  # Source code dir relative to 
 
 project = name
 copyright = '2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin'
-author = authors
+author = author
 version = version
 
 # -- General configuration ---------------------------------------------------
