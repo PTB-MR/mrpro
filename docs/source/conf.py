@@ -21,8 +21,8 @@ sys.path.insert(0, os.path.abspath('../../src'))  # Source code dir relative to 
 project = 'MRPro'
 copyright = '2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin'
 author = 'Christoph Kolbitsch, Patrick Schuenke, Felix Zimmermann, David Schote'
-release = '0.0.1'  # TODO: import this from package
-version = '0.0.1'  # TODO: import this from package
+release = '0.0.1'
+version = '0.0.1'
 
 
 # -- General configuration ---------------------------------------------------
@@ -48,7 +48,6 @@ source_suffix = {'.rst': 'restructuredtext', '.txt': 'restructuredtext', '.md': 
 
 html_theme = 'pydata_sphinx_theme'
 html_title = 'MRPro'
-html_logo = '_static/img/logo.jpg'
 html_show_sphinx = False
 html_static_path = ['_static']
 html_css_files = ['custom.css']
