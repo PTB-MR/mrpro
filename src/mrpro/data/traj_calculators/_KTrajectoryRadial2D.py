@@ -6,8 +6,23 @@ from mrpro.data.traj_calculators import KTrajectoryCalculator
 
 import numpy as np
 
+import torch
+
 # %%
 class KTrajectoryRadial2D(KTrajectoryCalculator):
+    """Radial 2D trajectory.
+
+    =======================================================================================================================================================================================================================
+    TO DO:
+    Frequency encoding along kx is carried out in a standard Cartesian way. The phase encoding points along ky are positioned along radial lines. More details can be found in: https://doi.org/10.1002/mrm.22102 and
+    https://doi.org/10.1118/1.4890095 (open access).
+    =======================================================================================================================================================================================================================
+
+    Parameters
+    ----------
+    angle
+        angle in rad between two radial phase encoding lines
+    """
     
     def __init__(
         self,
@@ -15,67 +30,94 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
     ) -> None:
         super().__init__()
         self.angle: float = angle
-    
-    def __call__(self, header: KHeader) -> KTrajectory:
-        """Calculate dummy trajectory for given KHeader."""
         
+    def _kfreq(self, kheader: KHeader):
+        """Calculate the trajectory along one readout (k0 dimension).
+
+        Parameters
+        ----------
+        kheader
+            MR raw data header (KHeader) containing required meta data
+
+        Returns
+        -------
+            Trajectory along ONE readout
+
+        Raises
+        ------
+        ValueError
+            Number of samples have to be the same for each readout
+        ValueError
+            Center sample has to be the same for each readout
+        """
         
-        num_samples = header.acq_info.number_of_samples
+        num_samples = kheader.acq_info.number_of_samples
+        center_sample = kheader.acq_info.center_sample
         
-        if not (torch.all(num_samples == num_samples[0])):
-            raise ValueError("Different number of readout sample points are not supported.")
-        
-        # num_spokes = header.encoding_limits.k1.max - header.encoding_limits.k1.min
-        
-        # center_sample = header.acq_info.center_sample
+        if len(torch.unique(num_samples)) > 1:
+            raise ValueError('Radial 2D trajectory can only be calculated if each acquisition has the same number of samples')
+        if len(torch.unique(center_sample)) > 1:
+            raise ValueError('Radial 2D trajectory can only be calculated if each acquisition has the same center sample')
         
         # Calculate points along readout
-
-        # k0 = torch.linspace(0, nk0 - 1, nk0, dtype=torch.float32) - center_sample[0, 0, 0]
-        # k0 *= 2 * torch.pi / nk0
-
-        
-        # kx = torch.zeros(1, 1, 1, header.encoding_limits.k0.length)
-        # ky = kz = torch.zeros(1, 1, 1, 1)
-        
-        # n_spokes, n_readout = self._get_shape(header)[-2], self._get_shape(header)[-1]
-
-        # # length of each spoke;
-        # spoke_length = n_readout
-
-        # # golden angle radial increment
-        # if self.golden_angle is True:
-        #     del_theta = np.deg2rad(180 / ((1 + np.sqrt(5)) / 2))
-
-        # # create radial coordinates
-        # ktheta = torch.arange(0, del_theta*n_spokes, del_theta)
-        # kradius = torch.linspace(-np.pi, np.pi, spoke_length)  # format of trajectories kbNUFFT package expects to be
-
-        # # construct transformation matrices
-        # ktraj = torch.zeros(self._get_shape(header))
-        # ktraj_init = torch.stack((kradius, torch.zeros(n_readout), torch.zeros(n_readout)))
-        # for i in range(n_spokes):
-        #     theta = ktheta[i]
-        #     rot_mat = torch.tensor([[torch.cos(theta), -torch.sin(theta), 0],
-        #                             [torch.sin(theta), torch.cos(theta), 0],
-        #                             [0, 0, 1]])
-        #     ktraj[..., i, :] = torch.matmul(rot_mat, ktraj_init).unsqueeze(1).unsqueeze(0)
-
-        # # skip if all optional trajectory information are missing else do something
-        # if torch.all(header.acq_info.trajectory_dimensions == 0):
-        #     pass
-        # else:
-        #     pass  # do something: replace the calculated trajectory information with the already present one
-
-        # return ktraj
-        
-        
-        
-        return KTrajectory(kz, ky, kx)
+        nk0 = int(num_samples[0, 0, 0])
+        k0 = torch.linspace(0, nk0 - 1, nk0, dtype=torch.float32) - center_sample[0, 0, 0]
+        k0 *= 2 * torch.pi / nk0
+        return k0
     
-# %%
+    def _kang(self, kheader):
+        """Calculate the angles of the encoding lines.
 
-test = KTrajectoryRadial2D()
+        Parameters
+        ----------
+        kheader
+            MR raw data header (KHeader) containing required meta data
 
-out = test()
-# %%
+        Returns
+        -------
+            Angles of read-out encoding lines
+        """
+        return kheader.acq_info.idx.k1 * self.angle
+    
+    def _krad(self, kheader):
+        """Calculate the k-space locations along the read-out encoding lines.
+
+        Parameters
+        ----------
+        kheader
+            MR raw data header (KHeader) containing required meta data
+
+        Returns
+        -------
+            k-space locations along the read out lines
+        """
+                
+        krad = self._kfreq(kheader)
+        
+        return krad
+    
+    def __call__(self, kheader: KHeader) -> KTrajectory:
+        """Calculate radial 2D trajectory for given KHeader.
+
+        Parameters
+        ----------
+        kheader
+           MR raw data header (KHeader) containing required meta data
+
+        Returns
+        -------
+            radial 2D trajectory for given KHeader
+        """
+
+        # K-space locations along phase encoding lines
+        krad = self._krad(kheader)
+        
+        # Angles of phase encoding lines
+        kang = self._kang(kheader) 
+        
+        # K-space cartesian coordinates
+        kx = krad[None, None, None] * torch.cos(kang)[..., None]
+        ky = krad[None, None, None] * torch.sin(kang)[..., None]
+        kz = torch.zeros(kx.shape)
+               
+        return KTrajectory(kz, ky, kx)
