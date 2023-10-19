@@ -18,12 +18,38 @@ import torch
 
 from mrpro.data.traj_calculators import KTrajectoryRpe
 from mrpro.data.traj_calculators import KTrajectorySunflowerGoldenRpe
+from mrpro.data.traj_calculators import KTrajectoryRadial2D
 from tests.data.conftest import random_kheader
 
 
 @pytest.fixture(scope='function')
 def valid_rpe_kheader(monkeypatch, random_kheader):
     """KHeader with all necessary parameters for RPE trajectories."""
+    # K-space dimensions
+    nk0 = 200
+    nk1 = 20
+    nk2 = 10
+
+    # List of k1 and k2 indices in the shape (other, k2, k1)
+    k1 = torch.linspace(0, nk1 - 1, nk1, dtype=torch.int32)
+    k2 = torch.linspace(0, nk2 - 1, nk2, dtype=torch.int32)
+    idx_k1, idx_k2 = torch.meshgrid(k1, k2, indexing='xy')
+    idx_k1 = torch.reshape(idx_k1, (1, nk2, nk1))
+    idx_k2 = torch.reshape(idx_k2, (1, nk2, nk1))
+
+    # Set parameters for RPE trajectory
+    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + nk0)
+    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + nk0 // 2)
+    monkeypatch.setattr(random_kheader.acq_info.idx, 'k1', idx_k1)
+    monkeypatch.setattr(random_kheader.acq_info.idx, 'k2', idx_k2)
+    monkeypatch.setattr(random_kheader.encoding_limits.k1, 'center', int(nk1 // 2))
+    monkeypatch.setattr(random_kheader.encoding_limits.k1, 'max', int(nk1 - 1))
+    return random_kheader
+
+
+@pytest.fixture(scope='function')
+def valid_rad2d_kheader(monkeypatch, random_kheader):
+    """KHeader with all necessary parameters for radial 2D trajectories."""
     # K-space dimensions
     nk0 = 200
     nk1 = 20
@@ -95,3 +121,6 @@ def test_KTrajectorySunflowerGoldenRpe(valid_rpe_kheader):
     ktrajectory = KTrajectorySunflowerGoldenRpe(rad_us_factor=2)
     ktraj = ktrajectory(valid_rpe_kheader)
     assert ktraj.broadcasted_shape == np.broadcast_shapes(*rpe_traj_shape(valid_rpe_kheader))
+
+
+def test_KTrajectoyRadial2D():
