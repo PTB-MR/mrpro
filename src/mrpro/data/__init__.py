@@ -4,6 +4,7 @@ from mrpro.data._TrajectoryDescription import TrajectoryDescription
 from mrpro.data._AcqInfo import AcqIdx
 from mrpro.data._AcqInfo import AcqInfo
 from mrpro.data._KTrajectory import KTrajectory
+from mrpro.data._KTrajectoryRawShape import KTrajectoryRawShape
 from mrpro.data._EncodingLimits import EncodingLimits
 from mrpro.data._EncodingLimits import Limits
 from mrpro.data._KHeader import KHeader
