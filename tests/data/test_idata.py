@@ -15,9 +15,9 @@
 import torch
 
 from mrpro.data import IData
-from tests.data.conftest import dcm_2d
-from tests.data.conftest import random_kheader
-from tests.data.conftest import random_test_data
+from tests.conftest import dcm_2d
+from tests.conftest import random_kheader
+from tests.conftest import random_test_data
 
 
 def test_IData_from_dcm_file(dcm_2d):
