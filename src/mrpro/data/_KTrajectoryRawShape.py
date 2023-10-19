@@ -64,5 +64,4 @@ class KTrajectoryRawShape:
         kz = rearrange(self.kz[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=num_k1, k2=num_k2)
         ky = rearrange(self.ky[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=num_k1, k2=num_k2)
         kx = rearrange(self.kx[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=num_k1, k2=num_k2)
-
         return KTrajectory(kz, ky, kx, repeat_detection_tolerance)

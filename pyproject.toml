@@ -32,6 +32,7 @@ dependencies = [
     "ismrmrd",
     "einops",
     "pydicom",
+    "pypulseq@git+https://github.com/imr-framework/pypulseq",
 ]
 
 [project.optional-dependencies]

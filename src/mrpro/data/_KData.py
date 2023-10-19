@@ -29,6 +29,7 @@ from mrpro.data import KHeader
 from mrpro.data import KTrajectory
 from mrpro.data import KTrajectoryRawShape
 from mrpro.data import Limits
+from mrpro.data._KTrajectoryRawShape import KTrajectoryRawShape
 from mrpro.data.enums import AcqFlags
 from mrpro.data.traj_calculators import KTrajectoryCalculator
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
@@ -149,7 +150,7 @@ class KData:
             case KTrajectoryCalculator():
                 ktraj_calc = ktrajectory(kheader)
                 if isinstance(ktraj_calc, KTrajectoryRawShape):
-                    ktraj = ktraj_calc.reshape(sort_idx, num_k2, num_k1)
+                    ktraj = ktraj_calc.reshape(sort_idx, num_k2, num_k1, repeat_detection_tolerance=None)
                 else:
                     ktraj = ktraj_calc
             case KTrajectory():

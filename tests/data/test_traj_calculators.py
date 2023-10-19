@@ -19,11 +19,14 @@ import torch
 from mrpro.data import KData
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.data.traj_calculators import KTrajectoryRadial2D
+from mrpro.data import KData
 from mrpro.data.traj_calculators import KTrajectoryRpe
 from mrpro.data.traj_calculators import KTrajectorySunflowerGoldenRpe
 from tests.conftest import random_kheader
 from tests.data import IsmrmrdRawTestData
 from tests.phantoms.test_ellipse_phantom import ph_ellipse
+from mrpro.data.traj_calculators._KTrajectorySeq import KTrajectorySeq
+from tests.data._PulseqRadialTestSeq import PulseqRadialTestSeq
 
 
 @pytest.fixture(scope='function')
@@ -61,6 +64,7 @@ def test_KTrajectoryRadial2D_golden(valid_rad2d_kheader):
     assert ktraj.kx.shape == valid_shape[2]
     assert ktraj.ky.shape == valid_shape[1]
     assert ktraj.kz.shape == valid_shape[0]
+from tests.data.test_kdata import ismrmrd_cart
 
 
 @pytest.fixture(scope='function')
@@ -70,6 +74,31 @@ def valid_rpe_kheader(monkeypatch, random_kheader):
     nk0 = 200
     nk1 = 20
     nk2 = 10
+
+    # List of k1 and k2 indices in the shape (other, k2, k1)
+    k1 = torch.linspace(0, nk1 - 1, nk1, dtype=torch.int32)
+    k2 = torch.linspace(0, nk2 - 1, nk2, dtype=torch.int32)
+    idx_k1, idx_k2 = torch.meshgrid(k1, k2, indexing='xy')
+    idx_k1 = torch.reshape(idx_k1, (1, nk2, nk1))
+    idx_k2 = torch.reshape(idx_k2, (1, nk2, nk1))
+
+    # Set parameters for RPE trajectory
+    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + nk0)
+    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + nk0 // 2)
+    monkeypatch.setattr(random_kheader.acq_info.idx, 'k1', idx_k1)
+    monkeypatch.setattr(random_kheader.acq_info.idx, 'k2', idx_k2)
+    monkeypatch.setattr(random_kheader.encoding_limits.k1, 'center', int(nk1 // 2))
+    monkeypatch.setattr(random_kheader.encoding_limits.k1, 'max', int(nk1 - 1))
+    return random_kheader
+
+
+@pytest.fixture(scope='function')
+def valid_radial_kheader(monkeypatch, random_kheader):
+    """KHeader with all necessary parameters for radial trajectories."""
+    # K-space dimensions
+    nk0 = 256
+    nk1 = 10
+    nk2 = 1
 
     # List of k1 and k2 indices in the shape (other, k2, k1)
     k1 = torch.linspace(0, nk1 - 1, nk1, dtype=torch.int32)
@@ -140,6 +169,7 @@ def test_KTrajectorySunflowerGoldenRpe(valid_rpe_kheader):
 
 
 @pytest.fixture(scope='session')
+<<<<<<< HEAD
 def ismrmrd_rad(ph_ellipse, tmp_path_factory):
     """Data set with uniform radial k-space sampling."""
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_rad.h5'
@@ -166,3 +196,26 @@ def test_KTrajectoryIsmrmrdRadial(ismrmrd_rad):
     ktraj_read = k.traj.as_tensor()
 
     torch.testing.assert_close(ktraj_calc, ktraj_read)
+=======
+def pulseqtestdata(tmp_path_factory):
+    seq_filename = tmp_path_factory.mktemp('mrpro') / 'radial.seq'
+    seq = PulseqRadialTestSeq(str(seq_filename), Nx=256, Nspokes=10)
+    return seq
+
+
+def test_KTrajectoryPulseq_validseq_random_header(pulseqtestdata, valid_radial_kheader):
+    """Test pulseq File reader with valid seq File."""
+    # TODO: Test with valid header
+    # TODO: Test with invalid seq file
+
+    ktrajectory = KTrajectorySeq(path=pulseqtestdata.seq_filename)
+    traj = ktrajectory(kheader=valid_radial_kheader)
+
+    kx_test = pulseqtestdata.traj_analytical.kx.squeeze(0).squeeze(0)  # .to(torch.float64)
+    kx_test = kx_test / torch.max(torch.abs(kx_test)) * torch.pi
+    # traj = traj.reshape()
+
+    # ktrajectory = KTrajectorySeq(pulseqtestdata.seq_filename)
+    # traj = ktrajectory(random_kheader)
+    torch.testing.assert_close(traj.kx.to(torch.float32), kx_test)
+>>>>>>> c7eb13b (added traj)
