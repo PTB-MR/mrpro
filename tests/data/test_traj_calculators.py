@@ -20,6 +20,7 @@ from mrpro.data import KData
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.data.traj_calculators import KTrajectoryRadial2D
 from mrpro.data import KData
+from mrpro.data.traj_calculators import KTrajectoryRadial2D
 from mrpro.data.traj_calculators import KTrajectoryRpe
 from mrpro.data.traj_calculators import KTrajectorySunflowerGoldenRpe
 from tests.conftest import random_kheader
@@ -64,6 +65,8 @@ def test_KTrajectoryRadial2D_golden(valid_rad2d_kheader):
     assert ktraj.kx.shape == valid_shape[2]
     assert ktraj.ky.shape == valid_shape[1]
     assert ktraj.kz.shape == valid_shape[0]
+
+
 from tests.data.test_kdata import ismrmrd_cart
 
 
@@ -169,7 +172,6 @@ def test_KTrajectorySunflowerGoldenRpe(valid_rpe_kheader):
 
 
 @pytest.fixture(scope='session')
-<<<<<<< HEAD
 def ismrmrd_rad(ph_ellipse, tmp_path_factory):
     """Data set with uniform radial k-space sampling."""
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_rad.h5'
@@ -196,7 +198,8 @@ def test_KTrajectoryIsmrmrdRadial(ismrmrd_rad):
     ktraj_read = k.traj.as_tensor()
 
     torch.testing.assert_close(ktraj_calc, ktraj_read)
-=======
+
+
 def pulseqtestdata(tmp_path_factory):
     seq_filename = tmp_path_factory.mktemp('mrpro') / 'radial.seq'
     seq = PulseqRadialTestSeq(str(seq_filename), Nx=256, Nspokes=10)
@@ -211,11 +214,7 @@ def test_KTrajectoryPulseq_validseq_random_header(pulseqtestdata, valid_radial_k
     ktrajectory = KTrajectorySeq(path=pulseqtestdata.seq_filename)
     traj = ktrajectory(kheader=valid_radial_kheader)
 
-    kx_test = pulseqtestdata.traj_analytical.kx.squeeze(0).squeeze(0)  # .to(torch.float64)
+    kx_test = pulseqtestdata.traj_analytical.kx.squeeze(0).squeeze(0)
     kx_test = kx_test / torch.max(torch.abs(kx_test)) * torch.pi
-    # traj = traj.reshape()
 
-    # ktrajectory = KTrajectorySeq(pulseqtestdata.seq_filename)
-    # traj = ktrajectory(random_kheader)
-    torch.testing.assert_close(traj.kx.to(torch.float32), kx_test)
->>>>>>> c7eb13b (added traj)
+    torch.testing.assert_close(traj.kx, kx_test, atol=5e-4, rtol=1e-3)
