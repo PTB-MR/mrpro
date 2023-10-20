@@ -18,16 +18,14 @@ from dataclasses import dataclass
 
 import numpy as np
 import torch
+from einops import rearrange
 
 from mrpro.data import KTrajectory
-from mrpro.utils import remove_repeat
-
-from einops import rearrange
 
 
 @dataclass(slots=True, init=False)
 class KTrajectoryRawShape:
-    """K-space trajectory in the shape of the original raw data ((other*k2*k1),k0).
+    """K-space trajectory in the shape of ((other*k2*k1),k0).
 
     Order of directions is always kz, ky, kx
     Shape of each of kx,ky,kz is ((other,k2,k1),k0) this means that e.g. slices, averages... have not yet been
@@ -39,9 +37,8 @@ class KTrajectoryRawShape:
     ky: torch.Tensor  # ((other,k2,k1),k0) #phase encoding direction, k1 if Cartesian
     kx: torch.Tensor  # ((other,k2,k1),k0) #frequency encoding direction, k0 if Cartesian
 
-    def __init__(
-        self, kz: torch.Tensor, ky: torch.Tensor, kx: torch.Tensor):
-        """Dataclass for the k-Space trajectory in the shape of the data in the raw data file.
+    def __init__(self, kz: torch.Tensor, ky: torch.Tensor, kx: torch.Tensor):
+        """Dataclass for trajectory shaped like the data in the raw data file.
 
         Parameters
         ----------
@@ -52,15 +49,17 @@ class KTrajectoryRawShape:
         self.ky = ky
         self.kx = kx
 
-
-    def reshape(self, sort_idx: np.ndarray, num_k2: int, num_k1: int, repeat_detection_tolerance: float | None = 1e-8) -> KTrajectory:
-        """Resort and reshape the raw trajectory to the shape and order of KTrajectory.
+    def reshape(
+        self, sort_idx: np.ndarray, num_k2: int, num_k1: int, repeat_detection_tolerance: float | None = 1e-8
+    ) -> KTrajectory:
+        """Resort and reshape the raw trajectory to KTrajectory.
 
         Parameters
         ----------
         sort_idx
-            Index which defines how combined dimension (other k2 k1) is separated into three separate dimensions.
-            This information needs to be provided from kheader.acq_info.
+            Index which defines how combined dimension (other k2 k1) needs to be sorted such that it can be separated
+            into three separate dimensions using simple reshape operation. This information needs to be provided from
+            kheader.acq_info.
         num_k2
             Number of k2 points.
         num_k1
@@ -74,9 +73,8 @@ class KTrajectoryRawShape:
         """
 
         # Resort and reshape
-        kz = rearrange(self.kz[sort_idx,...], '(other k2 k1) k0 -> other k2 k1 k0', k1=num_k1, k2=num_k2)
-        ky = rearrange(self.ky[sort_idx,...], '(other k2 k1) k0 -> other k2 k1 k0', k1=num_k1, k2=num_k2)
-        kx = rearrange(self.kx[sort_idx,...], '(other k2 k1) k0 -> other k2 k1 k0', k1=num_k1, k2=num_k2)
+        kz = rearrange(self.kz[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=num_k1, k2=num_k2)
+        ky = rearrange(self.ky[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=num_k1, k2=num_k2)
+        kx = rearrange(self.kx[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=num_k1, k2=num_k2)
 
         return KTrajectory(kz, ky, kx, repeat_detection_tolerance)
-
