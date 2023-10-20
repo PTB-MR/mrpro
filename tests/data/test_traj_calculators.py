@@ -46,7 +46,7 @@ def radial2D_traj_shape(valid_rad2d_kheader):
     nk1 = valid_rad2d_kheader.acq_info.idx.k1.shape[2]
     nk2 = 1
     nother = 1
-    return (torch.Size([nother, nk2, nk1, nk0]), torch.Size([nother, nk2, nk1, nk0]), torch.Size([nother, 1, 1, 1]))
+    return (torch.Size([nother, 1, 1, 1]), torch.Size([nother, nk2, nk1, nk0]), torch.Size([nother, nk2, nk1, nk0]))
 
 
 def test_KTrajectoryRadial2D_golden(valid_rad2d_kheader):
@@ -54,9 +54,9 @@ def test_KTrajectoryRadial2D_golden(valid_rad2d_kheader):
     ktrajectory = KTrajectoryRadial2D(angle=torch.pi * 0.618034)
     ktraj = ktrajectory(valid_rad2d_kheader)
     valid_shape = radial2D_traj_shape(valid_rad2d_kheader)
-    assert ktraj.kx.shape == valid_shape[0]
+    assert ktraj.kx.shape == valid_shape[2]
     assert ktraj.ky.shape == valid_shape[1]
-    assert ktraj.kz.shape == valid_shape[2]
+    assert ktraj.kz.shape == valid_shape[0]
 
 
 @pytest.fixture(scope='function')

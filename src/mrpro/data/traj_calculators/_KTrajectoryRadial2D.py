@@ -12,14 +12,6 @@ from mrpro.data.traj_calculators import KTrajectoryCalculator
 class KTrajectoryRadial2D(KTrajectoryCalculator):
     """Radial 2D trajectory.
 
-    ===========================================================================
-    TO DO:
-    Frequency encoding along kx is carried out in a standard Cartesian way.
-    The phase encoding points along ky are positioned along radial lines.
-    More details can be found in: https://doi.org/10.1002/mrm.22102 and
-    https://doi.org/10.1118/1.4890095 (open access).
-    ===========================================================================
-
     Parameters
     ----------
     angle
