@@ -53,7 +53,7 @@ class KTrajectoryRawShape:
         self.kx = kx
 
 
-    def reshape(self, sort_idx: torch.Tensor, num_k2: int, num_k1: int) -> KTrajectory:
+    def reshape(self, sort_idx: np.ndarray, num_k2: int, num_k1: int, repeat_detection_tolerance: float | None = 1e-8) -> KTrajectory:
         """Resort and reshape the raw trajectory to the shape and order of KTrajectory.
 
         Parameters
@@ -65,10 +65,12 @@ class KTrajectoryRawShape:
             Number of k2 points.
         num_k1
             Number of k1 points.
+        repeat_detection_tolerance:
+            Tolerance for repeat detection which is passed on to create KTrajectory. Set to None to disable.
 
         Returns
         -------
-            Ktrajectory with kx, ky and kz each in the shape (other k2 k1 k0).
+            KTrajectory with kx, ky and kz each in the shape (other k2 k1 k0).
         """
 
         # Resort and reshape
@@ -76,5 +78,5 @@ class KTrajectoryRawShape:
         ky = rearrange(self.ky[sort_idx,...], '(other k2 k1) k0 -> other k2 k1 k0', k1=num_k1, k2=num_k2)
         kx = rearrange(self.kx[sort_idx,...], '(other k2 k1) k0 -> other k2 k1 k0', k1=num_k1, k2=num_k2)
 
-        return KTrajectory(kz, ky, kx)
+        return KTrajectory(kz, ky, kx, repeat_detection_tolerance)
 
