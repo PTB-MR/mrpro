@@ -1,5 +1,4 @@
 # Imports
-import numpy as np
 import torch
 
 from mrpro.data import KHeader
@@ -13,12 +12,12 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
     Parameters
     ----------
     angle
-        angle in rad between two radial phase encoding lines
+        angle in rad between two radial lines
     """
 
     def __init__(
         self,
-        angle: float = np.deg2rad(180 / ((1 + np.sqrt(5)) / 2)),
+        angle: float = torch.pi * 0.618034,
     ) -> None:
         super().__init__()
         self.angle: float = angle
@@ -74,10 +73,10 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
             radial 2D trajectory for given KHeader
         """
 
-        # K-space locations along phase encoding lines
+        # K-space locations along readout lines
         krad = self._krad(kheader)
 
-        # Angles of phase encoding lines
+        # Angles of readout lines
         kang = kheader.acq_info.idx.k1 * self.angle
 
         # K-space cartesian coordinates

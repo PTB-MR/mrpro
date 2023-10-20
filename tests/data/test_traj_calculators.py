@@ -30,9 +30,8 @@ def valid_rad2d_kheader(monkeypatch, random_kheader):
 
     # List of k1 indices in the shape
     idx_k1 = torch.arange(nk1, dtype=torch.int32)[None, None, ...]
-    # idx_k1 = k1[..., None].repeat(1, nk0)[None, ...]
 
-    # Set parameters for Radial 2D trajectory
+    # Set parameters for radial 2D trajectory
     monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + nk0)
     monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + nk0 // 2)
     monkeypatch.setattr(random_kheader.acq_info.idx, 'k1', idx_k1)
