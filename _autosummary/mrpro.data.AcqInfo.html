@@ -517,8 +517,8 @@ document.write(`
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">measurement_uid</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">number_of_samples</span></code></p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.AcqInfo.number_of_samples" title="mrpro.data.AcqInfo.number_of_samples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">number_of_samples</span></code></a></p></td>
+<td><p>Number of readout sample points per readout (readouts may have different number of sample points).</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">patient_table_position</span></code></p></td>
 <td><p></p></td>
@@ -567,6 +567,13 @@ document.write(`
 <dd class="field-odd"><p><strong>acquisitions</strong> – list of ismrmrd acquisistions to read from. Needs at least one acquisition.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.number_of_samples">
+<span class="sig-name descname"><span class="pre">number_of_samples</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#mrpro.data.AcqInfo.number_of_samples" title="Link to this definition">#</a></dt>
+<dd><p>Number of readout sample points per readout (readouts may have different
+number of sample points).</p>
 </dd></dl>
 
 </dd></dl>
@@ -619,6 +626,7 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.AcqInfo"><code class="docutils literal notranslate"><span class="pre">AcqInfo</span></code></a><ul class="visible nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.AcqInfo.__init__"><code class="docutils literal notranslate"><span class="pre">AcqInfo.__init__()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.AcqInfo.from_ismrmrd_acquisitions"><code class="docutils literal notranslate"><span class="pre">AcqInfo.from_ismrmrd_acquisitions()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.AcqInfo.number_of_samples"><code class="docutils literal notranslate"><span class="pre">AcqInfo.number_of_samples</span></code></a></li>
 </ul>
 </li>
 </ul>

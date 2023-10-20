@@ -1,0 +1,25 @@
+mrpro.data.traj\_calculators.KTrajectoryRadial2D
+================================================
+
+.. currentmodule:: mrpro.data.traj_calculators
+
+.. autoclass:: KTrajectoryRadial2D
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~KTrajectoryRadial2D.__init__
+   
+   
+
+   
+   
+   
