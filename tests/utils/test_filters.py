@@ -12,17 +12,37 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import pytest
 import torch
 
 from mrpro.data import SpatialDimension
 from mrpro.utils.filters import spatial_uniform_filter_3d
 
 
-def test_spatial_uniform_filter_3d():
-    """Test spatial_uniform_filter_3d."""
+@pytest.fixture
+def data():
+    """Create a simple 3D tensor with a single voxel set to 1.0."""
     data = torch.zeros(1, 1, 5, 5, 5)
     data[..., 2, 2, 2] = 1.0
+    return data
 
-    # test with SpatialDimension
+
+def test_spatial_uniform_filter_3d(data):
+    """Test spatial_uniform_filter_3d with SpatialDimension."""
+
     res = spatial_uniform_filter_3d(data, SpatialDimension(3, 3, 3))
     assert torch.sum(res) == torch.sum(data)
+
+
+def test_spatial_uniform_filter_3d_tuple(data):
+    """Test spatial_uniform_filter_3d with tuple."""
+
+    res = spatial_uniform_filter_3d(data, (3, 3, 3))
+    assert torch.sum(res) == torch.sum(data)
+
+
+def test_spatial_unfirm_filter_wrong_width(data):
+    """Test spatial_uniform_filter_3d with wrong width."""
+
+    with pytest.raises(ValueError, match='Invalid filter width'):
+        spatial_uniform_filter_3d(data, (3, 3))
