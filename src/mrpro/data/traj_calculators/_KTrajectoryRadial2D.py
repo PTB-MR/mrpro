@@ -31,8 +31,8 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         super().__init__()
         self.angle: float = angle
         
-    def _kfreq(self, kheader: KHeader):
-        """Calculate the trajectory along one readout (k0 dimension).
+    def _krad(self, kheader: KHeader):
+        """Calculate the k-space locations along the read-out encoding lines.
 
         Parameters
         ----------
@@ -63,38 +63,7 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         nk0 = int(num_samples[0, 0, 0])
         k0 = torch.linspace(0, nk0 - 1, nk0, dtype=torch.float32) - center_sample[0, 0, 0]
         k0 *= 2 * torch.pi / nk0
-        return k0
-    
-    def _kang(self, kheader):
-        """Calculate the angles of the encoding lines.
-
-        Parameters
-        ----------
-        kheader
-            MR raw data header (KHeader) containing required meta data
-
-        Returns
-        -------
-            Angles of read-out encoding lines
-        """
-        return kheader.acq_info.idx.k1 * self.angle
-    
-    def _krad(self, kheader):
-        """Calculate the k-space locations along the read-out encoding lines.
-
-        Parameters
-        ----------
-        kheader
-            MR raw data header (KHeader) containing required meta data
-
-        Returns
-        -------
-            k-space locations along the read out lines
-        """
-                
-        krad = self._kfreq(kheader)
-        
-        return krad
+        return k0    
     
     def __call__(self, kheader: KHeader) -> KTrajectory:
         """Calculate radial 2D trajectory for given KHeader.
@@ -113,11 +82,11 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         krad = self._krad(kheader)
         
         # Angles of phase encoding lines
-        kang = self._kang(kheader) 
+        kang = kheader.acq_info.idx.k1 * self.angle
         
         # K-space cartesian coordinates
         kx = krad[None, None, None] * torch.cos(kang)[..., None]
         ky = krad[None, None, None] * torch.sin(kang)[..., None]
-        kz = torch.zeros(kx.shape)
+        kz = torch.zeros(1, 1, 1, 1)
                
         return KTrajectory(kz, ky, kx)
