@@ -37,7 +37,6 @@ class KTrajectoryRawShape:
     ky: torch.Tensor  # ((other,k2,k1),k0) #phase encoding direction, k1 if Cartesian
     kx: torch.Tensor  # ((other,k2,k1),k0) #frequency encoding direction, k0 if Cartesian
 
-
     def reshape(
         self, sort_idx: np.ndarray, num_k2: int, num_k1: int, repeat_detection_tolerance: float | None = 1e-8
     ) -> KTrajectory:
