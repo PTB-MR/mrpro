@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>mrpro.data.EncodingLimits &#8212; MRpro</title>
+    <title>mrpro.data.KTrajectoryRawShape &#8212; MRpro</title>
   
   
   
@@ -39,11 +39,11 @@
     <script src="../_static/documentation_options.js?v=8a448e45"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/mrpro.data.EncodingLimits';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/mrpro.data.KTrajectoryRawShape';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="mrpro.data.IData" href="mrpro.data.IData.html" />
-    <link rel="prev" title="mrpro.data.DcfData" href="mrpro.data.DcfData.html" />
+    <link rel="next" title="mrpro.data.Limits" href="mrpro.data.Limits.html" />
+    <link rel="prev" title="mrpro.data.KTrajectory" href="mrpro.data.KTrajectory.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -352,13 +352,13 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.AcqInfo.html">mrpro.data.AcqInfo</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.CsmData.html">mrpro.data.CsmData</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.DcfData.html">mrpro.data.DcfData</a></li>
-<li class="toctree-l2 current active"><a class="current reference internal" href="#">mrpro.data.EncodingLimits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mrpro.data.EncodingLimits.html">mrpro.data.EncodingLimits</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.IData.html">mrpro.data.IData</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.IHeader.html">mrpro.data.IHeader</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.KData.html">mrpro.data.KData</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.KHeader.html">mrpro.data.KHeader</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.KTrajectory.html">mrpro.data.KTrajectory</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.KTrajectoryRawShape.html">mrpro.data.KTrajectoryRawShape</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">mrpro.data.KTrajectoryRawShape</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.Limits.html">mrpro.data.Limits</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.QData.html">mrpro.data.QData</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.QHeader.html">mrpro.data.QHeader</a></li>
@@ -441,7 +441,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="mrpro.data.html" class="nav-link">mrpro.data</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">mrpro.data.E...</li>
+    <li class="breadcrumb-item active" aria-current="page">mrpro.data.K...</li>
   </ul>
 </nav>
 </div>
@@ -458,94 +458,66 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article" role="main">
                   
-  <section id="mrpro-data-encodinglimits">
-<h1>mrpro.data.EncodingLimits<a class="headerlink" href="#mrpro-data-encodinglimits" title="Link to this heading">#</a></h1>
+  <section id="mrpro-data-ktrajectoryrawshape">
+<h1>mrpro.data.KTrajectoryRawShape<a class="headerlink" href="#mrpro-data-ktrajectoryrawshape" title="Link to this heading">#</a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="mrpro.data.EncodingLimits">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.</span></span><span class="sig-name descname"><span class="pre">EncodingLimits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k0:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k1:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k2:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">average:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slice:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contrast:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repetition:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segment:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_0:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_1:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_2:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_3:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_4:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_5:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_6:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_7:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/_EncodingLimits.html#EncodingLimits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.EncodingLimits" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="mrpro.data.KTrajectoryRawShape">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.</span></span><span class="sig-name descname"><span class="pre">KTrajectoryRawShape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ky</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/_KTrajectoryRawShape.html#KTrajectoryRawShape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KTrajectoryRawShape" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Encoding limits dataclass with limits for each attribute.</p>
-<p>Reference: Magnetic Resonance in Medicine, 29 Jan 2016, 77(1):411-421,
-DOI: 10.1002/mrm.26089 (Fig. 3)</p>
+<p>K-space trajectory shaped ((other*k2*k1),k0).</p>
+<p>Order of directions is always kz, ky, kx
+Shape of each of kx,ky,kz is ((other,k2,k1),k0) this means that e.g. slices, averages… have not yet been
+separated from the phase and slice encoding dimensions. The trajectory is in the same shape as the raw data in the
+raw data file.</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k0:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k1:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k2:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">average:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slice:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contrast:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repetition:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segment:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_0:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_1:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_2:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_3:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_4:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_5:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_6:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_7:</span> <span class="pre">~mrpro.data._EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.data.EncodingLimits.__init__" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="mrpro.data.KTrajectoryRawShape.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ky</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.data.KTrajectoryRawShape.__init__" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <p class="rubric">Methods</p>
 <table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.EncodingLimits.__init__" title="mrpro.data.EncodingLimits.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([k0, k1, k2, average, slice, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KTrajectoryRawShape.__init__" title="mrpro.data.KTrajectoryRawShape.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(kz, ky, kx)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.EncodingLimits.from_ismrmrd_encodingLimitsType" title="mrpro.data.EncodingLimits.from_ismrmrd_encodingLimitsType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_ismrmrd_encodingLimitsType</span></code></a>(encodingLimits)</p></td>
-<td><p>Generate EncodingLimits from ismrmrd.encodingLimitsType.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KTrajectoryRawShape.reshape" title="mrpro.data.KTrajectoryRawShape.reshape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reshape</span></code></a>(sort_idx, num_k2, num_k1[, ...])</p></td>
+<td><p>Resort and reshape the raw trajectory to KTrajectory.</p></td>
 </tr>
 </tbody>
 </table>
 <p class="rubric">Attributes</p>
 <table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">k0</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">kz</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">k1</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ky</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">k2</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">average</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">slice</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">contrast</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">phase</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">repetition</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">set</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">segment</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">user_0</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">user_1</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">user_2</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">user_3</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">user_4</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">user_5</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">user_6</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">user_7</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">kx</span></code></p></td>
 <td><p></p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.from_ismrmrd_encodingLimitsType">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_ismrmrd_encodingLimitsType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">encodingLimits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">encodingLimitsType</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/_EncodingLimits.html#EncodingLimits.from_ismrmrd_encodingLimitsType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.EncodingLimits.from_ismrmrd_encodingLimitsType" title="Link to this definition">#</a></dt>
-<dd><p>Generate EncodingLimits from ismrmrd.encodingLimitsType.</p>
+<dt class="sig sig-object py" id="mrpro.data.KTrajectoryRawShape.reshape">
+<span class="sig-name descname"><span class="pre">reshape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sort_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_k2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_k1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repeat_detection_tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="mrpro.data.KTrajectory.html#mrpro.data.KTrajectory" title="mrpro.data._KTrajectory.KTrajectory"><span class="pre">KTrajectory</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_KTrajectoryRawShape.html#KTrajectoryRawShape.reshape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KTrajectoryRawShape.reshape" title="Link to this definition">#</a></dt>
+<dd><p>Resort and reshape the raw trajectory to KTrajectory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sort_idx</strong> – Index which defines how combined dimension (other k2 k1) needs to be sorted such that it can be separated
+into three separate dimensions using simple reshape operation. This information needs to be provided from
+kheader.acq_info.</p></li>
+<li><p><strong>num_k2</strong> – Number of k2 points.</p></li>
+<li><p><strong>num_k1</strong> – Number of k1 points.</p></li>
+<li><p><strong>repeat_detection_tolerance</strong> – Tolerance for repeat detection which is passed on to create KTrajectory. Set to None to disable.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>KTrajectory with kx, ky and kz each in the shape (other k2 k1 k0).</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -563,20 +535,20 @@ DOI: 10.1002/mrm.26089 (Fig. 3)</p>
                   <!-- Previous / next buttons -->
 <div class="prev-next-area">
     <a class="left-prev"
-       href="mrpro.data.DcfData.html"
+       href="mrpro.data.KTrajectory.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">mrpro.data.DcfData</p>
+        <p class="prev-next-title">mrpro.data.KTrajectory</p>
       </div>
     </a>
     <a class="right-next"
-       href="mrpro.data.IData.html"
+       href="mrpro.data.Limits.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">mrpro.data.IData</p>
+        <p class="prev-next-title">mrpro.data.Limits</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -595,9 +567,9 @@ DOI: 10.1002/mrm.26089 (Fig. 3)</p>
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.EncodingLimits"><code class="docutils literal notranslate"><span class="pre">EncodingLimits</span></code></a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.EncodingLimits.__init__"><code class="docutils literal notranslate"><span class="pre">EncodingLimits.__init__()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.EncodingLimits.from_ismrmrd_encodingLimitsType"><code class="docutils literal notranslate"><span class="pre">EncodingLimits.from_ismrmrd_encodingLimitsType()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectoryRawShape"><code class="docutils literal notranslate"><span class="pre">KTrajectoryRawShape</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectoryRawShape.__init__"><code class="docutils literal notranslate"><span class="pre">KTrajectoryRawShape.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectoryRawShape.reshape"><code class="docutils literal notranslate"><span class="pre">KTrajectoryRawShape.reshape()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -605,7 +577,7 @@ DOI: 10.1002/mrm.26089 (Fig. 3)</p>
 
   <div class="sidebar-secondary-item">
   <div class="tocsection sourcelink">
-    <a href="../_sources/_autosummary/mrpro.data.EncodingLimits.rst.txt">
+    <a href="../_sources/_autosummary/mrpro.data.KTrajectoryRawShape.rst.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>

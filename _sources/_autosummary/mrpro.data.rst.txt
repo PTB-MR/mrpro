@@ -29,6 +29,7 @@
       KData
       KHeader
       KTrajectory
+      KTrajectoryRawShape
       Limits
       QData
       QHeader
