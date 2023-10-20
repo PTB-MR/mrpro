@@ -1,4 +1,3 @@
-# %%
 # Imports
 import numpy as np
 import torch
@@ -8,7 +7,6 @@ from mrpro.data import KTrajectory
 from mrpro.data.traj_calculators import KTrajectoryCalculator
 
 
-# %%
 class KTrajectoryRadial2D(KTrajectoryCalculator):
     """Radial 2D trajectory.
 
