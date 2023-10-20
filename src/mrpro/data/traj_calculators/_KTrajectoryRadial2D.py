@@ -1,36 +1,38 @@
 # %%
 # Imports
-from mrpro.data import KTrajectory
+import numpy as np
+import torch
+
 from mrpro.data import KHeader
+from mrpro.data import KTrajectory
 from mrpro.data.traj_calculators import KTrajectoryCalculator
 
-import numpy as np
-
-import torch
 
 # %%
 class KTrajectoryRadial2D(KTrajectoryCalculator):
     """Radial 2D trajectory.
 
-    =======================================================================================================================================================================================================================
+    ===========================================================================
     TO DO:
-    Frequency encoding along kx is carried out in a standard Cartesian way. The phase encoding points along ky are positioned along radial lines. More details can be found in: https://doi.org/10.1002/mrm.22102 and
+    Frequency encoding along kx is carried out in a standard Cartesian way.
+    The phase encoding points along ky are positioned along radial lines.
+    More details can be found in: https://doi.org/10.1002/mrm.22102 and
     https://doi.org/10.1118/1.4890095 (open access).
-    =======================================================================================================================================================================================================================
+    ===========================================================================
 
     Parameters
     ----------
     angle
         angle in rad between two radial phase encoding lines
     """
-    
+
     def __init__(
         self,
         angle: float = np.deg2rad(180 / ((1 + np.sqrt(5)) / 2)),
     ) -> None:
         super().__init__()
         self.angle: float = angle
-        
+
     def _krad(self, kheader: KHeader):
         """Calculate the k-space locations along the read-out encoding lines.
 
@@ -50,21 +52,25 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         ValueError
             Center sample has to be the same for each readout
         """
-        
+
         num_samples = kheader.acq_info.number_of_samples
         center_sample = kheader.acq_info.center_sample
-        
+
         if len(torch.unique(num_samples)) > 1:
-            raise ValueError('Radial 2D trajectory can only be calculated if each acquisition has the same number of samples')
+            raise ValueError(
+                'Radial 2D trajectory can only be calculated if each acquisition has the same number of samples'
+            )
         if len(torch.unique(center_sample)) > 1:
-            raise ValueError('Radial 2D trajectory can only be calculated if each acquisition has the same center sample')
-        
+            raise ValueError(
+                'Radial 2D trajectory can only be calculated if each acquisition has the same center sample'
+            )
+
         # Calculate points along readout
         nk0 = int(num_samples[0, 0, 0])
         k0 = torch.linspace(0, nk0 - 1, nk0, dtype=torch.float32) - center_sample[0, 0, 0]
         k0 *= 2 * torch.pi / nk0
-        return k0    
-    
+        return k0
+
     def __call__(self, kheader: KHeader) -> KTrajectory:
         """Calculate radial 2D trajectory for given KHeader.
 
@@ -80,13 +86,13 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
 
         # K-space locations along phase encoding lines
         krad = self._krad(kheader)
-        
+
         # Angles of phase encoding lines
         kang = kheader.acq_info.idx.k1 * self.angle
-        
+
         # K-space cartesian coordinates
-        kx = krad[None, None, None] * torch.cos(kang)[..., None]
-        ky = krad[None, None, None] * torch.sin(kang)[..., None]
+        kx = krad * torch.cos(kang)[..., None]
+        ky = krad * torch.sin(kang)[..., None]
         kz = torch.zeros(1, 1, 1, 1)
-               
+
         return KTrajectory(kz, ky, kx)
