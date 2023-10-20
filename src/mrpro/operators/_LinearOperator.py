@@ -13,19 +13,15 @@
 #   limitations under the License.
 
 
-from abc import ABC
 from abc import abstractmethod
 
 import torch
-from torch import nn
+
+from mrpro.operators import Operator
 
 
-class LinearOperator(ABC, nn.Module):
+class LinearOperator(Operator):
     """General Linear Operator."""
-
-    @abstractmethod
-    def forward(self, x: torch.Tensor):
-        ...
 
     @abstractmethod
     def adjoint(self, x: torch.Tensor):
