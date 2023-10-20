@@ -16,9 +16,46 @@ import numpy as np
 import pytest
 import torch
 
+from mrpro.data.traj_calculators import KTrajectoryRadial2D
 from mrpro.data.traj_calculators import KTrajectoryRpe
 from mrpro.data.traj_calculators import KTrajectorySunflowerGoldenRpe
-from tests.data.conftest import random_kheader
+
+
+@pytest.fixture(scope='function')
+def valid_rad2d_kheader(monkeypatch, random_kheader):
+    """KHeader with all necessary parameters for radial 2D trajectories."""
+    # K-space dimensions
+    nk0 = 200
+    nk1 = 20
+
+    # List of k1 indices in the shape
+    idx_k1 = torch.arange(nk1, dtype=torch.int32)[None, None, ...]
+
+    # Set parameters for radial 2D trajectory
+    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + nk0)
+    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + nk0 // 2)
+    monkeypatch.setattr(random_kheader.acq_info.idx, 'k1', idx_k1)
+
+    return random_kheader
+
+
+def radial2D_traj_shape(valid_rad2d_kheader):
+    """Expected shape of trajectory based on KHeader."""
+    nk0 = valid_rad2d_kheader.acq_info.number_of_samples[0, 0, 0]
+    nk1 = valid_rad2d_kheader.acq_info.idx.k1.shape[2]
+    nk2 = 1
+    nother = 1
+    return (torch.Size([nother, 1, 1, 1]), torch.Size([nother, nk2, nk1, nk0]), torch.Size([nother, nk2, nk1, nk0]))
+
+
+def test_KTrajectoryRadial2D_golden(valid_rad2d_kheader):
+    """Calculate Radial 2D trajectory with golden angle."""
+    ktrajectory = KTrajectoryRadial2D(angle=torch.pi * 0.618034)
+    ktraj = ktrajectory(valid_rad2d_kheader)
+    valid_shape = radial2D_traj_shape(valid_rad2d_kheader)
+    assert ktraj.kx.shape == valid_shape[2]
+    assert ktraj.ky.shape == valid_shape[1]
+    assert ktraj.kz.shape == valid_shape[0]
 
 
 @pytest.fixture(scope='function')
