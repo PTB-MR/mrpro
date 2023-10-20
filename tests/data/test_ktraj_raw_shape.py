@@ -15,23 +15,24 @@
 import numpy as np
 import pytest
 import torch
-
-from einops import repeat
 from einops import rearrange
+from einops import repeat
 
 from mrpro.data import KTrajectoryRawShape
 from tests.data.test_ktraj import cartesian_grid
 
 
 def make_ktraj_raw_shape(ksomething, sort_idx):
-    """Reshape kx, ky or kz from (other k2 k1 k0) to ((other k2 k1) k0) and permutate order with sort_idx."""
+    """Reshape kx, ky or kz from (other k2 k1 k0) to ((other k2 k1) k0) and
+    permute order with sort_idx."""
     # Reshape to raw trajectory shape
     ksomething = rearrange(ksomething, 'other k2 k1 k0->(other k2 k1) k0')
 
-    # Permute trajectory points
+    # Permute trajectory points using sort_idx
     ksomething_perm = torch.zeros_like(ksomething)
-    ksomething_perm[sort_idx,:] = ksomething
-    return(ksomething_perm)
+    ksomething_perm[sort_idx, :] = ksomething
+    return ksomething_perm
+
 
 def test_ktraj_raw_reshape(cartesian_grid):
     """Test reshaping between raw ktrajectory and ktrajectory."""
@@ -47,8 +48,8 @@ def test_ktraj_raw_reshape(cartesian_grid):
     ky_full = repeat(ky_full, '1 k2 k1 k0->other k2 k1 k0', other=nother)
     kx_full = repeat(kx_full, '1 k2 k1 k0->other k2 k1 k0', other=nother)
 
-    # Reshape and repeat from (nother nk2 nk1 nk0) to (nother*nk2*nk1 nk0) and permuate
-    sort_idx = np.random.permutation(np.linspace(0, nother*nk2*nk1-1, nother*nk2*nk1))
+    # Reshape and repeat from (nother nk2 nk1 nk0) to (nother*nk2*nk1 nk0) and permute randomly
+    sort_idx = np.random.permutation(np.linspace(0, nother * nk2 * nk1 - 1, nother * nk2 * nk1))
     kz_raw = make_ktraj_raw_shape(kz_full, sort_idx)
     ky_raw = make_ktraj_raw_shape(ky_full, sort_idx)
     kx_raw = make_ktraj_raw_shape(kx_full, sort_idx)
@@ -63,4 +64,3 @@ def test_ktraj_raw_reshape(cartesian_grid):
     torch.testing.assert_close(ktraj.kz, kz_full)
     torch.testing.assert_close(ktraj.ky, ky_full)
     torch.testing.assert_close(ktraj.kx, kx_full)
-
