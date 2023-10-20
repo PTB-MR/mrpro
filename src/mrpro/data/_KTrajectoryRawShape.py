@@ -23,9 +23,9 @@ from einops import rearrange
 from mrpro.data import KTrajectory
 
 
-@dataclass(slots=True, init=False)
+@dataclass(slots=True, frozen=True)
 class KTrajectoryRawShape:
-    """K-space trajectory in the shape of ((other*k2*k1),k0).
+    """K-space trajectory shaped ((other*k2*k1),k0).
 
     Order of directions is always kz, ky, kx
     Shape of each of kx,ky,kz is ((other,k2,k1),k0) this means that e.g. slices, averages... have not yet been
@@ -37,17 +37,6 @@ class KTrajectoryRawShape:
     ky: torch.Tensor  # ((other,k2,k1),k0) #phase encoding direction, k1 if Cartesian
     kx: torch.Tensor  # ((other,k2,k1),k0) #frequency encoding direction, k0 if Cartesian
 
-    def __init__(self, kz: torch.Tensor, ky: torch.Tensor, kx: torch.Tensor):
-        """Dataclass for trajectory shaped like the data in the raw data file.
-
-        Parameters
-        ----------
-        kz, ky, kx:
-            Trajectory coordinates to set
-        """
-        self.kz = kz
-        self.ky = ky
-        self.kx = kx
 
     def reshape(
         self, sort_idx: np.ndarray, num_k2: int, num_k1: int, repeat_detection_tolerance: float | None = 1e-8
