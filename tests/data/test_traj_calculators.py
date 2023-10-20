@@ -16,9 +16,10 @@ import numpy as np
 import pytest
 import torch
 
+from mrpro.data.traj_calculators import KTrajectoryRadial2D
 from mrpro.data.traj_calculators import KTrajectoryRpe
 from mrpro.data.traj_calculators import KTrajectorySunflowerGoldenRpe
-from mrpro.data.traj_calculators import KTrajectoryRadial2D
+
 
 @pytest.fixture(scope='function')
 def valid_rad2d_kheader(monkeypatch, random_kheader):
@@ -26,41 +27,36 @@ def valid_rad2d_kheader(monkeypatch, random_kheader):
     # K-space dimensions
     nk0 = 200
     nk1 = 20
-    nk2 = 10
 
-    # List of k1 and k2 indices in the shape (other, k2, k1)
-    k1 = torch.linspace(0, nk1 - 1, nk1, dtype=torch.int32)
-    k2 = torch.linspace(0, nk2 - 1, nk2, dtype=torch.int32)
-    idx_k1, idx_k2 = torch.meshgrid(k1, k2, indexing='xy')
-    idx_k1 = torch.reshape(idx_k1, (1, nk2, nk1))
-    idx_k2 = torch.reshape(idx_k2, (1, nk2, nk1))
+    # List of k1 indices in the shape
+    idx_k1 = torch.arange(nk1, dtype=torch.int32)[None, None, ...]
+    # idx_k1 = k1[..., None].repeat(1, nk0)[None, ...]
 
     # Set parameters for Radial 2D trajectory
     monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + nk0)
     monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + nk0 // 2)
     monkeypatch.setattr(random_kheader.acq_info.idx, 'k1', idx_k1)
-    monkeypatch.setattr(random_kheader.acq_info.idx, 'k2', idx_k2)
-    monkeypatch.setattr(random_kheader.encoding_limits.k1, 'center', int(nk1 // 2))
-    monkeypatch.setattr(random_kheader.encoding_limits.k1, 'max', int(nk1 - 1))    
-    
+
     return random_kheader
+
 
 def radial2D_traj_shape(valid_rad2d_kheader):
     """Expected shape of trajectory based on KHeader."""
     nk0 = valid_rad2d_kheader.acq_info.number_of_samples[0, 0, 0]
     nk1 = valid_rad2d_kheader.acq_info.idx.k1.shape[2]
-    nk2 = valid_rad2d_kheader.acq_info.idx.k1.shape[1]
+    nk2 = 1
     nother = 1
-    return (torch.Size([nother, nk2, nk1, 1]), torch.Size([nother, nk2, nk1, 1]), torch.Size([nother, 1, 1, nk0]))
+    return (torch.Size([nother, nk2, nk1, nk0]), torch.Size([nother, nk2, nk1, nk0]), torch.Size([nother, 1, 1, 1]))
+
 
 def test_KTrajectoryRadial2D_golden(valid_rad2d_kheader):
     """Calculate Radial 2D trajectory with golden angle."""
     ktrajectory = KTrajectoryRadial2D(angle=torch.pi * 0.618034)
     ktraj = ktrajectory(valid_rad2d_kheader)
     valid_shape = radial2D_traj_shape(valid_rad2d_kheader)
-    assert ktraj.kz.shape == valid_shape[0]
+    assert ktraj.kx.shape == valid_shape[0]
     assert ktraj.ky.shape == valid_shape[1]
-    assert ktraj.kx.shape == valid_shape[2]
+    assert ktraj.kz.shape == valid_shape[2]
 
 
 @pytest.fixture(scope='function')
@@ -86,6 +82,7 @@ def valid_rpe_kheader(monkeypatch, random_kheader):
     monkeypatch.setattr(random_kheader.encoding_limits.k1, 'center', int(nk1 // 2))
     monkeypatch.setattr(random_kheader.encoding_limits.k1, 'max', int(nk1 - 1))
     return random_kheader
+
 
 def rpe_traj_shape(valid_rpe_kheader):
     """Expected shape of trajectory based on KHeader."""
