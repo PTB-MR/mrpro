@@ -14,6 +14,7 @@ authors = [
     { name = "Christoph Kolbitsch", email = "christoph.kolbitsch@ptb.de" },
     { name = "Patrick Schuenke", email = "patrick.schuenke@ptb.de" },
     { name = "Felix Zimmermann", email = "felix.zimmermann89@ptb.de" },
+    { name = "Mara Guastini", email = "mara.guastini@ptb.de" },
 ]
 
 classifiers = [
