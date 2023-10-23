@@ -9,8 +9,8 @@ from xsdata.models.datatype import XmlTime
 from mrpro.data import AcqInfo
 from mrpro.data import KHeader
 from mrpro.data.enums import AcqFlags
+from tests import RandomGenerator
 from tests.data import Dicom2DTestImage
-from tests.data import RandomGenerator
 from tests.phantoms.test_ellipse_phantom import ph_ellipse
 
 
