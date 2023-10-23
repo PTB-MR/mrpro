@@ -148,6 +148,32 @@ def random_full_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
     )
 
 
+@pytest.fixture(params=({'seed': 0},))
+def random_mandatory_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
+    """Generate a full header, i.e. all values used in
+    KHeader.from_ismrmrd_header() are set."""
+
+    seed = request.param['seed']
+    generator = RandomGenerator(seed)
+    encoding = xsd.encodingType(
+        trajectory=xsd.trajectoryType('other'),
+        encodedSpace=xsd.encodingSpaceType(
+            matrixSize=xsd.matrixSizeType(x=generator.int16(), y=generator.uint8(), z=generator.uint8()),
+            fieldOfView_mm=xsd.fieldOfViewMm(x=generator.uint8(), y=generator.uint8(), z=generator.uint8()),
+        ),
+        reconSpace=xsd.encodingSpaceType(
+            matrixSize=xsd.matrixSizeType(x=generator.uint8(), y=generator.uint8(), z=generator.uint8()),
+            fieldOfView_mm=xsd.fieldOfViewMm(x=generator.uint8(), y=generator.uint8(), z=generator.uint8()),
+        ),
+        encodingLimits=xsd.encodingLimitsType(),
+    )
+    experimentalConditions = xsd.experimentalConditionsType(H1resonanceFrequency_Hz=generator.int32())
+    return xsd.ismrmrdschema.ismrmrdHeader(
+        encoding=[encoding],
+        experimentalConditions=experimentalConditions,
+    )
+
+
 @pytest.fixture()
 def random_ismrmrd_file(random_acquisition, random_noise_acquisition, full_header):
     with tempfile.NamedTemporaryFile(suffix='.h5') as file:

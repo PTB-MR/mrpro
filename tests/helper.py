@@ -1,4 +1,4 @@
-"""Utilities for test functions."""
+"""Helper/Utilities for test functions."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #

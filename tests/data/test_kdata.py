@@ -19,9 +19,9 @@ from mrpro.data import KData
 from mrpro.data import KTrajectory
 from mrpro.data.traj_calculators._KTrajectoryCalculator import DummyTrajectory
 from tests.data import IsmrmrdRawTestData
+from tests.helper import kspace_to_image
+from tests.helper import rel_image_diff
 from tests.phantoms.test_ellipse_phantom import ph_ellipse
-from tests.utils import kspace_to_image
-from tests.utils import rel_image_diff
 
 
 @pytest.fixture(scope='session')

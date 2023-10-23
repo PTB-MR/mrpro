@@ -23,8 +23,8 @@ from mrpro.data import SpatialDimension
 from mrpro.phantoms.coils import birdcage_2d
 from tests.data.conftest import random_kheader
 from tests.data.conftest import random_test_data
+from tests.helper import rel_image_diff
 from tests.phantoms.test_ellipse_phantom import ph_ellipse
-from tests.utils import rel_image_diff
 
 
 def test_CsmData_is_frozen_dataclass(random_test_data, random_kheader):
