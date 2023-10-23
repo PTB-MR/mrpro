@@ -16,9 +16,9 @@ import pytest
 import torch
 
 from mrpro.data import SpatialDimension
+from tests.helper import kspace_to_image
+from tests.helper import rel_image_diff
 from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData
-from tests.utils import kspace_to_image
-from tests.utils import rel_image_diff
 
 
 @pytest.fixture(scope='session')
