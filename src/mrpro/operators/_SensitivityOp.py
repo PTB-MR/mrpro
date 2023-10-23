@@ -30,9 +30,11 @@ class SensitivityOp:  # todo: later put (LinearOp) here
         ----------
         img_data
             image data tensor with dimensions (all_other, 1, z, y, x).
-            The method returns an image data tensor with dimensions
-            (all_other, coils, z, y, x), where coils is the number of coils
-            given by csm.
+
+        Returns
+        -------
+        torch.Tensor
+            image data tensor with dimensions (all_other, coils, z, y, x).
         """
         return self.C * img_data
 
@@ -43,8 +45,11 @@ class SensitivityOp:  # todo: later put (LinearOp) here
         ----------
         img_data
             image data tensor with dimensions (all_other, coils, z, y, x).
-            The method returns an image data tensor with dimensions
-            (all_other, 1, z, y, x).
+
+        Returns
+        -------
+        torch.Tensor
+            image data tensor with dimensions (all_other, 1, z, y, x).
         """
 
         return (self.C.conj() * img_data).sum(-4, keepdim=True)
