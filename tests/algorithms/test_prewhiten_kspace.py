@@ -44,7 +44,4 @@ def test_prewhiten_kspace(random_kheader):
     kdata = KData(header=random_kheader, data=knoise_data, traj=ktraj)
 
     kdata = prewhiten_kspace(kdata, knoise)
-
-    # Need to add epsilon to matrices otherwise relative assert could fail due to div by 0
-    eps = torch.finfo(torch.float32).eps
-    torch.testing.assert_close(torch.eye(ncoils, dtype=torch.complex64) + eps, _calc_coil_cov(kdata.data) + eps)
+    torch.testing.assert_close(_calc_coil_cov(kdata.data), torch.eye(ncoils, dtype=torch.complex64))

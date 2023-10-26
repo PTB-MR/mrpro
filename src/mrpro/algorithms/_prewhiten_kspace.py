@@ -27,9 +27,14 @@ def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float = 1.0) ->
 
     This function is inspired by https://github.com/ismrmrd/ismrmrd-python-tools.
 
+    Step 1: Calculate noise correlation matrix N
+    Step 2: Carry out Cholesky decomposition L L^H = N
+    Step 3: Estimate noise decorrelation matrix D = inv(L)
+    Step 4: Apply D to k-space data
+
     More information can be found in
     http://onlinelibrary.wiley.com/doi/10.1002/jmri.24687/full
-    https://doi.org/10.1002/nbm.1429
+    https://doi.org/10.1002/mrm.1910160203
 
     Parameters
     ----------
