@@ -20,6 +20,7 @@ mrpro.data.traj\_calculators
       :template: class_template.rst
    
       KTrajectoryCalculator
+      KTrajectoryIsmrmrd
       KTrajectoryRadial2D
       KTrajectoryRpe
       KTrajectorySunflowerGoldenRpe

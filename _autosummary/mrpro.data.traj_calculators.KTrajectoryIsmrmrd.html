@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>mrpro.data.enums.PatientPosition &#8212; MRpro</title>
+    <title>mrpro.data.traj_calculators.KTrajectoryIsmrmrd &#8212; MRpro</title>
   
   
   
@@ -39,7 +39,7 @@
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/mrpro.data.enums.PatientPosition';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/mrpro.data.traj_calculators.KTrajectoryIsmrmrd';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -376,7 +376,7 @@ document.write(`
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page">mrpro.data.e...</li>
+    <li class="breadcrumb-item active" aria-current="page">mrpro.data.t...</li>
   </ul>
 </nav>
 </div>
@@ -393,46 +393,28 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article" role="main">
                   
-  <section id="mrpro-data-enums-patientposition">
-<h1>mrpro.data.enums.PatientPosition<a class="headerlink" href="#mrpro-data-enums-patientposition" title="Link to this heading">#</a></h1>
+  <section id="mrpro-data-traj-calculators-ktrajectoryismrmrd">
+<h1>mrpro.data.traj_calculators.KTrajectoryIsmrmrd<a class="headerlink" href="#mrpro-data-traj-calculators-ktrajectoryismrmrd" title="Link to this heading">#</a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="mrpro.data.enums.PatientPosition">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.enums.</span></span><span class="sig-name descname"><span class="pre">PatientPosition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/enums.html#PatientPosition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.enums.PatientPosition" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="mrpro.data.enums.Enum.html#mrpro.data.enums.Enum" title="enum.Enum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></a></p>
-<p>An enumeration.</p>
+<dt class="sig sig-object py" id="mrpro.data.traj_calculators.KTrajectoryIsmrmrd">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.traj_calculators.</span></span><span class="sig-name descname"><span class="pre">KTrajectoryIsmrmrd</span></span><a class="reference internal" href="../_modules/mrpro/data/traj_calculators/_KTrajectoryIsmrmrd.html#KTrajectoryIsmrmrd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.traj_calculators.KTrajectoryIsmrmrd" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Get trajectory in ISMRMRD raw data file.</p>
+<p>The trajectory in the ISMRMRD raw data file is read out. Information
+on the ISMRMRD trajectory can be found here:
+<a class="reference external" href="https://ismrmrd.readthedocs.io/en/latest/mrd_raw_data.html#k-space-trajectory">https://ismrmrd.readthedocs.io/en/latest/mrd_raw_data.html#k-space-trajectory</a></p>
+<p>The value range of the trajectory in the ISMRMRD file is not well defined. Here we simple normalize everything
+based on the highest value and ensure it is within [-pi, pi]. The trajectory is in the shape of the unsorted
+raw data.</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.data.enums.PatientPosition.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.data.enums.PatientPosition.__init__" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="mrpro.data.traj_calculators.KTrajectoryIsmrmrd.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/traj_calculators/_KTrajectoryIsmrmrd.html#KTrajectoryIsmrmrd.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.traj_calculators.KTrajectoryIsmrmrd.__init__" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
-<p class="rubric">Attributes</p>
+<p class="rubric">Methods</p>
 <table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">HFP</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">HFS</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">HFDR</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">HFDL</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">FFP</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">FFS</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">FFDR</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">FFDL</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">OTHER</span></code></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.traj_calculators.KTrajectoryIsmrmrd.__init__" title="mrpro.data.traj_calculators.KTrajectoryIsmrmrd.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>()</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -466,8 +448,8 @@ document.write(`
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.enums.PatientPosition"><code class="docutils literal notranslate"><span class="pre">PatientPosition</span></code></a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.enums.PatientPosition.__init__"><code class="docutils literal notranslate"><span class="pre">PatientPosition.__init__()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.traj_calculators.KTrajectoryIsmrmrd"><code class="docutils literal notranslate"><span class="pre">KTrajectoryIsmrmrd</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.traj_calculators.KTrajectoryIsmrmrd.__init__"><code class="docutils literal notranslate"><span class="pre">KTrajectoryIsmrmrd.__init__()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -475,7 +457,7 @@ document.write(`
 
   <div class="sidebar-secondary-item">
   <div class="tocsection sourcelink">
-    <a href="../_sources/_autosummary/mrpro.data.enums.PatientPosition.rst.txt">
+    <a href="../_sources/_autosummary/mrpro.data.traj_calculators.KTrajectoryIsmrmrd.rst.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>

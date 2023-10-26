@@ -1,0 +1,25 @@
+mrpro.data.traj\_calculators.KTrajectoryIsmrmrd
+===============================================
+
+.. currentmodule:: mrpro.data.traj_calculators
+
+.. autoclass:: KTrajectoryIsmrmrd
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~KTrajectoryIsmrmrd.__init__
+   
+   
+
+   
+   
+   

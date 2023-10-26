@@ -17,12 +17,12 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
-<link href="../../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=c5ced968eda925caa686" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=c5ced968eda925caa686" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=c5ced968eda925caa686" rel="stylesheet" />
 
   
-  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=c5ced968eda925caa686" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
@@ -31,11 +31,11 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=b625871b" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
-  <script src="../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=c5ced968eda925caa686" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=c5ced968eda925caa686" />
+  <script src="../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=c5ced968eda925caa686"></script>
 
-    <script src="../../../_static/documentation_options.js?v=8a448e45"></script>
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/mrpro/data/_KData';</script>
@@ -107,6 +107,7 @@
   
 
 <a class="navbar-brand logo" href="../../../index.html">
+  
   
   
   
@@ -420,9 +421,11 @@ document.write(`
 <span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">AcqInfo</span>
 <span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KHeader</span>
 <span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KTrajectory</span>
+<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KTrajectoryRawShape</span>
 <span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">Limits</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.enums</span> <span class="kn">import</span> <span class="n">AcqFlags</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.traj_calculators</span> <span class="kn">import</span> <span class="n">KTrajectoryCalculator</span>
+<span class="kn">from</span> <span class="nn">mrpro.data.traj_calculators</span> <span class="kn">import</span> <span class="n">KTrajectoryIsmrmrd</span>
 
 <span class="n">KDIM_SORT_LABELS</span> <span class="o">=</span> <span class="p">(</span>
     <span class="s1">&#39;k1&#39;</span><span class="p">,</span>
@@ -450,7 +453,7 @@ document.write(`
     <span class="k">def</span> <span class="nf">from_file</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
-        <span class="n">ktrajectory</span><span class="p">:</span> <span class="n">KTrajectoryCalculator</span> <span class="o">|</span> <span class="n">KTrajectory</span><span class="p">,</span>
+        <span class="n">ktrajectory</span><span class="p">:</span> <span class="n">KTrajectoryCalculator</span> <span class="o">|</span> <span class="n">KTrajectory</span> <span class="o">|</span> <span class="n">KTrajectoryIsmrmrd</span><span class="p">,</span>
         <span class="n">header_overwrites</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">dataset_idx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KData</span><span class="p">:</span>
@@ -538,12 +541,22 @@ document.write(`
                     <span class="nb">setattr</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">subfield</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">reshape_acq_data</span><span class="p">(</span><span class="n">subcurrent</span><span class="p">))</span>
 
         <span class="c1"># Calculate trajectory and check if it matches the kdata shape</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ktrajectory</span><span class="p">,</span> <span class="n">KTrajectoryCalculator</span><span class="p">):</span>
-            <span class="n">ktraj</span> <span class="o">=</span> <span class="n">ktrajectory</span><span class="p">(</span><span class="n">kheader</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ktrajectory</span><span class="p">,</span> <span class="n">KTrajectory</span><span class="p">):</span>
-            <span class="n">ktraj</span> <span class="o">=</span> <span class="n">ktrajectory</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;ktrajectory must be a KTrajectory or KTrajectoryCalculator, not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">ktrajectory</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">match</span> <span class="n">ktrajectory</span><span class="p">:</span>
+            <span class="k">case</span> <span class="n">KTrajectoryIsmrmrd</span><span class="p">():</span>
+                <span class="n">ktraj</span> <span class="o">=</span> <span class="n">ktrajectory</span><span class="p">(</span><span class="n">acquisitions</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">sort_idx</span><span class="p">,</span> <span class="n">num_k2</span><span class="p">,</span> <span class="n">num_k1</span><span class="p">)</span>
+            <span class="k">case</span> <span class="n">KTrajectoryCalculator</span><span class="p">():</span>
+                <span class="n">ktraj_calc</span> <span class="o">=</span> <span class="n">ktrajectory</span><span class="p">(</span><span class="n">kheader</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ktraj_calc</span><span class="p">,</span> <span class="n">KTrajectoryRawShape</span><span class="p">):</span>
+                    <span class="n">ktraj</span> <span class="o">=</span> <span class="n">ktraj_calc</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">sort_idx</span><span class="p">,</span> <span class="n">num_k2</span><span class="p">,</span> <span class="n">num_k1</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">ktraj</span> <span class="o">=</span> <span class="n">ktraj_calc</span>
+            <span class="k">case</span> <span class="n">KTrajectory</span><span class="p">():</span>
+                <span class="n">ktraj</span> <span class="o">=</span> <span class="n">ktrajectory</span>
+            <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="s1">&#39;ktrajectory must be KTrajectoryIsmrmrd, KTrajectory or KTrajectoryCalculator,&#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">ktrajectory</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+                <span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="n">shape</span> <span class="o">=</span> <span class="n">ktraj</span><span class="o">.</span><span class="n">broadcasted_shape</span>
@@ -586,8 +599,8 @@ document.write(`
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
-<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
+  <script src="../../../_static/scripts/bootstrap.js?digest=c5ced968eda925caa686"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=c5ced968eda925caa686"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -610,7 +623,7 @@ document.write(`
     <div class="footer-items__end">
       
         <div class="footer-item"><p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.2.
 </p></div>
       
     </div>

@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>mrpro.data.traj_calculators._KTrajectoryRadial2D &#8212; MRpro</title>
+    <title>mrpro.data.traj_calculators._KTrajectoryIsmrmrd &#8212; MRpro</title>
   
   
   
@@ -38,7 +38,7 @@
     <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../../../_static/doctools.js?v=888ff710"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/mrpro/data/traj_calculators/_KTrajectoryRadial2D';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/mrpro/data/traj_calculators/_KTrajectoryIsmrmrd';</script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -391,99 +391,79 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article" role="main">
                   
-  <h1>Source code for mrpro.data.traj_calculators._KTrajectoryRadial2D</h1><div class="highlight"><pre>
-<span></span><span class="c1"># Imports</span>
+  <h1>Source code for mrpro.data.traj_calculators._KTrajectoryIsmrmrd</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Returns the trajectory save in an ISMRMRD raw data file.&quot;&quot;&quot;</span>
+
+<span class="c1"># Copyright 2023 Physikalisch-Technische Bundesanstalt</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#   you may not use this file except in compliance with the License.</span>
+<span class="c1">#   You may obtain a copy of the License at</span>
+<span class="c1">#       http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#   Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1">#   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1">#   See the License for the specific language governing permissions and</span>
+<span class="c1">#   limitations under the License.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">ismrmrd</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 
-<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KHeader</span>
-<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KTrajectory</span>
-<span class="kn">from</span> <span class="nn">mrpro.data.traj_calculators</span> <span class="kn">import</span> <span class="n">KTrajectoryCalculator</span>
+<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KTrajectoryRawShape</span>
 
 
-<div class="viewcode-block" id="KTrajectoryRadial2D">
-<a class="viewcode-back" href="../../../../_autosummary/mrpro.data.traj_calculators.KTrajectoryRadial2D.html#mrpro.data.traj_calculators.KTrajectoryRadial2D">[docs]</a>
-<span class="k">class</span> <span class="nc">KTrajectoryRadial2D</span><span class="p">(</span><span class="n">KTrajectoryCalculator</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Radial 2D trajectory.</span>
+<div class="viewcode-block" id="KTrajectoryIsmrmrd">
+<a class="viewcode-back" href="../../../../_autosummary/mrpro.data.traj_calculators.KTrajectoryIsmrmrd.html#mrpro.data.traj_calculators.KTrajectoryIsmrmrd">[docs]</a>
+<span class="k">class</span> <span class="nc">KTrajectoryIsmrmrd</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get trajectory in ISMRMRD raw data file.</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    angle</span>
-<span class="sd">        angle in rad between two radial lines</span>
+<span class="sd">    The trajectory in the ISMRMRD raw data file is read out. Information</span>
+<span class="sd">    on the ISMRMRD trajectory can be found here:</span>
+<span class="sd">    https://ismrmrd.readthedocs.io/en/latest/mrd_raw_data.html#k-space-trajectory</span>
+
+<span class="sd">    The value range of the trajectory in the ISMRMRD file is not well defined. Here we simple normalize everything</span>
+<span class="sd">    based on the highest value and ensure it is within [-pi, pi]. The trajectory is in the shape of the unsorted</span>
+<span class="sd">    raw data.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="KTrajectoryRadial2D.__init__">
-<a class="viewcode-back" href="../../../../_autosummary/mrpro.data.traj_calculators.KTrajectoryRadial2D.html#mrpro.data.traj_calculators.KTrajectoryRadial2D.__init__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="mf">0.618034</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">angle</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">angle</span></div>
+<div class="viewcode-block" id="KTrajectoryIsmrmrd.__init__">
+<a class="viewcode-back" href="../../../../_autosummary/mrpro.data.traj_calculators.KTrajectoryIsmrmrd.html#mrpro.data.traj_calculators.KTrajectoryIsmrmrd.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_krad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the k-space locations along the read-out encoding lines.</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">acquisitions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ismrmrd</span><span class="o">.</span><span class="n">Acquisition</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">KTrajectoryRawShape</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read out the trajectory from the ISMRMRD data file.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        kheader</span>
-<span class="sd">            MR raw data header (KHeader) containing required meta data</span>
+<span class="sd">        acquisitions:</span>
+<span class="sd">            list of ismrmrd acquisistions to read from. Needs at least one acquisition.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">            Trajectory along ONE readout</span>
-
-<span class="sd">        Raises</span>
-<span class="sd">        ------</span>
-<span class="sd">        ValueError</span>
-<span class="sd">            Number of samples have to be the same for each readout</span>
-<span class="sd">        ValueError</span>
-<span class="sd">            Center sample has to be the same for each readout</span>
+<span class="sd">            trajectory in the shape of the original raw data within [-pi, pi].</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">num_samples</span> <span class="o">=</span> <span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">number_of_samples</span>
-        <span class="n">center_sample</span> <span class="o">=</span> <span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">center_sample</span>
+        <span class="c1"># Read out the trajectory</span>
+        <span class="n">ktraj_mrd</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">acq</span><span class="o">.</span><span class="n">traj</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="k">for</span> <span class="n">acq</span> <span class="ow">in</span> <span class="n">acquisitions</span><span class="p">])</span>
 
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">num_samples</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s1">&#39;Radial 2D trajectory can only be calculated if each acquisition has the same number of samples&#39;</span>
+        <span class="k">if</span> <span class="n">ktraj_mrd</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No trajectory information available in the acquisitions.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Scale trajectory to be within [-pi, pi]. Not ideal, but the best we can do.</span>
+        <span class="n">ktraj_mrd</span> <span class="o">*=</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">ktraj_mrd</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">ktraj_mrd</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">ktraj</span> <span class="o">=</span> <span class="n">KTrajectoryRawShape</span><span class="p">(</span>
+                <span class="n">kz</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">ktraj_mrd</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">ky</span><span class="o">=</span><span class="n">ktraj_mrd</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">kx</span><span class="o">=</span><span class="n">ktraj_mrd</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
             <span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">center_sample</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s1">&#39;Radial 2D trajectory can only be calculated if each acquisition has the same center sample&#39;</span>
-            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ktraj</span> <span class="o">=</span> <span class="n">KTrajectoryRawShape</span><span class="p">(</span><span class="n">kz</span><span class="o">=</span><span class="n">ktraj_mrd</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">ky</span><span class="o">=</span><span class="n">ktraj_mrd</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">kx</span><span class="o">=</span><span class="n">ktraj_mrd</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
 
-        <span class="c1"># Calculate points along readout</span>
-        <span class="n">nk0</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_samples</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
-        <span class="n">k0</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nk0</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">nk0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">-</span> <span class="n">center_sample</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="n">k0</span> <span class="o">*=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">nk0</span>
-        <span class="k">return</span> <span class="n">k0</span>
-
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KTrajectory</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate radial 2D trajectory for given KHeader.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        kheader</span>
-<span class="sd">           MR raw data header (KHeader) containing required meta data</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">            radial 2D trajectory for given KHeader</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="c1"># K-space locations along readout lines</span>
-        <span class="n">krad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_krad</span><span class="p">(</span><span class="n">kheader</span><span class="p">)</span>
-
-        <span class="c1"># Angles of readout lines</span>
-        <span class="n">kang</span> <span class="o">=</span> <span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">k1</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">angle</span>
-
-        <span class="c1"># K-space cartesian coordinates</span>
-        <span class="n">kx</span> <span class="o">=</span> <span class="n">krad</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">kang</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
-        <span class="n">ky</span> <span class="o">=</span> <span class="n">krad</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">kang</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
-        <span class="n">kz</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">KTrajectory</span><span class="p">(</span><span class="n">kz</span><span class="p">,</span> <span class="n">ky</span><span class="p">,</span> <span class="n">kx</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">ktraj</span></div>
 
 </pre></div>
 
