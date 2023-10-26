@@ -16,9 +16,13 @@ import numpy as np
 import pytest
 import torch
 
+from mrpro.data import KData
+from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.data.traj_calculators import KTrajectoryRadial2D
 from mrpro.data.traj_calculators import KTrajectoryRpe
 from mrpro.data.traj_calculators import KTrajectorySunflowerGoldenRpe
+from tests.data import IsmrmrdRawTestData
+from tests.phantoms.test_ellipse_phantom import ph_ellipse
 
 
 @pytest.fixture(scope='function')
@@ -132,3 +136,32 @@ def test_KTrajectorySunflowerGoldenRpe(valid_rpe_kheader):
     ktrajectory = KTrajectorySunflowerGoldenRpe(rad_us_factor=2)
     ktraj = ktrajectory(valid_rpe_kheader)
     assert ktraj.broadcasted_shape == np.broadcast_shapes(*rpe_traj_shape(valid_rpe_kheader))
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_rad(ph_ellipse, tmp_path_factory):
+    """Data set with uniform radial k-space sampling."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_rad.h5'
+    ismrmrd_kdat = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        phantom=ph_ellipse.phantom,
+        trajectory_type='radial',
+        acceleration=4,
+    )
+    return ismrmrd_kdat
+
+
+def test_KTrajectoryIsmrmrdRadial(ismrmrd_rad):
+    """Verify ismrmrd trajectory."""
+    # Calculate trajectory based on header information
+    angle_step = torch.pi / (ismrmrd_rad.matrix_size // ismrmrd_rad.acceleration)
+    k = KData.from_file(ismrmrd_rad.filename, KTrajectoryRadial2D(angle=angle_step))
+    ktraj_calc = k.traj.as_tensor()
+
+    # Read trajectory from raw data file
+    k = KData.from_file(ismrmrd_rad.filename, KTrajectoryIsmrmrd())
+    ktraj_read = k.traj.as_tensor()
+
+    torch.testing.assert_close(ktraj_calc, ktraj_read)
