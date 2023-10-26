@@ -17,13 +17,12 @@ from __future__ import annotations
 import dataclasses
 from pathlib import Path
 
-import h5py
 import ismrmrd
-import numpy as np
 import torch
 from einops import rearrange
 
 from mrpro.data.enums import AcqFlags
+
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class KNoise:
