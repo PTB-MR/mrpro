@@ -21,12 +21,9 @@ from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.data.traj_calculators import KTrajectoryRadial2D
 from mrpro.data.traj_calculators import KTrajectoryRpe
 from mrpro.data.traj_calculators import KTrajectorySunflowerGoldenRpe
-<<<<<<< HEAD
 from tests.data import IsmrmrdRawTestData
 from tests.phantoms.test_ellipse_phantom import ph_ellipse
-=======
 from tests.conftest import random_kheader
->>>>>>> a4eceeb (Noise measurement data class added with pre_whiten)
 
 
 @pytest.fixture(scope='function')
