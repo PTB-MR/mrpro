@@ -28,6 +28,7 @@
       IHeader
       KData
       KHeader
+      KNoise
       KTrajectory
       KTrajectoryRawShape
       Limits
