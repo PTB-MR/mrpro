@@ -18,8 +18,8 @@ import pytest
 from ismrmrd import xsd
 
 from mrpro.data import KHeader
-from tests.data.conftest import random_acq_info
-from tests.data.conftest import random_mandatory_ismrmrd_header
+from tests.conftest import random_acq_info
+from tests.conftest import random_mandatory_ismrmrd_header
 
 
 def test_kheader_fail_from_mandatory_ismrmrd_header(random_mandatory_ismrmrd_header, random_acq_info):
