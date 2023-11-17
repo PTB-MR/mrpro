@@ -23,6 +23,8 @@ from mrpro.utils.fft import kspace_to_image
 def remove_readout_os(kdata: KData) -> KData:
     """Remove any oversampling along the readout (k0) direction.
 
+    This function is inspired by https://github.com/gadgetron/gadgetron-python.
+
     Parameters
     ----------
     kdata
