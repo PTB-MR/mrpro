@@ -32,6 +32,7 @@ from mrpro.data import Limits
 from mrpro.data.enums import AcqFlags
 from mrpro.data.traj_calculators import KTrajectoryCalculator
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
+from mrpro.utils import modify_acq_info
 
 KDIM_SORT_LABELS = (
     'k1',
@@ -179,14 +180,7 @@ class KData:
         def reshape_acq_data(data):
             return rearrange(data[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=num_k1, k2=num_k2)
 
-        for field in dataclasses.fields(kheader.acq_info):
-            current = getattr(kheader.acq_info, field.name)
-            if isinstance(current, torch.Tensor):
-                setattr(kheader.acq_info, field.name, reshape_acq_data(current))
-            elif dataclasses.is_dataclass(current):
-                for subfield in dataclasses.fields(current):
-                    subcurrent = getattr(current, subfield.name)
-                    setattr(current, subfield.name, reshape_acq_data(subcurrent))
+        kheader.acq_info = modify_acq_info(reshape_acq_data, kheader.acq_info)
 
         # Calculate trajectory and check if it matches the kdata shape
         match ktrajectory:
