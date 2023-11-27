@@ -9,21 +9,20 @@ from mrpro.data._DcfData import DcfData
 from mrpro.data._KData import KData
 from mrpro.data.traj_calculators._KTrajectorySeq import KTrajectorySeq
 
-filepath = (
-    R"../../CEST_Data/2023-10-30_CEST_JOHANNES/meas_MID00072_FID04741_20231026_glycoCEST_fov192_offsets_44_b1_2p80/"
-)
+# %%
+filepath = R"../../CEST_Data/2023-11-14_Johannes_Seq_Test/"
 
 data = KData.from_file(
-    ktrajectory=KTrajectorySeq(path=filepath + "20231026_glycoCEST_fov192_offsets_44_b1_2p80.seq"),
-    filename=filepath + "meas_MID00072_FID04741_20231026_glycoCEST_fov192_offsets_44_b1_2p80.h5",
+    ktrajectory=KTrajectorySeq(path=filepath + "20231114_glycoCEST_fov192_offsets_11_b1_0p56.seq"),
+    filename=filepath + "meas_MID00057_FID05414_20231114_glycoCEST_fov192_offsets_11_b1_0p56.h5",
 )
 # %%
-sortidx = torch.argsort(data.traj.ky, dim=-2, stable=True)
-reshaped = torch.broadcast_to(sortidx.unsqueeze(1), data.data.shape)
-sorted = torch.gather(data.data, -2, reshaped)
+# sortidx = torch.argsort(data.traj.ky, dim=-2, stable=True)
+# reshaped = torch.broadcast_to(sortidx.unsqueeze(1), data.data.shape)
+# sorted = torch.gather(data.data, -2, reshaped)
 # sorted = data.data[...,reshaped,:]
 
-coilwise = torch.fft.fftshift(torch.fft.ifft2(sorted), dim=(-1, -2))
+coilwise = torch.fft.fftshift(torch.fft.ifft2(data.data), dim=(-1, -2))
 image = coilwise.abs().square().sum(1).sqrt()
 
 image = image.squeeze()
@@ -47,7 +46,11 @@ loaded_img = nib.load(
 ).get_fdata()
 
 # %%
-data2 = KData.from_file(
+import os
+
+filepath = R"/home/hammac01/Mrpro_Test_Data/"
+
+data = KData.from_file(
     ktrajectory=KTrajectorySeq(path=filepath + "20231010_tse_golden_radial_fov192_128px_etl1_128ang.seq"),
     filename=filepath + "meas_MID00073_FID03746_20231010_tse_golden_radial_fov192_128px_etl1_128ang.h5",
 )

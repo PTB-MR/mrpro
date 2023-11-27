@@ -58,6 +58,10 @@ class KTrajectorySeq(KTrajectoryCalculator):
         k_traj_adc, _, _, _, _ = seq.calculate_kspace()
 
         unique_idxs = {label: np.unique(getattr(kheader.acq_info.idx, label)) for label in ["k1", "k2"]}
+
+        print(kheader.acq_info)
+        print(unique_idxs)
+
         k1 = len(unique_idxs["k1"])
         k2 = len(unique_idxs["k2"])
         # k0 = int(k_traj_adc.shape[1] / k1 / k2)
@@ -67,8 +71,6 @@ class KTrajectorySeq(KTrajectoryCalculator):
 
         k0 = num_samples[0]
         k0 = tuple(k0.squeeze().tolist())[0]
-        print(k0)
-        print(type(k0))
 
         sample_size = num_samples.shape[0]
 
