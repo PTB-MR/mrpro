@@ -29,7 +29,6 @@ from mrpro.data import KHeader
 from mrpro.data import KTrajectory
 from mrpro.data import KTrajectoryRawShape
 from mrpro.data import Limits
-from mrpro.data._KTrajectoryRawShape import KTrajectoryRawShape
 from mrpro.data.enums import AcqFlags
 from mrpro.data.traj_calculators import KTrajectoryCalculator
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
