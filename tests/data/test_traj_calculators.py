@@ -198,6 +198,7 @@ def test_KTrajectoryIsmrmrdRadial(ismrmrd_rad):
     torch.testing.assert_close(ktraj_calc, ktraj_read)
 
 
+@pytest.fixture(scope='session')
 def pulseqtestdata(tmp_path_factory):
     seq_filename = tmp_path_factory.mktemp('mrpro') / 'radial.seq'
     seq = PulseqRadialTestSeq(str(seq_filename), Nx=256, Nspokes=10)
@@ -215,4 +216,4 @@ def test_KTrajectoryPulseq_validseq_random_header(pulseqtestdata, valid_radial_k
     kx_test = pulseqtestdata.traj_analytical.kx.squeeze(0).squeeze(0)
     kx_test = kx_test / torch.max(torch.abs(kx_test)) * torch.pi
 
-    torch.testing.assert_close(traj.kx, kx_test, atol=5e-4, rtol=1e-3)
+    torch.testing.assert_close(traj.kx.to(torch.float32), kx_test.to(torch.float32), atol=5e-4, rtol=1e-3)
