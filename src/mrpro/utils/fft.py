@@ -40,7 +40,7 @@ def image_to_kspace(idat: torch.Tensor, dim: tuple[int, ...] = (-1, -2, -3)) -> 
     idat
         image data on Cartesian grid
     dim, optional
-        dim along which iFFT is applied, by default last three dimensions (-1, -2, -3)
+        dim along which FFT is applied, by default last three dimensions (-1, -2, -3)
 
     Returns
     -------

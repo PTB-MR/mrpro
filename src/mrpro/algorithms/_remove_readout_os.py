@@ -37,7 +37,7 @@ def remove_readout_os(kdata: KData) -> KData:
     Raises
     ------
     ValueError
-        If the recon matrix along x is smaller than the encoding matrix along x.
+        If the recon matrix along x is larger than the encoding matrix along x.
     """
     # Ratio between encoded and recon space
     dim_ratio = kdata.header.recon_matrix.x / kdata.header.encoding_matrix.x
