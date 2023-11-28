@@ -35,14 +35,14 @@ from mrpro.data.traj_calculators import KTrajectoryCalculator
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 
 KDIM_SORT_LABELS = (
-    "k1",
-    "k2",
-    "average",
-    "slice",
-    "contrast",
-    "phase",
-    "repetition",
-    "set",
+    'k1',
+    'k2',
+    'average',
+    'slice',
+    'contrast',
+    'phase',
+    'repetition',
+    'set',
 )
 
 
@@ -74,12 +74,12 @@ class KData:
         """
 
         # Can raise FileNotFoundError
-        with ismrmrd.File(filename, "r") as file:
+        with ismrmrd.File(filename, 'r') as file:
             ds = file[list(file.keys())[dataset_idx]]
             ismrmrd_header = ds.header
             acquisitions = ds.acquisitions[:]
             try:
-                mtime: int = h5py.h5g.get_objinfo(ds["data"]._contents.id).mtime
+                mtime: int = h5py.h5g.get_objinfo(ds['data']._contents.id).mtime
             except AttributeError:
                 mtime = 0
             modification_time = datetime.datetime.fromtimestamp(mtime)
@@ -94,8 +94,8 @@ class KData:
             ismrmrd_header,
             acqinfo,
             defaults={
-                "datetime": modification_time,  # use the modification time of the dataset as fallback
-                "trajectory": ktrajectory,
+                'datetime': modification_time,  # use the modification time of the dataset as fallback
+                'trajectory': ktrajectory,
             },
             overwrite=header_overwrites,
         )
@@ -110,20 +110,20 @@ class KData:
         # Sort kdata and acq_info into ("all other dim", coils, k2, k1, k0) / ("all other dim", k2, k1, acq_info_dims)
         # Fist, ensure each the non k1/k2 dimensions covers the same number of k1 and k2 points
         unique_idxs = {label: np.unique(getattr(kheader.acq_info.idx, label)) for label in KDIM_SORT_LABELS}
-        num_k1 = len(unique_idxs["k1"])
-        num_k2 = len(unique_idxs["k2"])
+        num_k1 = len(unique_idxs['k1'])
+        num_k2 = len(unique_idxs['k2'])
 
         for label, idxs in unique_idxs.items():
-            if label in ("k1", "k2"):
+            if label in ('k1', 'k2'):
                 continue
             for idx in idxs:
                 idx_matches = torch.nonzero(getattr(kheader.acq_info.idx, label) == idx)
                 current_num_k1 = len(torch.unique(kheader.acq_info.idx.k1[idx_matches]))
                 current_num_k2 = len(torch.unique(kheader.acq_info.idx.k2[idx_matches]))
                 if current_num_k1 != num_k1:
-                    raise ValueError(f"Number of k1 points in {label}: {current_num_k1}. Expected: {num_k1}")
+                    raise ValueError(f'Number of k1 points in {label}: {current_num_k1}. Expected: {num_k1}')
                 if current_num_k2 != num_k2:
-                    raise ValueError(f"Number of k2 points in {label}: {current_num_k2}. Expected: {num_k2}")
+                    raise ValueError(f'Number of k2 points in {label}: {current_num_k2}. Expected: {num_k2}')
         print(kheader.acq_info.idx)
         # using np.lexsort as it looks a bit more familiar than looping and torch.argsort(..., stable=True)
         sort_ki = np.stack([getattr(kheader.acq_info.idx, label) for label in KDIM_SORT_LABELS], axis=0)
@@ -131,7 +131,7 @@ class KData:
 
         kdata = rearrange(
             kdata[sort_idx],
-            "(other k2 k1) coil k0 -> other coil k2 k1 k0",
+            '(other k2 k1) coil k0 -> other coil k2 k1 k0',
             k1=num_k1,
             k2=num_k2,
         )
@@ -139,7 +139,7 @@ class KData:
         def reshape_acq_data(data):
             return rearrange(
                 data[sort_idx],
-                "(other k2 k1) ... -> other k2 k1 ...",
+                '(other k2 k1) ... -> other k2 k1 ...',
                 k1=num_k1,
                 k2=num_k2,
             )
@@ -176,8 +176,8 @@ class KData:
             torch.broadcast_shapes(kdata[:, 0].shape, shape)
         except RuntimeError:
             raise ValueError(
-                f"Broadcasted shape trajectory do not match kdata: {shape} vs. {kdata.shape}. "
-                "Please check the trajectory."
+                f'Broadcasted shape trajectory do not match kdata: {shape} vs. {kdata.shape}. '
+                'Please check the trajectory.'
             )
 
         return cls(kheader, kdata, ktraj)

@@ -57,20 +57,18 @@ class KTrajectorySeq(KTrajectoryCalculator):
         seq.read(file_path=self.path)
         k_traj_adc, _, _, _, _ = seq.calculate_kspace()
 
-        unique_idxs = {label: np.unique(getattr(kheader.acq_info.idx, label)) for label in ["k1", "k2"]}
+        unique_idxs = {label: np.unique(getattr(kheader.acq_info.idx, label)) for label in ['k1', 'k2']}
 
-        print(kheader.acq_info)
-        print(unique_idxs)
+        k1 = len(unique_idxs['k1'])
+        k2 = len(unique_idxs['k2'])
 
-        k1 = len(unique_idxs["k1"])
-        k2 = len(unique_idxs["k2"])
-        # k0 = int(k_traj_adc.shape[1] / k1 / k2)
         num_samples = kheader.acq_info.number_of_samples
         if len(torch.unique(num_samples)) > 1:
-            raise ValueError("We  currently only support constant number of samples")
+            raise ValueError('We  currently only support constant number of samples')
 
-        k0 = num_samples[0]
-        k0 = tuple(k0.squeeze().tolist())[0]
+        # get number of samples as integer
+        # ToDo: find more pythonic solution compatible with mypy
+        k0 = int(num_samples[0].squeeze().tolist()[0])
 
         sample_size = num_samples.shape[0]
 
@@ -84,7 +82,7 @@ class KTrajectorySeq(KTrajectoryCalculator):
 
         kx = rearrange(
             kx,
-            "other k2 k1 k0 -> (other k2 k1) k0",
+            'other k2 k1 k0 -> (other k2 k1) k0',
             k0=k0,
             k2=k2,
             k1=k1,
@@ -92,7 +90,7 @@ class KTrajectorySeq(KTrajectoryCalculator):
         )
         ky = rearrange(
             ky,
-            "other k2 k1 k0 -> (other k2 k1) k0",
+            'other k2 k1 k0 -> (other k2 k1) k0',
             k0=k0,
             k2=k2,
             k1=k1,
@@ -100,7 +98,7 @@ class KTrajectorySeq(KTrajectoryCalculator):
         )
         kz = rearrange(
             kz,
-            "other k2 k1 k0 -> (other k2 k1) k0",
+            'other k2 k1 k0 -> (other k2 k1) k0',
             k0=k0,
             k2=k2,
             k1=k1,
