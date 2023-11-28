@@ -8,7 +8,7 @@ from einops import rearrange
 
 from mrpro.data._DcfData import DcfData
 from mrpro.data._KData import KData
-from mrpro.data.traj_calculators._KTrajectorySeq import KTrajectorySeq
+from mrpro.data.traj_calculators._KTrajectoryPulseq import KTrajectorySeq
 
 # %%
 filepath = R'../../CEST_Data/2023-11-14_Johannes_Seq_Test/'

@@ -1,4 +1,5 @@
-"""K-space trajectory from pulseq seq file."""
+# %%
+"""K-space trajectory from .seq file class."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -11,79 +12,97 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+from __future__ import annotations
 
 import numpy as np
-import pypulseq
+import pypulseq as pp
 import torch
+from einops import rearrange
 
-from mrpro.data.traj_calculators import KTrajectoryCalculator
+from mrpro.data import KHeader
+from mrpro.data._KTrajectoryRawShape import KTrajectoryRawShape
+from mrpro.data.traj_calculators._KTrajectoryCalculator import KTrajectoryCalculator
 
-# TODO: This is work in progress
-# copied over from https://github.com/Stef-Martin/MRERecon/blob/ReadData/ReadData.py
 
-
-class KTrajectoryPulseq(KTrajectoryCalculator):
+class KTrajectorySeq(KTrajectoryCalculator):
     """Trajectory from .seq file.
 
     Parameters
     ----------
     path
-        path to .seq file
+        absolute path to .seq file
     """
 
-    def __init__(
-        self,
-        path: str,  # TODO: should accept a pathlib.Path as well
-    ) -> None:
+    def __init__(self, path: str) -> None:
         super().__init__()
-        self.path: str = path
-        # TODO: Read in pulseq file here to throw error if file is corrupt or does not exist
+        self.path = path
 
-    # TODO: should be __call__(self, header:Kheader)->KTrajectory
-    def calc_traj(self) -> torch.Tensor:
-        """Get trajectory for given KHeader.
+    def __call__(self, kheader: KHeader) -> KTrajectoryRawShape:
+        """Calculate trajectory from given .seq file and header information.
 
         Parameters
         ----------
-        path:
+        kheader
+           MR raw data header (KHeader) containing required meta data
 
         Returns
         -------
-            phase encoding trajectory for given path
+            trajectory of type KTrajectoryRawShape
         """
-        seq = pypulseq.Sequence()
+        # k1 : num spirals
+        # k2 : num slices
+        # k0 : num k space points per spiral
+
+        seq = pp.Sequence()
         seq.read(file_path=self.path)
-        k_traj_adc, *_ = seq.calculate_kspacePP()
+        k_traj_adc, _, _, _, _ = seq.calculate_kspace()
 
-        kx = k_traj_adc[0]
-        ky = k_traj_adc[1]
-        kz = k_traj_adc[2]
+        unique_idxs = {label: np.unique(getattr(kheader.acq_info.idx, label)) for label in ['k1', 'k2']}
 
-        # ToDo: get this out of the sequence file
-        N_shots = 1
-        N_slices = 1
-        #####
-        num_spirals = N_shots
-        num_slices = N_slices
-        num_k_per_spiral = int(kx.shape[0] / num_spirals / num_slices)
+        k1 = len(unique_idxs['k1'])
+        k2 = len(unique_idxs['k2'])
 
-        # TODO: just use kz,ky,kx to create KTrajectory
-        k0 = num_k_per_spiral
-        k1 = num_spirals
-        k2 = num_slices
+        num_samples = kheader.acq_info.number_of_samples
+        if len(torch.unique(num_samples)) > 1:
+            raise ValueError('We  currently only support constant number of samples')
 
-        tensor_shape = (3, k2, k1, k0)
-        tensor = np.empty(tensor_shape)
+        # get number of samples as integer
+        # ToDo: find more pythonic solution compatible with mypy
+        k0 = int(num_samples[0].squeeze().tolist()[0])
 
-        # Create an index grid for broadcasting
-        i, j, k = np.indices((num_spirals, num_k_per_spiral, num_slices))
+        sample_size = num_samples.shape[0]
 
-        # Assign values to tensor using broadcasting
-        tensor[0, k, i, j] = kx[j]
-        tensor[1, k, i, j] = ky[j]
-        tensor[2, k, i, j] = kz[j]
+        k_traj_adc[0] = k_traj_adc[0] / np.max(np.abs(k_traj_adc[0])) * np.pi
+        k_traj_adc[1] = k_traj_adc[1] / np.max(np.abs(k_traj_adc[1])) * np.pi
+        k_traj_adc[2] = k_traj_adc[2] / np.max(np.abs(k_traj_adc[2])) * np.pi
 
-        ktraj = torch.from_numpy(tensor)
-        ktraj = ktraj.unsqueeze(dim=0)
-        # TODO: return KTrajectory
-        return ktraj
+        kx = torch.tensor(k_traj_adc[0]).view((sample_size, k2, k1, k0))
+        ky = torch.tensor(k_traj_adc[1]).view((sample_size, k2, k1, k0))
+        kz = torch.tensor(k_traj_adc[2]).view((sample_size, k2, k1, k0))
+
+        kx = rearrange(
+            kx,
+            'other k2 k1 k0 -> (other k2 k1) k0',
+            k0=k0,
+            k2=k2,
+            k1=k1,
+            other=sample_size,
+        )
+        ky = rearrange(
+            ky,
+            'other k2 k1 k0 -> (other k2 k1) k0',
+            k0=k0,
+            k2=k2,
+            k1=k1,
+            other=sample_size,
+        )
+        kz = rearrange(
+            kz,
+            'other k2 k1 k0 -> (other k2 k1) k0',
+            k0=k0,
+            k2=k2,
+            k1=k1,
+            other=sample_size,
+        )
+
+        return KTrajectoryRawShape(kz, ky, kx)
