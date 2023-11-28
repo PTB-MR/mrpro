@@ -1,4 +1,3 @@
-# %%
 """K-space trajectory from .seq file class."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
@@ -12,7 +11,10 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+
 from __future__ import annotations
+
+from pathlib import Path
 
 import numpy as np
 import pypulseq as pp
@@ -20,11 +22,11 @@ import torch
 from einops import rearrange
 
 from mrpro.data import KHeader
-from mrpro.data._KTrajectoryRawShape import KTrajectoryRawShape
-from mrpro.data.traj_calculators._KTrajectoryCalculator import KTrajectoryCalculator
+from mrpro.data import KTrajectoryRawShape
+from mrpro.data.traj_calculators import KTrajectoryCalculator
 
 
-class KTrajectorySeq(KTrajectoryCalculator):
+class KTrajectoryPulseq(KTrajectoryCalculator):
     """Trajectory from .seq file.
 
     Parameters
@@ -33,7 +35,7 @@ class KTrajectorySeq(KTrajectoryCalculator):
         absolute path to .seq file
     """
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: str | Path) -> None:
         super().__init__()
         self.path = path
 
@@ -49,12 +51,12 @@ class KTrajectorySeq(KTrajectoryCalculator):
         -------
             trajectory of type KTrajectoryRawShape
         """
-        # k1 : num spirals
-        # k2 : num slices
-        # k0 : num k space points per spiral
 
+        # create PyPulseq Sequence object and read .seq file
         seq = pp.Sequence()
         seq.read(file_path=self.path)
+
+        # calculate k-space trajectory using PyPulseq
         k_traj_adc, _, _, _, _ = seq.calculate_kspace()
 
         unique_idxs = {label: np.unique(getattr(kheader.acq_info.idx, label)) for label in ['k1', 'k2']}
@@ -80,6 +82,7 @@ class KTrajectorySeq(KTrajectoryCalculator):
         ky = torch.tensor(k_traj_adc[1]).view((sample_size, k2, k1, k0))
         kz = torch.tensor(k_traj_adc[2]).view((sample_size, k2, k1, k0))
 
+        # rearrange k-space trajectory to match MRpro convention
         kx = rearrange(
             kx,
             'other k2 k1 k0 -> (other k2 k1) k0',

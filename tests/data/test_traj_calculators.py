@@ -26,7 +26,7 @@ from mrpro.data.traj_calculators import KTrajectorySunflowerGoldenRpe
 from tests.conftest import random_kheader
 from tests.data import IsmrmrdRawTestData
 from tests.phantoms.test_ellipse_phantom import ph_ellipse
-from mrpro.data.traj_calculators._KTrajectorySeq import KTrajectorySeq
+from mrpro.data.traj_calculators._KTrajectoryPulseq import KTrajectoryPulseq
 from tests.data._PulseqRadialTestSeq import PulseqRadialTestSeq
 
 
@@ -211,7 +211,7 @@ def test_KTrajectoryPulseq_validseq_random_header(pulseqtestdata, valid_radial_k
     # TODO: Test with valid header
     # TODO: Test with invalid seq file
 
-    ktrajectory = KTrajectorySeq(path=pulseqtestdata.seq_filename)
+    ktrajectory = KTrajectoryPulseq(path=pulseqtestdata.seq_filename)
     traj = ktrajectory(kheader=valid_radial_kheader)
 
     kx_test = pulseqtestdata.traj_analytical.kx.squeeze(0).squeeze(0)

@@ -8,13 +8,13 @@ from einops import rearrange
 
 from mrpro.data._DcfData import DcfData
 from mrpro.data._KData import KData
-from mrpro.data.traj_calculators._KTrajectoryPulseq import KTrajectorySeq
+from mrpro.data.traj_calculators._KTrajectoryPulseq import KTrajectoryPulseq
 
 # %%
 filepath = R'../../CEST_Data/2023-11-14_Johannes_Seq_Test/'
 
 data = KData.from_file(
-    ktrajectory=KTrajectorySeq(path=filepath + '20231114_glycoCEST_fov192_offsets_11_b1_0p56.seq'),
+    ktrajectory=KTrajectoryPulseq(path=filepath + '20231114_glycoCEST_fov192_offsets_11_b1_0p56.seq'),
     filename=filepath + 'meas_MID00057_FID05414_20231114_glycoCEST_fov192_offsets_11_b1_0p56.h5',
 )
 # %%
@@ -49,7 +49,7 @@ loaded_img = nib.load(
 filepath = R'/home/hammac01/Mrpro_Test_Data/'
 
 data = KData.from_file(
-    ktrajectory=KTrajectorySeq(path=filepath + '20231010_tse_golden_radial_fov192_128px_etl1_128ang.seq'),
+    ktrajectory=KTrajectoryPulseq(path=filepath + '20231010_tse_golden_radial_fov192_128px_etl1_128ang.seq'),
     filename=filepath + 'meas_MID00073_FID03746_20231010_tse_golden_radial_fov192_128px_etl1_128ang.h5',
 )
 
