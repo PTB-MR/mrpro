@@ -37,5 +37,6 @@
    :template: module_template.rst
    :recursive:
 
+   mrpro.utils.fft
    mrpro.utils.filters
 
