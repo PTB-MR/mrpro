@@ -54,7 +54,7 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
 
         # create PyPulseq Sequence object and read .seq file
         seq = pp.Sequence()
-        seq.read(file_path=self.seq_path)
+        seq.read(file_path=str(self.seq_path))
 
         # calculate k-space trajectory using PyPulseq
         k_traj_adc, _, _, _, _ = seq.calculate_kspace()
@@ -66,7 +66,7 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
 
         num_samples = kheader.acq_info.number_of_samples
         if len(torch.unique(num_samples)) > 1:
-            raise ValueError('We  currently only support constant number of samples')
+            raise ValueError('We currently only support constant number of samples')
 
         # get number of samples as integer
         # ToDo: find more pythonic solution compatible with mypy
