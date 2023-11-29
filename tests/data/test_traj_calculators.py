@@ -199,21 +199,25 @@ def test_KTrajectoryIsmrmrdRadial(ismrmrd_rad):
 
 
 @pytest.fixture(scope='session')
-def pulseqtestdata(tmp_path_factory):
+def pulseq_example_rad_seq(tmp_path_factory):
     seq_filename = tmp_path_factory.mktemp('mrpro') / 'radial.seq'
-    seq = PulseqRadialTestSeq(str(seq_filename), Nx=256, Nspokes=10)
+    seq = PulseqRadialTestSeq(seq_filename, Nx=256, Nspokes=10)
     return seq
 
 
-def test_KTrajectoryPulseq_validseq_random_header(pulseqtestdata, valid_radial_kheader):
+def test_KTrajectoryPulseq_validseq_random_header(pulseq_example_rad_seq, valid_radial_kheader):
     """Test pulseq File reader with valid seq File."""
     # TODO: Test with valid header
     # TODO: Test with invalid seq file
 
-    ktrajectory = KTrajectoryPulseq(path=pulseqtestdata.seq_filename)
+    ktrajectory = KTrajectoryPulseq(seq_path=pulseq_example_rad_seq.seq_filename)
     traj = ktrajectory(kheader=valid_radial_kheader)
 
-    kx_test = pulseqtestdata.traj_analytical.kx.squeeze(0).squeeze(0)
+    kx_test = pulseq_example_rad_seq.traj_analytical.kx.squeeze(0).squeeze(0)
     kx_test = kx_test / torch.max(torch.abs(kx_test)) * torch.pi
 
+    ky_test = pulseq_example_rad_seq.traj_analytical.ky.squeeze(0).squeeze(0)
+    ky_test = ky_test / torch.max(torch.abs(ky_test)) * torch.pi
+
     torch.testing.assert_close(traj.kx.to(torch.float32), kx_test.to(torch.float32), atol=5e-4, rtol=1e-3)
+    torch.testing.assert_close(traj.ky.to(torch.float32), ky_test.to(torch.float32), atol=5e-4, rtol=1e-3)
