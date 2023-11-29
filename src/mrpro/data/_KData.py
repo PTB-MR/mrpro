@@ -123,25 +123,14 @@ class KData:
                     raise ValueError(f'Number of k1 points in {label}: {current_num_k1}. Expected: {num_k1}')
                 if current_num_k2 != num_k2:
                     raise ValueError(f'Number of k2 points in {label}: {current_num_k2}. Expected: {num_k2}')
-        print(kheader.acq_info.idx)
         # using np.lexsort as it looks a bit more familiar than looping and torch.argsort(..., stable=True)
         sort_ki = np.stack([getattr(kheader.acq_info.idx, label) for label in KDIM_SORT_LABELS], axis=0)
         sort_idx = np.lexsort(sort_ki)
 
-        kdata = rearrange(
-            kdata[sort_idx],
-            '(other k2 k1) coil k0 -> other coil k2 k1 k0',
-            k1=num_k1,
-            k2=num_k2,
-        )
+        kdata = rearrange(kdata[sort_idx], '(other k2 k1) coil k0 -> other coil k2 k1 k0', k1=num_k1, k2=num_k2)
 
         def reshape_acq_data(data):
-            return rearrange(
-                data[sort_idx],
-                '(other k2 k1) ... -> other k2 k1 ...',
-                k1=num_k1,
-                k2=num_k2,
-            )
+            return rearrange(data[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=num_k1, k2=num_k2)
 
         for field in dataclasses.fields(kheader.acq_info):
             current = getattr(kheader.acq_info, field.name)
