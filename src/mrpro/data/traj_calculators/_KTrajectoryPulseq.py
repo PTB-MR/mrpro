@@ -30,13 +30,13 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
 
     Parameters
     ----------
-    path
+    seq_path
         absolute path to .seq file
     """
 
-    def __init__(self, path: str | Path) -> None:
+    def __init__(self, seq_path: str | Path) -> None:
         super().__init__()
-        self.path = path
+        self.seq_path = seq_path
 
     def __call__(self, kheader: KHeader) -> KTrajectoryRawShape:
         """Calculate trajectory from given .seq file and header information.
@@ -53,7 +53,7 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
 
         # create PyPulseq Sequence object and read .seq file
         seq = pp.Sequence()
-        seq.read(file_path=self.path)
+        seq.read(file_path=str(self.seq_path))
 
         # calculate k-space trajectory using PyPulseq
         k_traj_adc, _, _, _, _ = seq.calculate_kspace()
@@ -65,7 +65,7 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
 
         num_samples = kheader.acq_info.number_of_samples
         if len(torch.unique(num_samples)) > 1:
-            raise ValueError('We  currently only support constant number of samples')
+            raise ValueError('We currently only support constant number of samples')
 
         # get number of samples as integer
         # ToDo: find more pythonic solution compatible with mypy

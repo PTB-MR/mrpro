@@ -55,7 +55,7 @@ class PulseqRadialTestSeq:
             seq.add_block(pypulseq.make_delay(100e-3))
             print(phi)
 
-        seq.write(seq_filename)
+        seq.write(str(seq_filename))
 
         self.Nx = Nx
         self.Nspokes = Nspokes
