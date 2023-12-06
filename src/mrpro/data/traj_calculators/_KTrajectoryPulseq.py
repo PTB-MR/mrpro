@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import pypulseq as pp
 import torch
 from einops import rearrange
@@ -58,7 +59,7 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         # calculate k-space trajectory using PyPulseq
         k_traj_adc, _, _, _, _ = seq.calculate_kspace()
 
-        unique_idxs = {label: torch.unique(getattr(kheader.acq_info.idx, label)) for label in ['k1', 'k2']}
+        unique_idxs = {label: np.unique(getattr(kheader.acq_info.idx, label)) for label in ['k1', 'k2']}
 
         k1 = len(unique_idxs['k1'])
         k2 = len(unique_idxs['k2'])
@@ -73,9 +74,9 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
 
         sample_size = num_samples.shape[0]
 
-        k_traj_adc[0] = k_traj_adc[0] / torch.max(torch.abs(k_traj_adc[0])) * torch.pi
-        k_traj_adc[1] = k_traj_adc[1] / torch.max(torch.abs(k_traj_adc[1])) * torch.pi
-        k_traj_adc[2] = k_traj_adc[2] / torch.max(torch.abs(k_traj_adc[2])) * torch.pi
+        k_traj_adc[0] = k_traj_adc[0] / np.max(np.abs(k_traj_adc[0])) * np.pi
+        k_traj_adc[1] = k_traj_adc[1] / np.max(np.abs(k_traj_adc[1])) * np.pi
+        k_traj_adc[2] = k_traj_adc[2] / np.max(np.abs(k_traj_adc[2])) * np.pi
 
         kx = torch.tensor(k_traj_adc[0]).view((sample_size, k2, k1, k0))
         ky = torch.tensor(k_traj_adc[1]).view((sample_size, k2, k1, k0))
