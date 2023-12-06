@@ -56,7 +56,8 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         seq.read(file_path=str(self.seq_path))
 
         # calculate k-space trajectory using PyPulseq
-        k_traj_adc, _, _, _, _ = seq.calculate_kspace()
+        k_traj_adc_numpy, _, _, _, _ = seq.calculate_kspace()
+        k_traj_adc = torch.from_numpy(k_traj_adc_numpy).clone().detach().requires_grad_(True)
 
         unique_idxs = {label: torch.unique(getattr(kheader.acq_info.idx, label)) for label in ['k1', 'k2']}
 
@@ -73,13 +74,14 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
 
         sample_size = num_samples.shape[0]
 
-        k_traj_adc[0] = k_traj_adc[0] / torch.max(torch.abs(k_traj_adc[0])) * torch.pi
-        k_traj_adc[1] = k_traj_adc[1] / torch.max(torch.abs(k_traj_adc[1])) * torch.pi
-        k_traj_adc[2] = k_traj_adc[2] / torch.max(torch.abs(k_traj_adc[2])) * torch.pi
+        with torch.no_grad():
+            k_traj_adc[0] = k_traj_adc[0] / torch.max(torch.abs(k_traj_adc[0])) * torch.pi
+            k_traj_adc[1] = k_traj_adc[1] / torch.max(torch.abs(k_traj_adc[1])) * torch.pi
+            k_traj_adc[2] = k_traj_adc[2] / torch.max(torch.abs(k_traj_adc[2])) * torch.pi
 
-        kx = torch.tensor(k_traj_adc[0]).view((sample_size, k2, k1, k0))
-        ky = torch.tensor(k_traj_adc[1]).view((sample_size, k2, k1, k0))
-        kz = torch.tensor(k_traj_adc[2]).view((sample_size, k2, k1, k0))
+        kx = k_traj_adc[0].view((sample_size, k2, k1, k0))
+        ky = k_traj_adc[1].view((sample_size, k2, k1, k0))
+        kz = k_traj_adc[2].view((sample_size, k2, k1, k0))
 
         # rearrange k-space trajectory to match MRpro convention
         kx = rearrange(
