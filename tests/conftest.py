@@ -221,6 +221,20 @@ def random_test_data(request):
 @pytest.fixture(scope='session')
 def dcm_2d(ph_ellipse, tmp_path_factory):
     """Single 2D dicom image."""
-    dcm_filename = tmp_path_factory.mktemp('mrpro') / 'dicom_2d.h5'
+    dcm_filename = tmp_path_factory.mktemp('mrpro') / 'dicom_2d.dcm'
     dcm_idat = Dicom2DTestImage(filename=dcm_filename, phantom=ph_ellipse.phantom)
+    return dcm_idat
+
+
+@pytest.fixture(scope='session', params=({'num_images': 7},))
+def dcm_multi_te(request, ph_ellipse, tmp_path_factory):
+    """Multiple 2D dicom images with different echo times."""
+    num_images = request.param['num_images']
+    path = tmp_path_factory.mktemp('mrpro_multi_dcm')
+    te = 2.0
+    dcm_idat = []
+    for _ in range(num_images):
+        dcm_filename = path / f'dicom_te_{int(te)}.dcm'
+        dcm_idat.append(Dicom2DTestImage(filename=dcm_filename, phantom=ph_ellipse.phantom, te=te))
+        te += 1.0
     return dcm_idat

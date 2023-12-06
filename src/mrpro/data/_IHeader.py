@@ -14,13 +14,17 @@
 
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass
 
+import numpy as np
 from pydicom.dataset import Dataset
 from pydicom.tag import Tag
 
 from mrpro.data import KHeader
 from mrpro.data import SpatialDimension
+
+MISC_TAGS = {'TimeAfterStart': 0x00191016}
 
 
 @dataclass(slots=True)
@@ -33,6 +37,7 @@ class IHeader:
     ti: list[float]
     fa: list[float]
     tr: list[float]
+    misc: dict = dataclasses.field(default_factory=dict)
 
     @classmethod
     def from_kheader(cls, kheader: KHeader):
@@ -53,27 +58,67 @@ class IHeader:
         )
 
     @classmethod
-    def from_dicom(cls, dicom_dataset: Dataset):
-        """Read DICOM file and return IHeader object.
+    def from_dicom_list(cls, dicom_datasets: list[Dataset]):
+        """Read DICOM files and return IHeader object.
 
         Parameters
         ----------
-        dicom_dataset
-            Dataset object containing the DICOM file.
+        dicom_datasets
+            List of dataset objects containing the DICOM file.
         """
 
-        def getItems(name):
-            """Get all items with a given name from a pydicom dataset."""
+        def get_item(ds, name):
+            """Get item with a given name from a pydicom dataset."""
             # iterall is recursive, so it will find all items with the given name
-            return [item.value for item in dicom_dataset.iterall() if item.tag == Tag(name)]
+            if isinstance(name, str):  # find item via value name
+                found_item = [item.value for item in ds.iterall() if item.tag == Tag(name)]
+            else:  # fine item via tag
+                found_item = [item.value for item in ds.iterall() if item.tag == name]
+            if len(found_item) == 0:
+                return None
+            elif len(found_item) == 1:
+                return found_item[0]
+            else:
+                raise ValueError(f'Item {name} found {len(found_item)} times.')
 
-        fa = getItems('FlipAngle')
-        ti = getItems('InversionTime')
-        tr = getItems('RepetitionTime')
+        def get_items_from_all_dicoms(name):
+            """Get list of items for all dataset objects in the list."""
+            return [get_item(ds, name) for ds in dicom_datasets]
+
+        def get_float_items_from_all_dicoms(name):
+            """Convert items to float."""
+            items = get_items_from_all_dicoms(name)
+            for idx, val in enumerate(items):
+                if val is not None:
+                    items[idx] = float(val)
+            return items
+
+        def make_unique(values):
+            """If all the values are the same only return one."""
+            if any(val is None for val in values):
+                return []
+            elif len(np.unique(values)) == 1:
+                return [values[0]]
+            else:
+                return values
+
+        fa = make_unique(get_float_items_from_all_dicoms('FlipAngle'))
+        ti = make_unique(get_float_items_from_all_dicoms('InversionTime'))
+        tr = make_unique(get_float_items_from_all_dicoms('RepetitionTime'))
         # at least one dicom example has no 'EchoTime' but 'EffectiveEchoTime'
-        te = getItems('EchoTime') or getItems('EffectiveEchoTime')
-        fov_x_mm = float(getItems('Rows')[0]) * getItems('PixelSpacing')[0][0]
-        fov_y_mm = float(getItems('Columns')[0]) * getItems('PixelSpacing')[0][1]
-        fov_z_mm = float(getItems('SliceThickness')[0])
+        te = make_unique(
+            get_float_items_from_all_dicoms('EchoTime') or get_float_items_from_all_dicoms('EffectiveEchoTime')
+        )
+
+        fov_x_mm = get_float_items_from_all_dicoms('Rows')[0] * float(get_items_from_all_dicoms('PixelSpacing')[0][0])
+        fov_y_mm = get_float_items_from_all_dicoms('Columns')[0] * float(
+            get_items_from_all_dicoms('PixelSpacing')[0][1]
+        )
+        fov_z_mm = get_float_items_from_all_dicoms('SliceThickness')[0]
         fov = SpatialDimension(fov_x_mm / 1000.0, fov_y_mm / 1000.0, fov_z_mm / 1000.0)
-        return cls(fov=fov, te=te, ti=ti, fa=fa, tr=tr)
+
+        # Get misc parameters
+        misc = {}
+        for name in MISC_TAGS:
+            misc[name] = make_unique(get_float_items_from_all_dicoms(MISC_TAGS[name]))
+        return cls(fov=fov, te=te, ti=ti, fa=fa, tr=tr, misc=misc)
