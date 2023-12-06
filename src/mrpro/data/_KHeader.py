@@ -1,4 +1,3 @@
-# %%
 """MR raw data / k-space data header dataclass."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
