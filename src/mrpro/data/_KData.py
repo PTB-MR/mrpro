@@ -161,7 +161,7 @@ class KData:
 
         try:
             shape = ktraj.broadcasted_shape
-            torch.broadcast_shapes(kdata[:, 0].shape, shape)
+            torch.broadcast_shapes(kdata.shape, shape)
         except RuntimeError:
             raise ValueError(
                 f'Broadcasted shape trajectory do not match kdata: {shape} vs. {kdata.shape}. '
