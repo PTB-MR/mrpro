@@ -148,7 +148,7 @@ class KData:
             case KTrajectoryCalculator():
                 ktraj_calc = ktrajectory(kheader)
                 if isinstance(ktraj_calc, KTrajectoryRawShape):
-                    ktraj = ktraj_calc.reshape(sort_idx, num_k2, num_k1, repeat_detection_tolerance=None)
+                    ktraj = ktraj_calc.reshape(sort_idx, num_k2, num_k1)
                 else:
                     ktraj = ktraj_calc
             case KTrajectory():
