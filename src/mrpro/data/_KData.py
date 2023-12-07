@@ -123,6 +123,7 @@ class KData:
                     raise ValueError(f'Number of k1 points in {label}: {current_num_k1}. Expected: {num_k1}')
                 if current_num_k2 != num_k2:
                     raise ValueError(f'Number of k2 points in {label}: {current_num_k2}. Expected: {num_k2}')
+
         # using np.lexsort as it looks a bit more familiar than looping and torch.argsort(..., stable=True)
         sort_ki = np.stack([getattr(kheader.acq_info.idx, label) for label in KDIM_SORT_LABELS], axis=0)
         sort_idx = np.lexsort(sort_ki)
