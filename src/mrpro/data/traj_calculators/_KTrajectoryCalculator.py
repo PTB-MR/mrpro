@@ -21,13 +21,14 @@ import torch
 
 from mrpro.data import KHeader
 from mrpro.data import KTrajectory
+from mrpro.data import KTrajectoryRawShape
 
 
 class KTrajectoryCalculator(ABC):
     """Base class for k-space trajectories."""
 
     @abstractmethod
-    def __call__(self, header: KHeader) -> KTrajectory:
+    def __call__(self, header: KHeader) -> KTrajectory | KTrajectoryRawShape:
         """Calculate the trajectory for given KHeader.
 
         The shapes of kz, ky and kx of the calculated trajectory must be

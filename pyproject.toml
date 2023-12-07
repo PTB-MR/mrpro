@@ -17,6 +17,8 @@ authors = [
     { name = "David Schote", email = "david.schote@ptb.de" },
     { name = "Sherine Brahma", email = "sherine.brahma@ptb.de" },
     { name = "Mara Guastini", email = "mara.guastini@ptb.de" },
+    { name = "Johannes Hammacher", email = "johannnes.hammacher@ptb.de" },
+    { name = "Stefan Martin", email = "stefan.martin@ptb.de" },
 ]
 classifiers = [
     "Programming Language :: Python",
@@ -32,6 +34,7 @@ dependencies = [
     "ismrmrd",
     "einops",
     "pydicom",
+    "pypulseq@git+https://github.com/imr-framework/pypulseq",
 ]
 
 [project.optional-dependencies]
