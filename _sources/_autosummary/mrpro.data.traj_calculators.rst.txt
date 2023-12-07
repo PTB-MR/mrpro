@@ -21,6 +21,7 @@ mrpro.data.traj\_calculators
    
       KTrajectoryCalculator
       KTrajectoryIsmrmrd
+      KTrajectoryPulseq
       KTrajectoryRadial2D
       KTrajectoryRpe
       KTrajectorySunflowerGoldenRpe

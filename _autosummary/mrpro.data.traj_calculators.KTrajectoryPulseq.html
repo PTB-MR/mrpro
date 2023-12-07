@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>mrpro.data.traj_calculators &#8212; MRpro</title>
+    <title>mrpro.data.traj_calculators.KTrajectoryPulseq &#8212; MRpro</title>
   
   
   
@@ -39,7 +39,7 @@
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/mrpro.data.traj_calculators';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/mrpro.data.traj_calculators.KTrajectoryPulseq';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -400,31 +400,33 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article" role="main">
                   
-  <section id="module-mrpro.data.traj_calculators">
-<span id="mrpro-data-traj-calculators"></span><h1>mrpro.data.traj_calculators<a class="headerlink" href="#module-mrpro.data.traj_calculators" title="Link to this heading">#</a></h1>
-<p class="rubric">Classes</p>
+  <section id="mrpro-data-traj-calculators-ktrajectorypulseq">
+<h1>mrpro.data.traj_calculators.KTrajectoryPulseq<a class="headerlink" href="#mrpro-data-traj-calculators-ktrajectorypulseq" title="Link to this heading">#</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="mrpro.data.traj_calculators.KTrajectoryPulseq">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.traj_calculators.</span></span><span class="sig-name descname"><span class="pre">KTrajectoryPulseq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/traj_calculators/_KTrajectoryPulseq.html#KTrajectoryPulseq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.traj_calculators.KTrajectoryPulseq" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="mrpro.data.traj_calculators.KTrajectoryCalculator.html#mrpro.data.traj_calculators.KTrajectoryCalculator" title="mrpro.data.traj_calculators._KTrajectoryCalculator.KTrajectoryCalculator"><code class="xref py py-class docutils literal notranslate"><span class="pre">KTrajectoryCalculator</span></code></a></p>
+<p>Trajectory from .seq file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>seq_path</strong> – absolute path to .seq file</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.traj_calculators.KTrajectoryPulseq.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/mrpro/data/traj_calculators/_KTrajectoryPulseq.html#KTrajectoryPulseq.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.traj_calculators.KTrajectoryPulseq.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<p class="rubric">Methods</p>
 <table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.data.traj_calculators.KTrajectoryCalculator.html#mrpro.data.traj_calculators.KTrajectoryCalculator" title="mrpro.data.traj_calculators.KTrajectoryCalculator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KTrajectoryCalculator</span></code></a>()</p></td>
-<td><p>Base class for k-space trajectories.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="mrpro.data.traj_calculators.KTrajectoryIsmrmrd.html#mrpro.data.traj_calculators.KTrajectoryIsmrmrd" title="mrpro.data.traj_calculators.KTrajectoryIsmrmrd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KTrajectoryIsmrmrd</span></code></a>()</p></td>
-<td><p>Get trajectory in ISMRMRD raw data file.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.data.traj_calculators.KTrajectoryPulseq.html#mrpro.data.traj_calculators.KTrajectoryPulseq" title="mrpro.data.traj_calculators.KTrajectoryPulseq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KTrajectoryPulseq</span></code></a>(seq_path)</p></td>
-<td><p>Trajectory from .seq file.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="mrpro.data.traj_calculators.KTrajectoryRadial2D.html#mrpro.data.traj_calculators.KTrajectoryRadial2D" title="mrpro.data.traj_calculators.KTrajectoryRadial2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KTrajectoryRadial2D</span></code></a>([angle])</p></td>
-<td><p>Radial 2D trajectory.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.data.traj_calculators.KTrajectoryRpe.html#mrpro.data.traj_calculators.KTrajectoryRpe" title="mrpro.data.traj_calculators.KTrajectoryRpe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KTrajectoryRpe</span></code></a>(angle[, shift_between_rpe_lines])</p></td>
-<td><p>Radial phase encoding trajectory.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="mrpro.data.traj_calculators.KTrajectorySunflowerGoldenRpe.html#mrpro.data.traj_calculators.KTrajectorySunflowerGoldenRpe" title="mrpro.data.traj_calculators.KTrajectorySunflowerGoldenRpe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KTrajectorySunflowerGoldenRpe</span></code></a>([rad_us_factor])</p></td>
-<td><p>Radial phase encoding trajectory with a sunflower pattern.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.traj_calculators.KTrajectoryPulseq.__init__" title="mrpro.data.traj_calculators.KTrajectoryPulseq.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(seq_path)</p></td>
+<td><p></p></td>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
 </section>
 
 
@@ -448,8 +450,22 @@ document.write(`
 
   <div class="sidebar-secondary-item">
 
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.traj_calculators.KTrajectoryPulseq"><code class="docutils literal notranslate"><span class="pre">KTrajectoryPulseq</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.traj_calculators.KTrajectoryPulseq.__init__"><code class="docutils literal notranslate"><span class="pre">KTrajectoryPulseq.__init__()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
   <div class="tocsection sourcelink">
-    <a href="../_sources/_autosummary/mrpro.data.traj_calculators.rst.txt">
+    <a href="../_sources/_autosummary/mrpro.data.traj_calculators.KTrajectoryPulseq.rst.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>
