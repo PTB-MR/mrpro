@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>MRPro Contributer Guide &#8212; MRpro</title>
+    <title>Guide for MRPro Contributors &#8212; MRpro</title>
   
   
   
@@ -138,7 +138,7 @@
     
                     <li class="nav-item">
                       <a class="nav-link nav-internal" href="user_guide.html">
-                        MRPro User Guide
+                        Guide for MRPro Users
                       </a>
                     </li>
                 
@@ -159,7 +159,7 @@
 
                     <li class="nav-item current active">
                       <a class="nav-link nav-internal" href="#">
-                        MRPro Contributer Guide
+                        Guide for MRPro Contributors
                       </a>
                     </li>
                 
@@ -266,7 +266,7 @@ document.write(`
     
                     <li class="nav-item">
                       <a class="nav-link nav-internal" href="user_guide.html">
-                        MRPro User Guide
+                        Guide for MRPro Users
                       </a>
                     </li>
                 
@@ -287,7 +287,7 @@ document.write(`
 
                     <li class="nav-item current active">
                       <a class="nav-link nav-internal" href="#">
-                        MRPro Contributer Guide
+                        Guide for MRPro Contributors
                       </a>
                     </li>
                 
@@ -384,7 +384,7 @@ document.write(`
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page">MRPro...</li>
+    <li class="breadcrumb-item active" aria-current="page">Guide for...</li>
   </ul>
 </nav>
 </div>
@@ -401,9 +401,59 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article" role="main">
                   
-  <section id="mrpro-contributer-guide">
-<h1>MRPro Contributer Guide<a class="headerlink" href="#mrpro-contributer-guide" title="Link to this heading">#</a></h1>
-<p>This is a contributer guide for the mrpro repository.</p>
+  <section id="guide-for-mrpro-contributors">
+<h1>Guide for MRPro Contributors<a class="headerlink" href="#guide-for-mrpro-contributors" title="Link to this heading">#</a></h1>
+<section id="repo-structure">
+<h2>Repo structure<a class="headerlink" href="#repo-structure" title="Link to this heading">#</a></h2>
+<p>This repository uses a <em>pyproject.toml</em> file to specify all the requirements.
+If you need a “normal” <em>requirements.txt</em> file, please have a look in <em>binder</em>. There you find a <em>requirements.txt</em>
+automatically created from <em>pyproject.toml</em> using GitHub actions.</p>
+<dl>
+<dt><strong>.github/workflows</strong></dt><dd><p>Definitions of GitHub action workflows to carry out formatting checks, run tests and automatically create this
+documentation.</p>
+</dd>
+<dt><strong>.vscode</strong></dt><dd><p>Configuration files for VS Code.</p>
+</dd>
+<dt><strong>.docs</strong></dt><dd><p>Files to create this documentation.</p>
+</dd>
+<dt><strong>binder</strong></dt><dd><p><em>requirements.txt</em> to install all dependencies when starting a binder session.</p>
+</dd>
+<dt><strong>examples</strong></dt><dd><p>Python scripts showcasing how MRpro can be used. Any data needed has to be automatically downloaded from
+an online repository (e.g. zenodo). The scripts are automatically translated to jupyter notebooks using GitHub
+actions. Individual cells should be indicated with <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">%%</span></code>. For markdown cells use <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">%%</span> <span class="pre">[markdown]</span></code>.
+The translation from python script to jupyter notebook is done using
+<a class="reference external" href="https://jupytext.readthedocs.io/en/latest/">jupytext</a> . See their documentation for more details.</p>
+<p>After translating the scripts to notebooks, the notebooks are run and their output is converted to html and added
+to this documentation in the <em>Examples</em> section.</p>
+<p>We are not using notebooks directly because if contributors forget to clear all cells prior to committing then the
+content of the notebook is also version controlled with git which makes things very messy.</p>
+</dd>
+<dt><strong>mrpro/src</strong></dt><dd><p>Main code for this package</p>
+</dd>
+<dt><strong>tests</strong></dt><dd><p>Tests which are automatically run by pytest.
+The subfolder structure should follow the same structure as in <em>mrpro/src</em>.</p>
+</dd>
+</dl>
+</section>
+<section id="src-mrpro-structure">
+<h2>src/mrpro structure<a class="headerlink" href="#src-mrpro-structure" title="Link to this heading">#</a></h2>
+<dl class="simple">
+<dt><strong>algorithms</strong></dt><dd><p>Everything which does something with the data, e.g. prewhiten k-space or remove oversampling.</p>
+</dd>
+<dt><strong>data</strong></dt><dd><p>All the data classes such as <code class="docutils literal notranslate"><span class="pre">KData</span></code>, <code class="docutils literal notranslate"><span class="pre">ImageData</span></code> or <code class="docutils literal notranslate"><span class="pre">CsmData</span></code>.
+As the name suggestions these should mainly contain data and meta information.
+Any functionaly beyond what is absolutely required for the classes should be put as separate functions.</p>
+</dd>
+<dt><strong>operators</strong></dt><dd><p>Linear and non-linear algorithms describing e.g. the transformation from image to k-space (<code class="docutils literal notranslate"><span class="pre">FourierOp</span></code>), the
+effect of receiver coils (<code class="docutils literal notranslate"><span class="pre">SensitivityOp</span></code>) or MR signal models.</p>
+</dd>
+<dt><strong>phantoms</strong></dt><dd><p>Numerical phantoms useful to evaluate reconstruction algorithms.</p>
+</dd>
+<dt><strong>utils</strong></dt><dd><p>Utilities such as spatial filters and also more basic functionality such as applying functions serially along the
+batch dimension (<code class="docutils literal notranslate"><span class="pre">smap</span></code>).</p>
+</dd>
+</dl>
+</section>
 </section>
 
 
@@ -433,6 +483,18 @@ document.write(`
             
               
                 <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#repo-structure">Repo structure</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#src-mrpro-structure">src/mrpro structure</a></li>
+</ul>
+  </nav></div>
 
   <div class="sidebar-secondary-item">
 
