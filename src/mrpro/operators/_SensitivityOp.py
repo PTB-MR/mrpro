@@ -15,9 +15,10 @@
 import torch
 
 from mrpro.data import CsmData
+from mrpro.operators import LinearOperator
 
 
-class SensitivityOp:  # todo: later put (LinearOp) here
+class SensitivityOp(LinearOperator):
     """Sensitivity operator class."""
 
     def __init__(self, csm: CsmData):
