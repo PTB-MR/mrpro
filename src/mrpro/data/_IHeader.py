@@ -67,13 +67,17 @@ class IHeader:
             List of dataset objects containing the DICOM file.
         """
 
-        def get_item(ds, name):
-            """Get item with a given name from a pydicom dataset."""
-            # iterall is recursive, so it will find all items with the given name
+        def get_item(ds, name: str | Tag):
+            """Get item with a given name or Tag from a pydicom dataset."""
+
             if isinstance(name, str):  # find item via value name
-                found_item = [item.value for item in ds.iterall() if item.tag == Tag(name)]
-            else:  # fine item via tag
-                found_item = [item.value for item in ds.iterall() if item.tag == name]
+                tag = Tag(name)
+            else:
+                tag = name
+
+            # iterall is recursive, so it will find all items with the given name
+            found_item = [item.value for item in ds.iterall() if item.tag == tag]
+
             if len(found_item) == 0:
                 return None
             elif len(found_item) == 1:
@@ -81,19 +85,16 @@ class IHeader:
             else:
                 raise ValueError(f'Item {name} found {len(found_item)} times.')
 
-        def get_items_from_all_dicoms(name):
+        def get_items_from_all_dicoms(name: str | Tag):
             """Get list of items for all dataset objects in the list."""
             return [get_item(ds, name) for ds in dicom_datasets]
 
-        def get_float_items_from_all_dicoms(name):
+        def get_float_items_from_all_dicoms(name: str | Tag):
             """Convert items to float."""
             items = get_items_from_all_dicoms(name)
-            for idx, val in enumerate(items):
-                if val is not None:
-                    items[idx] = float(val)
-            return items
+            return [float(val) if val is not None else None for val in items]
 
-        def make_unique(values):
+        def make_unique(values: list[float]):
             """If all the values are the same only return one."""
             if any(val is None for val in values):
                 return []
@@ -105,10 +106,12 @@ class IHeader:
         fa = make_unique(get_float_items_from_all_dicoms('FlipAngle'))
         ti = make_unique(get_float_items_from_all_dicoms('InversionTime'))
         tr = make_unique(get_float_items_from_all_dicoms('RepetitionTime'))
-        # at least one dicom example has no 'EchoTime' but 'EffectiveEchoTime'
-        te = make_unique(
-            get_float_items_from_all_dicoms('EchoTime') or get_float_items_from_all_dicoms('EffectiveEchoTime')
-        )
+
+        # get echo time(s). Some scanners use 'EchoTime', some use 'EffectiveEchoTime'
+        te_list = get_float_items_from_all_dicoms('EchoTime')
+        if all(val is None for val in te_list):  # check if all entries are None
+            te_list = get_float_items_from_all_dicoms('EffectiveEchoTime')
+        te = make_unique(te_list)
 
         fov_x_mm = get_float_items_from_all_dicoms('Rows')[0] * float(get_items_from_all_dicoms('PixelSpacing')[0][0])
         fov_y_mm = get_float_items_from_all_dicoms('Columns')[0] * float(
