@@ -17,7 +17,7 @@ mrpro.data.IHeader
    .. autosummary::
    
       ~IHeader.__init__
-      ~IHeader.from_dicom
+      ~IHeader.from_dicom_list
       ~IHeader.from_kheader
    
    
@@ -33,5 +33,6 @@ mrpro.data.IHeader
       ~IHeader.ti
       ~IHeader.fa
       ~IHeader.tr
+      ~IHeader.misc
    
    

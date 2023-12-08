@@ -491,10 +491,13 @@ document.write(`
 <tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.IData.__init__" title="mrpro.data.IData.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(header, data)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.IData.from_single_dicom" title="mrpro.data.IData.from_single_dicom"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_single_dicom</span></code></a>(filename)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.IData.from_dicom_folder" title="mrpro.data.IData.from_dicom_folder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_dicom_folder</span></code></a>(foldername[, suffix])</p></td>
+<td><p>Read all DICOM files from a folder and return IData object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.IData.from_single_dicom" title="mrpro.data.IData.from_single_dicom"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_single_dicom</span></code></a>(filename)</p></td>
 <td><p>Read single DICOM file and return IData object.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.IData.from_tensor_and_kheader" title="mrpro.data.IData.from_tensor_and_kheader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_tensor_and_kheader</span></code></a>(data, kheader)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.IData.from_tensor_and_kheader" title="mrpro.data.IData.from_tensor_and_kheader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_tensor_and_kheader</span></code></a>(data, kheader)</p></td>
 <td><p>Create IData object from a tensor and a KHeader object.</p></td>
 </tr>
 </tbody>
@@ -510,6 +513,21 @@ document.write(`
 </tr>
 </tbody>
 </table>
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.IData.from_dicom_folder">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dicom_folder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">foldername</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'dcm'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#mrpro.data.IData" title="mrpro.data._IData.IData"><span class="pre">IData</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_IData.html#IData.from_dicom_folder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.IData.from_dicom_folder" title="Link to this definition">#</a></dt>
+<dd><p>Read all DICOM files from a folder and return IData object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>foldername</strong> – Path to folder with DICOM files.</p></li>
+<li><p><strong>suffix</strong> – File extension (without period/full stop) to identify the DICOM files.
+If None, then all files in the folder are read in.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.IData.from_single_dicom">
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_single_dicom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#mrpro.data.IData" title="mrpro.data._IData.IData"><span class="pre">IData</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_IData.html#IData.from_single_dicom"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.IData.from_single_dicom" title="Link to this definition">#</a></dt>
@@ -585,6 +603,7 @@ document.write(`
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.IData"><code class="docutils literal notranslate"><span class="pre">IData</span></code></a><ul class="visible nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.IData.__init__"><code class="docutils literal notranslate"><span class="pre">IData.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.IData.from_dicom_folder"><code class="docutils literal notranslate"><span class="pre">IData.from_dicom_folder()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.IData.from_single_dicom"><code class="docutils literal notranslate"><span class="pre">IData.from_single_dicom()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.IData.from_tensor_and_kheader"><code class="docutils literal notranslate"><span class="pre">IData.from_tensor_and_kheader()</span></code></a></li>
 </ul>
