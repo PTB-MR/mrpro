@@ -12,10 +12,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import numpy as np
 import torch
 
 from mrpro.data import IData
 from tests.conftest import dcm_2d
+from tests.conftest import dcm_multi_te
 from tests.conftest import random_kheader
 from tests.conftest import random_test_data
 
@@ -26,6 +28,16 @@ def test_IData_from_dcm_file(dcm_2d):
     # IData uses complex values but dicom only supports real values
     im = torch.real(idat.data[0, 0, 0, ...])
     torch.testing.assert_close(im, dcm_2d.imref)
+
+
+def test_IData_from_dcm_folder(dcm_multi_te):
+    """IData from multiple dcm files in folder."""
+    idat = IData.from_dicom_folder(dcm_multi_te[0].filename.parent)
+    # Verify correct echo times
+    te_orig = [ds.te for ds in dcm_multi_te]
+    assert np.all(np.sort(te_orig) == np.sort(idat.header.te))
+    # Verify all images were read in
+    assert idat.data.shape[0] == len(te_orig)
 
 
 def test_IData_from_kheader_and_tensor(random_kheader, random_test_data):
