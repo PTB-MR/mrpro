@@ -19,6 +19,7 @@ authors = [
     { name = "Mara Guastini", email = "mara.guastini@ptb.de" },
     { name = "Johannes Hammacher", email = "johannnes.hammacher@ptb.de" },
     { name = "Stefan Martin", email = "stefan.martin@ptb.de" },
+    { name = "Andreas Kofler", email = "andreas.kofler@ptb.de" },
 ]
 classifiers = [
     "Programming Language :: Python",
@@ -35,6 +36,7 @@ dependencies = [
     "einops",
     "pydicom",
     "pypulseq@git+https://github.com/imr-framework/pypulseq",
+    "torchkbnufft>=1.4.0",
 ]
 
 [project.optional-dependencies]
