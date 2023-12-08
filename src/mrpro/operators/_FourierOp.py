@@ -83,7 +83,7 @@ class FourierOp(LinearOperator):
 
         # create information about image shape, k-data shape etc
         # and identify which directions can be ignored, which ones require a nuFFT
-        # and for which ones a simple FFT suiffices
+        # and for which ones a simple FFT suffices
         for n, os, k, i in zip(
             (im_shape.z, im_shape.y, im_shape.x),
             (oversampling.z, oversampling.y, oversampling.x),
@@ -144,7 +144,7 @@ class FourierOp(LinearOperator):
         self._nufft_im_size = nufft_im_size
 
     @staticmethod
-    def get_target_pattern(fft_dims: tuple, nufft_dims: tuple, ignore_dims: tuple) -> str:
+    def get_target_pattern(fft_dims: tuple[int, ...], nufft_dims: tuple[int, ...], ignore_dims: tuple[int, ...]) -> str:
         """Pattern to reshape image/k-space data to be able to perform nuFFT.
 
         Parameters
@@ -182,11 +182,11 @@ class FourierOp(LinearOperator):
         Parameters
         ----------
         x
-            coil image data with shape: other,coil,z,y,x
+            coil image data with shape: (other coil z y x)
 
         Returns
         -------
-            coil k-space data with shape: other,coil,k2,k1,k0
+            coil k-space data with shape: (other coil k2 k1 k0)
         """
         if self._im_shape != SpatialDimension(*x.shape[-3:]):
             raise ValueError('image data shape missmatch')
@@ -199,7 +199,7 @@ class FourierOp(LinearOperator):
             target_pattern = self.get_target_pattern(self._fft_dims, self._nufft_dims, self._ignore_dims)
 
             # get shape before applying nuFFT
-            nb, nc, nz, ny, nx = x.shape
+            nb, nc, _, _, _ = x.shape
             x = rearrange(x, init_pattern + '->' + target_pattern)
 
             # apply nuFFT
@@ -207,7 +207,7 @@ class FourierOp(LinearOperator):
                 # if multiple batches, repeat k-space trajectories
                 nb_ = int(x.shape[0] / nb)
                 omega = repeat(
-                    self._omega, 'other n_nufft_dims nk -> (other other_rep) n_nufft_dims nk', other_rep=nb_, other=nb
+                    self._omega, 'other n_nufft_dims nk -> (other other_rep) n_nufft_dims nk', other=nb, other_rep=nb_
                 )
             else:
                 omega = self._omega
@@ -231,11 +231,11 @@ class FourierOp(LinearOperator):
         Parameters
         ----------
         y
-            coil k-space data with shape: other,coil,k2,k1,k0
+            coil k-space data with shape: (other coil k2 k1 k0)
 
         Returns
         -------
-            coil image data with shape: other,coil,z,y,x
+            coil image data with shape: (other coil z y x)
         """
 
         if self._kshape[1:] != y.shape[-3:]:
@@ -280,7 +280,7 @@ class FourierOp(LinearOperator):
                 # if multiple batches, repeat k-space trajectories
                 nb_ = int(y.shape[0] / nb)
                 omega = repeat(
-                    self._omega, 'other n_nufft_dims nk -> (other other_rep) n_nufft_dims nk', other_rep=nb_, other=nb
+                    self._omega, 'other n_nufft_dims nk -> (other other_rep) n_nufft_dims nk', other=nb, other_rep=nb_
                 )
             else:
                 omega = self._omega
