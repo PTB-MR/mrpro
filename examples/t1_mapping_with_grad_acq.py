@@ -32,30 +32,13 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import torch
 
-# TODO remove once Fourier operator is available
-import torchkbnufft as tkbn
-from einops import rearrange
-
 from mrpro.data import CsmData
 from mrpro.data import DcfData
 from mrpro.data import IData
 from mrpro.data import KData
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
+from mrpro.operators import FourierOp
 from mrpro.operators import SensitivityOp
-
-
-# %%
-# Fourier operator
-# TODO remove once Fourier operator is available
-class E:
-    def __init__(self, im_size, ktraj):
-        self.kbnufft_adj = tkbn.KbNufftAdjoint(im_size=im_size)
-        self.ktraj = rearrange(ktraj, 'dim other k2 k1 k0->other dim (k2 k1 k0)')
-
-    def bwd(self, y):
-        y = rearrange(y, 'other coils k2 k1 k0->other coils (k2 k1 k0)')
-        return rearrange(self.kbnufft_adj(y, self.ktraj), 'other (coils z) y x->other coils z y x', z=1)
-
 
 # %%
 # Download raw data in ISMRMRD format from zenodo into a temporary directory
@@ -78,9 +61,8 @@ kdata = KData.from_file(data_folder / '2D_Dyn_GRad.h5', KTrajectoryIsmrmrd())
 kdcf = DcfData.from_traj_voronoi(kdata.traj)
 
 # Reconstruct average image for coil map estimation
-im_size = (kdata.header.recon_matrix.y, kdata.header.recon_matrix.x)
-ERad = E(im_size, kdata.traj.as_tensor()[1:3, ...])
-im = ERad.bwd(kdata.data * kdcf.data[:, None, ...])
+FOp = FourierOp(kdata.header.recon_matrix, kdata.traj)
+im = FOp.adjoint(kdata.data * kdcf.data[:, None, ...])
 
 # %%
 # Calculate coilmaps
