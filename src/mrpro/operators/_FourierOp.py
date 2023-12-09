@@ -217,7 +217,7 @@ class FourierOp(LinearOperator):
             nufft_dim_size = tuple([nk for nk, dim in zip(self._kshape[1:], (-3, -2, -1)) if dim in self._nufft_dims])
 
             # unflatten the nuFFT-dimensions
-            x = x.view(*x.shape[:2], *nufft_dim_size)
+            x = x.reshape(*x.shape[:2], *nufft_dim_size)
 
             # bring to shape defined by k-space trajectories
             nk2, nk1, nk0 = self._kshape[1:]
@@ -273,7 +273,7 @@ class FourierOp(LinearOperator):
             nufft_dim_size = tuple([nk for nk, dim in zip(self._kshape[1:], (-3, -2, -1)) if dim in self._nufft_dims])
             y_shape_tuple = tuple(y.shape)
             nk = int(torch.prod(torch.tensor(nufft_dim_size)))
-            y = y.view(*y_shape_tuple[:2], nk)
+            y = y.reshape(*y_shape_tuple[:2], nk)
 
             # apply adjoint nuFFT
             if nb > 1 and len(self._fft_dims) >= 1 and len(self._nufft_dims) >= 1:
