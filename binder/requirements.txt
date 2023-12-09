@@ -26,6 +26,8 @@ comm==0.2.0
     # via ipykernel
 contourpy==1.2.0
     # via matplotlib
+coverage==7.3.2
+    # via pypulseq
 cycler==0.12.1
     # via matplotlib
 debugpy==1.8.0
@@ -79,6 +81,8 @@ jupytext==1.16.0
     # via MRpro (pyproject.toml)
 kiwisolver==1.4.5
     # via matplotlib
+llvmlite==0.41.1
+    # via numba
 markdown-it-py==3.0.0
     # via
     #   jupytext
@@ -87,7 +91,9 @@ markdown-it-py==3.0.0
 markupsafe==2.1.3
     # via jinja2
 matplotlib==3.8.2
-    # via MRpro (pyproject.toml)
+    # via
+    #   MRpro (pyproject.toml)
+    #   pypulseq
 matplotlib-inline==0.1.6
     # via
     #   ipykernel
@@ -106,6 +112,8 @@ networkx==3.2.1
     # via torch
 nibabel==5.1.0
     # via torchio
+numba==0.58.1
+    # via sigpy
 numpy==1.26.2
     # via
     #   MRpro (pyproject.toml)
@@ -114,7 +122,11 @@ numpy==1.26.2
     #   ismrmrd
     #   matplotlib
     #   nibabel
+    #   numba
+    #   pypulseq
+    #   pywavelets
     #   scipy
+    #   sigpy
     #   torchio
     #   torchkbnufft
 nvidia-cublas-cu12==12.1.3.1
@@ -183,10 +195,14 @@ pyparsing==3.1.1
     # via matplotlib
 pyproject-hooks==1.0.0
     # via build
+pypulseq @ git+https://github.com/imr-framework/pypulseq
+    # via MRpro (pyproject.toml)
 python-dateutil==2.8.2
     # via
     #   jupyter-client
     #   matplotlib
+pywavelets==1.5.0
+    # via sigpy
 pyyaml==6.0.1
     # via jupytext
 pyzmq==25.1.1
@@ -207,10 +223,14 @@ rpds-py==0.13.2
     #   referencing
 scipy==1.11.4
     # via
+    #   pypulseq
+    #   sigpy
     #   torchio
     #   torchkbnufft
 shellingham==1.5.4
     # via typer
+sigpy==0.1.26
+    # via pypulseq
 simpleitk==2.3.1
     # via torchio
 six==1.16.0
@@ -237,7 +257,9 @@ tornado==6.4
     #   ipykernel
     #   jupyter-client
 tqdm==4.66.1
-    # via torchio
+    # via
+    #   sigpy
+    #   torchio
 traitlets==5.14.0
     # via
     #   comm
