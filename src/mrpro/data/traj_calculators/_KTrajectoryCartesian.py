@@ -47,12 +47,12 @@ class KTrajectoryCartesian(KTrajectoryCalculator):
         ky_max = kheader.recon_fov.y / kheader.recon_matrix.y
         kz_max = kheader.recon_fov.z / kheader.recon_matrix.z
 
-        kx = torch.linspace(-kx_max, kx_max, kheader.recon_matrix.x)
+        kx = torch.linspace(-kx_max * 2, kx_max * 2, kheader.recon_matrix.x * 2)  # TODO: oversampling factor
         ky = torch.linspace(-ky_max, ky_max, kheader.recon_matrix.y)
         kz = torch.linspace(-kz_max, kz_max, kheader.recon_matrix.z)
 
-        kx = kx[None, :, None, None]
+        kz = kz[None, :, None, None]
         ky = ky[None, None, :, None]
-        kz = kz[None, None, None, :]
+        kx = kx[None, None, None, :]
 
         return KTrajectory(kz, ky, kx)
