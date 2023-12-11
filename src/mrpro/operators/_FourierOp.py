@@ -50,7 +50,7 @@ def is_uniform(x: torch.Tensor, atol: float = 1e-6) -> torch.Tensor:
     return torch.tensor(all_close_list).all()
 
 
-class FourierOp(LinearOperator):
+class FourierOp(LinearOperator[torch.Tensor,]):
     def __init__(
         self,
         recon_shape: SpatialDimension[int],

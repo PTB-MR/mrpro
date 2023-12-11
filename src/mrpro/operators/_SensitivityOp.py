@@ -18,7 +18,7 @@ from mrpro.data import CsmData
 from mrpro.operators import LinearOperator
 
 
-class SensitivityOp(LinearOperator):
+class SensitivityOp(LinearOperator[torch.Tensor,]):
     """Sensitivity operator class."""
 
     def __init__(
