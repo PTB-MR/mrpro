@@ -38,13 +38,13 @@ class LinearOperator(Operator):
     def __matmul__(self, other: Operator):
         """Operator composition."""
         if not isinstance(other, LinearOperator):
-            super().__matmul__(other)
+            return Operator.__matmul__(self, other)
         return LinearOperatorComposition(self, other)
 
     def __add__(self, other: Operator):
         """Operator addition."""
         if not isinstance(other, LinearOperator):
-            super().__add__(other)
+            return Operator.__add__(self, other)
         return LinearOperatorSum(self, other)
 
     def __mul__(self, other: torch.Tensor):

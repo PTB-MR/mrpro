@@ -1,3 +1,5 @@
+"""Tests for the operators module."""
+
 import pytest
 import torch
 
@@ -45,7 +47,7 @@ def test_composition_operator():
     y1 = c(x)
     y2 = a(b(x))
 
-    torch.testing.assert_allclose(y1, y2)
+    torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator)
     assert not isinstance(c, LinearOperator)
 
@@ -58,9 +60,9 @@ def test_composition_linearoperator():
     y1 = c(x)
     y2 = a(b(x))
 
-    torch.testing.assert_allclose(y1, y2)
-    assert isinstance(c, Operator)
-    assert isinstance(c, LinearOperator)
+    torch.testing.assert_close(y1, y2)
+    assert isinstance(c, Operator), 'LinearOperator @ LinearOperator should be an Operator'
+    assert isinstance(c, LinearOperator), 'LinearOperator @ LinearOperator should be a LinearOperator'
 
 
 def test_composition_linearoperator_operator():
@@ -71,9 +73,9 @@ def test_composition_linearoperator_operator():
     y1 = c(x)
     y2 = a(b(x))
 
-    torch.testing.assert_allclose(y1, y2)
-    assert isinstance(c, Operator)
-    assert not isinstance(c, LinearOperator)
+    torch.testing.assert_close(y1, y2)
+    assert isinstance(c, Operator), 'LinearOperator @ Operator should be an Operator'
+    assert not isinstance(c, LinearOperator), 'LinearOperator @ Operator should not be a LinearOperator'
 
 
 def test_sum_operator():
@@ -84,9 +86,9 @@ def test_sum_operator():
     y1 = c(x)
     y2 = a(x) + b(x)
 
-    torch.testing.assert_allclose(y1, y2)
-    assert isinstance(c, Operator)
-    assert not isinstance(c, LinearOperator)
+    torch.testing.assert_close(y1, y2)
+    assert isinstance(c, Operator), 'Operator + Operator should be an Operator'
+    assert not isinstance(c, LinearOperator), 'Operator + Operator should not be a LinearOperator'
 
 
 def test_sum_linearoperator():
@@ -97,9 +99,9 @@ def test_sum_linearoperator():
     y1 = c(x)
     y2 = a(x) + b(x)
 
-    torch.testing.assert_allclose(y1, y2)
-    assert isinstance(c, Operator)
-    assert isinstance(c, LinearOperator)
+    torch.testing.assert_close(y1, y2)
+    assert isinstance(c, Operator), 'LinearOperator + LinearOperator should be an Operator'
+    assert isinstance(c, LinearOperator), 'LinearOperator + LinearOperator should be a LinearOperator'
 
 
 def test_sum_linearoperator_operator():
@@ -110,9 +112,22 @@ def test_sum_linearoperator_operator():
     y1 = c(x)
     y2 = a(x) + b(x)
 
-    torch.testing.assert_allclose(y1, y2)
-    assert isinstance(c, Operator)
-    assert not isinstance(c, LinearOperator)
+    torch.testing.assert_close(y1, y2)
+    assert isinstance(c, Operator), 'LinearOperator + Operator should be an Operator'
+    assert not isinstance(c, LinearOperator), 'LinearOperator + Operator should not be a LinearOperator'
+
+
+def test_sum_operator_linearoperator():
+    a = DummyOperator(torch.tensor(3.0))
+    b = DummyLinearOperator(torch.tensor(2.0))
+    c = a + b
+    x = torch.arange(10)
+    y1 = c(x)
+    y2 = a(x) + b(x)
+
+    torch.testing.assert_close(y1, y2)
+    assert isinstance(c, Operator), 'Operator + LinearOperator should be an Operator'
+    assert not isinstance(c, LinearOperator), 'Operator + LinearOperator should not be a LinearOperator'
 
 
 def test_elementwise_product_operator():
@@ -123,9 +138,9 @@ def test_elementwise_product_operator():
     y1 = c(x)
     y2 = a(x) * b
 
-    torch.testing.assert_allclose(y1, y2)
-    assert isinstance(c, Operator)
-    assert not isinstance(c, LinearOperator)
+    torch.testing.assert_close(y1, y2)
+    assert isinstance(c, Operator), 'Operator * scalar should be an Operator'
+    assert not isinstance(c, LinearOperator), 'Operator * scalar should not be a LinearOperator'
 
 
 def test_elementwise_product_linearoperator():
@@ -136,6 +151,6 @@ def test_elementwise_product_linearoperator():
     y1 = c(x)
     y2 = a(x) * b
 
-    torch.testing.assert_allclose(y1, y2)
-    assert isinstance(c, Operator)
-    assert isinstance(c, LinearOperator)
+    torch.testing.assert_close(y1, y2)
+    assert isinstance(c, Operator), 'LinearOperator * scalar should be an Operator'
+    assert isinstance(c, LinearOperator), 'LinearOperator * scalar should be a LinearOperator'
