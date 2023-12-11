@@ -36,7 +36,7 @@ from mrpro.data.traj_calculators._KTrajectoryCartesian import KTrajectoryCartesi
 
 # %%
 h5_filename = (
-    R'C:\Users\hammac01\Desktop\PythonCode\mrpro_test_data\meas_MID296_ssm_CVB1R_1sl_sag_trig400_FID39837_ismrmrd.h5'
+    R'C:\Temp\meas_MID296_ssm_CVB1R_1sl_sag_trig400_FID39837_ismrmrd.h5'
 )
 data = KData.from_file(
     ktrajectory=KTrajectoryCartesian(),
@@ -45,7 +45,11 @@ data = KData.from_file(
 # %%
 op = FourierOp(im_shape=SpatialDimension(1, 256, 512), traj=data.traj, oversampling=SpatialDimension(1, 1, 1))
 im = torch.fft.fftshift(op.H(data.data))
-image = torch.fft.fftshift(im.abs().square().sum(1).sqrt())
+#im = op.H(data.data)
+
+
+# %%
+# image = torch.fft.fftshift(im.abs().square().sum(1).sqrt())
 # sortidx = torch.argsort(data.traj.ky, dim=-2, stable=True)
 # reshaped = torch.broadcast_to(sortidx.unsqueeze(1), data.data.shape)
 # sorted = torch.gather(data.data, -2, reshaped)
@@ -56,7 +60,9 @@ image = torch.fft.fftshift(im.abs().square().sum(1).sqrt())
 # %% create IData object from image tensor and kheader
 idata = IData.from_tensor_and_kheader(im, data.header)
 # %% plot example img
-plt.matshow(np.abs(idata.data[0, 0, 0, :, :]))
+imagetmp = idata.data.abs().square().sum(1).sqrt()
+#plt.matshow(np.abs(idata.data[0, 0, 0, :, :]))
+plt.matshow(imagetmp[0,0,:,:])
 plt.show()
 # %% CODE FROM MANUEL
 # routes for B1 Mapping
