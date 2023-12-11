@@ -49,10 +49,10 @@ class WASABI(Operator):
         self.freq = freq
 
     def forward(self, qdata: torch.Tensor) -> torch.Tensor:
-        b0_shift = qdata[0, ...]
-        rb1 = qdata[1, ...]
-        c = qdata[2, ...]
-        d = qdata[3, ...]
+        b0_shift = qdata[0].unsqueeze(0)
+        rb1 = qdata[1].unsqueeze(0)
+        c = qdata[2].unsqueeze(0)
+        d = qdata[3].unsqueeze(0)
 
         b1 = self.b1_nom * rb1
         offsets = rearrange(self.offsets, 'x -> x 1 1 1 1 1')
