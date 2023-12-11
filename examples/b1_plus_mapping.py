@@ -24,13 +24,6 @@ from mrpro.data import KData
 from mrpro.data.traj_calculators import KTrajectorySunflowerGoldenRpe
 from mrpro.operators import FourierOp
 from mrpro.data import SpatialDimension
-
-# %% Define data path
-# folder = R'Z:\_allgemein\projects\8_13\B1Mapping'
-# file = R'meas_MID14_B1R_FA_20_cv_pTX_sun_B1R_v1p1_FID4365.h5'
-# mrd_path = Path(folder) / file
-# assert mrd_path.is_file()
-# %% Create KData object
 from mrpro.data._KData import KData
 from mrpro.data.traj_calculators._KTrajectoryCartesian import KTrajectoryCartesian
 
@@ -42,28 +35,13 @@ data = KData.from_file(
     ktrajectory=KTrajectoryCartesian(),
     filename=h5_filename,
 )
-# %%
+# %% perform FT and shift the k-space center
 op = FourierOp(im_shape=SpatialDimension(1, 256, 512), traj=data.traj, oversampling=SpatialDimension(1, 1, 1))
-im = torch.fft.fftshift(op.H(data.data))
-#im = op.H(data.data)
+im = torch.fft.fftshift(op.H(data.data), dim=(-2, -1))
 
-
-# %%
-# image = torch.fft.fftshift(im.abs().square().sum(1).sqrt())
-# sortidx = torch.argsort(data.traj.ky, dim=-2, stable=True)
-# reshaped = torch.broadcast_to(sortidx.unsqueeze(1), data.data.shape)
-# sorted = torch.gather(data.data, -2, reshaped)
-# coilwise = torch.fft.fftshift(torch.fft.ifft2(sorted), dim=(-1, -2))
-# image = coilwise.abs().square().sum(1).sqrt()
-# im = image.squeeze()
-# im = im[:, None, None, :, :]  # .squeeze()
 # %% create IData object from image tensor and kheader
 idata = IData.from_tensor_and_kheader(im, data.header)
-# %% plot example img
-imagetmp = idata.data.abs().square().sum(1).sqrt()
-#plt.matshow(np.abs(idata.data[0, 0, 0, :, :]))
-plt.matshow(imagetmp[0,0,:,:])
-plt.show()
+
 # %% CODE FROM MANUEL
 # routes for B1 Mapping
 opts = {}
@@ -140,7 +118,7 @@ def B1reco(IData):
         cxtemp2 = np.squeeze(cxtemp2)
     else:
         cxtemp2 = np.squeeze(cxtemp2, axis=-1)
-    # b1p_phase = np.exp(1j * np.angle(cxtemp2[:, :, :, :]))
+    b1p_phase = np.exp(1j * np.angle(cxtemp2[:, :, :, :]))
     # calculate the TX magnitude
     if opts['USEMEAN']:
         # calculate as in ISMRM abstract
@@ -209,13 +187,17 @@ def B1reco(IData):
     CVb1.filename =   MR.Pars.Recon.SaveFile;
     B1p.cxmap = double( RPEB1p);
     """
-    return b1p_mag, b1m_mag
+    return b1p_mag, b1p_phase
 
 
 # %% run B1reco
-b1p_mag, b1m_mag = B1reco(idata.data.numpy())
+b1p_mag, b1p_pha = B1reco(idata.data.numpy())
+
 # %%
 fig, axs = plt.subplots(2, 4, figsize=(16, 8))
 for i, axs in enumerate(axs.flatten()):
     axs.imshow(b1p_mag[:, :, 0, i])
-# %%
+
+fig, axs = plt.subplots(2, 4, figsize=(16, 8))
+for i, axs in enumerate(axs.flatten()):
+    axs.imshow(np.angle(b1p_pha[:, :, 0, i]))
