@@ -18,6 +18,7 @@ import numpy as np
 import torch
 import torchkbnufft as tkbn
 from einops import rearrange
+
 from mrpro.data import DcfData
 from mrpro.data import IData
 from mrpro.data import KData
@@ -190,8 +191,138 @@ def B1reco(IData):
     return b1p_mag, b1p_phase
 
 
+def B1reco_torch(IData):
+    ima = torch.moveaxis(IData, [0, 1, 2, 3, 4], [4, 3, 2, 1, 0])
+    sz = ima.shape
+    # calculate the noise level
+    noise_scan = ima[:, :, :, :, 1]
+    # noise_mean = np.mean(np.abs(noise_scan)) / 1.253
+    # RX_sens = (
+    #     torch.mean(
+    #         torch.mean(torch.mean(torch.abs(noise_scan), axis=0, keepdims=True), axis=1, keepdims=True), axis=2, keepdims=True
+    #     )
+    #     / 1.253
+    # )
+    # calculate the correlation
+    # coil correlation, can be resued from csm walshh?
+    #nn = torch.reshape(noise_scan, (sz[0] * sz[1] * sz[2], sz[3]))
+    #noise_corr = torch.zeros(sz[3], sz[3])
+    #for lL in range(0, sz[3]):
+    #    for lM in range(0, sz[3]):
+    #        cc = torch.corrcoef(nn[:, lL], nn[:, lM])
+    #        noise_corr[lL, lM] = cc[1, 0]
+    # correct for different RX sensitivities
+    ima_cor = ima[:, :, :, :, 2:]
+    sz_cor = ima_cor.shape
+    # calculate the relative TX phase
+    # ima_cor_ref = np.sum(ima_cor, axis=4) / sz_cor[4]
+    #print(ima_cor[:, :, :, :, opts['RELPHASECHANNEL'] - 1].size())
+    #print(ima_cor[:, :, :, :, opts['RELPHASECHANNEL'] - 1].repeat(1, 1, 1, 1, 10).size())
+
+    #phasetemp = removeInf(
+    #    removeNaN(ima_cor / ima_cor[:, :, :, :, opts['RELPHASECHANNEL'] - 1, None])
+    #)
+    phasetemp = ima_cor / ima_cor[:, :, :, :, opts['RELPHASECHANNEL'] - 1, None]
+    phasetemp[~torch.isfinite(phasetemp.abs())] = 0.
+
+    cxtemp = torch.sum(torch.abs(ima_cor) * torch.exp(1j * torch.angle(phasetemp)), axis=3, keepdims=True)
+    cxtemp2 = torch.moveaxis(cxtemp, [0, 1, 2, 3, 4], [0, 1, 2, 4, 3])
+    if cxtemp2.shape[2] != 1:
+        cxtemp2 = torch.squeeze(cxtemp2)
+    else:
+        cxtemp2 = torch.squeeze(cxtemp2, axis=-1)
+    b1p_phase = torch.exp(1j * torch.angle(cxtemp2[:, :, :, :]))
+    # calculate the TX magnitude
+    if opts['USEMEAN']:
+        # calculate as in ISMRM abstract
+        imamag = torch.abs(ima_cor)
+        #b1_magtmp = torch.divide(
+        #    torch.sum(imamag, axis=3, keepdims=True),
+        #    repmat(
+        #        torch.sum(torch.sum(imamag, axis=3, keepdims=True), axis=4, keepdims=True) ** 0.5, (1, 1, 1, 1, sz_cor[4])
+        #    ),
+        #)
+
+        #print(torch.sum(imamag, axis=3, keepdims=True).size())
+        #print((torch.sum(torch.sum(imamag, axis=3, keepdims=True), axis=4, keepdims=True)).size())
+
+        b1_magtmp = torch.sum(imamag, axis=3, keepdims=True) / ((torch.sum(torch.sum(imamag, axis=3, keepdims=True), axis=4, keepdims=True)) ** 0.5)
+        b1p_mag = torch.moveaxis(b1_magtmp, [0, 1, 2, 3, 4], [0, 1, 2, 4, 3])
+        if b1p_mag.shape[2] != 1:
+            b1p_mag = torch.squeeze(b1p_mag)
+        else:
+            b1p_mag = torch.squeeze(b1p_mag, axis=-1)
+        # calculate b1p_mag normalized with the CP mode
+        sum_cp = torch.sqrt(torch.sum(torch.abs(torch.sum(ima_cor, axis=4, keepdims=True)) ** 2, axis=3, keepdims=True))
+        sum_cp = torch.squeeze(sum_cp)
+        #rk = torch.divide(torch.sum(imamag, axis=3, keepdims=True), repmat(sum_cp, (1, 1, 1, 1, sz_cor[4])))
+
+        print(torch.sum(imamag, axis=3, keepdims=True).shape)
+
+        rk = torch.sum(imamag, axis=3, keepdims=True) / sum_cp[:, :, None, None, None]
+        rk = torch.moveaxis(rk, [0, 1, 2, 3, 4], [0, 1, 2, 4, 3])
+        rk = torch.squeeze(rk)
+    else:
+        # alternative calculation using median value
+        imamag = torch.abs(ima_cor)
+        # b1_1 = np.divide(ima_cor, repmat(np.sum(np.abs(imamag), axis=4, keepdims=True), (1, 1, 1, 1, sz_cor[4])))
+        # b1_2 = np.moveaxis(np.median(np.abs(b1_1), axis=3), [0, 1, 2, 3, 4], [0, 1, 2, 4, 3])
+        # b1p_magmed = np.multiply(
+        #     b1_2,
+        #     repmat(
+        #         np.squeeze(np.sum(np.sum(np.abs(imamag), axis=4, keepdims=True), axis=3, keepdims=True) ** 0.5),
+        #         (1, 1, 1, sz_cor[4]),
+        #     ),
+        # )
+    # calculate the relative RX phase
+    ima_cor_tmp = ima_cor[:, :, :, opts['RELPHASECHANNEL'] - 1, :]
+    ima_cor_tmp = ima_cor_tmp[:, :, :, None, :]
+
+    #phasetemp = removeInf(removeNaN(torch.divide(ima_cor, repmat(ima_cor_tmp, (1, 1, 1, sz[3], 1)))))
+    phasetemp = ima_cor / ima_cor_tmp
+    phasetemp[~torch.isfinite(phasetemp.abs())] = 0.
+
+    cxtemp = torch.sum(torch.abs(ima_cor) * torch.exp(1j * torch.angle(phasetemp)), axis=4, keepdims=True)
+    if cxtemp.shape[2] != 1:
+        cxtemp = torch.squeeze(cxtemp)
+    else:
+        cxtemp = torch.squeeze(cxtemp, axis=-1)
+    # b1m_phase = torch.exp(1j * torch.angle(cxtemp[:, :, :, :]))
+    # calculate TX magnitude
+    #b1m_mag = torch.divide(
+    #    torch.sum(imamag, axis=4, keepdims=True),
+    #    repmat(torch.sum(torch.sum(imamag, axis=3, keepdims=True), axis=4, keepdims=True) ** 0.5, (1, 1, 1, sz[3], 1)),
+    #
+
+    b1m_mag = torch.sum(imamag, axis=4, keepdims=True) / ((torch.sum(torch.sum(imamag, axis=3, keepdims=True), axis=4, keepdims=True)) * 0.5)
+
+
+    # if b1m_mag.shape[2] != 1:
+    #     b1m_mag = np.squeeze(b1m_mag)
+    # else:
+    #     b1m_mag = np.squeeze(b1m_mag, axis=-1)
+    # b1p_mag = np.moveaxis(b1p_mag, [0, 1, 2, 3, 4], [4, 3, 2, 1, 0])
+    # b1m_mag = np.moveaxis(b1m_mag, [0, 1, 2, 3, 4], [4, 3, 2, 1, 0])
+    """
+    RPEB1p=permute(MR.Pars.Recon.B1p(end:-1:1,end:-1:1,:,:,:),[3 2 1 4 5]);%
+    RPEB1m=permute(MR.Pars.Recon.B1m(end:-1:1,end:-1:1,:,:,:),[3 2 1 4 5]);%
+    CVb1.b1p_mag = double( abs(RPEB1p));
+    CVb1.b1p_pha = double(angle(RPEB1p));
+    CVb1.b1m_mag = double( abs(RPEB1m));
+    CVb1.b1m_pha = double(angle(RPEB1m));
+    CVb1.orig_cxima = double( permute(DATA{1}(end:-1:1,end:-1:1,:,:,:),[3 2 1 4 5]));
+    CVb1.b1pcx =double( RPEB1p);
+    CVb1.b1mcx =double( RPEB1m);
+    CVb1.noise_mean = MR.Pars.Recon.Noise_mean;
+    CVb1.filename =   MR.Pars.Recon.SaveFile;
+    B1p.cxmap = double( RPEB1p);
+    """
+    return b1p_mag, b1p_phase
+
+
 # %% run B1reco
-b1p_mag, b1p_pha = B1reco(idata.data.numpy())
+b1p_mag_np, b1p_pha_np = B1reco(idata.data.numpy())
+b1p_mag, b1p_pha = B1reco_torch(idata.data)
 
 # %%
 fig, axs = plt.subplots(2, 4, figsize=(16, 8))
@@ -201,3 +332,5 @@ for i, axs in enumerate(axs.flatten()):
 fig, axs = plt.subplots(2, 4, figsize=(16, 8))
 for i, axs in enumerate(axs.flatten()):
     axs.imshow(np.angle(b1p_pha[:, :, 0, i]))
+
+# %%
