@@ -27,6 +27,9 @@ from mrpro.data import DcfData
 from mrpro.data import IData
 from mrpro.data import KData
 from mrpro.data.traj_calculators import KTrajectorySunflowerGoldenRpe
+from mrpro.operators import FourierOp
+from mrpro.data import SpatialDimension
+
 
 # %% Define data path
 folder = R'Z:\_allgemein\projects\8_13\B1Mapping'
@@ -35,42 +38,38 @@ mrd_path = Path(folder) / file
 assert mrd_path.is_file()
 
 # %% Create KData object
-ktraj_calc = KTrajectorySunflowerGoldenRpe()
-kdata = KData.from_file(filename=mrd_path, ktrajectory=ktraj_calc)
-kdcf = DcfData.from_traj_voronoi(kdata.traj)
+from mrpro.data._KData import KData
+from mrpro.data.traj_calculators._KTrajectoryCartesian import KTrajectoryCartesian
 
+# %%
+h5_filename = (
+    R'C:\Users\hammac01\Desktop\PythonCode\mrpro_test_data\meas_MID296_ssm_CVB1R_1sl_sag_trig400_FID39837_ismrmrd.h5'
+)
+data = KData.from_file(
+    ktrajectory=KTrajectoryCartesian(),
+    filename=h5_filename,
+)
 
-# %% Recconstuct images
-def _ifftn(kdat, axis):
-    return torch.fft.fftshift(
-        torch.fft.ifftn(
-            torch.fft.ifftshift(kdat, axis=axis),
-            axis=axis,
-        ),
-        axis=axis,
-    )
+# %%
+op = FourierOp(im_shape=data.header.recon_matrix, oversampling=SpatialDimension(1, 1, 2), traj=data.traj)
+im = op.H(data.data)
 
+# sortidx = torch.argsort(data.traj.ky, dim=-2, stable=True)
+# reshaped = torch.broadcast_to(sortidx.unsqueeze(1), data.data.shape)
+# sorted = torch.gather(data.data, -2, reshaped)
 
-# get image dimensions
-im_size = (64, 64)
+# coilwise = torch.fft.fftshift(torch.fft.ifft2(sorted), dim=(-1, -2))
+# image = coilwise.abs().square().sum(1).sqrt()
 
-kdat = kdata.data * kdcf.data
-kdat = _ifftn(kdat, axis=-1)
+# im = image.squeeze()
+# im = im[:, None, None, :, :]  # .squeeze()
 
-# # reconstruct image data
-kbnufft_adj = tkbn.KbNufftAdjoint(im_size=im_size)
-
-kdat = rearrange(kdat, 'other coils k2 k1 k0->(other k0) coils (k2 k1)')
-ktraj_kbnufft = rearrange(kdata.traj.as_tensor()[:2, :, :, :, 0], 'dim other k2 k1 ->other dim (k2 k1)')
-im = kbnufft_adj(kdat, ktraj_kbnufft)
-
-im = rearrange(im, '(other k0) coils x2 x1 -> other coils x2 x1 k0', other=10)
 
 # %% create IData object from image tensor and kheader
-idata = IData.from_tensor_and_kheader(im, kdata.header)
+idata = IData.from_tensor_and_kheader(im, data.header)
 
 # %% plot example img
-plt.imshow(np.abs(np.sum(idata.data.numpy() ** 2, axis=1))[0, :, :, 64])
+plt.imshow(idata.data[0, 0, 0, :, :])
 plt.show()
 
 # %% CODE FROM MANUEL
@@ -253,4 +252,6 @@ b1p_mag, b1m_mag = B1reco(idata.data.numpy())
 # %%
 fig, axs = plt.subplots(2, 4, figsize=(16, 8))
 for i, axs in enumerate(axs.flatten()):
-    axs.imshow(b1p_mag[63, :, :, i])
+    axs.imshow(b1p_mag[:, :, 0, i])
+
+# %%
