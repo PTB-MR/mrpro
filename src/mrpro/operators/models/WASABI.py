@@ -54,11 +54,15 @@ class WASABI(Operator):
         c = qdata[2].unsqueeze(0)
         d = qdata[3].unsqueeze(0)
 
-        b1 = self.b1_nom * rb1
         offsets = rearrange(self.offsets, 'x -> x 1 1 1 1 1')
+        delta_x = offsets - b0_shift
+        b1 = self.b1_nom * rb1
 
-        res = c - d * (torch.pi * b1 * self.gamma * self.tp) ** 2 * torch.sinc(
-            self.tp * torch.sqrt((b1 * self.gamma) ** 2 + ((offsets - b0_shift) * self.freq) ** 2) ** 2
+        res = (
+            c
+            - d
+            * (torch.pi * b1 * self.gamma * self.tp) ** 2
+            * torch.sinc(self.tp * torch.sqrt((b1 * self.gamma) ** 2 + delta_x**2)) ** 2
         )
 
         return rearrange(res, 'p other c z y x -> (p other) c z y x')
