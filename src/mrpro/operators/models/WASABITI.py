@@ -45,6 +45,7 @@ class WASABITI(Operator):
         freq, optional
             larmor frequency [MHz], by default 127.7292
         """
+        super().__init__()
         self.offsets = offsets
         self.trec = trec
         self.tp = tp

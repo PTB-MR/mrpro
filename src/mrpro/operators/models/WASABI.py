@@ -42,7 +42,7 @@ class WASABI(Operator):
         freq, optional
             larmor frequency [MHz], by default 127.7292
         """
-
+        super().__init__()
         self.offsets = offsets
         self.tp = tp
         self.b1_nom = b1_nom
