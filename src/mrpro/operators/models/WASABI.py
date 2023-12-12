@@ -32,7 +32,7 @@ class WASABI(Operator):
         Parameters
         ----------
         offsets
-            frequency offsets [Hz]
+            frequency offsets [Hz], must be 1D tensor
         tp, optional
             RF pulse duration [s], by default 0.005
         b1_nom, optional
@@ -42,6 +42,7 @@ class WASABI(Operator):
         freq, optional
             larmor frequency [MHz], by default 127.7292
         """
+
         self.offsets = offsets
         self.tp = tp
         self.b1_nom = b1_nom
@@ -54,7 +55,8 @@ class WASABI(Operator):
         c = qdata[2].unsqueeze(0)
         d = qdata[3].unsqueeze(0)
 
-        offsets = rearrange(self.offsets, 'x -> x 1 1 1 1 1')
+        # ensure correct dimensionality
+        offsets = self.offsets[(...,) + (None,) * qdata[0].ndim]
         delta_x = offsets - b0_shift
         b1 = self.b1_nom * rb1
 
@@ -65,4 +67,5 @@ class WASABI(Operator):
             * torch.sinc(self.tp * torch.sqrt((b1 * self.gamma) ** 2 + delta_x**2)) ** 2
         )
 
-        return rearrange(res, 'p other c z y x -> (p other) c z y x')
+        # c = coils, ... = other (may be multi-dimensional)
+        return rearrange(res, 'offset ... c z y x -> (... offset) c z y x')

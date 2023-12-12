@@ -58,10 +58,12 @@ class WASABITI(Operator):
         t1 = qdata[2].unsqueeze(0)
 
         b1 = self.b1_nom * rb1
-        offsets = rearrange(self.offsets, 'x -> x 1 1 1 1 1')
-        trec = rearrange(self.trec, 'x -> x 1 1 1 1 1')
 
-        da = (offsets - b0_shift) * self.freq
+        # ensure correct dimensionality
+        offsets = self.offsets[(...,) + (None,) * qdata[0].ndim]
+        trec = self.trec[(...,) + (None,) * qdata[0].ndim]
+
+        da = offsets - b0_shift
         Mzi = 1.0 - torch.exp(torch.multiply(-1.0 / t1, trec))
 
         res = Mzi * (
@@ -71,4 +73,5 @@ class WASABITI(Operator):
             * torch.sinc(self.tp * torch.sqrt((b1 * self.gamma) ** 2 + da**2)) ** 2
         )
 
-        return rearrange(res, 'p other c z y x -> (p other) c z y x')
+        # c = coils, ... = other (may be multi-dimensional)
+        return rearrange(res, 'offset ... c z y x -> (... offset) c z y x')
