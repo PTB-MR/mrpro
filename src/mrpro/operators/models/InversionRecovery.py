@@ -16,8 +16,9 @@ from mrpro.operators import Operator
 
 
 class InversionRecovery(Operator):
-    def __init__(self, ti: list[float]):
-        self.ti = ti
+    def __init__(self, ti: torch.Tensor):
+        super().__init__()
+        self.ti = torch.nn.Parameter(ti, requires_grad=ti.requires_grad)
 
     def forward(self, qdata: torch.Tensor) -> torch.Tensor:
         """Apply the forward model.
@@ -26,15 +27,14 @@ class InversionRecovery(Operator):
         ----------
         qdata
             Quantitative parameter tensor (params, other, c, z, y, x)
-            params: (M0, T1)
+            params: (m0, t1)
 
         Returns
         -------
             Image data tensor (other, c, z, y, x)
         """
-        M0 = qdata[0].unsqueeze(0)
-        T1 = qdata[1].unsqueeze(0)
-        ti = rearrange(torch.Tensor(self.ti), 't -> t 1 1 1 1 1')
-        y = M0 * (1 - 2 * torch.exp(-torch.div(ti, T1)))
-        res = rearrange(y, 't other c z y x -> (t other) c z y x')
+        m0, t1 = qdata.unsqueeze(1)
+        ti = self.ti[(...,) + (None,) * (qdata[0].ndim)]
+        y = m0 * (1 - 2 * torch.exp(-ti / (t1 + 1e-10)))
+        res = rearrange(y, 't ... c z y x -> (... t) c z y x')
         return res

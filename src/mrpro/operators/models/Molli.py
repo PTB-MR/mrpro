@@ -16,7 +16,7 @@ from mrpro.operators import Operator
 
 
 class Molli(Operator):
-    def __init__(self, ti: list[float], n: int, rr: float):
+    def __init__(self, ti: torch.Tensor, n: torch.Tensor, rr: torch.Tensor):
         """Parameters needed to compute t = ti + (n - 1) * rr.
 
         Parameters
@@ -29,9 +29,10 @@ class Molli(Operator):
             heartbeat interval
 
         """
-        self.ti = ti
-        self.n = n
-        self.rr = rr
+        super().__init__()
+        self.ti = torch.nn.Parameter(ti, requires_grad=ti.requires_grad)
+        self.n = torch.nn.Parameter(n, requires_grad=n.requires_grad)
+        self.rr = torch.nn.Parameter(rr, requires_grad=rr.requires_grad)
 
     def forward(self, qdata: torch.Tensor) -> torch.Tensor:
         """Apply the forward model.
@@ -40,18 +41,17 @@ class Molli(Operator):
         ----------
         qdata
             Quantitative parameter tensor (params, other, c, z, y, x)
-            params: (A, B, T1)
+            params: (a, b, t1)
 
         Returns
         -------
             Image data tensor (other, c, z, y, x)
         """
-        A = qdata[0].unsqueeze(0)
-        B = qdata[1].unsqueeze(0)
-        T1 = qdata[2].unsqueeze(0)
-        t = torch.Tensor(self.ti) + (self.n - 1) * self.rr
-        t = rearrange(t, 't -> t 1 1 1 1 1')
-        T1_star = torch.div(T1, (torch.div(B, A) - 1))
-        y = A - B * torch.exp(-torch.div(t, T1_star))
-        res = rearrange(y, 't other c z y x -> (t other) c z y x')
+        a, b, t1 = qdata.unsqueeze(1)
+        t = self.ti + (self.n - 1) * self.rr
+        t = t[(...,) + (None,) * (qdata[0].ndim)]
+        t1_star = t1 / ((b / a) - 1)
+
+        y = a - b * torch.exp(-(t / (t1_star)))
+        res = rearrange(y, 't ... c z y x -> (... t) c z y x')
         return res
