@@ -1,0 +1,131 @@
+""""Script for B1+ mapping from H5 file."""
+# Copyright 2023 Physikalisch-Technische Bundesanstalt
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#       http://www.apache.org/licenses/LICENSE-2.0
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+#   Christoph Aigner, 2023.12.12
+#
+# Cartesian 1 2D slice works
+# TODO: RPE
+
+# %% import functionality
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+
+from mrpro.data import IData
+from mrpro.data import KData
+from mrpro.data import SpatialDimension
+from mrpro.data.traj_calculators._KTrajectoryCartesian import KTrajectoryCartesian
+from mrpro.operators import FourierOp
+
+
+# %% Fast B1 Mapping using NTx GRE
+def B1reco(IData, relphasechannel):
+    # relphasechannel ... use channel XXX as reference
+    # IData ... TX+2 GRE data
+
+    # shift the input data to have [X, Y, Z, RX, MEAS]
+    ima = torch.moveaxis(IData, [0, 1, 2, 3, 4], [4, 3, 2, 1, 0])
+    sz = ima.shape
+
+    # calculate the noise level
+    noise_scan = ima[:, :, :, :, 1]
+    noise_mean = torch.mean(torch.abs(torch.flatten(noise_scan))) / 1.253  # factor due to rician distribution
+    RX_sens = (
+        torch.mean(torch.mean(torch.mean(torch.abs(noise_scan), 0), 0), 0)
+    ) / 1.253  # factor due to rician distribution
+
+    # calculate the noise correlation
+    nn = torch.reshape(noise_scan, (sz[0] * sz[1] * sz[2], sz[3]))
+    noise_corr = torch.complex(torch.zeros(sz[3], sz[3]), torch.zeros(sz[3], sz[3]))
+
+    for lL in range(0, sz[3]):
+        for lM in range(0, sz[3]):
+            nnsubset = torch.cat((nn[:, lL, None], nn[:, lM, None]), dim=1)
+            nnsubset = torch.moveaxis(nnsubset, [0, 1], [1, 0])
+            cc = torch.corrcoef(nnsubset)
+            noise_corr[lL, lM] = cc[1, 0]
+
+    # correct for different RX sensitivities
+    ima_cor = ima[:, :, :, :, 2:] / RX_sens
+
+    # calculate the relative TX phase
+    phasetemp = ima_cor / ima_cor[:, :, :, :, relphasechannel, None]
+    phasetemp[~torch.isfinite(phasetemp.abs())] = 0.0
+
+    cxtemp = torch.sum(torch.abs(ima_cor) * torch.exp(1j * torch.angle(phasetemp)), dim=3, keepdim=True)
+    cxtemp2 = torch.moveaxis(cxtemp, [0, 1, 2, 3, 4], [0, 1, 2, 4, 3])
+    b1p_phase = torch.exp(1j * torch.angle(cxtemp2[:, :, :, :]))
+
+    # calculate the TX magnitude as in PFVM ISMRM abstract
+    imamag = torch.abs(ima_cor)
+    b1_magtmp = torch.sum(imamag, dim=3, keepdim=True) / (
+        (torch.sum(torch.sum(imamag, dim=3, keepdim=True), dim=4, keepdim=True)) ** 0.5
+    )
+    b1p_mag = torch.moveaxis(b1_magtmp, [0, 1, 2, 3, 4], [0, 1, 2, 4, 3])
+    sum_cp = torch.sqrt(
+        torch.sum(torch.abs(torch.sum(torch.tensor(ima_cor), dim=4, keepdim=True)) ** 2, dim=3, keepdim=True)
+    )
+    # sum_cp = torch.squeeze(sum_cp)
+
+    rk = torch.sum(imamag, dim=3, keepdim=True) / sum_cp
+    rk = torch.squeeze(torch.moveaxis(rk, [0, 1, 2, 3, 4], [0, 1, 2, 4, 3]))
+
+    # calculate the relative RX phase and magnitude
+    ima_cor_tmp = ima_cor[:, :, :, relphasechannel, :]
+    ima_cor_tmp = ima_cor_tmp[:, :, :, None, :]
+
+    phasetemp = ima_cor / ima_cor_tmp
+    phasetemp[~torch.isfinite(phasetemp.abs())] = 0.0
+
+    cxtemp = torch.sum(torch.abs(ima_cor) * torch.exp(1j * torch.angle(phasetemp)), dim=4, keepdim=True)
+
+    b1m_phase = torch.exp(1j * torch.angle(cxtemp[:, :, :, :]))
+    b1m_mag = torch.sum(imamag, dim=4, keepdim=True) / (
+        (torch.sum(torch.sum(imamag, dim=3, keepdim=True), dim=4, keepdim=True)) * 0.5
+    )
+
+    b1p_mag = torch.moveaxis(b1p_mag, [0, 1, 2, 3, 4], [4, 3, 2, 1, 0])
+    b1m_mag = torch.moveaxis(b1m_mag, [0, 1, 2, 3, 4], [4, 3, 2, 1, 0])
+
+    b1p_phase = torch.moveaxis(b1p_phase, [0, 1, 2, 3, 4], [4, 3, 2, 1, 0])
+    b1m_phase = torch.moveaxis(b1m_phase, [0, 1, 2, 3, 4], [4, 3, 2, 1, 0])
+
+    return b1m_mag, b1m_phase, b1p_mag, b1p_phase, noise_mean
+
+
+# %% Cartesian B1+ mapping - 1 2D Slice
+# Load the channelwise GRE data for relative B1+ mapping
+h5_filename = R'meas_MID296_ssm_CVB1R_1sl_sag_trig400_FID39837_ismrmrd.h5'
+data = KData.from_file(
+    ktrajectory=KTrajectoryCartesian(),
+    filename=h5_filename,
+)
+
+# perform FT, shift the k-space center and create IData object
+op = FourierOp(
+    im_shape=data.header.encoding_matrix, traj=data.traj, oversampling=SpatialDimension(1, 1, 1)
+)  # TODO: Remove Oversampling does not work
+im = torch.fft.fftshift(op.H(data.data), dim=(-2, -1))  # TODO: only works for 2D data!
+idata = IData.from_tensor_and_kheader(im, data.header)
+
+# run B1reco
+b1m_mag, b1m_pha, b1p_mag, b1p_pha, noise_mean = B1reco(idata.data, relphasechannel=0)
+
+# plot results
+fig, axs = plt.subplots(2, 4, figsize=(16, 8))
+for i, axs in enumerate(axs.flatten()):
+    axs.imshow(b1p_mag[0, i, 0, :, :])
+
+fig, axs = plt.subplots(2, 4, figsize=(16, 8))
+for i, axs in enumerate(axs.flatten()):
+    axs.imshow(np.angle(b1p_pha[0, i, 0, :, :]))
