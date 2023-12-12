@@ -13,6 +13,9 @@
 #
 #   Christoph Aigner, 2023.12.12
 #
+# Cartesian 1 2D slice works
+# TODO: RPE
+
 # %% import functionality
 import matplotlib.pyplot as plt
 import numpy as np
@@ -72,9 +75,9 @@ def B1reco(IData, relphasechannel):
     sum_cp = torch.sqrt(
         torch.sum(torch.abs(torch.sum(torch.tensor(ima_cor), dim=4, keepdim=True)) ** 2, dim=3, keepdim=True)
     )
-    sum_cp = torch.squeeze(sum_cp)
+    # sum_cp = torch.squeeze(sum_cp)
 
-    rk = torch.sum(imamag, dim=3, keepdim=True) / sum_cp[:, :, None, None, None]
+    rk = torch.sum(imamag, dim=3, keepdim=True) / sum_cp
     rk = torch.squeeze(torch.moveaxis(rk, [0, 1, 2, 3, 4], [0, 1, 2, 4, 3]))
 
     # calculate the relative RX phase and magnitude
@@ -100,21 +103,25 @@ def B1reco(IData, relphasechannel):
     return b1m_mag, b1m_phase, b1p_mag, b1p_phase, noise_mean
 
 
-# %% Load the channelwise GRE data for relative B1+ mapping
+# %% Cartesian B1+ mapping - 1 2D Slice
+# Load the channelwise GRE data for relative B1+ mapping
 h5_filename = R'meas_MID296_ssm_CVB1R_1sl_sag_trig400_FID39837_ismrmrd.h5'
 data = KData.from_file(
     ktrajectory=KTrajectoryCartesian(),
     filename=h5_filename,
 )
-# %% perform FT, shift the k-space center and create IData object
-op = FourierOp(im_shape=SpatialDimension(1, 256, 512), traj=data.traj, oversampling=SpatialDimension(1, 1, 1))
+
+# perform FT, shift the k-space center and create IData object
+op = FourierOp(
+    im_shape=data.header.encoding_matrix, traj=data.traj, oversampling=SpatialDimension(1, 1, 1)
+)  # TODO: Remove Oversampling does not work
 im = torch.fft.fftshift(op.H(data.data), dim=(-2, -1))  # TODO: only works for 2D data!
 idata = IData.from_tensor_and_kheader(im, data.header)
 
-# %% run B1reco
+# run B1reco
 b1m_mag, b1m_pha, b1p_mag, b1p_pha, noise_mean = B1reco(idata.data, relphasechannel=0)
 
-# %% plot results
+# plot results
 fig, axs = plt.subplots(2, 4, figsize=(16, 8))
 for i, axs in enumerate(axs.flatten()):
     axs.imshow(b1p_mag[0, i, 0, :, :])
