@@ -6,8 +6,8 @@ from mrpro.data import SpatialDimension
 from mrpro.data._KData import KData
 from mrpro.data.traj_calculators._KTrajectoryPulseq import KTrajectoryPulseq
 from mrpro.operators._FourierOp import FourierOp
-from mrpro.operators.models.WASABI import WASABI
-from mrpro.operators.models.WASABITI import WASABITI
+from mrpro.operators.models._WASABI import WASABI
+from mrpro.operators.models._WASABITI import WASABITI
 
 # %%
 filepath = R'/home/hammac01/CEST_Data/'

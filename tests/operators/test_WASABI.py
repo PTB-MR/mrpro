@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from mrpro.operators.models.WASABI import WASABI
+from mrpro.operators.models._WASABI import WASABI
 
 
 def create_data(offset_max=250, offset_nr=101, b0_shift=0, rb1=1.0, c=1.0, d=2.0, p=4, other=1, coils=1, z=1, y=1, x=1):
