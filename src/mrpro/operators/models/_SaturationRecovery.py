@@ -15,8 +15,15 @@ from einops import rearrange
 from mrpro.operators import Operator
 
 
-class InversionRecovery(Operator):
+class SaturationRecovery(Operator):
     def __init__(self, ti: torch.Tensor):
+        """Parameters needed for saturation recovery.
+
+        Parameters
+        ----------
+        ti
+            inversion times
+        """
         super().__init__()
         self.ti = torch.nn.Parameter(ti, requires_grad=ti.requires_grad)
 
@@ -35,6 +42,6 @@ class InversionRecovery(Operator):
         """
         m0, t1 = qdata.unsqueeze(1)
         ti = self.ti[(...,) + (None,) * (qdata[0].ndim)]
-        y = m0 * (1 - 2 * torch.exp(-ti / (t1 + 1e-10)))
+        y = m0 * (1 - torch.exp(-(ti / (t1 + 1e-10))))
         res = rearrange(y, 't ... c z y x -> (... t) c z y x')
         return res

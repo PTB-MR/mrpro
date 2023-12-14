@@ -15,8 +15,15 @@ from einops import rearrange
 from mrpro.operators import Operator
 
 
-class SaturationRecovery(Operator):
+class MOLLI(Operator):
     def __init__(self, ti: torch.Tensor):
+        """Parameters needed for MOLLI.
+
+        Parameters
+        ----------
+        ti
+            inversion times
+        """
         super().__init__()
         self.ti = torch.nn.Parameter(ti, requires_grad=ti.requires_grad)
 
@@ -27,14 +34,16 @@ class SaturationRecovery(Operator):
         ----------
         qdata
             Quantitative parameter tensor (params, other, c, z, y, x)
-            params: (m0, t1)
+            params: (a, b, t1)
 
         Returns
         -------
             Image data tensor (other, c, z, y, x)
         """
-        m0, t1 = qdata.unsqueeze(1)
+        a, b, t1 = qdata.unsqueeze(1)
         ti = self.ti[(...,) + (None,) * (qdata[0].ndim)]
-        y = m0 * (1 - torch.exp(-(ti / (t1 + 1e-10))))
+        t1_star = t1 / ((b / (a + 1e-10)) - 1)
+
+        y = a - b * torch.exp(-(ti / (t1_star)))
         res = rearrange(y, 't ... c z y x -> (... t) c z y x')
         return res
