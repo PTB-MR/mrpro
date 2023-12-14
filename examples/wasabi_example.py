@@ -10,7 +10,7 @@ from mrpro.operators.models.WASABI import WASABI
 from mrpro.operators.models.WASABITI import WASABITI
 
 # %%
-filepath = R'Z:/_allgemein/projects/8_13/MRPro/hackathon2_qmri/pulseq_WASABITI/'
+filepath = R'/home/hammac01/CEST_Data/'
 seq_filename = '20231127_WASABITI_adjusted_fov192.seq'
 h5_filename = 'meas_MID00021_FID05730_20231127_WASABITI_adjusted_fov192.h5'
 

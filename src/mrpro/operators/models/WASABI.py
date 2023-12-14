@@ -11,6 +11,7 @@
 #   limitations under the License.
 
 import torch
+import torch.nn as nn
 from einops import rearrange
 
 from mrpro.operators import Operator
@@ -20,10 +21,10 @@ class WASABI(Operator):
     def __init__(
         self,
         offsets: torch.Tensor,
-        tp: float = 0.005,
-        b1_nom: float = 3.70,
-        gamma: float = 42.5764,
-        freq: float = 127.7292,
+        tp: torch.Tensor = torch.Tensor([0.005]),
+        b1_nom: torch.Tensor = torch.Tensor([3.70]),
+        gamma: torch.Tensor = torch.Tensor([42.5764]),
+        freq: torch.Tensor = torch.Tensor([127.7292]),
     ) -> None:
         """WASABI function for simultaneous determination of B1 and B0.
 
@@ -43,17 +44,15 @@ class WASABI(Operator):
             larmor frequency [MHz], by default 127.7292
         """
         super().__init__()
-        self.offsets = offsets
-        self.tp = tp
-        self.b1_nom = b1_nom
-        self.gamma = gamma
-        self.freq = freq
+        # nn.Parameters allow for grad calculation
+        self.offsets = nn.Parameter(offsets, requires_grad=offsets.requires_grad)
+        self.tp = nn.Parameter(tp, requires_grad=tp.requires_grad)
+        self.b1_nom = nn.Parameter(b1_nom, requires_grad=b1_nom.requires_grad)
+        self.gamma = nn.Parameter(gamma, requires_grad=gamma.requires_grad)
+        self.freq = nn.Parameter(freq, requires_grad=freq.requires_grad)
 
     def forward(self, qdata: torch.Tensor) -> torch.Tensor:
-        b0_shift = qdata[0].unsqueeze(0)
-        rb1 = qdata[1].unsqueeze(0)
-        c = qdata[2].unsqueeze(0)
-        d = qdata[3].unsqueeze(0)
+        b0_shift, rb1, c, d = qdata.unsqueeze(1)
 
         # ensure correct dimensionality
         offsets = self.offsets[(...,) + (None,) * qdata[0].ndim]
@@ -69,3 +68,6 @@ class WASABI(Operator):
 
         # c = coils, ... = other (may be multi-dimensional)
         return rearrange(res, 'offset ... c z y x -> (... offset) c z y x')
+
+
+# TODO: do singal model methods also for complex variants
