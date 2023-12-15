@@ -160,7 +160,12 @@ def split_k1_into_other(
     setattr(
         kheader.acq_info.idx,
         other_label,
-        repeat(torch.linspace(0, num_other - 1, num_other), 'other-> other 1 k1', k1=split_idx.shape[1]),
+        repeat(
+            torch.linspace(0, num_other - 1, num_other),
+            'other-> other k2 k1',
+            k2=kdata.data.shape[2],
+            k1=split_idx.shape[1],
+        ),
     )
 
     return KData(kheader, kdat, KTrajectory.from_tensor(ktraj))
