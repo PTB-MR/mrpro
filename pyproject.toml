@@ -49,6 +49,7 @@ test = [
 ]
 lint = ["mypy", "flake8", "isort", "pre-commit", "autopep8", "pydocstyle"]
 docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject"]
+notebook = ["torchkbnufft", "zenodo_get", "ipykernel", "jupytext", "matplotlib", "pip-tools"]
 
 [project.urls]
 "repository" = "https://github.com/PTB-MR/mrpro"

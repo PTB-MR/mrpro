@@ -5,26 +5,157 @@ on:
     branches:
       - main
   pull_request:
-    branches:
-      - main
 
 permissions:
     contents: write
 
 jobs:
-  Documentation:
-    name: 'Build and deploy Documentation'
+  convert_scripts:
+    name: 'Translate scripts to notebooks'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+    outputs:
+      commit_hash: ${{ steps.add-commit-push.outputs.commit_hash }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
 
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install .[notebook]
+
+      - name: Create requirements.txt from toml
+        run: |
+          pip-compile --extra notebook -o ./binder/requirements.txt pyproject.toml
+
+      - name: Translate scripts to notebooks
+        run: |
+          scripts=$(ls ./examples/*.py)
+          for script in $scripts
+            do jupytext --set-kernel "python3" --update --output ${script//.py/.ipynb} $script
+          done
+
+      - name: Check if any notebooks have been changed
+        uses: tj-actions/verify-changed-files@v16
+        id: verify-changed-notebooks
+        with:
+          files: |
+            ./examples/*.ipynb
+            ./binder/requirements.txt
+
+      - name: Commit notebooks
+        if: steps.verify-changed-notebooks.outputs.files_changed == 'true'
+        uses: actions4git/add-commit-push@v1
+        with:
+          commit-message: Notebooks updated
+
+      - name: Get hash of last commit
+        id: add-commit-push
+        run: echo "commit_hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+  get_notebooks:
+    name: 'Get list of notebooks'
+    needs: convert_scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout mrpro repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.convert_scripts.outputs.commit_hash }}
+
+      - id: set-matrix
+        run: |
+          cd ./examples/
+          ls
+          echo "notebooks=$(ls *.ipynb | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+
+      - name: Notebook overview
+        run: echo ${{ steps.set-matrix.outputs.notebooks }}
+    outputs:
+      notebooks: ${{ steps.set-matrix.outputs.notebooks }}
+
+  run_notebook:
+    name: 'Run notebook'
+    needs: [convert_scripts, get_notebooks]
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+    strategy:
+      matrix:
+        notebook: ${{ fromJson(needs.get_notebooks.outputs.notebooks) }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.convert_scripts.outputs.commit_hash }}
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install .[notebook]
+
+      - name: Notebook name
+        run: echo ${{ matrix.notebook }}
+
+      - name: Run notebook
+        uses: yaananth/run-notebook@v2
+        env:
+          RUNNER: ${{ toJson(runner) }}
+          SECRETS: ${{ toJson(secrets) }}
+          GITHUB: ${{ toJson(github) }}
+        with:
+          notebook: ./examples/${{ matrix.notebook }}
+
+      - name: Get artifact names
+        id: artifact_names
+        run: |
+          notebook=${{ matrix.notebook }}
+          echo "ARTIFACT_NAME=${notebook/.ipynb/}" >> $GITHUB_OUTPUT
+          echo "HTML_RESULT=${notebook/.ipynb/.html}" >> $GITHUB_OUTPUT
+
+      - name: Upload notebook
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: ${{ steps.artifact_names.outputs.ARTIFACT_NAME }}
+          path: ${{ RUNNER.temp }}/nb-runner/${{ steps.artifact_names.outputs.HTML_RESULT }}
+        env:
+          RUNNER: ${{ toJson(runner) }}
+
+  create_documentation:
+    name: 'Build and deploy documentation'
+    needs: [convert_scripts, run_notebook]
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ needs.convert_scripts.outputs.commit_hash }}
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.11'
         cache: 'pip'
 
     - name: Install dependencies
@@ -32,19 +163,39 @@ jobs:
         pip install --upgrade pip
         pip install ".[docs]"
 
+    - name: Download notebook hmtl files
+      id: download
+      uses: actions/download-artifact@master
+      with:
+        path: ./docs/source/notebook_artifact/
+
+    - name: Copy notebook hmtl files
+      run: |
+          mkdir ./docs/source/_notebooks
+          cd ./docs/source/notebook_artifact/
+          notebooks=$(grep -rl --include='*' './')
+          for nb in $notebooks
+          do
+            echo $nb
+            cp ./$nb ../_notebooks/
+          done
+
+    - name: List of notebooks
+      run: |
+          cd ./docs/source/_notebooks/
+          notebooks=$(grep -rl --include='*.html' './')
+          cd ../
+          echo "" >> examples.rst
+          for nb in $notebooks
+          do
+            echo "   notebook_${nb/.html/.rst}" >> examples.rst
+            notebook_description=$(grep '<h1 id=' ./_notebooks/$nb | sed 's/.*">\(.*\)<a class=.*/\1/')
+            echo $notebook_description
+            echo $notebook_description > "notebook_${nb/.html/.rst}"
+            echo "========" >> "notebook_${nb/.html/.rst}"
+            echo ".. raw:: html" >> "notebook_${nb/.html/.rst}"
+            echo "   :file: ./_notebooks/$nb" >> "notebook_${nb/.html/.rst}"
+          done
+
     - name: Build docs
       run: sphinx-build -b html ./docs/source ./docs/build/html
-
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        publish_branch: github-pages
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs/build/html
-      if: github.event_name != 'pull_request'
-
-    - name: Save Documentation
-      uses: actions/upload-artifact@v3
-      with:
-        name: Documentation
-        path: docs/build/html/

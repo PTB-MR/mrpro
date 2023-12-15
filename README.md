@@ -8,6 +8,9 @@ This package supports ismrmrd-format for MR raw data. All data containers utiliz
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Coverage Bagde](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ckolbPTB/48e334a10caf60e6708d7c712e56d241/raw/coverage.json)
 
+If you want to give MRpro a try you can use
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/PTB-MR/mrpro.git/example_framework?labpath=examples)
+
 ## Installation for developers
 
 1. Clone the repo
