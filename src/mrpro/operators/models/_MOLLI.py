@@ -41,9 +41,10 @@ class MOLLI(Operator):
             Image data tensor (other, c, z, y, x)
         """
         a, b, t1 = qdata.unsqueeze(1)
+        t1 = torch.where(t1 == 0, 1e-10, t1)
+        a = torch.where(a == 0 | torch.equal((b / a), torch.ones_like(a)), a + 1e-10, a)
         ti = self.ti[(...,) + (None,) * (qdata[0].ndim)]
-        t1_star = t1 / ((b / (a + 1e-10)) - 1)
-
+        t1_star = t1 / ((b / a) - 1)
         y = a - b * torch.exp(-(ti / (t1_star)))
         res = rearrange(y, 't ... c z y x -> (... t) c z y x')
         return res

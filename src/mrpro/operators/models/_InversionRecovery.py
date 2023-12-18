@@ -41,7 +41,8 @@ class InversionRecovery(Operator):
             Image data tensor (other, c, z, y, x)
         """
         m0, t1 = qdata.unsqueeze(1)
+        t1 = torch.where(t1 == 0, 1e-10, t1)
         ti = self.ti[(...,) + (None,) * (qdata[0].ndim)]
-        y = m0 * (1 - 2 * torch.exp(-ti / (t1 + 1e-10)))
+        y = m0 * (1 - 2 * torch.exp(-ti / t1))
         res = rearrange(y, 't ... c z y x -> (... t) c z y x')
         return res
