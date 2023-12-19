@@ -11,6 +11,7 @@
 #   limitations under the License.
 
 import torch
+import torch.nn as nn
 from einops import rearrange
 
 from mrpro.operators import Operator
@@ -21,10 +22,10 @@ class WASABITI(Operator):
         self,
         offsets: torch.Tensor,
         trec: torch.Tensor,
-        tp: float = 0.005,
-        b1_nom: float = 3.75,
-        gamma: float = 42.5764,
-        freq: float = 127.7292,
+        tp: torch.Tensor = torch.Tensor([0.005]),
+        b1_nom: torch.Tensor = torch.Tensor([3.75]),
+        gamma: torch.Tensor = torch.Tensor([42.5764]),
+        freq: torch.Tensor = torch.Tensor([127.7292]),
     ) -> None:
         """WASABITI function for simultaneous determination of B1, B0 and T1.
 
@@ -46,12 +47,12 @@ class WASABITI(Operator):
             larmor frequency [MHz], by default 127.7292
         """
         super().__init__()
-        self.offsets = offsets
-        self.trec = trec
-        self.tp = tp
-        self.b1_nom = b1_nom
-        self.gamma = gamma
-        self.freq = freq
+        self.offsets = nn.Parameter(offsets, requires_grad=offsets.requires_grad)
+        self.trec = nn.Parameter(trec, requires_grad=trec.requires_grad)
+        self.tp = nn.Parameter(tp, requires_grad=tp.requires_grad)
+        self.b1_nom = nn.Parameter(b1_nom, requires_grad=b1_nom.requires_grad)
+        self.gamma = nn.Parameter(gamma, requires_grad=gamma.requires_grad)
+        self.freq = nn.Parameter(freq, requires_grad=freq.requires_grad)
 
     def forward(self, qdata: torch.Tensor) -> torch.Tensor:
         b0_shift = qdata[0].unsqueeze(0)
