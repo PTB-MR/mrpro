@@ -91,6 +91,9 @@ class DcfData:
             density compensation values (1, k2, k1, k0)
         """
 
+        # Get device of trajectory
+        traj_device = traj.device
+
         # 2D and 3D trajectories supported
         dim = traj.shape[0]
         if dim not in (2, 3):
@@ -98,7 +101,7 @@ class DcfData:
 
         # Calculate dcf only for unique k-space positions
         traj_dim = traj.shape
-        traj = np.round(traj.numpy(), decimals=UNIQUE_ROUNDING_DECIMALS)
+        traj = np.round(traj.cpu().numpy(), decimals=UNIQUE_ROUNDING_DECIMALS)
         traj = traj.reshape(dim, -1)
         traj_unique, inverse, counts = np.unique(traj, return_inverse=True, return_counts=True, axis=1)
 
@@ -135,7 +138,7 @@ class DcfData:
         # Sort dcf values back into the original order (i.e. before calling unique)
         dcf = np.reshape((dcf / counts)[inverse], traj_dim[1:])
 
-        return torch.tensor(dcf, dtype=torch.float32)
+        return torch.tensor(dcf, dtype=torch.float32, device=traj_device)
 
     @classmethod
     def from_traj_voronoi(cls, traj: KTrajectory) -> DcfData:
