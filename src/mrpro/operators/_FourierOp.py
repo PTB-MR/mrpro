@@ -137,10 +137,10 @@ class FourierOp(LinearOperator):
 
             self._omega = torch.stack(omega, dim=-2)
             self._fwd_nufft_op = KbNufft(
-                im_size=nufft_im_size, grid_size=grid_size, numpoints=numpoints, kbwidth=kbwidth
+                im_size=nufft_im_size, grid_size=grid_size, numpoints=numpoints, kbwidth=kbwidth, device=traj.kx.device
             )
             self._adj_nufft_op = KbNufftAdjoint(
-                im_size=nufft_im_size, grid_size=grid_size, numpoints=numpoints, kbwidth=kbwidth
+                im_size=nufft_im_size, grid_size=grid_size, numpoints=numpoints, kbwidth=kbwidth, device=traj.kx.device
             )
 
         self._ignore_dims = tuple(ignore_dims)

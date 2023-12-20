@@ -81,3 +81,47 @@ def test_KData_modify_header(ismrmrd_cart, field, value):
     par_dict = {field: value}
     k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory(), header_overwrites=par_dict)
     assert getattr(k.header, field) == value
+
+
+def test_KData_to_complex128(ismrmrd_cart):
+    """Change KData dtype complex128."""
+    k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    k_complex128 = k.to(dtype=torch.complex128)
+    assert k_complex128.data.dtype == torch.complex128
+    assert k_complex128.traj.kx.dtype == torch.float64
+    assert k_complex128.traj.ky.dtype == torch.float64
+    assert k_complex128.traj.kz.dtype == torch.float64
+
+
+@pytest.mark.cuda
+def test_KData_to_cuda(ismrmrd_cart):
+    """Test KData.to to move data to CUDA memory."""
+    k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    cuda_device = f'cuda:{torch.cuda.current_device()}'
+    kcuda = k.to(device=cuda_device)
+    assert kcuda.data.is_cuda
+    assert kcuda.traj.kz.is_cuda
+    assert kcuda.traj.ky.is_cuda
+    assert kcuda.traj.kx.is_cuda
+
+
+@pytest.mark.cuda
+def test_KData_cuda(ismrmrd_cart):
+    """Move KData object to CUDA memory."""
+    k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kcuda = k.cuda()
+    assert kcuda.data.is_cuda
+    assert kcuda.traj.kz.is_cuda
+    assert kcuda.traj.ky.is_cuda
+    assert kcuda.traj.kx.is_cuda
+
+
+@pytest.mark.cuda
+def test_KData_cpu(ismrmrd_cart):
+    """Move KData object to CUDA memory and back to CPU memory."""
+    k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kcpu = k.cuda().cpu()
+    assert kcpu.data.is_cpu
+    assert kcpu.traj.kz.is_cpu
+    assert kcpu.traj.ky.is_cpu
+    assert kcpu.traj.kx.is_cpu
