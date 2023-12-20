@@ -109,3 +109,21 @@ class KTrajectory:
 
         kz, ky, kx = torch.unbind(tensor, dim=stack_dim)
         return cls(kz, ky, kx, repeat_detection_tolerance=repeat_detection_tolerance)
+
+    def cuda(self, device: torch.device | None = None) -> KTrajectory:
+        """Create copy of trajectory in CUDA memory.
+
+        Parameters
+        ----------
+        device
+            The destination GPU device. Defaults to the current CUDA device.
+        """
+        if device is None:
+            device = torch.device(f'cuda:{torch.cuda.current_device()}')
+
+        # Trajectory to CUDA memory
+        return KTrajectory(kz=self.kz.cuda(device), ky=self.ky.cuda(device), kx=self.kx.cuda(device))
+
+    def cpu(self) -> KTrajectory:
+        """Create copy of trajectory in CPU memory."""
+        return KTrajectory(kz=self.kz.cpu(), ky=self.ky.cpu(), kx=self.kx.cpu())

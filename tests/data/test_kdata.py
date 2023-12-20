@@ -80,3 +80,25 @@ def test_KData_modify_header(ismrmrd_cart, field, value):
     par_dict = {field: value}
     k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory(), header_overwrites=par_dict)
     assert getattr(k.header, field) == value
+
+
+@pytest.mark.cuda
+def test_KData_cuda(ismrmrd_cart):
+    """Move KData object to CUDA memory."""
+    k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kcuda = k.cuda()
+    assert kcuda.data.is_cuda
+    assert kcuda.traj.kz.is_cuda
+    assert kcuda.traj.ky.is_cuda
+    assert kcuda.traj.kx.is_cuda
+
+
+@pytest.mark.cuda
+def test_KData_cpu(ismrmrd_cart):
+    """Move KData object to CUDA memory and back to CPU memory."""
+    k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kcpu = k.cuda().cpu()
+    assert kcpu.data.is_cpu
+    assert kcpu.traj.kz.is_cpu
+    assert kcpu.traj.ky.is_cpu
+    assert kcpu.traj.kx.is_cpu

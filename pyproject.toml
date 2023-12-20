@@ -58,6 +58,7 @@ docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject"]
 testpaths = ["tests"]
 filterwarnings = ["error"]
 # addopts = "-n auto" # TODO: debug vscode missing tests if enabled
+markers = ["cuda : Tests only to be run when cuda device is available"]
 
 # MyPy section
 [tool.mypy]

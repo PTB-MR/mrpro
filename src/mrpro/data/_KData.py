@@ -182,14 +182,9 @@ class KData:
         if device is None:
             device = torch.device(f'cuda:{torch.cuda.current_device()}')
 
-        # Move trajectory to CUDA memory
-        traj_gpu = KTrajectory(kz=self.traj.kz.cuda(device), ky=self.traj.ky.cuda(device), kx=self.traj.kx.cuda(device))
         # Create object with trajectory and data in CUDA memory
-        return KData(header=self.header, data=self.data.cuda(device), traj=traj_gpu)
+        return KData(header=self.header, data=self.data.cuda(device), traj=self.traj.cuda(device))
 
     def cpu(self) -> KData:
         """Create copy of object in CPU memory."""
-        # Move trajectory to CPU
-        traj_cpu = KTrajectory(kz=self.traj.kz.cpu(), ky=self.traj.ky.cpu(), kx=self.traj.kx.cpu())
-        # Create object in CPU memory
-        return KData(header=self.header, data=self.data.cpu(), traj=traj_cpu)
+        return KData(header=self.header, data=self.data.cpu(), traj=self.traj.cpu())
