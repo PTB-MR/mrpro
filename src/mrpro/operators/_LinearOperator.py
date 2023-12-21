@@ -18,6 +18,9 @@ from abc import abstractmethod
 import torch
 
 from mrpro.operators import Operator
+from mrpro.operators._Operator import OperatorComposition
+from mrpro.operators._Operator import OperatorElementwiseProduct
+from mrpro.operators._Operator import OperatorSum
 
 
 class LinearOperator(Operator):
@@ -31,6 +34,48 @@ class LinearOperator(Operator):
     def H(self):
         """Adjoint operator."""
         return AdjointLinearOperator(self)
+
+    def __matmul__(self, other: Operator):
+        """Operator composition."""
+        if not isinstance(other, LinearOperator):
+            return Operator.__matmul__(self, other)
+        return LinearOperatorComposition(self, other)
+
+    def __add__(self, other: Operator):
+        """Operator addition."""
+        if not isinstance(other, LinearOperator):
+            return Operator.__add__(self, other)
+        return LinearOperatorSum(self, other)
+
+    def __mul__(self, other: torch.Tensor):
+        """Operator multiplication with scalar."""
+        return LinearOperatorElementwiseProduct(self, other)
+
+
+class LinearOperatorComposition(LinearOperator, OperatorComposition):
+    """Operator composition."""
+
+    def adjoint(self, x: torch.Tensor):
+        """Adjoint operator composition."""
+        return self._operator2.adjoint(self._operator1.adjoint(x))
+
+
+class LinearOperatorSum(LinearOperator, OperatorSum):
+    """Operator addition."""
+
+    def adjoint(self, x: torch.Tensor):
+        """Adjoint operator addition."""
+        return self._operator1.adjoint(x) + self._operator2.adjoint(x)
+
+
+class LinearOperatorElementwiseProduct(LinearOperator, OperatorElementwiseProduct):
+    """Operator elementwise multiplication with scalar/tensor."""
+
+    def adjoint(self, x: torch.Tensor):
+        """Adjoint Operator elementwise multiplication with scalar/tensor."""
+        if self._tensor.is_complex():
+            return self._operator.adjoint(x) * self._tensor.conj()
+        return self._operator.adjoint(x) * self._tensor
 
 
 class AdjointLinearOperator(LinearOperator):
