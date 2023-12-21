@@ -49,11 +49,11 @@ class KTrajectoryRawShape:
             into three separate dimensions using simple reshape operation. This information needs to be provided from
             kheader.acq_info.
         num_k2
-            Number of k2 points.
+            number of k2 points.
         num_k1
-            Number of k1 points.
+            number of k1 points.
         repeat_detection_tolerance:
-            Tolerance for repeat detection which is passed on to create KTrajectory. Set to None to disable.
+            tolerance for repeat detection which is passed on to create KTrajectory. Set to None to disable.
 
         Returns
         -------

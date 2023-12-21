@@ -39,11 +39,11 @@ class CsmData(QData):
         Parameters
         ----------
         coil_images
-            Images for each coil element.
+            images for each coil element.
         smoothing_width
-            Width smoothing filter.
+            width smoothing filter.
         niter
-            Number of iterations of Walsh method.
+            number of iterations of Walsh method.
         """
         # Compute the pointwise covariance between coils
         coil_cov = torch.einsum('azyx,bzyx->abzyx', coil_images, coil_images.conj())
@@ -79,9 +79,9 @@ class CsmData(QData):
         idata
             IData object containing the images for each coil element.
         smoothing_width
-            Width of smoothing filter.
+            width of smoothing filter.
         niter
-            Number of iterations of Walsh method.
+            number of iterations of Walsh method.
         chunk_size_otherdim:
             How many elements of the other dimensions should be processed at once.
             Default is None, which means that all elements are processed at once.
