@@ -445,7 +445,7 @@ document.write(`
 <div class="viewcode-block" id="IHeader.from_kheader">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.IHeader.html#mrpro.data.IHeader.from_kheader">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_kheader</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">from_kheader</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IHeader</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create IHeader object from KHeader object.</span>
 
 <span class="sd">        Parameters</span>
@@ -466,13 +466,13 @@ document.write(`
 <div class="viewcode-block" id="IHeader.from_dicom_list">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.IHeader.html#mrpro.data.IHeader.from_dicom_list">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_dicom_list</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dicom_datasets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Dataset</span><span class="p">]):</span>
+    <span class="k">def</span> <span class="nf">from_dicom_list</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dicom_datasets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Dataset</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">IHeader</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read DICOM files and return IHeader object.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        dicom_datasets</span>
-<span class="sd">            List of dataset objects containing the DICOM file.</span>
+<span class="sd">            list of dataset objects containing the DICOM file.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">def</span> <span class="nf">get_item</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Tag</span><span class="p">):</span>

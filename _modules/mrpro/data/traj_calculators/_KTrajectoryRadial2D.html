@@ -428,7 +428,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">angle</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">angle</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_krad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_krad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the k-space locations along the read-out encoding lines.</span>
 
 <span class="sd">        Parameters</span>
@@ -438,7 +438,7 @@ document.write(`
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">            Trajectory along ONE readout</span>
+<span class="sd">            trajectory along ONE readout</span>
 
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>

@@ -520,8 +520,8 @@ document.write(`
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>foldername</strong> – Path to folder with DICOM files.</p></li>
-<li><p><strong>suffix</strong> – File extension (without period/full stop) to identify the DICOM files.
+<li><p><strong>foldername</strong> – path to folder with DICOM files.</p></li>
+<li><p><strong>suffix</strong> – file extension (without period/full stop) to identify the DICOM files.
 If None, then all files in the folder are read in.</p></li>
 </ul>
 </dd>
@@ -534,7 +534,7 @@ If None, then all files in the folder are read in.</p></li>
 <dd><p>Read single DICOM file and return IData object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>filename</strong> – Path to DICOM file.</p>
+<dd class="field-odd"><p><strong>filename</strong> – path to DICOM file.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -546,7 +546,7 @@ If None, then all files in the folder are read in.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> – torch.Tensor containing image data with dimensions (broadcastable to) (all_other, coils, z, x, y).</p></li>
+<li><p><strong>data</strong> – torch.Tensor containing image data with dimensions (broadcastable to) (other, coils, z, y, x).</p></li>
 <li><p><strong>kheader</strong> – MR raw data header (KHeader) containing required meta data for the image header (IHeader).</p></li>
 </ul>
 </dd>

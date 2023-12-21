@@ -437,7 +437,7 @@ document.write(`
 <div class="viewcode-block" id="QHeader.from_iheader">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.QHeader.html#mrpro.data.QHeader.from_iheader">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_iheader</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">iheader</span><span class="p">:</span> <span class="n">IHeader</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">from_iheader</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">iheader</span><span class="p">:</span> <span class="n">IHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QHeader</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create QHeader object from KHeader object.</span>
 
 <span class="sd">        Parameters</span>
@@ -452,7 +452,7 @@ document.write(`
 <div class="viewcode-block" id="QHeader.from_kheader">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.QHeader.html#mrpro.data.QHeader.from_kheader">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_kheader</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">from_kheader</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QHeader</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create QHeader object from KHeader object.</span>
 
 <span class="sd">        Parameters</span>
@@ -467,13 +467,13 @@ document.write(`
 <div class="viewcode-block" id="QHeader.from_dicom">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.QHeader.html#mrpro.data.QHeader.from_dicom">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_dicom</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dicom_dataset</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">from_dicom</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dicom_dataset</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QHeader</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read DICOM file containing qMRI data and return QHeader object.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        dicom_dataset</span>
-<span class="sd">            Dataset object containing the DICOM file.</span>
+<span class="sd">            dataset object containing the DICOM file.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">def</span> <span class="nf">getItems</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>  <span class="c1"># Todo: move to utils and reuse logic in IHeader</span>

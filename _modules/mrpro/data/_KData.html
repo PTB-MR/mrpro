@@ -468,13 +468,14 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">            filename:</span>
-<span class="sd">                Path to the ISMRMRD file</span>
-<span class="sd">            ktrajectory:</span>
+<span class="sd">            filename</span>
+<span class="sd">                path to the ISMRMRD file</span>
+<span class="sd">            ktrajectory</span>
 <span class="sd">                KTrajectory defining the trajectory to use # TODO: Maybe provide a default based on the header?</span>
-<span class="sd">            header_overwrites:</span>
-<span class="sd">                Dictionary of key-value pairs to overwrite the header</span>
-<span class="sd">            dataset_idx: Index of the dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)</span>
+<span class="sd">            header_overwrites</span>
+<span class="sd">                dictionary of key-value pairs to overwrite the header</span>
+<span class="sd">            dataset_idx</span>
+<span class="sd">                index of the dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Can raise FileNotFoundError</span>
@@ -533,7 +534,7 @@ document.write(`
         <span class="n">sort_ki</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="nb">getattr</span><span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">KDIM_SORT_LABELS</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">sort_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lexsort</span><span class="p">(</span><span class="n">sort_ki</span><span class="p">)</span>
 
-        <span class="n">kdata</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">kdata</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">],</span> <span class="s1">&#39;(other k2 k1) coil k0 -&gt; other coil k2 k1 k0&#39;</span><span class="p">,</span> <span class="n">k1</span><span class="o">=</span><span class="n">num_k1</span><span class="p">,</span> <span class="n">k2</span><span class="o">=</span><span class="n">num_k2</span><span class="p">)</span>
+        <span class="n">kdata</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">kdata</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">],</span> <span class="s1">&#39;(other k2 k1) coils k0 -&gt; other coils k2 k1 k0&#39;</span><span class="p">,</span> <span class="n">k1</span><span class="o">=</span><span class="n">num_k1</span><span class="p">,</span> <span class="n">k2</span><span class="o">=</span><span class="n">num_k2</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">reshape_acq_data</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">],</span> <span class="s1">&#39;(other k2 k1) ... -&gt; other k2 k1 ...&#39;</span><span class="p">,</span> <span class="n">k1</span><span class="o">=</span><span class="n">num_k1</span><span class="p">,</span> <span class="n">k2</span><span class="o">=</span><span class="n">num_k2</span><span class="p">)</span>

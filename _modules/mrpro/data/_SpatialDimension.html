@@ -452,9 +452,9 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        data:</span>
+<span class="sd">        data</span>
 <span class="sd">            should implement .x .y .z. For example ismrmrd&#39;s matrixSizeType.</span>
-<span class="sd">        conversion,  optional:</span>
+<span class="sd">        conversion,  optional</span>
 <span class="sd">            will be called for each value to convert it</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">conversion</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -473,9 +473,9 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        data:</span>
+<span class="sd">        data</span>
 <span class="sd">            shape (..., 3) in the order (x,y,z)</span>
-<span class="sd">        conversion, optional:</span>
+<span class="sd">        conversion, optional</span>
 <span class="sd">            will be called for each value to convert it, by default None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)):</span>

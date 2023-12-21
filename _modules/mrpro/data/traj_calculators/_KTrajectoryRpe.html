@@ -452,7 +452,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">shift_between_rpe_lines</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="n">shift_between_rpe_lines</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_apply_shifts_between_rpe_lines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">krad</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">kang_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_apply_shifts_between_rpe_lines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">krad</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">kang_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Shift radial phase encoding lines relative to each other.</span>
 
 <span class="sd">        Example: shift_between_rpe_lines = [0, 0.5, 0.25, 0.75] leads to a shift of the 0th line by 0,</span>
@@ -488,7 +488,7 @@ document.write(`
             <span class="n">krad</span><span class="p">[</span><span class="n">curr_angle_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">curr_krad</span>
         <span class="k">return</span> <span class="n">krad</span>
 
-    <span class="k">def</span> <span class="nf">_kfreq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_kfreq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the trajectory along one readout (k0 dimension).</span>
 
 <span class="sd">        Parameters</span>
@@ -498,7 +498,7 @@ document.write(`
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">            Trajectory along ONE readout</span>
+<span class="sd">            trajectory along ONE readout</span>
 
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
@@ -507,11 +507,10 @@ document.write(`
 <span class="sd">        ValueError</span>
 <span class="sd">            Center sample has to be the same for each readout</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Verify that each readout has the same number of samples and same center sample</span>
-
         <span class="n">num_samples</span> <span class="o">=</span> <span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">number_of_samples</span>
         <span class="n">center_sample</span> <span class="o">=</span> <span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">center_sample</span>
 
+        <span class="c1"># Verify that each readout has the same number of samples and same center sample</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">num_samples</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;RPE trajectory can only be calculated if each acquisition has the same number of samples&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">center_sample</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
@@ -523,7 +522,7 @@ document.write(`
         <span class="n">k0</span> <span class="o">*=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">nk0</span>
         <span class="k">return</span> <span class="n">k0</span>
 
-    <span class="k">def</span> <span class="nf">_kang</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_kang</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the angles of the phase encoding lines.</span>
 
 <span class="sd">        Parameters</span>
@@ -533,11 +532,11 @@ document.write(`
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">            Angles of phase encoding lines</span>
+<span class="sd">            angles of phase encoding lines</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">k2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">angle</span>
 
-    <span class="k">def</span> <span class="nf">_krad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_krad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the k-space locations along the phase encoding lines.</span>
 
 <span class="sd">        Parameters</span>

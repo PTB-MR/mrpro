@@ -443,7 +443,9 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">rad_us_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">rad_us_factor</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_apply_sunflower_shift_between_rpe_lines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">krad</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">kang</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_apply_sunflower_shift_between_rpe_lines</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">krad</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">kang</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Shift radial phase encoding lines relative to each other.</span>
 
 <span class="sd">        The shifts are applied to create a sunflower pattern of k-space points in the ky-kz phase encoding plane.</span>
@@ -476,7 +478,7 @@ document.write(`
         <span class="n">fov_scaling</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_rad_full</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">rad_us_factor</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">num_rad_full</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">krad</span> <span class="o">*</span> <span class="n">fov_scaling</span>
 
-    <span class="k">def</span> <span class="nf">_kang</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_kang</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the angles of the phase encoding lines.</span>
 
 <span class="sd">        Parameters</span>
@@ -486,11 +488,11 @@ document.write(`
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">            Angles of phase encoding lines</span>
+<span class="sd">            angles of phase encoding lines</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">k2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">angle</span><span class="p">)</span> <span class="o">%</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span>
 
-    <span class="k">def</span> <span class="nf">_krad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_krad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the k-space locations along the phase encoding lines.</span>
 
 <span class="sd">        Parameters</span>

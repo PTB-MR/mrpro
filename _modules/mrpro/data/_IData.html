@@ -472,7 +472,7 @@ document.write(`
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        data</span>
-<span class="sd">            torch.Tensor containing image data with dimensions (broadcastable to) (all_other, coils, z, x, y).</span>
+<span class="sd">            torch.Tensor containing image data with dimensions (broadcastable to) (other, coils, z, y, x).</span>
 <span class="sd">        kheader</span>
 <span class="sd">            MR raw data header (KHeader) containing required meta data for the image header (IHeader).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -488,13 +488,13 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        filename:</span>
-<span class="sd">            Path to DICOM file.</span>
+<span class="sd">        filename</span>
+<span class="sd">            path to DICOM file.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">ds</span> <span class="o">=</span> <span class="n">dcmread</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
         <span class="n">idata</span> <span class="o">=</span> <span class="n">_dcm_pixelarray_to_tensor</span><span class="p">(</span><span class="n">ds</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
-        <span class="n">idata</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="s1">&#39;(other coil z) y x -&gt; other coil z y x&#39;</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">coil</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">idata</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="s1">&#39;(other coils z) y x -&gt; other coils z y x&#39;</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">coils</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="n">header</span> <span class="o">=</span> <span class="n">IHeader</span><span class="o">.</span><span class="n">from_dicom_list</span><span class="p">([</span><span class="n">ds</span><span class="p">])</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">idata</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span></div>
@@ -508,10 +508,10 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        foldername:</span>
-<span class="sd">            Path to folder with DICOM files.</span>
-<span class="sd">        suffix:</span>
-<span class="sd">            File extension (without period/full stop) to identify the DICOM files.</span>
+<span class="sd">        foldername</span>
+<span class="sd">            path to folder with DICOM files.</span>
+<span class="sd">        suffix</span>
+<span class="sd">            file extension (without period/full stop) to identify the DICOM files.</span>
 <span class="sd">            If None, then all files in the folder are read in.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -544,7 +544,7 @@ document.write(`
 
         <span class="c1"># torch.stack is necessary otherwises mypy does not realize that rearrange yields Tensor from list[Tensor]</span>
         <span class="n">idata</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">_dcm_pixelarray_to_tensor</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span> <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">ds_list</span><span class="p">])</span>
-        <span class="n">idata</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="s1">&#39;(other coil z) y x -&gt; other coil z y x&#39;</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">idata</span><span class="p">),</span> <span class="n">coil</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">idata</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="s1">&#39;(other coils z) y x -&gt; other coils z y x&#39;</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">idata</span><span class="p">),</span> <span class="n">coils</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="n">header</span> <span class="o">=</span> <span class="n">IHeader</span><span class="o">.</span><span class="n">from_dicom_list</span><span class="p">(</span><span class="n">ds_list</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">idata</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span></div>

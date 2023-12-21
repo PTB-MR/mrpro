@@ -455,7 +455,7 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        stack_dim:</span>
+<span class="sd">        stack_dim</span>
 <span class="sd">            The dimension to stack the tensor along.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">broadcasted_shape</span>
@@ -466,7 +466,7 @@ document.write(`
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.KTrajectory.html#mrpro.data.KTrajectory.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">kz</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">ky</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">kx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">repeat_detection_tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">1e-8</span>
-    <span class="p">):</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;K-Space Trajectory dataclass.</span>
 
 <span class="sd">        Reduces repeated dimensions to singletons if repeat_detection_tolerance</span>
@@ -474,9 +474,9 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        kz, ky, kx:</span>
-<span class="sd">            Trajectory coordinates to set</span>
-<span class="sd">        repeat_detection_tolerance:</span>
+<span class="sd">        kz, ky, kx</span>
+<span class="sd">            trajectory coordinates to set</span>
+<span class="sd">        repeat_detection_tolerance</span>
 <span class="sd">            Tolerance for repeat detection. Set to None to disable.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">repeat_detection_tolerance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -508,12 +508,12 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tensor:</span>
+<span class="sd">        tensor</span>
 <span class="sd">            The tensor representation of the trajectory.</span>
 <span class="sd">            This should be a 5-dim tensor, with (kz,ky,kx) stacked in this order along stack_dim</span>
-<span class="sd">        stack_dim:</span>
+<span class="sd">        stack_dim</span>
 <span class="sd">            The dimension in the tensor the directions have been stacked along.</span>
-<span class="sd">        repeat_detection_tolerance:</span>
+<span class="sd">        repeat_detection_tolerance</span>
 <span class="sd">            detects if broadcasting can be used, i.e. if dimensions are repeated.</span>
 <span class="sd">            Set to None to disable.</span>
 <span class="sd">        &quot;&quot;&quot;</span>

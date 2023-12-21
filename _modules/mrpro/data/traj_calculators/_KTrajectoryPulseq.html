@@ -439,7 +439,10 @@ document.write(`
 
 <div class="viewcode-block" id="KTrajectoryPulseq.__init__">
 <a class="viewcode-back" href="../../../../_autosummary/mrpro.data.traj_calculators.KTrajectoryPulseq.html#mrpro.data.traj_calculators.KTrajectoryPulseq.__init__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">seq_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">seq_path</span> <span class="o">=</span> <span class="n">seq_path</span></div>
 
@@ -490,30 +493,9 @@ document.write(`
         <span class="n">kz</span> <span class="o">=</span> <span class="n">k_traj_adc</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">((</span><span class="n">sample_size</span><span class="p">,</span> <span class="n">k2</span><span class="p">,</span> <span class="n">k1</span><span class="p">,</span> <span class="n">k0</span><span class="p">))</span>
 
         <span class="c1"># rearrange k-space trajectory to match MRpro convention</span>
-        <span class="n">kx</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span>
-            <span class="n">kx</span><span class="p">,</span>
-            <span class="s1">&#39;other k2 k1 k0 -&gt; (other k2 k1) k0&#39;</span><span class="p">,</span>
-            <span class="n">k0</span><span class="o">=</span><span class="n">k0</span><span class="p">,</span>
-            <span class="n">k2</span><span class="o">=</span><span class="n">k2</span><span class="p">,</span>
-            <span class="n">k1</span><span class="o">=</span><span class="n">k1</span><span class="p">,</span>
-            <span class="n">other</span><span class="o">=</span><span class="n">sample_size</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">ky</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span>
-            <span class="n">ky</span><span class="p">,</span>
-            <span class="s1">&#39;other k2 k1 k0 -&gt; (other k2 k1) k0&#39;</span><span class="p">,</span>
-            <span class="n">k0</span><span class="o">=</span><span class="n">k0</span><span class="p">,</span>
-            <span class="n">k2</span><span class="o">=</span><span class="n">k2</span><span class="p">,</span>
-            <span class="n">k1</span><span class="o">=</span><span class="n">k1</span><span class="p">,</span>
-            <span class="n">other</span><span class="o">=</span><span class="n">sample_size</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">kz</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span>
-            <span class="n">kz</span><span class="p">,</span>
-            <span class="s1">&#39;other k2 k1 k0 -&gt; (other k2 k1) k0&#39;</span><span class="p">,</span>
-            <span class="n">k0</span><span class="o">=</span><span class="n">k0</span><span class="p">,</span>
-            <span class="n">k2</span><span class="o">=</span><span class="n">k2</span><span class="p">,</span>
-            <span class="n">k1</span><span class="o">=</span><span class="n">k1</span><span class="p">,</span>
-            <span class="n">other</span><span class="o">=</span><span class="n">sample_size</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="n">kx</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">kx</span><span class="p">,</span> <span class="s1">&#39;other k2 k1 k0 -&gt; (other k2 k1) k0&#39;</span><span class="p">,</span> <span class="n">k0</span><span class="o">=</span><span class="n">k0</span><span class="p">,</span> <span class="n">k2</span><span class="o">=</span><span class="n">k2</span><span class="p">,</span> <span class="n">k1</span><span class="o">=</span><span class="n">k1</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="n">sample_size</span><span class="p">)</span>
+        <span class="n">ky</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">ky</span><span class="p">,</span> <span class="s1">&#39;other k2 k1 k0 -&gt; (other k2 k1) k0&#39;</span><span class="p">,</span> <span class="n">k0</span><span class="o">=</span><span class="n">k0</span><span class="p">,</span> <span class="n">k2</span><span class="o">=</span><span class="n">k2</span><span class="p">,</span> <span class="n">k1</span><span class="o">=</span><span class="n">k1</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="n">sample_size</span><span class="p">)</span>
+        <span class="n">kz</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">kz</span><span class="p">,</span> <span class="s1">&#39;other k2 k1 k0 -&gt; (other k2 k1) k0&#39;</span><span class="p">,</span> <span class="n">k0</span><span class="o">=</span><span class="n">k0</span><span class="p">,</span> <span class="n">k2</span><span class="o">=</span><span class="n">k2</span><span class="p">,</span> <span class="n">k1</span><span class="o">=</span><span class="n">k1</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="n">sample_size</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">KTrajectoryRawShape</span><span class="p">(</span><span class="n">kz</span><span class="p">,</span> <span class="n">ky</span><span class="p">,</span> <span class="n">kx</span><span class="p">)</span></div>
 

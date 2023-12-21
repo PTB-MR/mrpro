@@ -433,12 +433,12 @@ document.write(`
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">        number_of_coils</span>
-<span class="sd">            Number of coil elements</span>
+<span class="sd">            number of coil elements</span>
 <span class="sd">        image_dimensions</span>
-<span class="sd">            Number of voxels in the image.</span>
+<span class="sd">            number of voxels in the image</span>
 <span class="sd">            This is a 2D simulation so the output will be (1 number_of_coils 1 image_dimensions.y image_dimensions.x)</span>
 <span class="sd">        relative_radius</span>
-<span class="sd">            Relative radius of birdcage</span>
+<span class="sd">            relative radius of birdcage</span>
 <span class="sd">        normalize_with_rss</span>
 <span class="sd">            If set to true, the calculated sensitivities are normalized by the root-sum-of-squares</span>
 
@@ -467,7 +467,7 @@ document.write(`
         <span class="c1"># Normalize only where rss is &gt; 0</span>
         <span class="n">sensitivities</span><span class="p">[:,</span> <span class="n">rss</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/=</span> <span class="n">rss</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">rss</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">repeat</span><span class="p">(</span><span class="n">sensitivities</span><span class="p">,</span> <span class="s1">&#39;coil y x-&gt;other coil z y x&#39;</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">repeat</span><span class="p">(</span><span class="n">sensitivities</span><span class="p">,</span> <span class="s1">&#39;coils y x-&gt;other coils z y x&#39;</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
 
 
 

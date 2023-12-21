@@ -442,11 +442,11 @@ document.write(`
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        coil_images</span>
-<span class="sd">            Images for each coil element.</span>
+<span class="sd">            images for each coil element.</span>
 <span class="sd">        smoothing_width</span>
-<span class="sd">            Width smoothing filter.</span>
+<span class="sd">            width smoothing filter.</span>
 <span class="sd">        niter</span>
-<span class="sd">            Number of iterations of Walsh method.</span>
+<span class="sd">            number of iterations of Walsh method.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Compute the pointwise covariance between coils</span>
         <span class="n">coil_cov</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;azyx,bzyx-&gt;abzyx&#39;</span><span class="p">,</span> <span class="n">coil_images</span><span class="p">,</span> <span class="n">coil_images</span><span class="o">.</span><span class="n">conj</span><span class="p">())</span>
@@ -484,9 +484,9 @@ document.write(`
 <span class="sd">        idata</span>
 <span class="sd">            IData object containing the images for each coil element.</span>
 <span class="sd">        smoothing_width</span>
-<span class="sd">            Width of smoothing filter.</span>
+<span class="sd">            width of smoothing filter.</span>
 <span class="sd">        niter</span>
-<span class="sd">            Number of iterations of Walsh method.</span>
+<span class="sd">            number of iterations of Walsh method.</span>
 <span class="sd">        chunk_size_otherdim:</span>
 <span class="sd">            How many elements of the other dimensions should be processed at once.</span>
 <span class="sd">            Default is None, which means that all elements are processed at once.</span>

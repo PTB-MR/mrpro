@@ -487,8 +487,8 @@ document.write(`
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> – quantitative image data tensor with dimensions (all_other, coils, z, y, x).</p></li>
-<li><p><strong>header</strong> – MRpro header containing required meta data for the QHeader.</p></li>
+<li><p><strong>data</strong> – quantitative image data tensor with dimensions (other, coils, z, y, x)</p></li>
+<li><p><strong>header</strong> – MRpro header containing required meta data for the QHeader</p></li>
 </ul>
 </dd>
 </dl>
@@ -527,8 +527,8 @@ document.write(`
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>idata</strong> – IData object containing the images for each coil element.</p></li>
-<li><p><strong>smoothing_width</strong> – Width of smoothing filter.</p></li>
-<li><p><strong>niter</strong> – Number of iterations of Walsh method.</p></li>
+<li><p><strong>smoothing_width</strong> – width of smoothing filter.</p></li>
+<li><p><strong>niter</strong> – number of iterations of Walsh method.</p></li>
 <li><p><strong>chunk_size_otherdim</strong> – How many elements of the other dimensions should be processed at once.
 Default is None, which means that all elements are processed at once.</p></li>
 </ul>
@@ -542,7 +542,7 @@ Default is None, which means that all elements are processed at once.</p></li>
 <dd><p>Read single DICOM file and return QData object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>filename</strong> – Path to DICOM file.</p>
+<dd class="field-odd"><p><strong>filename</strong> – path to DICOM file</p>
 </dd>
 </dl>
 </dd></dl>
