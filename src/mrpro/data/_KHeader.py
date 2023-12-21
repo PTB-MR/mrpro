@@ -93,16 +93,16 @@ class KHeader:
 
         Parameters
         ----------
-        header:
+        header
             ISMRMRD header
-        acq_info:
-            Acquisition information
-        defaults:
-            Dictionary of values to be used if information is missing in header
-        overwrite:
-            Dictionary of values to be used independent of header
-        encoding_number:
-            As ismrmrdHeader can contain multiple encodings, selects which to consider.
+        acq_info
+            acquisition information
+        defaults
+            dictionary of values to be used if information is missing in header
+        overwrite
+            dictionary of values to be used independent of header
+        encoding_number
+            as ismrmrdHeader can contain multiple encodings, selects which to consider.
         """
 
         # Conversion functions for units

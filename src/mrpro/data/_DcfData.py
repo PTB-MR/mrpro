@@ -42,7 +42,7 @@ class DcfData:
 
         Parameters
         ----------
-        traj:
+        traj
             k-space positions, 1D tensor
         """
 
