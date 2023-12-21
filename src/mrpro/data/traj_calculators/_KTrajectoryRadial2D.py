@@ -22,7 +22,7 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         super().__init__()
         self.angle: float = angle
 
-    def _krad(self, kheader: KHeader):
+    def _krad(self, kheader: KHeader) -> torch.Tensor:
         """Calculate the k-space locations along the read-out encoding lines.
 
         Parameters
@@ -32,7 +32,7 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
 
         Returns
         -------
-            Trajectory along ONE readout
+            trajectory along ONE readout
 
         Raises
         ------

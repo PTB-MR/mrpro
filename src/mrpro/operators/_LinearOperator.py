@@ -24,7 +24,7 @@ class LinearOperator(Operator):
     """General Linear Operator."""
 
     @abstractmethod
-    def adjoint(self, x: torch.Tensor):
+    def adjoint(self, x: torch.Tensor) -> torch.Tensor:
         ...
 
     @property
@@ -34,15 +34,15 @@ class LinearOperator(Operator):
 
 
 class AdjointLinearOperator(LinearOperator):
-    def __init__(self, operator: LinearOperator):
+    def __init__(self, operator: LinearOperator) -> None:
         super().__init__()
         self._operator = operator
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Adjoint of the operator."""
         return self._operator.adjoint(x)
 
-    def adjoint(self, x: torch.Tensor):
+    def adjoint(self, x: torch.Tensor) -> torch.Tensor:
         """Operator."""
         return self._operator.forward(x)
 

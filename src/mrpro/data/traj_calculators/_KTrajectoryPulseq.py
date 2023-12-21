@@ -34,7 +34,10 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         absolute path to .seq file
     """
 
-    def __init__(self, seq_path: str | Path) -> None:
+    def __init__(
+        self,
+        seq_path: str | Path,
+    ) -> None:
         super().__init__()
         self.seq_path = seq_path
 
@@ -84,29 +87,8 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         kz = k_traj_adc[2].view((sample_size, k2, k1, k0))
 
         # rearrange k-space trajectory to match MRpro convention
-        kx = rearrange(
-            kx,
-            'other k2 k1 k0 -> (other k2 k1) k0',
-            k0=k0,
-            k2=k2,
-            k1=k1,
-            other=sample_size,
-        )
-        ky = rearrange(
-            ky,
-            'other k2 k1 k0 -> (other k2 k1) k0',
-            k0=k0,
-            k2=k2,
-            k1=k1,
-            other=sample_size,
-        )
-        kz = rearrange(
-            kz,
-            'other k2 k1 k0 -> (other k2 k1) k0',
-            k0=k0,
-            k2=k2,
-            k1=k1,
-            other=sample_size,
-        )
+        kx = rearrange(kx, 'other k2 k1 k0 -> (other k2 k1) k0', k0=k0, k2=k2, k1=k1, other=sample_size)
+        ky = rearrange(ky, 'other k2 k1 k0 -> (other k2 k1) k0', k0=k0, k2=k2, k1=k1, other=sample_size)
+        kz = rearrange(kz, 'other k2 k1 k0 -> (other k2 k1) k0', k0=k0, k2=k2, k1=k1, other=sample_size)
 
         return KTrajectoryRawShape(kz, ky, kx)

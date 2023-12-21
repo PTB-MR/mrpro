@@ -23,5 +23,5 @@ class Operator(ABC, nn.Module):
     """The general Operator class."""
 
     @abstractmethod
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         ...

@@ -50,7 +50,7 @@ class KTrajectory:
 
         Parameters
         ----------
-        stack_dim:
+        stack_dim
             The dimension to stack the tensor along.
         """
         shape = self.broadcasted_shape
@@ -58,7 +58,7 @@ class KTrajectory:
 
     def __init__(
         self, kz: torch.Tensor, ky: torch.Tensor, kx: torch.Tensor, repeat_detection_tolerance: float | None = 1e-8
-    ):
+    ) -> None:
         """K-Space Trajectory dataclass.
 
         Reduces repeated dimensions to singletons if repeat_detection_tolerance
@@ -66,9 +66,9 @@ class KTrajectory:
 
         Parameters
         ----------
-        kz, ky, kx:
-            Trajectory coordinates to set
-        repeat_detection_tolerance:
+        kz, ky, kx
+            trajectory coordinates to set
+        repeat_detection_tolerance
             Tolerance for repeat detection. Set to None to disable.
         """
         if repeat_detection_tolerance is not None:
@@ -97,12 +97,12 @@ class KTrajectory:
 
         Parameters
         ----------
-        tensor:
+        tensor
             The tensor representation of the trajectory.
             This should be a 5-dim tensor, with (kz,ky,kx) stacked in this order along stack_dim
-        stack_dim:
+        stack_dim
             The dimension in the tensor the directions have been stacked along.
-        repeat_detection_tolerance:
+        repeat_detection_tolerance
             detects if broadcasting can be used, i.e. if dimensions are repeated.
             Set to None to disable.
         """
