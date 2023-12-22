@@ -16,6 +16,7 @@ import numpy as np
 import pytest
 import torch
 
+from mrpro.utils.fft import change_image_shape
 from mrpro.utils.fft import image_to_kspace
 from mrpro.utils.fft import kspace_to_image
 
@@ -54,3 +55,14 @@ def test_image_to_kspace_as_inverse():
     # Transform to k-space and back along all three dimensions
     idat_transform = image_to_kspace(kspace_to_image(idat))
     torch.testing.assert_close(idat, idat_transform)
+
+
+def test_change_image_size():
+    """Test changing image size by cropping and padding."""
+    ishape_orig = (100, 200, 50)
+    ishape_new = (80, 100, 240)
+    iorig = torch.randn(*ishape_orig, dtype=torch.complex64)
+    inew = change_image_shape(iorig, ishape_new)
+
+    # Compare overlapping region
+    torch.testing.assert_close(iorig[10:90, 50:150, :], inew[:, :, 95:145])

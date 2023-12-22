@@ -41,7 +41,7 @@ def change_image_shape(idat: torch.Tensor, idat_shape_new: tuple[int, ...]) -> t
 
     # Pad (positive npad) or crop  (negative npad)
     # Npad has to be reversed because pad expects it in reversed order
-    if not torch.all(torch.tensor(npad) != 0):
+    if not torch.all(torch.tensor(npad) == 0):
         idat = F.pad(idat, npad[::-1])
     return idat
 
