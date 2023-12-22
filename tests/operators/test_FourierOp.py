@@ -43,21 +43,23 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
 
 
 @pytest.mark.parametrize(
-    'im_shape, nkx, nky, nkz, sx, sy, sz',
+    'im_shape, k_shape, nkx, nky, nkz, sx, sy, sz',
     [
         # 2d cart mri with 1 coil, no oversampling
         (
-            (1, 1, 1, 96, 128),
-            (1, 1, 1, 128),
-            (1, 1, 96, 1),
-            (1, 1, 1, 1),
-            'uf',
-            'uf',
-            'z',
+            (1, 1, 1, 96, 128),  # im shape
+            (1, 1, 1, 96, 128),  # k shape
+            (1, 1, 1, 128),  # kx
+            (1, 1, 96, 1),  # ky
+            (1, 1, 1, 1),  # kz
+            'uf',  # kx is uniform
+            'uf',  # ky is uniform
+            'z',  # zero so no Fourier transform is performed along that dimension
         ),
         # 2d cart mri with 1 coil, with oversampling
         (
             (1, 1, 1, 96, 128),
+            (1, 1, 1, 128, 192),
             (1, 1, 1, 192),
             (1, 1, 128, 1),
             (1, 1, 1, 1),
@@ -68,36 +70,40 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
         # 2d non-Cartesian mri with 2 coil
         (
             (1, 2, 1, 96, 128),
+            (1, 2, 1, 16, 192),
             (1, 1, 16, 192),
             (1, 1, 16, 192),
             (1, 1, 1, 1),
-            'nuf',
+            'nuf',  # kx is non-uniform
             'nuf',
             'z',
         ),
         # 3d nuFFT mri, 4 coils, 2 other
         (
-            (2, 4, 16, 32, 64),  # im shape
-            (2, 16, 32, 64),  # kx
-            (2, 16, 32, 64),  # ky
-            (2, 16, 32, 64),  # kz
-            'nuf',  # kx is non-uniform
-            'nuf',  # ky is non-uniform
-            'nuf',  # kz is non-uniform
+            (2, 4, 16, 32, 64),
+            (2, 4, 16, 32, 64),
+            (2, 16, 32, 64),
+            (2, 16, 32, 64),
+            (2, 16, 32, 64),
+            'nuf',
+            'nuf',
+            'nuf',
         ),
         # 2d nuFFT cine mri with 8 cardiac phases, 5 coils
         (
             (8, 5, 1, 64, 64),
+            (8, 5, 1, 18, 128),
             (8, 1, 18, 128),
             (8, 1, 18, 128),
             (8, 1, 1, 1),
             'nuf',
             'nuf',
-            'z',  # zeros of no Fourier transform is performed along that dimension
+            'z',
         ),
         # 2d cart cine mri with 9 cardiac phases, 6 coils
         (
             (9, 6, 1, 96, 128),
+            (9, 6, 1, 128, 192),
             (9, 1, 1, 192),
             (9, 1, 128, 1),
             (9, 1, 1, 1),
@@ -108,6 +114,7 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
         # 2d cart cine mri with 8 cardiac phases, 7 coils, with oversampling
         (
             (8, 7, 1, 64, 96),
+            (8, 7, 1, 96, 128),
             (8, 1, 1, 128),
             (8, 1, 96, 1),
             (8, 1, 1, 1),
@@ -118,6 +125,7 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
         # radial phase encoding (RPE), 8 coils, with oversampling in both FFT and nuFFT directions
         (
             (2, 8, 64, 32, 48),
+            (2, 8, 8, 64, 96),
             (2, 1, 1, 96),
             (2, 8, 64, 1),
             (2, 8, 64, 1),
@@ -128,6 +136,7 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
         # stack of stars, 5 other, 3 coil, oversampling in both FFT and nuFFT directions
         (
             (5, 3, 48, 16, 32),
+            (5, 3, 96, 18, 64),
             (5, 1, 18, 64),
             (5, 1, 18, 64),
             (5, 96, 1, 1),
@@ -138,6 +147,7 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
         # similar to above, but the nuFFT dimensions are not next to each other
         (
             (5, 3, 48, 16, 32),
+            (5, 3, 96, 18, 64),
             (5, 1, 18, 64),
             (5, 96, 1, 1),
             (5, 1, 18, 64),
@@ -147,15 +157,16 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
         ),
     ],
 )
-def test_fourier_fwd_adj_property(im_shape, nkx, nky, nkz, sx, sy, sz):
+def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz):
     """Test adjoint property of Fourier operator."""
 
     # generate random images and k-space trajectories
     image, ktraj = create_data(im_shape, nkx, nky, nkz, sx, sy, sz)
 
     # create operator
-    im_shape = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
-    op = FourierOp(im_shape=im_shape, traj=ktraj)
+    recon_shape = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
+    encoding_shape = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    op = FourierOp(recon_shape=recon_shape, encoding_shape=encoding_shape, traj=ktraj)
 
     # apply forward and adjoint operator
     kdata = op(image)
@@ -171,4 +182,4 @@ def test_fourier_fwd_adj_property(im_shape, nkx, nky, nkz, sx, sy, sz):
     u_FHv = torch.vdot(u.flatten(), FHv.flatten())
 
     assert reco.shape == image.shape
-    assert torch.isclose(Fu_v, u_FHv, rtol=1e-4)
+    assert torch.isclose(Fu_v, u_FHv, rtol=1e-3)

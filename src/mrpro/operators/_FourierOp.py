@@ -11,7 +11,6 @@
 #   limitations under the License.
 
 import torch
-import torch.nn.functional as F
 from einops import rearrange
 from einops import repeat
 from torchkbnufft import KbNufft
@@ -20,6 +19,7 @@ from torchkbnufft import KbNufftAdjoint
 from mrpro.data import KTrajectory
 from mrpro.data import SpatialDimension
 from mrpro.operators import LinearOperator
+from mrpro.utils import fft
 
 
 def is_uniform(x: torch.Tensor, atol: float = 1e-6) -> torch.Tensor:
@@ -53,7 +53,8 @@ def is_uniform(x: torch.Tensor, atol: float = 1e-6) -> torch.Tensor:
 class FourierOp(LinearOperator):
     def __init__(
         self,
-        im_shape: SpatialDimension[int],
+        recon_shape: SpatialDimension[int],
+        encoding_shape: SpatialDimension[int],
         traj: KTrajectory,
         oversampling: SpatialDimension[float] = SpatialDimension(
             2.0, 2.0, 2.0
@@ -65,8 +66,10 @@ class FourierOp(LinearOperator):
 
         Parameters
         ----------
-        im_shape
-            dimension of the image to be Fourier-transformed
+        recon_shape
+            dimension of the reconstructed image
+        encoding_shape
+            dimension of the encoded k-space
         traj
             the k-space trajectories where the frequencies are sampled
         oversampling
@@ -82,7 +85,8 @@ class FourierOp(LinearOperator):
         nufft_dims = []
         fft_dims = []
         ignore_dims = []
-        fft_s = []
+        fft_recon_shape = []
+        fft_encoding_shape = []
         omega = []
         traj_shape = []
         super().__init__()
@@ -90,30 +94,27 @@ class FourierOp(LinearOperator):
         # create information about image shape, k-data shape etc
         # and identify which directions can be ignored, which ones require a nuFFT
         # and for which ones a simple FFT suffices
-        for n, os, k, i in zip(
-            (im_shape.z, im_shape.y, im_shape.x),
+        for rs, es, os, k, i in zip(
+            (recon_shape.z, recon_shape.y, recon_shape.x),
+            (encoding_shape.z, encoding_shape.y, encoding_shape.x),
             (oversampling.z, oversampling.y, oversampling.x),
             (traj.kz, traj.ky, traj.kx),
             (-3, -2, -1),
         ):
             nk_list = [traj.kz.shape[i], traj.ky.shape[i], traj.kx.shape[i]]
-            if n <= 1 and nk_list.count(1) == 3:
+            if rs <= 1 and nk_list.count(1) == 3:
                 # dimension with no Fourier transform
                 ignore_dims.append(i)
 
             elif nk_list.count(1) == 2:  # and is_uniform(k): #TODO: maybe is_uniform never needed?
-                # dimension with FFT
-                nk = torch.tensor(nk_list)
-                supp = torch.where(nk != 1, nk, 0)
-                s = supp.max().item()
-
                 # append dimension and output shape for oversampled FFT
                 fft_dims.append(i)
-                fft_s.append(s)
+                fft_recon_shape.append(int(rs))
+                fft_encoding_shape.append(int(es))
             else:
                 # dimension with nuFFT
-                grid_size.append(int(os * n))
-                nufft_im_size.append(n)
+                grid_size.append(int(os * rs))
+                nufft_im_size.append(rs)
                 nufft_dims.append(i)
 
                 # TODO: can omega be created here already?
@@ -144,9 +145,10 @@ class FourierOp(LinearOperator):
         self._ignore_dims = tuple(ignore_dims)
         self._nufft_dims = tuple(nufft_dims)
         self._fft_dims = tuple(fft_dims)
-        self._fft_s = tuple(fft_s)
+        self._fft_recon_shape = tuple(fft_recon_shape)
+        self._fft_encoding_shape = tuple(fft_encoding_shape)
         self._kshape = torch.broadcast_shapes(*traj_shape)
-        self._im_shape = im_shape
+        self._recon_shape = recon_shape
         self._nufft_im_size = nufft_im_size
 
     @staticmethod
@@ -194,11 +196,11 @@ class FourierOp(LinearOperator):
         -------
             coil k-space data with shape: (other coils k2 k1 k0)
         """
-        if self._im_shape != SpatialDimension(*x.shape[-3:]):
+        if self._recon_shape != SpatialDimension(*x.shape[-3:]):
             raise ValueError('image data shape missmatch')
 
         if len(self._fft_dims) != 0:
-            x = torch.fft.fftn(x, s=self._fft_s, dim=self._fft_dims, norm='ortho')
+            x = fft.image_to_kspace(x, encoding_shape=self._fft_encoding_shape, dim=self._fft_dims)
 
         if len(self._nufft_dims) != 0:
             init_pattern = 'other coils dim2 dim1 dim0'
@@ -249,22 +251,7 @@ class FourierOp(LinearOperator):
 
         # apply IFFT
         if len(self._fft_dims) != 0:
-            im_shape = [self._im_shape.z, self._im_shape.y, self._im_shape.x]
-            y = torch.fft.ifftn(y, s=self._fft_s, dim=self._fft_dims, norm='ortho')
-
-            # construct the paddings based on the FFT-directions
-            # TODO: can this be written more nicely?
-            diff_dim = torch.tensor(im_shape) - torch.tensor(y.shape[2:])
-            npad_tuple = tuple(
-                [
-                    int(diff_dim[i // 2].item()) if (i % 2 == 0 and dim in self._fft_dims) else 0
-                    for (i, dim) in zip(range(0, 6)[::-1], (-1, -1, -2, -2, -3, -3))
-                ]
-            )
-
-            # crop using (negative) padding;
-            if not torch.all(torch.tensor(npad_tuple) != 0):
-                y = F.pad(y, npad_tuple)
+            y = fft.kspace_to_image(y, recon_shape=self._fft_recon_shape, dim=self._fft_dims)
 
         # move dim where FFT was already performed such nuFFT can be performed
         if len(self._nufft_dims) != 0:
@@ -293,8 +280,8 @@ class FourierOp(LinearOperator):
             y = y.contiguous() if y.stride()[-1] != 1 else y
             y = self._adj_nufft_op(y, omega, norm='ortho')
 
-            # get back to orginal k-space shape
-            nz, ny, nx = self._im_shape.z, self._im_shape.y, self._im_shape.x
+            # get back to orginal image shape
+            nz, ny, nx = self._recon_shape.z, self._recon_shape.y, self._recon_shape.x
             y = rearrange(y, target_pattern + '->' + init_pattern, other=nb, coils=nc, dim2=nz, dim1=ny, dim0=nx)
 
         return y
