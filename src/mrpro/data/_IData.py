@@ -137,3 +137,45 @@ class IData:
 
         header = IHeader.from_dicom_list(ds_list)
         return cls(data=idata, header=header)
+
+    def to(self, *args, **kwargs) -> IData:
+        """Perform dtype and/or device conversion of data.
+
+        A torch.dtype and torch.device are inferred from the arguments
+        of self.to(*args, **kwargs). Please have a look at the
+        documentation of torch.Tensor.to() for more details.
+        """
+        return IData(header=self.header, data=self.data.to(*args, **kwargs))
+
+    def cuda(
+        self,
+        device: torch.device | None = None,
+        non_blocking: bool = False,
+        memory_format: torch.memory_format = torch.preserve_format,
+    ) -> IData:
+        """Create copy of object with data in CUDA memory.
+
+        Parameters
+        ----------
+        device
+            The destination GPU device. Defaults to the current CUDA device.
+        non_blocking
+            If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
+            Otherwise, the argument has no effect.
+        memory_format
+            The desired memory format of returned Tensor.
+        """
+        return IData(
+            header=self.header,
+            data=self.data.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),
+        )
+
+    def cpu(self, memory_format: torch.memory_format = torch.preserve_format) -> IData:
+        """Create copy of object in CPU memory.
+
+        Parameters
+        ----------
+        memory_format
+            The desired memory format of returned Tensor.
+        """
+        return IData(header=self.header, data=self.data.cpu(memory_format=memory_format))

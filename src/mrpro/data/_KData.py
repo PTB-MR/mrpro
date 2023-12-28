@@ -171,20 +171,40 @@ class KData:
 
         return cls(kheader, kdata, ktraj)
 
-    def cuda(self, device: torch.device | None = None) -> KData:
+    def cuda(
+        self,
+        device: torch.device | None = None,
+        non_blocking: bool = False,
+        memory_format: torch.memory_format = torch.preserve_format,
+    ) -> KData:
         """Create copy of object with trajectory and data in CUDA memory.
 
         Parameters
         ----------
         device
             The destination GPU device. Defaults to the current CUDA device.
+        non_blocking
+            If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
+            Otherwise, the argument has no effect.
+        memory_format
+            The desired memory format of returned Tensor.
         """
-        if device is None:
-            device = torch.device(f'cuda:{torch.cuda.current_device()}')
+        return KData(
+            header=self.header,
+            data=self.data.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),
+            traj=self.traj.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),
+        )
 
-        # Create object with trajectory and data in CUDA memory
-        return KData(header=self.header, data=self.data.cuda(device), traj=self.traj.cuda(device))
+    def cpu(self, memory_format: torch.memory_format = torch.preserve_format) -> KData:
+        """Create copy of object in CPU memory.
 
-    def cpu(self) -> KData:
-        """Create copy of object in CPU memory."""
-        return KData(header=self.header, data=self.data.cpu(), traj=self.traj.cpu())
+        Parameters
+        ----------
+        memory_format
+            The desired memory format of returned Tensor.
+        """
+        return KData(
+            header=self.header,
+            data=self.data.cpu(memory_format=memory_format),
+            traj=self.traj.cpu(memory_format=memory_format),
+        )
