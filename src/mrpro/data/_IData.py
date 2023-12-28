@@ -24,6 +24,7 @@ from pydicom import dcmread
 from pydicom.dataset import Dataset
 from pydicom.tag import Tag
 
+from mrpro.data import Data
 from mrpro.data import IHeader
 from mrpro.data import KHeader
 
@@ -54,11 +55,10 @@ def _dcm_pixelarray_to_tensor(ds: Dataset) -> torch.Tensor:
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
-class IData:
+class IData(Data):
     """MR image data (IData) class."""
 
     header: IHeader
-    data: torch.Tensor
 
     @classmethod
     def from_tensor_and_kheader(cls, data: torch.Tensor, kheader: KHeader) -> IData:

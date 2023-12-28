@@ -103,3 +103,47 @@ def test_ktraj_raise_wrong_dim():
     kx = ky = kz = torch.arange(1 * 2 * 3).reshape(1, 2, 3)
     with pytest.raises(ValueError):
         ktraj = KTrajectory(kz, ky, kx)
+
+
+def test_ktraj_to_float64(cartesian_grid):
+    """Change KTrajectory dtype to float64."""
+    nk0 = 10
+    nk1 = 20
+    nk2 = 30
+    kz_full, ky_full, kx_full = cartesian_grid(nk2, nk1, nk0, jitter=0.0)
+    ktraj = KTrajectory(kz_full, ky_full, kx_full)
+
+    ktraj_float64 = ktraj.to(dtype=torch.float64)
+    assert ktraj_float64.kz.dtype == torch.float64
+    assert ktraj_float64.ky.dtype == torch.float64
+    assert ktraj_float64.kx.dtype == torch.float64
+
+
+@pytest.mark.cuda
+def test_ktraj_cuda(cartesian_grid):
+    """Move KTrajectory object to CUDA memory."""
+    nk0 = 10
+    nk1 = 20
+    nk2 = 30
+    kz_full, ky_full, kx_full = cartesian_grid(nk2, nk1, nk0, jitter=0.0)
+    ktraj = KTrajectory(kz_full, ky_full, kx_full)
+
+    ktraj_cuda = ktraj.cuda()
+    assert ktraj_cuda.kz.is_cuda
+    assert ktraj_cuda.ky.is_cuda
+    assert ktraj_cuda.kx.is_cuda
+
+
+@pytest.mark.cuda
+def test_ktraj_cpu(cartesian_grid):
+    """Move KTrajectory object to CUDA memory and back to CPU memory."""
+    nk0 = 10
+    nk1 = 20
+    nk2 = 30
+    kz_full, ky_full, kx_full = cartesian_grid(nk2, nk1, nk0, jitter=0.0)
+    ktraj = KTrajectory(kz_full, ky_full, kx_full)
+
+    ktraj_cpu = ktraj.cuda().cpu()
+    assert ktraj_cpu.kz.is_cpu
+    assert ktraj_cpu.ky.is_cpu
+    assert ktraj_cpu.kx.is_cpu

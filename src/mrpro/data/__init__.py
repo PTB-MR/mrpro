@@ -8,6 +8,7 @@ from mrpro.data._KTrajectoryRawShape import KTrajectoryRawShape
 from mrpro.data._EncodingLimits import EncodingLimits
 from mrpro.data._EncodingLimits import Limits
 from mrpro.data._KHeader import KHeader
+from mrpro.data._Data import Data
 from mrpro.data._KData import KData
 from mrpro.data._KNoise import KNoise
 from mrpro.data._IHeader import IHeader

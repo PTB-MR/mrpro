@@ -214,3 +214,17 @@ def test_dcf_spiral_traj_voronoi_singlespiral():
     ignore_last = int(nkr / nki)  # ignore the outer points of the spirals
     torch.testing.assert_close(dcf_three_dense.data[..., 1, :-ignore_last], dcf_single.data[..., 0, :-ignore_last])
     torch.testing.assert_close(dcf_three_broadcast.data[..., 1, :-ignore_last], dcf_single.data[..., 0, :-ignore_last])
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize(
+    'nkr,nka,nk0',
+    [
+        (10, 6, 20),
+    ],
+)
+def test_dcf_rpe_traj_voronoi_cuda(nkr, nka, nk0):
+    """Voronoi-based dcf calculation for RPE trajectory in CUDA memory."""
+    ktraj = example_traj_rpe(nkr, nka, nk0)
+    dcf = DcfData.from_traj_voronoi(ktraj.cuda())
+    assert dcf.data.is_cuda
