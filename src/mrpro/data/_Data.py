@@ -14,17 +14,20 @@
 
 from __future__ import annotations
 
-from abc import ABC
-import torch
 import dataclasses
+from abc import ABC
 from typing import Any
+
+import torch
+
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class Data(ABC):
     """A general data class with field data and header."""
+
     data: torch.Tensor
     header: Any
-    
+
     def to(self, *args, **kwargs) -> Data:
         """Perform dtype and/or device conversion of data.
 
@@ -50,7 +53,7 @@ class Data(ABC):
             If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
             Otherwise, the argument has no effect.
         memory_format
-            The desired memory format of returned Tensor.
+            The desired memory format of returned tensor.
         """
         return Data(
             header=self.header,
@@ -63,6 +66,6 @@ class Data(ABC):
         Parameters
         ----------
         memory_format
-            The desired memory format of returned Tensor.
+            The desired memory format of returned tensor.
         """
         return Data(header=self.header, data=self.data.cpu(memory_format=memory_format))
