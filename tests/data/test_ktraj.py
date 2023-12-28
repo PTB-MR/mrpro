@@ -105,7 +105,6 @@ def test_ktraj_raise_wrong_dim():
         ktraj = KTrajectory(kz, ky, kx)
 
 
-@pytest.mark.cuda
 def test_ktraj_to_float64(cartesian_grid):
     """Change KTrajectory dtype to float64."""
     nk0 = 10
