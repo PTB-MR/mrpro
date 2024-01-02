@@ -50,8 +50,8 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         """Shift radial phase encoding lines relative to each other.
 
         Example: shift_between_rpe_lines = [0, 0.5, 0.25, 0.75] leads to a shift of the 0th line by 0,
-        the 1st line by 0.5*delta_k, the 2nd line by 0.25*delta_k, the 3rd line by 0.75*delta_k, the 4th line
-        by 0, the 5th line by 0.5*delta_k and so on. Phase encoding points in k-space center are not shifted.
+        the 1st line by 0.5, the 2nd line by 0.25, the 3rd line by 0.75, the 4th line by 0, the 5th line
+        by 0.5 and so on. Phase encoding points in k-space center are not shifted.
 
         Line #          k-space points before shift             k-space points after shift
         0               +    +    +    +    +    +    +         +    +    +    +    +    +    +
@@ -113,7 +113,6 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         # Calculate points along readout
         nk0 = int(num_samples[0, 0, 0])
         k0 = torch.linspace(0, nk0 - 1, nk0, dtype=torch.float32) - center_sample[0, 0, 0]
-        k0 *= 2 * torch.pi / nk0
         return k0
 
     def _kang(self, kheader: KHeader) -> torch.Tensor:
@@ -144,7 +143,6 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         """
         krad = (kheader.acq_info.idx.k1 - kheader.encoding_limits.k1.center).to(torch.float32)
         krad = self._apply_shifts_between_rpe_lines(krad, kheader.acq_info.idx.k2)
-        krad *= 2 * torch.pi / kheader.encoding_limits.k1.max
         return krad
 
     def __call__(self, kheader: KHeader) -> KTrajectory:

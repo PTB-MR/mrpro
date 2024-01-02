@@ -57,7 +57,6 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         # Calculate points along readout
         nk0 = int(num_samples[0, 0, 0])
         k0 = torch.linspace(0, nk0 - 1, nk0, dtype=torch.float32) - center_sample[0, 0, 0]
-        k0 *= 2 * torch.pi / nk0
         return k0
 
     def __call__(self, kheader: KHeader) -> KTrajectory:
