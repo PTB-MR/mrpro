@@ -3,3 +3,5 @@ from mrpro.operators._LinearOperator import LinearOperator
 from mrpro.operators._NonLinearOperator import NonLinearOperator
 from mrpro.operators._SensitivityOp import SensitivityOp
 from mrpro.operators._FourierOp import FourierOp
+from mrpro.operators.models._WASABI import WASABI
+from mrpro.operators.models._WASABITI import WASABITI
