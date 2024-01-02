@@ -7,13 +7,16 @@ from mrpro.operators import FourierOp
 from tests import RandomGenerator
 
 
-def create_uniform_traj(nk):
+def create_uniform_traj(nk, k_shape):
     """Create a tensor of uniform points with predefined shape nk."""
-    if nk[1:].count(1) <= 1:
+    kidx = torch.where(torch.tensor(nk[1:]) > 1)[0]
+    if len(kidx) > 1:
         raise ValueError('nk is allowed to have at most one non-singleton dimension')
-    n_kpoints = torch.tensor(nk[1:]).max()
-    if n_kpoints > 1:
-        k = torch.linspace(-1, 1, n_kpoints)
+    if len(kidx) >= 1:
+        # kidx+1 because we searched in nk[1:]
+        n_kpoints = nk[kidx + 1]
+        # kidx+2 because k_shape also includes coils dimensions
+        k = torch.linspace(-k_shape[kidx + 2] // 2, k_shape[kidx + 2] // 2 - 1, n_kpoints, dtype=torch.int64)
         views = [1 if i != n_kpoints else -1 for i in nk]
         k = k.view(*views).expand(list(nk))
     else:
@@ -21,7 +24,7 @@ def create_uniform_traj(nk):
     return k
 
 
-def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
+def create_data(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz):
     random_generator = RandomGenerator(seed=0)
 
     # generate random image
@@ -33,7 +36,7 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
         if spacing == 'nuf':
             k = random_generator.float32_tensor(size=nk)
         elif spacing == 'uf':
-            k = create_uniform_traj(nk)
+            k = create_uniform_traj(nk, k_shape=k_shape)
         elif spacing == 'z':
             k = torch.zeros(nk)
         k_list.append(k)
@@ -43,7 +46,7 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
 
 
 @pytest.mark.parametrize(
-    'im_shape, k_shape, nkx, nky, nkz, sx, sy, sz',
+    'im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, fft_dims',
     [
         # 2d cart mri with 1 coil, no oversampling
         (
@@ -55,6 +58,7 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
             'uf',  # kx is uniform
             'uf',  # ky is uniform
             'z',  # zero so no Fourier transform is performed along that dimension
+            [-1, -2],  # last two dimensions are FFT dimensions
         ),
         # 2d cart mri with 1 coil, with oversampling
         (
@@ -66,6 +70,7 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
             'uf',
             'uf',
             'z',
+            [-1, -2],
         ),
         # 2d non-Cartesian mri with 2 coil
         (
@@ -77,6 +82,7 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
             'nuf',  # kx is non-uniform
             'nuf',
             'z',
+            [],
         ),
         # 3d nuFFT mri, 4 coils, 2 other
         (
@@ -88,6 +94,7 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
             'nuf',
             'nuf',
             'nuf',
+            [],
         ),
         # 2d nuFFT cine mri with 8 cardiac phases, 5 coils
         (
@@ -99,6 +106,7 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
             'nuf',
             'nuf',
             'z',
+            [],
         ),
         # 2d cart cine mri with 9 cardiac phases, 6 coils
         (
@@ -110,6 +118,7 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
             'uf',
             'uf',
             'z',
+            [-1, -2],
         ),
         # 2d cart cine mri with 8 cardiac phases, 7 coils, with oversampling
         (
@@ -121,6 +130,7 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
             'uf',
             'uf',
             'z',
+            [-1, -2],
         ),
         # radial phase encoding (RPE), 8 coils, with oversampling in both FFT and nuFFT directions
         (
@@ -132,6 +142,19 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
             'uf',
             'nuf',
             'nuf',
+            [-1],
+        ),
+        # radial phase encoding (RPE), 8 coils with non-Cartesian sampling along readout
+        (
+            (2, 8, 64, 32, 48),
+            (2, 8, 8, 64, 96),
+            (2, 1, 1, 96),
+            (2, 8, 64, 1),
+            (2, 8, 64, 1),
+            'nuf',
+            'nuf',
+            'nuf',
+            [],
         ),
         # stack of stars, 5 other, 3 coil, oversampling in both FFT and nuFFT directions
         (
@@ -143,6 +166,7 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
             'nuf',
             'nuf',
             'uf',
+            [-3],
         ),
         # similar to above, but the nuFFT dimensions are not next to each other
         (
@@ -154,14 +178,15 @@ def create_data(im_shape, nkx, nky, nkz, sx, sy, sz):
             'nuf',
             'uf',
             'nuf',
+            [-3],
         ),
     ],
 )
-def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz):
+def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, fft_dims):
     """Test adjoint property of Fourier operator."""
 
     # generate random images and k-space trajectories
-    image, ktraj = create_data(im_shape, nkx, nky, nkz, sx, sy, sz)
+    image, ktraj = create_data(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz)
 
     # create operator
     recon_shape = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
@@ -181,5 +206,13 @@ def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz):
     Fu_v = torch.vdot(Fu.flatten(), v.flatten())
     u_FHv = torch.vdot(u.flatten(), FHv.flatten())
 
+    # Check that the fft dimensions were found correctly
+    op_fft_dims = list(op._fft_dims)
+    op_fft_dims.sort(reverse=True)
+    assert fft_dims == op_fft_dims
+
+    # Check that the dimensions are correct
     assert reco.shape == image.shape
+
+    # Check the adjoint property
     assert torch.isclose(Fu_v, u_FHv, rtol=1e-3)

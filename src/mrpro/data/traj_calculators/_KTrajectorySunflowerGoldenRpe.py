@@ -101,5 +101,4 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
         kang = self._kang(kheader)
         krad = (kheader.acq_info.idx.k1 - kheader.encoding_limits.k1.center).to(torch.float32)
         krad = self._apply_sunflower_shift_between_rpe_lines(krad, kang, kheader)
-        krad *= 2 * torch.pi / kheader.encoding_limits.k1.max
         return krad
