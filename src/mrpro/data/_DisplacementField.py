@@ -28,12 +28,12 @@ class DisplacementField:
     dimensions.
 
     Order of directions is always z, y, x Shape of each of fx,fy,fz is
-    (other, z, y, x)
+    (motion_state, other, z, y, x)
     """
 
-    fz: torch.Tensor  # (other, z, y, x)
-    fy: torch.Tensor  # (other, z, y, x)
-    fx: torch.Tensor  # (other, z, y, x)
+    fz: torch.Tensor  # (motion_state, other, z, y, x)
+    fy: torch.Tensor  # (motion_state, other, z, y, x)
+    fx: torch.Tensor  # (motion_state, other, z, y, x)
 
     def as_tensor(self, stack_dim=0):
         """Tensor representation of the displacement fields.
@@ -55,8 +55,8 @@ class DisplacementField:
         """
         if fz.shape != fy.shape or fz.shape != fx.shape:
             raise ValueError('fz, fy and fx must have the same dimensions.')
-        if len(fz.shape) != 4:
-            raise ValueError('The displacement field tensors should each have 4 dimensions.')
+        if len(fz.shape) != 5:
+            raise ValueError('The displacement field tensors should each have 5 dimensions.')
 
         self.fz = fz
         self.fy = fy
@@ -70,7 +70,7 @@ class DisplacementField:
         ----------
         tensor
             The tensor representation of the displacement fields.
-            This should be a 5-dim tensor, with (fz,fy,fx) stacked in this order along stack_dim
+            This should be a 6-dim tensor, with (fz,fy,fx) stacked in this order along stack_dim
         stack_dim
             The dimension in the tensor the directions have been stacked along.
         """
