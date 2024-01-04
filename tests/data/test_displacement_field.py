@@ -22,13 +22,13 @@ from mrpro.data import DisplacementField
 from tests import RandomGenerator
 
 
-@pytest.mark.parametrize('nother,nz,ny,nx', [(1, 40, 16, 20), (6, 40, 1, 20)])
-def test_displacement_field_creation(nother, nz, ny, nx):
+@pytest.mark.parametrize('nms,nother,nz,ny,nx', [(1, 1, 40, 16, 20), (6, 1, 40, 1, 20)])
+def test_displacement_field_creation(nms, nother, nz, ny, nx):
     """Test the creation of displacement fields."""
     random_generator = RandomGenerator(seed=0)
-    fz = random_generator.float32_tensor(size=(nother, nz, ny, nx))
-    fy = random_generator.float32_tensor(size=(nother, nz, ny, nx))
-    fx = random_generator.float32_tensor(size=(nother, nz, ny, nx))
+    fz = random_generator.float32_tensor(size=(nms, nother, nz, ny, nx))
+    fy = random_generator.float32_tensor(size=(nms, nother, nz, ny, nx))
+    fx = random_generator.float32_tensor(size=(nms, nother, nz, ny, nx))
 
     disp_field = DisplacementField(fz=fz, fy=fy, fx=fx)
 
@@ -37,13 +37,13 @@ def test_displacement_field_creation(nother, nz, ny, nx):
     torch.testing.assert_close(fx, disp_field.fx)
 
 
-@pytest.mark.parametrize('nother,nz,ny,nx', [(1, 40, 16, 20), (6, 40, 1, 20)])
-def test_displacement_field_tensors(nother, nz, ny, nx):
+@pytest.mark.parametrize('nms,nother,nz,ny,nx', [(1, 1, 40, 16, 20), (6, 1, 40, 1, 20)])
+def test_displacement_field_tensors(nms, nother, nz, ny, nx):
     """Test the creation of displacement fields tensors."""
     random_generator = RandomGenerator(seed=0)
-    fz = random_generator.float32_tensor(size=(nother, nz, ny, nx))
-    fy = random_generator.float32_tensor(size=(nother, nz, ny, nx))
-    fx = random_generator.float32_tensor(size=(nother, nz, ny, nx))
+    fz = random_generator.float32_tensor(size=(nms, nother, nz, ny, nx))
+    fy = random_generator.float32_tensor(size=(nms, nother, nz, ny, nx))
+    fx = random_generator.float32_tensor(size=(nms, nother, nz, ny, nx))
     f_tensor = torch.stack((fz, fy, fx), dim=0)
 
     disp_field = DisplacementField.from_tensor(f_tensor)

@@ -7,3 +7,4 @@ from mrpro.operators._FastFourierOp import FastFourierOp
 from mrpro.operators._FourierOp import FourierOp
 from mrpro.operators.models._WASABI import WASABI
 from mrpro.operators.models._WASABITI import WASABITI
+from mrpro.operators._MotionOp import MotionOp
