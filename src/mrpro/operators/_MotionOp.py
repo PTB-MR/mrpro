@@ -70,50 +70,58 @@ class MotionOp(LinearOperator):
         # Calculate inverse grid
         self.inverse_grid = torch.empty(1)
 
-    def combine_ms_other(self, x: torch.Tensor) -> torch.Tensor:
-        """Combine motion states and other.
+    def combine_complex_ms_other(self, x: torch.Tensor) -> torch.Tensor:
+        """Combine motion states and other and stack imag and real.
 
         Parameters
         ----------
         x
-            input data (motion_states, other, z, y, x)
+            complex valued input data (motion_states, other, z, y, x)
 
         Returns
         -------
-            data with motion_states and other combined if broadcast_to_other is False
+            real valued data with motion_states and other combined if broadcast_to_other is False
+            imag and real part of tensor stacked along batch dimension
         """
         if not self.broadcast_to_other:
-            x = rearrange(x, 'ms other z y x->(ms other) z y x')
-        return x
+            x = rearrange(x, 'ms other z y x->(ms other) 1 z y x')
+        return torch.cat((x.real, x.imag), dim=1)
 
-    def split_ms_other(self, x: torch.Tensor) -> torch.Tensor:
-        """Split motion states and other.
+    def split_complex_ms_other(self, x: torch.Tensor) -> torch.Tensor:
+        """Split motion states and other and imag and real.
 
         Parameters
         ----------
         x
-            input data ((motion_states, other), z, y, x)
+            real valued input data ((motion_states, other), (real, imag), z, y, x) or
+            (motion_states, (other real, other imag), z, y, x)
+
 
         Returns
         -------
             data with motion_states and other split if broadcast_to_other is False
+            imag and real part combined to complex tensor
         """
+        nother = x.shape[1] // 2
+        x = x[:, :nother] + 1j * x[:, nother:]
         if not self.broadcast_to_other:
-            x = rearrange(x, '(ms other) z y x->ms other z y x')
+            x = rearrange(x, '(ms other) 1 z y x->ms other z y x')
         return x
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if len(x.shape) != 5:
             raise ValueError('The input tensor should have 5 dimensions (motion_states, other, z, y, x).')
-        return self.split_ms_other(
-            torch_func.grid_sample(self.combine_ms_other(x), self.grid, padding_mode='border', align_corners=False)
+        return self.split_complex_ms_other(
+            torch_func.grid_sample(
+                self.combine_complex_ms_other(x), self.grid, padding_mode='border', align_corners=False
+            )
         )
 
     def adjoint(self, x: torch.Tensor) -> torch.Tensor:
         if len(x.shape) != 5:
             raise ValueError('The input tensor should have 5 dimensions (motion_states, other, z, y, x).')
-        return self.split_ms_other(
+        return self.split_complex_ms_other(
             torch_func.grid_sample(
-                self.combine_ms_other(x), self.inverse_grid, padding_mode='border', align_corners=False
+                self.combine_complex_ms_other(x), self.inverse_grid, padding_mode='border', align_corners=False
             )
         )

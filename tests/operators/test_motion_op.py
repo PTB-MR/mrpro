@@ -50,7 +50,7 @@ def test_different_shapes(im_shape, displacement_shape):
     random_generator = RandomGenerator(seed=0)
 
     # Create image
-    im = random_generator.float32_tensor(size=im_shape)
+    im = random_generator.complex64_tensor(size=im_shape)
 
     # Create displacement fields
     fz = random_generator.float32_tensor(size=displacement_shape)
@@ -71,8 +71,8 @@ def test_translation():
     im_shift = [5, 10, 20]
 
     # Create images
-    orig_im = torch.zeros(im_shape, dtype=torch.float32)
-    orig_im[:, :, 10:30, 15:45, 20:50] = 1
+    orig_im = torch.zeros(im_shape, dtype=torch.complex64)
+    orig_im[:, :, 10:30, 15:45, 20:50] = 1 + 2j
     translated_im = torch.roll(orig_im, shifts=im_shift, dims=(-3, -2, -1))
 
     # Create transformation which shifts an object along z, y and x, respectively.
