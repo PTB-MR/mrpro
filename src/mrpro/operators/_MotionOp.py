@@ -104,14 +104,14 @@ class MotionOp(LinearOperator):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if len(x.shape) != 5:
-            raise ValueError('The input tensor should each 5 dimensions (motion_states, other, z, y, x).')
+            raise ValueError('The input tensor should have 5 dimensions (motion_states, other, z, y, x).')
         return self.split_ms_other(
             torch_func.grid_sample(self.combine_ms_other(x), self.grid, padding_mode='border', align_corners=False)
         )
 
     def adjoint(self, x: torch.Tensor) -> torch.Tensor:
         if len(x.shape) != 5:
-            raise ValueError('The input tensor should each 5 dimensions (motion_states, other, z, y, x).')
+            raise ValueError('The input tensor should have 5 dimensions (motion_states, other, z, y, x).')
         return self.split_ms_other(
             torch_func.grid_sample(
                 self.combine_ms_other(x), self.inverse_grid, padding_mode='border', align_corners=False
