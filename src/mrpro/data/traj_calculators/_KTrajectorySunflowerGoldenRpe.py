@@ -67,10 +67,7 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
         # Set asym k-space point to 0 because this point was used to obtain a self-navigator signal.
         krad[kheader.acq_info.idx.k1 == 0] = 0
 
-        # Compensate for fov scaling
-        num_rad_full = krad.shape[2] * self.rad_us_factor
-        fov_scaling = (num_rad_full - self.rad_us_factor) / (num_rad_full - 1)
-        return krad * fov_scaling
+        return krad
 
     def _kang(self, kheader: KHeader) -> torch.Tensor:
         """Calculate the angles of the phase encoding lines.
@@ -101,5 +98,4 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
         kang = self._kang(kheader)
         krad = (kheader.acq_info.idx.k1 - kheader.encoding_limits.k1.center).to(torch.float32)
         krad = self._apply_sunflower_shift_between_rpe_lines(krad, kang, kheader)
-        krad *= 2 * torch.pi / kheader.encoding_limits.k1.max
         return krad
