@@ -4,3 +4,4 @@ from mrpro.data.traj_calculators._KTrajectorySunflowerGoldenRpe import KTrajecto
 from mrpro.data.traj_calculators._KTrajectoryRadial2D import KTrajectoryRadial2D
 from mrpro.data.traj_calculators._KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
 from mrpro.data.traj_calculators._KTrajectoryPulseq import KTrajectoryPulseq
+from mrpro.data.traj_calculators._KTrajectoryCartesian import KTrajectoryCartesian
