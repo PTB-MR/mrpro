@@ -77,18 +77,14 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
 
         sample_size = num_samples.shape[0]
 
-        with torch.no_grad():
-            k_traj_adc[0] = k_traj_adc[0] / torch.max(torch.abs(k_traj_adc[0])) * torch.pi
-            k_traj_adc[1] = k_traj_adc[1] / torch.max(torch.abs(k_traj_adc[1])) * torch.pi
-            k_traj_adc[2] = k_traj_adc[2] / torch.max(torch.abs(k_traj_adc[2])) * torch.pi
-
-        kx = k_traj_adc[0].view((sample_size, k2, k1, k0))
-        ky = k_traj_adc[1].view((sample_size, k2, k1, k0))
-        kz = k_traj_adc[2].view((sample_size, k2, k1, k0))
+        def reshape_pulseq_traj(k_traj, encoding_matrix):
+            with torch.no_grad():
+                k_traj *= encoding_matrix / (2 * torch.max(torch.abs(k_traj)))
+            return rearrange(k_traj, '(other k2 k1 k0) -> (other k2 k1) k0', k0=k0, k2=k2, k1=k1, other=sample_size)
 
         # rearrange k-space trajectory to match MRpro convention
-        kx = rearrange(kx, 'other k2 k1 k0 -> (other k2 k1) k0', k0=k0, k2=k2, k1=k1, other=sample_size)
-        ky = rearrange(ky, 'other k2 k1 k0 -> (other k2 k1) k0', k0=k0, k2=k2, k1=k1, other=sample_size)
-        kz = rearrange(kz, 'other k2 k1 k0 -> (other k2 k1) k0', k0=k0, k2=k2, k1=k1, other=sample_size)
+        kx = reshape_pulseq_traj(k_traj_adc[0], kheader.encoding_matrix.x)
+        ky = reshape_pulseq_traj(k_traj_adc[1], kheader.encoding_matrix.y)
+        kz = reshape_pulseq_traj(k_traj_adc[2], kheader.encoding_matrix.z)
 
         return KTrajectoryRawShape(kz, ky, kx)
