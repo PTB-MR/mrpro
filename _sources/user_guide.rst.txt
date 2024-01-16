@@ -28,6 +28,11 @@ To ensure the trajectory is calculated correctly, a ``KTrajectoryCalculator`` ne
 The trajectory can either be calculated based on MRpro functionality (e.g. for a 2D radial sampling scheme), read out
 from MRD or calculated from a `pulseq <http://pulseq.github.io/>`_ file.
 
+.. note::
+    The trajectory is expected to be defined within the space of the ``encoding_matrix``, e.g. if the
+    ``encoding_matrix`` is defined as (z=1, y=256, x=256), then a fully sampled Cartesian trajectory without partial
+    echo or partial Fourier is expected to be within [-128, 127] along both readout and phase encoding.
+
 Preparation for reconstruction
 ==============================
 MRpro provides a range of functionality to prepare the data for image reconstruction such as:
