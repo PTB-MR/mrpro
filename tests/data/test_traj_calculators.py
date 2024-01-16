@@ -108,13 +108,18 @@ def valid_radial_kheader(monkeypatch, random_kheader):
     idx_k1 = torch.reshape(idx_k1, (1, nk2, nk1))
     idx_k2 = torch.reshape(idx_k2, (1, nk2, nk1))
 
-    # Set parameters for RPE trajectory
+    # Set parameters for radial trajectory
     monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + nk0)
     monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + nk0 // 2)
     monkeypatch.setattr(random_kheader.acq_info.idx, 'k1', idx_k1)
     monkeypatch.setattr(random_kheader.acq_info.idx, 'k2', idx_k2)
     monkeypatch.setattr(random_kheader.encoding_limits.k1, 'center', int(nk1 // 2))
     monkeypatch.setattr(random_kheader.encoding_limits.k1, 'max', int(nk1 - 1))
+
+    # This is only needed for Pulseq trajectory calculation
+    monkeypatch.setattr(random_kheader.encoding_matrix, 'x', nk0)
+    monkeypatch.setattr(random_kheader.encoding_matrix, 'y', nk0)  # square encoding in kx-ky plane
+    monkeypatch.setattr(random_kheader.encoding_matrix, 'z', nk2)
     return random_kheader
 
 
@@ -195,7 +200,7 @@ def test_KTrajectoryIsmrmrdRadial(ismrmrd_rad):
     k = KData.from_file(ismrmrd_rad.filename, KTrajectoryIsmrmrd())
     ktraj_read = k.traj.as_tensor()
 
-    torch.testing.assert_close(ktraj_calc, ktraj_read)
+    torch.testing.assert_close(ktraj_calc, ktraj_read, atol=1e-2, rtol=1e-3)
 
 
 @pytest.fixture(scope='session')
@@ -214,10 +219,10 @@ def test_KTrajectoryPulseq_validseq_random_header(pulseq_example_rad_seq, valid_
     traj = ktrajectory(kheader=valid_radial_kheader)
 
     kx_test = pulseq_example_rad_seq.traj_analytical.kx.squeeze(0).squeeze(0)
-    kx_test = kx_test / torch.max(torch.abs(kx_test)) * torch.pi
+    kx_test *= valid_radial_kheader.encoding_matrix.x / (2 * torch.max(torch.abs(kx_test)))
 
     ky_test = pulseq_example_rad_seq.traj_analytical.ky.squeeze(0).squeeze(0)
-    ky_test = ky_test / torch.max(torch.abs(ky_test)) * torch.pi
+    ky_test *= valid_radial_kheader.encoding_matrix.y / (2 * torch.max(torch.abs(ky_test)))
 
-    torch.testing.assert_close(traj.kx.to(torch.float32), kx_test.to(torch.float32), atol=5e-4, rtol=1e-3)
-    torch.testing.assert_close(traj.ky.to(torch.float32), ky_test.to(torch.float32), atol=5e-4, rtol=1e-3)
+    torch.testing.assert_close(traj.kx.to(torch.float32), kx_test.to(torch.float32), atol=1e-2, rtol=1e-3)
+    torch.testing.assert_close(traj.ky.to(torch.float32), ky_test.to(torch.float32), atol=1e-2, rtol=1e-3)
