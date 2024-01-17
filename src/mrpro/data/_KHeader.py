@@ -51,7 +51,7 @@ class KHeader:
     encoding_limits: EncodingLimits
     # acc_factor: AccelerationFactor # TODO: decide if we want to keep this
     recon_matrix: SpatialDimension[int]
-    recon_fov: SpatialDimension[float]
+    recon_fov: SpatialDimension[float]  # TODO: describe scale
     encoding_matrix: SpatialDimension[int]
     encoding_fov: SpatialDimension[float]
     num_coils: int
