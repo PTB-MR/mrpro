@@ -17,14 +17,16 @@ import pytest
 import torch
 
 from mrpro.data import KData
+from mrpro.data.traj_calculators import KTrajectoryCartesian
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
+from mrpro.data.traj_calculators import KTrajectoryPulseq
 from mrpro.data.traj_calculators import KTrajectoryRadial2D
 from mrpro.data.traj_calculators import KTrajectoryRpe
 from mrpro.data.traj_calculators import KTrajectorySunflowerGoldenRpe
-from mrpro.data.traj_calculators._KTrajectoryPulseq import KTrajectoryPulseq
 from tests.conftest import random_kheader
 from tests.data import IsmrmrdRawTestData
 from tests.data._PulseqRadialTestSeq import PulseqRadialTestSeq
+from tests.data.test_kdata import ismrmrd_cart
 from tests.phantoms.test_ellipse_phantom import ph_ellipse
 
 
@@ -32,8 +34,9 @@ from tests.phantoms.test_ellipse_phantom import ph_ellipse
 def valid_rad2d_kheader(monkeypatch, random_kheader):
     """KHeader with all necessary parameters for radial 2D trajectories."""
     # K-space dimensions
-    nk0 = 200
-    nk1 = 20
+    nk0 = 256
+    nk1 = 10
+    nk2 = 1
 
     # List of k1 indices in the shape
     idx_k1 = torch.arange(nk1, dtype=torch.int32)[None, None, ...]
@@ -42,6 +45,11 @@ def valid_rad2d_kheader(monkeypatch, random_kheader):
     monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + nk0)
     monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + nk0 // 2)
     monkeypatch.setattr(random_kheader.acq_info.idx, 'k1', idx_k1)
+
+    # This is only needed for Pulseq trajectory calculation
+    monkeypatch.setattr(random_kheader.encoding_matrix, 'x', nk0)
+    monkeypatch.setattr(random_kheader.encoding_matrix, 'y', nk0)  # square encoding in kx-ky plane
+    monkeypatch.setattr(random_kheader.encoding_matrix, 'z', nk2)
 
     return random_kheader
 
@@ -63,9 +71,6 @@ def test_KTrajectoryRadial2D_golden(valid_rad2d_kheader):
     assert ktraj.kx.shape == valid_shape[2]
     assert ktraj.ky.shape == valid_shape[1]
     assert ktraj.kz.shape == valid_shape[0]
-
-
-from tests.data.test_kdata import ismrmrd_cart
 
 
 @pytest.fixture(scope='function')
@@ -90,36 +95,6 @@ def valid_rpe_kheader(monkeypatch, random_kheader):
     monkeypatch.setattr(random_kheader.acq_info.idx, 'k2', idx_k2)
     monkeypatch.setattr(random_kheader.encoding_limits.k1, 'center', int(nk1 // 2))
     monkeypatch.setattr(random_kheader.encoding_limits.k1, 'max', int(nk1 - 1))
-    return random_kheader
-
-
-@pytest.fixture(scope='function')
-def valid_radial_kheader(monkeypatch, random_kheader):
-    """KHeader with all necessary parameters for radial trajectories."""
-    # K-space dimensions
-    nk0 = 256
-    nk1 = 10
-    nk2 = 1
-
-    # List of k1 and k2 indices in the shape (other, k2, k1)
-    k1 = torch.linspace(0, nk1 - 1, nk1, dtype=torch.int32)
-    k2 = torch.linspace(0, nk2 - 1, nk2, dtype=torch.int32)
-    idx_k1, idx_k2 = torch.meshgrid(k1, k2, indexing='xy')
-    idx_k1 = torch.reshape(idx_k1, (1, nk2, nk1))
-    idx_k2 = torch.reshape(idx_k2, (1, nk2, nk1))
-
-    # Set parameters for radial trajectory
-    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + nk0)
-    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + nk0 // 2)
-    monkeypatch.setattr(random_kheader.acq_info.idx, 'k1', idx_k1)
-    monkeypatch.setattr(random_kheader.acq_info.idx, 'k2', idx_k2)
-    monkeypatch.setattr(random_kheader.encoding_limits.k1, 'center', int(nk1 // 2))
-    monkeypatch.setattr(random_kheader.encoding_limits.k1, 'max', int(nk1 - 1))
-
-    # This is only needed for Pulseq trajectory calculation
-    monkeypatch.setattr(random_kheader.encoding_matrix, 'x', nk0)
-    monkeypatch.setattr(random_kheader.encoding_matrix, 'y', nk0)  # square encoding in kx-ky plane
-    monkeypatch.setattr(random_kheader.encoding_matrix, 'z', nk2)
     return random_kheader
 
 
@@ -174,6 +149,52 @@ def test_KTrajectorySunflowerGoldenRpe(valid_rpe_kheader):
     assert ktraj.broadcasted_shape == np.broadcast_shapes(*rpe_traj_shape(valid_rpe_kheader))
 
 
+@pytest.fixture(scope='function')
+def valid_cartesian_kheader(monkeypatch, random_kheader):
+    """KHeader with all necessary parameters for Cartesian trajectories."""
+    # K-space dimensions
+    nk0 = 200
+    nk1 = 20
+    nk2 = 10
+
+    # List of k1 and k2 indices in the shape (other, k2, k1)
+    k1 = torch.linspace(0, nk1 - 1, nk1, dtype=torch.int32)
+    k2 = torch.linspace(0, nk2 - 1, nk2, dtype=torch.int32)
+    idx_k1, idx_k2 = torch.meshgrid(k1, k2, indexing='xy')
+    idx_k1 = torch.reshape(idx_k1, (1, nk2, nk1))
+    idx_k2 = torch.reshape(idx_k2, (1, nk2, nk1))
+
+    # Set parameters for Cartesian trajectory
+    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + nk0)
+    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + nk0 // 2)
+    monkeypatch.setattr(random_kheader.acq_info.idx, 'k1', idx_k1)
+    monkeypatch.setattr(random_kheader.acq_info.idx, 'k2', idx_k2)
+    monkeypatch.setattr(random_kheader.encoding_limits.k1, 'center', int(nk1 // 2))
+    monkeypatch.setattr(random_kheader.encoding_limits.k1, 'max', int(nk1 - 1))
+    monkeypatch.setattr(random_kheader.encoding_limits.k2, 'center', int(nk2 // 2))
+    monkeypatch.setattr(random_kheader.encoding_limits.k2, 'max', int(nk2 - 1))
+    return random_kheader
+
+
+def cartesian_traj_shape(valid_cartesian_kheader):
+    """Expected shape of trajectory based on KHeader."""
+    nk0 = valid_cartesian_kheader.acq_info.number_of_samples[0, 0, 0]
+    nk1 = valid_cartesian_kheader.acq_info.idx.k1.shape[2]
+    nk2 = valid_cartesian_kheader.acq_info.idx.k1.shape[1]
+    nother = 1
+    return (torch.Size([nother, nk2, 1, 1]), torch.Size([nother, 1, nk1, 1]), torch.Size([nother, 1, 1, nk0]))
+
+
+def test_KTrajectoryCartesian(valid_cartesian_kheader):
+    """Calculate Cartesian trajectory."""
+    ktrajectory = KTrajectoryCartesian()
+    ktraj = ktrajectory(valid_cartesian_kheader)
+    valid_shape = cartesian_traj_shape(valid_cartesian_kheader)
+    assert ktraj.kz.shape == valid_shape[0]
+    assert ktraj.ky.shape == valid_shape[1]
+    assert ktraj.kx.shape == valid_shape[2]
+
+
 @pytest.fixture(scope='session')
 def ismrmrd_rad(ph_ellipse, tmp_path_factory):
     """Data set with uniform radial k-space sampling."""
@@ -210,19 +231,19 @@ def pulseq_example_rad_seq(tmp_path_factory):
     return seq
 
 
-def test_KTrajectoryPulseq_validseq_random_header(pulseq_example_rad_seq, valid_radial_kheader):
+def test_KTrajectoryPulseq_validseq_random_header(pulseq_example_rad_seq, valid_rad2d_kheader):
     """Test pulseq File reader with valid seq File."""
     # TODO: Test with valid header
     # TODO: Test with invalid seq file
 
     ktrajectory = KTrajectoryPulseq(seq_path=pulseq_example_rad_seq.seq_filename)
-    traj = ktrajectory(kheader=valid_radial_kheader)
+    traj = ktrajectory(kheader=valid_rad2d_kheader)
 
     kx_test = pulseq_example_rad_seq.traj_analytical.kx.squeeze(0).squeeze(0)
-    kx_test *= valid_radial_kheader.encoding_matrix.x / (2 * torch.max(torch.abs(kx_test)))
+    kx_test *= valid_rad2d_kheader.encoding_matrix.x / (2 * torch.max(torch.abs(kx_test)))
 
     ky_test = pulseq_example_rad_seq.traj_analytical.ky.squeeze(0).squeeze(0)
-    ky_test *= valid_radial_kheader.encoding_matrix.y / (2 * torch.max(torch.abs(ky_test)))
+    ky_test *= valid_rad2d_kheader.encoding_matrix.y / (2 * torch.max(torch.abs(ky_test)))
 
     torch.testing.assert_close(traj.kx.to(torch.float32), kx_test.to(torch.float32), atol=1e-2, rtol=1e-3)
     torch.testing.assert_close(traj.ky.to(torch.float32), ky_test.to(torch.float32), atol=1e-2, rtol=1e-3)

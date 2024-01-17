@@ -82,39 +82,6 @@ class KTrajectoryRpe(KTrajectoryCalculator):
             krad[curr_angle_idx] = curr_krad
         return krad
 
-    def _kfreq(self, kheader: KHeader) -> torch.Tensor:
-        """Calculate the trajectory along one readout (k0 dimension).
-
-        Parameters
-        ----------
-        kheader
-            MR raw data header (KHeader) containing required meta data
-
-        Returns
-        -------
-            trajectory along ONE readout
-
-        Raises
-        ------
-        ValueError
-            Number of samples have to be the same for each readout
-        ValueError
-            Center sample has to be the same for each readout
-        """
-        num_samples = kheader.acq_info.number_of_samples
-        center_sample = kheader.acq_info.center_sample
-
-        # Verify that each readout has the same number of samples and same center sample
-        if len(torch.unique(num_samples)) > 1:
-            raise ValueError('RPE trajectory can only be calculated if each acquisition has the same number of samples')
-        if len(torch.unique(center_sample)) > 1:
-            raise ValueError('RPE trajectory can only be calculated if each acquisition has the same center sample')
-
-        # Calculate points along readout
-        nk0 = int(num_samples[0, 0, 0])
-        k0 = torch.linspace(0, nk0 - 1, nk0, dtype=torch.float32) - center_sample[0, 0, 0]
-        return k0
-
     def _kang(self, kheader: KHeader) -> torch.Tensor:
         """Calculate the angles of the phase encoding lines.
 
