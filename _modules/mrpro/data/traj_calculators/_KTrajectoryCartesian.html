@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>mrpro.data.traj_calculators._KTrajectoryIsmrmrd &#8212; MRpro</title>
+    <title>mrpro.data.traj_calculators._KTrajectoryCartesian &#8212; MRpro</title>
   
   
   
@@ -38,7 +38,7 @@
     <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../../../_static/doctools.js?v=888ff710"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/mrpro/data/traj_calculators/_KTrajectoryIsmrmrd';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/mrpro/data/traj_calculators/_KTrajectoryCartesian';</script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -398,8 +398,8 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <h1>Source code for mrpro.data.traj_calculators._KTrajectoryIsmrmrd</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Returns the trajectory saved in an ISMRMRD raw data file.&quot;&quot;&quot;</span>
+  <h1>Source code for mrpro.data.traj_calculators._KTrajectoryCartesian</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Cartesian trajectory class.&quot;&quot;&quot;</span>
 
 <span class="c1"># Copyright 2023 Physikalisch-Technische Bundesanstalt</span>
 <span class="c1">#</span>
@@ -413,61 +413,44 @@ document.write(`
 <span class="c1">#   See the License for the specific language governing permissions and</span>
 <span class="c1">#   limitations under the License.</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
-
-<span class="kn">import</span> <span class="nn">ismrmrd</span>
 <span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">repeat</span>
 
-<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KTrajectoryRawShape</span>
-
-
-<div class="viewcode-block" id="KTrajectoryIsmrmrd">
-<a class="viewcode-back" href="../../../../_autosummary/mrpro.data.traj_calculators.KTrajectoryIsmrmrd.html#mrpro.data.traj_calculators.KTrajectoryIsmrmrd">[docs]</a>
-<span class="k">class</span> <span class="nc">KTrajectoryIsmrmrd</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get trajectory in ISMRMRD raw data file.</span>
-
-<span class="sd">    The trajectory in the ISMRMRD raw data file is read out. Information</span>
-<span class="sd">    on the ISMRMRD trajectory can be found here:</span>
-<span class="sd">    https://ismrmrd.readthedocs.io/en/latest/mrd_raw_data.html#k-space-trajectory</span>
-
-<span class="sd">    The value range of the trajectory in the ISMRMRD file is not well defined. Here we simple normalize everything</span>
-<span class="sd">    based on the highest value and ensure it is within [-pi, pi]. The trajectory is in the shape of the unsorted</span>
-<span class="sd">    raw data.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<div class="viewcode-block" id="KTrajectoryIsmrmrd.__init__">
-<a class="viewcode-back" href="../../../../_autosummary/mrpro.data.traj_calculators.KTrajectoryIsmrmrd.html#mrpro.data.traj_calculators.KTrajectoryIsmrmrd.__init__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span></div>
+<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KHeader</span>
+<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KTrajectory</span>
+<span class="kn">from</span> <span class="nn">mrpro.data.traj_calculators</span> <span class="kn">import</span> <span class="n">KTrajectoryCalculator</span>
 
 
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">acquisitions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ismrmrd</span><span class="o">.</span><span class="n">Acquisition</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">KTrajectoryRawShape</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read out the trajectory from the ISMRMRD data file.</span>
+<div class="viewcode-block" id="KTrajectoryCartesian">
+<a class="viewcode-back" href="../../../../_autosummary/mrpro.data.traj_calculators.KTrajectoryCartesian.html#mrpro.data.traj_calculators.KTrajectoryCartesian">[docs]</a>
+<span class="k">class</span> <span class="nc">KTrajectoryCartesian</span><span class="p">(</span><span class="n">KTrajectoryCalculator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cartesian trajectory.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KTrajectory</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate Cartesian trajectory for given KHeader.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        acquisitions:</span>
-<span class="sd">            list of ismrmrd acquisistions to read from. Needs at least one acquisition.</span>
+<span class="sd">        kheader</span>
+<span class="sd">           MR raw data header (KHeader) containing required meta data</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">            trajectory in the shape of the original raw data.</span>
+<span class="sd">            Cartesian trajectory for given KHeader</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c1"># Read out the trajectory</span>
-        <span class="n">ktraj_mrd</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">acq</span><span class="o">.</span><span class="n">traj</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="k">for</span> <span class="n">acq</span> <span class="ow">in</span> <span class="n">acquisitions</span><span class="p">])</span>
+        <span class="c1"># K-space locations along readout lines</span>
+        <span class="n">kx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kfreq</span><span class="p">(</span><span class="n">kheader</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">ktraj_mrd</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No trajectory information available in the acquisitions.&#39;</span><span class="p">)</span>
+        <span class="c1"># Trajectory along phase and slice encoding</span>
+        <span class="n">ky</span> <span class="o">=</span> <span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">k1</span> <span class="o">-</span> <span class="n">kheader</span><span class="o">.</span><span class="n">encoding_limits</span><span class="o">.</span><span class="n">k1</span><span class="o">.</span><span class="n">center</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">kz</span> <span class="o">=</span> <span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">k2</span> <span class="o">-</span> <span class="n">kheader</span><span class="o">.</span><span class="n">encoding_limits</span><span class="o">.</span><span class="n">k2</span><span class="o">.</span><span class="n">center</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">ktraj_mrd</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="n">ktraj</span> <span class="o">=</span> <span class="n">KTrajectoryRawShape</span><span class="p">(</span>
-                <span class="n">kz</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">ktraj_mrd</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">ky</span><span class="o">=</span><span class="n">ktraj_mrd</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">kx</span><span class="o">=</span><span class="n">ktraj_mrd</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
-            <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">ktraj</span> <span class="o">=</span> <span class="n">KTrajectoryRawShape</span><span class="p">(</span><span class="n">kz</span><span class="o">=</span><span class="n">ktraj_mrd</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">ky</span><span class="o">=</span><span class="n">ktraj_mrd</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">kx</span><span class="o">=</span><span class="n">ktraj_mrd</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
-
-        <span class="k">return</span> <span class="n">ktraj</span></div>
+        <span class="c1"># Bring to correct dimensions</span>
+        <span class="n">kx</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">(</span><span class="n">kx</span><span class="p">,</span> <span class="s1">&#39;k0-&gt; other k2 k1 k0&#39;</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">k2</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">k1</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ky</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">(</span><span class="n">ky</span><span class="p">,</span> <span class="s1">&#39;other k2 k1-&gt; other k2 k1 k0&#39;</span><span class="p">,</span> <span class="n">k0</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">kz</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">(</span><span class="n">kz</span><span class="p">,</span> <span class="s1">&#39;other k2 k1-&gt; other k2 k1 k0&#39;</span><span class="p">,</span> <span class="n">k0</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">KTrajectory</span><span class="p">(</span><span class="n">kz</span><span class="p">,</span> <span class="n">ky</span><span class="p">,</span> <span class="n">kx</span><span class="p">)</span></div>
 
 </pre></div>
 

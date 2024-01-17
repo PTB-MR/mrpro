@@ -399,7 +399,20 @@ document.write(`
                 <article class="bd-article">
                   
   <h1>Source code for mrpro.data.traj_calculators._KTrajectoryRadial2D</h1><div class="highlight"><pre>
-<span></span><span class="c1"># Imports</span>
+<span></span><span class="sd">&quot;&quot;&quot;2D radial trajectory class.&quot;&quot;&quot;</span>
+
+<span class="c1"># Copyright 2023 Physikalisch-Technische Bundesanstalt</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1">#   you may not use this file except in compliance with the License.</span>
+<span class="c1">#   You may obtain a copy of the License at</span>
+<span class="c1">#       http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#   Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1">#   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1">#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1">#   See the License for the specific language governing permissions and</span>
+<span class="c1">#   limitations under the License.</span>
+
 <span class="kn">import</span> <span class="nn">torch</span>
 
 <span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KHeader</span>
@@ -428,43 +441,6 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">angle</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">angle</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_krad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the k-space locations along the read-out encoding lines.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        kheader</span>
-<span class="sd">            MR raw data header (KHeader) containing required meta data</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">            trajectory along ONE readout</span>
-
-<span class="sd">        Raises</span>
-<span class="sd">        ------</span>
-<span class="sd">        ValueError</span>
-<span class="sd">            Number of samples have to be the same for each readout</span>
-<span class="sd">        ValueError</span>
-<span class="sd">            Center sample has to be the same for each readout</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">num_samples</span> <span class="o">=</span> <span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">number_of_samples</span>
-        <span class="n">center_sample</span> <span class="o">=</span> <span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">center_sample</span>
-
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">num_samples</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s1">&#39;Radial 2D trajectory can only be calculated if each acquisition has the same number of samples&#39;</span>
-            <span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">center_sample</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s1">&#39;Radial 2D trajectory can only be calculated if each acquisition has the same center sample&#39;</span>
-            <span class="p">)</span>
-
-        <span class="c1"># Calculate points along readout</span>
-        <span class="n">nk0</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_samples</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
-        <span class="n">k0</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nk0</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">nk0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">-</span> <span class="n">center_sample</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">k0</span>
-
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KTrajectory</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate radial 2D trajectory for given KHeader.</span>
 
@@ -479,7 +455,7 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># K-space locations along readout lines</span>
-        <span class="n">krad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_krad</span><span class="p">(</span><span class="n">kheader</span><span class="p">)</span>
+        <span class="n">krad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kfreq</span><span class="p">(</span><span class="n">kheader</span><span class="p">)</span>
 
         <span class="c1"># Angles of readout lines</span>
         <span class="n">kang</span> <span class="o">=</span> <span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">k1</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">angle</span>
