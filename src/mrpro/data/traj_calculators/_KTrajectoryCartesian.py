@@ -1,4 +1,4 @@
-"""2D radial trajectory class."""
+"""Cartesian trajectory class."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -13,30 +13,18 @@
 #   limitations under the License.
 
 import torch
+from einops import repeat
 
 from mrpro.data import KHeader
 from mrpro.data import KTrajectory
 from mrpro.data.traj_calculators import KTrajectoryCalculator
 
 
-class KTrajectoryRadial2D(KTrajectoryCalculator):
-    """Radial 2D trajectory.
-
-    Parameters
-    ----------
-    angle
-        angle in rad between two radial lines
-    """
-
-    def __init__(
-        self,
-        angle: float = torch.pi * 0.618034,
-    ) -> None:
-        super().__init__()
-        self.angle: float = angle
+class KTrajectoryCartesian(KTrajectoryCalculator):
+    """Cartesian trajectory."""
 
     def __call__(self, kheader: KHeader) -> KTrajectory:
-        """Calculate radial 2D trajectory for given KHeader.
+        """Calculate Cartesian trajectory for given KHeader.
 
         Parameters
         ----------
@@ -45,18 +33,18 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
 
         Returns
         -------
-            radial 2D trajectory for given KHeader
+            Cartesian trajectory for given KHeader
         """
 
         # K-space locations along readout lines
-        krad = self._kfreq(kheader)
+        kx = self._kfreq(kheader)
 
-        # Angles of readout lines
-        kang = kheader.acq_info.idx.k1 * self.angle
+        # Trajectory along phase and slice encoding
+        ky = (kheader.acq_info.idx.k1 - kheader.encoding_limits.k1.center).to(torch.float32)
+        kz = (kheader.acq_info.idx.k2 - kheader.encoding_limits.k2.center).to(torch.float32)
 
-        # K-space cartesian coordinates
-        kx = krad * torch.cos(kang)[..., None]
-        ky = krad * torch.sin(kang)[..., None]
-        kz = torch.zeros(1, 1, 1, 1)
-
+        # Bring to correct dimensions
+        kx = repeat(kx, 'k0-> other k2 k1 k0', other=1, k2=1, k1=1)
+        ky = repeat(ky, 'other k2 k1-> other k2 k1 k0', k0=1)
+        kz = repeat(kz, 'other k2 k1-> other k2 k1 k0', k0=1)
         return KTrajectory(kz, ky, kx)

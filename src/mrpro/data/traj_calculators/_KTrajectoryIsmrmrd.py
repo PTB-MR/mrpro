@@ -1,4 +1,4 @@
-"""Returns the trajectory save in an ISMRMRD raw data file."""
+"""Returns the trajectory saved in an ISMRMRD raw data file."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
