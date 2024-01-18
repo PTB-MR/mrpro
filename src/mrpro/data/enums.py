@@ -122,3 +122,9 @@ class CalibrationMode(Enum):
     SEPARATE = 'separate'
     EXTERNAL = 'external'
     OTHER = 'other'
+
+
+class TrajType(Enum):
+    SINGLEVALUE = 0
+    ONGRID = 1
+    NOTONGRID = 2
