@@ -15,10 +15,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal
 
 import numpy as np
 import torch
 
+from mrpro.data.enums import TrajType
 from mrpro.utils import remove_repeat
 
 
@@ -41,11 +43,99 @@ class KTrajectory:
 
     @property
     def broadcasted_shape(self) -> tuple[int, ...]:
-        """The broadcasted shape of the trajectory."""
+        """The broadcasted shape of the trajectory.
+
+        Returns
+        -------
+            broadcasted shape of trajectory
+        """
         shape = np.broadcast_shapes(self.kx.shape, self.ky.shape, self.kz.shape)
         return tuple(shape)
 
-    def as_tensor(self, stack_dim=0):
+    def _type_of_traj(
+        self, tolerance: float = 1e-2, orientation: Literal['kz-ky-kx', 'k2-k1-k0'] = 'kz-ky-kx'
+    ) -> list[TrajType]:
+        """Type of trajectory.
+
+        This function checks if the entries of the trajectory along certain dimensions
+            - are of shape 1 -> TrajType.SINGLEVALUE
+            - lie on a Cartesian grid -> TrajType.ONGRID
+            - none of the above -> TrajType.NOTONGRID
+
+        Parameters
+        ----------
+        tolerance
+            tolerance used to determine if trajectory points lie on a gird
+
+        Returns
+        -------
+            type of trajectory along 'kz-ky-kx' or 'k2-k1-k0'
+        """
+        # Matrix describing trajectory-type [(kz, ky, kx), (k2, k1, k0)]
+        # Start with everything not on a grid (arbitrary k-space locations).
+        # We use the value of the enum-type to make it easier to do array operations.
+        traj_type_matrix = torch.tensor([[TrajType.NOTONGRID.value] * 3] * 3, dtype=torch.int8)
+
+        for ind, ks in enumerate((self.kz, self.ky, self.kx)):
+            are_values_on_grid = (ks - ks.to(dtype=torch.int64).to(dtype=ks.dtype)) <= tolerance
+
+            # Only True if True for all entries
+            are_values_on_grid = torch.all(are_values_on_grid)
+
+            for dim in (-3, -2, -1):
+                # Check if it is a singleton dimension
+                if ks.shape[dim] == 1:
+                    traj_type_matrix[ind, dim] = TrajType.SINGLEVALUE.value
+                else:
+                    if are_values_on_grid:
+                        traj_type_matrix[ind, dim] = TrajType.ONGRID.value
+
+        # Default is to sum along (k2, k1, k0) to return the trajectory type
+        # If we want instead the values along (k2, k1, k0) then we have to transpose the matrix.
+        if orientation == 'k2-k1-k0':
+            traj_type_matrix = torch.transpose(traj_type_matrix, dim0=0, dim1=1)
+
+        # Return trajectory-type
+        traj_type = [TrajType.ONGRID.value] * 3
+        for dim in (-3, -2, -1):
+            if torch.all(traj_type_matrix[dim, :] == TrajType.SINGLEVALUE.value):
+                traj_type[dim] = TrajType.SINGLEVALUE.value
+            elif torch.any(traj_type_matrix[dim, :] == TrajType.NOTONGRID.value):
+                traj_type[dim] = TrajType.NOTONGRID.value
+
+        return [TrajType(value) for value in traj_type]
+
+    @property
+    def traj_type_along_kzyx(self, tolerance: float = 1e-2) -> list[TrajType]:
+        """Type of trajectory along kz-ky-kx.
+
+        Parameters
+        ----------
+        tolerance
+            tolerance used to determine if trajectory points lie on a gird
+
+        Returns
+        -------
+            type of trajectory along kz-ky-kx
+        """
+        return self._type_of_traj(tolerance)
+
+    @property
+    def traj_type_along_k210(self, tolerance: float = 1e-2) -> list[TrajType]:
+        """Type of trajectory along k2-k1-k0.
+
+        Parameters
+        ----------
+        tolerance
+            tolerance used to determine if trajectory points lie on a gird
+
+        Returns
+        -------
+            type of trajectory along k2-k1-k0
+        """
+        return self._type_of_traj(tolerance, orientation='k2-k1-k0')
+
+    def as_tensor(self, stack_dim=0) -> torch.Tensor:
         """Tensor representation of the trajectory.
 
         Parameters
