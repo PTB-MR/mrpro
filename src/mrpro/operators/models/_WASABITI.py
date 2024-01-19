@@ -54,16 +54,12 @@ class WASABITI(Operator):
         self.gamma = nn.Parameter(gamma, requires_grad=gamma.requires_grad)
         self.freq = nn.Parameter(freq, requires_grad=freq.requires_grad)
 
-    def forward(self, qdata: torch.Tensor) -> torch.Tensor:
-        b0_shift = qdata[0].unsqueeze(0)
-        rb1 = qdata[1].unsqueeze(0)
-        t1 = qdata[2].unsqueeze(0)
-
+    def forward(self, b0_shift: torch.Tensor, rb1: torch.Tensor, t1: torch.Tensor) -> torch.Tensor:
         b1 = self.b1_nom * rb1
 
         # ensure correct dimensionality
-        offsets = self.offsets[(...,) + (None,) * qdata[0].ndim]
-        trec = self.trec[(...,) + (None,) * qdata[0].ndim]
+        offsets = self.offsets[(...,) + (None,) * b0_shift.ndim]
+        trec = self.trec[(...,) + (None,) * b0_shift.ndim]
 
         da = offsets - b0_shift
         Mzi = 1.0 - torch.exp(torch.multiply(-1.0 / t1, trec))
@@ -75,5 +71,6 @@ class WASABITI(Operator):
             * torch.sinc(self.tp * torch.sqrt((b1 * self.gamma) ** 2 + da**2)) ** 2
         )
 
+        print(res.shape)
         # c = coils, ... = other (may be multi-dimensional)
         return rearrange(res, 'offset ... c z y x -> (... offset) c z y x')

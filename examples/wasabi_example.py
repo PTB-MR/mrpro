@@ -35,25 +35,25 @@ reco = torch.fft.fftshift(op.H(data.data))
 offsets = torch.linspace(-250, 250, 101)
 wasabi_model = WASABI(offsets=offsets)
 
-qdata = torch.ones(4, 1, 5, 1, 1, 1)
-qdata[0, ...] = 0  # b0_shift
-qdata[1, ...] = 1.0
-qdata[2, ...] = 1.0
-qdata[3, ...] = 2.0
+b0_shift = torch.zeros([1, 1, 1, 1, 1])  # b0_shift
+rb1 = torch.Tensor([1.0])
+c = torch.Tensor([1.0])
+d = torch.Tensor([2.0])
 
-sig = wasabi_model.forward(qdata)
+sig = wasabi_model.forward(b0_shift, rb1, c, d)
 
 # %%
+offsets = torch.linspace(-250, 250, 101)
 trec = torch.ones_like(offsets)
 
 wasabiti_model = WASABITI(offsets=offsets, trec=trec)
 
 qdata = torch.ones(4, 1, 1, 1, 1, 1)
-qdata[0, ...] = 0  # b0_shift
-qdata[1, ...] = 1.0
-qdata[2, ...] = 10.0
+b0_shift = torch.zeros([1, 1, 1, 1, 1])  # b0_shift
+rb1 = torch.Tensor([1.0])
+t1 = torch.Tensor([10.0])
 
-sig2 = wasabiti_model.forward(qdata=qdata)
+sig2 = wasabiti_model.forward(b0_shift, rb1, t1)
 
 # %%
 # fig, ax = plt.subplots()

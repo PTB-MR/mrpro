@@ -51,11 +51,9 @@ class WASABI(Operator):
         self.gamma = nn.Parameter(gamma, requires_grad=gamma.requires_grad)
         self.freq = nn.Parameter(freq, requires_grad=freq.requires_grad)
 
-    def forward(self, qdata: torch.Tensor) -> torch.Tensor:
-        b0_shift, rb1, c, d = qdata.unsqueeze(1)
-
+    def forward(self, b0_shift: torch.Tensor, rb1: torch.Tensor, c: torch.Tensor, d: torch.Tensor) -> torch.Tensor:
         # ensure correct dimensionality
-        offsets = self.offsets[(...,) + (None,) * qdata[0].ndim]
+        offsets = self.offsets[(...,) + (None,) * b0_shift.ndim]
         delta_x = offsets - b0_shift
         b1 = self.b1_nom * rb1
 
@@ -67,6 +65,7 @@ class WASABI(Operator):
         )
 
         # c = coils, ... = other (may be multi-dimensional)
+        print(res.shape)
         return rearrange(res, 'offset ... c z y x -> (... offset) c z y x')
 
 
