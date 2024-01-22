@@ -13,15 +13,9 @@
 #   limitations under the License.
 
 from abc import ABC
-from abc import abstractmethod
 
-import torch
 from torch import nn
 
 
 class Operator(ABC, nn.Module):
     """The general Operator class."""
-
-    @abstractmethod
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        ...
