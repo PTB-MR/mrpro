@@ -40,9 +40,9 @@ class QData:
         Parameters
         ----------
         data
-            quantitative image data tensor with dimensions (all_other, coils, z, y, x).
+            quantitative image data tensor with dimensions (other, coils, z, y, x)
         header
-            MRpro header containing required meta data for the QHeader.
+            MRpro header containing required meta data for the QHeader
         """
         if isinstance(header, KHeader):
             qheader = QHeader.from_kheader(header)
@@ -60,14 +60,14 @@ class QData:
 
         Parameters
         ----------
-        filename:
-            Path to DICOM file.
+        filename
+            path to DICOM file
         """
 
         ds = dcmread(filename)
         # Image data is 2D np.array of Uint16, which cannot directly be converted to tensor
         qdata = torch.as_tensor(ds.pixel_array.astype(np.complex64))
-        qdata = rearrange(qdata[None, ...], '(other coil z) y x -> other coil z y x', other=1, coil=1, z=1)
+        qdata = rearrange(qdata[None, ...], '(other coils z) y x -> other coils z y x', other=1, coils=1, z=1)
 
         header = QHeader.from_dicom(ds)
         return cls(data=qdata, header=header)

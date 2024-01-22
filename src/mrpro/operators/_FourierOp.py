@@ -25,8 +25,18 @@ from mrpro.operators import LinearOperator
 def is_uniform(x: torch.Tensor, atol: float = 1e-6) -> torch.Tensor:
     """Check if a tensor contains equidistant sampling points.
 
-    If the tensor has batch-dimension>1, this is checked for all
-    batches.
+    Parameters
+    ----------
+    x
+        tensor to be checked
+    atol
+        tolerance of how similar the values have to be
+
+    Returns
+    -------
+        boolean tensor if sampling points are equidistant.
+
+    If the tensor has batch-dimension>1, this is checked for all batches.
     """
     # TODO: currrently, this function is never used here.
 
@@ -43,30 +53,29 @@ def is_uniform(x: torch.Tensor, atol: float = 1e-6) -> torch.Tensor:
 class FourierOp(LinearOperator):
     def __init__(
         self,
-        im_shape: SpatialDimension[int],
+        recon_shape: SpatialDimension[int],
+        encoding_shape: SpatialDimension[int],
         traj: KTrajectory,
         oversampling: SpatialDimension[float] = SpatialDimension(
             2.0, 2.0, 2.0
         ),  # TODO: maybe not the nicest, since only used for nuFFT
         numpoints: int = 6,
         kbwidth: float = 2.34,
-    ):
+    ) -> None:
         """Fourier Operator class.
 
         Parameters
         ----------
-        im_shape
-            dimension of the image to be Fourier-transformed
-
+        recon_shape
+            dimension of the reconstructed image
+        encoding_shape
+            dimension of the encoded k-space
         traj
             the k-space trajectories where the frequencies are sampled
-
         oversampling
             oversampling for (potential) nuFFT directions
-
         numpoints
             number of neighbors for interpolation for nuFFTs
-
         kbwidth
             size of the Kaiser-Bessel kernel for the nuFFT
         """
@@ -85,7 +94,7 @@ class FourierOp(LinearOperator):
         # and identify which directions can be ignored, which ones require a nuFFT
         # and for which ones a simple FFT suffices
         for n, os, k, i in zip(
-            (im_shape.z, im_shape.y, im_shape.x),
+            (recon_shape.z, recon_shape.y, recon_shape.x),
             (oversampling.z, oversampling.y, oversampling.x),
             (traj.kz, traj.ky, traj.kx),
             (-3, -2, -1),
@@ -120,12 +129,13 @@ class FourierOp(LinearOperator):
         # if non-uniform directions were identified, create the trajectories
         # to perform the nuFFT
         if len(nufft_dims) != 0:
-            for k in (traj.kz, traj.ky, traj.kx):
+            for k, ks in zip((traj.kz, traj.ky, traj.kx), (encoding_shape.z, encoding_shape.y, encoding_shape.x)):
                 # check number of singleton dimensions
                 n_singleton_dims = k.shape[1:].count(1)
                 if n_singleton_dims <= 1:
                     # if not is_uniform(k): #TODO: is_uniform maybe never needed?
-                    omega.append(k.flatten(start_dim=-3))
+                    # add trajectory and normalize within [-pi, pi]
+                    omega.append(k.flatten(start_dim=-3) * 2 * torch.pi / ks)
 
             self._omega = torch.stack(omega, dim=-2)
             self._fwd_nufft_op = KbNufft(
@@ -140,7 +150,7 @@ class FourierOp(LinearOperator):
         self._fft_dims = tuple(fft_dims)
         self._fft_s = tuple(fft_s)
         self._kshape = torch.broadcast_shapes(*traj_shape)
-        self._im_shape = im_shape
+        self._recon_shape = recon_shape
         self._nufft_im_size = nufft_im_size
 
     @staticmethod
@@ -158,7 +168,7 @@ class FourierOp(LinearOperator):
 
         Returns
         -------
-            pattern for how to reshape an image (other coil z y x) / k-space data (other coil k2 k1 k0)
+            pattern for how to reshape an image (other coils z y x) / k-space data (other coils k2 k1 k0)
             to be able to apply the forward/adoint nuFFT.
         """
         fft_dims_str = ''
@@ -173,7 +183,7 @@ class FourierOp(LinearOperator):
             elif dim in ignore_dims:
                 ignore_dims_str += ' ' + dim_str
 
-        target_pattern = f'(other{fft_dims_str}{ignore_dims_str}) coil{nufft_dims_str}'
+        target_pattern = f'(other{fft_dims_str}{ignore_dims_str}) coils{nufft_dims_str}'
         return target_pattern
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -182,20 +192,20 @@ class FourierOp(LinearOperator):
         Parameters
         ----------
         x
-            coil image data with shape: (other coil z y x)
+            coil image data with shape: (other coils z y x)
 
         Returns
         -------
-            coil k-space data with shape: (other coil k2 k1 k0)
+            coil k-space data with shape: (other coils k2 k1 k0)
         """
-        if self._im_shape != SpatialDimension(*x.shape[-3:]):
+        if self._recon_shape != SpatialDimension(*x.shape[-3:]):
             raise ValueError('image data shape missmatch')
 
         if len(self._fft_dims) != 0:
             x = torch.fft.fftn(x, s=self._fft_s, dim=self._fft_dims, norm='ortho')
 
         if len(self._nufft_dims) != 0:
-            init_pattern = 'other coil dim2 dim1 dim0'
+            init_pattern = 'other coils dim2 dim1 dim0'
             target_pattern = self.get_target_pattern(self._fft_dims, self._nufft_dims, self._ignore_dims)
 
             # get shape before applying nuFFT
@@ -217,11 +227,11 @@ class FourierOp(LinearOperator):
             nufft_dim_size = tuple([nk for nk, dim in zip(self._kshape[1:], (-3, -2, -1)) if dim in self._nufft_dims])
 
             # unflatten the nuFFT-dimensions
-            x = x.view(*x.shape[:2], *nufft_dim_size)
+            x = x.reshape(*x.shape[:2], *nufft_dim_size)
 
             # bring to shape defined by k-space trajectories
             nk2, nk1, nk0 = self._kshape[1:]
-            x = rearrange(x, target_pattern + '->' + init_pattern, other=nb, coil=nc, dim1=nk1, dim2=nk2, dim0=nk0)
+            x = rearrange(x, target_pattern + '->' + init_pattern, other=nb, coils=nc, dim1=nk1, dim2=nk2, dim0=nk0)
 
         return x
 
@@ -231,11 +241,11 @@ class FourierOp(LinearOperator):
         Parameters
         ----------
         y
-            coil k-space data with shape: (other coil k2 k1 k0)
+            coil k-space data with shape: (other coils k2 k1 k0)
 
         Returns
         -------
-            coil image data with shape: (other coil z y x)
+            coil image data with shape: (other coils z y x)
         """
 
         if self._kshape[1:] != y.shape[-3:]:
@@ -243,12 +253,12 @@ class FourierOp(LinearOperator):
 
         # apply IFFT
         if len(self._fft_dims) != 0:
-            im_shape = [self._im_shape.z, self._im_shape.y, self._im_shape.x]
+            recon_shape = [self._recon_shape.z, self._recon_shape.y, self._recon_shape.x]
             y = torch.fft.ifftn(y, s=self._fft_s, dim=self._fft_dims, norm='ortho')
 
             # construct the paddings based on the FFT-directions
             # TODO: can this be written more nicely?
-            diff_dim = torch.tensor(im_shape) - torch.tensor(y.shape[2:])
+            diff_dim = torch.tensor(recon_shape) - torch.tensor(y.shape[2:])
             npad_tuple = tuple(
                 [
                     int(diff_dim[i // 2].item()) if (i % 2 == 0 and dim in self._fft_dims) else 0
@@ -262,7 +272,7 @@ class FourierOp(LinearOperator):
 
         # move dim where FFT was already performed such nuFFT can be performed
         if len(self._nufft_dims) != 0:
-            init_pattern = 'other coil dim2 dim1 dim0'
+            init_pattern = 'other coils dim2 dim1 dim0'
             target_pattern = self.get_target_pattern(self._fft_dims, self._nufft_dims, self._ignore_dims)
 
             # get shape before applying nuFFT
@@ -273,7 +283,7 @@ class FourierOp(LinearOperator):
             nufft_dim_size = tuple([nk for nk, dim in zip(self._kshape[1:], (-3, -2, -1)) if dim in self._nufft_dims])
             y_shape_tuple = tuple(y.shape)
             nk = int(torch.prod(torch.tensor(nufft_dim_size)))
-            y = y.view(*y_shape_tuple[:2], nk)
+            y = y.reshape(*y_shape_tuple[:2], nk)
 
             # apply adjoint nuFFT
             if nb > 1 and len(self._fft_dims) >= 1 and len(self._nufft_dims) >= 1:
@@ -288,7 +298,7 @@ class FourierOp(LinearOperator):
             y = self._adj_nufft_op(y, omega, norm='ortho')
 
             # get back to orginal k-space shape
-            nz, ny, nx = self._im_shape.z, self._im_shape.y, self._im_shape.x
-            y = rearrange(y, target_pattern + '->' + init_pattern, other=nb, coil=nc, dim2=nz, dim1=ny, dim0=nx)
+            nz, ny, nx = self._recon_shape.z, self._recon_shape.y, self._recon_shape.x
+            y = rearrange(y, target_pattern + '->' + init_pattern, other=nb, coils=nc, dim2=nz, dim1=ny, dim0=nx)
 
         return y
