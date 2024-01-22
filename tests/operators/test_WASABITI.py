@@ -4,14 +4,15 @@ import torch
 from mrpro.operators.models._WASABITI import WASABITI
 
 
-def create_data(offset_max=250, offset_nr=101, b0_shift=0, rb1=1.0, t1=1.0, p=4, other=1, coils=1, z=1, y=1, x=1):
+def create_data(offset_max=250, offset_nr=101, b0_shift_in=0, rb1=1.0, t1=1.0, p=4, other=1, coils=1, z=1, y=1, x=1):
     offsets = torch.linspace(-offset_max, offset_max, offset_nr)
-    qdata = torch.ones(p, other, coils, z, y, x)
-    qdata[0, ...] = b0_shift
-    qdata[1, ...] = rb1
-    qdata[2, ...] = t1
 
-    return offsets, qdata
+    b0_shift = torch.zeros([1, 1, 1, 1, 1])  # b0_shift
+    b0_shift[0] = b0_shift_in
+    rb1 = torch.Tensor([rb1])
+    t1 = torch.Tensor([t1])
+
+    return offsets, b0_shift, rb1, t1
 
 
 @pytest.mark.parametrize(
@@ -25,11 +26,11 @@ def create_data(offset_max=250, offset_nr=101, b0_shift=0, rb1=1.0, t1=1.0, p=4,
 )
 def test_WASABITI_signal_model_shape(offset_max, offset_nr, b0_shift, rb1, t1, p, other, coils, z, y, x):
     """Test for correct output shape."""
-    offsets, qdata = create_data(offset_max, offset_nr, b0_shift, rb1, t1, p, other, coils, z, y, x)
+    offsets, b0_shift, rb1, t1 = create_data(offset_max, offset_nr, b0_shift, rb1, t1, p, other, coils, z, y, x)
     trec = torch.ones_like(offsets)
 
     wasabiti_model = WASABITI(offsets=offsets, trec=trec)
-    sig = wasabiti_model.forward(qdata)
+    sig = wasabiti_model.forward(b0_shift, rb1, t1)
 
     signal_shape = torch.Tensor(offset_nr, coils, z, y, x)
     assert sig.shape == signal_shape.shape
@@ -37,15 +38,15 @@ def test_WASABITI_signal_model_shape(offset_max, offset_nr, b0_shift, rb1, t1, p
 
 def test_WASABITI_shift_and_symmetry():
     """Test symmetry property of shifted and unshifted WASABITI spectra."""
-    offsets_unshifted, qdata_unshifted = create_data(offset_max=500, offset_nr=100, b0_shift=0)
+    offsets_unshifted, b0_shift, rb1, t1 = create_data(offset_max=500, offset_nr=100, b0_shift_in=0)
     trec = torch.ones_like(offsets_unshifted)
     wasabiti_model = WASABITI(offsets=offsets_unshifted, trec=trec)
-    sig_unshifted = wasabiti_model.forward(qdata_unshifted)
+    sig_unshifted = wasabiti_model.forward(b0_shift, rb1, t1)
 
-    offsets_shifted, qdata_shifted = create_data(offset_max=500, offset_nr=101, b0_shift=100)
+    offsets_shifted, b0_shift, rb1, t1 = create_data(offset_max=500, offset_nr=101, b0_shift_in=100)
     trec = torch.ones_like(offsets_shifted)
     wasabiti_model = WASABITI(offsets=offsets_shifted, trec=trec)
-    sig_shifted = wasabiti_model.forward(qdata_shifted)
+    sig_shifted = wasabiti_model.forward(b0_shift, rb1, t1)
 
     lower_index = (offsets_shifted == -300).nonzero()[0][0].item()
     upper_index = (offsets_shifted == 500).nonzero()[0][0].item()
@@ -60,10 +61,10 @@ def test_WASABITI_shift_and_symmetry():
 )
 def test_WASABITI_relaxation_term(t1):
     """Test relaxation term (Mzi) of WASABITI model."""
-    _, qdata = create_data(offset_max=300, offset_nr=3, b0_shift=0, t1=t1)
+    _, b0_shift, rb1, t1 = create_data(offset_max=300, offset_nr=3, b0_shift_in=0, t1=t1)
     offsets_new = torch.FloatTensor([30000])
     trec = torch.ones_like(offsets_new) * t1
     wasabiti_model = WASABITI(offsets=offsets_new, trec=trec)
-    sig = wasabiti_model.forward(qdata)
+    sig = wasabiti_model.forward(b0_shift, rb1, t1)
 
     assert torch.isclose(sig[0], torch.FloatTensor([1 - torch.exp(torch.FloatTensor([-1]))]), rtol=1e-8)
