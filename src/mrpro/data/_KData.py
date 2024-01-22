@@ -63,13 +63,14 @@ class KData:
 
         Parameters
         ----------
-            filename:
-                Path to the ISMRMRD file
-            ktrajectory:
+            filename
+                path to the ISMRMRD file
+            ktrajectory
                 KTrajectory defining the trajectory to use # TODO: Maybe provide a default based on the header?
-            header_overwrites:
-                Dictionary of key-value pairs to overwrite the header
-            dataset_idx: Index of the dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
+            header_overwrites
+                dictionary of key-value pairs to overwrite the header
+            dataset_idx
+                index of the dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
         """
 
         # Can raise FileNotFoundError
@@ -128,7 +129,7 @@ class KData:
         sort_ki = np.stack([getattr(kheader.acq_info.idx, label) for label in KDIM_SORT_LABELS], axis=0)
         sort_idx = np.lexsort(sort_ki)
 
-        kdata = rearrange(kdata[sort_idx], '(other k2 k1) coil k0 -> other coil k2 k1 k0', k1=num_k1, k2=num_k2)
+        kdata = rearrange(kdata[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=num_k1, k2=num_k2)
 
         def reshape_acq_data(data):
             return rearrange(data[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=num_k1, k2=num_k2)
@@ -162,7 +163,7 @@ class KData:
 
         try:
             shape = ktraj.broadcasted_shape
-            torch.broadcast_shapes(kdata.shape, shape)
+            torch.broadcast_shapes(kdata[..., 0, :, :, :].shape, shape)
         except RuntimeError:
             raise ValueError(
                 f'Broadcasted shape trajectory do not match kdata: {shape} vs. {kdata.shape}. '
