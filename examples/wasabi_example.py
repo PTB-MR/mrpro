@@ -26,7 +26,12 @@ data.traj.kx = data.traj.kx.to(torch.float32)
 
 # %%
 # create operator
-op = FourierOp(im_shape=SpatialDimension(1, 192, 192), traj=data.traj, oversampling=SpatialDimension(1, 1, 1))
+op = FourierOp(
+    recon_shape=data.header.recon_matrix,  # SpatialDimension(1, 192, 192),
+    encoding_shape=data.header.encoding_matrix,
+    traj=data.traj,
+    oversampling=SpatialDimension(1, 1, 1),
+)
 
 # apply adjoint operator
 reco = torch.fft.fftshift(op.H(data.data))
