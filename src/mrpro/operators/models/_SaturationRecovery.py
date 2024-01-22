@@ -27,22 +27,19 @@ class SaturationRecovery(Operator):
         super().__init__()
         self.ti = torch.nn.Parameter(ti, requires_grad=ti.requires_grad)
 
-    def forward(self, qdata: torch.Tensor) -> torch.Tensor:
+    def forward(self, m0: torch.Tensor, t1: torch.Tensor) -> torch.Tensor:
         """Apply the forward model.
 
         Parameters
         ----------
-        qdata
-            Quantitative parameter tensor (params, other, c, z, y, x)
-            params: (m0, t1)
+            Quantitative parameters m0, t1 with dimensions (other, c, z, y, x)
 
         Returns
         -------
             Image data tensor (other, c, z, y, x)
         """
-        m0, t1 = qdata.unsqueeze(1)
         t1 = torch.where(t1 == 0, 1e-10, t1)
-        ti = self.ti[(...,) + (None,) * (qdata[0].ndim)]
+        ti = self.ti[(...,) + (None,) * (m0.ndim)]
         y = m0 * (1 - torch.exp(-(ti / t1)))
         res = rearrange(y, 't ... c z y x -> (... t) c z y x')
         return res

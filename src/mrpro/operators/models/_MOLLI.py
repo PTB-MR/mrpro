@@ -27,23 +27,20 @@ class MOLLI(Operator):
         super().__init__()
         self.ti = torch.nn.Parameter(ti, requires_grad=ti.requires_grad)
 
-    def forward(self, qdata: torch.Tensor) -> torch.Tensor:
+    def forward(self, a: torch.Tensor, b: torch.Tensor, t1: torch.Tensor) -> torch.Tensor:
         """Apply the forward model.
 
         Parameters
         ----------
-        qdata
-            Quantitative parameter tensor (params, other, c, z, y, x)
-            params: (a, b, t1)
+            Quantitative parameters m0, t1 with dimensions (other, c, z, y, x)
 
         Returns
         -------
             Image data tensor (other, c, z, y, x)
         """
-        a, b, t1 = qdata.unsqueeze(1)
         t1 = torch.where(t1 == 0, 1e-10, t1)
         a = torch.where(a == 0 | torch.equal((b / a), torch.ones_like(a)), a + 1e-10, a)
-        ti = self.ti[(...,) + (None,) * (qdata[0].ndim)]
+        ti = self.ti[(...,) + (None,) * (a.ndim)]
         t1_star = t1 / ((b / a) - 1)
         y = a - b * torch.exp(-(ti / (t1_star)))
         res = rearrange(y, 't ... c z y x -> (... t) c z y x')

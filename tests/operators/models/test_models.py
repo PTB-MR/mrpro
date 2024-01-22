@@ -7,10 +7,11 @@ from mrpro.operators.models._SaturationRecovery import SaturationRecovery
 from tests import RandomGenerator
 
 
-def create_data(p, other=10, coils=5, z=100, y=100, x=100):
+def create_data(other=10, coils=5, z=100, y=100, x=100):
     random_generator = RandomGenerator(seed=0)
-    qdata = random_generator.float32_tensor(size=(p, other, coils, z, y, x), low=1e-10)
-    return qdata
+    m0 = random_generator.float32_tensor(size=(other, coils, z, y, x), low=1e-10)
+    t1 = random_generator.float32_tensor(size=(other, coils, z, y, x), low=1e-10)
+    return m0, t1
 
 
 @pytest.mark.parametrize(
@@ -28,20 +29,15 @@ def test_saturation_recovery(t, result):
     Checking that idata output tensor at t=0 is close to 0. Checking
     that idata output tensor at large t is close to m0.
     """
-
-    # Random qdata tensor
-    p, other, coils, z, y, x = 2, 10, 5, 100, 100, 100
-    qdata = create_data(p, other, coils, z, y, x)
-
     # Tensor of TI
     ti = torch.tensor([t])
 
     # Generate signal model and torch tensor for comparison
     model = SaturationRecovery(ti)
-    image = model.forward(qdata)
+    m0, t1 = create_data()
+    image = model.forward(m0, t1)
 
-    zeros = torch.zeros(size=((len(ti) * other, coils, z, y, x)))
-    m0 = qdata[0]
+    zeros = torch.zeros_like(m0)
 
     # Assert closeness to zero for t=0
     if result == '0':
@@ -67,17 +63,13 @@ def test_inversion_recovery(t, result):
     that idata output tensor at large t is close to m0.
     """
 
-    # Random qdata tensor
-    p, other, coils, z, y, x = 2, 10, 5, 100, 100, 100
-    qdata = create_data(p, other, coils, z, y, x)
-
     # Tensor of TI
     ti = torch.tensor([t])
 
     # Generate signal model and torch tensor for comparison
     model = InversionRecovery(ti)
-    image = model.forward(qdata)
-    m0 = qdata[0]
+    m0, t1 = create_data()
+    image = model.forward(m0, t1)
 
     # Assert closeness to -m0 for t=0
     if result == '-m0':
@@ -103,20 +95,17 @@ def test_molli(t, result):
     that idata output tensor at large t is close to a-b.
     """
     # Generate qdata tensor, not random as a<b is necessary for t1_star to be >= 0
-    p, other, coils, z, y, x = 3, 10, 5, 100, 100, 100
-    qdata = torch.zeros(size=(p, other, coils, z, y, x))
-    qdata[0] = torch.ones((1, other, coils, z, y, x)) * 2
-    qdata[1] = torch.ones((1, other, coils, z, y, x)) * 5
-    qdata[2] = torch.ones((1, other, coils, z, y, x)) * 2
+    other, coils, z, y, x = 10, 5, 100, 100, 100
+    a = torch.ones((other, coils, z, y, x)) * 2
+    b = torch.ones((other, coils, z, y, x)) * 5
+    t1 = torch.ones((other, coils, z, y, x)) * 2
 
     # Tensor of TI
     ti = torch.tensor([t])
 
     # Generate signal model and torch tensor for comparison
     model = MOLLI(ti)
-    image = model.forward(qdata)
-    a = qdata[0]
-    b = qdata[1]
+    image = model.forward(a, b, t1)
 
     # Assert closeness to a-b for large t
     if result == 'a-b':
