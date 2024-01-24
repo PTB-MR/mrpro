@@ -18,7 +18,7 @@ from torch.optim import LBFGS
 
 def lbfgs(
     f,
-    p,
+    params,
     lr=1,
     max_iter=100,
     max_eval=100,
@@ -33,8 +33,8 @@ def lbfgs(
     ----------
     f
         scalar function to be minimized
-    p
-        initial guess of the solution
+    params
+        list with parameters containing the initial guess of the solution
     lr, optional
         learning rate
     max_iter, optional
@@ -59,12 +59,12 @@ def lbfgs(
     """
 
     # enable gradient calculation
-    p.requires_grad = True
+    for p in params:
+        p.requires_grad = True
 
     # define lbfgs routine
-
     lbfgs_ = LBFGS(
-        [p],
+        params,
         lr=lr,
         history_size=history_size,
         max_iter=max_iter,
@@ -83,4 +83,4 @@ def lbfgs(
     # run lbfgs
     lbfgs_.step(closure)
 
-    return p
+    return params

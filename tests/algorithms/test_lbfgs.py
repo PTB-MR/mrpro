@@ -26,8 +26,8 @@ class Rosenbrock(nn.Module):
         self.a = a
         self.b = b
 
-    def forward(self, x):
-        fval = (self.a - x[:, 0]) ** 2 + self.b * (x[:, 1] - x[:, 0] ** 2) ** 2
+    def forward(self, x1, x2):
+        fval = (self.a - x1) ** 2 + self.b * (x[:, 1] - x2**2) ** 2
 
         return fval
 
@@ -54,15 +54,22 @@ def test_lbfgs(a, b):
         random_generator = RandomGenerator(seed=0)
 
         # generate two-dimensional test data
-        p = random_generator.float32_tensor(size=(1, 2))
+        x1 = random_generator.float32_tensor(size=(1,))
+        x2 = random_generator.float32_tensor(size=(1,))
+
+        # enable gradient calculation
+        x1.requires_grad = True
+        x2.requires_grad = True
+
+        params = [x1, x2]
 
         # define Rosenbrock function
         f = Rosenbrock(a, b)
 
         # call lbfgs
-        p = lbfgs(
+        params = lbfgs(
             f,
-            p,
+            params,
             lr=lr,
             max_iter=max_iter,
             max_eval=max_eval,
@@ -73,5 +80,6 @@ def test_lbfgs(a, b):
         )
 
         # minimizer of Rosenbrock function
-        sol = torch.tensor([[a, a**2]])
-        assert torch.isclose(p, sol, rtol=1e-4)
+        sol = torch.tensor([a, a**2])
+        x = torch.tensor(params)
+        assert torch.isclose(x, sol, rtol=1e-4)
