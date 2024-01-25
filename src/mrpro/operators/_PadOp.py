@@ -23,9 +23,9 @@ class PadOp(LinearOperator):
 
     def __init__(
         self,
-        dim: tuple[int, ...] = (-3, -2, -1),
-        orig_shape: tuple[int, ...] | None = None,
-        padded_shape: tuple[int, ...] | None = None,
+        dim: tuple[int, ...],
+        orig_shape: tuple[int, ...],
+        padded_shape: tuple[int, ...],
     ) -> None:
         """Pad Operator class.
 
@@ -34,19 +34,23 @@ class PadOp(LinearOperator):
 
         Parameters
         ----------
-        dim, optional
-            dim along which padding should be applied, by default last three dimensions (-1, -2, -3)
-        orig_shape, optional
-            shape of original data along dim
-        padded_shape, optional
-            shape of padded data along dim
+        dim
+            dim along which padding should be applied
+        orig_shape
+            shape of original data along dim, same length as dim
+        padded_shape
+            shape of padded data along dim, same length as dim
         """
+        if len(dim) != len(orig_shape) or len(dim) != len(padded_shape):
+            raise ValueError('Dim, orig_shape and padded_shape have to be of same length')
+
+        super().__init__()
         self.dim: tuple[int, ...] = dim
-        self.orig_shape: tuple[int, ...] | None = orig_shape
-        self.padded_shape: tuple[int, ...] | None = padded_shape
+        self.orig_shape: tuple[int, ...] = orig_shape
+        self.padded_shape: tuple[int, ...] = padded_shape
 
     @staticmethod
-    def _pad_data(x: torch.Tensor, dim: tuple[int, ...], padded_shape: tuple[int, ...] | None) -> torch.Tensor:
+    def _pad_data(x: torch.Tensor, dim: tuple[int, ...], padded_shape: tuple[int, ...]) -> torch.Tensor:
         """Pad or crop data.
 
         Parameters
@@ -63,7 +67,7 @@ class PadOp(LinearOperator):
             data with shape padded_shape
         """
         # Adapt image size
-        if padded_shape is not None:
+        if len(dim) > 0:
             s = list(x.shape)
             for idx, idim in enumerate(dim):
                 s[idim] = padded_shape[idx]
@@ -76,7 +80,7 @@ class PadOp(LinearOperator):
         Parameters
         ----------
         x
-            original data with shape orig_shape
+            data with shape orig_shape
 
         Returns
         -------
@@ -90,7 +94,7 @@ class PadOp(LinearOperator):
         Parameters
         ----------
         x
-            original data with shape padded_shape
+            data with shape padded_shape
 
         Returns
         -------

@@ -44,8 +44,14 @@ class FastFourierOp(LinearOperator):
         recon_shape, optional
             shape of reconstructed data
         """
+        super().__init__()
         self._dim: tuple[int, ...] = dim
-        self._pad_op: PadOp = PadOp(dim=dim, orig_shape=encoding_shape, padded_shape=recon_shape)
+        self._pad_op: PadOp
+        if encoding_shape is not None and recon_shape is not None:
+            self._pad_op = PadOp(dim=dim, orig_shape=recon_shape, padded_shape=encoding_shape)
+        else:
+            # No padding
+            self._pad_op = PadOp(dim=(), orig_shape=(), padded_shape=())
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """FFT from image space to k-space.

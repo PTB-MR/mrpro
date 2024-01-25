@@ -49,7 +49,7 @@ def test_pad_op_ajoint(u_shape, v_shape):
     """Test adjointness of pad operator."""
     u = torch.randn(u_shape, dtype=torch.complex64)
     v = torch.randn(v_shape, dtype=torch.complex64)
-    POp = PadOp(orig_shape=u_shape, padded_shape=v_shape)
+    POp = PadOp(dim=(-3, -2, -1), orig_shape=u_shape, padded_shape=v_shape)
     Au = POp.forward(u)
     AHv = POp.adjoint(v)
 
