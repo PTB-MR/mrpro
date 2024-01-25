@@ -61,7 +61,7 @@ def test_fast_fourier_op_adjoint(encoding_shape, recon_shape):
     y = torch.randn(encoding_shape, dtype=torch.complex64)
 
     # Create operator and apply
-    FFOp = FastFourierOp(encoding_shape=encoding_shape, recon_shape=recon_shape)
+    FFOp = FastFourierOp(recon_shape=recon_shape, encoding_shape=encoding_shape)
     Ax = FFOp.forward(x)
     AHy = FFOp.adjoint(y)
 

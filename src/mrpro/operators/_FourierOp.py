@@ -153,7 +153,7 @@ class FourierOp(LinearOperator):
         self._nufft_im_size = nufft_im_size
 
         self._fast_fourier_op = FastFourierOp(
-            dim=self._fft_dims, encoding_shape=self._fft_encoding_shape, recon_shape=self._fft_recon_shape
+            dim=self._fft_dims, recon_shape=self._fft_recon_shape, encoding_shape=self._fft_encoding_shape
         )
 
     @staticmethod

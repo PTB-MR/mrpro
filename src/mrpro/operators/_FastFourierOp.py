@@ -24,8 +24,8 @@ class FastFourierOp(LinearOperator):
     def __init__(
         self,
         dim: tuple[int, ...] = (-3, -2, -1),
-        encoding_shape: tuple[int, ...] | None = None,
         recon_shape: tuple[int, ...] | None = None,
+        encoding_shape: tuple[int, ...] | None = None,
     ) -> None:
         """Fast Fourier Operator class.
 
