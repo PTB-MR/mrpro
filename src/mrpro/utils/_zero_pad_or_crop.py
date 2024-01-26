@@ -71,13 +71,12 @@ def zero_pad_or_crop(
         dim = tuple(normalize_index(data.ndim, idx) for idx in dim)  # raises if any not in [-data.ndim,data.ndim)
         if len(dim) != len(set(dim)):  # this is why we normalize
             raise ValueError('repeated values are not allowed in dims')
-        new_shape_full = torch.tensor(data.shape)
-        for i, d in enumerate(dim):
-            new_shape_full[d] = new_shape[i]
+        # Update elements in data.shape at indices specified in dim with corresponding elements from new_shape
+        new_shape = tuple(new_shape[dim.index(i)] if i in dim else s for i, s in enumerate(data.shape))
 
     npad = []
-    for old, new in zip(torch.tensor(data.shape), new_shape_full):
-        diff = (new - old).numpy()  # __trunc__ method not available for tensors
+    for old, new in zip(data.shape, new_shape):
+        diff = new - old
         after = math.trunc(diff / 2)
         before = diff - after
         npad.append(before)
