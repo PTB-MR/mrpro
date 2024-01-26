@@ -58,6 +58,7 @@ docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject"]
 testpaths = ["tests"]
 filterwarnings = ["error"]
 # addopts = "-n auto" # TODO: debug vscode missing tests if enabled
+markers = ["cuda : Tests only to be run when cuda device is available"]
 
 # MyPy section
 [tool.mypy]
@@ -66,6 +67,8 @@ check_untyped_defs = "True"
 warn_no_return = "True"
 warn_unreachable = "True"
 exclude = ["docs"]
+enable_error_code = ["ignore-without-code"]
+warn_unused_ignores = "True"
 
 [[tool.mypy.overrides]]
 module = ["ismrmrd.*", "h5py", "scipy.*"]

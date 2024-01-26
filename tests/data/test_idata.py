@@ -13,6 +13,7 @@
 #   limitations under the License.
 
 import numpy as np
+import pytest
 import torch
 
 from mrpro.data import IData
@@ -44,3 +45,26 @@ def test_IData_from_kheader_and_tensor(random_kheader, random_test_data):
     """IData from KHeader and data tensor."""
     idat = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
     assert idat.header.te == random_kheader.te
+
+
+def test_IData_to_complex128(random_kheader, random_test_data):
+    """Change IData dtype complex128."""
+    idat = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
+    idat_complex128 = idat.to(dtype=torch.complex128)
+    assert idat_complex128.data.dtype == torch.complex128
+
+
+@pytest.mark.cuda
+def test_IData_cuda(random_kheader, random_test_data):
+    """Move IData object to CUDA memory."""
+    idat = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
+    idat_cuda = idat.cuda()
+    assert idat_cuda.data.is_cuda
+
+
+@pytest.mark.cuda
+def test_IData_cpu(random_kheader, random_test_data):
+    """Move IData object to CUDA memory and back to CPU memory."""
+    idat = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
+    idat_cpu = idat.cuda().cpu()
+    assert idat_cpu.data.is_cpu
