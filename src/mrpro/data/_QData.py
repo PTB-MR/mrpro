@@ -22,16 +22,16 @@ import torch
 from einops import rearrange
 from pydicom import dcmread
 
+from mrpro.data import Data
 from mrpro.data import IHeader
 from mrpro.data import KHeader
 from mrpro.data import QHeader
 
 
 @dataclasses.dataclass(init=False, slots=True, frozen=True)
-class QData:
+class QData(Data):
     """MR quantitative data (QData) class."""
 
-    data: torch.Tensor
     header: QHeader
 
     def __init__(self, data: torch.Tensor, header: KHeader | IHeader | QHeader) -> None:

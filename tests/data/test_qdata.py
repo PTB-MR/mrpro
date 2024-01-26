@@ -12,6 +12,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import pytest
 import torch
 
 from mrpro.data import IHeader
@@ -40,3 +41,26 @@ def test_QData_from_dcm_file(dcm_2d):
     # QData uses complex values but dicom only supports real values
     im = torch.real(qdat.data[0, 0, 0, ...])
     torch.testing.assert_close(im, dcm_2d.imref)
+
+
+def test_QData_to_complex128(random_kheader, random_test_data):
+    """Change IData dtype complex128."""
+    qdat = QData(data=random_test_data, header=random_kheader)
+    qdat_complex128 = qdat.to(dtype=torch.complex128)
+    assert qdat_complex128.data.dtype == torch.complex128
+
+
+@pytest.mark.cuda
+def test_QData_cuda(random_kheader, random_test_data):
+    """Move IData object to CUDA memory."""
+    qdat = QData(data=random_test_data, header=random_kheader)
+    qdat_cuda = qdat.cuda()
+    assert qdat_cuda.data.is_cuda
+
+
+@pytest.mark.cuda
+def test_QData_cpu(random_kheader, random_test_data):
+    """Move IData object to CUDA memory and back to CPU memory."""
+    qdat = QData(data=random_test_data, header=random_kheader)
+    qdat_cpu = qdat.cuda().cpu()
+    assert qdat_cpu.data.is_cpu
