@@ -1,4 +1,4 @@
-"""Class for Pad Operator."""
+"""Class for Zero Pad Operator."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -15,11 +15,11 @@
 import torch
 
 from mrpro.operators import LinearOperator
-from mrpro.utils import change_data_shape
+from mrpro.utils import zero_pad_or_crop
 
 
-class PadOp(LinearOperator):
-    """Pad operator class."""
+class ZeroPadOp(LinearOperator):
+    """Zero Pad operator class."""
 
     def __init__(
         self,
@@ -27,7 +27,7 @@ class PadOp(LinearOperator):
         orig_shape: tuple[int, ...],
         padded_shape: tuple[int, ...],
     ) -> None:
-        """Pad Operator class.
+        """Zero Pad Operator class.
 
         The operator carries out zero-padding if the padded_shape is larger than orig_shape and cropping if the
         padded_shape is smaller.
@@ -49,31 +49,6 @@ class PadOp(LinearOperator):
         self.orig_shape: tuple[int, ...] = orig_shape
         self.padded_shape: tuple[int, ...] = padded_shape
 
-    @staticmethod
-    def _pad_data(x: torch.Tensor, dim: tuple[int, ...], padded_shape: tuple[int, ...]) -> torch.Tensor:
-        """Pad or crop data.
-
-        Parameters
-        ----------
-        x
-            original data
-        dim
-            dim along which padding should be applied
-        padded_shape
-            shape of padded data
-
-        Returns
-        -------
-            data with shape padded_shape
-        """
-        # Adapt image size
-        if len(dim) > 0:
-            s = list(x.shape)
-            for idx, idim in enumerate(dim):
-                s[idim] = padded_shape[idx]
-            x = change_data_shape(x, tuple(s))
-        return x
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Pad or crop data.
 
@@ -86,7 +61,7 @@ class PadOp(LinearOperator):
         -------
             data with shape padded_shape
         """
-        return self._pad_data(x, self.dim, self.padded_shape)
+        return zero_pad_or_crop(x, self.padded_shape, self.dim)
 
     def adjoint(self, x: torch.Tensor) -> torch.Tensor:
         """Crop or pad data.
@@ -100,4 +75,4 @@ class PadOp(LinearOperator):
         -------
             data with shape orig_shape
         """
-        return self._pad_data(x, self.dim, self.orig_shape)
+        return zero_pad_or_crop(x, self.orig_shape, self.dim)

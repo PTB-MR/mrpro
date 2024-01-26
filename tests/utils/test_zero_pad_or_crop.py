@@ -1,4 +1,4 @@
-"""Tests for image space - k-space transformations."""
+"""Tests for zero padding and cropping of data tensors."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -12,19 +12,19 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import numpy as np
-import pytest
 import torch
 
-from mrpro.utils._change_data_shape import change_data_shape
+from mrpro.utils._zero_pad_or_crop import zero_pad_or_crop
+from tests import RandomGenerator
 
 
-def test_change_data_shape_content():
-    """Test changing data size by cropping and padding."""
+def test_zero_pad_or_crop_content():
+    """Test changing data by cropping and padding."""
+    generator = RandomGenerator(seed=0)
     dshape_orig = (100, 200, 50)
     dshape_new = (80, 100, 240)
-    dorig = torch.randn(*dshape_orig, dtype=torch.complex64)
-    dnew = change_data_shape(dorig, dshape_new)
+    dorig = generator.complex64_tensor(dshape_orig)
+    dnew = zero_pad_or_crop(dorig, dshape_new, dim=(-3, -2, -1))
 
     # Compare overlapping region
     torch.testing.assert_close(dorig[10:90, 50:150, :], dnew[:, :, 95:145])

@@ -15,7 +15,7 @@
 import torch
 
 from mrpro.operators import LinearOperator
-from mrpro.operators import PadOp
+from mrpro.operators import ZeroPadOp
 
 
 class FastFourierOp(LinearOperator):
@@ -46,12 +46,12 @@ class FastFourierOp(LinearOperator):
         """
         super().__init__()
         self._dim: tuple[int, ...] = dim
-        self._pad_op: PadOp
+        self._pad_op: ZeroPadOp
         if encoding_shape is not None and recon_shape is not None:
-            self._pad_op = PadOp(dim=dim, orig_shape=recon_shape, padded_shape=encoding_shape)
+            self._pad_op = ZeroPadOp(dim=dim, orig_shape=recon_shape, padded_shape=encoding_shape)
         else:
             # No padding
-            self._pad_op = PadOp(dim=(), orig_shape=(), padded_shape=())
+            self._pad_op = ZeroPadOp(dim=(), orig_shape=(), padded_shape=())
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """FFT from image space to k-space.

@@ -1,4 +1,4 @@
-"""Tests for Pad Operator class."""
+"""Tests for Zero Pad Operator class."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -16,16 +16,16 @@ import numpy as np
 import pytest
 import torch
 
-from mrpro.operators import PadOp
+from mrpro.operators import ZeroPadOp
 
 
-def test_pad_op_content():
+def test_zero_pad_op_content():
     """Test correct padding."""
     dshape_orig = (2, 100, 3, 200, 50, 2)
     dshape_new = (2, 80, 3, 100, 240, 2)
     dorig = torch.randn(*dshape_orig, dtype=torch.complex64)
     pad_dim = (-5, -3, -2)
-    POp = PadOp(
+    POp = ZeroPadOp(
         dim=pad_dim,
         orig_shape=tuple([dshape_orig[d] for d in pad_dim]),
         padded_shape=tuple([dshape_new[d] for d in pad_dim]),
@@ -45,11 +45,11 @@ def test_pad_op_content():
         ((100, 200, 50), (13, 221, 64)),
     ],
 )
-def test_pad_op_ajoint(u_shape, v_shape):
+def test_zero_pad_op_ajoint(u_shape, v_shape):
     """Test adjointness of pad operator."""
     u = torch.randn(u_shape, dtype=torch.complex64)
     v = torch.randn(v_shape, dtype=torch.complex64)
-    POp = PadOp(dim=(-3, -2, -1), orig_shape=u_shape, padded_shape=v_shape)
+    POp = ZeroPadOp(dim=(-3, -2, -1), orig_shape=u_shape, padded_shape=v_shape)
     Au = POp.forward(u)
     AHv = POp.adjoint(v)
 

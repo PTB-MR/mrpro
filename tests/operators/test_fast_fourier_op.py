@@ -21,7 +21,7 @@ from mrpro.operators import FastFourierOp
 
 @pytest.mark.parametrize('npoints, a', [(100, 20), (300, 20)])
 def test_fast_fourier_op_forward(npoints, a):
-    """Test  Fast Fourier Op transformation using a Gaussian."""
+    """Test Fast Fourier Op transformation using a Gaussian."""
     # Utilize that a Fourier transform of a Gaussian function is given by
     # F(exp(-x^2/a)) = sqrt(pi*a)exp(-a*pi^2k^2)
 
