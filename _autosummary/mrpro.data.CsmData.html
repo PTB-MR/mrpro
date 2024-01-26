@@ -42,7 +42,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/mrpro.data.CsmData';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="mrpro.data.DcfData" href="mrpro.data.DcfData.html" />
+    <link rel="next" title="mrpro.data.Data" href="mrpro.data.Data.html" />
     <link rel="prev" title="mrpro.data.AcqInfo" href="mrpro.data.AcqInfo.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -350,6 +350,7 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.AcqIdx.html">mrpro.data.AcqIdx</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.AcqInfo.html">mrpro.data.AcqInfo</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">mrpro.data.CsmData</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mrpro.data.Data.html">mrpro.data.Data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.DcfData.html">mrpro.data.DcfData</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.EncodingLimits.html">mrpro.data.EncodingLimits</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.IData.html">mrpro.data.IData</a></li>
@@ -486,11 +487,20 @@ document.write(`
 <tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.CsmData.__init__" title="mrpro.data.CsmData.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(data, header)</p></td>
 <td><p>Create QData object from a tensor and an arbitrary MRpro header.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.CsmData.cpu" title="mrpro.data.CsmData.cpu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cpu</span></code></a>([memory_format])</p></td>
+<td><p>Create copy of object in CPU memory.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.CsmData.cuda" title="mrpro.data.CsmData.cuda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cuda</span></code></a>([device, non_blocking, memory_format])</p></td>
+<td><p>Create copy of object with data in CUDA memory.</p></td>
+</tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.CsmData.from_idata_walsh" title="mrpro.data.CsmData.from_idata_walsh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_idata_walsh</span></code></a>(idata[, smoothing_width, ...])</p></td>
 <td><p>Create csm object from image data using iterative Walsh method.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.CsmData.from_single_dicom" title="mrpro.data.CsmData.from_single_dicom"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_single_dicom</span></code></a>(filename)</p></td>
 <td><p>Read single DICOM file and return QData object.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.CsmData.to" title="mrpro.data.CsmData.to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Perform dtype and/or device conversion of data.</p></td>
 </tr>
 </tbody>
 </table>
@@ -505,6 +515,33 @@ document.write(`
 </tr>
 </tbody>
 </table>
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.CsmData.cpu">
+<span class="sig-name descname"><span class="pre">cpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="mrpro.data.Data.html#mrpro.data.Data" title="mrpro.data._Data.Data"><span class="pre">Data</span></a></span></span><a class="headerlink" href="#mrpro.data.CsmData.cpu" title="Link to this definition">#</a></dt>
+<dd><p>Create copy of object in CPU memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.CsmData.cuda">
+<span class="sig-name descname"><span class="pre">cuda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">non_blocking</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="mrpro.data.Data.html#mrpro.data.Data" title="mrpro.data._Data.Data"><span class="pre">Data</span></a></span></span><a class="headerlink" href="#mrpro.data.CsmData.cuda" title="Link to this definition">#</a></dt>
+<dd><p>Create copy of object with data in CUDA memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>device</strong> – The destination GPU device. Defaults to the current CUDA device.</p></li>
+<li><p><strong>non_blocking</strong> – If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
+Otherwise, the argument has no effect.</p></li>
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.CsmData.from_idata_walsh">
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_idata_walsh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.IData.html#mrpro.data.IData" title="mrpro.data._IData.IData"><span class="pre">IData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">smoothing_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.filters.SpatialDimension.html#mrpro.utils.filters.SpatialDimension" title="mrpro.data._SpatialDimension.SpatialDimension"><span class="pre">SpatialDimension</span></a><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">SpatialDimension(z=5,</span> <span class="pre">y=5,</span> <span class="pre">x=5)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">niter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size_otherdim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#mrpro.data.CsmData" title="mrpro.data._CsmData.CsmData"><span class="pre">CsmData</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_CsmData.html#CsmData.from_idata_walsh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.CsmData.from_idata_walsh" title="Link to this definition">#</a></dt>
@@ -533,6 +570,15 @@ Default is None, which means that all elements are processed at once.</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.CsmData.to">
+<span class="sig-name descname"><span class="pre">to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="mrpro.data.Data.html#mrpro.data.Data" title="mrpro.data._Data.Data"><span class="pre">Data</span></a></span></span><a class="headerlink" href="#mrpro.data.CsmData.to" title="Link to this definition">#</a></dt>
+<dd><p>Perform dtype and/or device conversion of data.</p>
+<p>A torch.dtype and torch.device are inferred from the arguments
+of self.to(<a href="#id1"><span class="problematic" id="id2">*</span></a>args, <a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs). Please have a look at the
+documentation of torch.Tensor.to() for more details.</p>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -557,11 +603,11 @@ Default is None, which means that all elements are processed at once.</p></li>
       </div>
     </a>
     <a class="right-next"
-       href="mrpro.data.DcfData.html"
+       href="mrpro.data.Data.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">mrpro.data.DcfData</p>
+        <p class="prev-next-title">mrpro.data.Data</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -585,8 +631,11 @@ Default is None, which means that all elements are processed at once.</p></li>
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.CsmData"><code class="docutils literal notranslate"><span class="pre">CsmData</span></code></a><ul class="visible nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.CsmData.__init__"><code class="docutils literal notranslate"><span class="pre">CsmData.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.CsmData.cpu"><code class="docutils literal notranslate"><span class="pre">CsmData.cpu()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.CsmData.cuda"><code class="docutils literal notranslate"><span class="pre">CsmData.cuda()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.CsmData.from_idata_walsh"><code class="docutils literal notranslate"><span class="pre">CsmData.from_idata_walsh()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.CsmData.from_single_dicom"><code class="docutils literal notranslate"><span class="pre">CsmData.from_single_dicom()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.CsmData.to"><code class="docutils literal notranslate"><span class="pre">CsmData.to()</span></code></a></li>
 </ul>
 </li>
 </ul>

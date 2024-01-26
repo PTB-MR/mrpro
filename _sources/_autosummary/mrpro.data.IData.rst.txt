@@ -17,9 +17,12 @@ mrpro.data.IData
    .. autosummary::
    
       ~IData.__init__
+      ~IData.cpu
+      ~IData.cuda
       ~IData.from_dicom_folder
       ~IData.from_single_dicom
       ~IData.from_tensor_and_kheader
+      ~IData.to
    
    
 
@@ -29,7 +32,7 @@ mrpro.data.IData
 
    .. autosummary::
    
-      ~IData.header
       ~IData.data
+      ~IData.header
    
    

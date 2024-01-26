@@ -512,6 +512,70 @@ document.write(`
 
         <span class="n">kz</span><span class="p">,</span> <span class="n">ky</span><span class="p">,</span> <span class="n">kx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">stack_dim</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">kz</span><span class="p">,</span> <span class="n">ky</span><span class="p">,</span> <span class="n">kx</span><span class="p">,</span> <span class="n">repeat_detection_tolerance</span><span class="o">=</span><span class="n">repeat_detection_tolerance</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KTrajectory.to">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.KTrajectory.html#mrpro.data.KTrajectory.to">[docs]</a>
+    <span class="k">def</span> <span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KTrajectory</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform dtype and/or device conversion of trajectory.</span>
+
+<span class="sd">        A torch.dtype and torch.device are inferred from the arguments</span>
+<span class="sd">        of self.to(*args, **kwargs). Please have a look at the</span>
+<span class="sd">        documentation of torch.Tensor.to() for more details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">KTrajectory</span><span class="p">(</span>
+            <span class="n">kz</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kz</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">),</span> <span class="n">ky</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ky</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">),</span> <span class="n">kx</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kx</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KTrajectory.cuda">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.KTrajectory.html#mrpro.data.KTrajectory.cuda">[docs]</a>
+    <span class="k">def</span> <span class="nf">cuda</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">non_blocking</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">memory_format</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">memory_format</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">preserve_format</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KTrajectory</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create copy of trajectory in CUDA memory.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        device</span>
+<span class="sd">            The destination GPU device. Defaults to the current CUDA device.</span>
+<span class="sd">        non_blocking</span>
+<span class="sd">            If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.</span>
+<span class="sd">            Otherwise, the argument has no effect.</span>
+<span class="sd">        memory_format</span>
+<span class="sd">            The desired memory format of returned Tensor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">KTrajectory</span><span class="p">(</span>
+            <span class="n">kz</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kz</span><span class="o">.</span><span class="n">cuda</span><span class="p">(</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="n">non_blocking</span><span class="p">,</span> <span class="n">memory_format</span><span class="o">=</span><span class="n">memory_format</span>
+            <span class="p">),</span>  <span class="c1"># type: ignore [call-arg]</span>
+            <span class="n">ky</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ky</span><span class="o">.</span><span class="n">cuda</span><span class="p">(</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="n">non_blocking</span><span class="p">,</span> <span class="n">memory_format</span><span class="o">=</span><span class="n">memory_format</span>
+            <span class="p">),</span>  <span class="c1"># type: ignore [call-arg]</span>
+            <span class="n">kx</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kx</span><span class="o">.</span><span class="n">cuda</span><span class="p">(</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="n">non_blocking</span><span class="p">,</span> <span class="n">memory_format</span><span class="o">=</span><span class="n">memory_format</span>
+            <span class="p">),</span>  <span class="c1"># type: ignore [call-arg]</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KTrajectory.cpu">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.KTrajectory.html#mrpro.data.KTrajectory.cpu">[docs]</a>
+    <span class="k">def</span> <span class="nf">cpu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_format</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">memory_format</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">preserve_format</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KTrajectory</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create copy of trajectory in CPU memory.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        memory_format</span>
+<span class="sd">            The desired memory format of returned Tensor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">KTrajectory</span><span class="p">(</span>
+            <span class="n">kz</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kz</span><span class="o">.</span><span class="n">cpu</span><span class="p">(</span><span class="n">memory_format</span><span class="o">=</span><span class="n">memory_format</span><span class="p">),</span>  <span class="c1"># type: ignore [call-arg]</span>
+            <span class="n">ky</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ky</span><span class="o">.</span><span class="n">cpu</span><span class="p">(</span><span class="n">memory_format</span><span class="o">=</span><span class="n">memory_format</span><span class="p">),</span>  <span class="c1"># type: ignore [call-arg]</span>
+            <span class="n">kx</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kx</span><span class="o">.</span><span class="n">cpu</span><span class="p">(</span><span class="n">memory_format</span><span class="o">=</span><span class="n">memory_format</span><span class="p">),</span>  <span class="c1"># type: ignore [call-arg]</span>
+        <span class="p">)</span></div>
 </div>
 
 </pre></div>

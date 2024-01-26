@@ -17,7 +17,10 @@ mrpro.data.KData
    .. autosummary::
    
       ~KData.__init__
+      ~KData.cpu
+      ~KData.cuda
       ~KData.from_file
+      ~KData.to
    
    
 

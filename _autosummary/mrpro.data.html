@@ -350,6 +350,7 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.AcqIdx.html">mrpro.data.AcqIdx</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.AcqInfo.html">mrpro.data.AcqInfo</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.CsmData.html">mrpro.data.CsmData</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mrpro.data.Data.html">mrpro.data.Data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.DcfData.html">mrpro.data.DcfData</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.EncodingLimits.html">mrpro.data.EncodingLimits</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.IData.html">mrpro.data.IData</a></li>
@@ -470,46 +471,49 @@ document.write(`
 <tr class="row-odd"><td><p><a class="reference internal" href="mrpro.data.CsmData.html#mrpro.data.CsmData" title="mrpro.data.CsmData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CsmData</span></code></a>(data, header)</p></td>
 <td><p>Coil sensitivity map class.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="mrpro.data.DcfData.html#mrpro.data.DcfData" title="mrpro.data.DcfData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DcfData</span></code></a>(data)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.data.Data.html#mrpro.data.Data" title="mrpro.data.Data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Data</span></code></a>(data, header)</p></td>
+<td><p>A general data class with field data and header.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.data.DcfData.html#mrpro.data.DcfData" title="mrpro.data.DcfData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DcfData</span></code></a>(data)</p></td>
 <td><p>Density compensation data (DcfData) class.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.data.EncodingLimits.html#mrpro.data.EncodingLimits" title="mrpro.data.EncodingLimits"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EncodingLimits</span></code></a>(k0, k1, k2, average, slice, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.data.EncodingLimits.html#mrpro.data.EncodingLimits" title="mrpro.data.EncodingLimits"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EncodingLimits</span></code></a>(k0, k1, k2, average, slice, ...)</p></td>
 <td><p>Encoding limits dataclass with limits for each attribute.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="mrpro.data.IData.html#mrpro.data.IData" title="mrpro.data.IData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IData</span></code></a>(header, data)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.data.IData.html#mrpro.data.IData" title="mrpro.data.IData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IData</span></code></a>(data, header)</p></td>
 <td><p>MR image data (IData) class.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.data.IHeader.html#mrpro.data.IHeader" title="mrpro.data.IHeader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IHeader</span></code></a>(fov, te, ti, fa, tr, misc)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.data.IHeader.html#mrpro.data.IHeader" title="mrpro.data.IHeader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IHeader</span></code></a>(fov, te, ti, fa, tr, misc)</p></td>
 <td><p>MR image data header.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="mrpro.data.KData.html#mrpro.data.KData" title="mrpro.data.KData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KData</span></code></a>(header, data, traj)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.data.KData.html#mrpro.data.KData" title="mrpro.data.KData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KData</span></code></a>(header, data, traj)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.data.KHeader.html#mrpro.data.KHeader" title="mrpro.data.KHeader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KHeader</span></code></a>(trajectory, b0, encoding_limits, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.data.KHeader.html#mrpro.data.KHeader" title="mrpro.data.KHeader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KHeader</span></code></a>(trajectory, b0, encoding_limits, ...)</p></td>
 <td><p>MR raw data header.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="mrpro.data.KNoise.html#mrpro.data.KNoise" title="mrpro.data.KNoise"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KNoise</span></code></a>(data)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.data.KNoise.html#mrpro.data.KNoise" title="mrpro.data.KNoise"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KNoise</span></code></a>(data)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.data.KTrajectory.html#mrpro.data.KTrajectory" title="mrpro.data.KTrajectory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KTrajectory</span></code></a>(kz, ky, kx[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.data.KTrajectory.html#mrpro.data.KTrajectory" title="mrpro.data.KTrajectory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KTrajectory</span></code></a>(kz, ky, kx[, ...])</p></td>
 <td><p>K-space trajectory.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="mrpro.data.KTrajectoryRawShape.html#mrpro.data.KTrajectoryRawShape" title="mrpro.data.KTrajectoryRawShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KTrajectoryRawShape</span></code></a>(kz, ky, kx)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.data.KTrajectoryRawShape.html#mrpro.data.KTrajectoryRawShape" title="mrpro.data.KTrajectoryRawShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KTrajectoryRawShape</span></code></a>(kz, ky, kx)</p></td>
 <td><p>K-space trajectory shaped ((other*k2*k1),k0).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.Limits"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Limits</span></code></a>([min, max, center])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.Limits"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Limits</span></code></a>([min, max, center])</p></td>
 <td><p>Limits dataclass with min, max, and center attributes.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="mrpro.data.QData.html#mrpro.data.QData" title="mrpro.data.QData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QData</span></code></a>(data, header)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.data.QData.html#mrpro.data.QData" title="mrpro.data.QData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QData</span></code></a>(data, header)</p></td>
 <td><p>MR quantitative data (QData) class.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.data.QHeader.html#mrpro.data.QHeader" title="mrpro.data.QHeader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QHeader</span></code></a>(fov)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.data.QHeader.html#mrpro.data.QHeader" title="mrpro.data.QHeader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QHeader</span></code></a>(fov)</p></td>
 <td><p>MR quantitative data header.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="mrpro.data.SpatialDimension.html#mrpro.data.SpatialDimension" title="mrpro.data.SpatialDimension"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpatialDimension</span></code></a>(z, y, x)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.data.SpatialDimension.html#mrpro.data.SpatialDimension" title="mrpro.data.SpatialDimension"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpatialDimension</span></code></a>(z, y, x)</p></td>
 <td><p>Spatial dataclass of float/int/tensors (z, y, x).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.data.TrajectoryDescription.html#mrpro.data.TrajectoryDescription" title="mrpro.data.TrajectoryDescription"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrajectoryDescription</span></code></a>(identifier, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.data.TrajectoryDescription.html#mrpro.data.TrajectoryDescription" title="mrpro.data.TrajectoryDescription"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrajectoryDescription</span></code></a>(identifier, ...)</p></td>
 <td><p>TrajectoryDescription dataclass.</p></td>
 </tr>
 </tbody>

@@ -17,8 +17,11 @@ mrpro.data.CsmData
    .. autosummary::
    
       ~CsmData.__init__
+      ~CsmData.cpu
+      ~CsmData.cuda
       ~CsmData.from_idata_walsh
       ~CsmData.from_single_dicom
+      ~CsmData.to
    
    
 

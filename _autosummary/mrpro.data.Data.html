@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>mrpro.data.KData &#8212; MRpro</title>
+    <title>mrpro.data.Data &#8212; MRpro</title>
   
   
   
@@ -39,11 +39,11 @@
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/mrpro.data.KData';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/mrpro.data.Data';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="mrpro.data.KHeader" href="mrpro.data.KHeader.html" />
-    <link rel="prev" title="mrpro.data.IHeader" href="mrpro.data.IHeader.html" />
+    <link rel="next" title="mrpro.data.DcfData" href="mrpro.data.DcfData.html" />
+    <link rel="prev" title="mrpro.data.CsmData" href="mrpro.data.CsmData.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -350,12 +350,12 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.AcqIdx.html">mrpro.data.AcqIdx</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.AcqInfo.html">mrpro.data.AcqInfo</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.CsmData.html">mrpro.data.CsmData</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.Data.html">mrpro.data.Data</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">mrpro.data.Data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.DcfData.html">mrpro.data.DcfData</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.EncodingLimits.html">mrpro.data.EncodingLimits</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.IData.html">mrpro.data.IData</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.IHeader.html">mrpro.data.IHeader</a></li>
-<li class="toctree-l2 current active"><a class="current reference internal" href="#">mrpro.data.KData</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mrpro.data.KData.html">mrpro.data.KData</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.KHeader.html">mrpro.data.KHeader</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.KNoise.html">mrpro.data.KNoise</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.KTrajectory.html">mrpro.data.KTrajectory</a></li>
@@ -443,7 +443,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="mrpro.data.html" class="nav-link">mrpro.data</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">mrpro.data.KData</li>
+    <li class="breadcrumb-item active" aria-current="page">mrpro.data.Data</li>
   </ul>
 </nav>
 </div>
@@ -460,111 +460,80 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="mrpro-data-kdata">
-<h1>mrpro.data.KData<a class="headerlink" href="#mrpro-data-kdata" title="Link to this heading">#</a></h1>
+  <section id="mrpro-data-data">
+<h1>mrpro.data.Data<a class="headerlink" href="#mrpro-data-data" title="Link to this heading">#</a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="mrpro.data.KData">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.</span></span><span class="sig-name descname"><span class="pre">KData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">header</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'KHeader'</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'torch.Tensor'</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">traj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'KTrajectory'</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/_KData.html#KData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KData" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dt class="sig sig-object py" id="mrpro.data.Data">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.</span></span><span class="sig-name descname"><span class="pre">Data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">header</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/_Data.html#Data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.Data" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<p>A general data class with field data and header.</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.data.KData.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">header</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.KHeader.html#mrpro.data.KHeader" title="mrpro.data._KHeader.KHeader"><span class="pre">KHeader</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">traj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.KTrajectory.html#mrpro.data.KTrajectory" title="mrpro.data._KTrajectory.KTrajectory"><span class="pre">KTrajectory</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.data.KData.__init__" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="mrpro.data.Data.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">header</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.data.Data.__init__" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <p class="rubric">Methods</p>
 <table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.__init__" title="mrpro.data.KData.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(header, data, traj)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.Data.__init__" title="mrpro.data.Data.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(data, header)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KData.cpu" title="mrpro.data.KData.cpu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cpu</span></code></a>([memory_format])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.Data.cpu" title="mrpro.data.Data.cpu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cpu</span></code></a>([memory_format])</p></td>
 <td><p>Create copy of object in CPU memory.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.cuda" title="mrpro.data.KData.cuda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cuda</span></code></a>([device, non_blocking, memory_format])</p></td>
-<td><p>Create copy of object with trajectory and data in CUDA memory.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.Data.cuda" title="mrpro.data.Data.cuda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cuda</span></code></a>([device, non_blocking, memory_format])</p></td>
+<td><p>Create copy of object with data in CUDA memory.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KData.from_file" title="mrpro.data.KData.from_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_file</span></code></a>(filename, ktrajectory[, ...])</p></td>
-<td><p>Load k-space data from an ISMRMRD file.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.to" title="mrpro.data.KData.to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code></a>([device, dtype, non_blocking, copy, ...])</p></td>
-<td><p>Perform dtype and/or device conversion of trajectory and data.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.Data.to" title="mrpro.data.Data.to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Perform dtype and/or device conversion of data.</p></td>
 </tr>
 </tbody>
 </table>
 <p class="rubric">Attributes</p>
 <table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">header</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">traj</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">header</span></code></p></td>
 <td><p></p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.data.KData.cpu">
-<span class="sig-name descname"><span class="pre">cpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#mrpro.data.KData" title="mrpro.data._KData.KData"><span class="pre">KData</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_KData.html#KData.cpu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KData.cpu" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="mrpro.data.Data.cpu">
+<span class="sig-name descname"><span class="pre">cpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#mrpro.data.Data" title="mrpro.data._Data.Data"><span class="pre">Data</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_Data.html#Data.cpu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.Data.cpu" title="Link to this definition">#</a></dt>
 <dd><p>Create copy of object in CPU memory.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>memory_format</strong> – The desired memory format of returned Tensor.</p>
+<dd class="field-odd"><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.data.KData.cuda">
-<span class="sig-name descname"><span class="pre">cuda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">non_blocking</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#mrpro.data.KData" title="mrpro.data._KData.KData"><span class="pre">KData</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_KData.html#KData.cuda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KData.cuda" title="Link to this definition">#</a></dt>
-<dd><p>Create copy of object with trajectory and data in CUDA memory.</p>
+<dt class="sig sig-object py" id="mrpro.data.Data.cuda">
+<span class="sig-name descname"><span class="pre">cuda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">non_blocking</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#mrpro.data.Data" title="mrpro.data._Data.Data"><span class="pre">Data</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_Data.html#Data.cuda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.Data.cuda" title="Link to this definition">#</a></dt>
+<dd><p>Create copy of object with data in CUDA memory.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>device</strong> – The destination GPU device. Defaults to the current CUDA device.</p></li>
 <li><p><strong>non_blocking</strong> – If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
 Otherwise, the argument has no effect.</p></li>
-<li><p><strong>memory_format</strong> – The desired memory format of returned Tensor.</p></li>
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
 </ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.data.KData.from_file">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ktrajectory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.traj_calculators.KTrajectoryCalculator.html#mrpro.data.traj_calculators.KTrajectoryCalculator" title="mrpro.data.traj_calculators._KTrajectoryCalculator.KTrajectoryCalculator"><span class="pre">KTrajectoryCalculator</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.KTrajectory.html#mrpro.data.KTrajectory" title="mrpro.data._KTrajectory.KTrajectory"><span class="pre">KTrajectory</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.traj_calculators.KTrajectoryIsmrmrd.html#mrpro.data.traj_calculators.KTrajectoryIsmrmrd" title="mrpro.data.traj_calculators._KTrajectoryIsmrmrd.KTrajectoryIsmrmrd"><span class="pre">KTrajectoryIsmrmrd</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">header_overwrites</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#mrpro.data.KData" title="mrpro.data._KData.KData"><span class="pre">KData</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_KData.html#KData.from_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KData.from_file" title="Link to this definition">#</a></dt>
-<dd><p>Load k-space data from an ISMRMRD file.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>filename</strong> – path to the ISMRMRD file</p></li>
-<li><p><strong>ktrajectory</strong> – KTrajectory defining the trajectory to use # TODO: Maybe provide a default based on the header?</p></li>
-<li><p><strong>header_overwrites</strong> – dictionary of key-value pairs to overwrite the header</p></li>
-<li><p><strong>dataset_idx</strong> – index of the dataset to load (converter creates dataset, dataset_1, …), default is -1 (last)</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="mrpro.data.KData.to">
-<span class="sig-name descname"><span class="pre">to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dtype</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">non_blocking</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#mrpro.data.KData" title="mrpro.data._KData.KData"><span class="pre">KData</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_KData.html#KData.to"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KData.to" title="Link to this definition">#</a></dt>
-<dd><p>Perform dtype and/or device conversion of trajectory and data.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>device</strong> – The destination device. Defaults to the current device.</p></li>
-<li><p><strong>dtype</strong> – Dtype of the k-space data, can only be torch.complex64 or torch.complex128.
-The dtype of the trajectory (torch.float32 or torch.float64) is then inferred from this.</p></li>
-<li><p><strong>non_blocking</strong> – If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
-Otherwise, the argument has no effect.</p></li>
-<li><p><strong>copy</strong> – If True a new Tensor is created even when the Tensor already matches the desired conversion.</p></li>
-<li><p><strong>memory_format</strong> – The desired memory format of returned Tensor.</p></li>
-</ul>
-</dd>
-</dl>
+<dt class="sig sig-object py" id="mrpro.data.Data.to">
+<span class="sig-name descname"><span class="pre">to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#mrpro.data.Data" title="mrpro.data._Data.Data"><span class="pre">Data</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_Data.html#Data.to"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.Data.to" title="Link to this definition">#</a></dt>
+<dd><p>Perform dtype and/or device conversion of data.</p>
+<p>A torch.dtype and torch.device are inferred from the arguments
+of self.to(<a href="#id1"><span class="problematic" id="id2">*</span></a>args, <a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs). Please have a look at the
+documentation of torch.Tensor.to() for more details.</p>
 </dd></dl>
 
 </dd></dl>
@@ -582,20 +551,20 @@ Otherwise, the argument has no effect.</p></li>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="mrpro.data.IHeader.html"
+       href="mrpro.data.CsmData.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">mrpro.data.IHeader</p>
+        <p class="prev-next-title">mrpro.data.CsmData</p>
       </div>
     </a>
     <a class="right-next"
-       href="mrpro.data.KHeader.html"
+       href="mrpro.data.DcfData.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">mrpro.data.KHeader</p>
+        <p class="prev-next-title">mrpro.data.DcfData</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -617,12 +586,11 @@ Otherwise, the argument has no effect.</p></li>
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KData"><code class="docutils literal notranslate"><span class="pre">KData</span></code></a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KData.__init__"><code class="docutils literal notranslate"><span class="pre">KData.__init__()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KData.cpu"><code class="docutils literal notranslate"><span class="pre">KData.cpu()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KData.cuda"><code class="docutils literal notranslate"><span class="pre">KData.cuda()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KData.from_file"><code class="docutils literal notranslate"><span class="pre">KData.from_file()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KData.to"><code class="docutils literal notranslate"><span class="pre">KData.to()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.Data"><code class="docutils literal notranslate"><span class="pre">Data</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.Data.__init__"><code class="docutils literal notranslate"><span class="pre">Data.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.Data.cpu"><code class="docutils literal notranslate"><span class="pre">Data.cpu()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.Data.cuda"><code class="docutils literal notranslate"><span class="pre">Data.cuda()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.Data.to"><code class="docutils literal notranslate"><span class="pre">Data.to()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -631,7 +599,7 @@ Otherwise, the argument has no effect.</p></li>
   <div class="sidebar-secondary-item">
 
   <div class="tocsection sourcelink">
-    <a href="../_sources/_autosummary/mrpro.data.KData.rst.txt">
+    <a href="../_sources/_autosummary/mrpro.data.Data.rst.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>

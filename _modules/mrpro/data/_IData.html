@@ -417,6 +417,7 @@ document.write(`
 <span class="kn">from</span> <span class="nn">pydicom.dataset</span> <span class="kn">import</span> <span class="n">Dataset</span>
 <span class="kn">from</span> <span class="nn">pydicom.tag</span> <span class="kn">import</span> <span class="n">Tag</span>
 
+<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">Data</span>
 <span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">IHeader</span>
 <span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KHeader</span>
 
@@ -449,11 +450,10 @@ document.write(`
 <div class="viewcode-block" id="IData">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.IData.html#mrpro.data.IData">[docs]</a>
 <span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">IData</span><span class="p">:</span>
+<span class="k">class</span> <span class="nc">IData</span><span class="p">(</span><span class="n">Data</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;MR image data (IData) class.&quot;&quot;&quot;</span>
 
     <span class="n">header</span><span class="p">:</span> <span class="n">IHeader</span>
-    <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
 
 <div class="viewcode-block" id="IData.from_tensor_and_kheader">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.IData.html#mrpro.data.IData.from_tensor_and_kheader">[docs]</a>

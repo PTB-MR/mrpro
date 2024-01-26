@@ -1,9 +1,9 @@
-mrpro.data.QData
-================
+mrpro.data.Data
+===============
 
 .. currentmodule:: mrpro.data
 
-.. autoclass:: QData
+.. autoclass:: Data
    :members:
    :show-inheritance:
    :inherited-members:
@@ -16,11 +16,10 @@ mrpro.data.QData
 
    .. autosummary::
    
-      ~QData.__init__
-      ~QData.cpu
-      ~QData.cuda
-      ~QData.from_single_dicom
-      ~QData.to
+      ~Data.__init__
+      ~Data.cpu
+      ~Data.cuda
+      ~Data.to
    
    
 
@@ -30,7 +29,7 @@ mrpro.data.QData
 
    .. autosummary::
    
-      ~QData.data
-      ~QData.header
+      ~Data.data
+      ~Data.header
    
    

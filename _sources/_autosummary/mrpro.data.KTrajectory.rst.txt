@@ -18,7 +18,10 @@ mrpro.data.KTrajectory
    
       ~KTrajectory.__init__
       ~KTrajectory.as_tensor
+      ~KTrajectory.cpu
+      ~KTrajectory.cuda
       ~KTrajectory.from_tensor
+      ~KTrajectory.to
    
    
 

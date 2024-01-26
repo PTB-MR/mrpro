@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>mrpro.data._QData &#8212; MRpro</title>
+    <title>mrpro.data._Data &#8212; MRpro</title>
   
   
   
@@ -38,7 +38,7 @@
     <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/mrpro/data/_QData';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/mrpro/data/_Data';</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -373,7 +373,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">mrpro.data._QData</li>
+    <li class="breadcrumb-item active" aria-current="page">mrpro.data._Data</li>
   </ul>
 </nav>
 </div>
@@ -390,8 +390,8 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <h1>Source code for mrpro.data._QData</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;MR quantitative data (QData) class.&quot;&quot;&quot;</span>
+  <h1>Source code for mrpro.data._Data</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Base class for data objects.&quot;&quot;&quot;</span>
 
 <span class="c1"># Copyright 2023 Physikalisch-Technische Bundesanstalt</span>
 <span class="c1">#</span>
@@ -408,69 +408,72 @@ document.write(`
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span> <span class="nn">dataclasses</span>
-<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">rearrange</span>
-<span class="kn">from</span> <span class="nn">pydicom</span> <span class="kn">import</span> <span class="n">dcmread</span>
-
-<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">Data</span>
-<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">IHeader</span>
-<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KHeader</span>
-<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">QHeader</span>
 
 
-<div class="viewcode-block" id="QData">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.data.QData.html#mrpro.data.QData">[docs]</a>
-<span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">QData</span><span class="p">(</span><span class="n">Data</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;MR quantitative data (QData) class.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Data">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Data.html#mrpro.data.Data">[docs]</a>
+<span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Data</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A general data class with field data and header.&quot;&quot;&quot;</span>
 
-    <span class="n">header</span><span class="p">:</span> <span class="n">QHeader</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+    <span class="n">header</span><span class="p">:</span> <span class="n">Any</span>
 
-<div class="viewcode-block" id="QData.__init__">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.data.QData.html#mrpro.data.QData.__init__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">header</span><span class="p">:</span> <span class="n">KHeader</span> <span class="o">|</span> <span class="n">IHeader</span> <span class="o">|</span> <span class="n">QHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create QData object from a tensor and an arbitrary MRpro header.</span>
+<div class="viewcode-block" id="Data.to">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Data.html#mrpro.data.Data.to">[docs]</a>
+    <span class="k">def</span> <span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Data</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform dtype and/or device conversion of data.</span>
+
+<span class="sd">        A torch.dtype and torch.device are inferred from the arguments</span>
+<span class="sd">        of self.to(*args, **kwargs). Please have a look at the</span>
+<span class="sd">        documentation of torch.Tensor.to() for more details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Data</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Data.cuda">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Data.html#mrpro.data.Data.cuda">[docs]</a>
+    <span class="k">def</span> <span class="nf">cuda</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">non_blocking</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">memory_format</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">memory_format</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">preserve_format</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Data</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create copy of object with data in CUDA memory.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        data</span>
-<span class="sd">            quantitative image data tensor with dimensions (other, coils, z, y, x)</span>
-<span class="sd">        header</span>
-<span class="sd">            MRpro header containing required meta data for the QHeader</span>
+<span class="sd">        device</span>
+<span class="sd">            The destination GPU device. Defaults to the current CUDA device.</span>
+<span class="sd">        non_blocking</span>
+<span class="sd">            If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.</span>
+<span class="sd">            Otherwise, the argument has no effect.</span>
+<span class="sd">        memory_format</span>
+<span class="sd">            The desired memory format of returned tensor.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="n">KHeader</span><span class="p">):</span>
-            <span class="n">qheader</span> <span class="o">=</span> <span class="n">QHeader</span><span class="o">.</span><span class="n">from_kheader</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="n">IHeader</span><span class="p">):</span>
-            <span class="n">qheader</span> <span class="o">=</span> <span class="n">QHeader</span><span class="o">.</span><span class="n">from_iheader</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="n">QHeader</span><span class="p">):</span>
-            <span class="n">qheader</span> <span class="o">=</span> <span class="n">header</span>
-
-        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
-        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;header&#39;</span><span class="p">,</span> <span class="n">qheader</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">Data</span><span class="p">(</span>
+            <span class="n">header</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cuda</span><span class="p">(</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="n">non_blocking</span><span class="p">,</span> <span class="n">memory_format</span><span class="o">=</span><span class="n">memory_format</span>
+            <span class="p">),</span>  <span class="c1"># type: ignore [call-arg]</span>
+        <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="QData.from_single_dicom">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.data.QData.html#mrpro.data.QData.from_single_dicom">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_single_dicom</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QData</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read single DICOM file and return QData object.</span>
+<div class="viewcode-block" id="Data.cpu">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Data.html#mrpro.data.Data.cpu">[docs]</a>
+    <span class="k">def</span> <span class="nf">cpu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_format</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">memory_format</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">preserve_format</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Data</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create copy of object in CPU memory.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        filename</span>
-<span class="sd">            path to DICOM file</span>
+<span class="sd">        memory_format</span>
+<span class="sd">            The desired memory format of returned tensor.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">dcmread</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-        <span class="c1"># Image data is 2D np.array of Uint16, which cannot directly be converted to tensor</span>
-        <span class="n">qdata</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">pixel_array</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">))</span>
-        <span class="n">qdata</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">qdata</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s1">&#39;(other coils z) y x -&gt; other coils z y x&#39;</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">coils</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="n">header</span> <span class="o">=</span> <span class="n">QHeader</span><span class="o">.</span><span class="n">from_dicom</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">qdata</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">Data</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cpu</span><span class="p">(</span><span class="n">memory_format</span><span class="o">=</span><span class="n">memory_format</span><span class="p">))</span>  <span class="c1"># type: ignore [call-arg]</span></div>
 </div>
 
 </pre></div>

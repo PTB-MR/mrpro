@@ -22,6 +22,7 @@
       AcqIdx
       AcqInfo
       CsmData
+      Data
       DcfData
       EncodingLimits
       IData
