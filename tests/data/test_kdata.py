@@ -18,7 +18,7 @@ import torch
 from mrpro.data import KData
 from mrpro.data import KTrajectory
 from mrpro.data.traj_calculators._KTrajectoryCalculator import DummyTrajectory
-from mrpro.utils.fft import kspace_to_image
+from mrpro.operators import FastFourierOp
 from tests.data import IsmrmrdRawTestData
 from tests.helper import rel_image_diff
 from tests.phantoms.test_ellipse_phantom import ph_ellipse
@@ -66,7 +66,8 @@ def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
 def test_KData_kspace(ismrmrd_cart):
     """Read in data and verify k-space by comparing reconstructed image."""
     k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
-    irec = kspace_to_image(k.data, dim=(-1, -2))
+    FFOp = FastFourierOp(dim=(-1, -2))
+    irec = FFOp.adjoint(k.data)
 
     # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
