@@ -17,6 +17,7 @@ import pytest
 import torch
 
 from mrpro.operators import FastFourierOp
+from tests import RandomGenerator
 
 
 @pytest.mark.parametrize('npoints, a', [(100, 20), (300, 20)])
@@ -57,8 +58,9 @@ def test_fast_fourier_op_adjoint(encoding_shape, recon_shape):
     """Test adjointness of Fast Fourier Op."""
 
     # Create test data
-    x = torch.randn(recon_shape, dtype=torch.complex64)
-    y = torch.randn(encoding_shape, dtype=torch.complex64)
+    generator = RandomGenerator(seed=0)
+    x = generator.complex64_tensor(recon_shape)
+    y = generator.complex64_tensor(encoding_shape)
 
     # Create operator and apply
     FFOp = FastFourierOp(recon_shape=recon_shape, encoding_shape=encoding_shape)
