@@ -19,7 +19,7 @@ from mrpro.algorithms import remove_readout_os
 from mrpro.data import KData
 from mrpro.data import KTrajectory
 from mrpro.data import SpatialDimension
-from mrpro.utils.fft import kspace_to_image
+from mrpro.operators import FastFourierOp
 from tests import RandomGenerator
 from tests.conftest import random_kheader
 from tests.helper import rel_image_diff
@@ -74,7 +74,8 @@ def test_remove_readout_os(monkeypatch, random_kheader):
     kdata = remove_readout_os(kdata)
 
     # Reconstruct image from k-space data of one coil and compare to phantom image
-    idat_rec = kspace_to_image(kdata.data[:, 0, ...], dim=(-1, -2))
+    FFOp = FastFourierOp(dim=(-1, -2))
+    idat_rec = FFOp.adjoint(kdata.data[:, 0, ...])
 
     # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
