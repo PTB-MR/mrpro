@@ -17,6 +17,7 @@
       remove_repeat
       rgetattr
       smap
+      zero_pad_or_crop
    
    
 
@@ -37,6 +38,5 @@
    :template: module_template.rst
    :recursive:
 
-   mrpro.utils.fft
    mrpro.utils.filters
 

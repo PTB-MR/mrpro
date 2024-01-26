@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>mrpro.utils.fft.kspace_to_image &#8212; MRpro</title>
+    <title>mrpro.utils.zero_pad_or_crop &#8212; MRpro</title>
   
   
   
@@ -39,11 +39,11 @@
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/mrpro.utils.fft.kspace_to_image';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/mrpro.utils.zero_pad_or_crop';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="mrpro.utils.filters" href="mrpro.utils.filters.html" />
-    <link rel="prev" title="mrpro.utils.fft.image_to_kspace" href="mrpro.utils.fft.image_to_kspace.html" />
+    <link rel="prev" title="mrpro.utils.smap" href="mrpro.utils.smap.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -390,12 +390,8 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.remove_repeat.html">mrpro.utils.remove_repeat</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.rgetattr.html">mrpro.utils.rgetattr</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.smap.html">mrpro.utils.smap</a></li>
-<li class="toctree-l2 current active has-children"><a class="reference internal" href="mrpro.utils.fft.html">mrpro.utils.fft</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-6"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.fft.image_to_kspace.html">mrpro.utils.fft.image_to_kspace</a></li>
-<li class="toctree-l3 current active"><a class="current reference internal" href="#">mrpro.utils.fft.kspace_to_image</a></li>
-</ul>
-</li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="mrpro.utils.filters.html">mrpro.utils.filters</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-7"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">mrpro.utils.zero_pad_or_crop</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="mrpro.utils.filters.html">mrpro.utils.filters</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-6"><i class="fa-solid fa-chevron-down"></i></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.repeat.html">mrpro.utils.filters.repeat</a></li>
 <li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.spatial_uniform_filter_3d.html">mrpro.utils.filters.spatial_uniform_filter_3d</a></li>
 <li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.SpatialDimension.html">mrpro.utils.filters.SpatialDimension</a></li>
@@ -432,8 +428,6 @@ document.write(`
 
 
 
-
-
 <nav aria-label="Breadcrumb">
   <ul class="bd-breadcrumbs">
     
@@ -446,10 +440,7 @@ document.write(`
     <li class="breadcrumb-item"><a href="../api.html" class="nav-link">API</a></li>
     
     
-    <li class="breadcrumb-item"><i class="fa-solid fa-ellipsis"></i></li>
-    
-    
-    <li class="breadcrumb-item"><a href="mrpro.utils.fft.html" class="nav-link">mrpro.utils.fft</a></li>
+    <li class="breadcrumb-item"><a href="mrpro.utils.html" class="nav-link">mrpro.utils</a></li>
     
     <li class="breadcrumb-item active" aria-current="page">mrpro.utils....</li>
   </ul>
@@ -468,22 +459,22 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="mrpro-utils-fft-kspace-to-image">
-<h1>mrpro.utils.fft.kspace_to_image<a class="headerlink" href="#mrpro-utils-fft-kspace-to-image" title="Link to this heading">#</a></h1>
+  <section id="mrpro-utils-zero-pad-or-crop">
+<h1>mrpro.utils.zero_pad_or_crop<a class="headerlink" href="#mrpro-utils-zero-pad-or-crop" title="Link to this heading">#</a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="mrpro.utils.fft.kspace_to_image">
-<span class="sig-prename descclassname"><span class="pre">mrpro.utils.fft.</span></span><span class="sig-name descname"><span class="pre">kspace_to_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kdat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(-1,</span> <span class="pre">-2,</span> <span class="pre">-3)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/mrpro/utils/fft.html#kspace_to_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.utils.fft.kspace_to_image" title="Link to this definition">#</a></dt>
-<dd><p>IFFT from k-space to image space.</p>
+<dt class="sig sig-object py" id="mrpro.utils.zero_pad_or_crop">
+<span class="sig-prename descclassname"><span class="pre">mrpro.utils.</span></span><span class="sig-name descname"><span class="pre">zero_pad_or_crop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/mrpro/utils/_zero_pad_or_crop.html#zero_pad_or_crop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.utils.zero_pad_or_crop" title="Link to this definition">#</a></dt>
+<dd><p>Change shape of data by cropping or zero-padding.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>kdat</strong> – k-space data on Cartesian grid</p></li>
-<li><p><strong>dim</strong> – dim along which iFFT is applied, by default last three dimensions (-1, -2, -3)</p></li>
-<li><p><strong>optional</strong> – dim along which iFFT is applied, by default last three dimensions (-1, -2, -3)</p></li>
+<li><p><strong>data</strong> – data</p></li>
+<li><p><strong>new_shape</strong> – desired shape of data</p></li>
+<li><p><strong>dim</strong> – dimensions the new_shape corresponds to. None (default) is interpreted as last len(new_shape) dimensions.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>iFFT of kdat</p>
+<dd class="field-even"><p>data zero padded or cropped to shape</p>
 </dd>
 </dl>
 </dd></dl>
@@ -501,12 +492,12 @@ document.write(`
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="mrpro.utils.fft.image_to_kspace.html"
+       href="mrpro.utils.smap.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">mrpro.utils.fft.image_to_kspace</p>
+        <p class="prev-next-title">mrpro.utils.smap</p>
       </div>
     </a>
     <a class="right-next"
@@ -536,14 +527,14 @@ document.write(`
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.utils.fft.kspace_to_image"><code class="docutils literal notranslate"><span class="pre">kspace_to_image()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.utils.zero_pad_or_crop"><code class="docutils literal notranslate"><span class="pre">zero_pad_or_crop()</span></code></a></li>
 </ul>
   </nav></div>
 
   <div class="sidebar-secondary-item">
 
   <div class="tocsection sourcelink">
-    <a href="../_sources/_autosummary/mrpro.utils.fft.kspace_to_image.rst.txt">
+    <a href="../_sources/_autosummary/mrpro.utils.zero_pad_or_crop.rst.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>

@@ -1,6 +1,0 @@
-mrpro.utils.fft.image\_to\_kspace
-=================================
-
-.. currentmodule:: mrpro.utils.fft
-
-.. autofunction:: image_to_kspace
