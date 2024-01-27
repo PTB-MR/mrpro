@@ -77,7 +77,7 @@ class KTrajectory:
         traj_type_matrix = torch.tensor([[TrajType.NOTONGRID.value] * 3] * 3, dtype=torch.int8)
 
         for ind, ks in enumerate((self.kz, self.ky, self.kx)):
-            are_values_on_grid = (ks - ks.to(dtype=torch.int64).to(dtype=ks.dtype)) <= tolerance
+            are_values_on_grid = (ks - torch.round(ks)) <= tolerance
 
             # Only True if True for all entries
             are_values_on_grid = torch.all(are_values_on_grid)

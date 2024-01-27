@@ -1,4 +1,4 @@
-"""Cartesian Sampling Operators."""
+"""Cartesian Sampling Operator."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -90,6 +90,56 @@ class CartesianSamplingOp(LinearOperator):
         self._kshape = traj.broadcasted_shape
         self._encoding_shape = encoding_shape
 
+    @staticmethod
+    def _expand_fft_idx(
+        fft_idx: torch.Tensor,
+        data_device: torch.device,
+        dim_coils: int,
+        dim_other: int,
+        encoding_shape: SpatialDimension,
+    ):
+        """Expand the fft index to the full dataset.
+
+        The fft_idx is calculated based on the trajectory and hence does not include the coil dimension and not
+        necessarily the correct other dimension.
+
+        Parameters
+        ----------
+        fft_idx
+            Index to sort data into encoding space based on trajectory
+        data_device
+            Device of data
+        dim_coils
+            Coil dimension of data
+        dim_other
+            Other dimension of data
+        encoding_shape
+            Dimensions of encoding shape
+
+
+        Returns
+        -------
+            Index to sort data into encoding space including correct other and coils dimension
+        """
+        coil_idx = repeat(
+            torch.arange(dim_coils, device=data_device),
+            ' coils-> other coils k2 k1 k0',
+            k0=fft_idx.shape[-1],
+            k1=fft_idx.shape[-2],
+            k2=fft_idx.shape[-3],
+            other=dim_other,
+        )
+        other_idx = repeat(
+            torch.arange(dim_other, device=data_device),
+            ' other-> other coils k2 k1 k0',
+            k0=fft_idx.shape[-1],
+            k1=fft_idx.shape[-2],
+            k2=fft_idx.shape[-3],
+            coils=dim_coils,
+        )
+
+        return fft_idx + other_idx * dim_coils + coil_idx * encoding_shape.z * encoding_shape.y * encoding_shape.x
+
     def forward(self, y: torch.Tensor) -> torch.Tensor:
         """Forward operator which selects acquired k-space data from k-space.
 
@@ -106,21 +156,10 @@ class CartesianSamplingOp(LinearOperator):
             raise ValueError('k-space data shape missmatch')
 
         if len(self._fft_dims) > 0 and len(self._fft_idx) > 0:
-            if len(self._fft_idx_full) == 0 or self._fft_idx_full.shape[1] != y.shape[1]:
-                coil_idx = torch.ones(
-                    *(y.shape[:2] + self._fft_idx.shape[2:]), dtype=torch.int64, device=y.device
-                ) * rearrange(
-                    torch.linspace(0, y.shape[1] - 1, y.shape[1], dtype=torch.int64, device=y.device),
-                    'coils->1 coils 1 1 1',
-                )
-                other_idx = torch.ones_like(self._fft_idx, dtype=torch.int64, device=y.device) * rearrange(
-                    torch.linspace(0, y.shape[0] - 1, y.shape[0], dtype=torch.int64, device=y.device),
-                    'other->other 1 1 1 1',
-                )
-                self._fft_idx_full = (
-                    self._fft_idx
-                    + other_idx * y.shape[1]
-                    + coil_idx * self._encoding_shape.z * self._encoding_shape.y * self._encoding_shape.x
+            # Calculate the full index if it has not been calculated yet or if the other and coil dimension has changed
+            if len(self._fft_idx_full) == 0 or self._fft_idx_full.shape[:2] != y.shape[:2]:
+                self._fft_idx_full = self._expand_fft_idx(
+                    self._fft_idx, y.device, y.shape[-4], y.shape[-5], self._encoding_shape
                 )
 
             return torch.take(y, self._fft_idx_full)
@@ -144,29 +183,17 @@ class CartesianSamplingOp(LinearOperator):
             raise ValueError('k-space data shape missmatch')
 
         if len(self._fft_dims) > 0 and len(self._fft_idx) > 0:
-            if len(self._fft_idx_full) == 0 or self._fft_idx_full.shape[1] != y.shape[1]:
-                coil_idx = torch.ones(
-                    *(y.shape[:2] + self._fft_idx.shape[2:]), dtype=torch.int64, device=y.device
-                ) * rearrange(
-                    torch.linspace(0, y.shape[1] - 1, y.shape[1], dtype=torch.int64, device=y.device),
-                    'coils->1 coils 1 1 1',
-                )
-                other_idx = torch.ones_like(self._fft_idx, dtype=torch.int64, device=y.device) * rearrange(
-                    torch.linspace(0, y.shape[0] - 1, y.shape[0], dtype=torch.int64, device=y.device),
-                    'other->other 1 1 1 1',
-                )
-                self._fft_idx_full = (
-                    self._fft_idx
-                    + other_idx * y.shape[1]
-                    + coil_idx * self._encoding_shape.z * self._encoding_shape.y * self._encoding_shape.x
+            # Calculate the full index if it has not been calculated yet or if the other and coil dimension has changed
+            if len(self._fft_idx_full) == 0 or self._fft_idx_full.shape[:2] != y.shape[:2]:
+                self._fft_idx_full = self._expand_fft_idx(
+                    self._fft_idx, y.device, y.shape[-4], y.shape[-5], self._encoding_shape
                 )
 
-            ysort = torch.zeros(
+            return torch.zeros(
                 *(y.shape[:2] + (self._encoding_shape.z, self._encoding_shape.y, self._encoding_shape.x)),
                 dtype=y.dtype,
                 device=y.device,
-            )
+            ).put_(self._fft_idx_full, y, accumulate=True)
 
-            return ysort.put_(self._fft_idx_full, y, accumulate=True)
         else:
             return y
