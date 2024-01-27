@@ -21,8 +21,8 @@ from torchkbnufft import KbNufftAdjoint
 
 from mrpro.data import KTrajectory
 from mrpro.data import SpatialDimension
-from mrpro.operators import FastFourierOp
 from mrpro.data.enums import TrajType
+from mrpro.operators import FastFourierOp
 from mrpro.operators import LinearOperator
 
 
@@ -73,10 +73,10 @@ class FourierOp(LinearOperator):
         # Find dimensions which require FFT
         self._fft_dims = get_dims_for_traj_type(TrajType.ONGRID)
         if len(self._fft_dims) > 0:
-            self._fft_s = get_spatial_dims(encoding_shape, self._fft_dims)
-
             self._fast_fourier_op = FastFourierOp(
-                dim=self._fft_dims, recon_shape=self._fft_recon_shape, encoding_shape=self._fft_encoding_shape
+                dim=self._fft_dims,
+                recon_shape=get_spatial_dims(recon_shape, self._fft_dims),
+                encoding_shape=get_spatial_dims(encoding_shape, self._fft_dims),
             )
 
         # Find dimensions which require NUFFT
