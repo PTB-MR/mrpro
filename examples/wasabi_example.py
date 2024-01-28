@@ -2,15 +2,16 @@
 import matplotlib.pyplot as plt
 import torch
 
+from mrpro.data import KData
+from mrpro.data import KTrajectory
 from mrpro.data import SpatialDimension
-from mrpro.data._KData import KData
-from mrpro.data.traj_calculators._KTrajectoryPulseq import KTrajectoryPulseq
-from mrpro.operators._FourierOp import FourierOp
-from mrpro.operators.models._WASABI import WASABI
-from mrpro.operators.models._WASABITI import WASABITI
+from mrpro.data.traj_calculators import KTrajectoryPulseq
+from mrpro.operators import WASABI
+from mrpro.operators import WASABITI
+from mrpro.operators import FourierOp
 
 # %%
-filepath = R'/home/hammac01/CEST_Data/'
+filepath = R'./CEST_Data/'
 seq_filename = '20231127_WASABITI_adjusted_fov192.seq'
 h5_filename = 'meas_MID00021_FID05730_20231127_WASABITI_adjusted_fov192.h5'
 
@@ -20,9 +21,10 @@ data = KData.from_file(
 )
 # %%
 # manually set kz
-data.traj.kz = torch.zeros(data.traj.kz.shape[0], 1, 1, 1)
-data.traj.ky = data.traj.ky.to(torch.float32)
-data.traj.kx = data.traj.kx.to(torch.float32)
+kz = torch.zeros(data.traj.kz.shape[0], 1, 1, 1)
+ky = data.traj.ky.to(torch.float32)
+kx = data.traj.kx.to(torch.float32)
+data = KData(data.header, data.data, KTrajectory(kx, ky, kz))
 
 # %%
 # create operator
@@ -61,10 +63,6 @@ t1 = torch.Tensor([10.0])
 sig2 = wasabiti_model.forward(b0_shift, rb1, t1)
 
 # %%
-# fig, ax = plt.subplots()
-# ax.plot(offsets, torch.abs(sig[0:101].squeeze()))
-# plt.show()
-
 fig, ax = plt.subplots()
 ax.plot(torch.abs(sig2.squeeze()))
 plt.show()
