@@ -124,7 +124,6 @@ class CalibrationMode(Enum):
     OTHER = 'other'
 
 
-class TrajType(Enum):
-    SINGLEVALUE = 0
-    ONGRID = 1
-    NOTONGRID = 2
+class TrajType(Flag):
+    SINGLEVALUE = 1
+    ONGRID = 2

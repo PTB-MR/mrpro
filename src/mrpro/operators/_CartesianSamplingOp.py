@@ -40,7 +40,7 @@ class CartesianSamplingOp(LinearOperator):
         super().__init__()
 
         # Find dimensions of Cartesian sampling
-        fft_dims = [dim for dim in (-3, -2, -1) if traj.traj_type_along_kzyx[dim] == TrajType.ONGRID]
+        fft_dims = [dim for dim in (-3, -2, -1) if traj.type_along_kzyx[dim] == TrajType.ONGRID]
 
         # Cartesian dimensions were found, create sorting index
         if len(fft_dims) > 0:

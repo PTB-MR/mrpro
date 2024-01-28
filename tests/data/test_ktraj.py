@@ -196,22 +196,18 @@ def test_traj_type_update():
     sz = 'nuf'
     ktraj = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
 
-    # Verify trajectory dimensions
-    assert ktraj.type_kx == TrajType.ONGRID
-    assert ktraj.type_ky == TrajType.NOTONGRID
-    assert ktraj.type_kz == TrajType.NOTONGRID
-
     # Make readout non-uniform
-    random_generator = RandomGenerator(seed=0)
-    kx = random_generator.float32_tensor(size=nkx)
-    ktraj.kx[:] = kx
+    ktraj.kx[:] = RandomGenerator(seed=0).float32_tensor(size=nkx)
 
-    # Verify trajectory dimensions
-    assert ktraj.type_kx == TrajType.NOTONGRID
+    with pytest.raises(NotImplementedError, match='modified'):
+        ktraj.type_along_k210
+
+    with pytest.raises(NotImplementedError, match='modified'):
+        ktraj.type_along_kzyx
 
 
 @COMMON_MR_TRAJECTORIES
-def test_ktraj_type_along_kzyx(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
+def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
     """Test identification of traj types."""
 
     # Generate random k-space trajectories
@@ -222,18 +218,18 @@ def test_ktraj_type_along_kzyx(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0,
     on_grid_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx)) if s == 'uf']
     not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx)) if s == 'nuf']
 
-    # Check dimensions which are of shape 1 and do not need any transform
-    assert all([ktraj.traj_type_along_kzyx[dim] == TrajType.SINGLEVALUE for dim in single_value_dims])
+    # check dimensions which are of shape 1 and do not need any transform
+    assert all([ktraj.type_along_kzyx[dim] & TrajType.SINGLEVALUE for dim in single_value_dims])
 
     # Check dimensions which are on a grid and require FFT
-    assert all([ktraj.traj_type_along_kzyx[dim] == TrajType.ONGRID for dim in on_grid_dims])
+    assert all([ktraj.type_along_kzyx[dim] & TrajType.ONGRID for dim in on_grid_dims])
 
     # Check dimensions which are not on a grid and require NUFFT
-    assert all([ktraj.traj_type_along_kzyx[dim] == TrajType.NOTONGRID for dim in not_on_grid_dims])
+    assert all([~(ktraj.type_along_kzyx[dim] & (TrajType.SINGLEVALUE | TrajType.ONGRID)) for dim in not_on_grid_dims])
 
 
 @COMMON_MR_TRAJECTORIES
-def test_ktraj_type_along_k210(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
+def test_ktype_along_k210(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
     """Test identification of traj types."""
 
     # Generate random k-space trajectories
@@ -244,11 +240,11 @@ def test_ktraj_type_along_k210(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0,
     on_grid_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0)) if s == 'uf']
     not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0)) if s == 'nuf']
 
-    # Check dimensions which are of shape 1 and do not need any transform
-    assert all([ktraj.traj_type_along_k210[dim] == TrajType.SINGLEVALUE for dim in single_value_dims])
+    # check dimensions which are of shape 1 and do not need any transform
+    assert all([ktraj.type_along_k210[dim] & TrajType.SINGLEVALUE for dim in single_value_dims])
 
     # Check dimensions which are on a grid and require FFT
-    assert all([ktraj.traj_type_along_k210[dim] == TrajType.ONGRID for dim in on_grid_dims])
+    assert all([ktraj.type_along_k210[dim] & TrajType.ONGRID for dim in on_grid_dims])
 
     # Check dimensions which are not on a grid and require NUFFT
-    assert all([ktraj.traj_type_along_k210[dim] == TrajType.NOTONGRID for dim in not_on_grid_dims])
+    assert all([~(ktraj.type_along_k210[dim] & (TrajType.SINGLEVALUE | TrajType.ONGRID)) for dim in not_on_grid_dims])
