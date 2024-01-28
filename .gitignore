@@ -161,3 +161,7 @@ cython_debug/
 
 # Documentation
 **/_autosummary
+
+# anaconda related directories
+.conda
+.micromamba
