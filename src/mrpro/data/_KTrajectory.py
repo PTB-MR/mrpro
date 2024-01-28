@@ -23,7 +23,7 @@ from mrpro.data.enums import TrajType
 from mrpro.utils import remove_repeat
 
 
-@dataclass(slots=True, init=False)
+@dataclass(slots=True, init=False, frozen=True)
 class KTrajectory:
     """K-space trajectory.
 
@@ -36,9 +36,18 @@ class KTrajectory:
         kz is zero(1,1,1,1)
     """
 
-    kz: torch.Tensor  # (other,k2,k1,k0) #phase encoding direction, k2 if Cartesian
-    ky: torch.Tensor  # (other,k2,k1,k0) #phase encoding direction, k1 if Cartesian
-    kx: torch.Tensor  # (other,k2,k1,k0) #frequency encoding direction, k0 if Cartesian
+    kz: torch.Tensor
+    """(other,k2,k1,k0), phase encoding direction k2 if Cartesian."""
+
+    ky: torch.Tensor
+    """(other,k2,k1,k0), phase encoding direction k1 if Cartesian."""
+
+    kx: torch.Tensor
+    """(other,k2,k1,k0), frequency encoding direction k0 if Cartesian."""
+
+    _type_along_kzyx: tuple[TrajType, TrajType, TrajType]
+    _type_along_k210: tuple[TrajType, TrajType, TrajType]
+    _expected_tensor_versions: tuple[int, int, int]
 
     # Type of trajectory
     _type_kz_ky_kx: list[TrajType]  # for kz, ky and kx directions
@@ -61,106 +70,60 @@ class KTrajectory:
         shape = np.broadcast_shapes(self.kx.shape, self.ky.shape, self.kz.shape)
         return tuple(shape)
 
-    def _type_of_traj(self) -> None:
-        """Calculate type of trajectory.
+    def _traj_types(self, tolerance) -> tuple[tuple[TrajType, TrajType, TrajType], tuple[TrajType, TrajType, TrajType]]:
+        """Calculate the trajectory type along kzkykx and k2k1k0.
 
-        This function checks if the entries of the trajectory along certain dimensions
+        Checks if the entries of the trajectory along certain dimensions
             - are of shape 1 -> TrajType.SINGLEVALUE
             - lie on a Cartesian grid -> TrajType.ONGRID
             - none of the above -> TrajType.NOTONGRID
 
-        Returns
-        -------
-            type of trajectory along kz-ky-kx and k2-k1-k0
-        """
-        # Check if trajectory has changed and type information needs to be updated
-        if self._traj_version != [self.kz._version, self.ky._version, self.kx._version]:
-            # Matrix describing trajectory-type [(kz, ky, kx), (k2, k1, k0)]
-            # Start with everything not on a grid (arbitrary k-space locations).
-            # We use the value of the enum-type to make it easier to do array operations.
-            traj_type_matrix = torch.tensor([[TrajType.NOTONGRID.value] * 3] * 3, dtype=torch.int8)
-
-            for ind, ks in enumerate((self.kz, self.ky, self.kx)):
-                are_values_on_grid = (ks - torch.round(ks)) <= self.type_tolerance
-
-                # Only True if True for all entries
-                are_values_on_grid = torch.all(are_values_on_grid)
-
-                for dim in (-3, -2, -1):
-                    # Check if it is a singleton dimension
-                    if ks.shape[dim] == 1:
-                        traj_type_matrix[ind, dim] = TrajType.SINGLEVALUE.value
-                    else:
-                        if are_values_on_grid:
-                            traj_type_matrix[ind, dim] = TrajType.ONGRID.value
-
-            # Return trajectory-type
-            def get_traj_type(type_matrix):
-                traj_type = [TrajType.ONGRID.value] * 3
-                for dim in (-3, -2, -1):
-                    if torch.all(type_matrix[dim, :] == TrajType.SINGLEVALUE.value):
-                        traj_type[dim] = TrajType.SINGLEVALUE.value
-                    elif torch.any(type_matrix[dim, :] == TrajType.NOTONGRID.value):
-                        traj_type[dim] = TrajType.NOTONGRID.value
-                return traj_type
-
-            # Default is to sum along (k2, k1, k0) to return the trajectory type for kz, ky and kx
-            self._type_kz_ky_kx = [TrajType(val) for val in get_traj_type(traj_type_matrix)]
-            # If we want instead the values along k2, k1, and k0 then we have to transpose the matrix.
-            self._type_k2_k1_k0 = [
-                TrajType(val) for val in get_traj_type(torch.transpose(traj_type_matrix, dim0=0, dim1=1))
-            ]
-
-            # Update version to remember current trajectory
-            self._traj_version = [self.kz._version, self.ky._version, self.kx._version]
-
-    @property
-    def type_kz(self):
-        """Type of trajectory along kz."""
-        self._type_of_traj()
-        return self._type_kz_ky_kx[-3]
-
-    @property
-    def type_ky(self):
-        """Type of trajectory along ky."""
-        self._type_of_traj()
-        return self._type_kz_ky_kx[-2]
-
-    @property
-    def type_kx(self):
-        """Type of trajectory along kx."""
-        self._type_of_traj()
-        return self._type_kz_ky_kx[-1]
-
-    @property
-    def traj_type_along_kzyx(self, tolerance: float = 1e-2) -> list[TrajType]:
-        """Type of trajectory along kz-ky-kx.
 
         Parameters
         ----------
-        tolerance
-            tolerance used to determine if trajectory points lie on a gird
+            tolerance:
+                absolute tolerance in checking if points are on integer grid positions
 
         Returns
         -------
-            type of trajectory along kz-ky-kx
+            ((types along kz,ky,kx),(types along k2,k1,k0))
+
+        # TODO: consider non-integer positions that are on a grid, e.g. (0.5, 1, 1.5, ....)
         """
-        return self._type_kz_ky_kx
+
+        # Matrix describing trajectory-type [(kz, ky, kx), (k2, k1, k0)]
+        # Start with everything not on a grid (arbitrary k-space locations).
+        # We use the value of the enum-type to make it easier to do array operations.
+        traj_type_matrix = torch.zeros(3, 3, dtype=torch.int)
+        for ind, ks in enumerate((self.kz, self.ky, self.kx)):
+            values_on_grid = not ks.is_floating_point() or torch.all(ks.frac() <= tolerance)
+            for dim in (-3, -2, -1):
+                if ks.shape[dim] == 1:
+                    traj_type_matrix[ind, dim] |= TrajType.SINGLEVALUE.value | TrajType.ONGRID.value
+                if values_on_grid:
+                    traj_type_matrix[ind, dim] |= TrajType.ONGRID.value
+
+        # kz should only have flags that are enabled in all columns
+        # k2 only flags enabled in all rows, etc
+        type_zyx = [TrajType(i.item()) for i in np.bitwise_and.reduce(traj_type_matrix, axis=1)]
+        type_210 = [TrajType(i.item()) for i in np.bitwise_and.reduce(traj_type_matrix, axis=0)]
+
+        # make mypy recognize return  will always have len=3
+        return (type_zyx[0], type_zyx[1], type_zyx[2]), (type_210[0], type_210[1], type_210[2])
 
     @property
-    def traj_type_along_k210(self, tolerance: float = 1e-2) -> list[TrajType]:
-        """Type of trajectory along k2-k1-k0.
+    def type_along_kzyx(self) -> tuple[TrajType, TrajType, TrajType]:
+        """Type of trajectory along kz-ky-kx."""
+        if self._expected_tensor_versions != (self.kz._version, self.ky._version, self.kx._version):
+            raise NotImplementedError('The trajectory has been modified inplace. This is not supported')
+        return self._type_along_kzyx
 
-        Parameters
-        ----------
-        tolerance
-            tolerance used to determine if trajectory points lie on a gird
-
-        Returns
-        -------
-            type of trajectory along k2-k1-k0
-        """
-        return self._type_k2_k1_k0
+    @property
+    def type_along_k210(self) -> tuple[TrajType, TrajType, TrajType]:
+        """Type of trajectory along k2-k1-k0."""
+        if self._expected_tensor_versions != (self.kz._version, self.ky._version, self.kx._version):
+            raise NotImplementedError('The trajectory has been modified inplace. This is not supported')
+        return self._type_along_k210
 
     def as_tensor(self, stack_dim=0) -> torch.Tensor:
         """Tensor representation of the trajectory.
@@ -179,7 +142,7 @@ class KTrajectory:
         ky: torch.Tensor,
         kx: torch.Tensor,
         repeat_detection_tolerance: float | None = 1e-8,
-        type_tolerance: float = 1e-2,
+        grid_detection_tolerance: float = 1e-3,
     ) -> None:
         """K-Space Trajectory dataclass.
 
@@ -192,18 +155,16 @@ class KTrajectory:
             trajectory coordinates to set
         repeat_detection_tolerance
             Tolerance for repeat detection. Set to None to disable.
+        grid_detection_tolerance
+            tolerance to detect if trajectory points are on integer grid positions
         """
         if repeat_detection_tolerance is not None:
             kz, ky, kx = (remove_repeat(tensor, repeat_detection_tolerance) for tensor in (kz, ky, kx))
 
-        self.kz = kz
-        self.ky = ky
-        self.kx = kx
-
-        # Calculate what the type of the trajectory is along different directions
-        self.type_tolerance = type_tolerance
-        self._traj_version = [-1, -1, -1]
-        self._type_of_traj()
+        # use of setattr due to frozen dataclass
+        object.__setattr__(self, 'kz', kz)
+        object.__setattr__(self, 'ky', ky)
+        object.__setattr__(self, 'kx', kx)
 
         try:
             shape = self.broadcasted_shape
@@ -212,9 +173,19 @@ class KTrajectory:
         if len(shape) < 4:
             raise ValueError('The k-space trajectory tensors should each have at least 4 dimensions.')
 
+        type_along_kzyx, type_along_k210 = self._traj_types(grid_detection_tolerance)
+        # use of setattr due to frozen dataclass
+        object.__setattr__(self, '_expected_tensor_versions', (self.kz._version, self.ky._version, self.kx._version))
+        object.__setattr__(self, '_type_along_kzyx', type_along_kzyx)
+        object.__setattr__(self, '_type_along_k210', type_along_k210)
+
     @classmethod
     def from_tensor(
-        cls, tensor: torch.Tensor, stack_dim: int = 0, repeat_detection_tolerance: float | None = 1e-8
+        cls,
+        tensor: torch.Tensor,
+        stack_dim: int = 0,
+        repeat_detection_tolerance: float | None = 1e-8,
+        grid_detection_tolerance: float = 1e-3,
     ) -> KTrajectory:
         """Create a KTrajectory from a tensor representation of the trajectory.
 
@@ -232,10 +203,18 @@ class KTrajectory:
         repeat_detection_tolerance
             detects if broadcasting can be used, i.e. if dimensions are repeated.
             Set to None to disable.
+        grid_detection_tolerance
+            tolerance to detect if trajectory points are on integer grid positions
         """
 
         kz, ky, kx = torch.unbind(tensor, dim=stack_dim)
-        return cls(kz, ky, kx, repeat_detection_tolerance=repeat_detection_tolerance)
+        return cls(
+            kz,
+            ky,
+            kx,
+            repeat_detection_tolerance=repeat_detection_tolerance,
+            grid_detection_tolerance=grid_detection_tolerance,
+        )
 
     def to(self, *args, **kwargs) -> KTrajectory:
         """Perform dtype and/or device conversion of trajectory.
