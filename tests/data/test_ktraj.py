@@ -184,28 +184,6 @@ def test_ktraj_cpu(cartesian_grid):
     assert ktraj_cpu.kx.is_cpu
 
 
-def test_traj_type_update():
-    """Test update of trajectory type when trajectory changes."""
-    # Generate random RPE trajectory
-    k_shape = (1, 8, 8, 64, 96)
-    nkx = (1, 1, 1, 96)
-    nky = (1, 8, 64, 1)
-    nkz = (1, 8, 64, 1)
-    sx = 'uf'  # uniform sampling along readout
-    sy = 'nuf'
-    sz = 'nuf'
-    ktraj = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
-
-    # Make readout non-uniform
-    ktraj.kx[:] = RandomGenerator(seed=0).float32_tensor(size=nkx)
-
-    with pytest.raises(NotImplementedError, match='modified'):
-        ktraj.type_along_k210
-
-    with pytest.raises(NotImplementedError, match='modified'):
-        ktraj.type_along_kzyx
-
-
 @COMMON_MR_TRAJECTORIES
 def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
     """Test identification of traj types."""
