@@ -45,8 +45,8 @@ class KTrajectory:
     kx: torch.Tensor
     """(other,k2,k1,k0), frequency encoding direction k0 if Cartesian."""
 
-    # Tolerance for trajectory type estimation (i.e. how close do the values have to be to grid points)
-    type_tolerance: float
+    # Tolerance of how close trajectory positions have to be to integer grid points
+    grid_detection_tolerance: float
 
     @property
     def broadcasted_shape(self) -> tuple[int, ...]:
@@ -101,12 +101,12 @@ class KTrajectory:
     @property
     def type_along_kzyx(self) -> tuple[TrajType, TrajType, TrajType]:
         """Type of trajectory along kz-ky-kx."""
-        return self._traj_types(self.type_tolerance)[0]
+        return self._traj_types(self.grid_detection_tolerance)[0]
 
     @property
     def type_along_k210(self) -> tuple[TrajType, TrajType, TrajType]:
         """Type of trajectory along k2-k1-k0."""
-        return self._traj_types(self.type_tolerance)[1]
+        return self._traj_types(self.grid_detection_tolerance)[1]
 
     def as_tensor(self, stack_dim=0) -> torch.Tensor:
         """Tensor representation of the trajectory.
@@ -148,6 +148,9 @@ class KTrajectory:
         object.__setattr__(self, 'kz', kz)
         object.__setattr__(self, 'ky', ky)
         object.__setattr__(self, 'kx', kx)
+
+        # use of setattr due to frozen dataclass
+        object.__setattr__(self, 'grid_detection_tolerance', grid_detection_tolerance)
 
         try:
             shape = self.broadcasted_shape
