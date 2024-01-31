@@ -29,7 +29,7 @@ classifiers = [
 ]
 dependencies = [
     "numpy>=1.23,<2.0",
-    "torch>=2.0,<3.0",
+    "torch>=2.2,<3.0",
     "torchio",
     "ismrmrd",
     "einops",
