@@ -45,19 +45,8 @@ class KTrajectory:
     kx: torch.Tensor
     """(other,k2,k1,k0), frequency encoding direction k0 if Cartesian."""
 
-    _type_along_kzyx: tuple[TrajType, TrajType, TrajType]
-    _type_along_k210: tuple[TrajType, TrajType, TrajType]
-    _expected_tensor_versions: tuple[int, int, int]
-
-    # Type of trajectory
-    _type_kz_ky_kx: list[TrajType]  # for kz, ky and kx directions
-    _type_k2_k1_k0: list[TrajType]  # for k2, k1 and k0 directions
-
     # Tolerance for trajectory type estimation (i.e. how close do the values have to be to grid points)
     type_tolerance: float
-
-    # Tensor version of kz, ky and kx to detect any changes which require type update
-    _traj_version: list[int]
 
     @property
     def broadcasted_shape(self) -> tuple[int, ...]:
@@ -76,8 +65,6 @@ class KTrajectory:
         Checks if the entries of the trajectory along certain dimensions
             - are of shape 1 -> TrajType.SINGLEVALUE
             - lie on a Cartesian grid -> TrajType.ONGRID
-            - none of the above -> TrajType.NOTONGRID
-
 
         Parameters
         ----------
@@ -114,16 +101,12 @@ class KTrajectory:
     @property
     def type_along_kzyx(self) -> tuple[TrajType, TrajType, TrajType]:
         """Type of trajectory along kz-ky-kx."""
-        if self._expected_tensor_versions != (self.kz._version, self.ky._version, self.kx._version):
-            raise NotImplementedError('The trajectory has been modified inplace. This is not supported')
-        return self._type_along_kzyx
+        return self._traj_types(self.type_tolerance)[0]
 
     @property
     def type_along_k210(self) -> tuple[TrajType, TrajType, TrajType]:
         """Type of trajectory along k2-k1-k0."""
-        if self._expected_tensor_versions != (self.kz._version, self.ky._version, self.kx._version):
-            raise NotImplementedError('The trajectory has been modified inplace. This is not supported')
-        return self._type_along_k210
+        return self._traj_types(self.type_tolerance)[1]
 
     def as_tensor(self, stack_dim=0) -> torch.Tensor:
         """Tensor representation of the trajectory.
@@ -172,12 +155,6 @@ class KTrajectory:
             raise ValueError('The k-space trajectory dimensions must be broadcastable.')
         if len(shape) != 4:
             raise ValueError('The k-space trajectory tensors should each have 4 dimensions.')
-
-        type_along_kzyx, type_along_k210 = self._traj_types(grid_detection_tolerance)
-        # use of setattr due to frozen dataclass
-        object.__setattr__(self, '_expected_tensor_versions', (self.kz._version, self.ky._version, self.kx._version))
-        object.__setattr__(self, '_type_along_kzyx', type_along_kzyx)
-        object.__setattr__(self, '_type_along_k210', type_along_k210)
 
     @classmethod
     def from_tensor(

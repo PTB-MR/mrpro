@@ -89,12 +89,9 @@ class FourierOp(LinearOperator):
             ]
             if self._fft_dims != fft_dims_k210:
                 raise NotImplementedError(
-                    'Cartesian FFT dims need to be aligned with the k-space dimension,'
-                    'i.e. kx along k0, ky along k1 and kz along k2'
+                    'If both FFT and NUFFT dims are present, Cartesian FFT dims need to be aligned with the '
+                    'k-space dimension, i.e. kx along k0, ky along k1 and kz along k2'
                 )
-
-            # Special case when the fft dimension does not align with the corresponding k2, k1 or k0 dimension.
-            # E.g. kx is of shape (1,1,30,1,1): kx sampling along k2.
 
             self._nufft_im_size = get_spatial_dims(recon_shape, self._nufft_dims)
             grid_size = [
@@ -137,7 +134,7 @@ class FourierOp(LinearOperator):
 
         if self._nufft_dims:
             # we need to move the nufft-dimensions to the end and flatten all other dimensions
-            # so the new shape will be (... non_nuft_dims) coils nufft_dims
+            # so the new shape will be (... non_nufft_dims) coils nufft_dims
             # we could move the permute to __init__ but then we still would need to prepend if len(other)>1
             keep_dims = [-4] + self._nufft_dims  # -4 is always coil
             permute = [i for i in range(-x.ndim, 0) if i not in keep_dims] + keep_dims
@@ -147,7 +144,7 @@ class FourierOp(LinearOperator):
             xpermutedshape = x.shape
             x = x.flatten(end_dim=-len(keep_dims) - 1)
 
-            # omega should be (... non_nuft_dims) n_nufft_dims (nufft_dims)
+            # omega should be (... non_nufft_dims) n_nufft_dims (nufft_dims)
             # TODO: consider moving the broadcast along fft dimensions to __init__ (independent of x shape).
             omega = self._omega.permute(*permute)
             omega = omega.broadcast_to(*xpermutedshape[: -len(keep_dims)], *omega.shape[-len(keep_dims) :])
@@ -179,7 +176,7 @@ class FourierOp(LinearOperator):
 
         if self._nufft_dims:
             # we need to move the nufft-dimensions to the end, flatten them and flatten all other dimensions
-            # so the new shape will be (... non_nuft_dims) coils (nufft_dims)
+            # so the new shape will be (... non_nufft_dims) coils (nufft_dims)
             keep_dims = [-4] + self._nufft_dims  # -4 is coil
             permute = [i for i in range(-x.ndim, 0) if i not in keep_dims] + keep_dims
             unpermute = np.argsort(permute)
