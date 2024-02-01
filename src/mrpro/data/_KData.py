@@ -110,20 +110,38 @@ class KData:
         # Sort kdata and acq_info into ("all other dim", coils, k2, k1, k0) / ("all other dim", k2, k1, acq_info_dims)
         # Fist, ensure each the non k1/k2 dimensions covers the same number of k1 and k2 points
         unique_idxs = {label: np.unique(getattr(kheader.acq_info.idx, label)) for label in KDIM_SORT_LABELS}
-        num_k1 = len(unique_idxs['k1'])
-        num_k2 = len(unique_idxs['k2'])
 
+        # In order to be able to reshape data into (other coils k2 k1 k0) the number of acquisitions has to be the
+        # same as the product of all unique_idxs
+        num_total_unique = torch.prod(torch.as_tensor([len(unique_idxs[label]) for label in KDIM_SORT_LABELS]))
+
+        # To find the dimensions of k2 and k1 we check a random other dimension
+        idx_matches = torch.nonzero(getattr(kheader.acq_info.idx, 'slice') == 0)
+        if num_total_unique == kdata.shape[0]:
+            # Data can be reshaped into (other coils k2 k1 k0))
+            num_k1 = len(torch.unique(kheader.acq_info.idx.k1[idx_matches]))
+            num_k2 = len(torch.unique(kheader.acq_info.idx.k2[idx_matches]))
+        else:
+            # Data is reshaped as (other 1 (k2 k1) k0)
+            num_k1 = len(idx_matches)
+            num_k2 = 1
+
+        # Here we verify that the k2 and k1 contain the same number of k-space points for all other dimensions
         for label, idxs in unique_idxs.items():
             if label in ('k1', 'k2'):
                 continue
             for idx in idxs:
                 idx_matches = torch.nonzero(getattr(kheader.acq_info.idx, label) == idx)
-                current_num_k1 = len(torch.unique(kheader.acq_info.idx.k1[idx_matches]))
-                current_num_k2 = len(torch.unique(kheader.acq_info.idx.k2[idx_matches]))
-                if current_num_k1 != num_k1:
-                    raise ValueError(f'Number of k1 points in {label}: {current_num_k1}. Expected: {num_k1}')
-                if current_num_k2 != num_k2:
-                    raise ValueError(f'Number of k2 points in {label}: {current_num_k2}. Expected: {num_k2}')
+                if num_total_unique == kdata.shape[0]:
+                    current_num_k1 = len(torch.unique(kheader.acq_info.idx.k1[idx_matches]))
+                    current_num_k2 = len(torch.unique(kheader.acq_info.idx.k2[idx_matches]))
+                    if current_num_k1 != num_k1:
+                        raise ValueError(f'Number of k1 points in {label}: {current_num_k1}. Expected: {num_k1}')
+                    if current_num_k2 != num_k2:
+                        raise ValueError(f'Number of k2 points in {label}: {current_num_k2}. Expected: {num_k2}')
+                else:
+                    if len(idx_matches) != num_k1:
+                        raise ValueError(f'Number of (k2 k1) points in {label}: {len(idx_matches)}. Expected: {num_k1}')
 
         # using np.lexsort as it looks a bit more familiar than looping and torch.argsort(..., stable=True)
         sort_ki = np.stack([getattr(kheader.acq_info.idx, label) for label in KDIM_SORT_LABELS], axis=0)
