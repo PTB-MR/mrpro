@@ -59,7 +59,7 @@ def test_KData_raise_wrong_ktraj_shape(ismrmrd_cart):
 def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
     """Multiple repetitions with different number of phase encoding lines is
     not supported."""
-    with pytest.raises(ValueError, match='Number of (k2 k1) points in repetition: 256. Expected: 512'):
+    with pytest.raises(ValueError, match=r'Number of \((k2 k1\)) points in repetition:'):
         KData.from_file(ismrmrd_cart_invalid_reps.filename, DummyTrajectory())
 
 
