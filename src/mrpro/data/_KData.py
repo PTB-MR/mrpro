@@ -212,7 +212,7 @@ class KData:
             header=self.header,
             data=self.data.to(
                 device=device, dtype=dtype, non_blocking=non_blocking, copy=copy, memory_format=memory_format
-            ),  # type: ignore [call-overload]
+            ),
             traj=self.traj.to(
                 device=device, dtype=dtype_traj, non_blocking=non_blocking, copy=copy, memory_format=memory_format
             ),
