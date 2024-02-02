@@ -79,7 +79,7 @@ class IsmrmrdRawTestData:
         acceleration: int = 1,
         noise_level: float = 0.00005,
         trajectory_type: Literal['cartesian', 'radial'] = 'cartesian',
-        sampling_order: Literal['linear', 'low_high', 'high_low'] = 'linear',
+        sampling_order: Literal['linear', 'low_high', 'high_low', 'random'] = 'linear',
         phantom: EllipsePhantom = EllipsePhantom(),
     ):
         self.filename: str | Path = filename
@@ -101,23 +101,34 @@ class IsmrmrdRawTestData:
         nfe = self.oversampling * nx
         npe = ny
 
-        if trajectory_type == 'cartesian':
-            # Create Cartesian grid for k-space locations
-            traj_ky, traj_kx, kpe = self._cartesian_trajectory(npe, nfe, acceleration, sampling_order)
-        elif trajectory_type == 'radial':
-            # Create uniform radial trajectory
-            traj_ky, traj_kx, kpe = self._radial_trajectory(npe, nfe, acceleration)
-        else:
-            raise ValueError(f'Trajectory type {trajectory_type} not supported.')
+        # Go through all repetitions and create a trajectory and k-space
+        kpe = []
+        ktrue = []
+        traj_kx = []
+        traj_ky = []
+        for _ in range(self.repetitions):
+            if trajectory_type == 'cartesian':
+                # Create Cartesian grid for k-space locations
+                traj_ky_rep, traj_kx_rep, kpe_rep = self._cartesian_trajectory(npe, nfe, acceleration, sampling_order)
+            elif trajectory_type == 'radial':
+                # Create uniform radial trajectory
+                traj_ky_rep, traj_kx_rep, kpe_rep = self._radial_trajectory(npe, nfe, acceleration)
+            else:
+                raise ValueError(f'Trajectory type {trajectory_type} not supported.')
 
-        # Create analytic k-space and reference image
-        ktrue = self.phantom.kspace(traj_ky, traj_kx)
+            # Create analytic k-space and save trajectory
+            ktrue.append(self.phantom.kspace(traj_ky_rep, traj_kx_rep))
+            kpe.append(kpe_rep)
+            traj_kx.append(traj_kx_rep)
+            traj_ky.append(traj_ky_rep)
+
+        # Reference image is the same for all repetitions
         im_dim = SpatialDimension(z=1, y=npe, x=nfe)
         self.imref = self.phantom.image_space(im_dim)
 
         # Multi-coil acquisition
         # TODO: proper application of coils
-        ktrue = repeat(ktrue, '... -> coils ... ', coils=self.ncoils)
+        ktrue = [repeat(k, '... -> coils ... ', coils=self.ncoils) for k in ktrue]
 
         # Open the dataset
         dset = ismrmrd.Dataset(self.filename, 'dataset', create_if_needed=True)
@@ -227,12 +238,12 @@ class IsmrmrdRawTestData:
 
         # Loop over the repetitions, add noise and write to disk
         for rep in range(self.repetitions):
-            noise = self.noise_level * torch.randn(self.ncoils, nfe, len(kpe), dtype=torch.complex64)
+            noise = self.noise_level * torch.randn(self.ncoils, nfe, len(kpe[rep]), dtype=torch.complex64)
             # Here's where we would make the noise correlated
-            K = ktrue + noise
+            K = ktrue[rep] + noise
             acq.idx.repetition = rep
-            for pe_idx, pe_pos in enumerate(kpe):
-                if not self.flag_invalid_reps or rep == 0 or pe_idx < len(kpe) // 2:  # fewer lines for rep > 0
+            for pe_idx, pe_pos in enumerate(kpe[rep]):
+                if not self.flag_invalid_reps or rep == 0 or pe_idx < len(kpe[rep]) // 2:  # fewer lines for rep > 0
                     # Set some fields in the header
                     acq.scan_counter = counter
 
@@ -250,7 +261,9 @@ class IsmrmrdRawTestData:
                         acq.setFlag(ismrmrd.ACQ_LAST_IN_REPETITION)
 
                     # Set trajectory.
-                    acq.traj[:] = torch.stack((traj_kx[:, pe_idx], traj_ky[:, pe_idx]), dim=1).numpy().astype(float)
+                    acq.traj[:] = (
+                        torch.stack((traj_kx[rep][:, pe_idx], traj_ky[rep][:, pe_idx]), dim=1).numpy().astype(float)
+                    )
 
                     # Set the data and append
                     acq.data[:] = K[:, :, pe_idx].numpy()
@@ -265,7 +278,7 @@ class IsmrmrdRawTestData:
         npe: int,
         nfe: int,
         acceleration: int = 1,
-        sampling_order: Literal['linear', 'low_high', 'high_low'] = 'linear',
+        sampling_order: Literal['linear', 'low_high', 'high_low', 'random'] = 'linear',
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Calculate Cartesian sampling trajecgory.
 
@@ -283,13 +296,20 @@ class IsmrmrdRawTestData:
         # Fully sampled frequency encoding
         kfe = torch.arange(-nfe // 2, nfe // 2)
 
-        # Always include k-space center and more points on the negative side of k-space
-        kpe_pos = torch.arange(0, npe // 2, acceleration)
-        kpe_neg = -torch.arange(acceleration, npe // 2 + 1, acceleration)
-        kpe = torch.cat((kpe_neg, kpe_pos), dim=0)
+        if sampling_order == 'random':
+            # Linear order of a fully sampled kpe dimension. Undersampling is done later.
+            kpe = torch.arange(0, npe)
+        else:
+            # Always include k-space center and more points on the negative side of k-space
+            kpe_pos = torch.arange(0, npe // 2, acceleration)
+            kpe_neg = -torch.arange(acceleration, npe // 2 + 1, acceleration)
+            kpe = torch.cat((kpe_neg, kpe_pos), dim=0)
 
         # Different temporal orders of phase encoding points
-        if sampling_order == 'linear':
+        if sampling_order == 'random':
+            perm = torch.randperm(len(kpe))
+            kpe = kpe[perm[: len(perm) // acceleration]]
+        elif sampling_order == 'linear':
             kpe, _ = torch.sort(kpe)
         elif sampling_order == 'low_high':
             idx = torch.argsort(torch.abs(kpe), stable=True)
