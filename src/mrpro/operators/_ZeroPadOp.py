@@ -49,7 +49,7 @@ class ZeroPadOp(LinearOperator):
         self.orig_shape: tuple[int, ...] = orig_shape
         self.padded_shape: tuple[int, ...] = padded_shape
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Pad or crop data.
 
         Parameters
@@ -61,9 +61,9 @@ class ZeroPadOp(LinearOperator):
         -------
             data with shape padded_shape
         """
-        return zero_pad_or_crop(x, self.padded_shape, self.dim)
+        return (zero_pad_or_crop(x, self.padded_shape, self.dim),)
 
-    def adjoint(self, x: torch.Tensor) -> torch.Tensor:
+    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Crop or pad data.
 
         Parameters
@@ -75,4 +75,4 @@ class ZeroPadOp(LinearOperator):
         -------
             data with shape orig_shape
         """
-        return zero_pad_or_crop(x, self.orig_shape, self.dim)
+        return (zero_pad_or_crop(x, self.orig_shape, self.dim),)

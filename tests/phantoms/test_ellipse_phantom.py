@@ -56,7 +56,7 @@ def test_kspace_image_match(ph_ellipse):
     im = ph_ellipse.phantom.image_space(im_dim)
     kdat = ph_ellipse.phantom.kspace(ph_ellipse.ky, ph_ellipse.kx)
     FFOp = FastFourierOp(dim=(-1, -2))
-    irec = FFOp.adjoint(kdat)
+    (irec,) = FFOp.adjoint(kdat)
     # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
     # differences along the edges of the elliptic objects.
