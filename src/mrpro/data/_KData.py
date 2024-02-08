@@ -66,11 +66,11 @@ class KData:
             filename
                 path to the ISMRMRD file
             ktrajectory
-                KTrajectory defining the trajectory to use # TODO: Maybe provide a default based on the header?
+                KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory
             header_overwrites
                 dictionary of key-value pairs to overwrite the header
             dataset_idx
-                index of the dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
+                index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
         """
 
         # Can raise FileNotFoundError
@@ -99,24 +99,22 @@ class KData:
             },
             overwrite=header_overwrites,
         )
+
+        # Create single kdata tensor from acquisition data
         kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 
         # Fill k0 limits if they were set to zero / not set in the header
         if kheader.encoding_limits.k0.length == 1:
             kheader.encoding_limits.k0 = Limits(0, kdata.shape[-1] - 1, kdata.shape[-1] // 2)
 
-        # TODO: Check for partial Fourier and reflected readouts
-
         # Sort kdata and acq_info into ("all other dim", coils, k2, k1, k0) / ("all other dim", k2, k1, acq_info_dims)
         # Fist, ensure each the non k1/k2 dimensions covers the same number of k1 and k2 points
         unique_idxs = {label: np.unique(getattr(kheader.acq_info.idx, label)) for label in KDIM_SORT_LABELS}
 
-        # In order to be able to reshape data into (other coils k2 k1 k0) the number of acquisitions has to be the
-        # same as the product of all unique_idxs
-        num_total_unique = torch.prod(torch.as_tensor([len(unique_idxs[label]) for label in KDIM_SORT_LABELS]))
+        # For reshaping into (other coils k2 k1 k0), the number of acqs must match the product of all unique_idxs
+        num_total_unique = torch.as_tensor([len(unique_idxs[label]) for label in KDIM_SORT_LABELS]).prod()
 
-        # At least one average, slice, contrast, phase, repetition and set must exist. We use this to find out the
-        # dimensions of k1 an k2.
+        # Define function to find index label combinations. This is used to determine the dimensions of k1 and k2.
         def idx_label_combination(average_idx, slice_idx, contrast_idx, phase_idx, repetition_idx, set_idx):
             return torch.nonzero(
                 (kheader.acq_info.idx.average == average_idx)
@@ -130,12 +128,14 @@ class KData:
         idx_matches = idx_label_combination(
             *[unique_idxs[label][0] for label in KDIM_SORT_LABELS if label not in ('k1', 'k2')]
         )
+
+        # Determine the number of k1 and k2 points
         if num_total_unique == kdata.shape[0]:
             # Data can be reshaped into (other coils k2 k1 k0))
             num_k1 = len(torch.unique(kheader.acq_info.idx.k1[idx_matches]))
             num_k2 = len(torch.unique(kheader.acq_info.idx.k2[idx_matches]))
         else:
-            # Data is reshaped as (other 1 (k2 k1) k0)
+            # Data is reshaped into (other 1 (k2 k1) k0)
             num_k1 = len(idx_matches)
             num_k2 = 1
 
@@ -170,12 +170,12 @@ class KData:
                 if len(idx_matches) != num_k1:
                     raise ValueError(f'Number of (k2 k1) points in {label_str}: {len(idx_matches)}. Expected: {num_k1}')
 
-        # using np.lexsort as it looks a bit more familiar than looping and torch.argsort(..., stable=True)
+        # Sort the data according to the sorted indices
         sort_ki = np.stack([getattr(kheader.acq_info.idx, label) for label in KDIM_SORT_LABELS], axis=0)
         sort_idx = np.lexsort(sort_ki)
-
         kdata = rearrange(kdata[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=num_k1, k2=num_k2)
 
+        # Reshape the acquisition data and update the header acquisition infos accordingly
         def reshape_acq_data(data):
             return rearrange(data[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=num_k1, k2=num_k2)
 

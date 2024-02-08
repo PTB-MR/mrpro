@@ -64,10 +64,19 @@ def test_KData_from_file(ismrmrd_cart):
 
 
 def test_KData_random_cart_undersampling(ismrmrd_cart_random_us):
-    """Read in data with different random Cartesian undersampling in multiple
+    """Read data with different random Cartesian undersampling in multiple
     repetitions."""
     k = KData.from_file(ismrmrd_cart_random_us.filename, DummyTrajectory())
     assert k is not None
+
+
+def test_KData_random_cart_undersampling_shape(ismrmrd_cart_random_us):
+    """Check shape of KData with random Cartesian undersampling."""
+    k = KData.from_file(ismrmrd_cart_random_us.filename, DummyTrajectory())
+    # check if the number of repetitions is correct
+    assert k.data.shape[-5] == ismrmrd_cart_random_us.repetitions
+    # check if the number of phase encoding lines per repetition is correct
+    assert k.data.shape[-2] == ismrmrd_cart_random_us.matrix_size // ismrmrd_cart_random_us.acceleration
 
 
 def test_KData_raise_wrong_ktraj_shape(ismrmrd_cart):
