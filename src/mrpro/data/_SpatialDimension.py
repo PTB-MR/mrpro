@@ -28,6 +28,8 @@ T = TypeVar('T', int, float, torch.Tensor)
 
 
 class XYZ(Protocol[T]):
+    """Protocol for structures with attributes x, y and z of type T."""
+
     x: T
     y: T
     z: T

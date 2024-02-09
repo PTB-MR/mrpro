@@ -18,6 +18,8 @@ from mrpro.operators import SignalModel
 
 
 class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
+    """WASABI signal model."""
+
     def __init__(
         self,
         offsets: torch.Tensor,
@@ -26,7 +28,7 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         gamma: torch.Tensor = torch.Tensor([42.5764]),
         freq: torch.Tensor = torch.Tensor([127.7292]),
     ) -> None:
-        """WASABI function for simultaneous determination of B1 and B0.
+        """Initialize WASABI signal model for mapping of B0 and B1.
 
         For more details see: https://doi.org/10.1002/mrm.26133
 
@@ -54,7 +56,24 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
     def forward(
         self, b0_shift: torch.Tensor, rb1: torch.Tensor, c: torch.Tensor, d: torch.Tensor
     ) -> tuple[torch.Tensor,]:
-        # ensure correct dimensionality
+        """Apply WASABI signal model.
+
+        Parameters
+        ----------
+        b0_shift
+            B0 shift [Hz]
+        rb1
+            relative B1 amplitude
+        c
+            additional fit parameter for the signal model
+        d
+            additional fit parameter for the signal model
+
+        Returns
+        -------
+        torch.Tensor
+            data tensor with dimensions ((... offsets), coils, z, y, x)
+        """
         offsets = self.offsets[(...,) + (None,) * b0_shift.ndim]
         delta_x = offsets - b0_shift
         b1 = self.b1_nom * rb1
@@ -67,8 +86,4 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         )
 
         # c = coils, ... = other (may be multi-dimensional)
-        print(res.shape)
-        return rearrange(res, 'offset ... c z y x -> (... offset) c z y x')
-
-
-# TODO: do singal model methods also for complex variants
+        return rearrange(res, 'offsets ... c z y x -> (... offsets) c z y x')

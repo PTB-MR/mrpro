@@ -78,6 +78,7 @@ class KHeader:
 
     @property
     def fa_degree(self) -> list[float]:
+        """Flip angle in degree."""
         return [el / pi * 180 for el in self.fa]
 
     @classmethod
@@ -102,7 +103,7 @@ class KHeader:
         overwrite
             dictionary of values to be used independent of header
         encoding_number
-            as ismrmrdHeader can contain multiple encodings, selects which to consider.
+            as ismrmrdHeader can contain multiple encodings, selects which to consider
         """
 
         # Conversion functions for units
