@@ -3,7 +3,7 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "MRpro"
+name = "mrpro"
 version = "0.0.1"
 description = "MR image reconstruction and processing package specifically developed for PyTorch."
 readme = "README.md"
