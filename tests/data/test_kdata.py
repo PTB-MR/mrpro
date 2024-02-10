@@ -42,10 +42,41 @@ def ismrmrd_cart_invalid_reps(tmp_path_factory):
     return ismrmrd_kdat
 
 
+@pytest.fixture(scope='session')
+def ismrmrd_cart_random_us(ph_ellipse, tmp_path_factory):
+    """Randomly undersampled cartesian data set with repetitions."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdat = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        acceleration=4,
+        sampling_order='random',
+        phantom=ph_ellipse.phantom,
+    )
+    return ismrmrd_kdat
+
+
 def test_KData_from_file(ismrmrd_cart):
     """Read in data from file."""
     k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     assert k is not None
+
+
+def test_KData_random_cart_undersampling(ismrmrd_cart_random_us):
+    """Read data with different random Cartesian undersampling in multiple
+    repetitions."""
+    k = KData.from_file(ismrmrd_cart_random_us.filename, DummyTrajectory())
+    assert k is not None
+
+
+def test_KData_random_cart_undersampling_shape(ismrmrd_cart_random_us):
+    """Check shape of KData with random Cartesian undersampling."""
+    k = KData.from_file(ismrmrd_cart_random_us.filename, DummyTrajectory())
+    # check if the number of repetitions is correct
+    assert k.data.shape[-5] == ismrmrd_cart_random_us.repetitions
+    # check if the number of phase encoding lines per repetition is correct
+    assert k.data.shape[-2] == ismrmrd_cart_random_us.matrix_size // ismrmrd_cart_random_us.acceleration
 
 
 def test_KData_raise_wrong_ktraj_shape(ismrmrd_cart):
@@ -59,7 +90,7 @@ def test_KData_raise_wrong_ktraj_shape(ismrmrd_cart):
 def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
     """Multiple repetitions with different number of phase encoding lines is
     not supported."""
-    with pytest.raises(ValueError, match='Number of k1 points in repetition: 128. Expected: 256'):
+    with pytest.raises(ValueError, match=r'Number of \((k2 k1\)) points in '):
         KData.from_file(ismrmrd_cart_invalid_reps.filename, DummyTrajectory())
 
 
