@@ -82,8 +82,8 @@ class KTrajectory:
             shape = self.broadcasted_shape
         except ValueError:
             raise ValueError('The k-space trajectory dimensions must be broadcastable.')
-        if len(shape) != 4:
-            raise ValueError('The k-space trajectory tensors should each have 4 dimensions.')
+        if len(shape) < 4:
+            raise ValueError('The k-space trajectory tensors should each have at least 4 dimensions.')
 
     @classmethod
     def from_tensor(
