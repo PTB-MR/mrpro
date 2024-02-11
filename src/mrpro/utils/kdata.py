@@ -15,7 +15,6 @@
 import copy
 from typing import Literal
 
-import numpy as np
 import torch
 from einops import rearrange
 from einops import repeat
@@ -29,7 +28,7 @@ from mrpro.utils import modify_acq_info
 def combine_k2_k1_into_k1(
     kdata: KData,
 ) -> KData:
-    """Combine k2 and k1 into k1 of kdata.
+    """Reshape kdata from (... k2 k1 ...) to (... 1 (k2 k1) ...).
 
     Parameters
     ----------
@@ -59,23 +58,23 @@ def combine_k2_k1_into_k1(
     return KData(kheader, kdat, KTrajectory.from_tensor(ktraj))
 
 
-def split_idx(idx: torch.Tensor, ni_per_block: int, ni_overlap: int = 0, cyclic: bool = False) -> torch.Tensor:
+def split_idx(idx: torch.Tensor, np_per_block: int, np_overlap: int = 0, cyclic: bool = False) -> torch.Tensor:
     """Split a tensor of indices into different blocks.
 
     Parameters
     ----------
     idx
         1D indices to be split into different blocks.
-    ni_per_block
+    np_per_block
         Number of points per block.
-    ni_overlap
+    np_overlap, optional
         Number of points overlapping between blocks, by default 0, i.e. no overlap between blocks
     cyclic, optional
         Last block is filled up with points from the first block, e.g. due to cyclic cardiac motion, by default False
 
 
     Example:
-    # idx = [1,2,3,4,5,6,7,8,9], ni_per_block = 5, ni_overlap = 3, cycle = True
+    # idx = [1,2,3,4,5,6,7,8,9], np_per_block = 5, np_overlap = 3, cycle = True
     #
     # idx:     1 2 3 4 5 6 7 8 9
     # block 0: 0 0 0 0 0
@@ -100,32 +99,21 @@ def split_idx(idx: torch.Tensor, ni_per_block: int, ni_overlap: int = 0, cyclic:
         raise ValueError('idx should be a 1D vector.')
 
     # Make sure overlap is not larger than the number of points in a block
-    if ni_overlap >= ni_per_block:
+    if np_overlap >= np_per_block:
         raise ValueError('Overlap has to be smaller than the number of points in a block.')
 
     # Calculate number of blocks
     # 1 2 3 4 5 6 7 8 9
-    # x x                       ni_non_overlap
-    #     x x x                 ni_overlap
-    # x x x x x                 ni_per_block
-    ni_non_overlap = ni_per_block - ni_overlap
+    # x x                       step
+    #     x x x                 np_overlap
+    # x x x x x                 np_per_block
+    step = np_per_block - np_overlap
 
     # For cyclic splitting utilize beginning of index to maximize number of blocks
     if cyclic:
-        num_blocks = int(np.ceil(idx.shape[0] / ni_non_overlap))
-        # Add required number of points from the beginning to the end
-        idx = torch.cat((idx, idx[: (num_blocks * ni_non_overlap + ni_overlap) - idx.shape[0]]), dim=0)
-    else:
-        num_blocks = (idx.shape[0] - ni_overlap) // ni_non_overlap
+        idx = torch.concat((idx, idx[:step]))
 
-    # Go through each block and get indices
-    split_idx = torch.zeros((num_blocks, ni_per_block), dtype=idx.dtype)
-    for block_idx in range(num_blocks):
-        block_start = block_idx * ni_non_overlap
-        block_end = block_start + ni_per_block
-        split_idx[block_idx, :] = idx[block_start:block_end]
-
-    return split_idx
+    return idx.unfold(dimension=0, size=np_per_block, step=step)
 
 
 def split_k2_or_k1_into_other(
@@ -201,7 +189,7 @@ def split_k2_or_k1_into_other(
     ktraj = kdata.traj.as_tensor()
     # Verify that other dimension of trajectory is 1 or matches data
     if ktraj.shape[1] > 1 and ktraj.shape[1] != kdata.data.shape[0]:
-        raise ValueError('other dimension of trajectory has to be 1 or match data')
+        raise ValueError(f'other dimension of trajectory has to be 1 or match data ({kdata.data.shape[0]})')
     elif ktraj.shape[1] == 1 and kdata.data.shape[0] > 1:
         ktraj = repeat(ktraj, 'dim other k2 k1 k0->dim (other_data other) k2 k1 k0', other_data=kdata.data.shape[0])
     ktraj = rearrange(split_data_traj(ktraj), rearrange_pattern_traj)
