@@ -24,8 +24,7 @@ class LinearOperator(Operator):
     """General Linear Operator."""
 
     @abstractmethod
-    def adjoint(self, x: torch.Tensor) -> torch.Tensor:
-        ...
+    def adjoint(self, x: torch.Tensor) -> torch.Tensor: ...
 
     @property
     def H(self):
