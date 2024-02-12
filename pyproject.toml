@@ -7,7 +7,7 @@ name = "MRpro"
 version = "0.0.1"
 description = "MR image reconstruction and processing package specifically developed for PyTorch."
 readme = "README.md"
-requires-python = ">=3.10,<3.12"
+requires-python = ">=3.10,<3.13"
 license = { file = "LICENSE" }
 keywords = ["MRI, reconstruction, processing, PyTorch"]
 authors = [
@@ -25,6 +25,7 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
