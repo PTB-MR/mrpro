@@ -17,6 +17,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 from pathlib import Path
+from typing import Literal
 
 import h5py
 import ismrmrd
@@ -29,6 +30,9 @@ from mrpro.data import KHeader
 from mrpro.data import KTrajectory
 from mrpro.data import KTrajectoryRawShape
 from mrpro.data import Limits
+from mrpro.data._kdata._rearrange_k2_k1_into_k1 import rearrange_k2_k1_into_k1
+from mrpro.data._kdata._select_other_subset import select_other_subset
+from mrpro.data._kdata._split_k2_or_k1_into_other import split_k2_or_k1_into_other
 from mrpro.data.enums import AcqFlags
 from mrpro.data.traj_calculators import KTrajectoryCalculator
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
@@ -330,3 +334,79 @@ class KData:
             data=self.data.cpu(memory_format=memory_format),  # type: ignore [call-arg]
             traj=self.traj.cpu(memory_format=memory_format),
         )
+
+    def split_k1_into_other(
+        self,
+        split_idx: torch.Tensor,
+        other_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
+    ) -> KData:
+        """Based on an index tensor, split the data in e.g. phases.
+
+        Parameters
+        ----------
+        split_idx
+            2D index describing the k1 points in each block to be moved to other dimension  (other_split, k1_per_split)
+        other_label
+            Label of other dimension, e.g. repetition, phase
+
+        Returns
+        -------
+            K-space data with new shape ((other other_split) coils k2 k1_per_split k0)
+        """
+        return split_k2_or_k1_into_other(self, split_idx, other_label, split_dir='k1')
+
+    def split_k2_into_other(
+        self,
+        split_idx: torch.Tensor,
+        other_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
+    ) -> KData:
+        """Based on an index tensor, split the data in e.g. phases.
+
+        Parameters
+        ----------
+        split_idx
+            2D index describing the k2 points in each block to be moved to other dimension  (other_split, k2_per_split)
+        other_label
+            Label of other dimension, e.g. repetition, phase
+
+        Returns
+        -------
+            K-space data with new shape ((other other_split) coils k2_per_split k1 k0)
+        """
+        return split_k2_or_k1_into_other(self, split_idx, other_label, split_dir='k2')
+
+    def rearrange_k2_k1_into_k1(
+        self,
+    ) -> KData:
+        """Rearrange kdata from (... k2 k1 ...) to (... 1 (k2 k1) ...).
+
+        Returns
+        -------
+            K-space data (other coils 1 (k2 k1) k0)
+        """
+        return rearrange_k2_k1_into_k1(self)
+
+    def select_other_subset(
+        self,
+        subset_idx: torch.Tensor,
+        subset_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
+    ) -> KData:
+        """Select a subset from the other dimension of KData.
+
+        Parameters
+        ----------
+        subset_idx
+            Index which elements of the other subset to use, e.g. phase 0,1,2 and 5
+        subset_label
+            Name of the other label, e.g. phase
+
+        Returns
+        -------
+            K-space data (other_subset coils k2 k1 k0)
+
+        Raises
+        ------
+        ValueError
+            If the subset indices are not available in the data
+        """
+        return select_other_subset(self, subset_idx, subset_label)
