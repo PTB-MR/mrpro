@@ -2,8 +2,8 @@
 import matplotlib.pyplot as plt
 import torch
 
+from mrpro.data import KData
 from mrpro.data import SpatialDimension
-from mrpro.data._KData import KData
 from mrpro.data.traj_calculators._KTrajectoryPulseq import KTrajectoryPulseq
 from mrpro.operators._FourierOp import FourierOp
 from mrpro.operators.models._WASABI import WASABI
