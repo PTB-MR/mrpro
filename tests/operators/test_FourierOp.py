@@ -180,13 +180,13 @@ def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, 
     op = FourierOp(recon_shape=recon_shape, encoding_shape=encoding_shape, traj=ktraj)
 
     # apply forward and adjoint operator
-    kdata = op(image)
-    reco = op.H(kdata)
+    (kdata,) = op(image)
+    (reco,) = op.H(kdata)
     # test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v
     random_generator = RandomGenerator(seed=0)
     u = random_generator.complex64_tensor(size=image.shape)
     v = random_generator.complex64_tensor(size=kdata.shape)
-    Fu, FHv = op(u), op.H(v)
+    (Fu,), (FHv,) = op(u), op.H(v)
     Fu_v = torch.vdot(Fu.flatten(), v.flatten())
     u_FHv = torch.vdot(u.flatten(), FHv.flatten())
 

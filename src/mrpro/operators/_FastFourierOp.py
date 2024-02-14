@@ -53,7 +53,7 @@ class FastFourierOp(LinearOperator):
             # No padding
             self._pad_op = ZeroPadOp(dim=(), orig_shape=(), padded_shape=())
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """FFT from image space to k-space.
 
         Parameters
@@ -65,12 +65,13 @@ class FastFourierOp(LinearOperator):
         -------
             FFT of x
         """
-        return torch.fft.fftshift(
-            torch.fft.fftn(torch.fft.ifftshift(self._pad_op.forward(x), dim=self._dim), dim=self._dim, norm='ortho'),
+        y = torch.fft.fftshift(
+            torch.fft.fftn(torch.fft.ifftshift(*self._pad_op.forward(x), dim=self._dim), dim=self._dim, norm='ortho'),
             dim=self._dim,
         )
+        return (y,)
 
-    def adjoint(self, y: torch.Tensor) -> torch.Tensor:
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
         """IFFT from k-space to image space.
 
         Parameters

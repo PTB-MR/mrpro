@@ -12,10 +12,10 @@
 import torch
 from einops import rearrange
 
-from mrpro.operators import Operator
+from mrpro.operators import SignalModel
 
 
-class SaturationRecovery(Operator):
+class SaturationRecovery(SignalModel[torch.Tensor, torch.Tensor]):
     def __init__(self, ti: torch.Tensor):
         """Parameters needed for saturation recovery.
 
@@ -27,7 +27,7 @@ class SaturationRecovery(Operator):
         super().__init__()
         self.ti = torch.nn.Parameter(ti, requires_grad=ti.requires_grad)
 
-    def forward(self, m0: torch.Tensor, t1: torch.Tensor) -> torch.Tensor:
+    def forward(self, m0: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the forward model.
 
         Parameters
@@ -42,4 +42,4 @@ class SaturationRecovery(Operator):
         ti = self.ti[(...,) + (None,) * (m0.ndim)]
         y = m0 * (1 - torch.exp(-(ti / t1)))
         res = rearrange(y, 't ... c z y x -> (... t) c z y x')
-        return res
+        return (res,)

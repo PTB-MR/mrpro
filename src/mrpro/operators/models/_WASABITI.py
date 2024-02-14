@@ -14,10 +14,10 @@ import torch
 import torch.nn as nn
 from einops import rearrange
 
-from mrpro.operators import Operator
+from mrpro.operators import SignalModel
 
 
-class WASABITI(Operator):
+class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
     def __init__(
         self,
         offsets: torch.Tensor,
@@ -54,7 +54,7 @@ class WASABITI(Operator):
         self.gamma = nn.Parameter(gamma, requires_grad=gamma.requires_grad)
         self.freq = nn.Parameter(freq, requires_grad=freq.requires_grad)
 
-    def forward(self, b0_shift: torch.Tensor, rb1: torch.Tensor, t1: torch.Tensor) -> torch.Tensor:
+    def forward(self, b0_shift: torch.Tensor, rb1: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
         b1 = self.b1_nom * rb1
 
         # ensure correct dimensionality
