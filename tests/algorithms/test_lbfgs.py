@@ -1,4 +1,4 @@
-"""Tests lbfgs."""
+"""Tests for LBFGS."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -14,42 +14,30 @@
 
 import pytest
 import torch
-import torch.nn as nn
+import torch.nn.functional as F
 
 from mrpro.algorithms import lbfgs
+from mrpro.data import SpatialDimension
+from mrpro.operators import ConstraintsOp
+from mrpro.operators import Operator
+from mrpro.operators.functionals import L2_data_discrepancy
+from mrpro.operators.models import SaturationRecovery
+from mrpro.phantoms import EllipsePhantom
 from tests import RandomGenerator
-
-
-class Rosenbrock(nn.Module):
-    def __init__(self, a=1, b=100):
-        super().__init__()
-        self.a = a
-        self.b = b
-
-    def forward(self, x1, x2):
-        fval = (self.a - x1) ** 2 + self.b * (x[:, 1] - x2**2) ** 2
-
-        return fval
+from tests.operators._OptimizationTestFunctions import Rosenbrock
 
 
 @pytest.mark.parametrize(
     'a, b',
-    [
-        (1, 100),
-    ],
+    [(1.0, 100.0), (2.0, 50.0), (5.0, 10.0), (10.0, 5.0)],
 )
-def test_lbfgs(a, b):
-    """Test lbfgs functionality."""
+def test_lbfgs_rosenbrock(a, b):
+    """Test adam functionality."""
 
     with pytest.raises(ImportWarning):  # ToDo: remove this when fixed
-        # hyperparams or lbfgs
-        lr = 1
-        max_iter = 120
-        max_eval = 120
-        tolerance_grad = 1e-07
-        tolerance_change = 1e-09
-        history_size = 10
-        line_search_fn = 'strong_wolfe'
+        # hyperparams or adam
+        lr = 1e-2
+        max_iter = 1000
 
         random_generator = RandomGenerator(seed=0)
 
@@ -70,13 +58,8 @@ def test_lbfgs(a, b):
         params = lbfgs(
             f,
             params,
-            lr=lr,
             max_iter=max_iter,
-            max_eval=max_eval,
-            tolerance_grad=tolerance_grad,
-            tolerance_change=tolerance_change,
-            history_size=history_size,
-            line_search_fn=line_search_fn,
+            lr=lr,
         )
 
         # minimizer of Rosenbrock function

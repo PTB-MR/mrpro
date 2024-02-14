@@ -13,20 +13,21 @@
 #   limitations under the License.
 
 
+import torch
 from torch.optim import LBFGS
 
 
 def lbfgs(
     f,
-    params,
-    lr=1,
-    max_iter=100,
-    max_eval=100,
-    tolerance_grad=1e-07,
-    tolerance_change=1e-09,
-    history_size=10,
-    line_search_fn='strong_wolfe',
-):
+    params: list,
+    lr: float = 1.0,
+    max_iter: int = 100,
+    max_eval: int | None = 100,
+    tolerance_grad: float = 1e-07,
+    tolerance_change: float = 1e-09,
+    history_size: int = 10,
+    line_search_fn: str | None = 'strong_wolfe',
+) -> list[torch.Tensor]:
     """LBFGS for non-linear minimization problems.
 
     Parameters
@@ -34,7 +35,7 @@ def lbfgs(
     f
         scalar function to be minimized
     params
-        list with parameters containing the initial guess of the solution
+        list with parameters to be optimized
     lr, optional
         learning rate
     max_iter, optional
@@ -55,13 +56,15 @@ def lbfgs(
 
     Returns
     -------
-        optimized parameter p
+        list of optimized parameters
     """
 
-    # enable gradient calculation
-    for p in params:
-        p.requires_grad = True
-
+    # TODO: remove after new pytorch release;
+    if torch.tensor([torch.is_complex(p) for p in params]).any():
+        raise ValueError(
+            "at least one tensor in 'params' is complex-valued; \
+            \ncomplex-valued tensors will be allowed for lbfgs in future torch versions"
+        )
     # define lbfgs routine
     lbfgs_ = LBFGS(
         params,
@@ -76,7 +79,7 @@ def lbfgs(
 
     def closure():
         lbfgs_.zero_grad()
-        objective = f(p)
+        objective = f(*params)
         objective.backward()
         return objective
 
