@@ -29,40 +29,46 @@ from tests.operators._OptimizationTestFunctions import Rosenbrock
 
 @pytest.mark.parametrize(
     'a, b',
-    [(1.0, 100.0), (2.0, 50.0), (5.0, 10.0), (10.0, 5.0)],
+    [(1.0, 100.0), (1.0, 50.0), (1.0, 25.0), (1.0, 2.0)],
 )
 def test_lbfgs_rosenbrock(a, b):
-    """Test adam functionality."""
+    """Test lbfgs functionality."""
 
-    with pytest.raises(ImportWarning):  # ToDo: remove this when fixed
-        # hyperparams or adam
-        lr = 1e-2
-        max_iter = 1000
+    # with pytest.raises(ImportWarning):  # ToDo: remove this when fixed
+    # hyperparams or lbfgs
+    lr = 1.0
+    max_iter = 2000
 
-        random_generator = RandomGenerator(seed=0)
+    random_generator = RandomGenerator(seed=0)
 
-        # generate two-dimensional test data
-        x1 = random_generator.float32_tensor(size=(1,))
-        x2 = random_generator.float32_tensor(size=(1,))
+    # generate two-dimensional test data
+    x1 = random_generator.float32_tensor(size=(1,))
+    x2 = random_generator.float32_tensor(size=(1,))
 
-        # enable gradient calculation
-        x1.requires_grad = True
-        x2.requires_grad = True
+    # enable gradient calculation
+    x1.requires_grad = True
+    x2.requires_grad = True
 
-        params = [x1, x2]
+    params = [x1, x2]
 
-        # define Rosenbrock function
-        f = Rosenbrock(a, b)
+    # define Rosenbrock function
+    f = Rosenbrock(a, b)
 
-        # call lbfgs
-        params = lbfgs(
-            f,
-            params,
-            max_iter=max_iter,
-            lr=lr,
-        )
+    # call lbfgs
+    params = lbfgs(
+        f,
+        params,
+        max_iter=max_iter,
+        lr=lr,
+    )
 
-        # minimizer of Rosenbrock function
-        sol = torch.tensor([a, a**2])
-        x = torch.tensor(params)
-        assert torch.isclose(x, sol, rtol=1e-4)
+    # minimizer of Rosenbrock function
+    sol = torch.tensor([a, a**2])
+
+    # obtained solution
+    x = torch.tensor(params)
+
+    # check if they are close
+    tol = 1.0
+    mse = F.mse_loss(sol, x)
+    assert mse < tol

@@ -79,7 +79,7 @@ def lbfgs(
 
     def closure():
         lbfgs_.zero_grad()
-        objective = f(*params)
+        (objective,) = f(*params)
         objective.backward()
         return objective
 
