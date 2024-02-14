@@ -30,9 +30,6 @@ from mrpro.data import KHeader
 from mrpro.data import KTrajectory
 from mrpro.data import KTrajectoryRawShape
 from mrpro.data import Limits
-from mrpro.data._kdata._rearrange_k2_k1_into_k1 import rearrange_k2_k1_into_k1
-from mrpro.data._kdata._select_other_subset import select_other_subset
-from mrpro.data._kdata._split_k2_or_k1_into_other import split_k2_or_k1_into_other
 from mrpro.data.enums import AcqFlags
 from mrpro.data.traj_calculators import KTrajectoryCalculator
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
@@ -319,6 +316,8 @@ class KData:
         -------
             K-space data with new shape ((other other_split) coils k2 k1_per_split k0)
         """
+        from mrpro.data._kdata._split_k2_or_k1_into_other import split_k2_or_k1_into_other
+
         return split_k2_or_k1_into_other(self, split_idx, other_label, split_dir='k1')
 
     def split_k2_into_other(
@@ -339,6 +338,8 @@ class KData:
         -------
             K-space data with new shape ((other other_split) coils k2_per_split k1 k0)
         """
+        from mrpro.data._kdata._split_k2_or_k1_into_other import split_k2_or_k1_into_other
+
         return split_k2_or_k1_into_other(self, split_idx, other_label, split_dir='k2')
 
     def rearrange_k2_k1_into_k1(
@@ -350,6 +351,8 @@ class KData:
         -------
             K-space data (other coils 1 (k2 k1) k0)
         """
+        from mrpro.data._kdata._rearrange_k2_k1_into_k1 import rearrange_k2_k1_into_k1
+
         return rearrange_k2_k1_into_k1(self)
 
     def select_other_subset(
@@ -375,4 +378,6 @@ class KData:
         ValueError
             If the subset indices are not available in the data
         """
+        from mrpro.data._kdata._select_other_subset import select_other_subset
+
         return select_other_subset(self, subset_idx, subset_label)
