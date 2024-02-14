@@ -307,7 +307,7 @@ def test_KData_split_k2_into_other(consistently_shaped_kdata, monkeypatch, nothe
         ('phase', torch.tensor([2, 2, 8], dtype=torch.int32)),
     ],
 )
-def test_KData_sel_other_subset_from_kdata(consistently_shaped_kdata, monkeypatch, subset_label, subset_idx):
+def test_KData_select_other_subset(consistently_shaped_kdata, monkeypatch, subset_label, subset_idx):
     """Test selection of a subset from other dimension."""
     # Create KData
     nother, ncoil, nk2, nk1, nk0 = consistently_shaped_kdata.data.shape
@@ -317,7 +317,7 @@ def test_KData_sel_other_subset_from_kdata(consistently_shaped_kdata, monkeypatc
     monkeypatch.setattr(consistently_shaped_kdata.header.acq_info.idx, subset_label, iother)
 
     # Select subset of data
-    kdata_subset = consistently_shaped_kdata.sel_other_subset_from_kdata(subset_idx, subset_label)
+    kdata_subset = consistently_shaped_kdata.select_other_subset(subset_idx, subset_label)
 
     # Verify shape of data
     assert kdata_subset.data.shape == (subset_idx.shape[0], ncoil, nk2, nk1, nk0)
