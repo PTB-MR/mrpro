@@ -437,6 +437,18 @@ document.write(`
     <span class="s1">&#39;set&#39;</span><span class="p">,</span>
 <span class="p">)</span>
 
+<span class="c1"># Same criteria as https://github.com/wtclarke/pymapvbvd/blob/master/mapvbvd/mapVBVD.py uses</span>
+<span class="n">DEFAULT_IGNORE_FLAGS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">AcqFlags</span><span class="o">.</span><span class="n">ACQ_IS_NOISE_MEASUREMENT</span>
+    <span class="o">|</span> <span class="n">AcqFlags</span><span class="o">.</span><span class="n">ACQ_IS_DUMMYSCAN_DATA</span>
+    <span class="o">|</span> <span class="n">AcqFlags</span><span class="o">.</span><span class="n">ACQ_IS_HPFEEDBACK_DATA</span>
+    <span class="o">|</span> <span class="n">AcqFlags</span><span class="o">.</span><span class="n">ACQ_IS_NAVIGATION_DATA</span>
+    <span class="o">|</span> <span class="n">AcqFlags</span><span class="o">.</span><span class="n">ACQ_IS_PHASECORR_DATA</span>
+    <span class="o">|</span> <span class="n">AcqFlags</span><span class="o">.</span><span class="n">ACQ_IS_PHASE_STABILIZATION</span>
+    <span class="o">|</span> <span class="n">AcqFlags</span><span class="o">.</span><span class="n">ACQ_IS_PHASE_STABILIZATION_REFERENCE</span>
+    <span class="o">|</span> <span class="n">AcqFlags</span><span class="o">.</span><span class="n">ACQ_IS_PARALLEL_CALIBRATION</span>
+<span class="p">)</span>
+
 
 <div class="viewcode-block" id="KData">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.KData.html#mrpro.data.KData">[docs]</a>
@@ -455,6 +467,7 @@ document.write(`
         <span class="n">ktrajectory</span><span class="p">:</span> <span class="n">KTrajectoryCalculator</span> <span class="o">|</span> <span class="n">KTrajectory</span> <span class="o">|</span> <span class="n">KTrajectoryIsmrmrd</span><span class="p">,</span>
         <span class="n">header_overwrites</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">dataset_idx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">ignore_flags</span><span class="p">:</span> <span class="n">AcqFlags</span> <span class="o">=</span> <span class="n">DEFAULT_IGNORE_FLAGS</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KData</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load k-space data from an ISMRMRD file.</span>
 
@@ -468,6 +481,11 @@ document.write(`
 <span class="sd">                dictionary of key-value pairs to overwrite the header</span>
 <span class="sd">            dataset_idx</span>
 <span class="sd">                index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)</span>
+<span class="sd">            ignore_flags</span>
+<span class="sd">                Acqisition flags to filter out. Defaults to all non-images as defined by pymapvbvd.</span>
+<span class="sd">                Use ACQ_NO_FLAG to disable the filter.</span>
+<span class="sd">                Note: If ACQ_IS_PARALLEL_CALIBRATION is set without also setting ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING</span>
+<span class="sd">                      we interpret it as: Ignore if IS_PARALLEL_CALIBRATION and not PARALLEL_CALIBRATION_AND_IMAGING</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Can raise FileNotFoundError</span>
@@ -481,9 +499,23 @@ document.write(`
                 <span class="n">mtime</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">modification_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">mtime</span><span class="p">)</span>
 
-        <span class="c1"># Noise data etc must be handled separately #TODO: check which flags we also need to add.</span>
-        <span class="n">ignore_flags</span> <span class="o">=</span> <span class="n">AcqFlags</span><span class="o">.</span><span class="n">ACQ_IS_NOISE_MEASUREMENT</span> <span class="o">|</span> <span class="n">AcqFlags</span><span class="o">.</span><span class="n">ACQ_IS_SURFACECOILCORRECTIONSCAN_DATA</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">AcqFlags</span><span class="o">.</span><span class="n">ACQ_IS_PARALLEL_CALIBRATION</span> <span class="ow">in</span> <span class="n">ignore_flags</span>
+            <span class="ow">and</span> <span class="n">AcqFlags</span><span class="o">.</span><span class="n">ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ignore_flags</span>
+        <span class="p">):</span>
+            <span class="c1"># if only ACQ_IS_PARALLEL_CALIBRATION is set, reinterpret it as: ignore if</span>
+            <span class="c1"># ACQ_IS_PARALLEL_CALIBRATION is set and ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING is not set</span>
+            <span class="n">ignore_flags</span> <span class="o">=</span> <span class="n">ignore_flags</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">AcqFlags</span><span class="o">.</span><span class="n">ACQ_IS_PARALLEL_CALIBRATION</span>
+            <span class="n">acquisitions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+                <span class="nb">filter</span><span class="p">(</span>
+                    <span class="k">lambda</span> <span class="n">acq</span><span class="p">:</span> <span class="p">(</span><span class="n">AcqFlags</span><span class="o">.</span><span class="n">ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING</span><span class="o">.</span><span class="n">value</span> <span class="o">&amp;</span> <span class="n">acq</span><span class="o">.</span><span class="n">flags</span><span class="p">)</span>
+                    <span class="ow">or</span> <span class="ow">not</span> <span class="p">(</span><span class="n">AcqFlags</span><span class="o">.</span><span class="n">ACQ_IS_PARALLEL_CALIBRATION</span><span class="o">.</span><span class="n">value</span> <span class="o">&amp;</span> <span class="n">acq</span><span class="o">.</span><span class="n">flags</span><span class="p">),</span>
+                    <span class="n">acquisitions</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
         <span class="n">acquisitions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">acq</span><span class="p">:</span> <span class="ow">not</span> <span class="p">(</span><span class="n">ignore_flags</span><span class="o">.</span><span class="n">value</span> <span class="o">&amp;</span> <span class="n">acq</span><span class="o">.</span><span class="n">flags</span><span class="p">),</span> <span class="n">acquisitions</span><span class="p">))</span>
+
         <span class="n">acqinfo</span> <span class="o">=</span> <span class="n">AcqInfo</span><span class="o">.</span><span class="n">from_ismrmrd_acquisitions</span><span class="p">(</span><span class="n">acquisitions</span><span class="p">)</span>
 
         <span class="c1"># Raises ValueError if required fields are missing in the header</span>
