@@ -12,13 +12,18 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from __future__ import annotations
+
 import copy
+from typing import TYPE_CHECKING
 
 from einops import rearrange
 
-from mrpro.data import KData
-from mrpro.data import KTrajectory
 from mrpro.utils import modify_acq_info
+
+if TYPE_CHECKING:
+    from mrpro.data import KData
+    from mrpro.data import KTrajectory
 
 
 def rearrange_k2_k1_into_k1(
@@ -40,7 +45,7 @@ def rearrange_k2_k1_into_k1(
     kdat = rearrange(kdata.data, '... coils k2 k1 k0->... coils 1 (k2 k1) k0')
 
     # Rearrange trajectory
-    ktraj = rearrange(kdata.traj.as_tensor(), 'dim other k2 k1 k0-> dim other 1 (k2 k1) k0')
+    ktraj = rearrange(kdata.traj.as_tensor(), 'dim ... k2 k1 k0-> dim ... 1 (k2 k1) k0')
 
     # Create new header with correct shape
     kheader = copy.deepcopy(kdata.header)

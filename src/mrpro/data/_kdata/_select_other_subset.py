@@ -12,14 +12,20 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from __future__ import annotations
+
 import copy
-from typing import Literal
+from typing import TYPE_CHECKING
 
 import torch
 
-from mrpro.data import KData
-from mrpro.data import KTrajectory
 from mrpro.utils import modify_acq_info
+
+if TYPE_CHECKING:
+    from typing import Literal
+
+    from mrpro.data import KData
+    from mrpro.data import KTrajectory
 
 
 def select_other_subset(

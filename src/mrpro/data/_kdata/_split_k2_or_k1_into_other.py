@@ -12,17 +12,23 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from __future__ import annotations
+
 import copy
-from typing import Literal
+from typing import TYPE_CHECKING
 
 import torch
 from einops import rearrange
 from einops import repeat
 
-from mrpro.data import KData
-from mrpro.data import KTrajectory
-from mrpro.data import Limits
 from mrpro.utils import modify_acq_info
+
+if TYPE_CHECKING:
+    from typing import Literal
+
+    from mrpro.data import KData
+    from mrpro.data import KTrajectory
+    from mrpro.data import Limits
 
 
 def split_k2_or_k1_into_other(
@@ -122,3 +128,49 @@ def split_k2_or_k1_into_other(
     setattr(kheader.acq_info.idx, other_label, acq_info_other_split)
 
     return KData(kheader, kdat, KTrajectory.from_tensor(ktraj))
+
+
+def split_k1_into_other(
+    kdata: KData,
+    split_idx: torch.Tensor,
+    other_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
+) -> KData:
+    """Based on an index tensor, split the data in e.g. phases.
+
+    Parameters
+    ----------
+    split_idx
+        2D index describing the k1 points in each block to be moved to other dimension  (other_split, k1_per_split)
+    other_label
+        Label of other dimension, e.g. repetition, phase
+
+    Returns
+    -------
+        K-space data with new shape ((other other_split) coils k2 k1_per_split k0)
+    """
+    from mrpro.data._kdata._split_k2_or_k1_into_other import split_k2_or_k1_into_other
+
+    return split_k2_or_k1_into_other(kdata, split_idx, other_label, split_dir='k1')
+
+
+def split_k2_into_other(
+    kdata: KData,
+    split_idx: torch.Tensor,
+    other_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
+) -> KData:
+    """Based on an index tensor, split the data in e.g. phases.
+
+    Parameters
+    ----------
+    split_idx
+        2D index describing the k2 points in each block to be moved to other dimension  (other_split, k2_per_split)
+    other_label
+        Label of other dimension, e.g. repetition, phase
+
+    Returns
+    -------
+        K-space data with new shape ((other other_split) coils k2_per_split k1 k0)
+    """
+    from mrpro.data._kdata._split_k2_or_k1_into_other import split_k2_or_k1_into_other
+
+    return split_k2_or_k1_into_other(kdata, split_idx, other_label, split_dir='k2')
