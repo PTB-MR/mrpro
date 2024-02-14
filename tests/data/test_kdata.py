@@ -98,7 +98,7 @@ def test_KData_kspace(ismrmrd_cart):
     """Read in data and verify k-space by comparing reconstructed image."""
     k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     FFOp = FastFourierOp(dim=(-1, -2))
-    irec = FFOp.adjoint(k.data)
+    (irec,) = FFOp.adjoint(k.data)
 
     # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high

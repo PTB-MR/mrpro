@@ -189,7 +189,7 @@ class FourierOp(LinearOperator):
         target_pattern = f'(other{fft_dims_str}{ignore_dims_str}) coils{nufft_dims_str}'
         return target_pattern
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Forward operator mapping the coil-images to the coil k-space data.
 
         Parameters
@@ -205,7 +205,7 @@ class FourierOp(LinearOperator):
             raise ValueError('image data shape missmatch')
 
         if len(self._fft_dims) != 0:
-            x = self._fast_fourier_op.forward(x)
+            (x,) = self._fast_fourier_op.forward(x)
 
         if len(self._nufft_dims) != 0:
             init_pattern = 'other coils dim2 dim1 dim0'
@@ -236,9 +236,9 @@ class FourierOp(LinearOperator):
             nk2, nk1, nk0 = self._kshape[1:]
             x = rearrange(x, target_pattern + '->' + init_pattern, other=nb, coils=nc, dim1=nk1, dim2=nk2, dim0=nk0)
 
-        return x
+        return (x,)
 
-    def adjoint(self, y: torch.Tensor) -> torch.Tensor:
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint operator mapping the coil k-space data to the coil images.
 
         Parameters
@@ -256,7 +256,7 @@ class FourierOp(LinearOperator):
 
         # apply IFFT
         if len(self._fft_dims) != 0:
-            y = self._fast_fourier_op.adjoint(y)
+            (y,) = self._fast_fourier_op.adjoint(y)
 
         # move dim where FFT was already performed such nuFFT can be performed
         if len(self._nufft_dims) != 0:
@@ -289,4 +289,4 @@ class FourierOp(LinearOperator):
             nz, ny, nx = self._recon_shape.z, self._recon_shape.y, self._recon_shape.x
             y = rearrange(y, target_pattern + '->' + init_pattern, other=nb, coils=nc, dim2=nz, dim1=ny, dim0=nx)
 
-        return y
+        return (y,)
