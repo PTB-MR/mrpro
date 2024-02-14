@@ -50,10 +50,12 @@ be created. A simply acquisition model could consist of a ``SensitivityOp`` desc
 receiver coils and ``FourierOp`` describing the transform from image space to k-space taking the sampling scheme
 (trajectory) into account. Additional operators describing transformations due to physiological motion or
 MR signal models can be added.
+All operators take one or more tensors as input and return a tuple of one or more tensors as output.
+Operators can be chained using ``@`` to form a full acquisition model.
 
 Based on the acquisition model a suitable minimization function and reconstruction algorithm needs to be selected.
 
-Depending on the choices made above the reconstruction algorithms provides images (``ImageData``) or quantitative
+Depending on the choices made above the reconstruction algorithms provides images (``IData``) or quantitative
 parametric maps (``QData``).
 
 Image processing

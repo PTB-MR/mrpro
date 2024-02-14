@@ -446,9 +446,11 @@ echo or partial Fourier is expected to be within [-128, 127] along both readout 
 be created. A simply acquisition model could consist of a <code class="docutils literal notranslate"><span class="pre">SensitivityOp</span></code> describing the effect of different
 receiver coils and <code class="docutils literal notranslate"><span class="pre">FourierOp</span></code> describing the transform from image space to k-space taking the sampling scheme
 (trajectory) into account. Additional operators describing transformations due to physiological motion or
-MR signal models can be added.</p>
+MR signal models can be added.
+All operators take one or more tensors as input and return a tuple of one or more tensors as output.
+Operators can be chained using <code class="docutils literal notranslate"><span class="pre">&#64;</span></code> to form a full acquisition model.</p>
 <p>Based on the acquisition model a suitable minimization function and reconstruction algorithm needs to be selected.</p>
-<p>Depending on the choices made above the reconstruction algorithms provides images (<code class="docutils literal notranslate"><span class="pre">ImageData</span></code>) or quantitative
+<p>Depending on the choices made above the reconstruction algorithms provides images (<code class="docutils literal notranslate"><span class="pre">IData</span></code>) or quantitative
 parametric maps (<code class="docutils literal notranslate"><span class="pre">QData</span></code>).</p>
 </section>
 <section id="image-processing">
