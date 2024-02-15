@@ -1,4 +1,8 @@
 # %%
+import subprocess
+import tempfile
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import torch
 
@@ -10,13 +14,20 @@ from mrpro.operators.models._WASABI import WASABI
 from mrpro.operators.models._WASABITI import WASABITI
 
 # %%
-filepath = R'/home/hammac01/CEST_Data/'
+
+data_folder = Path(tempfile.mkdtemp())
+zenodo_cmd = f'zenodo_get 10.5281/zenodo.10664974/files/20231127_WASABITI_adjusted_fov192.seq -o {str(data_folder)}'
+out = subprocess.call(zenodo_cmd, shell=True)
+
+# %%
+# for single file
+filepath = data_folder
 seq_filename = '20231127_WASABITI_adjusted_fov192.seq'
 h5_filename = 'meas_MID00021_FID05730_20231127_WASABITI_adjusted_fov192.h5'
 
 data = KData.from_file(
-    ktrajectory=KTrajectoryPulseq(seq_path=filepath + seq_filename),
-    filename=filepath + h5_filename,
+    ktrajectory=KTrajectoryPulseq(seq_path=f'{filepath}/{seq_filename}'),
+    filename=f'{filepath}/{h5_filename}',
 )
 # %%
 # manually set kz
