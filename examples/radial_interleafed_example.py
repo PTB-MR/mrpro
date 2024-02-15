@@ -19,9 +19,17 @@ from mrpro.operators._FourierOp import FourierOp
 
 # %%
 
+# flag for conversion and saving nifty files
+# If you wish to save the resulting reconstructed image as a nifty fily, set  NIFTI = "True"
+NIFTI = False
+# %%
+
 data_folder = Path(tempfile.mkdtemp())
 zenodo_cmd = f'zenodo_get 10.5281/zenodo.10664974 -o {str(data_folder)}'
 out = subprocess.call(zenodo_cmd, shell=True)
+
+if out != 0:
+    raise ConnectionError('Zenodo donload failed!')
 
 # %%
 # for single file
@@ -66,13 +74,15 @@ for i in image:
 
 # idata = IData.from_tensor_and_kheader(im, data.header)
 # %%
-image = image.swapaxes(0, 2)
-rotated = np.rot90(image.numpy(), 3)
-ni_img = nib.Nifti1Image(np.abs(image.numpy()), affine=np.eye(4))
-# nib.save(
-#    ni_img,
-#    f'{filepath}/{h5_filename.split(".")[0]}/.nii',
-# )
+if NIFTI:
+    image = image.swapaxes(0, 2)
+    rotated = np.rot90(image.numpy(), 3)
+    ni_img = nib.Nifti1Image(np.abs(image.numpy()), affine=np.eye(4))
+    nib.save(
+        ni_img,
+        f'{filepath}/{h5_filename.split(".")[0]}/.nii',
+    )
+# %%
 
 # %%
 # test_load = nib.load(
