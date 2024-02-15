@@ -25,10 +25,10 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.12
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.12'
           cache: 'pip'
 
       - name: Install dependencies
@@ -102,10 +102,10 @@ jobs:
         with:
           ref: ${{ needs.convert_scripts.outputs.commit_hash }}
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.12
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.12'
           cache: 'pip'
 
       - name: Install dependencies
@@ -165,11 +165,11 @@ jobs:
 
     - name: Download notebook hmtl files
       id: download
-      uses: actions/download-artifact@master
+      uses: actions/download-artifact@v4
       with:
         path: ./docs/source/notebook_artifact/
 
-    - name: Copy notebook hmtl files
+    - name: Copy notebook html files
       run: |
           mkdir ./docs/source/_notebooks
           cd ./docs/source/notebook_artifact/
