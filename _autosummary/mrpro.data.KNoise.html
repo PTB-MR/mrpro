@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>mrpro.data.KNoise &#8212; MRpro</title>
+    <title>mrpro.data.KNoise &#8212; mrpro</title>
   
   
   
@@ -116,7 +116,7 @@
   
   
   
-    <p class="title logo__title">MRpro</p>
+    <p class="title logo__title">mrpro</p>
   
 </a></div>
     
@@ -464,8 +464,20 @@ document.write(`
 <h1>mrpro.data.KNoise<a class="headerlink" href="#mrpro-data-knoise" title="Link to this heading">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="mrpro.data.KNoise">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.</span></span><span class="sig-name descname"><span class="pre">KNoise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'torch.Tensor'</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/_KNoise.html#KNoise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KNoise" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.</span></span><span class="sig-name descname"><span class="pre">KNoise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/_KNoise.html#KNoise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KNoise" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>MR raw data / k-space data class for noise measurements.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KNoise.data">
+<span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#mrpro.data.KNoise.data" title="Link to this definition">#</a></dt>
+<dd><p>k-space data of noise measurements as complex tensor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.KNoise.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.data.KNoise.__init__" title="Link to this definition">#</a></dt>
@@ -485,7 +497,7 @@ document.write(`
 <p class="rubric">Attributes</p>
 <table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KNoise.data" title="mrpro.data.KNoise.data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code></a></p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -555,6 +567,7 @@ document.write(`
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KNoise"><code class="docutils literal notranslate"><span class="pre">KNoise</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KNoise.data"><code class="docutils literal notranslate"><span class="pre">KNoise.data</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KNoise.__init__"><code class="docutils literal notranslate"><span class="pre">KNoise.__init__()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KNoise.from_file"><code class="docutils literal notranslate"><span class="pre">KNoise.from_file()</span></code></a></li>
 </ul>

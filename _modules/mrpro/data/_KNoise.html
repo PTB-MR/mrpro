@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>mrpro.data._KNoise &#8212; MRpro</title>
+    <title>mrpro.data._KNoise &#8212; mrpro</title>
   
   
   
@@ -113,7 +113,7 @@
   
   
   
-    <p class="title logo__title">MRpro</p>
+    <p class="title logo__title">mrpro</p>
   
 </a></div>
     
@@ -421,6 +421,14 @@ document.write(`
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.KNoise.html#mrpro.data.KNoise">[docs]</a>
 <span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">KNoise</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;MR raw data / k-space data class for noise measurements.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data</span>
+<span class="sd">        k-space data of noise measurements as complex tensor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
 
 <div class="viewcode-block" id="KNoise.from_file">

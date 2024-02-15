@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>mrpro.data._EncodingLimits &#8212; MRpro</title>
+    <title>mrpro.data._EncodingLimits &#8212; mrpro</title>
   
   
   
@@ -113,7 +113,7 @@
   
   
   
-    <p class="title logo__title">MRpro</p>
+    <p class="title logo__title">mrpro</p>
   
 </a></div>
     
@@ -424,14 +424,19 @@ document.write(`
     <span class="nb">max</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">center</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
 
+<div class="viewcode-block" id="Limits.from_ismrmrd">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Limits.html#mrpro.data.Limits.from_ismrmrd">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_ismrmrd</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">limitType</span><span class="p">:</span> <span class="n">limitType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Limits</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create Limits from ismrmrd.limitType.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">limitType</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">cls</span><span class="p">()</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">*</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">astuple</span><span class="p">(</span><span class="n">limitType</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">*</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">astuple</span><span class="p">(</span><span class="n">limitType</span><span class="p">))</span></div>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Length of the limits.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">max</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min</span> <span class="o">+</span> <span class="mi">1</span></div>
 
 

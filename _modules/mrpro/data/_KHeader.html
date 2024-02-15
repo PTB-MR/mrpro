@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>mrpro.data._KHeader &#8212; MRpro</title>
+    <title>mrpro.data._KHeader &#8212; mrpro</title>
   
   
   
@@ -113,7 +113,7 @@
   
   
   
-    <p class="title logo__title">MRpro</p>
+    <p class="title logo__title">mrpro</p>
   
 </a></div>
     
@@ -473,6 +473,7 @@ document.write(`
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">fa_degree</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Flip angle in degree.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">el</span> <span class="o">/</span> <span class="n">pi</span> <span class="o">*</span> <span class="mi">180</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fa</span><span class="p">]</span>
 
 <div class="viewcode-block" id="KHeader.from_ismrmrd">
@@ -499,7 +500,7 @@ document.write(`
 <span class="sd">        overwrite</span>
 <span class="sd">            dictionary of values to be used independent of header</span>
 <span class="sd">        encoding_number</span>
-<span class="sd">            as ismrmrdHeader can contain multiple encodings, selects which to consider.</span>
+<span class="sd">            as ismrmrdHeader can contain multiple encodings, selects which to consider</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Conversion functions for units</span>
