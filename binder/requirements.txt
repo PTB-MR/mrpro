@@ -17,11 +17,7 @@ certifi==2023.11.17
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
-    # via
-    #   pip-tools
-    #   typer
-colorama==0.4.6
-    # via typer
+    # via pip-tools
 comm==0.2.0
     # via ipykernel
 contourpy==1.2.0
@@ -34,8 +30,6 @@ debugpy==1.8.0
     # via ipykernel
 decorator==5.1.1
     # via ipython
-deprecated==1.2.14
-    # via torchio
 einops==0.7.0
     # via mrpro (pyproject.toml)
 executing==2.0.1
@@ -52,8 +46,6 @@ fsspec==2023.12.0
     # via torch
 h5py==3.10.0
     # via ismrmrd
-humanize==4.9.0
-    # via torchio
 idna==3.6
     # via requests
 ipykernel==6.27.1
@@ -87,7 +79,6 @@ markdown-it-py==3.0.0
     # via
     #   jupytext
     #   mdit-py-plugins
-    #   rich
 markupsafe==2.1.3
     # via jinja2
 matplotlib==3.8.2
@@ -110,8 +101,6 @@ nest-asyncio==1.5.8
     # via ipykernel
 networkx==3.2.1
     # via torch
-nibabel==5.1.0
-    # via torchio
 numba==0.58.1
     # via sigpy
 numpy==1.26.2
@@ -121,13 +110,11 @@ numpy==1.26.2
     #   ismrmrd
     #   matplotlib
     #   mrpro (pyproject.toml)
-    #   nibabel
     #   numba
     #   pypulseq
     #   pywavelets
     #   scipy
     #   sigpy
-    #   torchio
     #   torchkbnufft
 nvidia-cublas-cu12==12.1.3.1
     # via
@@ -166,7 +153,6 @@ packaging==23.2
     #   ipykernel
     #   jupytext
     #   matplotlib
-    #   nibabel
 parso==0.8.3
     # via jedi
 pexpect==4.9.0
@@ -188,9 +174,7 @@ pure-eval==0.2.2
 pydicom==2.4.3
     # via mrpro (pyproject.toml)
 pygments==2.17.2
-    # via
-    #   ipython
-    #   rich
+    # via ipython
 pyparsing==3.1.1
     # via matplotlib
 pyproject-hooks==1.0.0
@@ -215,8 +199,6 @@ referencing==0.31.1
     #   jsonschema-specifications
 requests==2.31.0
     # via zenodo-get
-rich==13.7.0
-    # via typer
 rpds-py==0.13.2
     # via
     #   jsonschema
@@ -225,14 +207,9 @@ scipy==1.11.4
     # via
     #   pypulseq
     #   sigpy
-    #   torchio
     #   torchkbnufft
-shellingham==1.5.4
-    # via typer
 sigpy==0.1.26
     # via pypulseq
-simpleitk==2.3.1
-    # via torchio
 six==1.16.0
     # via
     #   asttokens
@@ -246,10 +223,7 @@ toml==0.10.2
 torch==2.2.0
     # via
     #   mrpro (pyproject.toml)
-    #   torchio
     #   torchkbnufft
-torchio==0.19.3
-    # via mrpro (pyproject.toml)
 torchkbnufft==1.4.0
     # via mrpro (pyproject.toml)
 tornado==6.4
@@ -257,9 +231,7 @@ tornado==6.4
     #   ipykernel
     #   jupyter-client
 tqdm==4.66.1
-    # via
-    #   sigpy
-    #   torchio
+    # via sigpy
 traitlets==5.14.0
     # via
     #   comm
@@ -271,12 +243,9 @@ traitlets==5.14.0
     #   nbformat
 triton==2.2.0
     # via torch
-typer[all]==0.9.0
-    # via torchio
 typing-extensions==4.8.0
     # via
     #   torch
-    #   typer
     #   xsdata
 urllib3==2.1.0
     # via requests
@@ -286,8 +255,6 @@ wget==3.2
     # via zenodo-get
 wheel==0.42.0
     # via pip-tools
-wrapt==1.16.0
-    # via deprecated
 xsdata==23.8
     # via ismrmrd
 zenodo-get==1.5.1
