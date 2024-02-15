@@ -70,8 +70,7 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
 
         Returns
         -------
-        torch.Tensor
-            data tensor with dimensions ((... offsets), coils, z, y, x)
+            signal with dimensions ((... offsets), coils, z, y, x)
         """
         b1 = self.b1_nom * rb1
 

@@ -71,8 +71,7 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
 
         Returns
         -------
-        torch.Tensor
-            data tensor with dimensions ((... offsets), coils, z, y, x)
+            signal with dimensions ((... offsets), coils, z, y, x)
         """
         offsets = self.offsets[(...,) + (None,) * b0_shift.ndim]
         delta_x = offsets - b0_shift

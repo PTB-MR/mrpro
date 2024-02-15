@@ -41,8 +41,7 @@ class InversionRecovery(SignalModel[torch.Tensor, torch.Tensor]):
 
         Returns
         -------
-        torch.Tensor
-            data tensor with dimensions ((... inv_times), coils, z, y, x)
+            signal with dimensions ((... inv_times), coils, z, y, x)
         """
         t1 = torch.where(t1 == 0, 1e-10, t1)
         ti = self.ti[(...,) + (None,) * (m0.ndim)]
