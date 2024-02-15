@@ -44,6 +44,8 @@ class CartesianSamplingOp(LinearOperator):
             the k-space trajectories where the frequencies are sampled
         """
         super().__init__()
+        self._fft_idx_full: torch.Tensor | None
+        self._fft_idx: torch.Tensor | None
 
         # Find dimensions of Cartesian sampling
         fft_dims = [dim for dim in (-3, -2, -1) if traj.type_along_kzyx[dim] == TrajType.ONGRID]
@@ -86,11 +88,11 @@ class CartesianSamplingOp(LinearOperator):
             )
 
             self._fft_idx = kidx
-            self._fft_idx_full = torch.zeros(0)  # not None to satisfy mypy
+            self._fft_idx_full = None
 
         # Make sure sorting index is actually needed
-        if torch.all(torch.diff(self._fft_idx.flatten()) == 1):
-            self._fft_idx = torch.zeros(0)  # not None to satisfy mypy
+        if self._fft_idx is not None and torch.all(torch.diff(self._fft_idx.flatten()) == 1):
+            self._fft_idx = None
 
         self._fft_dims = tuple(fft_dims)
         self._kshape = traj.broadcasted_shape
@@ -103,7 +105,7 @@ class CartesianSamplingOp(LinearOperator):
         dim_coils: int,
         dim_other: int,
         encoding_shape: SpatialDimension,
-    ):
+    ) -> torch.Tensor:
         """Expand the fft index to the full dataset.
 
         The fft_idx is calculated based on the trajectory and hence does not include the coil dimension and not
@@ -161,9 +163,9 @@ class CartesianSamplingOp(LinearOperator):
         if self._encoding_shape != SpatialDimension(*x.shape[-3:]):
             raise ValueError('k-space data shape missmatch')
 
-        if len(self._fft_dims) > 0 and len(self._fft_idx) > 0:
+        if self._fft_dims and self._fft_idx is not None:
             # Calculate the full index if it has not been calculated yet or if the other and coil dimension has changed
-            if len(self._fft_idx_full) == 0 or self._fft_idx_full.shape[:2] != x.shape[:2]:
+            if (self._fft_idx_full is None) or (self._fft_idx_full.shape[:2] != x.shape[:2]):
                 self._fft_idx_full = self._expand_fft_idx(
                     self._fft_idx, x.device, x.shape[-4], x.shape[-5], self._encoding_shape
                 )
@@ -188,9 +190,9 @@ class CartesianSamplingOp(LinearOperator):
         if self._kshape[1:] != y.shape[-3:]:
             raise ValueError('k-space data shape missmatch')
 
-        if len(self._fft_dims) > 0 and len(self._fft_idx) > 0:
+        if self._fft_dims and self._fft_idx is not None:
             # Calculate the full index if it has not been calculated yet or if the other and coil dimension has changed
-            if len(self._fft_idx_full) == 0 or self._fft_idx_full.shape[:2] != y.shape[:2]:
+            if self._fft_idx_full is None or self._fft_idx_full.shape[:2] != y.shape[:2]:
                 self._fft_idx_full = self._expand_fft_idx(
                     self._fft_idx, y.device, y.shape[-4], y.shape[-5], self._encoding_shape
                 )

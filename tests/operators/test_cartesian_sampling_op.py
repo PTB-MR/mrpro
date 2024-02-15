@@ -19,9 +19,7 @@ from mrpro.data import KTrajectory
 from mrpro.data import SpatialDimension
 from mrpro.operators import CartesianSamplingOp
 from tests import RandomGenerator
-from tests.conftest import COMMON_MR_TRAJECTORIES
 from tests.data.test_ktraj import create_traj
-from tests.operators.test_fourier_op import create_data
 
 
 def test_cart_sampling_op_data_match():
@@ -49,7 +47,7 @@ def test_cart_sampling_op_data_match():
     SOp_sub = CartesianSamplingOp(encoding_shape=encoding_shape, traj=ktraj_sub)
 
     # Verify that the fully-sampled sampling operator does not do anything because the data is already sorted
-    assert len(SOp._fft_idx) == 0
+    assert SOp._fft_idx is None
 
     # Verify identical shape
     (k,) = SOp.adjoint(kdata)
