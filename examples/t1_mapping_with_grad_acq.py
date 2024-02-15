@@ -61,8 +61,12 @@ kdata = KData.from_file(data_folder / '2D_Dyn_GRad.h5', KTrajectoryIsmrmrd())
 kdcf = DcfData.from_traj_voronoi(kdata.traj)
 
 # Reconstruct average image for coil map estimation
-FOp = FourierOp(kdata.header.recon_matrix, kdata.traj)
-im = FOp.adjoint(kdata.data * kdcf.data[:, None, ...])
+FOp = FourierOp(
+    recon_shape=kdata.header.recon_matrix,
+    encoding_shape=kdata.header.encoding_matrix,
+    traj=kdata.traj,
+)
+(im,) = FOp.adjoint(kdata.data * kdcf.data[:, None, ...])
 
 # %%
 # Calculate coilmaps
@@ -72,7 +76,7 @@ csm_op = SensitivityOp(csm)
 
 # %%
 # Coil combination
-im = csm_op.adjoint(im)
+(im,) = csm_op.adjoint(im)
 
 # %%
 # Visualize results
