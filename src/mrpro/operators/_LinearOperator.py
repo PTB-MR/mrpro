@@ -32,7 +32,9 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor,]]):
     """General Linear Operator."""
 
     @abstractmethod
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]: ...
+    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Adjoint of the operator."""
+        ...
 
     @property
     def H(self):
@@ -89,6 +91,8 @@ class LinearOperatorElementwiseProduct(LinearOperator, OperatorElementwiseProduc
 
 
 class AdjointLinearOperator(LinearOperator):
+    """Adjoint of a LinearOperator."""
+
     def __init__(self, operator: LinearOperator) -> None:
         super().__init__()
         self._operator = operator
