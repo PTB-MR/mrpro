@@ -52,10 +52,12 @@ def test_cart_sampling_op_data_match():
     assert len(SOp._fft_idx) == 0
 
     # Verify identical shape
-    assert SOp.adjoint(kdata).shape == SOp_sub.adjoint(kdata_sub).shape
+    (k,) = SOp.adjoint(kdata)
+    (k_sub,) = SOp_sub.adjoint(kdata_sub)
+    assert k.shape == k_sub.shape
 
     # Verify data is correctly sorted
-    torch.testing.assert_close(kdata[:, :, ::2, ::4, ::3], SOp_sub.adjoint(kdata_sub)[:, :, ::2, ::4, ::3])
+    torch.testing.assert_close(kdata[:, :, ::2, ::4, ::3], k_sub[:, :, ::2, ::4, ::3])
 
 
 @pytest.mark.parametrize(
@@ -97,7 +99,8 @@ def test_cart_sampling_op_fwd_adj(sampling):
     random_generator = RandomGenerator(seed=0)
     u = random_generator.complex64_tensor(size=k_shape)
     v = random_generator.complex64_tensor(size=k_shape[:2] + ktraj_sub.as_tensor().shape[2:])
-    Fu, FHv = SOp_sub(u), SOp_sub.H(v)
+    (Fu,) = SOp_sub(u)
+    (FHv,) = SOp_sub.H(v)
     Fu_v = torch.vdot(Fu.flatten(), v.flatten())
     u_FHv = torch.vdot(u.flatten(), FHv.flatten())
 
