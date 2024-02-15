@@ -60,7 +60,7 @@ b0_shift = torch.zeros([1, 1, 1, 1, 1])  # b0_shift
 rb1 = torch.Tensor([1.0])
 t1 = torch.Tensor([10.0])
 
-sig2 = wasabiti_model.forward(b0_shift, rb1, t1)
+sig2 = wasabiti_model.forward(b0_shift, rb1, t1)[0]
 
 # %%
 fig, ax = plt.subplots()

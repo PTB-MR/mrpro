@@ -162,6 +162,11 @@ cython_debug/
 # Documentation
 **/_autosummary
 
-# anaconda related directories
+# Ignore Conda environment directories:
 .conda
 .micromamba
+
+# Ignore vim files:
+*~
+*.swp
+*.swo

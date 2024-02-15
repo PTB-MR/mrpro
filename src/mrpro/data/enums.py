@@ -73,6 +73,8 @@ class AcqFlags(Flag):
 
 
 class InterleavingDimension(Enum):
+    """Interleaving dimension."""
+
     PHASE = 'phase'
     REPETITION = 'repetition'
     CONTRAST = 'contrast'
@@ -81,12 +83,16 @@ class InterleavingDimension(Enum):
 
 
 class MultibandCalibration(Enum):
+    """Multiband calibration."""
+
     SEPARABLE2_D = 'separable2D'
     FULL3_D = 'full3D'
     OTHER = 'other'
 
 
 class PatientPosition(Enum):
+    """Patient position."""
+
     HFP = 'HFP'
     HFS = 'HFS'
     HFDR = 'HFDR'
@@ -99,6 +105,8 @@ class PatientPosition(Enum):
 
 
 class TrajectoryType(Enum):
+    """Trajectory type."""
+
     CARTESIAN = 'cartesian'
     EPI = 'epi'
     RADIAL = 'radial'
@@ -108,6 +116,8 @@ class TrajectoryType(Enum):
 
 
 class WaveformInformation(Enum):
+    """Waveform information."""
+
     ECG = 'ecg'
     PULSE = 'pulse'
     RESPIRATORY = 'respiratory'
@@ -117,6 +127,8 @@ class WaveformInformation(Enum):
 
 
 class CalibrationMode(Enum):
+    """Calibration mode."""
+
     EMBEDDED = 'embedded'
     INTERLEAVED = 'interleaved'
     SEPARATE = 'separate'
@@ -125,5 +137,7 @@ class CalibrationMode(Enum):
 
 
 class TrajType(Flag):
+    """Special Properties of the Trajectory."""
+
     SINGLEVALUE = 1
     ONGRID = 2

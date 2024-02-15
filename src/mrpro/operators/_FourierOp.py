@@ -25,6 +25,8 @@ from mrpro.operators import LinearOperator
 
 
 class FourierOp(LinearOperator):
+    """Fourier Operator class."""
+
     def __init__(
         self,
         recon_shape: SpatialDimension[int],
@@ -115,7 +117,7 @@ class FourierOp(LinearOperator):
 
             self._kshape = traj.broadcasted_shape
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Forward operator mapping the coil-images to the coil k-space data.
 
         Parameters
@@ -130,7 +132,7 @@ class FourierOp(LinearOperator):
 
         if len(self._fft_dims):
             # FFT
-            x = self._fast_fourier_op.forward(x)
+            (x,) = self._fast_fourier_op.forward(x)
 
         if self._nufft_dims:
             # we need to move the nufft-dimensions to the end and flatten all other dimensions
@@ -155,9 +157,9 @@ class FourierOp(LinearOperator):
             shape_nufft_dims = [self._kshape[i] for i in self._nufft_dims]
             x = x.reshape(*xpermutedshape[: -len(keep_dims)], -1, *shape_nufft_dims)  # -1 is coils
             x = x.permute(*unpermute)
-        return x
+        return (x,)
 
-    def adjoint(self, x: torch.Tensor) -> torch.Tensor:
+    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint operator mapping the coil k-space data to the coil images.
 
         Parameters
@@ -172,7 +174,7 @@ class FourierOp(LinearOperator):
 
         if self._fft_dims:
             # IFFT
-            x = self._fast_fourier_op.adjoint(x)
+            (x,) = self._fast_fourier_op.adjoint(x)
 
         if self._nufft_dims:
             # we need to move the nufft-dimensions to the end, flatten them and flatten all other dimensions
@@ -194,4 +196,4 @@ class FourierOp(LinearOperator):
             x = x.reshape(*xpermutedshape[: -len(keep_dims)], *x.shape[-len(keep_dims) :])
             x = x.permute(*unpermute)
 
-        return x
+        return (x,)

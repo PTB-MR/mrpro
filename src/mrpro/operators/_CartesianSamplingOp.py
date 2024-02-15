@@ -23,12 +23,18 @@ from mrpro.operators import LinearOperator
 
 
 class CartesianSamplingOp(LinearOperator):
+    """Cartesian Sampling Operator.
+
+    Puts the data on a Cartesian sampled grid based on the k-space
+    trajectory.
+    """
+
     def __init__(
         self,
         encoding_shape: SpatialDimension[int],
         traj: KTrajectory,
     ) -> None:
-        """Cartesian Sampling Operator class.
+        """Initilize Sampling Operator class.
 
         Parameters
         ----------
@@ -140,33 +146,33 @@ class CartesianSamplingOp(LinearOperator):
 
         return fft_idx + other_idx * dim_coils + coil_idx * encoding_shape.z * encoding_shape.y * encoding_shape.x
 
-    def forward(self, y: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Forward operator which selects acquired k-space data from k-space.
 
         Parameters
         ----------
-        y
+        x
             k-space with dimensions given by encoding_shape
 
         Returns
         -------
             k-space data in original (i.e. acquired) dimensions
         """
-        if self._encoding_shape != SpatialDimension(*y.shape[-3:]):
+        if self._encoding_shape != SpatialDimension(*x.shape[-3:]):
             raise ValueError('k-space data shape missmatch')
 
         if len(self._fft_dims) > 0 and len(self._fft_idx) > 0:
             # Calculate the full index if it has not been calculated yet or if the other and coil dimension has changed
-            if len(self._fft_idx_full) == 0 or self._fft_idx_full.shape[:2] != y.shape[:2]:
+            if len(self._fft_idx_full) == 0 or self._fft_idx_full.shape[:2] != x.shape[:2]:
                 self._fft_idx_full = self._expand_fft_idx(
-                    self._fft_idx, y.device, y.shape[-4], y.shape[-5], self._encoding_shape
+                    self._fft_idx, x.device, x.shape[-4], x.shape[-5], self._encoding_shape
                 )
 
-            return torch.take(y, self._fft_idx_full)
-        else:
-            return y
+            x = torch.take(x, self._fft_idx_full)
 
-    def adjoint(self, y: torch.Tensor) -> torch.Tensor:
+        return (x,)
+
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint operator sorting data into the encoding_space matrix.
 
         Parameters
@@ -189,11 +195,10 @@ class CartesianSamplingOp(LinearOperator):
                     self._fft_idx, y.device, y.shape[-4], y.shape[-5], self._encoding_shape
                 )
 
-            return torch.zeros(
+            y = torch.zeros(
                 *(y.shape[:2] + (self._encoding_shape.z, self._encoding_shape.y, self._encoding_shape.x)),
                 dtype=y.dtype,
                 device=y.device,
             ).put_(self._fft_idx_full, y, accumulate=True)
 
-        else:
-            return y
+        return (y,)

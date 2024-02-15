@@ -23,7 +23,7 @@ repos:
         exclude: ^docs/
 
   - repo: 'https://github.com/psf/black'
-    rev: 24.1.1
+    rev: 24.2.0
     hooks:
       - id: black
         language_version: python3
@@ -42,7 +42,7 @@ repos:
       - id: mypy
         additional_dependencies:
           - numpy
-          - torch
+          - torch>=2.2.0
           - '--index-url=https://download.pytorch.org/whl/cpu'
           - '--extra-index-url=https://pypi.python.org/simple'
         exclude: docs/.*|tests/.*
