@@ -3,7 +3,7 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "MRpro"
+name = "mrpro"
 version = "0.0.1"
 description = "MR image reconstruction and processing package specifically developed for PyTorch."
 readme = "README.md"
@@ -99,18 +99,7 @@ force_single_line = true
 
 [tool.pydocstyle]
 convention = "numpy"
-add_ignore = [
-    "D100",
-    "D101",
-    "D102",
-    "D103",
-    "D104",
-    "D105",
-    "D106",
-    "D107",
-    "D202",
-]
-# select = ["D200", "D201", "D205", "D206", "D207", "D208", "D214", "D215", "D409"]
+add_ignore = ["D202"]
 
 [tool.codespell]
 builtin = "en-GB_to_en-US"

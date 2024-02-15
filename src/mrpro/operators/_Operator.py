@@ -30,7 +30,9 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
     """The general Operator class."""
 
     @abstractmethod
-    def forward(self, *args: *Tin) -> Tout: ...
+    def forward(self, *args: *Tin) -> Tout:
+        """Apply forward operator."""
+        ...
 
     def __matmul__(self, other: Operator[*Tin2, tuple[*Tin]]) -> Operator[*Tin2, Tout]:
         """Operator composition."""

@@ -59,6 +59,8 @@ DEFAULT_IGNORE_FLAGS = (
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class KData:
+    """MR raw data / k-space data class."""
+
     header: KHeader
     data: torch.Tensor
     traj: KTrajectory
