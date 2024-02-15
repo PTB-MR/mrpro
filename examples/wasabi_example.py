@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import torch
 
 from mrpro.data import SpatialDimension
-from mrpro.data._DcfData import DcfData
 from mrpro.data._KData import KData
 from mrpro.data.traj_calculators._KTrajectoryPulseq import KTrajectoryPulseq
 from mrpro.operators._FourierOp import FourierOp
@@ -11,7 +10,7 @@ from mrpro.operators.models._WASABI import WASABI
 from mrpro.operators.models._WASABITI import WASABITI
 
 # %%
-filepath = R'/echo/hammac01/CEST_DATA/'
+filepath = R'/home/hammac01/CEST_Data/'
 seq_filename = '20231127_WASABITI_adjusted_fov192.seq'
 h5_filename = 'meas_MID00021_FID05730_20231127_WASABITI_adjusted_fov192.h5'
 
@@ -24,10 +23,6 @@ data = KData.from_file(
 data.traj.kz = torch.zeros(data.traj.kz.shape[0], 1, 1, 1)
 data.traj.ky = data.traj.ky.to(torch.float32)
 data.traj.kx = data.traj.kx.to(torch.float32)
-
-# %%
-# Densitiy compensation
-dcf = DcfData.from_traj_voronoi(traj=data.traj)
 
 # %%
 # create operator
@@ -63,7 +58,7 @@ b0_shift = torch.zeros([1, 1, 1, 1, 1])  # b0_shift
 rb1 = torch.Tensor([1.0])
 t1 = torch.Tensor([10.0])
 
-sig2 = wasabiti_model.forward(b0_shift, rb1, t1)
+sig2 = wasabiti_model.forward(b0_shift, rb1, t1)[0]
 
 # %%
 # fig, ax = plt.subplots()

@@ -1,4 +1,8 @@
 # %%
+import subprocess
+import tempfile
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import nibabel as nib
 import numpy as np
@@ -14,15 +18,22 @@ from mrpro.operators import SensitivityOp
 from mrpro.operators._FourierOp import FourierOp
 
 # %%
+
+data_folder = Path(tempfile.mkdtemp())
+zenodo_cmd = f'zenodo_get 10.5281/zenodo.10664974 -o {str(data_folder)}'
+out = subprocess.call(zenodo_cmd, shell=True)
+
+# %%
 # for single file
-filepath = R'/echo/hammac01/CEST_DATA/20240130_CEST_interleafed_radial_256px_fov256_8mm_50spokes_100ms/'
+filepath = data_folder
 seq_filename = '20240130_CEST_interleafed_radial_256px_fov256_8mm_50spokes_100ms.seq'
 h5_filename = 'meas_MID00044_FID00370_20240130_CEST_interleafed_radial_256px_fov256_8mm_50spokes_100m.h5'
+
 
 # %%
 data = KData.from_file(
     ktrajectory=KTrajectoryRadial2D(),
-    filename=filepath + h5_filename,
+    filename=f'{filepath}/{h5_filename}',
 )
 # %%
 # Densitiy compensation
@@ -58,10 +69,10 @@ for i in image:
 image = image.swapaxes(0, 2)
 rotated = np.rot90(image.numpy(), 3)
 ni_img = nib.Nifti1Image(np.abs(image.numpy()), affine=np.eye(4))
-nib.save(
-    ni_img,
-    filepath + h5_filename.split('.')[0] + '.nii',
-)
+# nib.save(
+#    ni_img,
+#    f'{filepath}/{h5_filename.split(".")[0]}/.nii',
+# )
 
 # %%
 # test_load = nib.load(
