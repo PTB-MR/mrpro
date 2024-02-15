@@ -25,10 +25,10 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
           cache: 'pip'
 
       - name: Install dependencies
@@ -48,7 +48,7 @@ jobs:
           done
 
       - name: Check if any notebooks have been changed
-        uses: tj-actions/verify-changed-files@v16
+        uses: tj-actions/verify-changed-files@v18
         id: verify-changed-notebooks
         with:
           files: |
@@ -102,10 +102,10 @@ jobs:
         with:
           ref: ${{ needs.convert_scripts.outputs.commit_hash }}
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
           cache: 'pip'
 
       - name: Install dependencies
@@ -149,13 +149,13 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-      # with:
-      #   ref: ${{ needs.convert_scripts.outputs.commit_hash }}
+      with:
+        ref: ${{ needs.convert_scripts.outputs.commit_hash }}
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.12'
         cache: 'pip'
 
     - name: Install dependencies
