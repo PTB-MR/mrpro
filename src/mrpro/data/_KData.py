@@ -59,17 +59,7 @@ DEFAULT_IGNORE_FLAGS = (
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class KData:
-    """MR raw data / k-space data class.
-
-    Attributes
-    ----------
-    header
-        MR raw data header (KHeader) containing required meta data
-    data
-        k-space data as complex tensor
-    traj
-        k-space trajectory as float32 or float64 tensor
-    """
+    """MR raw data / k-space data class."""
 
     header: KHeader
     data: torch.Tensor
