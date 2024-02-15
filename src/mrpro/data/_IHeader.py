@@ -40,7 +40,7 @@ class IHeader:
     misc: dict = dataclasses.field(default_factory=dict)
 
     @classmethod
-    def from_kheader(cls, kheader: KHeader):
+    def from_kheader(cls, kheader: KHeader) -> IHeader:
         """Create IHeader object from KHeader object.
 
         Parameters
@@ -58,13 +58,13 @@ class IHeader:
         )
 
     @classmethod
-    def from_dicom_list(cls, dicom_datasets: list[Dataset]):
+    def from_dicom_list(cls, dicom_datasets: list[Dataset]) -> IHeader:
         """Read DICOM files and return IHeader object.
 
         Parameters
         ----------
         dicom_datasets
-            List of dataset objects containing the DICOM file.
+            list of dataset objects containing the DICOM file.
         """
 
         def get_item(ds, name: str | Tag):

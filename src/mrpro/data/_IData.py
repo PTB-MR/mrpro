@@ -24,6 +24,7 @@ from pydicom import dcmread
 from pydicom.dataset import Dataset
 from pydicom.tag import Tag
 
+from mrpro.data import Data
 from mrpro.data import IHeader
 from mrpro.data import KHeader
 
@@ -54,11 +55,10 @@ def _dcm_pixelarray_to_tensor(ds: Dataset) -> torch.Tensor:
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
-class IData:
+class IData(Data):
     """MR image data (IData) class."""
 
     header: IHeader
-    data: torch.Tensor
 
     @classmethod
     def from_tensor_and_kheader(cls, data: torch.Tensor, kheader: KHeader) -> IData:
@@ -67,7 +67,7 @@ class IData:
         Parameters
         ----------
         data
-            torch.Tensor containing image data with dimensions (broadcastable to) (all_other, coils, z, x, y).
+            torch.Tensor containing image data with dimensions (broadcastable to) (other, coils, z, y, x).
         kheader
             MR raw data header (KHeader) containing required meta data for the image header (IHeader).
         """
@@ -80,13 +80,13 @@ class IData:
 
         Parameters
         ----------
-        filename:
-            Path to DICOM file.
+        filename
+            path to DICOM file.
         """
 
         ds = dcmread(filename)
         idata = _dcm_pixelarray_to_tensor(ds)[None, :]
-        idata = rearrange(idata, '(other coil z) y x -> other coil z y x', other=1, coil=1, z=1)
+        idata = rearrange(idata, '(other coils z) y x -> other coils z y x', other=1, coils=1, z=1)
 
         header = IHeader.from_dicom_list([ds])
         return cls(data=idata, header=header)
@@ -97,10 +97,10 @@ class IData:
 
         Parameters
         ----------
-        foldername:
-            Path to folder with DICOM files.
-        suffix:
-            File extension (without period/full stop) to identify the DICOM files.
+        foldername
+            path to folder with DICOM files.
+        suffix
+            file extension (without period/full stop) to identify the DICOM files.
             If None, then all files in the folder are read in.
         """
 
@@ -133,7 +133,7 @@ class IData:
 
         # torch.stack is necessary otherwises mypy does not realize that rearrange yields Tensor from list[Tensor]
         idata = torch.stack([_dcm_pixelarray_to_tensor(ds) for ds in ds_list])
-        idata = rearrange(idata, '(other coil z) y x -> other coil z y x', other=len(idata), coil=1, z=1)
+        idata = rearrange(idata, '(other coils z) y x -> other coils z y x', other=len(idata), coils=1, z=1)
 
         header = IHeader.from_dicom_list(ds_list)
         return cls(data=idata, header=header)

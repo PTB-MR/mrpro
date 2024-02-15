@@ -1,4 +1,17 @@
-# Imports
+"""2D radial trajectory class."""
+
+# Copyright 2023 Physikalisch-Technische Bundesanstalt
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#       http://www.apache.org/licenses/LICENSE-2.0
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
 import torch
 
 from mrpro.data import KHeader
@@ -22,44 +35,6 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         super().__init__()
         self.angle: float = angle
 
-    def _krad(self, kheader: KHeader):
-        """Calculate the k-space locations along the read-out encoding lines.
-
-        Parameters
-        ----------
-        kheader
-            MR raw data header (KHeader) containing required meta data
-
-        Returns
-        -------
-            Trajectory along ONE readout
-
-        Raises
-        ------
-        ValueError
-            Number of samples have to be the same for each readout
-        ValueError
-            Center sample has to be the same for each readout
-        """
-
-        num_samples = kheader.acq_info.number_of_samples
-        center_sample = kheader.acq_info.center_sample
-
-        if len(torch.unique(num_samples)) > 1:
-            raise ValueError(
-                'Radial 2D trajectory can only be calculated if each acquisition has the same number of samples'
-            )
-        if len(torch.unique(center_sample)) > 1:
-            raise ValueError(
-                'Radial 2D trajectory can only be calculated if each acquisition has the same center sample'
-            )
-
-        # Calculate points along readout
-        nk0 = int(num_samples[0, 0, 0])
-        k0 = torch.linspace(0, nk0 - 1, nk0, dtype=torch.float32) - center_sample[0, 0, 0]
-        k0 *= 2 * torch.pi / nk0
-        return k0
-
     def __call__(self, kheader: KHeader) -> KTrajectory:
         """Calculate radial 2D trajectory for given KHeader.
 
@@ -74,7 +49,7 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         """
 
         # K-space locations along readout lines
-        krad = self._krad(kheader)
+        krad = self._kfreq(kheader)
 
         # Angles of readout lines
         kang = kheader.acq_info.idx.k1 * self.angle

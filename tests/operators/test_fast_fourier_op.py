@@ -1,4 +1,4 @@
-"""Tests for image space - k-space transformations."""
+"""Tests for Fast Fourier Operator class."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -16,13 +16,13 @@ import numpy as np
 import pytest
 import torch
 
-from mrpro.utils.fft import image_to_kspace
-from mrpro.utils.fft import kspace_to_image
+from mrpro.operators import FastFourierOp
+from tests import RandomGenerator
 
 
 @pytest.mark.parametrize('npoints, a', [(100, 20), (300, 20)])
-def test_kspace_to_image(npoints, a):
-    """Test k-space to image transformation using a Gaussian."""
+def test_fast_fourier_op_forward(npoints, a):
+    """Test Fast Fourier Op transformation using a Gaussian."""
     # Utilize that a Fourier transform of a Gaussian function is given by
     # F(exp(-x^2/a)) = sqrt(pi*a)exp(-a*pi^2k^2)
 
@@ -36,21 +36,35 @@ def test_kspace_to_image(npoints, a):
     igauss = torch.exp(-(x**2) / a).to(torch.complex64)
     kgauss = np.sqrt(torch.pi * a) * torch.exp(-a * torch.pi**2 * k**2).to(torch.complex64)
 
-    # Transform k-space to image
-    kgauss_fft = kspace_to_image(kgauss, dim=(0,))
+    # Transform image to k-space
+    FFOp = FastFourierOp(dim=(0,))
+    (igauss_fwd,) = FFOp.forward(igauss)
 
     # Scaling to "undo" fft scaling
-    kgauss_fft *= 2 / np.sqrt(npoints)
-    torch.testing.assert_close(kgauss_fft, igauss)
+    igauss_fwd *= np.sqrt(npoints) / 2
+    torch.testing.assert_close(igauss_fwd, kgauss)
 
 
-def test_image_to_kspace_as_inverse():
-    """Test if image_to_kspace is the inverse of kspace_to_image."""
+@pytest.mark.parametrize(
+    'encoding_shape, recon_shape',
+    [
+        ((101, 201, 50), (13, 221, 64)),
+        ((100, 200, 50), (14, 220, 64)),
+        ((101, 201, 50), (14, 220, 64)),
+        ((100, 200, 50), (13, 221, 64)),
+    ],
+)
+def test_fast_fourier_op_adjoint(encoding_shape, recon_shape):
+    """Test adjointness of Fast Fourier Op."""
 
-    # Create random 3D data set
-    npoints = [200, 100, 50]
-    idat = torch.randn(*npoints, dtype=torch.complex64)
+    # Create test data
+    generator = RandomGenerator(seed=0)
+    x = generator.complex64_tensor(recon_shape)
+    y = generator.complex64_tensor(encoding_shape)
 
-    # Transform to k-space and back along all three dimensions
-    idat_transform = image_to_kspace(kspace_to_image(idat))
-    torch.testing.assert_close(idat, idat_transform)
+    # Create operator and apply
+    FFOp = FastFourierOp(recon_shape=recon_shape, encoding_shape=encoding_shape)
+    (Ax,) = FFOp.forward(x)
+    (AHy,) = FFOp.adjoint(y)
+
+    assert torch.isclose(torch.vdot(Ax.flatten(), y.flatten()), torch.vdot(x.flatten(), AHy.flatten()), rtol=1e-3)

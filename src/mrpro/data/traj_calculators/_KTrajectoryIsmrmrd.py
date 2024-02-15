@@ -1,4 +1,4 @@
-"""Returns the trajectory save in an ISMRMRD raw data file."""
+"""Returns the trajectory saved in an ISMRMRD raw data file."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -45,7 +45,7 @@ class KTrajectoryIsmrmrd:
 
         Returns
         -------
-            trajectory in the shape of the original raw data within [-pi, pi].
+            trajectory in the shape of the original raw data.
         """
 
         # Read out the trajectory
@@ -53,9 +53,6 @@ class KTrajectoryIsmrmrd:
 
         if ktraj_mrd.numel() == 0:
             raise ValueError('No trajectory information available in the acquisitions.')
-
-        # Scale trajectory to be within [-pi, pi]. Not ideal, but the best we can do.
-        ktraj_mrd *= torch.pi / ktraj_mrd.abs().max()
 
         if ktraj_mrd.shape[2] == 2:
             ktraj = KTrajectoryRawShape(

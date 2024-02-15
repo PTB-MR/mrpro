@@ -13,7 +13,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        python-version: ["3.10", "3.11"]
+        python-version: ["3.11", "3.12"]
 
     steps:
       - name: Checkout repo
@@ -36,7 +36,7 @@ jobs:
       - name: Run PyTest
 
         run: |
-          pytest -n 4 --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
+          pytest -n 4 -m "not cuda" --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
 
       - name: Pytest coverage comment
         id: coverageComment

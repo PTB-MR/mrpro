@@ -50,7 +50,7 @@ class KTrajectory:
 
         Parameters
         ----------
-        stack_dim:
+        stack_dim
             The dimension to stack the tensor along.
         """
         shape = self.broadcasted_shape
@@ -58,7 +58,7 @@ class KTrajectory:
 
     def __init__(
         self, kz: torch.Tensor, ky: torch.Tensor, kx: torch.Tensor, repeat_detection_tolerance: float | None = 1e-8
-    ):
+    ) -> None:
         """K-Space Trajectory dataclass.
 
         Reduces repeated dimensions to singletons if repeat_detection_tolerance
@@ -66,9 +66,9 @@ class KTrajectory:
 
         Parameters
         ----------
-        kz, ky, kx:
-            Trajectory coordinates to set
-        repeat_detection_tolerance:
+        kz, ky, kx
+            trajectory coordinates to set
+        repeat_detection_tolerance
             Tolerance for repeat detection. Set to None to disable.
         """
         if repeat_detection_tolerance is not None:
@@ -82,8 +82,8 @@ class KTrajectory:
             shape = self.broadcasted_shape
         except ValueError:
             raise ValueError('The k-space trajectory dimensions must be broadcastable.')
-        if len(shape) != 4:
-            raise ValueError('The k-space trajectory tensors should each have 4 dimensions.')
+        if len(shape) < 4:
+            raise ValueError('The k-space trajectory tensors should each have at least 4 dimensions.')
 
     @classmethod
     def from_tensor(
@@ -97,15 +97,70 @@ class KTrajectory:
 
         Parameters
         ----------
-        tensor:
+        tensor
             The tensor representation of the trajectory.
             This should be a 5-dim tensor, with (kz,ky,kx) stacked in this order along stack_dim
-        stack_dim:
+        stack_dim
             The dimension in the tensor the directions have been stacked along.
-        repeat_detection_tolerance:
+        repeat_detection_tolerance
             detects if broadcasting can be used, i.e. if dimensions are repeated.
             Set to None to disable.
         """
 
         kz, ky, kx = torch.unbind(tensor, dim=stack_dim)
         return cls(kz, ky, kx, repeat_detection_tolerance=repeat_detection_tolerance)
+
+    def to(self, *args, **kwargs) -> KTrajectory:
+        """Perform dtype and/or device conversion of trajectory.
+
+        A torch.dtype and torch.device are inferred from the arguments
+        of self.to(*args, **kwargs). Please have a look at the
+        documentation of torch.Tensor.to() for more details.
+        """
+        return KTrajectory(
+            kz=self.kz.to(*args, **kwargs), ky=self.ky.to(*args, **kwargs), kx=self.kx.to(*args, **kwargs)
+        )
+
+    def cuda(
+        self,
+        device: torch.device | None = None,
+        non_blocking: bool = False,
+        memory_format: torch.memory_format = torch.preserve_format,
+    ) -> KTrajectory:
+        """Create copy of trajectory in CUDA memory.
+
+        Parameters
+        ----------
+        device
+            The destination GPU device. Defaults to the current CUDA device.
+        non_blocking
+            If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
+            Otherwise, the argument has no effect.
+        memory_format
+            The desired memory format of returned Tensor.
+        """
+        return KTrajectory(
+            kz=self.kz.cuda(
+                device=device, non_blocking=non_blocking, memory_format=memory_format
+            ),  # type: ignore [call-arg]
+            ky=self.ky.cuda(
+                device=device, non_blocking=non_blocking, memory_format=memory_format
+            ),  # type: ignore [call-arg]
+            kx=self.kx.cuda(
+                device=device, non_blocking=non_blocking, memory_format=memory_format
+            ),  # type: ignore [call-arg]
+        )
+
+    def cpu(self, memory_format: torch.memory_format = torch.preserve_format) -> KTrajectory:
+        """Create copy of trajectory in CPU memory.
+
+        Parameters
+        ----------
+        memory_format
+            The desired memory format of returned Tensor.
+        """
+        return KTrajectory(
+            kz=self.kz.cpu(memory_format=memory_format),  # type: ignore [call-arg]
+            ky=self.ky.cpu(memory_format=memory_format),  # type: ignore [call-arg]
+            kx=self.kx.cpu(memory_format=memory_format),  # type: ignore [call-arg]
+        )

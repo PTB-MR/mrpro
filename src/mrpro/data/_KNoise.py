@@ -26,6 +26,14 @@ from mrpro.data.enums import AcqFlags
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class KNoise:
+    """MR raw data / k-space data class for noise measurements.
+
+    Attributes
+    ----------
+    data
+        k-space data of noise measurements as complex tensor
+    """
+
     data: torch.Tensor
 
     @classmethod
@@ -38,9 +46,9 @@ class KNoise:
 
         Parameters
         ----------
-            filename:
+            filename
                 Path to the ISMRMRD file
-            dataset_idx:
+            dataset_idx
                 Index of the dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
         """
 

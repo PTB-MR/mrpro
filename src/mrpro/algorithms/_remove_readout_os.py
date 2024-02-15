@@ -16,8 +16,7 @@ import torch
 
 from mrpro.data import KData
 from mrpro.data import KTrajectory
-from mrpro.utils.fft import image_to_kspace
-from mrpro.utils.fft import kspace_to_image
+from mrpro.operators import FastFourierOp
 
 
 def remove_readout_os(kdata: KData) -> KData:
@@ -56,9 +55,10 @@ def remove_readout_os(kdata: KData) -> KData:
             return input[..., start_cropped_readout:end_cropped_readout]
 
         # Transform to image space, crop to reconstruction matrix size and transform back
-        dat = kspace_to_image(kdata.data, dim=(-1,))
+        FFOp = FastFourierOp(dim=(-1,))
+        (dat,) = FFOp.adjoint(kdata.data)
         dat = crop_readout(dat)
-        dat = image_to_kspace(dat, dim=(-1,))
+        (dat,) = FFOp.forward(dat)
 
         # Adapt trajectory
         ks = [kdata.traj.kz, kdata.traj.ky, kdata.traj.kx]

@@ -28,6 +28,7 @@ class AccelerationFactor:
 
     @property
     def overall(self) -> float:
+        """Overall acceleration factor in k1 and k2."""
         return self.k1 * self.k2
 
     @classmethod
