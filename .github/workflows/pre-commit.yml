@@ -14,8 +14,8 @@ jobs:
           cache: 'pip' # caching pip dependencies
       - uses: pre-commit/action@v3.0.1
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
-  # Cancel in-progress runs when a new workflow with the same group name is triggered
-  cancel-in-progress: true
+#   # Cancel in-progress runs when a new workflow with the same group name is triggered
+#   cancel-in-progress: true
