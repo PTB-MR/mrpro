@@ -84,7 +84,6 @@ def lbfgs(
         objective.backward()
         return objective
 
-    #simone war hier
     # run lbfgs
     optim.step(closure)
 
