@@ -12,9 +12,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+
 import torch
 from einops import rearrange
-from einops import repeat
 
 from mrpro.data import KTrajectory
 from mrpro.data import SpatialDimension
@@ -34,7 +34,7 @@ class CartesianSamplingOp(LinearOperator):
         encoding_shape: SpatialDimension[int],
         traj: KTrajectory,
     ) -> None:
-        """Initilize Sampling Operator class.
+        """Initialize Sampling Operator class.
 
         Parameters
         ----------
@@ -44,109 +44,41 @@ class CartesianSamplingOp(LinearOperator):
             the k-space trajectories where the frequencies are sampled
         """
         super().__init__()
-        self._fft_idx_full: torch.Tensor | None
-        self._fft_idx: torch.Tensor | None
+        encoding_shape = SpatialDimension.from_xyz(encoding_shape)
 
-        # Find dimensions of Cartesian sampling
-        fft_dims = [dim for dim in (-3, -2, -1) if traj.type_along_kzyx[dim] == TrajType.ONGRID]
+        # Cache as these migh take some time to compute
+        traj_type_kzyx = traj.type_along_kzyx
+        ktraj_tensor = traj.as_tensor()
 
-        # Cartesian dimensions were found, create sorting index
-        if len(fft_dims) > 0:
-            ktraj_tensor = traj.as_tensor()
-            if -1 in fft_dims:
-                kx_idx = ktraj_tensor[-1, ...] + encoding_shape.x // 2
-            else:
-                encoding_shape.x = ktraj_tensor.shape[-1]
-                kx_idx = torch.ones_like(ktraj_tensor[0, ...]) * rearrange(
-                    torch.linspace(0, ktraj_tensor.shape[-1] - 1, ktraj_tensor.shape[-1]), 'kx->1 1 1 kx'
-                )
-            if -2 in fft_dims:
-                ky_idx = ktraj_tensor[-2, ...] + encoding_shape.y // 2
-            else:
-                encoding_shape.y = ktraj_tensor.shape[-2]
-                ky_idx = torch.ones_like(ktraj_tensor[0, ...]) * rearrange(
-                    torch.linspace(0, ktraj_tensor.shape[-2] - 1, ktraj_tensor.shape[-2]), 'ky->1 1 ky 1'
-                )
-            if -3 in fft_dims:
-                kz_idx = ktraj_tensor[-3, ...] + encoding_shape.z // 2
-            else:
-                encoding_shape.z = ktraj_tensor.shape[-3]
-                kz_idx = torch.ones_like(ktraj_tensor[0, ...]) * rearrange(
-                    torch.linspace(0, ktraj_tensor.shape[-3] - 1, ktraj_tensor.shape[-3]), 'kz->1 kz 1 1'
-                )
-            other_idx = torch.ones_like(ktraj_tensor[0, ...]) * rearrange(
-                torch.linspace(0, ktraj_tensor.shape[1] - 1, ktraj_tensor.shape[1]), 'other->other 1 1 1'
-            )
-            kidx = (
-                other_idx * encoding_shape.z * encoding_shape.y * encoding_shape.x
-                + kz_idx * encoding_shape.y * encoding_shape.x
-                + ky_idx * encoding_shape.x
-                + kx_idx
-            )
-            kidx = repeat(
-                kidx.to(dtype=torch.int64, device=traj.kx.device), 'other k2 k1 k0->other coil k2 k1 k0', coil=1
-            )
+        if traj_type_kzyx[-1] == TrajType.ONGRID:  # kx
+            kx_idx = ktraj_tensor[-1, ...] + encoding_shape.x // 2
+        else:
+            encoding_shape.x = ktraj_tensor.shape[-1]
+            kx_idx = rearrange(torch.arange(ktraj_tensor.shape[-1]), 'kx->1 1 1 kx')
 
-            self._fft_idx = kidx
-            self._fft_idx_full = None
+        if traj_type_kzyx[-2] == TrajType.ONGRID:  # ky
+            ky_idx = ktraj_tensor[-2, ...] + encoding_shape.y // 2
+        else:
+            encoding_shape.y = ktraj_tensor.shape[-2]
+            ky_idx = rearrange(torch.arange(ktraj_tensor.shape[-2]), 'ky->1 1 ky 1')
 
-        # Make sure sorting index is actually needed
-        if self._fft_idx is not None and torch.all(torch.diff(self._fft_idx.flatten()) == 1):
-            self._fft_idx = None
+        if traj_type_kzyx[-3] == TrajType.ONGRID:  # kz
+            kz_idx = ktraj_tensor[-3, ...] + encoding_shape.z // 2
+        else:
+            encoding_shape.z = ktraj_tensor.shape[-3]
+            kz_idx = rearrange(torch.arange(ktraj_tensor.shape[-3]), 'kz->1 kz 1 1')
 
-        self._fft_dims = tuple(fft_dims)
+        kidx = (
+            (kz_idx * encoding_shape.y * encoding_shape.x + ky_idx * encoding_shape.x + kx_idx)
+            .flatten()
+            .to(dtype=torch.int64)
+        )
+        self.register_buffer('_fft_idx', kidx.unsqueeze(0))
+        # we can skip the indexing if the data is already sorted
+        self._needs_indexing = not torch.all(torch.diff(kidx) == 1)
+
         self._kshape = traj.broadcasted_shape
         self._encoding_shape = encoding_shape
-
-    @staticmethod
-    def _expand_fft_idx(
-        fft_idx: torch.Tensor,
-        data_device: torch.device,
-        dim_coils: int,
-        dim_other: int,
-        encoding_shape: SpatialDimension,
-    ) -> torch.Tensor:
-        """Expand the fft index to the full dataset.
-
-        The fft_idx is calculated based on the trajectory and hence does not include the coil dimension and not
-        necessarily the correct other dimension.
-
-        Parameters
-        ----------
-        fft_idx
-            Index to sort data into encoding space based on trajectory
-        data_device
-            Device of data
-        dim_coils
-            Coil dimension of data
-        dim_other
-            Other dimension of data
-        encoding_shape
-            Dimensions of encoding shape
-
-
-        Returns
-        -------
-            Index to sort data into encoding space including correct other and coils dimension
-        """
-        coil_idx = repeat(
-            torch.arange(dim_coils, device=data_device),
-            ' coils-> other coils k2 k1 k0',
-            k0=fft_idx.shape[-1],
-            k1=fft_idx.shape[-2],
-            k2=fft_idx.shape[-3],
-            other=dim_other,
-        )
-        other_idx = repeat(
-            torch.arange(dim_other, device=data_device),
-            ' other-> other coils k2 k1 k0',
-            k0=fft_idx.shape[-1],
-            k1=fft_idx.shape[-2],
-            k2=fft_idx.shape[-3],
-            coils=dim_coils,
-        )
-
-        return fft_idx + other_idx * dim_coils + coil_idx * encoding_shape.z * encoding_shape.y * encoding_shape.x
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Forward operator which selects acquired k-space data from k-space.
@@ -163,16 +95,16 @@ class CartesianSamplingOp(LinearOperator):
         if self._encoding_shape != SpatialDimension(*x.shape[-3:]):
             raise ValueError('k-space data shape missmatch')
 
-        if self._fft_dims and self._fft_idx is not None:
-            # Calculate the full index if it has not been calculated yet or if the other and coil dimension has changed
-            if (self._fft_idx_full is None) or (self._fft_idx_full.shape[:2] != x.shape[:2]):
-                self._fft_idx_full = self._expand_fft_idx(
-                    self._fft_idx, x.device, x.shape[-4], x.shape[-5], self._encoding_shape
-                )
+        if not self._needs_indexing:
+            return (x,)
 
-            x = torch.take(x, self._fft_idx_full)
+        x_2d = rearrange(x, '... k2 k1 k0 -> (...) (k2 k1 k0)')
+        # take_along_dim does broadcast
+        x_indexed = torch.take_along_dim(x_2d, self._fft_idx, dim=-1)
+        # reshape to (other1, other2 ..., k2, k1, k0)
+        x_reshaped = x_indexed.reshape(x.shape[:-3] + self._kshape[-3:])
 
-        return (x,)
+        return (x_reshaped,)
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint operator sorting data into the encoding_space matrix.
@@ -187,20 +119,26 @@ class CartesianSamplingOp(LinearOperator):
             k-space data sorted into encoding_space matrix
         """
 
-        if self._kshape[1:] != y.shape[-3:]:
+        if self._kshape[-3:] != y.shape[-3:]:
             raise ValueError('k-space data shape missmatch')
 
-        if self._fft_dims and self._fft_idx is not None:
-            # Calculate the full index if it has not been calculated yet or if the other and coil dimension has changed
-            if self._fft_idx_full is None or self._fft_idx_full.shape[:2] != y.shape[:2]:
-                self._fft_idx_full = self._expand_fft_idx(
-                    self._fft_idx, y.device, y.shape[-4], y.shape[-5], self._encoding_shape
-                )
+        if not self._needs_indexing:
+            return (y,)
 
-            y = torch.zeros(
-                *(y.shape[:2] + (self._encoding_shape.z, self._encoding_shape.y, self._encoding_shape.x)),
-                dtype=y.dtype,
-                device=y.device,
-            ).put_(self._fft_idx_full, y, accumulate=True)
+        y_2d = rearrange(y, '... k2 k1 k0 -> (...) (k2 k1 k0)')
 
-        return (y,)
+        # scatter does not broadcast, so we need to expand the fft_idx to the full dataset
+        idx_expanded = self._fft_idx.expand(len(y_2d), -1)
+
+        y_scattered = torch.zeros(
+            len(y_2d),
+            (self._encoding_shape.z * self._encoding_shape.y * self._encoding_shape.x),
+            dtype=y.dtype,
+            device=y.device,
+        ).scatter_(dim=-1, index=idx_expanded, src=y_2d)
+        # reshape to (other1, other2 ..., k2, k1, k0)
+        y_reshaped = y_scattered.reshape(
+            *y.shape[:-3], self._encoding_shape.z, self._encoding_shape.y, self._encoding_shape.x
+        )
+
+        return (y_reshaped,)

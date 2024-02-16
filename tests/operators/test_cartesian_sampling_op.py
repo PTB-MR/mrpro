@@ -47,7 +47,7 @@ def test_cart_sampling_op_data_match():
     SOp_sub = CartesianSamplingOp(encoding_shape=encoding_shape, traj=ktraj_sub)
 
     # Verify that the fully-sampled sampling operator does not do anything because the data is already sorted
-    assert SOp._fft_idx is None
+    assert not SOp._needs_indexing
 
     # Verify identical shape
     (k,) = SOp.adjoint(kdata)
