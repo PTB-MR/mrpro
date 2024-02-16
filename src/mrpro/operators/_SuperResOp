@@ -194,6 +194,101 @@ class SuperResOp(LinearOperator):
 
         return matrix
 
+
+    # def _generate_matrix_zyx(self,
+    # input_shape: tuple, R: Rotation, offset: torch.Tensor, w: int, slice_function, rotation_center=None):
+    #     """Sample a sparse matrix that represents the projection of a volume onto a
+    #     plane. Applied to 3d volume with dimensions (z y x) and slice
+    #     is in the dimension z.
+
+    #     Outside the volume it is zero padded
+
+    #     Parameters
+    #     ----------
+    #     R: scipy.spatial.transform.Rotation
+    #         Rotation that describes the orientation of the plane
+    #     offset: torch.Tensor
+    #         Offset of the plane in the volume
+    #     w: int
+    #         Factor that determines the number of pixels that are considered in the projection along the slice direction
+    #     slice_function: Callable
+    #         Function that describes the slice profile
+    #     rotation_center: torch.Tensor
+    #         Center of rotation, if None the center of the volume is used, i.e. for 4 pixels 0 1 2 3 it is between 1 and 2
+
+    #     Returns
+    #     -------
+    #     torch.sparse_csr_matrix
+    #         Sparse matrix that represents the projection of the volume onto the plane
+    #     """
+    #     Z, Y, X = input_shape
+    #     pixel = torch.stack([Z / 2 * torch.ones(Y, X)] + list(torch.meshgrid(torch.arange(X), torch.arange(Y), indexing='xy')), dim=-1)
+
+    #     pixel = pixel + offset
+    #     if rotation_center is None:
+    #         # default rotation center is the center of the volume, i.e. for 4 pixels
+    #         # 0 1 2 3 it is between 0 and 1
+    #         rotation_center = torch.tensor([Z / 2 - 0.5, Y / 2 - 0.5, X / 2 - 0.5])
+    #     pixel_rotated = self._rotate(pixel, R, rotation_center=rotation_center)
+
+    #     # We cast a ray from the pixel perpendicular to the plane.
+    #     # Pixels further away then w will not be considered
+    #     # Distance between two pixels will always at least be 1
+    #     # In all possible directions for each point aloing the line we consider the eight neighboring points
+    #     # by adding all possible combinations of 0 and 1 to the point and flooring
+    #     ray = self._rotate(torch.stack([torch.arange(-w, w), torch.zeros(2 * w), torch.zeros(2 * w)], dim=-1), R)
+    #     offsets = torch.tensor(list(itertools.product([1, 0], repeat=3)))
+
+    #     point = (pixel_rotated[:, :, None, None, :] + ray[None, None, None, :, :] + offsets[None, None, :, None, :]).floor()
+    #     distance = pixel_rotated[:, :, None, None, :] - point
+    #     # Inverse rotation projects the distance back to the original coordinate system, i.e
+    #     # Distance in z is distance along the line, i.e. the slice profile weighted direction
+    #     # Distance in x and y is the distance of a pixel to the ray and linear interpolation is used to weight the distance
+    #     distance_z, distance_y, distance_x = self._rotate(distance, R, inverse=True).unbind(-1)
+    #     weight_xy = (1 - distance_x.abs()).clamp_min(0) * (1 - distance_y.abs()).clamp_min(0)
+    #     weight_z = slice_function(distance_z)
+    #     weight = (weight_xy * weight_z).reshape(Y * X, -1)
+
+    #     source = einops.rearrange(point, 'Y X s1 s2 xyz -> (Y X) (s1 s2) xyz').int()
+    #     # Remove points outside the volume
+    #     mask = (
+    #         (source[..., 0] < Z)
+    #         & (source[..., 0] >= 0)
+    #         & (source[..., 1] < Y)
+    #         & (source[..., 1] >= 0)
+    #         & (source[..., 2] < X)
+    #         & (source[..., 2] >= 0)
+    #     )
+    #     # We need this at the edge of the volume to approximate zero padding
+    #     fraction_in_view = (mask * (weight > 0)).sum(-1) / (weight > 0).sum(-1)
+
+    #     source_index = torch.tensor(np.ravel_multi_index(source[mask].unbind(-1), (Z, Y, X)))
+    #     target_index = torch.repeat_interleave(torch.arange(Y * X), mask.sum(-1))
+
+    #     # Count duplicates. Coalesce will sum the values of duplicate indices
+    #     ones = torch.ones_like(source_index).float()
+    #     ones = torch.sparse_coo_tensor(
+    #         indices=torch.stack((target_index, source_index)), values=ones, size=(Y * X, Z * Y * X), dtype=torch.float32
+    #     )
+    #     ones = ones.coalesce()
+
+    #     matrix = torch.sparse_coo_tensor(
+    #         indices=torch.stack((target_index, source_index)),
+    #         values=weight.reshape(Y * X, -1)[mask],
+    #         size=(Y * X, Z * Y * X),
+    #         dtype=torch.float32,
+    #     ).coalesce()
+    #     matrix.values()[:] /= ones.values()
+
+    #     # Normalize
+    #     norm = fraction_in_view / matrix.sum(1).to_dense()
+    #     matrix *= norm[:, None]
+    #     matrix = matrix.to_sparse_csr()
+
+    #     return matrix
+
+
+
     def forward(self, img_hr: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the projection operatore to high resolution 3d volume.
 
