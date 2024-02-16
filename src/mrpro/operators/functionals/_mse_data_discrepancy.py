@@ -19,9 +19,7 @@ from mrpro.operators import Operator
 
 
 class mse_data_discrepancy(Operator):
-    def __init__(self, data: torch.Tensor) -> None:
-        super().__init__()
-        """MSE loss function.
+    """MSE loss function.
 
         This class implements the function
             1./N * || . - data ||_2^2,
@@ -32,11 +30,14 @@ class mse_data_discrepancy(Operator):
         by 2. By this, we achieve that for example
             MSE(1) = MES(1+1j*0) = 1.
 
-        Parameters
-        ----------
-        data
-            observed data
-        """
+    Parameters
+    ----------
+    data
+        observed data
+    """
+
+    def __init__(self, data: torch.Tensor) -> None:
+        super().__init__()
 
         # observed data
         self.data = data
