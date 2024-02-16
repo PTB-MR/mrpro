@@ -43,7 +43,7 @@ from mrpro.operators import SensitivityOp
 # %%
 # Download raw data in ISMRMRD format from zenodo into a temporary directory
 data_folder = Path(tempfile.mkdtemp())
-zenodo_cmd = f'zenodo_get 10.5281/zenodo.7903232 -o {str(data_folder)}'
+zenodo_cmd = f'zenodo_get 10.5281/zenodo.10671597 -o {str(data_folder)}'
 out = subprocess.call(zenodo_cmd, shell=True)
 
 # %% [markdown]
