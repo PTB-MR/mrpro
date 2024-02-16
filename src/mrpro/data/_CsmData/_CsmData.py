@@ -95,7 +95,7 @@ class CsmData(QData):
         return cls(header=idata.header, data=csm_data)
 
     @classmethod
-    def coil_map_study_2d_Inati(cls, data: torch.Tensor, ks: int, power: int, padding_mode='circular') -> CsmData:
+    def from_idata_inati(cls, data: torch.Tensor, ks: int, power: int, padding_mode='circular') -> CsmData:
         """Coil sensitivity maps using the Inati method.
 
         Details of the method can be found in Inati et al. 2004.
