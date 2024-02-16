@@ -1,6 +1,6 @@
 """Operator enforcing constraints by variable transformations."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
+# Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -14,11 +14,11 @@
 
 
 import torch
+import torch.nn.functional as F
 
 from mrpro.operators import Operator
 
 
-# TODO: inheriting from Operator throws "_backward_hooks"-error
 class ConstraintsOp(Operator):
     """Transformation to map real-valued tensors to certain ranges."""
 
@@ -26,14 +26,20 @@ class ConstraintsOp(Operator):
         self,
         bounds: tuple[tuple[float | None, float | None], ...],
         beta_sigmoid: float = 1.0,
-        beta_softplus: float = 1.0,
+        beta_softplus: int = 1,
     ) -> None:
         super().__init__()
-        self.lower_bounds = [bound[0] for bound in bounds]
-        self.upper_bounds = [bound[1] for bound in bounds]
+
+        if beta_sigmoid <= 0:
+            raise ValueError(f'parameter beta_sigmoid must be greater than zero; given {beta_sigmoid}')
+        if beta_softplus <= 0:
+            raise ValueError(f'parameter beta_softplus must be greater than zero; given {beta_softplus}')
 
         self.beta_sigmoid = beta_sigmoid
         self.beta_softplus = beta_softplus
+
+        self.lower_bounds = [bound[0] for bound in bounds]
+        self.upper_bounds = [bound[1] for bound in bounds]
 
         for lb, ub in bounds:
             if (ub is not None and lb is not None) and lb > ub:
@@ -43,40 +49,28 @@ class ConstraintsOp(Operator):
                 )
 
     @staticmethod
-    def sigmoid_transf(x: torch.Tensor, bounds: tuple[float, float], beta: float = 1.0) -> torch.Tensor:
+    def sigmoid(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
         """Constraint x to be in the range given by 'bounds'."""
 
-        return bounds[0] + (bounds[1] - bounds[0]) * (1.0 / (1.0 + torch.exp(-beta * x)))
+        return F.sigmoid(beta * x)
 
     @staticmethod
-    def sigmoid_transf_inv(x: torch.Tensor, bounds: tuple[float, float], beta: float = 1.0) -> torch.Tensor:
-        """Inverse of 'sigmoid_transf."""
+    def sigmoid_inverse(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
+        """Constraint x to be in the range given by 'bounds'."""
 
-        return -torch.log(1.0 / ((x - bounds[0]) / (bounds[1] - bounds[0])) - 1.0) / beta
+        return torch.logit(x) / beta
 
     @staticmethod
-    def softplus_transf(x: torch.Tensor, lbound: float, beta: float = 0.1) -> torch.Tensor:
+    def softplus(x: torch.Tensor, beta: int = 1) -> torch.Tensor:
         """Constrain x to be in (bound,infty)."""
 
-        return lbound + 1.0 / beta * torch.log(1 + torch.exp(beta * x))
+        return F.softplus(x, beta=beta)
 
     @staticmethod
-    def softplus_transf_inv(x: torch.Tensor, lbound: float, beta: float = 0.1) -> torch.Tensor:
-        """Inverse of 'softplus_transf."""
+    def softplus_inverse(x: torch.Tensor, beta: int = 1) -> torch.Tensor:
+        """Inverse of 'softplus_transformation."""
 
-        return torch.log(torch.exp(beta * (x - lbound)) - 1.0) / beta
-
-    @staticmethod
-    def neg_softplus_transf(x: torch.Tensor, ubound: float, beta: float = 0.1) -> torch.Tensor:
-        """Contrain x to be in (-infty,bound)."""
-
-        return ubound - 1.0 / beta * torch.log(1 + torch.exp(beta * x))
-
-    @staticmethod
-    def neg_softplus_transf_inv(x: torch.Tensor, ubound: float, beta: float = 0.1) -> torch.Tensor:
-        """Constrain x to be in (-infty,bound)."""
-
-        return torch.log(torch.exp(beta * (ubound - x)) - 1.0) / beta
+        return beta * x + torch.log(-torch.expm1(-beta * x))
 
     def forward(self, x: tuple[torch.Tensor, ...]) -> tuple[torch.Tensor, ...]:
         # iterate over the tensors and constrain them if necessary according to the
@@ -88,15 +82,15 @@ class ConstraintsOp(Operator):
             # distiguish cases
             if lb is not None and ub is not None:
                 # case (a,b) with a<b and a,b \in R
-                xc.append(self.sigmoid_transf(x[i], bounds=(lb, ub), beta=self.beta_sigmoid))
+                xc.append(lb + (ub - lb) * self.sigmoid(x[i], beta=self.beta_sigmoid))
 
             elif lb is not None and ub is None:
                 # case (a,None); corresponds to (a, \infty)
-                xc.append(self.softplus_transf(x[i], lbound=lb, beta=self.beta_softplus))
+                xc.append(lb + self.softplus(x[i], beta=self.beta_softplus))
 
             elif lb is None and ub is not None:
                 # case (None,b); corresponds to (-\infty, b)
-                xc.append(self.neg_softplus_transf(x[i], ubound=ub, beta=self.beta_softplus))
+                xc.append(ub - self.softplus(-x[i], beta=self.beta_softplus))
             elif lb is None and ub is None:
                 # case (None,None); corresponds to (-\infty, \infty), i.e. no transformation
                 xc.append(x[i])
@@ -113,15 +107,15 @@ class ConstraintsOp(Operator):
             # distiguish cases
             if lb is not None and ub is not None:
                 # case (a,b) with a<b and a,b \in R
-                x.append(self.sigmoid_transf_inv(xc[i], bounds=(lb, ub), beta=self.beta_sigmoid))
+                x.append(self.sigmoid_inverse((xc[i] - lb) / (ub - lb), beta=self.beta_sigmoid))
 
             elif lb is not None and ub is None:
                 # case (a,None); corresponds to (a, \infty)
-                x.append(self.softplus_transf_inv(xc[i], lbound=lb, beta=self.beta_softplus))
+                x.append(self.softplus_inverse(xc[i] - lb, beta=self.beta_softplus))
 
             elif lb is None and ub is not None:
                 # case (None,b); corresponds to (-\infty, b)
-                x.append(self.neg_softplus_transf_inv(xc[i], ubound=ub, beta=self.beta_softplus))
+                x.append(-self.softplus_inverse(-(xc[i] - ub), beta=self.beta_softplus))
             elif lb is None and ub is None:
                 # case (None,None); corresponds to (-\infty, \infty), i.e. no transformation
                 x.append(xc[i])

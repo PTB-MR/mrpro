@@ -1,6 +1,6 @@
 """LBFGS for solving non-linear minimization problems."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
+# Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -65,8 +65,9 @@ def lbfgs(
             "at least one tensor in 'params' is complex-valued; \
             \ncomplex-valued tensors will be allowed for lbfgs in future torch versions"
         )
+
     # define lbfgs routine
-    lbfgs_ = LBFGS(
+    optim = LBFGS(
         params,
         lr=lr,
         history_size=history_size,
@@ -78,12 +79,12 @@ def lbfgs(
     )
 
     def closure():
-        lbfgs_.zero_grad()
+        optim.zero_grad()
         (objective,) = f(*params)
         objective.backward()
         return objective
 
     # run lbfgs
-    lbfgs_.step(closure)
+    optim.step(closure)
 
     return params

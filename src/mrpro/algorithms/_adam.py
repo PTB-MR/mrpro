@@ -1,6 +1,6 @@
 """ADAM for solving non-linear minimization problems."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
+# Copyright 2024Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ def adam(
     """
 
     # define Adam routine
-    adam_ = Adam(
+    optim = Adam(
         params=params,
         lr=lr,
         betas=betas,
@@ -87,13 +87,13 @@ def adam(
     )
 
     def closure():
-        adam_.zero_grad()
+        optim.zero_grad()
         (objective,) = f(*params)
         objective.backward()
         return objective
 
     # run adam
     for _ in range(max_iter):
-        adam_.step(closure)
+        optim.step(closure)
 
     return params
