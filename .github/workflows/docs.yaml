@@ -59,6 +59,7 @@ jobs:
         if: steps.verify-changed-notebooks.outputs.files_changed == 'true'
         uses: actions4git/add-commit-push@v1
         with:
+          token: ${{ secrets.mrpro }}
           commit-message: Notebooks updated
 
       - name: Get hash of last commit
