@@ -22,14 +22,36 @@ from mrpro.operators._FourierOp import FourierOp
 # flag for conversion and saving nifty files
 # If you wish to save the resulting reconstructed image as a nifty fily, set  NIFTI = "True"
 NIFTI = False
+
 # %%
 
+# Create a temporary directory to save the downloaded files
 data_folder = Path(tempfile.mkdtemp())
-zenodo_cmd = f'zenodo_get 10.5281/zenodo.10664974 -o {str(data_folder)}'
-out = subprocess.call(zenodo_cmd, shell=True)
+print(f'Data will be saved to: {data_folder}')
 
-if out != 0:
-    raise ConnectionError('Zenodo donload failed!')
+# Initialize attempt counter and set maximum number of attempts
+attempt = 1
+max_attempts = 3
+
+# Start the download process
+while attempt <= max_attempts:
+    # Zenodo command for downloading
+    zenodo_cmd = f'zenodo_get 10.5281/zenodo.10664974 -o {str(data_folder)}'
+
+    # Execute the Zenodo command
+    out = subprocess.call(zenodo_cmd, shell=True)
+
+    # Check if the download was successful
+    if out == 0:
+        print('Download successful.')
+        break
+    else:
+        print(f'Download failed! Attempt {attempt} of {max_attempts}')
+        attempt += 1
+
+if attempt > max_attempts:
+    # Abort after reaching the maximum number of attempts
+    raise ConnectionError('Zenodo download failed after 3 attempts!')
 
 # %%
 # for single file
