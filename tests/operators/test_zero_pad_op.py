@@ -32,7 +32,7 @@ def test_zero_pad_op_content():
         orig_shape=tuple([dshape_orig[d] for d in pad_dim]),
         padded_shape=tuple([dshape_new[d] for d in pad_dim]),
     )
-    dnew = POp.forward(dorig)
+    (dnew,) = POp.forward(dorig)
 
     # Compare overlapping region
     torch.testing.assert_close(dorig[:, 10:90, :, 50:150, :, :], dnew[:, :, :, :, 95:145, :])
@@ -47,13 +47,13 @@ def test_zero_pad_op_content():
         ((100, 200, 50), (13, 221, 64)),
     ],
 )
-def test_zero_pad_op_ajoint(u_shape, v_shape):
+def test_zero_pad_op_adjoint(u_shape, v_shape):
     """Test adjointness of pad operator."""
     generator = RandomGenerator(seed=0)
     u = generator.complex64_tensor(u_shape)
     v = generator.complex64_tensor(v_shape)
     POp = ZeroPadOp(dim=(-3, -2, -1), orig_shape=u_shape, padded_shape=v_shape)
-    Au = POp.forward(u)
-    AHv = POp.adjoint(v)
+    (Au,) = POp.forward(u)
+    (AHv,) = POp.adjoint(v)
 
     assert torch.isclose(torch.vdot(Au.flatten(), v.flatten()), torch.vdot(u.flatten(), AHv.flatten()), rtol=1e-3)

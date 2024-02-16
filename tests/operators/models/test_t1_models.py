@@ -35,7 +35,7 @@ def test_saturation_recovery(t, result):
     # Generate signal model and torch tensor for comparison
     model = SaturationRecovery(ti)
     m0, t1 = create_data()
-    image = model.forward(m0, t1)
+    (image,) = model.forward(m0, t1)
 
     zeros = torch.zeros_like(m0)
 
@@ -69,7 +69,7 @@ def test_inversion_recovery(t, result):
     # Generate signal model and torch tensor for comparison
     model = InversionRecovery(ti)
     m0, t1 = create_data()
-    image = model.forward(m0, t1)
+    (image,) = model.forward(m0, t1)
 
     # Assert closeness to -m0 for t=0
     if result == '-m0':
@@ -105,7 +105,7 @@ def test_molli(t, result):
 
     # Generate signal model and torch tensor for comparison
     model = MOLLI(ti)
-    image = model.forward(a, b, t1)
+    (image,) = model.forward(a, b, t1)
 
     # Assert closeness to a-b for large t
     if result == 'a-b':

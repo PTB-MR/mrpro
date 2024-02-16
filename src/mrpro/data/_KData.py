@@ -44,9 +44,23 @@ KDIM_SORT_LABELS = (
     'set',
 )
 
+# Same criteria as https://github.com/wtclarke/pymapvbvd/blob/master/mapvbvd/mapVBVD.py uses
+DEFAULT_IGNORE_FLAGS = (
+    AcqFlags.ACQ_IS_NOISE_MEASUREMENT
+    | AcqFlags.ACQ_IS_DUMMYSCAN_DATA
+    | AcqFlags.ACQ_IS_HPFEEDBACK_DATA
+    | AcqFlags.ACQ_IS_NAVIGATION_DATA
+    | AcqFlags.ACQ_IS_PHASECORR_DATA
+    | AcqFlags.ACQ_IS_PHASE_STABILIZATION
+    | AcqFlags.ACQ_IS_PHASE_STABILIZATION_REFERENCE
+    | AcqFlags.ACQ_IS_PARALLEL_CALIBRATION
+)
+
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class KData:
+    """MR raw data / k-space data class."""
+
     header: KHeader
     data: torch.Tensor
     traj: KTrajectory
@@ -58,6 +72,7 @@ class KData:
         ktrajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
         header_overwrites: dict[str, object] | None = None,
         dataset_idx: int = -1,
+        ignore_flags: AcqFlags = DEFAULT_IGNORE_FLAGS,
     ) -> KData:
         """Load k-space data from an ISMRMRD file.
 
@@ -66,11 +81,16 @@ class KData:
             filename
                 path to the ISMRMRD file
             ktrajectory
-                KTrajectory defining the trajectory to use # TODO: Maybe provide a default based on the header?
+                KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory
             header_overwrites
                 dictionary of key-value pairs to overwrite the header
             dataset_idx
-                index of the dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
+                index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
+            ignore_flags
+                Acqisition flags to filter out. Defaults to all non-images as defined by pymapvbvd.
+                Use ACQ_NO_FLAG to disable the filter.
+                Note: If ACQ_IS_PARALLEL_CALIBRATION is set without also setting ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING
+                      we interpret it as: Ignore if IS_PARALLEL_CALIBRATION and not PARALLEL_CALIBRATION_AND_IMAGING
         """
 
         # Can raise FileNotFoundError
@@ -84,9 +104,23 @@ class KData:
                 mtime = 0
             modification_time = datetime.datetime.fromtimestamp(mtime)
 
-        # Noise data etc must be handled separately #TODO: check which flags we also need to add.
-        ignore_flags = AcqFlags.ACQ_IS_NOISE_MEASUREMENT | AcqFlags.ACQ_IS_SURFACECOILCORRECTIONSCAN_DATA
+        if (
+            AcqFlags.ACQ_IS_PARALLEL_CALIBRATION in ignore_flags
+            and AcqFlags.ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING not in ignore_flags
+        ):
+            # if only ACQ_IS_PARALLEL_CALIBRATION is set, reinterpret it as: ignore if
+            # ACQ_IS_PARALLEL_CALIBRATION is set and ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING is not set
+            ignore_flags = ignore_flags & ~AcqFlags.ACQ_IS_PARALLEL_CALIBRATION
+            acquisitions = list(
+                filter(
+                    lambda acq: (AcqFlags.ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING.value & acq.flags)
+                    or not (AcqFlags.ACQ_IS_PARALLEL_CALIBRATION.value & acq.flags),
+                    acquisitions,
+                )
+            )
+
         acquisitions = list(filter(lambda acq: not (ignore_flags.value & acq.flags), acquisitions))
+
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
 
         # Raises ValueError if required fields are missing in the header
@@ -99,38 +133,83 @@ class KData:
             },
             overwrite=header_overwrites,
         )
+
+        # Create single kdata tensor from acquisition data
         kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 
         # Fill k0 limits if they were set to zero / not set in the header
         if kheader.encoding_limits.k0.length == 1:
             kheader.encoding_limits.k0 = Limits(0, kdata.shape[-1] - 1, kdata.shape[-1] // 2)
 
-        # TODO: Check for partial Fourier and reflected readouts
-
         # Sort kdata and acq_info into ("all other dim", coils, k2, k1, k0) / ("all other dim", k2, k1, acq_info_dims)
         # Fist, ensure each the non k1/k2 dimensions covers the same number of k1 and k2 points
         unique_idxs = {label: np.unique(getattr(kheader.acq_info.idx, label)) for label in KDIM_SORT_LABELS}
-        num_k1 = len(unique_idxs['k1'])
-        num_k2 = len(unique_idxs['k2'])
 
-        for label, idxs in unique_idxs.items():
-            if label in ('k1', 'k2'):
-                continue
-            for idx in idxs:
-                idx_matches = torch.nonzero(getattr(kheader.acq_info.idx, label) == idx)
+        # For reshaping into (other coils k2 k1 k0), the number of acqs must match the product of all unique_idxs
+        num_total_unique = torch.as_tensor([len(unique_idxs[label]) for label in KDIM_SORT_LABELS]).prod()
+
+        # Define function to find index label combinations. This is used to determine the dimensions of k1 and k2.
+        def idx_label_combination(average_idx, slice_idx, contrast_idx, phase_idx, repetition_idx, set_idx):
+            return torch.nonzero(
+                (kheader.acq_info.idx.average == average_idx)
+                & (kheader.acq_info.idx.slice == slice_idx)
+                & (kheader.acq_info.idx.contrast == contrast_idx)
+                & (kheader.acq_info.idx.phase == phase_idx)
+                & (kheader.acq_info.idx.repetition == repetition_idx)
+                & (kheader.acq_info.idx.set == set_idx)
+            )
+
+        idx_matches = idx_label_combination(
+            *[unique_idxs[label][0] for label in KDIM_SORT_LABELS if label not in ('k1', 'k2')]
+        )
+
+        # Determine the number of k1 and k2 points
+        if num_total_unique == kdata.shape[0]:
+            # Data can be reshaped into (other coils k2 k1 k0))
+            num_k1 = len(torch.unique(kheader.acq_info.idx.k1[idx_matches]))
+            num_k2 = len(torch.unique(kheader.acq_info.idx.k2[idx_matches]))
+        else:
+            # Data is reshaped into (other 1 (k2 k1) k0)
+            num_k1 = len(idx_matches)
+            num_k2 = 1
+
+        # Create all combinations of averages, slices, contrasts... to make the following loop easier to read
+        idx_combinations = [
+            [average_idx, slice_idx, contrast_idx, phase_idx, repetition_idx, set_idx]
+            for average_idx in unique_idxs['average']
+            for slice_idx in unique_idxs['slice']
+            for contrast_idx in unique_idxs['contrast']
+            for phase_idx in unique_idxs['phase']
+            for repetition_idx in unique_idxs['repetition']
+            for set_idx in unique_idxs['set']
+        ]
+
+        # Verify that k2 and k1 contain the same number of k-space points for all combinations of averages, slices...
+        for average_idx, slice_idx, contrast_idx, phase_idx, repetition_idx, set_idx in idx_combinations:
+            idx_matches = idx_label_combination(
+                average_idx, slice_idx, contrast_idx, phase_idx, repetition_idx, set_idx
+            )
+            label_str = (
+                f'[average {average_idx} | slice {slice_idx} | contrast {contrast_idx} | phase {phase_idx}'
+                + f'| repetition {repetition_idx} | set {set_idx}]'
+            )
+            if num_total_unique == kdata.shape[0]:
                 current_num_k1 = len(torch.unique(kheader.acq_info.idx.k1[idx_matches]))
                 current_num_k2 = len(torch.unique(kheader.acq_info.idx.k2[idx_matches]))
                 if current_num_k1 != num_k1:
-                    raise ValueError(f'Number of k1 points in {label}: {current_num_k1}. Expected: {num_k1}')
+                    raise ValueError(f'Number of k1 points in {label_str}: {current_num_k1}. Expected: {num_k1}')
                 if current_num_k2 != num_k2:
-                    raise ValueError(f'Number of k2 points in {label}: {current_num_k2}. Expected: {num_k2}')
+                    raise ValueError(f'Number of k2 points in {label_str}: {current_num_k2}. Expected: {num_k2}')
+            else:
+                if len(idx_matches) != num_k1:
+                    raise ValueError(f'Number of (k2 k1) points in {label_str}: {len(idx_matches)}. Expected: {num_k1}')
 
-        # using np.lexsort as it looks a bit more familiar than looping and torch.argsort(..., stable=True)
+        # Sort the data according to the sorted indices
         sort_ki = np.stack([getattr(kheader.acq_info.idx, label) for label in KDIM_SORT_LABELS], axis=0)
         sort_idx = np.lexsort(sort_ki)
-
         kdata = rearrange(kdata[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=num_k1, k2=num_k2)
 
+        # Reshape the acquisition data and update the header acquisition infos accordingly
         def reshape_acq_data(data):
             return rearrange(data[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=num_k1, k2=num_k2)
 

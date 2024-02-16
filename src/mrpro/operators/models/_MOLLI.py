@@ -12,31 +12,38 @@
 import torch
 from einops import rearrange
 
-from mrpro.operators import Operator
+from mrpro.operators import SignalModel
 
 
-class MOLLI(Operator):
+class MOLLI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
+    """Signal model for Modified Look-Locker inversion recovery (MOLLI)."""
+
     def __init__(self, ti: torch.Tensor):
-        """Parameters needed for MOLLI.
+        """Initialize MOLLI signal model for T1 mapping.
 
         Parameters
         ----------
         ti
-            inversion times
+            inversion times [s]
         """
         super().__init__()
         self.ti = torch.nn.Parameter(ti, requires_grad=ti.requires_grad)
 
-    def forward(self, a: torch.Tensor, b: torch.Tensor, t1: torch.Tensor) -> torch.Tensor:
-        """Apply the forward model.
+    def forward(self, a: torch.Tensor, b: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply MOLLI signal model.
 
         Parameters
         ----------
-            Quantitative parameters m0, t1 with dimensions (other, c, z, y, x)
+        a
+            Parameter a in MOLLI signal model
+        b
+            Parameter b in MOLLI signal model
+        t1
+            longitudinal relaxation time T1 [s]
 
         Returns
         -------
-            Image data tensor (other, c, z, y, x)
+            signal with dimensions ((... inv_times), coils, z, y, x)
         """
         t1 = torch.where(t1 == 0, 1e-10, t1)
         a = torch.where(a == 0 | torch.equal((b / a), torch.ones_like(a)), a + 1e-10, a)
@@ -44,4 +51,4 @@ class MOLLI(Operator):
         t1_star = t1 / ((b / a) - 1)
         y = a - b * torch.exp(-(ti / (t1_star)))
         res = rearrange(y, 't ... c z y x -> (... t) c z y x')
-        return res
+        return (res,)

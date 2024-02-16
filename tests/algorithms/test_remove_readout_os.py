@@ -75,7 +75,7 @@ def test_remove_readout_os(monkeypatch, random_kheader):
 
     # Reconstruct image from k-space data of one coil and compare to phantom image
     FFOp = FastFourierOp(dim=(-1, -2))
-    idat_rec = FFOp.adjoint(kdata.data[:, 0, ...])
+    (idat_rec,) = FFOp.adjoint(kdata.data[:, 0, ...])
 
     # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high

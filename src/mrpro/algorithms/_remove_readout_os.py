@@ -56,9 +56,9 @@ def remove_readout_os(kdata: KData) -> KData:
 
         # Transform to image space, crop to reconstruction matrix size and transform back
         FFOp = FastFourierOp(dim=(-1,))
-        dat = FFOp.adjoint(kdata.data)
+        (dat,) = FFOp.adjoint(kdata.data)
         dat = crop_readout(dat)
-        dat = FFOp.forward(dat)
+        (dat,) = FFOp.forward(dat)
 
         # Adapt trajectory
         ks = [kdata.traj.kz, kdata.traj.ky, kdata.traj.kx]
