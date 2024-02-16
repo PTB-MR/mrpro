@@ -22,8 +22,14 @@ from mrpro.operators._FourierOp import FourierOp
 # If you wish to save the resulting reconstructed image as a nifty fily, set  NIFTI = "True"
 NIFTI = False
 
-# %%
+# %% [markdown]
 
+# # Download example data
+# The example data is taken from (https://zenodo.org/records/10669837).
+# It entails GRE phantom scans with fully sampled cartesian trajectory.
+# The sequence used was a pypulseq GRE sequence available under
+# (https://github.com/imr-framework/pypulseq/blob/dev/pypulseq/seq_examples/scripts/write_gre.py)
+# %%
 # Create a temporary directory to save the downloaded files
 data_folder = Path(tempfile.mkdtemp())
 print(f'Data will be saved to: {data_folder}')
@@ -53,17 +59,28 @@ if attempt > max_attempts:
     raise ConnectionError('Zenodo download failed after 3 attempts!')
 
 # %%
-# for single file
 filepath = data_folder
 seq_filename = 'gre_example.seq'
 h5_filename = 'meas_MID00021_FID00266_pulseq.h5'
 
+# %% [markdown]
+# # Read in data
+# Data is read in using the downloaded .h5 file and a corresponding
+# trajectory calculator (cartesian in this case). Given the trajectory
+# calculator, mrpro will automatically read, sort and validate the data.
 
 # %%
 data = KData.from_file(
     ktrajectory=KTrajectoryCartesian(),
     filename=f'{filepath}/{h5_filename}',
 )
+
+# %% [markdown]
+# # Reconstruction
+# Given the loaded data, the Fourier Operator is initialized next,
+# with which the appropriate Fourier Transform is carried out.
+# Furthermore, coil sensitivity maps are created to control for varying
+# coil sensitivities throughout the scan.
 
 # %%
 # perform FT and CSM
@@ -81,14 +98,18 @@ csm = CsmData.from_idata_walsh(idata, smoothing_width)
 sensitivity_op = SensitivityOp(csm)
 (x,) = sensitivity_op.H(xcoils)
 
+# %% [markdown]
+# # See the results
 # %%
 image = x.squeeze(0)
 for i in image:
     print(i.shape)
     plt.matshow(torch.abs(i[0]))
     break
-
-# idata = IData.from_tensor_and_kheader(im, data.header)
+# %% [markdown]
+# # Save reconstructed images
+# In case you would like to save the reconstructed images,
+# set the NIFTI flag at the top to True
 # %%
 if NIFTI:
     image = image.swapaxes(0, 2)
@@ -98,18 +119,3 @@ if NIFTI:
         ni_img,
         f'{filepath}/{h5_filename.split(".")[0]}/.nii',
     )
-# %%
-
-# %%
-# test_load = nib.load(
-#    "/home/hammac01/CEST_Data/2024-01-25_JOHANNES_Interleafed_CEST/Transversal/20240123_CEST_interleafed_radial_256px_fov256_8mm_200spokes_golden_angle_56offsets_0.035saturation_dummy_spokes/meas_MID00058_FID00269_0_035saturation.nii"
-# ).get_fdata()
-# test_load = test_load.swapaxes(0, 2)
-
-# %%
-# for i in test_load:
-#    print(i.shape)
-#    plt.matshow(i)
-#    break
-
-# %%
