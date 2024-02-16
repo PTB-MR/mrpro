@@ -1,3 +1,7 @@
+# %% [markdown]
+# # Basic example for reconstruction of radial interleafed sampled data
+# This notebook is meant as a first introduction inot mrpro-based
+# reconstruction of radial interleafed data.
 # %%
 import subprocess
 import tempfile
@@ -23,8 +27,12 @@ from mrpro.operators._FourierOp import FourierOp
 # If you wish to save the resulting reconstructed image as a nifty fily, set  NIFTI = "True"
 NIFTI = False
 
-# %%
+# %% [markdown]
 
+# # Download example data
+# The example data is taken from (https://zenodo.org/records/10669837).
+# It entails data acquired using radial-interleafed sequences written in pulseq.
+# %%
 # Create a temporary directory to save the downloaded files
 data_folder = Path(tempfile.mkdtemp())
 print(f'Data will be saved to: {data_folder}')
@@ -54,17 +62,25 @@ if attempt > max_attempts:
     raise ConnectionError('Zenodo download failed after 3 attempts!')
 
 # %%
-# for single file
 filepath = data_folder
 seq_filename = '20240130_CEST_interleafed_radial_256px_fov256_8mm_50spokes_100ms.seq'
 h5_filename = 'meas_MID00044_FID00370_20240130_CEST_interleafed_radial_256px_fov256_8mm_50spokes_100m.h5'
-
-
+# %% [markdown]
+# # Read in data
+# Data is read in using the downloaded .h5 file and a corresponding
+# trajectory calculator (cartesian in this case). Given the trajectory
+# calculator, mrpro will automatically read, sort and validate the data.
 # %%
 data = KData.from_file(
     ktrajectory=KTrajectoryRadial2D(),
     filename=f'{filepath}/{h5_filename}',
 )
+# %% [markdown]
+# # Reconstruction
+# Given the loaded data, the Fourier Operator is initialized next,
+# with which the appropriate Fourier Transform is carried out.
+# Furthermore, density compensation and coil sensitivity maps are created to
+# control for varying coil sensitivities ad densities throughout the scan.
 # %%
 # Densitiy compensation
 dcf = DcfData.from_traj_voronoi(traj=data.traj)
@@ -85,15 +101,19 @@ csm = CsmData.from_idata_walsh(idata, smoothing_width)
 sensitivity_op = SensitivityOp(csm)
 (x,) = sensitivity_op.H(xcoils)
 
+# %% [markdown]
+# # See the results
 # %%
-
 image = x.abs().square().sum(1).sqrt()
 image = image.squeeze()
 for i in image:
     print(i.shape)
     plt.matshow(torch.abs(i))
     break
-
+# %% [markdown]
+# # Save reconstructed images
+# In case you would like to save the reconstructed images,
+# set the NIFTI flag at the top to True
 # %%
 if NIFTI:
     image = image.swapaxes(0, 2)
