@@ -200,7 +200,7 @@ document.write(`
           
           
           
-          <a href="https://github.com/ckolbPTB/mrpro" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/PTB-MR/mrpro" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -309,7 +309,7 @@ document.write(`
           
           
           
-          <a href="https://github.com/ckolbPTB/mrpro" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/PTB-MR/mrpro" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitHub</span></a>
         </li>
 </ul></div>
@@ -397,6 +397,7 @@ document.write(`
 <span class="kn">import</span> <span class="nn">types</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
 <span class="kn">import</span> <span class="nn">keyword</span>
+<span class="kn">import</span> <span class="nn">builtins</span>
 <span class="kn">import</span> <span class="nn">functools</span>
 <span class="kn">import</span> <span class="nn">itertools</span>
 <span class="kn">import</span> <span class="nn">abc</span>
@@ -615,29 +616,6 @@ document.write(`
 <span class="c1"># https://bugs.python.org/issue33453 for details.</span>
 <span class="n">_MODULE_IDENTIFIER_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^(?:\s*(\w+)\s*\.)?\s*(\w+)&#39;</span><span class="p">)</span>
 
-<span class="c1"># Atomic immutable types which don&#39;t require any recursive handling and for which deepcopy</span>
-<span class="c1"># returns the same object. We can provide a fast-path for these types in asdict and astuple.</span>
-<span class="n">_ATOMIC_TYPES</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span>
-    <span class="c1"># Common JSON Serializable types</span>
-    <span class="n">types</span><span class="o">.</span><span class="n">NoneType</span><span class="p">,</span>
-    <span class="nb">bool</span><span class="p">,</span>
-    <span class="nb">int</span><span class="p">,</span>
-    <span class="nb">float</span><span class="p">,</span>
-    <span class="nb">str</span><span class="p">,</span>
-    <span class="c1"># Other common types</span>
-    <span class="nb">complex</span><span class="p">,</span>
-    <span class="nb">bytes</span><span class="p">,</span>
-    <span class="c1"># Other types that are also unaffected by deepcopy</span>
-    <span class="n">types</span><span class="o">.</span><span class="n">EllipsisType</span><span class="p">,</span>
-    <span class="n">types</span><span class="o">.</span><span class="n">NotImplementedType</span><span class="p">,</span>
-    <span class="n">types</span><span class="o">.</span><span class="n">CodeType</span><span class="p">,</span>
-    <span class="n">types</span><span class="o">.</span><span class="n">BuiltinFunctionType</span><span class="p">,</span>
-    <span class="n">types</span><span class="o">.</span><span class="n">FunctionType</span><span class="p">,</span>
-    <span class="nb">type</span><span class="p">,</span>
-    <span class="nb">range</span><span class="p">,</span>
-    <span class="nb">property</span><span class="p">,</span>
-<span class="p">})</span>
-
 <span class="c1"># This function&#39;s logic is copied from &quot;recursive_repr&quot; function in</span>
 <span class="c1"># reprlib module to avoid dependency.</span>
 <span class="k">def</span> <span class="nf">_recursive_repr</span><span class="p">(</span><span class="n">user_function</span><span class="p">):</span>
@@ -756,25 +734,15 @@ document.write(`
                  <span class="s1">&#39;order&#39;</span><span class="p">,</span>
                  <span class="s1">&#39;unsafe_hash&#39;</span><span class="p">,</span>
                  <span class="s1">&#39;frozen&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;match_args&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;kw_only&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;slots&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;weakref_slot&#39;</span><span class="p">,</span>
                  <span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                 <span class="n">init</span><span class="p">,</span> <span class="nb">repr</span><span class="p">,</span> <span class="n">eq</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">unsafe_hash</span><span class="p">,</span> <span class="n">frozen</span><span class="p">,</span>
-                 <span class="n">match_args</span><span class="p">,</span> <span class="n">kw_only</span><span class="p">,</span> <span class="n">slots</span><span class="p">,</span> <span class="n">weakref_slot</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">init</span><span class="p">,</span> <span class="nb">repr</span><span class="p">,</span> <span class="n">eq</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">unsafe_hash</span><span class="p">,</span> <span class="n">frozen</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">init</span> <span class="o">=</span> <span class="n">init</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">repr</span> <span class="o">=</span> <span class="nb">repr</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">eq</span> <span class="o">=</span> <span class="n">eq</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="n">order</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">unsafe_hash</span> <span class="o">=</span> <span class="n">unsafe_hash</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">frozen</span> <span class="o">=</span> <span class="n">frozen</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">match_args</span> <span class="o">=</span> <span class="n">match_args</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kw_only</span> <span class="o">=</span> <span class="n">kw_only</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">slots</span> <span class="o">=</span> <span class="n">slots</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">weakref_slot</span> <span class="o">=</span> <span class="n">weakref_slot</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">(</span><span class="s1">&#39;_DataclassParams(&#39;</span>
@@ -783,11 +751,7 @@ document.write(`
                 <span class="sa">f</span><span class="s1">&#39;eq=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">eq</span><span class="si">!r}</span><span class="s1">,&#39;</span>
                 <span class="sa">f</span><span class="s1">&#39;order=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="si">!r}</span><span class="s1">,&#39;</span>
                 <span class="sa">f</span><span class="s1">&#39;unsafe_hash=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">unsafe_hash</span><span class="si">!r}</span><span class="s1">,&#39;</span>
-                <span class="sa">f</span><span class="s1">&#39;frozen=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">frozen</span><span class="si">!r}</span><span class="s1">,&#39;</span>
-                <span class="sa">f</span><span class="s1">&#39;match_args=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">match_args</span><span class="si">!r}</span><span class="s1">,&#39;</span>
-                <span class="sa">f</span><span class="s1">&#39;kw_only=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kw_only</span><span class="si">!r}</span><span class="s1">,&#39;</span>
-                <span class="sa">f</span><span class="s1">&#39;slots=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">slots</span><span class="si">!r}</span><span class="s1">,&#39;</span>
-                <span class="sa">f</span><span class="s1">&#39;weakref_slot=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">weakref_slot</span><span class="si">!r}</span><span class="s1">&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;frozen=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">frozen</span><span class="si">!r}</span><span class="s1">&#39;</span>
                 <span class="s1">&#39;)&#39;</span><span class="p">)</span>
 
 
@@ -848,18 +812,14 @@ document.write(`
         <span class="nb">locals</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">return_annotation</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
     <span class="k">if</span> <span class="n">return_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">MISSING</span><span class="p">:</span>
-        <span class="nb">locals</span><span class="p">[</span><span class="s1">&#39;__dataclass_return_type__&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">return_type</span>
-        <span class="n">return_annotation</span> <span class="o">=</span> <span class="s1">&#39;-&gt;__dataclass_return_type__&#39;</span>
+        <span class="nb">locals</span><span class="p">[</span><span class="s1">&#39;_return_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">return_type</span>
+        <span class="n">return_annotation</span> <span class="o">=</span> <span class="s1">&#39;-&gt;_return_type&#39;</span>
     <span class="n">args</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
     <span class="n">body</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;  </span><span class="si">{</span><span class="n">b</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">body</span><span class="p">)</span>
 
     <span class="c1"># Compute the text of the entire function.</span>
     <span class="n">txt</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39; def </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">(</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s1">)</span><span class="si">{</span><span class="n">return_annotation</span><span class="si">}</span><span class="s1">:</span><span class="se">\n</span><span class="si">{</span><span class="n">body</span><span class="si">}</span><span class="s1">&#39;</span>
 
-    <span class="c1"># Free variables in exec are resolved in the global namespace.</span>
-    <span class="c1"># The global namespace we have is user-provided, so we can&#39;t modify it for</span>
-    <span class="c1"># our purposes. So we put the things we need into locals and introduce a</span>
-    <span class="c1"># scope to allow the function we&#39;re creating to close over them.</span>
     <span class="n">local_vars</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">locals</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
     <span class="n">txt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;def __create_fn__(</span><span class="si">{</span><span class="n">local_vars</span><span class="si">}</span><span class="s2">):</span><span class="se">\n</span><span class="si">{</span><span class="n">txt</span><span class="si">}</span><span class="se">\n</span><span class="s2"> return </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="n">ns</span> <span class="o">=</span> <span class="p">{}</span>
@@ -883,14 +843,14 @@ document.write(`
     <span class="c1"># Return the text of the line in the body of __init__ that will</span>
     <span class="c1"># initialize this field.</span>
 
-    <span class="n">default_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;__dataclass_dflt_</span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">__&#39;</span>
+    <span class="n">default_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;_dflt_</span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span>
     <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">default_factory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">MISSING</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">init</span><span class="p">:</span>
             <span class="c1"># This field has a default factory.  If a parameter is</span>
             <span class="c1"># given, use it.  If not, call the factory.</span>
             <span class="nb">globals</span><span class="p">[</span><span class="n">default_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">default_factory</span>
             <span class="n">value</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">default_name</span><span class="si">}</span><span class="s1">() &#39;</span>
-                     <span class="sa">f</span><span class="s1">&#39;if </span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> is __dataclass_HAS_DEFAULT_FACTORY__ &#39;</span>
+                     <span class="sa">f</span><span class="s1">&#39;if </span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> is _HAS_DEFAULT_FACTORY &#39;</span>
                      <span class="sa">f</span><span class="s1">&#39;else </span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># This is a field that&#39;s not in the __init__ params, but</span>
@@ -951,11 +911,11 @@ document.write(`
     <span class="k">elif</span> <span class="n">f</span><span class="o">.</span><span class="n">default</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">MISSING</span><span class="p">:</span>
         <span class="c1"># There&#39;s a default, this will be the name that&#39;s used to look</span>
         <span class="c1"># it up.</span>
-        <span class="n">default</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;=__dataclass_dflt_</span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">__&#39;</span>
+        <span class="n">default</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;=_dflt_</span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span>
     <span class="k">elif</span> <span class="n">f</span><span class="o">.</span><span class="n">default_factory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">MISSING</span><span class="p">:</span>
         <span class="c1"># There&#39;s a factory function.  Set a marker.</span>
-        <span class="n">default</span> <span class="o">=</span> <span class="s1">&#39;=__dataclass_HAS_DEFAULT_FACTORY__&#39;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">:__dataclass_type_</span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">__</span><span class="si">{</span><span class="n">default</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="n">default</span> <span class="o">=</span> <span class="s1">&#39;=_HAS_DEFAULT_FACTORY&#39;</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">:_type_</span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}{</span><span class="n">default</span><span class="si">}</span><span class="s1">&#39;</span>
 
 
 <span class="k">def</span> <span class="nf">_init_fn</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">std_fields</span><span class="p">,</span> <span class="n">kw_only_fields</span><span class="p">,</span> <span class="n">frozen</span><span class="p">,</span> <span class="n">has_post_init</span><span class="p">,</span>
@@ -978,9 +938,10 @@ document.write(`
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;non-default argument </span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">!r}</span><span class="s1"> &#39;</span>
                                 <span class="s1">&#39;follows default argument&#39;</span><span class="p">)</span>
 
-    <span class="nb">locals</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s1">&#39;__dataclass_type_</span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">__&#39;</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">type</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">}</span>
+    <span class="nb">locals</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s1">&#39;_type_</span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">type</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">}</span>
     <span class="nb">locals</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
-        <span class="s1">&#39;__dataclass_HAS_DEFAULT_FACTORY__&#39;</span><span class="p">:</span> <span class="n">_HAS_DEFAULT_FACTORY</span><span class="p">,</span>
+        <span class="s1">&#39;MISSING&#39;</span><span class="p">:</span> <span class="n">MISSING</span><span class="p">,</span>
+        <span class="s1">&#39;_HAS_DEFAULT_FACTORY&#39;</span><span class="p">:</span> <span class="n">_HAS_DEFAULT_FACTORY</span><span class="p">,</span>
         <span class="s1">&#39;__dataclass_builtins_object__&#39;</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span>
     <span class="p">})</span>
 
@@ -1031,19 +992,21 @@ document.write(`
 <span class="k">def</span> <span class="nf">_frozen_get_del_attr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="nb">globals</span><span class="p">):</span>
     <span class="nb">locals</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;cls&#39;</span><span class="p">:</span> <span class="bp">cls</span><span class="p">,</span>
               <span class="s1">&#39;FrozenInstanceError&#39;</span><span class="p">:</span> <span class="n">FrozenInstanceError</span><span class="p">}</span>
-    <span class="n">condition</span> <span class="o">=</span> <span class="s1">&#39;type(self) is cls&#39;</span>
     <span class="k">if</span> <span class="n">fields</span><span class="p">:</span>
-        <span class="n">condition</span> <span class="o">+=</span> <span class="s1">&#39; or name in {&#39;</span> <span class="o">+</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;}&#39;</span>
+        <span class="n">fields_str</span> <span class="o">=</span> <span class="s1">&#39;(&#39;</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;,)&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Special case for the zero-length tuple.</span>
+        <span class="n">fields_str</span> <span class="o">=</span> <span class="s1">&#39;()&#39;</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">_create_fn</span><span class="p">(</span><span class="s1">&#39;__setattr__&#39;</span><span class="p">,</span>
                       <span class="p">(</span><span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">),</span>
-                      <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;if </span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">:&#39;</span><span class="p">,</span>
+                      <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;if type(self) is cls or name in </span><span class="si">{</span><span class="n">fields_str</span><span class="si">}</span><span class="s1">:&#39;</span><span class="p">,</span>
                         <span class="s1">&#39; raise FrozenInstanceError(f&quot;cannot assign to field </span><span class="si">{name!r}</span><span class="s1">&quot;)&#39;</span><span class="p">,</span>
                        <span class="sa">f</span><span class="s1">&#39;super(cls, self).__setattr__(name, value)&#39;</span><span class="p">),</span>
                        <span class="nb">locals</span><span class="o">=</span><span class="nb">locals</span><span class="p">,</span>
                        <span class="nb">globals</span><span class="o">=</span><span class="nb">globals</span><span class="p">),</span>
             <span class="n">_create_fn</span><span class="p">(</span><span class="s1">&#39;__delattr__&#39;</span><span class="p">,</span>
                       <span class="p">(</span><span class="s1">&#39;self&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">),</span>
-                      <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;if </span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s1">:&#39;</span><span class="p">,</span>
+                      <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;if type(self) is cls or name in </span><span class="si">{</span><span class="n">fields_str</span><span class="si">}</span><span class="s1">:&#39;</span><span class="p">,</span>
                         <span class="s1">&#39; raise FrozenInstanceError(f&quot;cannot delete field </span><span class="si">{name!r}</span><span class="s1">&quot;)&#39;</span><span class="p">,</span>
                        <span class="sa">f</span><span class="s1">&#39;super(cls, self).__delattr__(name)&#39;</span><span class="p">),</span>
                        <span class="nb">locals</span><span class="o">=</span><span class="nb">locals</span><span class="p">,</span>
@@ -1330,9 +1293,7 @@ document.write(`
         <span class="nb">globals</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="nb">setattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">_PARAMS</span><span class="p">,</span> <span class="n">_DataclassParams</span><span class="p">(</span><span class="n">init</span><span class="p">,</span> <span class="nb">repr</span><span class="p">,</span> <span class="n">eq</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span>
-                                           <span class="n">unsafe_hash</span><span class="p">,</span> <span class="n">frozen</span><span class="p">,</span>
-                                           <span class="n">match_args</span><span class="p">,</span> <span class="n">kw_only</span><span class="p">,</span>
-                                           <span class="n">slots</span><span class="p">,</span> <span class="n">weakref_slot</span><span class="p">))</span>
+                                           <span class="n">unsafe_hash</span><span class="p">,</span> <span class="n">frozen</span><span class="p">))</span>
 
     <span class="c1"># Find our base classes in reverse MRO order, and exclude</span>
     <span class="c1"># ourselves.  In reversed order so that more derived classes</span>
@@ -1351,7 +1312,10 @@ document.write(`
             <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">_PARAMS</span><span class="p">)</span><span class="o">.</span><span class="n">frozen</span><span class="p">:</span>
                 <span class="n">any_frozen_base</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="c1"># Annotations defined specifically in this class (not in base classes).</span>
+    <span class="c1"># Annotations that are defined in this class (not in base</span>
+    <span class="c1"># classes).  If __annotations__ isn&#39;t present, then this class</span>
+    <span class="c1"># adds no new annotations.  We use this to compute fields that are</span>
+    <span class="c1"># added by this class.</span>
     <span class="c1">#</span>
     <span class="c1"># Fields are found from cls_annotations, which is guaranteed to be</span>
     <span class="c1"># ordered.  Default values are from class attributes, if a field</span>
@@ -1360,7 +1324,7 @@ document.write(`
     <span class="c1"># actual default value.  Pseudo-fields ClassVars and InitVars are</span>
     <span class="c1"># included, despite the fact that they&#39;re not real fields.  That&#39;s</span>
     <span class="c1"># dealt with later.</span>
-    <span class="n">cls_annotations</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">get_annotations</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+    <span class="n">cls_annotations</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;__annotations__&#39;</span><span class="p">,</span> <span class="p">{})</span>
 
     <span class="c1"># Now find fields in our class.  While doing so, validate some</span>
     <span class="c1"># things, and set the default values (as class attributes) where</span>
@@ -1709,7 +1673,7 @@ document.write(`
 <span class="sd">    If given, &#39;dict_factory&#39; will be used instead of built-in dict.</span>
 <span class="sd">    The function applies recursively to field values that are</span>
 <span class="sd">    dataclass instances. This will also look into built-in containers:</span>
-<span class="sd">    tuples, lists, and dicts. Other objects are copied with &#39;copy.deepcopy()&#39;.</span>
+<span class="sd">    tuples, lists, and dicts.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_dataclass_instance</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;asdict() should be called on dataclass instances&quot;</span><span class="p">)</span>
@@ -1717,21 +1681,12 @@ document.write(`
 
 
 <span class="k">def</span> <span class="nf">_asdict_inner</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">dict_factory</span><span class="p">):</span>
-    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_ATOMIC_TYPES</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">obj</span>
-    <span class="k">elif</span> <span class="n">_is_dataclass_instance</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
-        <span class="c1"># fast path for the common case</span>
-        <span class="k">if</span> <span class="n">dict_factory</span> <span class="ow">is</span> <span class="nb">dict</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">{</span>
-                <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">_asdict_inner</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="nb">dict</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
-            <span class="p">}</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
-                <span class="n">value</span> <span class="o">=</span> <span class="n">_asdict_inner</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="n">dict_factory</span><span class="p">)</span>
-                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
-            <span class="k">return</span> <span class="n">dict_factory</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">_is_dataclass_instance</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">_asdict_inner</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="n">dict_factory</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">dict_factory</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;_fields&#39;</span><span class="p">):</span>
         <span class="c1"># obj is a namedtuple.  Recurse into it, but the returned</span>
         <span class="c1"># object is another namedtuple of the same type.  This is</span>
@@ -1759,13 +1714,6 @@ document.write(`
         <span class="c1"># above).</span>
         <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)(</span><span class="n">_asdict_inner</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">dict_factory</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">),</span> <span class="s1">&#39;default_factory&#39;</span><span class="p">):</span>
-            <span class="c1"># obj is a defaultdict, which has a different constructor from</span>
-            <span class="c1"># dict as it requires the default_factory as its first arg.</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;default_factory&#39;</span><span class="p">))</span>
-            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="n">result</span><span class="p">[</span><span class="n">_asdict_inner</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">dict_factory</span><span class="p">)]</span> <span class="o">=</span> <span class="n">_asdict_inner</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">dict_factory</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">result</span>
         <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)((</span><span class="n">_asdict_inner</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">dict_factory</span><span class="p">),</span>
                           <span class="n">_asdict_inner</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">dict_factory</span><span class="p">))</span>
                          <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
@@ -1789,7 +1737,7 @@ document.write(`
 <span class="sd">    If given, &#39;tuple_factory&#39; will be used instead of built-in tuple.</span>
 <span class="sd">    The function applies recursively to field values that are</span>
 <span class="sd">    dataclass instances. This will also look into built-in containers:</span>
-<span class="sd">    tuples, lists, and dicts. Other objects are copied with &#39;copy.deepcopy()&#39;.</span>
+<span class="sd">    tuples, lists, and dicts.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_dataclass_instance</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
@@ -1798,9 +1746,7 @@ document.write(`
 
 
 <span class="k">def</span> <span class="nf">_astuple_inner</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">tuple_factory</span><span class="p">):</span>
-    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_ATOMIC_TYPES</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">obj</span>
-    <span class="k">elif</span> <span class="n">_is_dataclass_instance</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">_is_dataclass_instance</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
         <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">_astuple_inner</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="n">tuple_factory</span><span class="p">)</span>
@@ -1820,15 +1766,7 @@ document.write(`
         <span class="c1"># above).</span>
         <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)(</span><span class="n">_astuple_inner</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">tuple_factory</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-        <span class="n">obj_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj_type</span><span class="p">,</span> <span class="s1">&#39;default_factory&#39;</span><span class="p">):</span>
-            <span class="c1"># obj is a defaultdict, which has a different constructor from</span>
-            <span class="c1"># dict as it requires the default_factory as its first arg.</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="n">obj_type</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;default_factory&#39;</span><span class="p">))</span>
-            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="n">result</span><span class="p">[</span><span class="n">_astuple_inner</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">tuple_factory</span><span class="p">)]</span> <span class="o">=</span> <span class="n">_astuple_inner</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">tuple_factory</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">result</span>
-        <span class="k">return</span> <span class="n">obj_type</span><span class="p">((</span><span class="n">_astuple_inner</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">tuple_factory</span><span class="p">),</span> <span class="n">_astuple_inner</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">tuple_factory</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)((</span><span class="n">_astuple_inner</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">tuple_factory</span><span class="p">),</span> <span class="n">_astuple_inner</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">tuple_factory</span><span class="p">))</span>
                           <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
@@ -1837,7 +1775,7 @@ document.write(`
 <span class="k">def</span> <span class="nf">make_dataclass</span><span class="p">(</span><span class="n">cls_name</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">bases</span><span class="o">=</span><span class="p">(),</span> <span class="n">namespace</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                    <span class="nb">repr</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">eq</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">unsafe_hash</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                    <span class="n">frozen</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">match_args</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                   <span class="n">weakref_slot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                   <span class="n">weakref_slot</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a new dynamically created dataclass.</span>
 
 <span class="sd">    The dataclass name will be &#39;cls_name&#39;.  &#39;fields&#39; is an iterable</span>
@@ -1857,11 +1795,8 @@ document.write(`
 
 <span class="sd">    For the bases and namespace parameters, see the builtin type() function.</span>
 
-<span class="sd">    The parameters init, repr, eq, order, unsafe_hash, frozen, match_args, kw_only,</span>
-<span class="sd">    slots, and weakref_slot are passed to dataclass().</span>
-
-<span class="sd">    If module parameter is defined, the &#39;__module__&#39; attribute of the dataclass is</span>
-<span class="sd">    set to that value.</span>
+<span class="sd">    The parameters init, repr, eq, order, unsafe_hash, and frozen are passed to</span>
+<span class="sd">    dataclass().</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">namespace</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1903,19 +1838,6 @@ document.write(`
     <span class="c1"># We use `types.new_class()` instead of simply `type()` to allow dynamic creation</span>
     <span class="c1"># of generic dataclasses.</span>
     <span class="bp">cls</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">new_class</span><span class="p">(</span><span class="n">cls_name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="p">{},</span> <span class="n">exec_body_callback</span><span class="p">)</span>
-
-    <span class="c1"># For pickling to work, the __module__ variable needs to be set to the frame</span>
-    <span class="c1"># where the dataclass is created.</span>
-    <span class="k">if</span> <span class="n">module</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">module</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframemodulename</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="s1">&#39;__main__&#39;</span>
-        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">module</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">f_globals</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;__name__&#39;</span><span class="p">,</span> <span class="s1">&#39;__main__&#39;</span><span class="p">)</span>
-            <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
-                <span class="k">pass</span>
-    <span class="k">if</span> <span class="n">module</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">cls</span><span class="o">.</span><span class="vm">__module__</span> <span class="o">=</span> <span class="n">module</span>
 
     <span class="c1"># Apply the normal decorator.</span>
     <span class="k">return</span> <span class="n">dataclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="n">init</span><span class="p">,</span> <span class="nb">repr</span><span class="o">=</span><span class="nb">repr</span><span class="p">,</span> <span class="n">eq</span><span class="o">=</span><span class="n">eq</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">,</span>
