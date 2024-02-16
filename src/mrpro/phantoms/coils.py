@@ -30,12 +30,12 @@ def birdcage_2d(
     Parameters
     ----------
         number_of_coils
-            Number of coil elements
+            number of coil elements
         image_dimensions
-            Number of voxels in the image.
+            number of voxels in the image
             This is a 2D simulation so the output will be (1 number_of_coils 1 image_dimensions.y image_dimensions.x)
         relative_radius
-            Relative radius of birdcage
+            relative radius of birdcage
         normalize_with_rss
             If set to true, the calculated sensitivities are normalized by the root-sum-of-squares
 
@@ -64,7 +64,7 @@ def birdcage_2d(
         # Normalize only where rss is > 0
         sensitivities[:, rss > 0] /= rss[None, rss > 0]
 
-    return repeat(sensitivities, 'coil y x->other coil z y x', other=1, z=1)
+    return repeat(sensitivities, 'coils y x->other coils z y x', other=1, z=1)
 
 
 # License information from https://github.com/ismrmrd/ismrmrd-python-tools

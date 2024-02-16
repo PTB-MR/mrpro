@@ -1,4 +1,4 @@
-"""Utilities for test functions."""
+"""Helper/Utilities for test functions."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -13,23 +13,6 @@
 #   limitations under the License.
 
 import torch
-
-
-def kspace_to_image(kdat, dim=(-1, -2)):
-    """IFFT from k-space to image space.
-
-    Parameters
-    ----------
-    kdat
-        k-space data on Cartesian grid
-    dim, optional
-        dim along which iFFT is applied, by default last two dimensions (-1, -2)
-
-    Returns
-    -------
-        FFT of kdat
-    """
-    return torch.fft.fftshift(torch.fft.ifftn(torch.fft.ifftshift(kdat, dim=dim), dim=dim, norm='ortho'), dim=dim)
 
 
 def rel_image_diff(im1, im2):

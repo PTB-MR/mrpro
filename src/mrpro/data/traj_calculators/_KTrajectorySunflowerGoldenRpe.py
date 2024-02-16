@@ -37,7 +37,9 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
         super().__init__(angle=torch.pi * 0.618034)
         self.rad_us_factor: float = rad_us_factor
 
-    def _apply_sunflower_shift_between_rpe_lines(self, krad: torch.Tensor, kang: torch.Tensor, kheader: KHeader):
+    def _apply_sunflower_shift_between_rpe_lines(
+        self, krad: torch.Tensor, kang: torch.Tensor, kheader: KHeader
+    ) -> torch.Tensor:
         """Shift radial phase encoding lines relative to each other.
 
         The shifts are applied to create a sunflower pattern of k-space points in the ky-kz phase encoding plane.
@@ -65,12 +67,9 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
         # Set asym k-space point to 0 because this point was used to obtain a self-navigator signal.
         krad[kheader.acq_info.idx.k1 == 0] = 0
 
-        # Compensate for fov scaling
-        num_rad_full = krad.shape[2] * self.rad_us_factor
-        fov_scaling = (num_rad_full - self.rad_us_factor) / (num_rad_full - 1)
-        return krad * fov_scaling
+        return krad
 
-    def _kang(self, kheader):
+    def _kang(self, kheader: KHeader) -> torch.Tensor:
         """Calculate the angles of the phase encoding lines.
 
         Parameters
@@ -80,11 +79,11 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
 
         Returns
         -------
-            Angles of phase encoding lines
+            angles of phase encoding lines
         """
         return (kheader.acq_info.idx.k2 * self.angle) % torch.pi
 
-    def _krad(self, kheader):
+    def _krad(self, kheader: KHeader) -> torch.Tensor:
         """Calculate the k-space locations along the phase encoding lines.
 
         Parameters
@@ -99,5 +98,4 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
         kang = self._kang(kheader)
         krad = (kheader.acq_info.idx.k1 - kheader.encoding_limits.k1.center).to(torch.float32)
         krad = self._apply_sunflower_shift_between_rpe_lines(krad, kang, kheader)
-        krad *= 2 * torch.pi / kheader.encoding_limits.k1.max
         return krad

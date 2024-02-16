@@ -43,11 +43,13 @@ class Dicom2DTestImage:
         filename: str | Path,
         matrix_size_y: int = 128,
         matrix_size_x: int = 256,
+        te: float = 3.7,
         phantom: EllipsePhantom = EllipsePhantom(),
     ):
         self.filename: str | Path = filename
         self.matrix_size_y: int = matrix_size_y
         self.matrix_size_x: int = matrix_size_x
+        self.te: float = te
         self.phantom: EllipsePhantom = phantom
 
         # Create image
@@ -77,8 +79,11 @@ class Dicom2DTestImage:
         ds.PixelSpacing = [1, 1]  # in mm
         ds.SliceThickness = 1  # in mm
 
+        elem = pydicom.DataElement(0x00191015, 'FD', [1.0, 2.0, 3.0])
+        ds.add(elem)
+
         ds.FlipAngle = 15.0
-        ds.EchoTime = 3.7
+        ds.EchoTime = te
         ds.RepetitionTime = 25.2
 
         ds.BitsAllocated = 16

@@ -21,9 +21,9 @@ def remove_repeat(tensor: torch.Tensor, tol: float) -> torch.Tensor:
     Parameters
     ----------
     tensor:
-        The tensor. Must be real
+        input tensor. Must be real
     tol:
-        The tolerance
+        tolerance
     """
 
     def can_be_singleton(dim: int) -> bool:

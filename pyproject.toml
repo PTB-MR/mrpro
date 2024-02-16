@@ -3,33 +3,39 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "MRpro"
+name = "mrpro"
 version = "0.0.1"
 description = "MR image reconstruction and processing package specifically developed for PyTorch."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11,<3.14"
 license = { file = "LICENSE" }
 keywords = ["MRI, reconstruction, processing, PyTorch"]
 authors = [
     { name = "Christoph Kolbitsch", email = "christoph.kolbitsch@ptb.de" },
     { name = "Patrick Schuenke", email = "patrick.schuenke@ptb.de" },
     { name = "Felix Zimmermann", email = "felix.zimmermann89@ptb.de" },
+    { name = "David Schote", email = "david.schote@ptb.de" },
+    { name = "Sherine Brahma", email = "sherine.brahma@ptb.de" },
+    { name = "Mara Guastini", email = "mara.guastini@ptb.de" },
+    { name = "Johannes Hammacher", email = "johannnes.hammacher@ptb.de" },
+    { name = "Stefan Martin", email = "stefan.martin@ptb.de" },
+    { name = "Andreas Kofler", email = "andreas.kofler@ptb.de" },
 ]
-
 classifiers = [
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
     "numpy>=1.23,<2.0",
-    "torch>=2.0,<3.0",
+    "torch>=2.2,<3.0",
     "torchio",
     "ismrmrd",
     "einops",
     "pydicom",
+    "pypulseq@git+https://github.com/imr-framework/pypulseq",
+    "torchkbnufft>=1.4.0",
 ]
 
 [project.optional-dependencies]
@@ -42,7 +48,7 @@ test = [
     "pytest-xdist",
 ]
 lint = ["mypy", "flake8", "isort", "pre-commit", "autopep8", "pydocstyle"]
-docs = ["sphinx", "sphinx_rtd_theme"]
+docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject"]
 
 [project.urls]
 "repository" = "https://github.com/PTB-MR/mrpro"
@@ -51,15 +57,18 @@ docs = ["sphinx", "sphinx_rtd_theme"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = ["error"]
-addopts = "-n auto"
+# addopts = "-n auto" # TODO: debug vscode missing tests if enabled
+markers = ["cuda : Tests only to be run when cuda device is available"]
 
 # MyPy section
 [tool.mypy]
-warn_return_any = "False"
-check_untyped_defs = "True"
-warn_no_return = "True"
-warn_unreachable = "True"
+warn_return_any = false
+check_untyped_defs = true
+warn_no_return = true
+warn_unreachable = true
 exclude = ["docs"]
+enable_error_code = ["ignore-without-code"]
+warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
 module = ["ismrmrd.*", "h5py", "scipy.*"]
@@ -67,7 +76,7 @@ ignore_missing_imports = true
 
 [tool.black]
 line-length = 120
-skip-string-normalization = "True"
+skip-string-normalization = true
 target-version = ['py310']
 exclude = '''
 /(
@@ -85,23 +94,12 @@ profile = "black"
 skip = ["__init__.py"]
 line_length = 120
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
-force_single_line = "True"
+force_single_line = true
 
 
 [tool.pydocstyle]
 convention = "numpy"
-add_ignore = [
-    "D100",
-    "D101",
-    "D102",
-    "D103",
-    "D104",
-    "D105",
-    "D106",
-    "D107",
-    "D202",
-]
-# select = ["D200", "D201", "D205", "D206", "D207", "D208", "D214", "D215", "D409"]
+add_ignore = ["D202"]
 
 [tool.codespell]
 builtin = "en-GB_to_en-US"

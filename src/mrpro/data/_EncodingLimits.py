@@ -31,12 +31,14 @@ class Limits:
 
     @classmethod
     def from_ismrmrd(cls, limitType: limitType) -> Limits:
+        """Create Limits from ismrmrd.limitType."""
         if limitType is None:
             return cls()
         return cls(*dataclasses.astuple(limitType))
 
     @property
     def length(self) -> int:
+        """Length of the limits."""
         return self.max - self.min + 1
 
 

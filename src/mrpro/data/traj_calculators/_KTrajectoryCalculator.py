@@ -21,19 +21,53 @@ import torch
 
 from mrpro.data import KHeader
 from mrpro.data import KTrajectory
+from mrpro.data import KTrajectoryRawShape
 
 
 class KTrajectoryCalculator(ABC):
     """Base class for k-space trajectories."""
 
     @abstractmethod
-    def __call__(self, header: KHeader) -> KTrajectory:
+    def __call__(self, header: KHeader) -> KTrajectory | KTrajectoryRawShape:
         """Calculate the trajectory for given KHeader.
 
         The shapes of kz, ky and kx of the calculated trajectory must be
         broadcastable to (prod(all_other_dimensions), k2, k1, k0).
         """
         ...
+
+    def _kfreq(self, kheader: KHeader) -> torch.Tensor:
+        """Calculate the trajectory along one readout (k0 dimension).
+
+        Parameters
+        ----------
+        kheader
+            MR raw data header (KHeader) containing required meta data
+
+        Returns
+        -------
+            trajectory along ONE readout
+
+        Raises
+        ------
+        ValueError
+            Number of samples have to be the same for each readout
+        ValueError
+            Center sample has to be the same for each readout
+        """
+        num_samples = kheader.acq_info.number_of_samples
+        center_sample = kheader.acq_info.center_sample
+
+        # Verify that each readout has the same number of samples and same center sample
+        if len(torch.unique(num_samples)) > 1:
+            raise ValueError('Trajectory can only be calculated if each acquisition has the same number of samples')
+        if len(torch.unique(center_sample)) > 1:
+            raise ValueError('Trajectory can only be calculated if each acquisition has the same center sample')
+
+        # Calculate points along readout
+        nk0 = int(num_samples[0, 0, 0])
+        k0 = torch.linspace(0, nk0 - 1, nk0, dtype=torch.float32) - center_sample[0, 0, 0]
+        return k0
 
 
 class DummyTrajectory(KTrajectoryCalculator):

@@ -32,7 +32,7 @@ class QHeader:
     fov: SpatialDimension[float]
 
     @classmethod
-    def from_iheader(cls, iheader: IHeader):
+    def from_iheader(cls, iheader: IHeader) -> QHeader:
         """Create QHeader object from KHeader object.
 
         Parameters
@@ -44,7 +44,7 @@ class QHeader:
         return cls(fov=iheader.fov)
 
     @classmethod
-    def from_kheader(cls, kheader: KHeader):
+    def from_kheader(cls, kheader: KHeader) -> QHeader:
         """Create QHeader object from KHeader object.
 
         Parameters
@@ -56,13 +56,13 @@ class QHeader:
         return cls(fov=kheader.recon_fov)
 
     @classmethod
-    def from_dicom(cls, dicom_dataset: Dataset):
+    def from_dicom(cls, dicom_dataset: Dataset) -> QHeader:
         """Read DICOM file containing qMRI data and return QHeader object.
 
         Parameters
         ----------
         dicom_dataset
-            Dataset object containing the DICOM file.
+            dataset object containing the DICOM file.
         """
 
         def getItems(name):  # Todo: move to utils and reuse logic in IHeader

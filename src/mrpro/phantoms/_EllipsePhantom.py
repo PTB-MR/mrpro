@@ -77,7 +77,7 @@ class EllipsePhantom:
         Parameters
         ----------
         image_dimensions
-            Number of voxels in the image.
+            number of voxels in the image
             This is a 2D simulation so the output will be (1 1 1 image_dimensions.y image_dimensions.x)
         """
         # Calculate image representation of phantom
@@ -94,4 +94,4 @@ class EllipsePhantom:
             ] = el.intensity
             idat += curr_el
 
-        return repeat(idat, 'y x->other coil z y x', other=1, coil=1, z=1)
+        return repeat(idat, 'y x->other coils z y x', other=1, coils=1, z=1)

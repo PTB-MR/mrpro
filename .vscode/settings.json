@@ -12,7 +12,8 @@
         "editor.defaultFormatter": "ms-python.black-formatter"
     },
     "python.testing.pytestArgs": [
-        "tests"
+        "tests",
+        "-m not cuda"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,

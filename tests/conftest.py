@@ -9,8 +9,8 @@ from xsdata.models.datatype import XmlTime
 from mrpro.data import AcqInfo
 from mrpro.data import KHeader
 from mrpro.data.enums import AcqFlags
+from tests import RandomGenerator
 from tests.data import Dicom2DTestImage
-from tests.data import RandomGenerator
 from tests.phantoms.test_ellipse_phantom import ph_ellipse
 
 
@@ -148,6 +148,32 @@ def random_full_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
     )
 
 
+@pytest.fixture(params=({'seed': 0},))
+def random_mandatory_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
+    """Generate a full header, i.e. all values used in
+    KHeader.from_ismrmrd_header() are set."""
+
+    seed = request.param['seed']
+    generator = RandomGenerator(seed)
+    encoding = xsd.encodingType(
+        trajectory=xsd.trajectoryType('other'),
+        encodedSpace=xsd.encodingSpaceType(
+            matrixSize=xsd.matrixSizeType(x=generator.int16(), y=generator.uint8(), z=generator.uint8()),
+            fieldOfView_mm=xsd.fieldOfViewMm(x=generator.uint8(), y=generator.uint8(), z=generator.uint8()),
+        ),
+        reconSpace=xsd.encodingSpaceType(
+            matrixSize=xsd.matrixSizeType(x=generator.uint8(), y=generator.uint8(), z=generator.uint8()),
+            fieldOfView_mm=xsd.fieldOfViewMm(x=generator.uint8(), y=generator.uint8(), z=generator.uint8()),
+        ),
+        encodingLimits=xsd.encodingLimitsType(),
+    )
+    experimentalConditions = xsd.experimentalConditionsType(H1resonanceFrequency_Hz=generator.int32())
+    return xsd.ismrmrdschema.ismrmrdHeader(
+        encoding=[encoding],
+        experimentalConditions=experimentalConditions,
+    )
+
+
 @pytest.fixture()
 def random_ismrmrd_file(random_acquisition, random_noise_acquisition, full_header):
     with tempfile.NamedTemporaryFile(suffix='.h5') as file:
@@ -195,6 +221,20 @@ def random_test_data(request):
 @pytest.fixture(scope='session')
 def dcm_2d(ph_ellipse, tmp_path_factory):
     """Single 2D dicom image."""
-    dcm_filename = tmp_path_factory.mktemp('mrpro') / 'dicom_2d.h5'
+    dcm_filename = tmp_path_factory.mktemp('mrpro') / 'dicom_2d.dcm'
     dcm_idat = Dicom2DTestImage(filename=dcm_filename, phantom=ph_ellipse.phantom)
+    return dcm_idat
+
+
+@pytest.fixture(scope='session', params=({'num_images': 7},))
+def dcm_multi_te(request, ph_ellipse, tmp_path_factory):
+    """Multiple 2D dicom images with different echo times."""
+    num_images = request.param['num_images']
+    path = tmp_path_factory.mktemp('mrpro_multi_dcm')
+    te = 2.0
+    dcm_idat = []
+    for _ in range(num_images):
+        dcm_filename = path / f'dicom_te_{int(te)}.dcm'
+        dcm_idat.append(Dicom2DTestImage(filename=dcm_filename, phantom=ph_ellipse.phantom, te=te))
+        te += 1.0
     return dcm_idat

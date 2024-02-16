@@ -28,6 +28,8 @@ T = TypeVar('T', int, float, torch.Tensor)
 
 
 class XYZ(Protocol[T]):
+    """Protocol for structures with attributes x, y and z of type T."""
+
     x: T
     y: T
     z: T
@@ -47,9 +49,9 @@ class SpatialDimension(Generic[T]):
 
         Parameters
         ----------
-        data:
+        data
             should implement .x .y .z. For example ismrmrd's matrixSizeType.
-        conversion,  optional:
+        conversion,  optional
             will be called for each value to convert it
         """
         if conversion is not None:
@@ -65,9 +67,9 @@ class SpatialDimension(Generic[T]):
 
         Parameters
         ----------
-        data:
+        data
             shape (..., 3) in the order (x,y,z)
-        conversion, optional:
+        conversion, optional
             will be called for each value to convert it, by default None
         """
         if not isinstance(data, (np.ndarray, torch.Tensor)):

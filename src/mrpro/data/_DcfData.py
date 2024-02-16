@@ -42,7 +42,7 @@ class DcfData:
 
         Parameters
         ----------
-        traj:
+        traj
             k-space positions, 1D tensor
         """
 
@@ -98,9 +98,9 @@ class DcfData:
 
         # Calculate dcf only for unique k-space positions
         traj_dim = traj.shape
-        traj = np.round(traj.numpy(), decimals=UNIQUE_ROUNDING_DECIMALS)
-        traj = traj.reshape(dim, -1)
-        traj_unique, inverse, counts = np.unique(traj, return_inverse=True, return_counts=True, axis=1)
+        traj_numpy = np.round(traj.cpu().numpy(), decimals=UNIQUE_ROUNDING_DECIMALS)
+        traj_numpy = traj_numpy.reshape(dim, -1)
+        traj_unique, inverse, counts = np.unique(traj_numpy, return_inverse=True, return_counts=True, axis=1)
 
         # Especially in 3D, errors in the calculation of the convex hull can occur for edge points. To avoid this,
         # the corner points of a cube bounding box are added here. The bounding box is chosen very large to ensure these
@@ -135,7 +135,7 @@ class DcfData:
         # Sort dcf values back into the original order (i.e. before calling unique)
         dcf = np.reshape((dcf / counts)[inverse], traj_dim[1:])
 
-        return torch.tensor(dcf, dtype=torch.float32)
+        return torch.tensor(dcf, dtype=torch.float32, device=traj.device)
 
     @classmethod
     def from_traj_voronoi(cls, traj: KTrajectory) -> DcfData:

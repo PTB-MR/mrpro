@@ -16,9 +16,9 @@ import pytest
 import torch
 
 from mrpro.data import SpatialDimension
+from mrpro.operators import FastFourierOp
+from tests.helper import rel_image_diff
 from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData
-from tests.utils import kspace_to_image
-from tests.utils import rel_image_diff
 
 
 @pytest.fixture(scope='session')
@@ -55,7 +55,8 @@ def test_kspace_image_match(ph_ellipse):
     im_dim = SpatialDimension(z=1, y=ph_ellipse.ny, x=ph_ellipse.nx)
     im = ph_ellipse.phantom.image_space(im_dim)
     kdat = ph_ellipse.phantom.kspace(ph_ellipse.ky, ph_ellipse.kx)
-    irec = kspace_to_image(kdat)
+    FFOp = FastFourierOp(dim=(-1, -2))
+    (irec,) = FFOp.adjoint(kdat)
     # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
     # differences along the edges of the elliptic objects.

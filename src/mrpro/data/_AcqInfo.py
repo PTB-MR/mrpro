@@ -54,7 +54,11 @@ class AcqInfo:
     encoding_space_ref: torch.Tensor
     flags: torch.Tensor
     measurement_uid: torch.Tensor
+
     number_of_samples: torch.Tensor
+    """Number of readout sample points per readout (readouts may have different
+    number of sample points)."""
+
     patient_table_position: SpatialDimension[torch.Tensor]
     phase_dir: SpatialDimension[torch.Tensor]
     physiology_time_stamp: torch.Tensor
