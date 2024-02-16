@@ -1,4 +1,4 @@
-"""Linear Operators."""
+"""Signal Model Operators."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -11,9 +11,19 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+from __future__ import annotations
+
+from typing import TypeVarTuple
+
+import torch
 
 from mrpro.operators import Operator
 
+Tin = TypeVarTuple('Tin')
 
-class NonLinearOperator(Operator):
-    """General Non-Linear Operator."""
+
+# SignalModel has multiple inputs and one output
+class SignalModel(Operator[*Tin, tuple[torch.Tensor,]]):
+    """Signal Model Operator."""
+
+    ...

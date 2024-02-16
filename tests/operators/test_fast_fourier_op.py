@@ -38,7 +38,7 @@ def test_fast_fourier_op_forward(npoints, a):
 
     # Transform image to k-space
     FFOp = FastFourierOp(dim=(0,))
-    igauss_fwd = FFOp.forward(igauss)
+    (igauss_fwd,) = FFOp.forward(igauss)
 
     # Scaling to "undo" fft scaling
     igauss_fwd *= np.sqrt(npoints) / 2
@@ -64,7 +64,7 @@ def test_fast_fourier_op_adjoint(encoding_shape, recon_shape):
 
     # Create operator and apply
     FFOp = FastFourierOp(recon_shape=recon_shape, encoding_shape=encoding_shape)
-    Ax = FFOp.forward(x)
-    AHy = FFOp.adjoint(y)
+    (Ax,) = FFOp.forward(x)
+    (AHy,) = FFOp.adjoint(y)
 
     assert torch.isclose(torch.vdot(Ax.flatten(), y.flatten()), torch.vdot(x.flatten(), AHy.flatten()), rtol=1e-3)

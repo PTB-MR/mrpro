@@ -42,6 +42,17 @@ class mse_data_discrepancy(Operator):
         self.data = data
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Calculate the MSE of the input.
+
+        Parameters
+        ----------
+        x
+            tensor whose mse with respect to data should be calculated
+
+        Returns
+        -------
+            MSE of the different of the input and the given data
+        """
         if torch.is_complex(x) or torch.is_complex(self.data):
             factor = 2.0
             x = torch.view_as_real(x) if torch.is_complex(x) else torch.view_as_real(x + 1j * 0)

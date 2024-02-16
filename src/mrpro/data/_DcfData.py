@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 import dataclasses
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 from functools import reduce
 from itertools import product
 
@@ -28,6 +28,10 @@ from mrpro.data import KTrajectory
 from mrpro.utils import smap
 
 UNIQUE_ROUNDING_DECIMALS = 15
+
+
+def _volume(v):
+    return ConvexHull(v).volume
 
 
 @dataclasses.dataclass(slots=True, frozen=False)
@@ -114,8 +118,9 @@ class DcfData:
         regions = [vdiagram.regions[r] for r in vdiagram.point_region[: -len(corner_points)]]  # Ignore corner points
         vertices = [vdiagram.vertices[region] for region in regions]
 
-        # Calculate volume/area of voronoi cells using threads (ConvexHull is thread safe and drops the GIL)
-        future = ThreadPoolExecutor(max_workers=torch.get_num_threads()).map(lambda v: ConvexHull(v).volume, vertices)
+        # Calculate volume/area of voronoi cells using processes, as this is a very time-consuming operation
+        # and ConvexHull is singlethreaded and does not seem to drop the GIL
+        future = ProcessPoolExecutor(max_workers=torch.get_num_threads()).map(_volume, vertices, chunksize=100)
         dcf = np.array(list(future))
 
         # Get outliers (i.e. voronoi cell which are unbound) and set them to a reasonable value

@@ -44,9 +44,23 @@ KDIM_SORT_LABELS = (
     'set',
 )
 
+# Same criteria as https://github.com/wtclarke/pymapvbvd/blob/master/mapvbvd/mapVBVD.py uses
+DEFAULT_IGNORE_FLAGS = (
+    AcqFlags.ACQ_IS_NOISE_MEASUREMENT
+    | AcqFlags.ACQ_IS_DUMMYSCAN_DATA
+    | AcqFlags.ACQ_IS_HPFEEDBACK_DATA
+    | AcqFlags.ACQ_IS_NAVIGATION_DATA
+    | AcqFlags.ACQ_IS_PHASECORR_DATA
+    | AcqFlags.ACQ_IS_PHASE_STABILIZATION
+    | AcqFlags.ACQ_IS_PHASE_STABILIZATION_REFERENCE
+    | AcqFlags.ACQ_IS_PARALLEL_CALIBRATION
+)
+
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class KData:
+    """MR raw data / k-space data class."""
+
     header: KHeader
     data: torch.Tensor
     traj: KTrajectory
@@ -58,6 +72,7 @@ class KData:
         ktrajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
         header_overwrites: dict[str, object] | None = None,
         dataset_idx: int = -1,
+        ignore_flags: AcqFlags = DEFAULT_IGNORE_FLAGS,
     ) -> KData:
         """Load k-space data from an ISMRMRD file.
 
@@ -71,6 +86,11 @@ class KData:
                 dictionary of key-value pairs to overwrite the header
             dataset_idx
                 index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
+            ignore_flags
+                Acqisition flags to filter out. Defaults to all non-images as defined by pymapvbvd.
+                Use ACQ_NO_FLAG to disable the filter.
+                Note: If ACQ_IS_PARALLEL_CALIBRATION is set without also setting ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING
+                      we interpret it as: Ignore if IS_PARALLEL_CALIBRATION and not PARALLEL_CALIBRATION_AND_IMAGING
         """
 
         # Can raise FileNotFoundError
@@ -84,9 +104,23 @@ class KData:
                 mtime = 0
             modification_time = datetime.datetime.fromtimestamp(mtime)
 
-        # Noise data etc must be handled separately #TODO: check which flags we also need to add.
-        ignore_flags = AcqFlags.ACQ_IS_NOISE_MEASUREMENT | AcqFlags.ACQ_IS_SURFACECOILCORRECTIONSCAN_DATA
+        if (
+            AcqFlags.ACQ_IS_PARALLEL_CALIBRATION in ignore_flags
+            and AcqFlags.ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING not in ignore_flags
+        ):
+            # if only ACQ_IS_PARALLEL_CALIBRATION is set, reinterpret it as: ignore if
+            # ACQ_IS_PARALLEL_CALIBRATION is set and ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING is not set
+            ignore_flags = ignore_flags & ~AcqFlags.ACQ_IS_PARALLEL_CALIBRATION
+            acquisitions = list(
+                filter(
+                    lambda acq: (AcqFlags.ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING.value & acq.flags)
+                    or not (AcqFlags.ACQ_IS_PARALLEL_CALIBRATION.value & acq.flags),
+                    acquisitions,
+                )
+            )
+
         acquisitions = list(filter(lambda acq: not (ignore_flags.value & acq.flags), acquisitions))
+
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
 
         # Raises ValueError if required fields are missing in the header

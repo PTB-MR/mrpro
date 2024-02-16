@@ -14,10 +14,12 @@ import torch
 import torch.nn as nn
 from einops import rearrange
 
-from mrpro.operators import Operator
+from mrpro.operators import SignalModel
 
 
-class WASABITI(Operator):
+class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
+    """WASABITI signal model."""
+
     def __init__(
         self,
         offsets: torch.Tensor,
@@ -27,7 +29,7 @@ class WASABITI(Operator):
         gamma: torch.Tensor = torch.Tensor([42.5764]),
         freq: torch.Tensor = torch.Tensor([127.7292]),
     ) -> None:
-        """WASABITI function for simultaneous determination of B1, B0 and T1.
+        """Initialize WASABITI signal model for mapping of B0, B1 and T1.
 
         For more details see: Proc. Intl. Soc. Mag. Reson. Med. 31 (2023): 0906
 
@@ -54,7 +56,22 @@ class WASABITI(Operator):
         self.gamma = nn.Parameter(gamma, requires_grad=gamma.requires_grad)
         self.freq = nn.Parameter(freq, requires_grad=freq.requires_grad)
 
-    def forward(self, b0_shift: torch.Tensor, rb1: torch.Tensor, t1: torch.Tensor) -> torch.Tensor:
+    def forward(self, b0_shift: torch.Tensor, rb1: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply WASABITI signal model.
+
+        Parameters
+        ----------
+        b0_shift
+            B0 shift [Hz]
+        rb1
+            relative B1 amplitude
+        t1
+            longitudinal relaxation time T1 [s]
+
+        Returns
+        -------
+            signal with dimensions ((... offsets), coils, z, y, x)
+        """
         b1 = self.b1_nom * rb1
 
         # ensure correct dimensionality

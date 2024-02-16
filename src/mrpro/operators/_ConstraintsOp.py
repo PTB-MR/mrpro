@@ -73,6 +73,17 @@ class ConstraintsOp(Operator):
         return beta * x + torch.log(-torch.expm1(-beta * x))
 
     def forward(self, x: tuple[torch.Tensor, ...]) -> tuple[torch.Tensor, ...]:
+        """Transform tensors to chosen range.
+
+        Parameters
+        ----------
+        x
+            tensors to be transformed
+
+        Returns
+        -------
+            tensors transformed to the range defined by the chosen bounds
+        """
         # iterate over the tensors and constrain them if necessary according to the
         # chosen bounds
         xc = []
@@ -98,6 +109,17 @@ class ConstraintsOp(Operator):
         return tuple(xc)
 
     def inverse(self, xc: tuple[torch.Tensor, ...]) -> tuple[torch.Tensor, ...]:
+        """Reverses the variable transformation.
+
+        Parameters
+        ----------
+        xc
+            transformed tensors with values in the range defined by the bounds
+
+        Returns
+        -------
+            tensors in the domain with no bounds
+        """
         # iterate over the tensors and constrain them if necessary according to the
         # chosen bounds
         x = []
