@@ -1,3 +1,7 @@
+# %% [markdown]
+# # Basic example for reconstruction of cartesian fully-sampled data
+# This notebook is meant as a first introduction inot mrpro-based
+# reconstruction of fully-sampled cartesian data.
 # %%
 import subprocess
 import tempfile
@@ -19,7 +23,7 @@ from mrpro.operators._FourierOp import FourierOp
 # %%
 
 # flag for conversion and saving nifty files
-# If you wish to save the resulting reconstructed image as a nifty fily, set  NIFTI = "True"
+# If you wish to save the resulting reconstructed image as a nifty file, set  NIFTI = "True"
 NIFTI = False
 
 # %% [markdown]
