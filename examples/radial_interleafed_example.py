@@ -78,15 +78,16 @@ ft_op = FourierOp(
     traj=data.traj,
     oversampling=SpatialDimension(1, 1, 1),
 )
-xcoils = ft_op.H(data.data * dcf.data)
+(xcoils,) = ft_op.H(data.data * dcf.data)
 idata = IData.from_tensor_and_kheader(xcoils, data.header)
 
 smoothing_width = SpatialDimension(z=1, y=5, x=5)
 csm = CsmData.from_idata_walsh(idata, smoothing_width)
 sensitivity_op = SensitivityOp(csm)
-x = sensitivity_op.H(xcoils)
+(x,) = sensitivity_op.H(xcoils)
 
 # %%
+
 image = x.abs().square().sum(1).sqrt()
 image = image.squeeze()
 for i in image:
