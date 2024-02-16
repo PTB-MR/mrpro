@@ -22,7 +22,7 @@ import torch
 from scipy.spatial.transform import Rotation
 
 from mrpro.operators import LinearOperator
-#%%
+
 
 class SuperResOp(LinearOperator):
     """Super resolution operator class."""
@@ -59,8 +59,8 @@ class SuperResOp(LinearOperator):
 
         self.projection_matrix = self._generate_matrix(
             input_shape=input_shape,
-            R=R,
-            offset=offset,
+            rot=R,
+            offset_slicePos=offset,
             w=w,
             slice_function=slice_function,
             rotation_center=rotation_center,
@@ -78,7 +78,7 @@ class SuperResOp(LinearOperator):
         return ret.reshape(vector.shape)
 
     def _generate_matrix(
-        self, input_shape: tuple, R: Rotation, offset: torch.Tensor, w: int, slice_function, rotation_center=None
+        self, input_shape: tuple, rot: Rotation, offset_slicePos: torch.Tensor, w: int, slice_function, rotation_center=None
     ):
         """Sample a sparse matrix that represents the projection of a volume
         onto a plane.
@@ -94,10 +94,13 @@ class SuperResOp(LinearOperator):
         X, Y, Z = input_shape
 
         # select slice position
-        grid_xy = list(torch.meshgrid(torch.arange(X), torch.arange(Y)))
-        grid_z = [Z / 2 * torch.ones(X, Y)]
-        pixel = torch.stack(grid_xy + grid_z, dim=-1)
-        pixel = pixel + offset
+        pos_xy = list(torch.meshgrid(torch.arange(X), torch.arange(Y)))
+        pos_z = [Z / 2 * torch.ones(X, Y)]
+
+        pos = torch.stack(pos_xy + pos_z, dim=-1)
+        pos = pos + offset_slicePos #slice position is actually set according to offset
+
+        plt.imshow(pos)
 
         if rotation_center is None:
             # default rotation center is the center of the volume, i.e. for 4 pixels
@@ -105,12 +108,12 @@ class SuperResOp(LinearOperator):
             rotation_center = torch.tensor([X / 2 - 0.5, Y / 2 - 0.5, Z / 2 - 0.5])
 
         # rotate the slice
-        pixel_rotated = self._rotate(pixel, R, rotation_center=rotation_center)
+        pos_rot = self._rotate(pos, rot, rotation_center=rotation_center)
 
         # We cast a ray from the pixel perpendicular to the plane.
         # Pixels further away then w will not be considered
-        ray = self._rotate(torch.stack([torch.zeros(2 * w), torch.zeros(2 * w), torch.arange(-w, w)], dim=-1), R)
-
+        sliceNormal = torch.stack([torch.zeros(2 * w), torch.zeros(2 * w), torch.arange(-w, w)], dim=-1)
+        sliceNormal = self._rotate(sliceNormal, rot)
 
         offsets = torch.tensor(list(itertools.product([0, 1], repeat=3)))
 
@@ -119,14 +122,14 @@ class SuperResOp(LinearOperator):
         # by adding all possible combinations of 0 and 1 to the point and flooring
 
         point = (
-            pixel_rotated[:, :, None, None, :] + ray[None, None, None, :, :] + offsets[None, None, :, None, :]
+            pos_rot[:, :, None, None, :] + sliceNormal[None, None, None, :, :] + offsets[None, None, :, None, :]
         ).floor()
-        distance = pixel_rotated[:, :, None, None, :] - point
+        distance = pos_rot[:, :, None, None, :] - point
 
         # Inverse rotation projects the distance back to the original coordinate system, i.e
         # Distance in z is distance along the line, i.e. the slice profile weighted direction
         # Distance in x and y is the distance of a pixel to the ray and linear interpolation is used to weight the distance
-        distance_x, distance_y, distance_z = self._rotate(distance, R, inverse=True).unbind(-1)
+        distance_x, distance_y, distance_z = self._rotate(distance, rot, inverse=True).unbind(-1)
         weight_xy = (1 - distance_x.abs()).clamp_min(0) * (1 - distance_y.abs()).clamp_min(0)
         weight_z = slice_function(distance_z)
         weight = (weight_xy * weight_z).reshape(X * Y, -1)
@@ -207,7 +210,7 @@ class SuperResOp(LinearOperator):
 
 
 
-# %%
+
 
 class Settings_superRes:
     def __init__(self) -> None:
@@ -222,13 +225,12 @@ class Settings_superRes:
 
 settings_super = Settings_superRes()
 
-# %%
 srr_op = SuperResOp(input_shape=settings_super.input_shape,
                     R=settings_super.R,
                     offset=settings_super.offset,
                     w=3 * settings_super.sigma,
                     slice_function=settings_super.sliceProf)
-# %%
+
 
 
 def simulHR(flag_show = True):
@@ -241,7 +243,7 @@ def simulHR(flag_show = True):
         plt.matshow(img_square)
     return square_vol
 vol_HR = simulHR(flag_show = True)
-#%%
+
 
 vol_HR_exp = vol_HR.unsqueeze(0).unsqueeze(0).expand(-1, 2, -1, -1, -1)
 slice_LR = srr_op.forward(vol_HR_exp)
