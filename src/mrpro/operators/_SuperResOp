@@ -118,21 +118,22 @@ class SuperResOp(LinearOperator):
         # binary counter representing all neighboring voxel for a specific position
         # all points that could influence to intensity of a pixel in the new slice
         # alternative would be looping over the neighboring voxels
-        offsets = torch.tensor(list(itertools.product([0, 1], repeat=3)))#shape [8,3]
+        offsets_neighbors = torch.tensor(list(itertools.product([0, 1], repeat=3)))#shape [8,3]
 
         # Distance between two pixels will always at least be 1
         # In all possible directions for each point along the line we consider the eight neighboring points
         # by adding all possible combinations of 0 and 1 to the point and flooring
-
-        point = (
-            pos_rot[:, :, None, None, :] + sliceNormal[None, None, None, :, :] + offsets[None, None, :, None, :]
+        # dimensions of point and distance: [X, Y, 8 being the neighbors, 2*lenght_normal, 3 being the 3D position]
+        pos_rot_thick = (
+            pos_rot[:, :, None, None, :] + sliceNormal[None, None, None, :, :] + offsets_neighbors[None, None, :, None, :]
         ).floor()
-        distance = pos_rot[:, :, None, None, :] - point
+        # distance of each voxel within slice and within length_normal to the center of the rotated slice
+        distance_rot = pos_rot[:, :, None, None, :] - pos_rot_thick
 
         # Inverse rotation projects the distance back to the original coordinate system, i.e
         # Distance in z is distance along the line, i.e. the slice profile weighted direction
         # Distance in x and y is the distance of a pixel to the ray and linear interpolation is used to weight the distance
-        distance_x, distance_y, distance_z = self._rotate(distance, rot, inverse=True).unbind(-1)
+        distance_x, distance_y, distance_z = self._rotate(distance_rot, rot, inverse=True).unbind(-1)
         weight_xy = (1 - distance_x.abs()).clamp_min(0) * (1 - distance_y.abs()).clamp_min(0)
         weight_z = slice_function(distance_z)
         weight = (weight_xy * weight_z).reshape(X * Y, -1)
@@ -146,7 +147,7 @@ class SuperResOp(LinearOperator):
         # counts = counts[inverse_idx].reshape(weight.shape).float()
         # weight = weight / counts.float()
 
-        source = einops.rearrange(point, 'X Y s1 s2 xyz -> (X Y) (s1 s2) xyz').int()
+        source = einops.rearrange(pos_rot_thick, 'X Y s1 s2 xyz -> (X Y) (s1 s2) xyz').int()
 
         # Remove points outside the volume
         # find points in source outside volume
@@ -164,21 +165,25 @@ class SuperResOp(LinearOperator):
 
         source_index = torch.tensor(np.ravel_multi_index(source[mask].unbind(-1), (X, Y, Z)))
         target_index = torch.repeat_interleave(torch.arange(X * Y), mask.sum(-1))
+        target_source_stack = torch.stack((target_index, source_index))
 
         # Count duplicates.
         # ensuring that points counted twice don't get twice the weight
         # Coalesce will sum the values of duplicate indices
         ones = torch.ones_like(source_index).float()
         ones = torch.sparse_coo_tensor(
-            indices=torch.stack((target_index, source_index)), values=ones, size=(X * Y, X * Y * Z), dtype=torch.float32
+                    indices=target_source_stack,
+                    values=ones,
+                    size=(X * Y, X * Y * Z),
+                    dtype=torch.float32
         )
         ones = ones.coalesce()
 
         matrix = torch.sparse_coo_tensor(
-            indices=torch.stack((target_index, source_index)),
-            values=weight.reshape(X * Y, -1)[mask],
-            size=(X * Y, X * Y * Z),
-            dtype=torch.float32,
+                    indices=target_source_stack,
+                    values=weight.reshape(X * Y, -1)[mask],
+                    size=(X * Y, X * Y * Z),
+                    dtype=torch.float32,
         ).coalesce()
         matrix.values()[:] /= ones.values()
 
