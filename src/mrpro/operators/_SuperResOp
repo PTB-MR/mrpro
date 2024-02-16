@@ -200,3 +200,37 @@ class SuperResOp(LinearOperator):
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         return super().adjoint(x)
+
+
+
+#%%
+img_square = torch.zeros(64, 64)
+img_square[22:42, 22:42] = 1
+
+
+square_vol = img_square.unsqueeze(0).repeat(64, 1, 1)
+
+# %%
+import matplotlib.pyplot as plt
+
+plt.matshow(img_square)
+# %%
+
+R = Rotation.from_euler('xyz', [0, 0, 45], degrees=True)
+slice_center = torch.tensor([0, 0, 0])
+input_shape = (64, 64, 64)
+offset = torch.tensor([0, 0, 0])
+sigma = 1
+f = lambda distance_z: torch.exp(-(distance_z**2) / (2 * sigma**2))
+
+# %%
+srr_op = SuperResOp(input_shape, R, offset, w=3 * sigma, slice_function=f)
+# %%
+vol = square_vol.unsqueeze(0).unsqueeze(0).expand(-1, 2, -1, -1, -1)
+
+slice = srr_op.forward(vol)
+print(slice.shape)
+# %%
+
+plt.matshow(slice[0, 0, 0, ...])
+# %%
