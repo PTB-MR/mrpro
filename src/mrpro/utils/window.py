@@ -20,10 +20,10 @@ import torch
 
 
 def sliding_window(
-    x: torch.Tensor,
-    window_shape: int | tuple[int, ...],
-    axis: int | tuple[int, ...] | None = None,
-    strides: int | tuple[int, ...] = 1,
+    x,
+    window_shape,
+    axis=None,
+    strides=1,
 ) -> torch.Tensor:
     """Sliding window view into the tensor x.
 

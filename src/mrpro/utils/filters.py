@@ -86,9 +86,9 @@ def _filter_separable(x: torch.Tensor, kernels: list[torch.Tensor], axis: list[i
 
 def gaussian_filter(
     x: torch.Tensor,
-    sigmas: float | list[float,],
-    axis: int | tuple[int, ...] | None = None,
-    truncate: int = 3,
+    sigmas,
+    axis=None,
+    truncate=3,
 ) -> torch.Tensor:
     """Apply a nd-Gaussian filter.
 
@@ -121,8 +121,8 @@ def gaussian_filter(
 
 def uniform_filter(
     x: torch.Tensor,
-    width: float | list[float,],
-    axis: int | tuple[int, ...] | None = None,
+    width,
+    axis=None,
 ) -> torch.Tensor:
     """Apply a nd-uniform filter.
 
