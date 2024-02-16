@@ -31,7 +31,7 @@ print(f'Data will be saved to: {data_folder}')
 
 # Initialize attempt counter and set maximum number of attempts
 attempt = 1
-max_attempts = 3
+max_attempts = 5
 
 # Start the download process
 while attempt <= max_attempts:
@@ -72,7 +72,6 @@ dcf = DcfData.from_traj_voronoi(traj=data.traj)
 # %%
 # perform FT and CSM
 ft_op = FourierOp(
-    # im_shape=SpatialDimension(1, 256, 256),
     recon_shape=SpatialDimension(1, 256, 256),
     encoding_shape=SpatialDimension(1, 256, 256),
     traj=data.traj,
@@ -95,7 +94,6 @@ for i in image:
     plt.matshow(torch.abs(i))
     break
 
-# idata = IData.from_tensor_and_kheader(im, data.header)
 # %%
 if NIFTI:
     image = image.swapaxes(0, 2)
@@ -105,18 +103,3 @@ if NIFTI:
         ni_img,
         f'{filepath}/{h5_filename.split(".")[0]}/.nii',
     )
-# %%
-
-# %%
-# test_load = nib.load(
-#    "/home/hammac01/CEST_Data/2024-01-25_JOHANNES_Interleafed_CEST/Transversal/20240123_CEST_interleafed_radial_256px_fov256_8mm_200spokes_golden_angle_56offsets_0.035saturation_dummy_spokes/meas_MID00058_FID00269_0_035saturation.nii"
-# ).get_fdata()
-# test_load = test_load.swapaxes(0, 2)
-
-# %%
-# for i in test_load:
-#    print(i.shape)
-#    plt.matshow(i)
-#    break
-
-# %%
