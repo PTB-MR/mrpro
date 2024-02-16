@@ -52,6 +52,7 @@ out = subprocess.call(zenodo_cmd, shell=True)
 # - Reading in the raw data and the trajectory from the ismrmrd raw data file
 # - Calculating the density compensation function (dcf)
 # - Reconstructing one image averaging over the entire relaxation period
+# - insert something to trigger new workfow...
 
 # %%
 # Read raw data and trajectory
