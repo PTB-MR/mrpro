@@ -61,7 +61,7 @@ class SuperResOp(LinearOperator):
             input_shape=input_shape,
             rot=R,
             offset_slicePos=offset,
-            w=w,
+            length_normal=w,
             slice_function=slice_function,
             rotation_center=rotation_center,
         )
@@ -78,7 +78,7 @@ class SuperResOp(LinearOperator):
         return ret.reshape(vector.shape)
 
     def _generate_matrix(
-        self, input_shape: tuple, rot: Rotation, offset_slicePos: torch.Tensor, w: int, slice_function, rotation_center=None
+        self, input_shape: tuple, rot: Rotation, offset_slicePos: torch.Tensor, length_normal: int, slice_function, rotation_center=None
     ):
         """Sample a sparse matrix that represents the projection of a volume
         onto a plane.
@@ -112,10 +112,13 @@ class SuperResOp(LinearOperator):
 
         # We cast a ray from the pixel perpendicular to the plane.
         # Pixels further away then w will not be considered
-        sliceNormal = torch.stack([torch.zeros(2 * w), torch.zeros(2 * w), torch.arange(-w, w)], dim=-1)
-        sliceNormal = self._rotate(sliceNormal, rot)
+        sliceNormal = torch.stack([torch.zeros(2 * length_normal), torch.zeros(2 * length_normal), torch.arange(-length_normal, length_normal)], dim=-1)
+        sliceNormal = self._rotate(sliceNormal, rot)#shape: [6,3]
 
-        offsets = torch.tensor(list(itertools.product([0, 1], repeat=3)))
+        # binary counter representing all neighboring voxel for a specific position
+        # all points that could influence to intensity of a pixel in the new slice
+        # alternative would be looping over the neighboring voxels
+        offsets = torch.tensor(list(itertools.product([0, 1], repeat=3)))#shape [8,3]
 
         # Distance between two pixels will always at least be 1
         # In all possible directions for each point along the line we consider the eight neighboring points
@@ -146,6 +149,7 @@ class SuperResOp(LinearOperator):
         source = einops.rearrange(point, 'X Y s1 s2 xyz -> (X Y) (s1 s2) xyz').int()
 
         # Remove points outside the volume
+        # find points in source outside volume
         mask = (
             (source[..., 0] < X)
             & (source[..., 0] >= 0)
@@ -161,7 +165,9 @@ class SuperResOp(LinearOperator):
         source_index = torch.tensor(np.ravel_multi_index(source[mask].unbind(-1), (X, Y, Z)))
         target_index = torch.repeat_interleave(torch.arange(X * Y), mask.sum(-1))
 
-        # Count duplicates. Coalesce will sum the values of duplicate indices
+        # Count duplicates.
+        # ensuring that points counted twice don't get twice the weight
+        # Coalesce will sum the values of duplicate indices
         ones = torch.ones_like(source_index).float()
         ones = torch.sparse_coo_tensor(
             indices=torch.stack((target_index, source_index)), values=ones, size=(X * Y, X * Y * Z), dtype=torch.float32
@@ -209,9 +215,6 @@ class SuperResOp(LinearOperator):
 
 
 
-
-
-
 class Settings_superRes:
     def __init__(self) -> None:
         self.R = Rotation.from_euler('xyz', [0, 0, 45], degrees=True)
@@ -241,6 +244,7 @@ def simulHR(flag_show = True):
 
     if flag_show:
         plt.matshow(img_square)
+        plt.title('img_square')
     return square_vol
 vol_HR = simulHR(flag_show = True)
 
@@ -250,5 +254,7 @@ slice_LR = srr_op.forward(vol_HR_exp)
 print(slice_LR.shape)
 
 plt.matshow(slice_LR[0, 0, 0, ...])
+plt.title('slice_LR')
+
 plt.show()
 # %%
