@@ -32,7 +32,7 @@ def test_fatwater_to_echoes(n_echoes, other, coils, z, y, x):
     shift.
     """
     # Generate signal model and torch tensor for comparison
-    fat_mod = torch.ones((2, 1, 1, 1, 1))
+    fat_mod = torch.ones((n_echoes, 1, 1, 1, 1))
     model = FatWater(fat_mod)
     water, fat, phasor = create_data(n_echoes, other, coils, z, y, x)
     echoes = model.forward(water, fat, phasor)[0]
