@@ -408,7 +408,7 @@ document.write(`
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span> <span class="nn">dataclasses</span>
-<span class="kn">from</span> <span class="nn">concurrent.futures</span> <span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
+<span class="kn">from</span> <span class="nn">concurrent.futures</span> <span class="kn">import</span> <span class="n">ProcessPoolExecutor</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span>
 
@@ -421,6 +421,10 @@ document.write(`
 <span class="kn">from</span> <span class="nn">mrpro.utils</span> <span class="kn">import</span> <span class="n">smap</span>
 
 <span class="n">UNIQUE_ROUNDING_DECIMALS</span> <span class="o">=</span> <span class="mi">15</span>
+
+
+<span class="k">def</span> <span class="nf">_volume</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">ConvexHull</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">volume</span>
 
 
 <div class="viewcode-block" id="DcfData">
@@ -509,8 +513,9 @@ document.write(`
         <span class="n">regions</span> <span class="o">=</span> <span class="p">[</span><span class="n">vdiagram</span><span class="o">.</span><span class="n">regions</span><span class="p">[</span><span class="n">r</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">vdiagram</span><span class="o">.</span><span class="n">point_region</span><span class="p">[:</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">corner_points</span><span class="p">)]]</span>  <span class="c1"># Ignore corner points</span>
         <span class="n">vertices</span> <span class="o">=</span> <span class="p">[</span><span class="n">vdiagram</span><span class="o">.</span><span class="n">vertices</span><span class="p">[</span><span class="n">region</span><span class="p">]</span> <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">]</span>
 
-        <span class="c1"># Calculate volume/area of voronoi cells using threads (ConvexHull is thread safe and drops the GIL)</span>
-        <span class="n">future</span> <span class="o">=</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">get_num_threads</span><span class="p">())</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">ConvexHull</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">volume</span><span class="p">,</span> <span class="n">vertices</span><span class="p">)</span>
+        <span class="c1"># Calculate volume/area of voronoi cells using processes, as this is a very time-consuming operation</span>
+        <span class="c1"># and ConvexHull is singlethreaded and does not seem to drop the GIL</span>
+        <span class="n">future</span> <span class="o">=</span> <span class="n">ProcessPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">get_num_threads</span><span class="p">())</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">_volume</span><span class="p">,</span> <span class="n">vertices</span><span class="p">,</span> <span class="n">chunksize</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
         <span class="n">dcf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">future</span><span class="p">))</span>
 
         <span class="c1"># Get outliers (i.e. voronoi cell which are unbound) and set them to a reasonable value</span>
