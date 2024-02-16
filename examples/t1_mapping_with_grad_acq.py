@@ -55,7 +55,7 @@ out = subprocess.call(zenodo_cmd, shell=True)
 
 # %%
 # Read raw data and trajectory
-kdata = KData.from_file(data_folder / '2D_Dyn_GRad.h5', KTrajectoryIsmrmrd())
+kdata = KData.from_file(data_folder / '2D_GRad_map_t1.h5', KTrajectoryIsmrmrd())
 
 # Calculate dcf
 kdcf = DcfData.from_traj_voronoi(kdata.traj)
