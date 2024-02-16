@@ -94,7 +94,9 @@ class SuperResOp(LinearOperator):
         X, Y, Z = input_shape
 
         # select slice position
-        pixel = torch.stack(list(torch.meshgrid(torch.arange(X), torch.arange(Y))) + [Z / 2 * torch.ones(X, Y)], dim=-1)
+        grid_xy = list(torch.meshgrid(torch.arange(X), torch.arange(Y)))
+        grid_z = [Z / 2 * torch.ones(X, Y)]
+        pixel = torch.stack(grid_xy + grid_z, dim=-1)
         pixel = pixel + offset
 
         if rotation_center is None:
@@ -203,20 +205,11 @@ class SuperResOp(LinearOperator):
         return super().adjoint(x)
 
 
-#%%
-def simulHR(flag_show = True):
-    img_square = torch.zeros(64, 64)
-    img_square[22:42, 22:42] = 1
 
-    square_vol = img_square.unsqueeze(0).repeat(64, 1, 1)
-
-    if flag_show:
-        plt.matshow(img_square)
-    return square_vol
 
 # %%
 
-class SuperResSettings:
+class Settings_superRes:
     def __init__(self) -> None:
         self.R = Rotation.from_euler('xyz', [0, 0, 45], degrees=True)
         self.slice_center = torch.tensor([0, 0, 0])
@@ -227,7 +220,7 @@ class SuperResSettings:
     def sliceProf(self, distance_z):
         return torch.exp(-(distance_z**2) / (2 * self.sigma**2))
 
-settings_super = SuperResSettings()
+settings_super = Settings_superRes()
 
 # %%
 srr_op = SuperResOp(input_shape=settings_super.input_shape,
@@ -237,11 +230,23 @@ srr_op = SuperResOp(input_shape=settings_super.input_shape,
                     slice_function=settings_super.sliceProf)
 # %%
 
-vol_HR = simulHR(flag_show = True)
-vol_HR_exp = vol_HR.unsqueeze(0).unsqueeze(0).expand(-1, 2, -1, -1, -1)
 
+def simulHR(flag_show = True):
+    img_square = torch.zeros(64, 64)
+    img_square[22:42, 22:42] = 1
+
+    square_vol = img_square.unsqueeze(0).repeat(64, 1, 1)
+
+    if flag_show:
+        plt.matshow(img_square)
+    return square_vol
+vol_HR = simulHR(flag_show = True)
+#%%
+
+vol_HR_exp = vol_HR.unsqueeze(0).unsqueeze(0).expand(-1, 2, -1, -1, -1)
 slice_LR = srr_op.forward(vol_HR_exp)
 print(slice_LR.shape)
 
 plt.matshow(slice_LR[0, 0, 0, ...])
+plt.show()
 # %%
