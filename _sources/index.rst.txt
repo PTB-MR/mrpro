@@ -10,6 +10,7 @@ Welcome to MRPro's documentation!
    :maxdepth: 1
 
    user_guide
+   faq
    examples
    api
    contributer_guide

@@ -26,6 +26,7 @@ mrpro.data.enums
       InterleavingDimension
       MultibandCalibration
       PatientPosition
+      TrajType
       TrajectoryType
       WaveformInformation
       auto

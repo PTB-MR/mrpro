@@ -135,6 +135,13 @@
                 
 
                     <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../faq.html">
+                        Frequently asked questions
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
                       <a class="nav-link nav-internal" href="../../../examples.html">
                         MRPro Examples
                       </a>
@@ -253,6 +260,13 @@ document.write(`
                     <li class="nav-item">
                       <a class="nav-link nav-internal" href="../../../user_guide.html">
                         Guide for MRPro Users
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../faq.html">
+                        Frequently asked questions
                       </a>
                     </li>
                 
@@ -412,12 +426,13 @@ document.write(`
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 
+<span class="kn">from</span> <span class="nn">mrpro.data.enums</span> <span class="kn">import</span> <span class="n">TrajType</span>
 <span class="kn">from</span> <span class="nn">mrpro.utils</span> <span class="kn">import</span> <span class="n">remove_repeat</span>
 
 
 <div class="viewcode-block" id="KTrajectory">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.KTrajectory.html#mrpro.data.KTrajectory">[docs]</a>
-<span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">KTrajectory</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;K-space trajectory.</span>
 
@@ -430,19 +445,81 @@ document.write(`
 <span class="sd">        kz is zero(1,1,1,1)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">kz</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>  <span class="c1"># (other,k2,k1,k0) #phase encoding direction, k2 if Cartesian</span>
-    <span class="n">ky</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>  <span class="c1"># (other,k2,k1,k0) #phase encoding direction, k1 if Cartesian</span>
-    <span class="n">kx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>  <span class="c1"># (other,k2,k1,k0) #frequency encoding direction, k0 if Cartesian</span>
+    <span class="n">kz</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;(other,k2,k1,k0), phase encoding direction k2 if Cartesian.&quot;&quot;&quot;</span>
+
+    <span class="n">ky</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;(other,k2,k1,k0), phase encoding direction k1 if Cartesian.&quot;&quot;&quot;</span>
+
+    <span class="n">kx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;(other,k2,k1,k0), frequency encoding direction k0 if Cartesian.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Tolerance of how close trajectory positions have to be to integer grid points</span>
+    <span class="n">grid_detection_tolerance</span><span class="p">:</span> <span class="nb">float</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">broadcasted_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The broadcasted shape of the trajectory.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The broadcasted shape of the trajectory.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            broadcasted shape of trajectory</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_shapes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kx</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ky</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kz</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">_traj_types</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">TrajType</span><span class="p">,</span> <span class="n">TrajType</span><span class="p">,</span> <span class="n">TrajType</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">TrajType</span><span class="p">,</span> <span class="n">TrajType</span><span class="p">,</span> <span class="n">TrajType</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the trajectory type along kzkykx and k2k1k0.</span>
+
+<span class="sd">        Checks if the entries of the trajectory along certain dimensions</span>
+<span class="sd">            - are of shape 1 -&gt; TrajType.SINGLEVALUE</span>
+<span class="sd">            - lie on a Cartesian grid -&gt; TrajType.ONGRID</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">            tolerance:</span>
+<span class="sd">                absolute tolerance in checking if points are on integer grid positions</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            ((types along kz,ky,kx),(types along k2,k1,k0))</span>
+
+<span class="sd">        # TODO: consider non-integer positions that are on a grid, e.g. (0.5, 1, 1.5, ....)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Matrix describing trajectory-type [(kz, ky, kx), (k2, k1, k0)]</span>
+        <span class="c1"># Start with everything not on a grid (arbitrary k-space locations).</span>
+        <span class="c1"># We use the value of the enum-type to make it easier to do array operations.</span>
+        <span class="n">traj_type_matrix</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ind</span><span class="p">,</span> <span class="n">ks</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">kz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ky</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kx</span><span class="p">)):</span>
+            <span class="n">values_on_grid</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">ks</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">()</span> <span class="ow">or</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ks</span><span class="o">.</span><span class="n">frac</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">tolerance</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">ks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">traj_type_matrix</span><span class="p">[</span><span class="n">ind</span><span class="p">,</span> <span class="n">dim</span><span class="p">]</span> <span class="o">|=</span> <span class="n">TrajType</span><span class="o">.</span><span class="n">SINGLEVALUE</span><span class="o">.</span><span class="n">value</span> <span class="o">|</span> <span class="n">TrajType</span><span class="o">.</span><span class="n">ONGRID</span><span class="o">.</span><span class="n">value</span>
+                <span class="k">if</span> <span class="n">values_on_grid</span><span class="p">:</span>
+                    <span class="n">traj_type_matrix</span><span class="p">[</span><span class="n">ind</span><span class="p">,</span> <span class="n">dim</span><span class="p">]</span> <span class="o">|=</span> <span class="n">TrajType</span><span class="o">.</span><span class="n">ONGRID</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="c1"># kz should only have flags that are enabled in all columns</span>
+        <span class="c1"># k2 only flags enabled in all rows, etc</span>
+        <span class="n">type_zyx</span> <span class="o">=</span> <span class="p">[</span><span class="n">TrajType</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">item</span><span class="p">())</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">bitwise_and</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">traj_type_matrix</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)]</span>
+        <span class="n">type_210</span> <span class="o">=</span> <span class="p">[</span><span class="n">TrajType</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">item</span><span class="p">())</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">bitwise_and</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">traj_type_matrix</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)]</span>
+
+        <span class="c1"># make mypy recognize return  will always have len=3</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">type_zyx</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">type_zyx</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">type_zyx</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="p">(</span><span class="n">type_210</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">type_210</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">type_210</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">type_along_kzyx</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">TrajType</span><span class="p">,</span> <span class="n">TrajType</span><span class="p">,</span> <span class="n">TrajType</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Type of trajectory along kz-ky-kx.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_traj_types</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid_detection_tolerance</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">type_along_k210</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">TrajType</span><span class="p">,</span> <span class="n">TrajType</span><span class="p">,</span> <span class="n">TrajType</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Type of trajectory along k2-k1-k0.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_traj_types</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid_detection_tolerance</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+
 <div class="viewcode-block" id="KTrajectory.as_tensor">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.KTrajectory.html#mrpro.data.KTrajectory.as_tensor">[docs]</a>
-    <span class="k">def</span> <span class="nf">as_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stack_dim</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">as_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stack_dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Tensor representation of the trajectory.</span>
 
 <span class="sd">        Parameters</span>
@@ -457,7 +534,12 @@ document.write(`
 <div class="viewcode-block" id="KTrajectory.__init__">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.KTrajectory.html#mrpro.data.KTrajectory.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">kz</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">ky</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">kx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">repeat_detection_tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">1e-8</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">kz</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">ky</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">kx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">repeat_detection_tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
+        <span class="n">grid_detection_tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;K-Space Trajectory dataclass.</span>
 
@@ -470,13 +552,19 @@ document.write(`
 <span class="sd">            trajectory coordinates to set</span>
 <span class="sd">        repeat_detection_tolerance</span>
 <span class="sd">            Tolerance for repeat detection. Set to None to disable.</span>
+<span class="sd">        grid_detection_tolerance</span>
+<span class="sd">            tolerance to detect if trajectory points are on integer grid positions</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">repeat_detection_tolerance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">kz</span><span class="p">,</span> <span class="n">ky</span><span class="p">,</span> <span class="n">kx</span> <span class="o">=</span> <span class="p">(</span><span class="n">remove_repeat</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">repeat_detection_tolerance</span><span class="p">)</span> <span class="k">for</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="p">(</span><span class="n">kz</span><span class="p">,</span> <span class="n">ky</span><span class="p">,</span> <span class="n">kx</span><span class="p">))</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">kz</span> <span class="o">=</span> <span class="n">kz</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ky</span> <span class="o">=</span> <span class="n">ky</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kx</span> <span class="o">=</span> <span class="n">kx</span>
+        <span class="c1"># use of setattr due to frozen dataclass</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;kz&#39;</span><span class="p">,</span> <span class="n">kz</span><span class="p">)</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;ky&#39;</span><span class="p">,</span> <span class="n">ky</span><span class="p">)</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;kx&#39;</span><span class="p">,</span> <span class="n">kx</span><span class="p">)</span>
+
+        <span class="c1"># use of setattr due to frozen dataclass</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;grid_detection_tolerance&#39;</span><span class="p">,</span> <span class="n">grid_detection_tolerance</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">broadcasted_shape</span>
@@ -490,7 +578,11 @@ document.write(`
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.KTrajectory.html#mrpro.data.KTrajectory.from_tensor">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_tensor</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">stack_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">repeat_detection_tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">1e-8</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">stack_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">repeat_detection_tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
+        <span class="n">grid_detection_tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KTrajectory</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a KTrajectory from a tensor representation of the trajectory.</span>
 
@@ -508,10 +600,18 @@ document.write(`
 <span class="sd">        repeat_detection_tolerance</span>
 <span class="sd">            detects if broadcasting can be used, i.e. if dimensions are repeated.</span>
 <span class="sd">            Set to None to disable.</span>
+<span class="sd">        grid_detection_tolerance</span>
+<span class="sd">            tolerance to detect if trajectory points are on integer grid positions</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">kz</span><span class="p">,</span> <span class="n">ky</span><span class="p">,</span> <span class="n">kx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">stack_dim</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">kz</span><span class="p">,</span> <span class="n">ky</span><span class="p">,</span> <span class="n">kx</span><span class="p">,</span> <span class="n">repeat_detection_tolerance</span><span class="o">=</span><span class="n">repeat_detection_tolerance</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">kz</span><span class="p">,</span>
+            <span class="n">ky</span><span class="p">,</span>
+            <span class="n">kx</span><span class="p">,</span>
+            <span class="n">repeat_detection_tolerance</span><span class="o">=</span><span class="n">repeat_detection_tolerance</span><span class="p">,</span>
+            <span class="n">grid_detection_tolerance</span><span class="o">=</span><span class="n">grid_detection_tolerance</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="KTrajectory.to">
