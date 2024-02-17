@@ -50,6 +50,8 @@ class CartesianSamplingOp(LinearOperator):
         traj_type_kzyx = traj.type_along_kzyx
         ktraj_tensor = traj.as_tensor()
 
+        # If a dimension is irregular or singleton, we will not perform any reordering
+        # in it, only dimensions on a cartesian grid will be reordered.
         if traj_type_kzyx[-1] == TrajType.ONGRID:  # kx
             kx_idx = ktraj_tensor[-1, ...] + encoding_shape.x // 2
         else:
@@ -68,6 +70,7 @@ class CartesianSamplingOp(LinearOperator):
             encoding_shape.z = ktraj_tensor.shape[-3]
             kz_idx = rearrange(torch.arange(ktraj_tensor.shape[-3]), 'kz->1 kz 1 1')
 
+        # 1D indices into a flattened tensor
         kidx = (
             (kz_idx * encoding_shape.y * encoding_shape.x + ky_idx * encoding_shape.x + kx_idx)
             .flatten()
@@ -98,10 +101,10 @@ class CartesianSamplingOp(LinearOperator):
         if not self._needs_indexing:
             return (x,)
 
-        x_2d = rearrange(x, '... k2 k1 k0 -> (...) (k2 k1 k0)')
-        # take_along_dim does broadcast
+        x_2d = rearrange(x, '... k2_enc k1_enc k0_enc -> (...) (k2_enc k1_enc k0_enc)')
+        # take_along_dim does broadcast, so no need for extending here
         x_indexed = torch.take_along_dim(x_2d, self._fft_idx, dim=-1)
-        # reshape to (other1, other2 ..., k2, k1, k0)
+        # reshape to (... other coil, k2, k1, k0)
         x_reshaped = x_indexed.reshape(x.shape[:-3] + self._kshape[-3:])
 
         return (x_reshaped,)
@@ -112,7 +115,7 @@ class CartesianSamplingOp(LinearOperator):
         Parameters
         ----------
         y
-            k-space data in original (i.e. acquired shape)
+            k-space data in original (i.e. acquired) shape
 
         Returns
         -------
@@ -126,17 +129,19 @@ class CartesianSamplingOp(LinearOperator):
             return (y,)
 
         y_2d = rearrange(y, '... k2 k1 k0 -> (...) (k2 k1 k0)')
-
-        # scatter does not broadcast, so we need to expand the fft_idx to the full dataset
+        # scatter does not broadcast, so we need a view of fft_idx with shape
+        # (... other coil) (k2 k1 k0)
         idx_expanded = self._fft_idx.expand(len(y_2d), -1)
 
+        # although scatter_ is inplace, this will not cause issues with autograd, as self
+        # is always constant zero and gradients w.r.t. src work as expected.
         y_scattered = torch.zeros(
-            len(y_2d),
-            (self._encoding_shape.z * self._encoding_shape.y * self._encoding_shape.x),
+            len(y_2d),  # (... other coil)
+            self._encoding_shape.z * self._encoding_shape.y * self._encoding_shape.x,
             dtype=y.dtype,
             device=y.device,
         ).scatter_(dim=-1, index=idx_expanded, src=y_2d)
-        # reshape to (other1, other2 ..., k2, k1, k0)
+        # reshape to  ..., other, coil, k2_enc, k1_enc, k0_enc
         y_reshaped = y_scattered.reshape(
             *y.shape[:-3], self._encoding_shape.z, self._encoding_shape.y, self._encoding_shape.x
         )
