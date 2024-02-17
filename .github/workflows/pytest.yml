@@ -13,7 +13,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.11"]
     # runs within your Docker container
     container:
       image: docker://ckolbptb/mrpro_py311:latest
