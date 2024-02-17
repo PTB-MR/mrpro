@@ -23,21 +23,22 @@ from mrpro.operators import LinearOperator
 
 
 class MotionOp(LinearOperator):
+    """Motion Operator class.
+
+    This operator takes a displacement field with the displacement in voxel and calculates a deformation field/flow
+    field suitable for torch.grid_sample. Torch.grid_sample requires a deformation field which specifies the
+    sampling voxel locations normalized by the input spatial dimensions.
+
+    Parameters
+    ----------
+    displacement_field
+        displacement field describing spatial motion transformations
+    """
+
     def __init__(
         self,
         displacement_field: DisplacementField,
     ) -> None:
-        """Motion Operator class.
-
-        This operator takes a displacement field with the displacement in voxel and calculates a deformation field/flow
-        field suitable for torch.grid_sample. Torch.grid_sample requires a deformation field which specifies the
-        sampling voxel locations normalized by the input spatial dimensions.
-
-        Parameters
-        ----------
-        displacement_field
-            displacement field describing spatial motion transformations
-        """
         super().__init__()
 
         # If other > 1 then the displacement fields are not broadcasted along this dimension and this dimension needs
@@ -68,7 +69,7 @@ class MotionOp(LinearOperator):
         self.grid += unity_grid
 
         # Calculate inverse grid
-        self.inverse_grid = torch.empty(1)
+        self.inverse_grid = self.grid
 
     def combine_complex_ms_other(self, x: torch.Tensor) -> torch.Tensor:
         """Combine motion states and other and stack imag and real.
@@ -108,20 +109,56 @@ class MotionOp(LinearOperator):
             x = rearrange(x, '(ms other) 1 z y x->ms other z y x')
         return x
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if len(x.shape) != 5:
-            raise ValueError('The input tensor should have 5 dimensions (motion_states, other, z, y, x).')
-        return self.split_complex_ms_other(
-            torch_func.grid_sample(
-                self.combine_complex_ms_other(x), self.grid, padding_mode='border', align_corners=False
-            )
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply forward motion transformation.
+
+        Parameters
+        ----------
+        x
+            tensor to be transformed (other, z, y, x)
+
+        Returns
+        -------
+            transformed tensor (motion_states, other, z, y, x)
+
+        Raises
+        ------
+        ValueError
+            Input tensor has to have 4 dimensions.
+        """
+        if len(x.shape) != 4:
+            raise ValueError('The input tensor should have 4 dimensions (other, z, y, x).')
+        return (
+            self.split_complex_ms_other(
+                torch_func.grid_sample(
+                    self.combine_complex_ms_other(x), self.grid, padding_mode='border', align_corners=False
+                )
+            ),
         )
 
-    def adjoint(self, x: torch.Tensor) -> torch.Tensor:
+    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply backward motion transformation.
+
+        Parameters
+        ----------
+        x
+            tensor to be transformed (motion_states, other, z, y, x)
+
+        Returns
+        -------
+            transformed tensor (other, z, y, x)
+
+        Raises
+        ------
+        ValueError
+            Input tensor has to have 5 dimensions.
+        """
         if len(x.shape) != 5:
             raise ValueError('The input tensor should have 5 dimensions (motion_states, other, z, y, x).')
-        return self.split_complex_ms_other(
-            torch_func.grid_sample(
-                self.combine_complex_ms_other(x), self.inverse_grid, padding_mode='border', align_corners=False
-            )
+        return (
+            self.split_complex_ms_other(
+                torch_func.grid_sample(
+                    self.combine_complex_ms_other(x), self.inverse_grid, padding_mode='border', align_corners=False
+                )
+            ),
         )
