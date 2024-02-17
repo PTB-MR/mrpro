@@ -1,0 +1,146 @@
+name: Build and test docker
+
+on:
+  pull_request:
+    paths-ignore:
+      - "**.md"
+
+jobs:
+  get_dockerfiles:
+    name: "Get list of dockerfiles for different containers"
+    runs-on: ubuntu-latest
+    outputs:
+      docker_toml: ${{ steps.filter.outputs.docker_toml }}
+      dockerfiles: ${{ steps.set-matrix.outputs.dockerfiles }}
+      imagenames: ${{ steps.set-matrix.outputs.imagenames }}
+    steps:
+      - name: Checkout mrpro repo
+        uses: actions/checkout@v4
+
+      - name: Check if files in docker or the toml file has been modified
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            docker_toml:
+              - 'docker/*'
+              - 'pyproject.toml'
+              - '/.github/docker.yml'
+
+      - run: echo ${{ steps.filter.outputs.docker_toml }}
+
+      - id: set-matrix
+        if: steps.filter.outputs.docker_toml == 'true'
+        run: |
+          cd ./docker/
+          ls
+          dockerfiles=$(ls Dockerfile_* | jq -R -s -c 'split("\n")[:-1]')
+          echo $dockerfiles
+          echo "dockerfiles=$dockerfiles" >> $GITHUB_OUTPUT
+          imagenames=$(ls Dockerfile_* | sed -e 's/Dockerfile_/ghcr.io\/ptb-mr\/mrpro_/' | jq -R -s -c 'split("\n")[:-1]')
+          echo $imagenames
+          echo "imagenames=$imagenames" >> $GITHUB_OUTPUT
+
+      - name: Dockerfile overview
+        if: steps.filter.outputs.docker_toml == 'true'
+        run: |
+          echo ${{ steps.set-matrix.outputs.dockerfiles }}
+          echo ${{ steps.set-matrix.outputs.imagenames }}
+
+  push_test:
+    name: "Create test images and push to GCR"
+    needs: get_dockerfiles
+    if: ${{ needs.get_dockerfiles.outputs.docker_toml == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        dockerfile: ${{ fromJson(needs.get_dockerfiles.outputs.dockerfiles) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create image name
+        id: image_name
+        run: |
+          dockerfile=${{ matrix.dockerfile }}
+          echo "image_name=${dockerfile/Dockerfile_/ghcr.io/ptb-mr/mrpro_}" >> $GITHUB_OUTPUT
+
+      - name: Login to GitHub Packages
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ptb-mr
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker
+          file: ./docker/${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.image_name.outputs.image_name }}:test
+
+  test:
+    name: "Test docker containers"
+    needs: [get_dockerfiles, push_test]
+    if: ${{ needs.get_dockerfiles.outputs.docker_toml == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+    strategy:
+      matrix:
+        imagename: ${{ fromJson(needs.get_dockerfiles.outputs.imagenames) }}
+    # runs within Docker container
+    container:
+      image: ${{ matrix.imagename }}:test
+      options: --user runner
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install mrpro and dependencies
+        run: pip install --upgrade --upgrade-strategy "eager" .[test]
+
+      - name: Install pytest-github-actions-annotate-failures plugin
+        run: pip install pytest-github-actions-annotate-failures
+
+      - name: Run PyTest
+        run: |
+          pytest -n 4 -m "not cuda"
+
+  push_latest:
+    name: "Create latest images and push to GCR"
+    needs: [get_dockerfiles, test]
+    if: ${{ needs.get_dockerfiles.outputs.docker_toml == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        dockerfile: ${{ fromJson(needs.get_dockerfiles.outputs.dockerfiles) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create image name
+        id: image_name
+        run: |
+          dockerfile=${{ matrix.dockerfile }}
+          echo "image_name=${dockerfile/Dockerfile_/ghcr.io/ptb-mr/mrpro_}" >> $GITHUB_OUTPUT
+
+      - name: Login to GitHub Packages
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ptb-mr
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull and push Docker image with new tag
+        run: |
+            docker pull ${{ steps.image_name.outputs.image_name }}:test
+            docker tag ${{ steps.image_name.outputs.image_name }}:test ${{ steps.image_name.outputs.image_name }}:latest
+            docker push ${{ steps.image_name.outputs.image_name }}:latest
