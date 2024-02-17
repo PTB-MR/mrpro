@@ -1,3 +1,5 @@
+"""Fourier Operator."""
+
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -10,44 +12,16 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import numpy as np
 import torch
-from einops import rearrange
-from einops import repeat
 from torchkbnufft import KbNufft
 from torchkbnufft import KbNufftAdjoint
 
 from mrpro.data import KTrajectory
 from mrpro.data import SpatialDimension
+from mrpro.data.enums import TrajType
 from mrpro.operators import FastFourierOp
 from mrpro.operators import LinearOperator
-
-
-def is_uniform(x: torch.Tensor, atol: float = 1e-6) -> torch.Tensor:
-    """Check if a tensor contains equidistant sampling points.
-
-    Parameters
-    ----------
-    x
-        tensor to be checked
-    atol
-        tolerance of how similar the values have to be
-
-    Returns
-    -------
-        boolean tensor if sampling points are equidistant.
-
-    If the tensor has batch-dimension>1, this is checked for all batches.
-    """
-    # TODO: currrently, this function is never used here.
-
-    if x.shape[1:].count(1) <= 1:
-        raise ValueError('x is allowed to have at most one non-singleton dimension')
-    all_close_list = [
-        torch.allclose(torch.diff(x[kb, ...].flatten()), torch.diff(x[kb, ...].flatten())[0], atol=atol)
-        for kb in range(x.shape[0])
-    ]
-
-    return torch.tensor(all_close_list).all()
 
 
 class FourierOp(LinearOperator):
@@ -82,114 +56,66 @@ class FourierOp(LinearOperator):
             size of the Kaiser-Bessel kernel for the nuFFT
         """
 
-        grid_size = []
-        nufft_im_size = []
-        nufft_dims = []
-        fft_dims = []
-        ignore_dims = []
-        fft_recon_shape = []
-        fft_encoding_shape = []
-        omega = []
-        traj_shape = []
         super().__init__()
 
-        # create information about image shape, k-data shape etc
-        # and identify which directions can be ignored, which ones require a nuFFT
-        # and for which ones a simple FFT suffices
-        for rs, es, os, k, i in zip(
-            (recon_shape.z, recon_shape.y, recon_shape.x),
-            (encoding_shape.z, encoding_shape.y, encoding_shape.x),
-            (oversampling.z, oversampling.y, oversampling.x),
-            (traj.kz, traj.ky, traj.kx),
-            (-3, -2, -1),
-        ):
-            nk_list = [traj.kz.shape[i], traj.ky.shape[i], traj.kx.shape[i]]
-            if rs <= 1 and nk_list.count(1) == 3:
-                # dimension with no Fourier transform
-                ignore_dims.append(i)
+        def get_spatial_dims(spatial_dims, dims):
+            return [s for s, i in zip((spatial_dims.z, spatial_dims.y, spatial_dims.x), (-3, -2, -1)) if i in dims]
 
-            elif nk_list.count(1) == 2:  # and is_uniform(k): #TODO: maybe is_uniform never needed?
-                # append dimension and output shape for oversampled FFT
-                fft_dims.append(i)
-                fft_recon_shape.append(int(rs))
-                fft_encoding_shape.append(int(es))
+        def get_traj(traj, dims):
+            return [k for k, i in zip((traj.kz, traj.ky, traj.kx), (-3, -2, -1)) if i in dims]
+
+        self._ignore_dims, self._fft_dims, self._nufft_dims = [], [], []
+        for dim, type in zip((-3, -2, -1), traj.type_along_kzyx):
+            if type & TrajType.SINGLEVALUE:
+                # dimension which do not require any transform
+                self._ignore_dims.append(dim)
+            elif type & TrajType.ONGRID:
+                self._fft_dims.append(dim)
             else:
-                # dimension with nuFFT
-                grid_size.append(int(os * rs))
-                nufft_im_size.append(rs)
-                nufft_dims.append(i)
+                self._nufft_dims.append(dim)
 
-                # TODO: can omega be created here already?
-                # seems necessary to do this in a different loop where we create a list
-                # of kz, ky and kx to be stacked if they are compatible
-                # omega.append(k.flatten(start_dim=-3))
+        if self._fft_dims:
+            self._fast_fourier_op = FastFourierOp(
+                dim=tuple(self._fft_dims),
+                recon_shape=get_spatial_dims(recon_shape, self._fft_dims),
+                encoding_shape=get_spatial_dims(encoding_shape, self._fft_dims),
+            )
 
-            traj_shape.append(k.shape)
+        # Find dimensions which require NUFFT
+        if self._nufft_dims:
+            fft_dims_k210 = [
+                dim
+                for dim in (-3, -2, -1)
+                if (traj.type_along_k210[dim] & TrajType.ONGRID)
+                and not (traj.type_along_k210[dim] & TrajType.SINGLEVALUE)
+            ]
+            if self._fft_dims != fft_dims_k210:
+                raise NotImplementedError(
+                    'If both FFT and NUFFT dims are present, Cartesian FFT dims need to be aligned with the '
+                    'k-space dimension, i.e. kx along k0, ky along k1 and kz along k2'
+                )
 
-        # if non-uniform directions were identified, create the trajectories
-        # to perform the nuFFT
-        if len(nufft_dims) != 0:
-            for k, ks in zip((traj.kz, traj.ky, traj.kx), (encoding_shape.z, encoding_shape.y, encoding_shape.x)):
-                # check number of singleton dimensions
-                n_singleton_dims = k.shape[1:].count(1)
-                if n_singleton_dims <= 1:
-                    # if not is_uniform(k): #TODO: is_uniform maybe never needed?
-                    # add trajectory and normalize within [-pi, pi]
-                    omega.append(k.flatten(start_dim=-3) * 2 * torch.pi / ks)
+            self._nufft_im_size = get_spatial_dims(recon_shape, self._nufft_dims)
+            grid_size = [
+                int(s * os) for s, os in zip(self._nufft_im_size, get_spatial_dims(oversampling, self._nufft_dims))
+            ]
+            omega = [
+                k * 2 * torch.pi / ks
+                for k, ks in zip(get_traj(traj, self._nufft_dims), get_spatial_dims(encoding_shape, self._nufft_dims))
+            ]
 
-            self._omega = torch.stack(omega, dim=-2)
+            # Broadcast shapes (not always needed but also does not hurt)
+            omega = [k.expand(*np.broadcast_shapes(*[k.shape for k in omega])) for k in omega]
+            self._omega = torch.stack(omega, dim=-4)  # use the 'coil' dim for the direction
+
             self._fwd_nufft_op = KbNufft(
-                im_size=nufft_im_size, grid_size=grid_size, numpoints=numpoints, kbwidth=kbwidth, device=traj.kx.device
+                im_size=self._nufft_im_size, grid_size=grid_size, numpoints=numpoints, kbwidth=kbwidth
             )
             self._adj_nufft_op = KbNufftAdjoint(
-                im_size=nufft_im_size, grid_size=grid_size, numpoints=numpoints, kbwidth=kbwidth, device=traj.kx.device
+                im_size=self._nufft_im_size, grid_size=grid_size, numpoints=numpoints, kbwidth=kbwidth
             )
 
-        self._ignore_dims = tuple(ignore_dims)
-        self._nufft_dims = tuple(nufft_dims)
-        self._fft_dims = tuple(fft_dims)
-        self._fft_recon_shape = tuple(fft_recon_shape)
-        self._fft_encoding_shape = tuple(fft_encoding_shape)
-        self._kshape = torch.broadcast_shapes(*traj_shape)
-        self._recon_shape = recon_shape
-        self._nufft_im_size = nufft_im_size
-
-        self._fast_fourier_op = FastFourierOp(
-            dim=self._fft_dims, recon_shape=self._fft_recon_shape, encoding_shape=self._fft_encoding_shape
-        )
-
-    @staticmethod
-    def get_target_pattern(fft_dims: tuple[int, ...], nufft_dims: tuple[int, ...], ignore_dims: tuple[int, ...]) -> str:
-        """Pattern to reshape image/k-space data to be able to perform nuFFT.
-
-        Parameters
-        ----------
-        fft_dims
-            the dimensions along which a simple FFT can be performed
-        nufft_dims
-            the dimensions for which a nuFFT has to be performed
-        ignore_dims
-            dimension that are not Fourier-transformed
-
-        Returns
-        -------
-            pattern for how to reshape an image (other coils z y x) / k-space data (other coils k2 k1 k0)
-            to be able to apply the forward/adoint nuFFT.
-        """
-        fft_dims_str = ''
-        nufft_dims_str = ''
-        ignore_dims_str = ''
-
-        for dim, dim_str in zip((-3, -2, -1), ('dim2', 'dim1', 'dim0')):
-            if dim in fft_dims:
-                fft_dims_str += ' ' + dim_str
-            elif dim in nufft_dims:
-                nufft_dims_str += ' ' + dim_str
-            elif dim in ignore_dims:
-                ignore_dims_str += ' ' + dim_str
-
-        target_pattern = f'(other{fft_dims_str}{ignore_dims_str}) coils{nufft_dims_str}'
-        return target_pattern
+            self._kshape = traj.broadcasted_shape
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Forward operator mapping the coil-images to the coil k-space data.
@@ -197,98 +123,77 @@ class FourierOp(LinearOperator):
         Parameters
         ----------
         x
-            coil image data with shape: (other coils z y x)
+            coil image data with shape: (... coils z y x)
 
         Returns
         -------
-            coil k-space data with shape: (other coils k2 k1 k0)
+            coil k-space data with shape: (... coils k2 k1 k0)
         """
-        if self._recon_shape != SpatialDimension(*x.shape[-3:]):
-            raise ValueError('image data shape missmatch')
 
-        if len(self._fft_dims) != 0:
+        if len(self._fft_dims):
+            # FFT
             (x,) = self._fast_fourier_op.forward(x)
 
-        if len(self._nufft_dims) != 0:
-            init_pattern = 'other coils dim2 dim1 dim0'
-            target_pattern = self.get_target_pattern(self._fft_dims, self._nufft_dims, self._ignore_dims)
+        if self._nufft_dims:
+            # we need to move the nufft-dimensions to the end and flatten all other dimensions
+            # so the new shape will be (... non_nufft_dims) coils nufft_dims
+            # we could move the permute to __init__ but then we still would need to prepend if len(other)>1
+            keep_dims = [-4] + self._nufft_dims  # -4 is always coil
+            permute = [i for i in range(-x.ndim, 0) if i not in keep_dims] + keep_dims
+            unpermute = np.argsort(permute)
 
-            # get shape before applying nuFFT
-            nb, nc, _, _, _ = x.shape
-            x = rearrange(x, init_pattern + '->' + target_pattern)
+            x = x.permute(*permute)
+            xpermutedshape = x.shape
+            x = x.flatten(end_dim=-len(keep_dims) - 1)
 
-            # apply nuFFT
-            if nb > 1 and len(self._fft_dims) >= 1 and len(self._nufft_dims) >= 1:
-                # if multiple batches, repeat k-space trajectories
-                nb_ = int(x.shape[0] / nb)
-                omega = repeat(
-                    self._omega, 'other n_nufft_dims nk -> (other other_rep) n_nufft_dims nk', other=nb, other_rep=nb_
-                )
-            else:
-                omega = self._omega
+            # omega should be (... non_nufft_dims) n_nufft_dims (nufft_dims)
+            # TODO: consider moving the broadcast along fft dimensions to __init__ (independent of x shape).
+            omega = self._omega.permute(*permute)
+            omega = omega.broadcast_to(*xpermutedshape[: -len(keep_dims)], *omega.shape[-len(keep_dims) :])
+            omega = omega.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
+
             x = self._fwd_nufft_op(x, omega, norm='ortho')
 
-            # identify separate dimensionality of nuFFT-dimensions
-            nufft_dim_size = tuple([nk for nk, dim in zip(self._kshape[1:], (-3, -2, -1)) if dim in self._nufft_dims])
-
-            # unflatten the nuFFT-dimensions
-            x = x.reshape(*x.shape[:2], *nufft_dim_size)
-
-            # bring to shape defined by k-space trajectories
-            nk2, nk1, nk0 = self._kshape[1:]
-            x = rearrange(x, target_pattern + '->' + init_pattern, other=nb, coils=nc, dim1=nk1, dim2=nk2, dim0=nk0)
-
+            shape_nufft_dims = [self._kshape[i] for i in self._nufft_dims]
+            x = x.reshape(*xpermutedshape[: -len(keep_dims)], -1, *shape_nufft_dims)  # -1 is coils
+            x = x.permute(*unpermute)
         return (x,)
 
-    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
+    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint operator mapping the coil k-space data to the coil images.
 
         Parameters
         ----------
-        y
-            coil k-space data with shape: (other coils k2 k1 k0)
+        x
+            coil k-space data with shape: (... coils k2 k1 k0)
 
         Returns
         -------
-            coil image data with shape: (other coils z y x)
+            coil image data with shape: (... coils z y x)
         """
 
-        if self._kshape[1:] != y.shape[-3:]:
-            raise ValueError('k-space data shape missmatch')
+        if self._fft_dims:
+            # IFFT
+            (x,) = self._fast_fourier_op.adjoint(x)
 
-        # apply IFFT
-        if len(self._fft_dims) != 0:
-            (y,) = self._fast_fourier_op.adjoint(y)
+        if self._nufft_dims:
+            # we need to move the nufft-dimensions to the end, flatten them and flatten all other dimensions
+            # so the new shape will be (... non_nufft_dims) coils (nufft_dims)
+            keep_dims = [-4] + self._nufft_dims  # -4 is coil
+            permute = [i for i in range(-x.ndim, 0) if i not in keep_dims] + keep_dims
+            unpermute = np.argsort(permute)
 
-        # move dim where FFT was already performed such nuFFT can be performed
-        if len(self._nufft_dims) != 0:
-            init_pattern = 'other coils dim2 dim1 dim0'
-            target_pattern = self.get_target_pattern(self._fft_dims, self._nufft_dims, self._ignore_dims)
+            x = x.permute(*permute)
+            xpermutedshape = x.shape
+            x = x.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
 
-            # get shape before applying nuFFT
-            nb, nc, _, _, _ = y.shape
-            y = rearrange(y, init_pattern + '->' + target_pattern)
+            omega = self._omega.permute(*permute)
+            omega = omega.broadcast_to(*xpermutedshape[: -len(keep_dims)], *omega.shape[-len(keep_dims) :])
+            omega = omega.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
 
-            # flatten the nuFFT-dimensions
-            nufft_dim_size = tuple([nk for nk, dim in zip(self._kshape[1:], (-3, -2, -1)) if dim in self._nufft_dims])
-            y_shape_tuple = tuple(y.shape)
-            nk = int(torch.prod(torch.tensor(nufft_dim_size)))
-            y = y.reshape(*y_shape_tuple[:2], nk)
+            x = self._adj_nufft_op(x, omega, norm='ortho')
 
-            # apply adjoint nuFFT
-            if nb > 1 and len(self._fft_dims) >= 1 and len(self._nufft_dims) >= 1:
-                # if multiple batches, repeat k-space trajectories
-                nb_ = int(y.shape[0] / nb)
-                omega = repeat(
-                    self._omega, 'other n_nufft_dims nk -> (other other_rep) n_nufft_dims nk', other=nb, other_rep=nb_
-                )
-            else:
-                omega = self._omega
-            y = y.contiguous() if y.stride()[-1] != 1 else y
-            y = self._adj_nufft_op(y, omega, norm='ortho')
+            x = x.reshape(*xpermutedshape[: -len(keep_dims)], *x.shape[-len(keep_dims) :])
+            x = x.permute(*unpermute)
 
-            # get back to orginal image shape
-            nz, ny, nx = self._recon_shape.z, self._recon_shape.y, self._recon_shape.x
-            y = rearrange(y, target_pattern + '->' + init_pattern, other=nb, coils=nc, dim2=nz, dim1=ny, dim0=nx)
-
-        return (y,)
+        return (x,)
