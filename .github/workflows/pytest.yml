@@ -16,7 +16,7 @@ jobs:
         python-version: ["3.11", "3.12"]
     # runs within your Docker container
     container:
-      image: docker://ckolbptb/reco_server:latest
+      image: docker://ckolbptb/mrpro_py311:latest
 
     steps:
       - name: Checkout repo

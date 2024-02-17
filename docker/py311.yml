@@ -1,0 +1,40 @@
+name: mrpro_py311
+channels:
+  - conda-forge
+  - gadgetron
+  - pytorch
+  - cuda
+dependencies:
+  - python=3.11
+  - numpy>=1.23,<2.0 # MRpro
+  - einops
+  - pydicom
+  - coverage # MRpro test
+  - codecov
+  - pre-commit
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - mypy # MRpro lint
+  - flake8
+  - isort
+  - pre-commit
+  - autopep8
+  - pydocstyle
+  - sphinx # MRpro docs
+  - pydata-sphinx-theme
+  - pip # Additional
+  - scipy
+  - nibabel
+  - matplotlib
+  - psutil
+  - pandas
+  - scikit-image
+  - scikit-learn
+  - hdf5storage
+  - ipykernel
+  - pip:
+    - zenodo_get
+    - ismrmrd==1.14.0
+    - sphinx-pyproject # MRpro docs
+    - pypulseq@git+https://github.com/imr-framework/pypulseq # MRpro
