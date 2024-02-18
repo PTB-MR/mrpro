@@ -9,6 +9,6 @@ ${APT_GET_INSTALL} apt-utils locales
 ${APT_GET_INSTALL} --reinstall ca-certificates
 
 # base utilities
-${APT_GET_INSTALL} build-essential python3-dev wget git tmux zsh vim htop unzip
+${APT_GET_INSTALL} lsb-release build-essential python3-dev wget git tmux zsh vim htop unzip
 
 apt-get clean
