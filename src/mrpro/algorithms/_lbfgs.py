@@ -20,7 +20,7 @@ from mrpro.operators import Operator
 
 
 def lbfgs(
-    f: Operator,
+    f: Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]],
     params: list,
     lr: float = 1.0,
     max_iter: int = 100,

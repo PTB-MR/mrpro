@@ -19,7 +19,7 @@ from mrpro.operators import Operator
 
 
 def adam(
-    f: Operator,
+    f: Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]],
     params: list,
     max_iter: int,
     lr: float = 1e-3,

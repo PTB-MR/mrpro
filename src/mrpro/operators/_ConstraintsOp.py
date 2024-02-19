@@ -19,7 +19,7 @@ import torch.nn.functional as F
 from mrpro.operators import Operator
 
 
-class ConstraintsOp(Operator):
+class ConstraintsOp(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]]):
     """Transformation to map real-valued tensors to certain ranges."""
 
     def __init__(
