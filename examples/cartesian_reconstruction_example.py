@@ -58,7 +58,7 @@ while attempt <= max_attempts:
         print(f'Download failed! Attempt {attempt} of {max_attempts}')
         attempt += 1
 
-if attempt > max_attempts:
+else:
     # Abort after reaching the maximum number of attempts
     raise ConnectionError('Zenodo download failed after 3 attempts!')
 
