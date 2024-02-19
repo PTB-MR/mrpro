@@ -64,7 +64,7 @@ class ConstraintsOp(Operator):
     def softplus(x: torch.Tensor, beta: int = 1) -> torch.Tensor:
         """Constrain x to be in (bound,infty)."""
 
-        return F.softplus(x, beta=beta)
+        return -(1 / beta) * torch.nn.functional.logsigmoid(-beta * x)
 
     @staticmethod
     def softplus_inverse(x: torch.Tensor, beta: int = 1) -> torch.Tensor:
@@ -72,7 +72,7 @@ class ConstraintsOp(Operator):
 
         return beta * x + torch.log(-torch.expm1(-beta * x))
 
-    def forward(self, x: tuple[torch.Tensor, ...]) -> tuple[torch.Tensor, ...]:
+    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Transform tensors to chosen range.
 
         Parameters
@@ -108,7 +108,7 @@ class ConstraintsOp(Operator):
 
         return tuple(xc)
 
-    def inverse(self, xc: tuple[torch.Tensor, ...]) -> tuple[torch.Tensor, ...]:
+    def inverse(self, *xc: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Reverses the variable transformation.
 
         Parameters

@@ -15,9 +15,11 @@
 import torch
 from torch.optim import Adam
 
+from mrpro.operators import Operator
+
 
 def adam(
-    f,
+    f: Operator,
     params: list,
     max_iter: int,
     lr: float = 1e-3,
@@ -73,7 +75,7 @@ def adam(
 
     # define Adam routine
     optim = Adam(
-        params=params,
+        params=[p.detach().clone().requires_grad_(True) for p in params],
         lr=lr,
         betas=betas,
         eps=eps,

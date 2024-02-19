@@ -23,15 +23,15 @@ from tests.operators._OptimizationTestFunctions import Rosenbrock
 
 
 @pytest.mark.parametrize(
-    'optimizer_name, bounds_flag',
+    'optimizer, bounds_flag',
     [
-        ('adam', 0),
-        ('adam', 1),
-        ('lbfgs', 0),
-        ('lbfgs', 1),
+        (adam, False),
+        (adam, True),
+        (lbfgs, False),
+        (lbfgs, True),
     ],
 )
-def test_optimizers_rosenbrock(optimizer_name, bounds_flag):
+def test_optimizers_rosenbrock(optimizer, bounds_flag):
 
     # TODO: currently required locally; check if required on GitHub;
     with pytest.raises(ImportWarning):
@@ -39,19 +39,15 @@ def test_optimizers_rosenbrock(optimizer_name, bounds_flag):
         random_generator = RandomGenerator(seed=0)
 
         # generate two-dimensional test data
-        x1 = random_generator.float32_tensor(size=(1,))
-        x2 = random_generator.float32_tensor(size=(1,))
-
-        # enable gradient calculation
-        x1.requires_grad = True
-        x2.requires_grad = True
+        x1 = torch.tensor([42.0])
+        x2 = torch.tensor([3.14])
         params_init = [x1, x2]
 
         # define Rosenbrock function
         a, b = 1, 100
         rosen_brock = Rosenbrock(a, b)
 
-        # set
+        # possibly set constraints
         cop = ConstraintsOp(bounds=((-1, 1),)) if bounds_flag else None
 
         def f(x):  # TODO: Use @ later
@@ -60,11 +56,6 @@ def test_optimizers_rosenbrock(optimizer_name, bounds_flag):
         # hyperparams for optimizer
         lr = 1e-2
         max_iter = 250
-
-        if optimizer_name == 'adam':
-            optimizer = adam
-        elif optimizer_name == 'lbfgs':
-            optimizer = lbfgs
 
         # minimizer of Rosenbrock function
         analytical_sol = torch.tensor([a, a**2])
@@ -77,4 +68,8 @@ def test_optimizers_rosenbrock(optimizer_name, bounds_flag):
             lr=lr,
         )
 
+        # test if the obtained solution is close to the analytical
         torch.testing.assert_close(torch.tensor(params_result), analytical_sol)
+
+        # test if the optimizer didn't change the initialization but returned copies
+        not torch.testing.assert_close(torch.tensor(params_result), torch.tensor(params_init))

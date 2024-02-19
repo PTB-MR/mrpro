@@ -16,9 +16,11 @@
 import torch
 from torch.optim import LBFGS
 
+from mrpro.operators import Operator
+
 
 def lbfgs(
-    f,
+    f: Operator,
     params: list,
     lr: float = 1.0,
     max_iter: int = 100,
@@ -68,7 +70,7 @@ def lbfgs(
 
     # define lbfgs routine
     optim = LBFGS(
-        params,
+        params=[p.detach().clone().requires_grad_(True) for p in params],
         lr=lr,
         history_size=history_size,
         max_iter=max_iter,

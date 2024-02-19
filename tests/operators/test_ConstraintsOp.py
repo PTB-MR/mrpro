@@ -39,7 +39,7 @@ def test_constraints_operator_bounds(bounds):
     Cop = ConstraintsOp(bounds)
 
     # transform tensor to be component-wise in the range defined by bounds
-    (cx,) = Cop((x,))
+    (cx,) = Cop(x)
     ((a, b),) = bounds
 
     # check if min/max values of transformed tensor
@@ -73,10 +73,10 @@ def test_constraints_operator_inverse(bounds):
     Cop = ConstraintsOp(bounds)
 
     # transform tensor to be component-wise in the range defined by bounds
-    (cx,) = Cop((x,))
+    (cx,) = Cop(x)
 
     # reverse transformation and check for equality
-    (xx,) = Cop.inverse((cx,))
+    (xx,) = Cop.inverse(cx)
     torch.testing.assert_close(xx, x)
 
 
@@ -101,8 +101,48 @@ def test_constraints_operator_no_nans(bounds):
     Cop = ConstraintsOp(bounds)
 
     # transform tensor to be component-wise in the range defined by bounds
-    (cx,) = Cop((x,))
+    (cx,) = Cop(x)
 
     # reverse transformation and check if no nans are returned
-    (xx,) = Cop.inverse((cx,))
+    (xx,) = Cop.inverse(cx)
     assert not torch.isnan(xx).any()
+
+
+@pytest.mark.parametrize(
+    'bounds',
+    [
+        (
+            (None, None),
+            (1.0, None),
+            (None, 1.0),
+        ),
+    ],
+)
+def test_constraints_operator_multiple_inputs(bounds):
+
+    random_generator = RandomGenerator(seed=0)
+
+    # random tensors with arbitrary values
+    x1 = random_generator.float32_tensor(size=(36, 72), low=-1, high=1)
+    x2 = random_generator.float32_tensor(size=(36, 72), low=-1, high=1)
+    x3 = random_generator.float32_tensor(size=(36, 72), low=-1, high=1)
+
+    # define constraints operator using the bounds
+    Cop = ConstraintsOp(bounds)
+
+    # transform tensor to be component-wise in the range defined by bounds
+    (
+        cx1,
+        cx2,
+        cx3,
+    ) = Cop(x1, x2, x3)
+
+    # reverse transformation and check if no nans are returned
+    (
+        xx1,
+        xx2,
+        xx3,
+    ) = Cop.inverse(cx1, cx2, cx3)
+    torch.testing.assert_close(xx1, x1)
+    torch.testing.assert_close(xx2, x2)
+    torch.testing.assert_close(xx3, x3)
