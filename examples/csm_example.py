@@ -66,7 +66,7 @@ op = FourierOp(
 idata = IData.from_tensor_and_kheader(xcoils, data.header)
 
 smoothing_width = SpatialDimension(z=1, y=5, x=5)
-csm = CsmData.from_idata_inati(data=idata.data.squeeze(), ks=1, power=1)
+csm = CsmData.from_idata_inati(idata=idata, ks=1, power=1)
 sensitivity_op = SensitivityOp(csm)
 (x,) = sensitivity_op.H(xcoils)
 # %%
@@ -76,3 +76,4 @@ for i in image:
     print(i.shape)
     plt.matshow(torch.abs(i))
     break
+# %%
