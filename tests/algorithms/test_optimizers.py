@@ -34,42 +34,42 @@ from tests.operators._OptimizationTestFunctions import Rosenbrock
 def test_optimizers_rosenbrock(optimizer, bounds_flag):
 
     # TODO: currently required locally; check if required on GitHub;
-    with pytest.raises(ImportWarning):
+    # with pytest.raises(ImportWarning):
 
-        random_generator = RandomGenerator(seed=0)
+    random_generator = RandomGenerator(seed=0)
 
-        # generate two-dimensional test data
-        x1 = torch.tensor([42.0])
-        x2 = torch.tensor([3.14])
-        params_init = [x1, x2]
+    # generate two-dimensional test data
+    x1 = torch.tensor([42.0])
+    x2 = torch.tensor([3.14])
+    params_init = [x1, x2]
 
-        # define Rosenbrock function
-        a, b = 1, 100
-        rosen_brock = Rosenbrock(a, b)
+    # define Rosenbrock function
+    a, b = 1, 100
+    rosen_brock = Rosenbrock(a, b)
 
-        # possibly set constraints
-        cop = ConstraintsOp(bounds=((-1, 1),)) if bounds_flag else None
+    # possibly set constraints
+    cop = ConstraintsOp(bounds=((-1, 1),)) if bounds_flag else None
 
-        def f(x):  # TODO: Use @ later
-            return rosen_brock(x) if cop is None else rosen_brock(cop(x))
+    def f(x):  # TODO: Use @ later
+        return rosen_brock(x) if cop is None else rosen_brock(cop(x))
 
-        # hyperparams for optimizer
-        lr = 1e-2
-        max_iter = 250
+    # hyperparams for optimizer
+    lr = 1e-2
+    max_iter = 250
 
-        # minimizer of Rosenbrock function
-        analytical_sol = torch.tensor([a, a**2])
+    # minimizer of Rosenbrock function
+    analytical_sol = torch.tensor([a, a**2])
 
-        # estimate minimizer
-        params_result = optimizer(
-            f,
-            params_init,
-            max_iter=max_iter,
-            lr=lr,
-        )
+    # estimate minimizer
+    params_result = optimizer(
+        f,
+        params_init,
+        max_iter=max_iter,
+        lr=lr,
+    )
 
-        # test if the obtained solution is close to the analytical
-        torch.testing.assert_close(torch.tensor(params_result), analytical_sol)
+    # test if the obtained solution is close to the analytical
+    torch.testing.assert_close(torch.tensor(params_result), analytical_sol)
 
-        # test if the optimizer didn't change the initialization but returned copies
-        not torch.testing.assert_close(torch.tensor(params_result), torch.tensor(params_init))
+    # test if the optimizer didn't change the initialization but returned copies
+    not torch.testing.assert_close(torch.tensor(params_result), torch.tensor(params_init))
