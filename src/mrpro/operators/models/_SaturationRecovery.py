@@ -32,7 +32,7 @@ class SaturationRecovery(Operator):
 
         Parameters
         ----------
-            Quantitative parameters m0, t1 with dimensions (other, c, z, y, x)
+            Quantitative parameters m0, t1 with dimensions: (other, c, z, y, x)
 
         Returns
         -------
