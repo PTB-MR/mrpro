@@ -244,9 +244,7 @@ traitlets==5.14.0
 triton==2.2.0
     # via torch
 typing-extensions==4.8.0
-    # via
-    #   torch
-    #   xsdata
+    # via torch
 urllib3==2.1.0
     # via requests
 wcwidth==0.2.12
@@ -255,8 +253,10 @@ wget==3.2
     # via zenodo-get
 wheel==0.42.0
     # via pip-tools
-xsdata==23.8
-    # via ismrmrd
+xsdata==22.12
+    # via
+    #   ismrmrd
+    #   mrpro (pyproject.toml)
 zenodo-get==1.5.1
     # via mrpro (pyproject.toml)
 
