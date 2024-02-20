@@ -223,7 +223,7 @@ def test_KData_rearrange_k2_k1_into_k1(consistently_shaped_kdata):
     nother, ncoils, nk2, nk1, nk0 = consistently_shaped_kdata.data.shape
 
     # Combine data
-    kdata_combined = consistently_shaped_kdata.rearrange_k2_k1_into_k1()
+    kdata_combined = KData.rearrange_k2_k1_into_k1(consistently_shaped_kdata)
 
     # Verify shape of k-space data
     assert kdata_combined.data.shape == (nother, ncoils, 1, nk2 * nk1, nk0)
@@ -255,7 +255,7 @@ def test_KData_split_k1_into_other(consistently_shaped_kdata, monkeypatch, nothe
     idx_split = split_idx(idx_k1, ni_per_block)
 
     # Split data
-    kdata_split = consistently_shaped_kdata.split_k1_into_other(idx_split, other_label)
+    kdata_split = KData.split_k1_into_other(consistently_shaped_kdata, idx_split, other_label)
 
     # Verify shape of k-space data
     assert kdata_split.data.shape == (idx_split.shape[0] * nother, ncoils, nk2, ni_per_block, nk0)
@@ -289,7 +289,7 @@ def test_KData_split_k2_into_other(consistently_shaped_kdata, monkeypatch, nothe
     idx_split = split_idx(idx_k2, ni_per_block)
 
     # Split data
-    kdata_split = consistently_shaped_kdata.split_k2_into_other(idx_split, other_label)
+    kdata_split = KData.split_k2_into_other(consistently_shaped_kdata, idx_split, other_label)
 
     # Verify shape of k-space data
     assert kdata_split.data.shape == (idx_split.shape[0] * nother, ncoils, ni_per_block, nk1, nk0)
@@ -317,7 +317,7 @@ def test_KData_select_other_subset(consistently_shaped_kdata, monkeypatch, subse
     monkeypatch.setattr(consistently_shaped_kdata.header.acq_info.idx, subset_label, iother)
 
     # Select subset of data
-    kdata_subset = consistently_shaped_kdata.select_other_subset(subset_idx, subset_label)
+    kdata_subset = KData.select_other_subset(consistently_shaped_kdata, subset_idx, subset_label)
 
     # Verify shape of data
     assert kdata_subset.data.shape == (subset_idx.shape[0], ncoil, nk2, nk1, nk0)
