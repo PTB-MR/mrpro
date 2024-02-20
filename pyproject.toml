@@ -31,6 +31,7 @@ dependencies = [
     "numpy>=1.23,<2.0",
     "torch>=2.2,<3.0",
     "ismrmrd",
+    "xsdata>=22.2,<23",
     "einops",
     "pydicom",
     "pypulseq@git+https://github.com/imr-framework/pypulseq",
