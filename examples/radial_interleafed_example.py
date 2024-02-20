@@ -1,16 +1,13 @@
 # %% [markdown]
-# # Basic example for reconstruction of radial interleafed sampled data
-# This notebook is meant as a first introduction inot mrpro-based
-# reconstruction of radial interleafed data.
+# # Basic example for reconstruction of radial interleaved sampled data
+# This notebook is meant as a first introduction into mrpro-based
+# reconstruction of radial interleaved data.
 # %%
-import subprocess
 import tempfile
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import nibabel as nib
-import numpy as np
-import torch
+import zenodo_get
 
 from mrpro.data import CsmData
 from mrpro.data import IData
@@ -21,54 +18,27 @@ from mrpro.data.traj_calculators._KTrajectoryRadial2D import KTrajectoryRadial2D
 from mrpro.operators import SensitivityOp
 from mrpro.operators._FourierOp import FourierOp
 
-# %%
-
-# flag for conversion and saving nifty files
-# If you wish to save the resulting reconstructed image as a nifty fily, set  NIFTI = "True"
-NIFTI = False
-
 # %% [markdown]
 
 # # Download example data
 # The example data is taken from (https://zenodo.org/records/10669837).
-# It entails data acquired using radial-interleafed sequences written in pulseq.
+# It entails data acquired using radial-interleaved sequences written in pulseq.
 # %%
 # Create a temporary directory to save the downloaded files
 data_folder = Path(tempfile.mkdtemp())
 print(f'Data will be saved to: {data_folder}')
 
-# Initialize attempt counter and set maximum number of attempts
-attempt = 1
-max_attempts = 5
-
-# Start the download process
-while attempt <= max_attempts:
-    # Zenodo command for downloading
-    zenodo_cmd = f'zenodo_get 10.5281/zenodo.10664974 -o {str(data_folder)}'
-
-    # Execute the Zenodo command
-    out = subprocess.call(zenodo_cmd, shell=True)
-
-    # Check if the download was successful
-    if out == 0:
-        print('Download successful.')
-        break
-    else:
-        print(f'Download failed! Attempt {attempt} of {max_attempts}')
-        attempt += 1
-
-if attempt > max_attempts:
-    # Abort after reaching the maximum number of attempts
-    raise ConnectionError('Zenodo download failed after 3 attempts!')
+DATASET = '10664974'
+data_folder = Path(tempfile.mkdtemp())
+zenodo_get.zenodo_get([DATASET, '-r', 5, '-o', data_folder])  # r: retries
 
 # %%
 filepath = data_folder
-seq_filename = '20240130_CEST_interleafed_radial_256px_fov256_8mm_50spokes_100ms.seq'
 h5_filename = 'meas_MID00044_FID00370_20240130_CEST_interleafed_radial_256px_fov256_8mm_50spokes_100m.h5'
 # %% [markdown]
 # # Read in data
 # Data is read in using the downloaded .h5 file and a corresponding
-# trajectory calculator (cartesian in this case). Given the trajectory
+# trajectory calculator (2D Golden radial in this case). Given the trajectory
 # calculator, mrpro will automatically read, sort and validate the data.
 # %%
 data = KData.from_file(
@@ -81,9 +51,6 @@ data = KData.from_file(
 # with which the appropriate Fourier Transform is carried out.
 # Furthermore, density compensation and coil sensitivity maps are created to
 # control for varying coil sensitivities ad densities throughout the scan.
-# %%
-# Densitiy compensation
-dcf = DcfData.from_traj_voronoi(traj=data.traj)
 
 # %%
 # perform FT and CSM
@@ -93,33 +60,23 @@ ft_op = FourierOp(
     traj=data.traj,
     oversampling=SpatialDimension(1, 1, 1),
 )
+
+# %%
+# Density compensation
+dcf = DcfData.from_traj_voronoi(traj=data.traj)
+
+# %%
+# Calculate Coil sensitivity maps
 (xcoils,) = ft_op.H(data.data * dcf.data)
 idata = IData.from_tensor_and_kheader(xcoils, data.header)
 
 smoothing_width = SpatialDimension(z=1, y=5, x=5)
 csm = CsmData.from_idata_walsh(idata, smoothing_width)
 sensitivity_op = SensitivityOp(csm)
-(x,) = sensitivity_op.H(xcoils)
+(image,) = sensitivity_op.H(xcoils)
 
 # %% [markdown]
 # # See the results
 # %%
-image = x.abs().square().sum(1).sqrt()
-image = image.squeeze()
-for i in image:
-    print(i.shape)
-    plt.matshow(torch.abs(i))
-    break
-# %% [markdown]
-# # Save reconstructed images
-# In case you would like to save the reconstructed images,
-# set the NIFTI flag at the top to True
+plt.matshow(image.abs()[0, 0, 0, :, :])  # plotting single slice
 # %%
-if NIFTI:
-    image = image.swapaxes(0, 2)
-    rotated = np.rot90(image.numpy(), 3)
-    ni_img = nib.Nifti1Image(np.abs(image.numpy()), affine=np.eye(4))
-    nib.save(
-        ni_img,
-        f'{filepath}/{h5_filename.split(".")[0]}/.nii',
-    )
