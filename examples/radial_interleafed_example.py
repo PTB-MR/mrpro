@@ -49,8 +49,7 @@ data = KData.from_file(
 # # Reconstruction
 # Given the loaded data, the Fourier Operator is initialized next,
 # with which the appropriate Fourier Transform is carried out.
-# Furthermore, density compensation and coil sensitivity maps are created to
-# control for varying coil sensitivities ad densities throughout the scan.
+# Furthermore, density compensation and coil sensitivity maps are created.
 
 # %%
 # perform FT and CSM
