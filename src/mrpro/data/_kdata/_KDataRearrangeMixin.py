@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 from einops import rearrange
 
 if TYPE_CHECKING:
-    from mrpro.data import KData
+    from mrpro.data._kdata._KData import KDataProtocol
 
 from mrpro.utils import modify_acq_info
 
@@ -27,10 +27,7 @@ from mrpro.utils import modify_acq_info
 class KDataRearrangeMixin:
     """Rearrange KData."""
 
-    @staticmethod
-    def rearrange_k2_k1_into_k1(
-        kdata: KData,
-    ) -> KData:
+    def rearrange_k2_k1_into_k1(self: KDataProtocol) -> KDataProtocol:
         """Rearrange kdata from (... k2 k1 ...) to (... 1 (k2 k1) ...).
 
         Parameters
@@ -44,13 +41,13 @@ class KDataRearrangeMixin:
         """
 
         # Rearrange data
-        kdat = rearrange(kdata.data, '... coils k2 k1 k0->... coils 1 (k2 k1) k0')
+        kdat = rearrange(self.data, '... coils k2 k1 k0->... coils 1 (k2 k1) k0')
 
         # Rearrange trajectory
-        ktraj = rearrange(kdata.traj.as_tensor(), 'dim ... k2 k1 k0-> dim ... 1 (k2 k1) k0')
+        ktraj = rearrange(self.traj.as_tensor(), 'dim ... k2 k1 k0-> dim ... 1 (k2 k1) k0')
 
         # Create new header with correct shape
-        kheader = copy.deepcopy(kdata.header)
+        kheader = copy.deepcopy(self.header)
 
         # Update shape of acquisition info index
         def reshape_acq_info(info):
@@ -58,4 +55,4 @@ class KDataRearrangeMixin:
 
         kheader.acq_info = modify_acq_info(reshape_acq_info, kheader.acq_info)
 
-        return type(kdata)(kheader, kdat, type(kdata.traj).from_tensor(ktraj))
+        return type(self)(kheader, kdat, type(self.traj).from_tensor(ktraj))

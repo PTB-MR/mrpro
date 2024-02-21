@@ -20,7 +20,7 @@ from typing import Literal
 import torch
 
 if TYPE_CHECKING:
-    from mrpro.data import KData
+    from mrpro.data._kdata._KData import KDataProtocol
 
 from mrpro.utils import modify_acq_info
 
@@ -28,12 +28,11 @@ from mrpro.utils import modify_acq_info
 class KDataSelectMixin:
     """Select subset of KData."""
 
-    @staticmethod
     def select_other_subset(
-        kdata: KData,
+        self: KDataProtocol,
         subset_idx: torch.Tensor,
         subset_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
-    ) -> KData:
+    ) -> KDataProtocol:
         """Select a subset from the other dimension of KData.
 
         Parameters
@@ -55,8 +54,8 @@ class KDataSelectMixin:
             If the subset indices are not available in the data
         """
         # Make a copy such that the original kdata.header remains the same
-        kheader = copy.deepcopy(kdata.header)
-        ktraj = kdata.traj.as_tensor()
+        kheader = copy.deepcopy(self.header)
+        ktraj = self.traj.as_tensor()
 
         # Verify that the subset_idx is available
         label_idx = getattr(kheader.acq_info.idx, subset_label)
@@ -73,10 +72,10 @@ class KDataSelectMixin:
         kheader.acq_info = modify_acq_info(select_acq_info, kheader.acq_info)
 
         # Select data
-        kdat = kdata.data[other_idx, ...]
+        kdat = self.data[other_idx, ...]
 
         # Select ktraj
         if ktraj.shape[1] > 1:
             ktraj = ktraj[:, other_idx, ...]
 
-        return type(kdata)(kheader, kdat, type(kdata.traj).from_tensor(ktraj))
+        return type(self)(kheader, kdat, type(self.traj).from_tensor(ktraj))

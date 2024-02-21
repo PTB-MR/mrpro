@@ -17,6 +17,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 from pathlib import Path
+from typing import Protocol
 
 import h5py
 import ismrmrd
@@ -59,6 +60,33 @@ DEFAULT_IGNORE_FLAGS = (
     | AcqFlags.ACQ_IS_PHASE_STABILIZATION_REFERENCE
     | AcqFlags.ACQ_IS_PARALLEL_CALIBRATION
 )
+
+
+class KDataProtocol(Protocol):
+    """Protocol for KData."""
+
+    @property
+    def header(self) -> KHeader:
+        """Useless docstring to pass pydocstyle."""
+        ...
+
+    @property
+    def data(self) -> torch.Tensor:
+        """Useless docstring to pass pydocstyle."""
+        ...
+
+    @property
+    def traj(self) -> KTrajectory:
+        """Useless docstring to pass pydocstyle."""
+        ...
+
+    def __init__(self, header: KHeader, data: torch.Tensor, traj: KTrajectory):
+        """Useless docstring to pass pydocstyle."""
+        ...
+
+    def _split_k2_or_k1_into_other(self, split_idx: torch.Tensor, other_label: str, split_dir: str) -> KDataProtocol:
+        """Useless docstring to pass pydocstyle."""
+        ...
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
