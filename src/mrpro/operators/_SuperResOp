@@ -24,6 +24,26 @@ from scipy.spatial.transform import Rotation
 from mrpro.operators import LinearOperator
 
 
+def show_3D(vol, axs_proj, title = '', idx_slice = None):
+    shape_vol = vol.shape
+    if axs_proj == 0:
+        idx_slice = shape_vol[0]//2 if idx_slice is None else idx_slice
+        img = vol[idx_slice]
+    elif axs_proj == 1:
+        idx_slice = shape_vol[1]//2 if idx_slice is None else idx_slice
+
+        img = vol[:,idx_slice]
+    elif axs_proj == 2:
+        idx_slice = shape_vol[2]//2 if idx_slice is None else idx_slice
+        img = vol[:,:,idx_slice]
+    else:
+        raise Exception()
+
+    plt.matshow(img)
+    if title == '':
+        title = 'img'
+    plt.title(title+'_proj'+str(axs_proj))
+
 class SuperResOp(LinearOperator):
     """Super resolution operator class."""
 
@@ -100,7 +120,6 @@ class SuperResOp(LinearOperator):
         pos = torch.stack(pos_xy + pos_z, dim=-1)
         pos = pos + offset_slicePos #slice position is actually set according to offset
 
-        plt.imshow(pos)
 
         if rotation_center is None:
             # default rotation center is the center of the volume, i.e. for 4 pixels
@@ -317,10 +336,10 @@ class SuperResOp(LinearOperator):
 
 class Settings_superRes:
     def __init__(self) -> None:
-        self.R = Rotation.from_euler('xyz', [0, 0, 45], degrees=True)
+        self.R = Rotation.from_euler('xyz', [0, 0, 0], degrees=True)
         self.slice_center = torch.tensor([0, 0, 0])
-        self.input_shape = (64, 64, 64)
-        self.offset = torch.tensor([0, 0, 0])
+        self.input_shape = (96, 96, 96)
+        self.offset = torch.tensor([0, 0, 30])
         self.sigma = 1
 
     def sliceProf(self, distance_z):
@@ -346,11 +365,19 @@ def simulHR(flag_show = True):
         plt.matshow(img_square)
         plt.title('img_square')
     return square_vol
-vol_HR = simulHR(flag_show = True)
+
+#vol_HR = simulHR(flag_show = True)
+#vol_HR_exp = vol_HR.unsqueeze(0).unsqueeze(0).expand(-1, 2, -1, -1, -1)
 
 
-vol_HR_exp = vol_HR.unsqueeze(0).unsqueeze(0).expand(-1, 2, -1, -1, -1)
-slice_LR = srr_op.forward(vol_HR_exp)
+vol_XCAT_HR = torch.tensor(np.load('/../../echo/allgemein/projects/hufnag01/forMrPro/xcatRef.npy')[16:112, :,:96])
+
+for idx_proj in range(3):
+    show_3D(vol_XCAT_HR, axs_proj = idx_proj, title = 'XCAT_HR')
+
+vol_XCAT_HR = vol_XCAT_HR.unsqueeze(0).unsqueeze(0).expand(-1, 2, -1, -1, -1)
+
+slice_LR = srr_op.forward(vol_XCAT_HR)
 print(slice_LR.shape)
 
 plt.matshow(slice_LR[0, 0, 0, ...])
