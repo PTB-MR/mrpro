@@ -1,0 +1,11 @@
+ARG BASE_IMAGE=ubuntu:22.04
+FROM ${BASE_IMAGE} as base
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+ARG PYTHON="python3.11"
+
+# install python and dependencies
+COPY reco.sh .
+RUN bash reco.sh
+RUN rm reco.sh

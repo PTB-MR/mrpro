@@ -3,6 +3,8 @@ FROM ${BASE_IMAGE} as base
 
 ARG DEBIAN_FRONTEND=noninteractive
 
+ARG PYTHON="python3.12"
+
 # install python and dependencies
 COPY reco.sh .
 RUN bash reco.sh

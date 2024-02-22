@@ -13,10 +13,10 @@ jobs:
       contents: write
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
+        containerpython-version: ["docker://ckolbptb/mrpro_py311:latest", "docker://ckolbptb/mrpro_py312:latest"]
     # runs within Docker container
     container:
-      image: docker://ckolbptb/mrpro_py311:latest
+      image: ${{ matrix.container-python-version }}
 
     steps:
       - name: Checkout repo
@@ -24,7 +24,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
+          python --version
           python -m pip install .[test]
 
       - name: Install pytest-github-actions-annotate-failures plugin
