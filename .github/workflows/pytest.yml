@@ -13,7 +13,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        containerpython-version: ["docker://ckolbptb/mrpro_py311:latest", "docker://ckolbptb/mrpro_py312:latest"]
+        container-python-version: ["docker://ckolbptb/mrpro_py311:latest", "docker://ckolbptb/mrpro_py312:latest"]
     # runs within Docker container
     container:
       image: ${{ matrix.container-python-version }}
