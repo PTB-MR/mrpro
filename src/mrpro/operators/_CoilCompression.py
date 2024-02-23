@@ -1,8 +1,9 @@
-from mrpro.data import Data
-from mrpro.operators import LinearOperator
+import einops
 import numpy as np
 import torch
-import einops
+
+from mrpro.data import Data
+from mrpro.operators import LinearOperator
 
 
 class CoilCompression(LinearOperator):
@@ -20,7 +21,6 @@ class CoilCompression(LinearOperator):
         separate_dim, optional
             tuple of dimensions to construct separate compression matrices for.
             None means one global compression matrix for all (but the coil) dimensions.
-
         """
         super().__init__()
         if isinstance(data, Data):
@@ -35,7 +35,7 @@ class CoilCompression(LinearOperator):
             # reshape to (*separate dimensions, -1, coils)
             separate_dims_normalized = [d.ndim + i if i < 0 else i for i in separate_dims]
             if coil_dimension in separate_dims_normalized:
-                raise ValueError("coil dimension must not be in separate_dims")
+                raise ValueError('coil dimension must not be in separate_dims')
             permute = (
                 separate_dims_normalized
                 + [i for i in range(d.ndim) if i != coil_dimension and i not in separate_dims_normalized]

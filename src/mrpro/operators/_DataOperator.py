@@ -8,9 +8,10 @@ from mrpro.operators import Operator
 
 
 class DataOperator(torch.nn.Module):
-    """Apply operator to the .data of a Data object
+    """Apply operator to the .data of a Data object.
 
-    returns a new Data object with the result of the operator applied to the .data
+    returns a new Data object with the result of the operator applied to
+    the .data
 
     # TODO: THIS IS ONLY FOR TESTING, REMOVE LATER
 
@@ -20,7 +21,7 @@ class DataOperator(torch.nn.Module):
     """
 
     def __init__(self, Operator: Operator[torch.Tensor, tuple[torch.Tensor,]], returntype: type[Data] | None = None):
-        """Initialize the DataOperator
+        """Initialize the DataOperator.
 
         Parameters
         ----------
@@ -28,14 +29,13 @@ class DataOperator(torch.nn.Module):
             The operator to apply
         returntype
             The type of the Data object to return. If None, the same type as the input is returned.
-
         """
         super().__init__()
         self.Operator = Operator
         self.returntype = returntype
 
     def forward(self, data: Data):
-        """Apply the operator"""
+        """Apply the operator."""
         ret = self.Operator(data.data)
         pref = {
             field.name: deepcopy(getattr(data, field.name))
