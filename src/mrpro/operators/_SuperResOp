@@ -141,10 +141,13 @@ class SuperResOp(LinearOperator):
 
     def __init__(
         self,
+        num_slices_per_stack: int,
+        thickness_slice: int,
+        gap_slices_inHR: float,
+        num_stacks: int,
         input_shape: tuple,
-        R: list[Rotation],
-        offset: list[torch.Tensor],
         w: int,
+        rot_per_stack: list[list[int]],
         slice_function: Callable,
         rotation_center=None,
     ):
@@ -169,8 +172,21 @@ class SuperResOp(LinearOperator):
             Center of rotation, if None the center of the volume is used, i.e. for 4 pixels 0 1 2 3 it is between 1 and 2
         """
 
-        self.num_stacks= len(R)
-        self.slices_per_stack = len(offset)
+        self.num_stacks= num_stacks
+        self.slices_per_stack = num_slices_per_stack
+
+        #calc offsets
+        offset_range = num_slices_per_stack*(thickness_slice+gap_slices_inHR)
+        offsets = np.arange(0,offset_range+1,step =offset_range/num_slices_per_stack)
+        offsets-=np.mean(offsets)
+        offset = []
+        for idx_slice in range(num_slices_per_stack):
+            offset.append(torch.tensor([0, 0, offsets[idx_slice]]))
+        #calc R
+        R = []
+        for idx_stack in range(num_stacks):
+            R.append(Rotation.from_euler('xyz', rot_per_stack[idx_stack], degrees=True))
+
         self.projection_matrix = []
         for idx_stack in range(self.num_stacks):
             matrix_per_stack = []
@@ -313,10 +329,6 @@ class SuperResOp(LinearOperator):
         return matrix
 
 
-
-
-
-
     def forward(self, img_hr: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the projection operatore to high resolution 3d volume.
 
@@ -386,30 +398,25 @@ for idx_proj in range(3):
 
 vol_XCAT_HR = vol_XCAT_HR.unsqueeze(0).unsqueeze(0).expand(-1, 2, -1, -1, -1)
 
-#settings for super resolution using 4 stacks with 5 slices per stack are set and calculated
-#stacks are rotated around the septum (using the septum as rotation axis)
+
 num_slices_per_stack = 5
 gap_slices_inHR = 4
-num_stacks = 4
 thickness_slice = 4
+#stacks are rotated around the septum (using the septum as rotation axis)
 rot_per_stack = [[90,0,  0],[90,  0,45],[90,  0,90],[90,  0,135]]
-offset_range = num_slices_per_stack*(thickness_slice+gap_slices_inHR)
-offsets = np.arange(0,offset_range+1,step =offset_range/num_slices_per_stack)
-offsets-=np.mean(offsets)
-offset_per_stack = []
-for idx_slice in range(num_slices_per_stack):
-    offset_per_stack.append(torch.tensor([0, 0, offsets[idx_slice]]))
-R = []
-for idx_stack in range(num_stacks):
-    R.append(Rotation.from_euler('xyz', rot_per_stack[idx_stack], degrees=True))
+num_stacks = len(rot_per_stack)
 
 settings_sliceProfile = Settings_sliceProfile(sliceThickness=thickness_slice)
 
 srr_op = SuperResOp(input_shape=(96, 96, 96),
-                    R=R,
-                    offset=offset_per_stack,
+                    num_slices_per_stack = num_slices_per_stack,
+                    gap_slices_inHR = gap_slices_inHR,
+                    num_stacks = num_stacks,
+                    thickness_slice = thickness_slice,
+                    rot_per_stack = rot_per_stack,
                     w= 3 * settings_sliceProfile.sigma,
                     slice_function=settings_sliceProfile.sliceProf_rect)
+
 slice_LR = srr_op.forward(vol_XCAT_HR)
 
 for idx_stack in range(num_stacks):
