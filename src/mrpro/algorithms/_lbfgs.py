@@ -20,7 +20,7 @@ from mrpro.operators import Operator
 
 
 def lbfgs(
-    f: Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]],
+    f: Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor]],
     params: list,
     lr: float = 1.0,
     max_iter: int = 100,
@@ -37,7 +37,9 @@ def lbfgs(
     f
         scalar function to be minimized
     params
-        list with parameters to be optimized
+        list with parameters to be optimized.
+        Note that these parameters will not be changed. Instead, we create a copy and
+        leave the initial values untouched.
     lr, optional
         learning rate
     max_iter, optional

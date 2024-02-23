@@ -26,7 +26,7 @@ class ConstraintsOp(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]
         self,
         bounds: tuple[tuple[float | None, float | None], ...],
         beta_sigmoid: float = 1.0,
-        beta_softplus: int = 1,
+        beta_softplus: float = 1.0,
     ) -> None:
         super().__init__()
 
@@ -61,13 +61,13 @@ class ConstraintsOp(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]
         return torch.logit(x) / beta
 
     @staticmethod
-    def softplus(x: torch.Tensor, beta: int = 1) -> torch.Tensor:
+    def softplus(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
         """Constrain x to be in (bound,infty)."""
 
         return -(1 / beta) * torch.nn.functional.logsigmoid(-beta * x)
 
     @staticmethod
-    def softplus_inverse(x: torch.Tensor, beta: int = 1) -> torch.Tensor:
+    def softplus_inverse(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
         """Inverse of 'softplus_transformation."""
 
         return beta * x + torch.log(-torch.expm1(-beta * x))

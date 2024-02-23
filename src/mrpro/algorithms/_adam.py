@@ -1,6 +1,6 @@
 """ADAM for solving non-linear minimization problems."""
 
-# Copyright 2024Physikalisch-Technische Bundesanstalt
+# Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ from mrpro.operators import Operator
 
 
 def adam(
-    f: Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]],
+    f: Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor]],
     params: list,
     max_iter: int,
     lr: float = 1e-3,
@@ -40,7 +40,9 @@ def adam(
     f
         scalar-valued function to be optimized
     params
-        list of parameters to be optimized
+        list of parameters to be optimized.
+        Note that these parameters will not be changed. Instead, we create a copy and
+        leave the initial values untouched.
     lr, optional
         learning rate, by default 1e-3
     betas, optional

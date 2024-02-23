@@ -18,7 +18,7 @@ import torch.nn.functional as F
 from mrpro.operators import Operator
 
 
-class mse_data_discrepancy(Operator[torch.Tensor, tuple[torch.Tensor, ...]]):
+class mse_data_discrepancy(Operator[*tuple[torch.Tensor], tuple[torch.Tensor]]):
     """MSE loss function.
 
         This class implements the function
