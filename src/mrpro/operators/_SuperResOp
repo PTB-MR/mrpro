@@ -142,8 +142,8 @@ class SuperResOp(LinearOperator):
     def __init__(
         self,
         input_shape: tuple,
-        R: Rotation,
-        offset: torch.Tensor,
+        R: list[Rotation],
+        offset: list[torch.Tensor],
         w: int,
         slice_function: Callable,
         rotation_center=None,
@@ -158,9 +158,9 @@ class SuperResOp(LinearOperator):
         input_shape: tuple
             shape of a volume in (x,y,z)
         R: scipy.spatial.transform.Rotation
-            Rotation that describes the orientation of the plane
+            List of rotations of stacks that describes the orientation of the plane
         offset: torch.Tensor
-            Offset of the plane in the volume
+            List of offsets of the slices of the plane in the volume
         w: int
             Factor that determines the number of pixels that are considered in the projection along the slice direction
         slice_function: Callable
@@ -169,14 +169,22 @@ class SuperResOp(LinearOperator):
             Center of rotation, if None the center of the volume is used, i.e. for 4 pixels 0 1 2 3 it is between 1 and 2
         """
 
-        self.projection_matrix = self._generate_matrix(
-            input_shape=input_shape,
-            rot=R,
-            offset_slicePos=offset,
-            length_normal=w,
-            slice_function=slice_function,
-            rotation_center=rotation_center,
-        )
+        self.num_stacks= len(R)
+        self.slices_per_stack = len(offset)
+        self.projection_matrix = []
+        for idx_stack in range(self.num_stacks):
+            matrix_per_stack = []
+            for idx_slice in range(self.slices_per_stack):
+                matrix_per_stack.append(self._generate_matrix(
+                    input_shape=input_shape,
+                    rot=R[idx_stack],
+                    offset_slicePos=offset[idx_slice],
+                    length_normal=w,
+                    slice_function=slice_function,
+                    rotation_center=rotation_center,
+                ))
+
+            self.projection_matrix.append(matrix_per_stack)
 
     def _rotate(self, vector: torch.Tensor, R: Rotation, rotation_center=None, inverse=False):
         """Rotate tensor by scipy Rotation around a rotation center."""
@@ -321,32 +329,33 @@ class SuperResOp(LinearOperator):
         -------
             image data tensor with dimensions (other coils 1 y x) that represents 2d low resolution slice
         """
-
         other, coils, z, y, x = img_hr.shape
-        matrix = self.projection_matrix
 
-        # couldnt find another way to broadcast sparse matrix
-        flattened = einops.rearrange(img_hr, 'other coils z y x -> (other coils) (x y z)')
-        slice = torch.stack([matrix @ flattened[i] for i in range(flattened.shape[0])], dim=0)
-        return einops.rearrange(slice, '(other coils) (x y) -> other coils 1 y x', coils=coils, y=y)
+        list_stacks = []
+        for idx_stack in range(self.num_stacks):
+
+            list_slices = []
+            for idx_slice in range(self.slices_per_stack):
+                matrix = self.projection_matrix
+
+                # couldnt find another way to broadcast sparse matrix
+                flattened = einops.rearrange(img_hr, 'other coils z y x -> (other coils) (x y z)')
+                slice = torch.stack([matrix[idx_stack][idx_slice] @ flattened[i] for i in range(flattened.shape[0])], dim=0)
+                list_slices.append(einops.rearrange(slice, '(other coils) (x y) -> other coils 1 y x', coils=coils, y=y))
+            list_stacks.append(list_slices)
+        return list_stacks
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         return super().adjoint(x)
 
-class Settings_superRes:
+
+class Settings_sliceProfile:
     def __init__(self,
-                 R = None,
-                 slice_center = None,
-                 input_shape = None,
-                 offset = None,
+                 sliceThickness: float,
                  sigma = None,
-                 sliceThickness = None) -> None:
-        self.R = Rotation.from_euler('xyz', [0, 0, 0], degrees=True) if R is None else R
-        self.slice_center = torch.tensor([0, 0, 0]) if slice_center is None else slice_center
-        self.input_shape = (96, 96, 96) if input_shape is None else input_shape
-        self.offset = torch.tensor([0, 0, 30]) if offset is None else offset
+                 ) -> None:
+        self.sliceThickness =  sliceThickness
         self.sigma = 1 if sigma is None else sigma
-        self.sliceThickness = 4 if sliceThickness is None else sliceThickness
 
     def sliceProf(self, distance_z):
         #unit of distance_z: high resolution voxel
@@ -369,7 +378,6 @@ def simulHR(flag_show = True):
 
 #vol_HR = simulHR(flag_show = True)
 #vol_HR_exp = vol_HR.unsqueeze(0).unsqueeze(0).expand(-1, 2, -1, -1, -1)
-
 
 vol_XCAT_HR = torch.tensor(np.load('/../../echo/allgemein/projects/hufnag01/forMrPro/xcatRef.npy')[16:112, :,:96])
 
@@ -395,23 +403,18 @@ R = []
 for idx_stack in range(num_stacks):
     R.append(Rotation.from_euler('xyz', rot_per_stack[idx_stack], degrees=True))
 
-#loop over all stacks and all slices and generate new SuperResOp for each slice
-#apply forward model for each SuperResOp
-# TODO: this should be changed such that th SuperResOp is called once for the whole super resolution configuration
+settings_sliceProfile = Settings_sliceProfile(sliceThickness=thickness_slice)
+
+srr_op = SuperResOp(input_shape=(96, 96, 96),
+                    R=R,
+                    offset=offset_per_stack,
+                    w= 3 * settings_sliceProfile.sigma,
+                    slice_function=settings_sliceProfile.sliceProf_rect)
+slice_LR = srr_op.forward(vol_XCAT_HR)
+
 for idx_stack in range(num_stacks):
     for idx_slice in range(num_slices_per_stack):
-        settings_super = Settings_superRes(offset=offset_per_stack[idx_slice],
-                                           R=R[idx_stack],
-                                           sliceThickness = thickness_slice
-                                           )
-        srr_op = SuperResOp(input_shape=settings_super.input_shape,
-                            R=settings_super.R,
-                            offset=settings_super.offset,
-                            w= 3 * settings_super.sigma,
-                            slice_function=settings_super.sliceProf_rect)
-        slice_LR = srr_op.forward(vol_XCAT_HR)
-
-        plt.matshow(slice_LR[0, 0, 0, ...],
+        plt.matshow(slice_LR[idx_stack][idx_slice][0, 0, 0, ...],
                     cmap = plt.get_cmap("inferno"), vmin = 0, vmax = 1.6)
         plt.title('stack'+str(idx_stack)+'_slice'+str(idx_slice))
 
