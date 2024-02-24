@@ -1,17 +1,14 @@
-name: pre-commit
+name: Pre-Commit
 
 on:
   pull_request:
 
 jobs:
   pre-commit:
-    runs-on: ubuntu-latest
+    container:
+      image: docker://ckolbptb/mrpro_py311:latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip' # caching pip dependencies
       - uses: pre-commit/action@v3.0.1
 
 concurrency:

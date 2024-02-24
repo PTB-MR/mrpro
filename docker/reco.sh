@@ -25,10 +25,10 @@ python -m ensurepip --upgrade
 python -m pip install --upgrade pip
 
 # pre-install cpu-version of torch to avoid installation of cuda-version via requirements.txt
-python -m pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+python -m pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 
 # install mrpro + dependencies
-python -m pip install .[notebook,test]
+python -m pip install .[notebook,test,docs]
 
 # clean up
 rm -r /opt/mrpro
