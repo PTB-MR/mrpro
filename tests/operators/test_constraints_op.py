@@ -146,7 +146,8 @@ def test_constraints_operator_multiple_inputs(bounds):
     'bounds',
     [
         ((1.0, -1.0), (-1.0, 1.0)),  # first one is invalid
-        ((-1.0, 1.0), (1.0, 1.0)),  # second on is invalid
+        ((-1.0, 1.0), (1.0, -1.0)),  # second one is invalid
+        ((1.0, 1.0),),
         ((torch.nan, 1),),
         ((-1, torch.nan),),
         ((torch.inf, -torch.inf),),
