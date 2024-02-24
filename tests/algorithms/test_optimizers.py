@@ -55,9 +55,9 @@ def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1):
         if enforce_bounds_on_x1:
             # the analytical solution for x_1 will be a, thus we can limit it into [0,2a]
             constrain_op = ConstraintsOp(bounds=((0, 2 * a),))
-            functional = rosen_brock @ constrain_op(x)
+            functional = rosen_brock @ constrain_op
         else:
-            functional = rosen_brock(x)
+            functional = rosen_brock
 
         # hyperparams for optimizer
         lr = 1e-2
