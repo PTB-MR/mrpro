@@ -130,6 +130,8 @@ jobs:
     name: 'Build and deploy documentation'
     needs: [convert_scripts, run_notebook]
     runs-on: ubuntu-latest
+    container:
+      image: docker://ckolbptb/mrpro_py311:latest
 
     steps:
     - name: Checkout
@@ -137,16 +139,8 @@ jobs:
       with:
         ref: ${{ needs.convert_scripts.outputs.commit_hash }}
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        cache: 'pip'
-
     - name: Install dependencies
-      run: |
-        pip install --upgrade pip
-        pip install ".[docs]"
+      run: python -m pip install .[docs]
 
     - name: Download notebook hmtl files
       id: download

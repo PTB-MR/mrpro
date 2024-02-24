@@ -46,7 +46,7 @@ def multi_coil_image(num_coils, ph_ellipse, random_kheader):
 def test_CsmData_is_frozen_dataclass(random_test_data, random_kheader):
     """CsmData inherits frozen dataclass property from QData."""
     csm = CsmData(data=random_test_data, header=random_kheader)
-    #with pytest.raises(dataclasses.FrozenInstanceError):
+    # with pytest.raises(dataclasses.FrozenInstanceError):
     csm.data = random_test_data
 
 
