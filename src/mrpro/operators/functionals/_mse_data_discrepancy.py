@@ -19,7 +19,7 @@ from mrpro.operators import Operator
 
 
 class mse_data_discrepancy(Operator[*tuple[torch.Tensor], tuple[torch.Tensor]]):
-    """MSE loss function.
+    """Mean Squared Error (MSE) loss function.
 
         This class implements the function
             1./N * || . - data ||_2^2,
@@ -28,7 +28,7 @@ class mse_data_discrepancy(Operator[*tuple[torch.Tensor], tuple[torch.Tensor]]):
         N.B. if one of data or input is complex-valued, we
         identify the space C^N with R^2N and multiply the output
         by 2. By this, we achieve that for example
-            MSE(1) = MES(1+1j*0) = 1.
+            MSE(1) = MSE(1+1j*0) = 1.
 
     Parameters
     ----------
@@ -36,7 +36,7 @@ class mse_data_discrepancy(Operator[*tuple[torch.Tensor], tuple[torch.Tensor]]):
         observed data
     """
 
-    def __init__(self, data: torch.Tensor) -> None:
+    def __init__(self, data: torch.Tensor):
         super().__init__()
 
         # observed data
@@ -48,20 +48,21 @@ class mse_data_discrepancy(Operator[*tuple[torch.Tensor], tuple[torch.Tensor]]):
         Parameters
         ----------
         x
-            tensor whose mse with respect to data should be calculated
+            tensor whose MSE with respect to the data given at initilization should be calculated
 
         Returns
         -------
-            MSE of the different of the input and the given data
+            Mean Squared Error (MSE) of input and the data
         """
         if torch.is_complex(x) or torch.is_complex(self.data):
-            factor = 2.0
-            x = torch.view_as_real(x) if torch.is_complex(x) else torch.view_as_real(x + 1j * 0)
-            data = (
+            # F.mse_loss is only implemented for real tensors
+            # Thus, we cast both to C and then to R^2
+            # and undo the division by ten twice the number of elements in mse_loss
+            x_R2 = torch.view_as_real(x) if torch.is_complex(x) else torch.view_as_real(x + 1j * 0)
+            data_R2 = (
                 torch.view_as_real(self.data) if torch.is_complex(self.data) else torch.view_as_real(self.data + 1j * 0)
             )
-        else:
-            factor = 1.0
-            data = self.data
-
-        return (factor * F.mse_loss(x, data),)
+            mse = F.mse_loss(x_R2, data_R2) * 2.0
+        else:  # both are real
+            mse = F.mse_loss(x, self.data)
+        return (mse,)

@@ -35,11 +35,12 @@ from mrpro.operators.functionals._mse_data_discrepancy import mse_data_discrepan
     ],
 )
 def test_mse_functional(data, x, expected_mse):
+    """Test if mse_data_discrepancy matches expected values.
 
-    # create mse functional based on data, i.e.
-    # 1/N*|| . - data||_2^2
+    Expected values are supposed to be
+    1/N*|| . - data||_2^2
+    """
+
     mse_dc = mse_data_discrepancy(torch.tensor(data))
-
-    # calculate mse and compared to expected value
     (mse,) = mse_dc(torch.tensor(x))
     torch.testing.assert_close(mse, torch.tensor(expected_mse))

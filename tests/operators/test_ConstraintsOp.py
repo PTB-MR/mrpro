@@ -63,6 +63,7 @@ def test_constraints_operator_bounds(bounds):
     ],
 )
 def test_constraints_operator_inverse(bounds):
+    """Tests if operator inverse inverser the operator."""
 
     random_generator = RandomGenerator(seed=0)
 
@@ -91,6 +92,7 @@ def test_constraints_operator_inverse(bounds):
     ],
 )
 def test_constraints_operator_no_nans(bounds):
+    """Tests if the operator always returns valid values, never nans."""
 
     random_generator = RandomGenerator(seed=0)
 
@@ -131,18 +133,25 @@ def test_constraints_operator_multiple_inputs(bounds):
     Cop = ConstraintsOp(bounds)
 
     # transform tensor to be component-wise in the range defined by bounds
-    (
-        cx1,
-        cx2,
-        cx3,
-    ) = Cop(x1, x2, x3)
+    cx1, cx2, cx3 = Cop(x1, x2, x3)
 
     # reverse transformation and check if no nans are returned
-    (
-        xx1,
-        xx2,
-        xx3,
-    ) = Cop.inverse(cx1, cx2, cx3)
+    xx1, xx2, xx3 = Cop.inverse(cx1, cx2, cx3)
     torch.testing.assert_close(xx1, x1)
     torch.testing.assert_close(xx2, x2)
     torch.testing.assert_close(xx3, x3)
+
+
+@pytest.mark.parametrize(
+    'bounds',
+    [
+        ((1.0, -1.0), (-1.0, 1.0)),  # first one is invalid
+        ((-1.0, 1.0), (1.0, 1.0)),  # second on is invalid
+        ((torch.nan, 1),),
+        ((-1, torch.nan),),
+        ((torch.inf, -torch.inf),),
+    ],
+)
+def test_constraints_operator_illegal_bounds(bounds):
+    with pytest.raises(ValueError, match='invalid'):
+        Cop = ConstraintsOp(bounds)

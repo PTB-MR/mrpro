@@ -22,54 +22,61 @@ from tests import RandomGenerator
 from tests.operators._OptimizationTestFunctions import Rosenbrock
 
 
+@pytest.mark.parametrize('enforce_bounds_on_x1', [True, False])
 @pytest.mark.parametrize(
-    'optimizer, bounds_flag',
+    'optimizer',
     [
-        (adam, False),
-        (adam, True),
-        (lbfgs, False),
-        (lbfgs, True),
+        adam,
+        lbfgs,
     ],
 )
-def test_optimizers_rosenbrock(optimizer, bounds_flag):
+def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1):
 
-    # TODO: currently required; see also issue #132 on GitHub
+    # TODO: remove once fixed in pytorch. see also issue #132 on GitHub
     with pytest.raises(ImportWarning):
 
         random_generator = RandomGenerator(seed=0)
 
-        # generate two-dimensional test data
-        x1 = torch.tensor([42.0])
-        x2 = torch.tensor([3.14])
-        params_init = [x1, x2]
-
-        # define Rosenbrock function
+        # use Rosenbrock function as test case with 2D test data
         a, b = 1, 100
         rosen_brock = Rosenbrock(a, b)
 
-        # possibly set constraints
-        cop = ConstraintsOp(bounds=((-1, 1),)) if bounds_flag else None
+        # initial point of optimization
+        x1 = torch.tensor([42.0])
+        x2 = torch.tensor([3.14])
+        x1.grad = torch.tensor([2.7])
+        x2.grad = torch.tensor([-1])
+        params_init = [x1, x2]
 
-        def f(x):  # TODO: Use @ later
-            return rosen_brock(x) if cop is None else rosen_brock(cop(x))
+        # save to compare with later as optimization should not change the initial points
+        params_init_before = [i.detach().clone for i in params_init]
+        params_init_grad_before = [i.grad.clone() for i in params_init]
+
+        if enforce_bounds_on_x1:
+            # the analytical solution for x_1 will be a, thus we can limit it into [0,2a]
+            constrain_op = ConstraintsOp(bounds=((0, 2 * a),))
+            functional = rosen_brock @ constrain_op(x)
+        else:
+            functional = rosen_brock(x)
 
         # hyperparams for optimizer
         lr = 1e-2
         max_iter = 250
 
         # minimizer of Rosenbrock function
-        analytical_sol = torch.tensor([a, a**2])
+        analytical_solution = torch.tensor([a, a**2])
 
         # estimate minimizer
         params_result = optimizer(
-            f,
+            functional,
             params_init,
             max_iter=max_iter,
             lr=lr,
         )
 
-        # test if the obtained solution is close to the analytical
-        torch.testing.assert_close(torch.tensor(params_result), analytical_sol)
+        # obtained solution should match analytical
+        torch.testing.assert_close(torch.tensor(params_result), analytical_solution)
 
-        # test if the optimizer didn't change the initialization but returned copies
-        not torch.testing.assert_close(torch.tensor(params_result), torch.tensor(params_init))
+        for p, before, grad_before in zip(params_init, params_init_before, params_init_grad_before):
+            assert p == before, 'the initial parameter should not have changed during optimization'
+            assert p.grad == before, 'the inital paramters gradient should not have changed during optimization'

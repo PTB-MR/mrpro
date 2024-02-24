@@ -44,8 +44,8 @@ class ConstraintsOp(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]
         for lb, ub in bounds:
             if (ub is not None and lb is not None) and lb > ub:
                 raise ValueError(
-                    f'bounds should be ( (a1,b1), (a2,b2), ...) with ai<=bi if neither ai or bi is None;\
-                        \nbound tuple {lb,ub} is invalid'
+                    'bounds should be ( (a1,b1), (a2,b2), ...) with ai<=bi if neither ai or bi is None;'
+                    f'\nbound tuple {lb, ub} is invalid'
                 )
 
     @staticmethod
