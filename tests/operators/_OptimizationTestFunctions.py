@@ -19,7 +19,7 @@ from mrpro.operators import Operator
 
 
 # TODO: Consider introducing the concept of a "Functional" for scalar-valued operators
-class Rosenbrock(Operator):
+class Rosenbrock(Operator[torch.Tensor, torch.Tensor, tuple[torch.Tensor,]]):
     def __init__(self, a: float = 1, b: float = 100) -> None:
         super().__init__()
         self.a = a
@@ -31,7 +31,7 @@ class Rosenbrock(Operator):
         return (fval,)
 
 
-class Booth(Operator):
+class Booth(Operator[torch.Tensor, torch.Tensor, tuple[torch.Tensor,]]):
     def __init__(self) -> None:
         super().__init__()
 

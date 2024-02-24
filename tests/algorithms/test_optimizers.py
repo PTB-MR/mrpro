@@ -45,7 +45,7 @@ def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1):
         x1 = torch.tensor([42.0])
         x2 = torch.tensor([3.14])
         x1.grad = torch.tensor([2.7])
-        x2.grad = torch.tensor([-1])
+        x2.grad = torch.tensor([-1.0])
         params_init = [x1, x2]
 
         # save to compare with later as optimization should not change the initial points
