@@ -46,9 +46,7 @@ jobs:
         uses: tj-actions/verify-changed-files@v18
         id: verify-changed-notebooks
         with:
-          files: |
-            ./examples/*.ipynb
-            ./binder/requirements.txt
+          files: ./examples/*.ipynb
 
       - name: Commit notebooks
         if: steps.verify-changed-notebooks.outputs.files_changed == 'true'
