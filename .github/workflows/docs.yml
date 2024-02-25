@@ -115,7 +115,7 @@ jobs:
             TMP=${{ runner.temp }}"/nb-runner"
             echo $TMP
             echo "${TMP:1}" | tr '/' ','
-            mkdir -p . "${TMP:1}" | tr '/' ','
+            mkdir -p /home {runner,work,_temp,nb-runner}
             
       - name: Run notebook
         uses: yaananth/run-notebook@v2
