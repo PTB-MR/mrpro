@@ -9,13 +9,14 @@ on:
 permissions:
     contents: write
 
+defaults:
+    run:
+      shell: bash
+
 jobs:
   convert_scripts:
     name: 'Translate scripts to notebooks'
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
     permissions:
       pull-requests: write
       contents: write
