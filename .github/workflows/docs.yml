@@ -112,7 +112,8 @@ jobs:
         run: |
             echo ${RUNNER_TEMP}
             echo ${{ runner.temp }}
-            echo TMP=${{ runner.temp }}
+            TMP=${{ runner.temp }}
+            echo $TMP
             echo "${TMP:1}" | tr '/' ','
             mkdir -p . "${TMP:1}" | tr '/' ','
             
