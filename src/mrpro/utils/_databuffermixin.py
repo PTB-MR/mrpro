@@ -1,16 +1,19 @@
 from collections import OrderedDict
+
 import torch
-from mrpro.data import Data
+
+from mrpro.data._Data import Data
 
 
 class DataBufferMixin(torch.nn.Module):
-    """A Mixin that allow to set a mrpro.data.Data as a Buffer
+    """A Mixin that allow to set a mrpro.data.Data as a Buffer.
 
-    This implements the same logic for mrpro.Data as torch.nn.Module uses for Buffers,
-    but stores them in a separate dictionary called _data
+    This implements the same logic for mrpro.Data as torch.nn.Module
+    uses for Buffers, but stores them in a separate dictionary called
+    _data
 
-    The main use is to allow Data objects to be automatically moved to a devices etc
-    if one calles, for example DataBufferMixin.cuda()
+    The main use is to allow Data objects to be automatically moved to a
+    devices etc if one calles, for example DataBufferMixin.cuda()
 
     Used in Operators, for example.
     """
@@ -49,9 +52,9 @@ class DataBufferMixin(torch.nn.Module):
             return super().register_buffer(name, data, persistent)
 
         if '_data' not in self.__dict__:
-            raise AttributeError("cannot assign buffer before super().__init__() call")
+            raise AttributeError('cannot assign buffer before super().__init__() call')
         elif not isinstance(name, str):
-            raise TypeError(f"buffer name should be a string. Got {torch.typename(name)}")
+            raise TypeError(f'buffer name should be a string. Got {torch.typename(name)}')
         elif '.' in name:
             raise KeyError("buffer name can't contain \".\"")
         elif name == '':
@@ -74,6 +77,7 @@ class DataBufferMixin(torch.nn.Module):
                 self._data[key] = fn(data)
 
     def __getattr__(self, name: str):
+        """Get Attribute."""
         if '_data' in self.__dict__:
             data = self.__dict__['_data']
             if name in data:
@@ -81,6 +85,7 @@ class DataBufferMixin(torch.nn.Module):
         return super().__getattr__(name)
 
     def __setattr__(self, name: str, value: torch.Tensor | torch.nn.Module | Data) -> None:
+        """Set Attribute."""
         if isinstance(value, Data):
             data = self.__dict__.get('_data')
             if data is not None and name in data:
@@ -90,6 +95,7 @@ class DataBufferMixin(torch.nn.Module):
             return super().__setattr__(name, value)
 
     def __delattr__(self, name):
+        """Delete Attribute."""
         if name in self._data:
             del self._data[name]
             self._non_persistent_buffers_set.discard(name)
