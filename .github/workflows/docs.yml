@@ -113,6 +113,7 @@ jobs:
             echo ${RUNNER_TEMP}
             echo ${{ runner.temp }}
             echo TMP=${{ runner.temp }}
+            echo "${TMP:1}" | tr '/' ','
             mkdir -p . "${TMP:1}" | tr '/' ','
             
       - name: Run notebook
