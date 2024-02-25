@@ -84,13 +84,11 @@ class DataBufferMixin(torch.nn.Module):
                 return data[name]
         return super().__getattr__(name)
 
-    def __setattr__(self, name: str, value: torch.Tensor | torch.nn.Module | Data) -> None:
+    def __setattr__(self, name: str, value) -> None:
         """Set Attribute."""
-        if isinstance(value, Data):
-            data = self.__dict__.get('_data')
-            if data is not None and name in data:
-                # TODO: hooks ?
-                data[name] = value
+        if isinstance(value, Data) and (data := self.__dict__.get('_data')) is not None and name in data:
+            # TODO: hooks ?
+            data[name] = value
         else:
             return super().__setattr__(name, value)
 
