@@ -115,7 +115,7 @@ jobs:
             TMP=${{ runner.temp }}"/nb-runner"
             echo $TMP
             echo "${TMP:1}" | tr '/' ','
-            mkdir -p /home {runner,work,_temp}
+            mkdir -p {home,runner,work,_temp}
             ls ${{ runner.temp }}
             
       - name: Run notebook
