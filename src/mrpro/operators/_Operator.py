@@ -21,12 +21,14 @@ from typing import TypeVarTuple
 
 import torch
 
+from mrpro.utils import DataBufferMixin
+
 Tin = TypeVarTuple('Tin')  # TODO: bind to torch.Tensors
 Tin2 = TypeVarTuple('Tin2')  # TODO: bind to torch.Tensors
 Tout = TypeVar('Tout')  # TODO: bind to torch.Tensor
 
 
-class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
+class Operator(Generic[*Tin, Tout], ABC, DataBufferMixin, torch.nn.Module):
     """The general Operator class."""
 
     @abstractmethod
