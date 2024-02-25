@@ -7,7 +7,7 @@ from mrpro.operators import LinearOperator
 from mrpro.operators import Operator
 
 
-class DummyOperator(Operator):
+class DummyOperator(Operator[torch.Tensor, torch.Tensor]):
     """Dummy operator for testing, raises input to the power of value."""
 
     def __init__(self, value: torch.Tensor):
@@ -16,7 +16,7 @@ class DummyOperator(Operator):
 
     def forward(self, x: torch.Tensor):
         """Dummy operator."""
-        return x**self._value
+        return (x**self._value,)
 
 
 class DummyLinearOperator(LinearOperator):
@@ -28,15 +28,13 @@ class DummyLinearOperator(LinearOperator):
 
     def forward(self, x: torch.Tensor):
         """Dummy linear operator."""
-        return x * 2
+        return (x * self._value,)
 
     def adjoint(self, x: torch.Tensor):
         """Dummy adjoint linear operator."""
-        if x.is_complex():
-            x = x.conj()
         if self._value.is_complex():
-            return x * self._value.conj()
-        return x * self._value
+            return (x * self._value.conj(),)
+        return (x * self._value,)
 
 
 def test_composition_operator():
@@ -44,8 +42,8 @@ def test_composition_operator():
     b = DummyOperator(torch.tensor(3.0))
     c = a @ b
     x = torch.arange(10)
-    y1 = c(x)
-    y2 = a(b(x))
+    (y1,) = c(x)
+    (y2,) = a(*b(x))
 
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator)
@@ -57,8 +55,8 @@ def test_composition_linearoperator():
     b = DummyLinearOperator(torch.tensor(3.0))
     c = a @ b
     x = torch.arange(10)
-    y1 = c(x)
-    y2 = a(b(x))
+    (y1,) = c(x)
+    (y2,) = a(*b(x))
 
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator), 'LinearOperator @ LinearOperator should be an Operator'
@@ -70,8 +68,8 @@ def test_composition_linearoperator_operator():
     b = DummyOperator(torch.tensor(3.0))
     c = a @ b
     x = torch.arange(10)
-    y1 = c(x)
-    y2 = a(b(x))
+    (y1,) = c(x)
+    (y2,) = a(*b(x))
 
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator), 'LinearOperator @ Operator should be an Operator'
@@ -83,8 +81,8 @@ def test_sum_operator():
     b = DummyOperator(torch.tensor(3.0))
     c = a + b
     x = torch.arange(10)
-    y1 = c(x)
-    y2 = a(x) + b(x)
+    (y1,) = c(x)
+    y2 = a(x)[0] + b(x)[0]
 
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator), 'Operator + Operator should be an Operator'
@@ -96,8 +94,8 @@ def test_sum_linearoperator():
     b = DummyLinearOperator(torch.tensor(3.0))
     c = a + b
     x = torch.arange(10)
-    y1 = c(x)
-    y2 = a(x) + b(x)
+    (y1,) = c(x)
+    y2 = a(x)[0] + b(x)[0]
 
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator), 'LinearOperator + LinearOperator should be an Operator'
@@ -109,8 +107,8 @@ def test_sum_linearoperator_operator():
     b = DummyOperator(torch.tensor(3.0))
     c = a + b
     x = torch.arange(10)
-    y1 = c(x)
-    y2 = a(x) + b(x)
+    (y1,) = c(x)
+    y2 = a(x)[0] + b(x)[0]
 
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator), 'LinearOperator + Operator should be an Operator'
@@ -122,8 +120,8 @@ def test_sum_operator_linearoperator():
     b = DummyLinearOperator(torch.tensor(2.0))
     c = a + b
     x = torch.arange(10)
-    y1 = c(x)
-    y2 = a(x) + b(x)
+    (y1,) = c(x)
+    y2 = a(x)[0] + b(x)[0]
 
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator), 'Operator + LinearOperator should be an Operator'
@@ -135,8 +133,8 @@ def test_elementwise_product_operator():
     b = torch.tensor(3.0)
     c = a * b
     x = torch.arange(10)
-    y1 = c(x)
-    y2 = a(x) * b
+    (y1,) = c(x)
+    y2 = a(x)[0] * b
 
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator), 'Operator * scalar should be an Operator'
@@ -148,8 +146,8 @@ def test_elementwise_rproduct_operator():
     b = torch.tensor(3.0)
     c = b * a
     x = torch.arange(10)
-    y1 = c(x)
-    y2 = a(x) * b
+    (y1,) = c(x)
+    y2 = a(x)[0] * b
 
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator), 'Operator * scalar should be an Operator'
@@ -161,8 +159,8 @@ def test_elementwise_product_linearoperator():
     b = torch.tensor(3.0)
     c = a * b
     x = torch.arange(10)
-    y1 = c(x)
-    y2 = a(x) * b
+    (y1,) = c(x)
+    y2 = a(x)[0] * b
 
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator), 'LinearOperator * scalar should be an Operator'
@@ -174,9 +172,42 @@ def test_elementwise_rproduct_linearoperator():
     b = torch.tensor(3.0)
     c = b * a
     x = torch.arange(10)
-    y1 = c(x)
-    y2 = a(x) * b
+    (y1,) = c(x)
+    y2 = a(x)[0] * b
 
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator), 'LinearOperator * scalar should be an Operator'
     assert isinstance(c, LinearOperator), 'LinearOperator * scalar should be a LinearOperator'
+
+
+def test_adjoint_composition_operators():
+    a = DummyLinearOperator(torch.tensor(2.0 + 1j))
+    b = DummyLinearOperator(torch.tensor(3.0 + 2j))
+    u = torch.tensor(4 + 5j)
+    v = torch.tensor(7 + 8j)
+    A = a @ b
+    (Au,) = A(u)
+    (AHv,) = A.H(v)
+    torch.testing.assert_close(Au * v.conj(), u * AHv.conj())
+
+
+def test_adjoint_product():
+    a = DummyLinearOperator(torch.tensor(2.0 + 1j))
+    b = torch.tensor(3.0 + 2j)
+    u = torch.tensor(4 + 5j)
+    v = torch.tensor(7 + 8j)
+    A = a * b
+    (Au,) = A(u)
+    (AHv,) = A.H(v)
+    torch.testing.assert_close(Au * v.conj(), u * AHv.conj())
+
+
+def test_adjoint_sum():
+    a = DummyLinearOperator(torch.tensor(2.0 + 1j))
+    b = DummyLinearOperator(torch.tensor(3.0 + 2j))
+    u = torch.tensor(4 + 5j)
+    v = torch.tensor(7 + 8j)
+    A = a + b
+    (Au,) = A(u)
+    (AHv,) = A.H(v)
+    torch.testing.assert_close(Au * v.conj(), u * AHv.conj())
