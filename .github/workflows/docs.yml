@@ -48,6 +48,7 @@ jobs:
             ls /__w/mrpro/mrpro/
             ls /__w/mrpro/mrpro/.
             cd /__w/mrpro/mrpro/.
+            git config --global --add safe.directory /__w/mrpro/mrpro
             git status
 
       - name: Check if any notebooks have been changed
