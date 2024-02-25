@@ -42,6 +42,14 @@ jobs:
             do jupytext --set-kernel "python3" --update --output ${script//.py/.ipynb} $script
           done
 
+      - name: Check repo
+        run: |
+            pwd
+            ls /__w/mrpro/mrpro/
+            ls /__w/mrpro/mrpro/.
+            cd /__w/mrpro/mrpro/.
+            git status
+
       - name: Check if any notebooks have been changed
         uses: tj-actions/verify-changed-files@v18
         id: verify-changed-notebooks
