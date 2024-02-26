@@ -52,11 +52,12 @@ jobs:
           namedLogo: python
 
       - name: Set pipeline status
-        run: |
-          if [[ ${{ steps.coverageComment.outputs.errors }} -ne 0 || ${{ steps.coverageComment.outputs.failures }} -ne 0 ]]; then
-            echo "Errors or failures detected, marking pipeline as failure."
-            exit 1
-          fi
+        if: steps.coverageComment.outputs.errors != 0 || steps.coverageComment.outputs.failures != 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.actions.setFailed('Pytest failed')
+            github.actions.setOutput('status', 'failed')
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
