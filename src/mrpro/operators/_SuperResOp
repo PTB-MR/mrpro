@@ -136,6 +136,12 @@ def show_3D(vol, axs_proj, title = '', idx_slice = None):
         title = 'img'
     plt.title(title+'_proj'+str(axs_proj))
 
+def show_2D(img,  title = ''):
+    plt.matshow(img, cmap = plt.get_cmap("inferno"), vmin = 0, vmax = 1.6)
+    if title == '':
+        title = 'img'
+    plt.title(title)
+
 class SuperResOp(LinearOperator):
     """Super resolution operator class."""
 
@@ -189,8 +195,10 @@ class SuperResOp(LinearOperator):
             R.append(Rotation.from_euler('xyz', rot_per_stack[idx_stack], degrees=True))
 
         self.matrix = []
+
         for idx_stack in range(self.num_stacks):
             matrix_per_stack = []
+
             for idx_slice in range(self.slices_per_stack):
                 matrix_per_stack.append(self._generate_matrix(
                     rot=R[idx_stack],
@@ -200,7 +208,9 @@ class SuperResOp(LinearOperator):
                     rotation_center=rotation_center,
                 ))
 
+
             self.matrix.append(matrix_per_stack)
+
 
     def _rotate(self, vector: torch.Tensor, R: Rotation, rotation_center=None, inverse=False):
         """Rotate tensor by scipy Rotation around a rotation center."""
@@ -214,7 +224,12 @@ class SuperResOp(LinearOperator):
         return ret.reshape(vector.shape)
 
     def _generate_matrix(
-        self,  rot: Rotation, offset_slicePos: torch.Tensor, length_normal: int, slice_function, rotation_center=None
+        self,
+        rot: Rotation,
+        offset_slicePos: torch.Tensor,
+        length_normal: int,
+        slice_function,
+        rotation_center=None
     ):
         """Sample a sparse matrix that represents the projection of a volume
         onto a plane.
@@ -258,11 +273,11 @@ class SuperResOp(LinearOperator):
         # In all possible directions for each point along the line we consider the eight neighboring points
         # by adding all possible combinations of 0 and 1 to the point and flooring
         # dimensions of point and distance: [X, Y, 8 being the neighbors, 2*lenght_normal, 3 being the 3D position]
-        pos_rot_thick = (
+        points_influencing_pixel = (
             pos_rot[:, :, None, None, :] + sliceNormal[None, None, None, :, :] + offsets_neighbors[None, None, :, None, :]
         ).floor()
         # distance of each voxel within slice and within length_normal to the center of the rotated slice
-        distance_rot = pos_rot[:, :, None, None, :] - pos_rot_thick
+        distance_rot = pos_rot[:, :, None, None, :] - points_influencing_pixel
 
         # Inverse rotation projects the distance back to the original coordinate system, i.e
         # Distance in z is distance along the line, i.e. the slice profile weighted direction
@@ -270,7 +285,7 @@ class SuperResOp(LinearOperator):
         distance_x, distance_y, distance_z = self._rotate(distance_rot, rot, inverse=True).unbind(-1)
         weight_xy = (1 - distance_x.abs()).clamp_min(0) * (1 - distance_y.abs()).clamp_min(0)
         weight_z = slice_function(distance_z)
-        weight = (weight_xy * weight_z).reshape(X * Y, -1)
+        weight = (weight_xy * weight_z).reshape(X * Y, -1)#weight is the same for each z pos, therefore only dim x and y
 
         # Mara: understand the next commented lines
 
@@ -281,7 +296,9 @@ class SuperResOp(LinearOperator):
         # counts = counts[inverse_idx].reshape(weight.shape).float()
         # weight = weight / counts.float()
 
-        source = einops.rearrange(pos_rot_thick, 'X Y s1 s2 xyz -> (X Y) (s1 s2) xyz').int()
+        source = einops.rearrange(
+            points_influencing_pixel,
+            'X Y neighbors raylength  XYZdim -> (X Y) (neighbors raylength ) XYZdim').int()
 
         # Remove points outside the volume
         # find points in source outside volume
@@ -323,7 +340,9 @@ class SuperResOp(LinearOperator):
 
         # Normalize
         norm = fraction_in_view / matrix.sum(1).to_dense()
-        matrix *= norm[:, None]
+
+        matrix = matrix * norm[:, None]
+
         matrix = matrix.to_sparse_csr()
 
         return matrix
@@ -342,8 +361,6 @@ class SuperResOp(LinearOperator):
             image data tensor with dimensions (other coils 1 y x) that represents 2d low resolution slice
         """
         other, coils, z, y, x = vol_HR.shape
-        print('volHR shape = '+str(vol_HR.shape))
-        print('self shape ='+str(self.shape_HR))
         list_stacks = []
         for idx_stack in range(self.num_stacks):
             list_slices = []
@@ -363,6 +380,14 @@ class SuperResOp(LinearOperator):
         vol_HR = torch.zeros((other, coils, z,y,x))
         vol_HR_flat = einops.rearrange(vol_HR, 'other coils z y x -> (other coils) (x y z)')
 
+        weightSum_HR = torch.zeros(vol_HR_flat.shape[1])
+
+        #normalize matrix for HR
+        for idx_stack in range(self.num_stacks):
+            for idx_slice in range(self.slices_per_stack):
+                #TODO: improve and calc sum without converting to dense
+                weightSum_HR+= self.matrix[idx_stack][idx_slice].to_dense().sum(0)
+
         for idx_stack in range(self.num_stacks):
             for idx_slice in range(self.slices_per_stack):
                 slice_LR = slices_LR[idx_stack][idx_slice]
@@ -370,12 +395,12 @@ class SuperResOp(LinearOperator):
 
                 matrix = self.matrix[idx_stack][idx_slice]
                 for idx_coil in range(vol_HR_flat.shape[0]):
-                    vol_HR_flat[idx_coil] += matrix.H @slice_LR[idx_coil]
+                    vol_HR_flat[idx_coil] += matrix.H @ slice_LR[idx_coil]
+
+        vol_HR_flat/=torch.where(weightSum_HR != 0., weightSum_HR.unsqueeze(0),1.)
 
         vol_HR = einops.rearrange(vol_HR_flat, '(other coils) (x y z) -> other coils z y x', coils=coils, y=y, x = x, z = z)
         return vol_HR
-
-        #return super().adjoint(slices_LR)
 
 
 class Settings_sliceProfile:
@@ -440,14 +465,16 @@ vol_HR_upsampled = srr_op.adjoint(slices_LR)
 
 for idx_proj in range(3):
     show_3D(vol_HR_upsampled[0,0], axs_proj = idx_proj, title = 'vol_HR_upsampled_0')
-    show_3D(vol_HR_upsampled[0,1], axs_proj = idx_proj, title = 'vol_HR_upsampled_0')
+    show_3D(vol_HR_upsampled[0,1], axs_proj = idx_proj, title = 'vol_HR_upsampled_1')
 
 
-for idx_stack in range(num_stacks):
-    for idx_slice in range(num_slices_per_stack):
-        plt.matshow(slices_LR[idx_stack][idx_slice][0, 0, 0, ...],
-                    cmap = plt.get_cmap("inferno"), vmin = 0, vmax = 1.6)
-        plt.title('stack'+str(idx_stack)+'_slice'+str(idx_slice))
+flag_showLRstacks = False
+if flag_showLRstacks:
+    for idx_stack in range(num_stacks):
+        for idx_slice in range(num_slices_per_stack):
+            plt.matshow(slices_LR[idx_stack][idx_slice][0, 0, 0, ...],
+                        cmap = plt.get_cmap("inferno"), vmin = 0, vmax = 1.6)
+            plt.title('stack'+str(idx_stack)+'_slice'+str(idx_slice))
 
 plt.show()
 # %%
