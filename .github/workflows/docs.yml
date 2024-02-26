@@ -7,15 +7,15 @@ on:
   pull_request:
 
 permissions:
-    contents: write
+  contents: write
 
 defaults:
-    run:
-      shell: bash
+  run:
+    shell: bash
 
 jobs:
   convert_scripts:
-    name: 'Translate scripts to notebooks'
+    name: "Translate scripts to notebooks"
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -64,7 +64,7 @@ jobs:
         run: echo "commit_hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
   get_notebooks:
-    name: 'Get list of notebooks'
+    name: "Get list of notebooks"
     needs: convert_scripts
     runs-on: ubuntu-latest
     steps:
@@ -85,7 +85,7 @@ jobs:
       notebooks: ${{ steps.set-matrix.outputs.notebooks }}
 
   run_notebook:
-    name: 'Run notebook'
+    name: "Run notebook"
     needs: [convert_scripts, get_notebooks]
     runs-on: ubuntu-latest
     permissions:
@@ -110,17 +110,15 @@ jobs:
 
       - name: Check paths
         run: |
-            echo ${RUNNER_TEMP}
-            echo ${{ runner.temp }}
-            touch ${{ runner.temp }}/test.txt
-            echo testtest > ${{ runner.temp }}/test.txt
-            echo "ls -a ${{ runner.temp }}"
-            ls -a ${{ runner.temp }}
-            TMP=${{ runner.temp }}"/nb-runner"
-            echo $TMP
-            echo "${TMP:1}" | tr '/' ','
-            mkdir -p {home,runner,work,_temp}
-            ls ${{ runner.temp }}
+          echo ${RUNNER_TEMP}
+          echo ${{ runner.temp }}
+          echo "ls -a ${ RUNNER_TEMP }"
+          ls -a ${RUNNER_TEMP}
+          # TMP=${{ runner.temp }}"/nb-runner"
+          # echo $TMP
+          # echo "${TMP:1}" | tr '/' ','
+          # mkdir -p {home,runner,work,_temp}
+          # ls ${{ runner.temp }}
 
       - name: Run notebook
         uses: yaananth/run-notebook@v2
@@ -148,29 +146,29 @@ jobs:
           RUNNER: ${{ toJson(runner) }}
 
   create_documentation:
-    name: 'Build and deploy documentation'
+    name: "Build and deploy documentation"
     needs: [convert_scripts, run_notebook]
     runs-on: ubuntu-latest
     container:
       image: docker://ckolbptb/mrpro_py311:latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ needs.convert_scripts.outputs.commit_hash }}
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.convert_scripts.outputs.commit_hash }}
 
-    - name: Install dependencies
-      run: python -m pip install .[docs]
+      - name: Install dependencies
+        run: python -m pip install .[docs]
 
-    - name: Download notebook hmtl files
-      id: download
-      uses: actions/download-artifact@v4
-      with:
-        path: ./docs/source/notebook_artifact/
+      - name: Download notebook hmtl files
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          path: ./docs/source/notebook_artifact/
 
-    - name: Copy notebook html files
-      run: |
+      - name: Copy notebook html files
+        run: |
           mkdir ./docs/source/_notebooks
           cd ./docs/source/notebook_artifact/
           notebooks=$(grep -rl --include='*' './')
@@ -180,8 +178,8 @@ jobs:
             cp ./$nb ../_notebooks/
           done
 
-    - name: List of notebooks
-      run: |
+      - name: List of notebooks
+        run: |
           cd ./docs/source/_notebooks/
           notebooks=$(grep -rl --include='*.html' './')
           cd ../
@@ -197,22 +195,22 @@ jobs:
             echo "   :file: ./_notebooks/$nb" >> "notebook_${nb/.html/.rst}"
           done
 
-    - name: Build docs
-      run: sphinx-build -b html ./docs/source ./docs/build/html
+      - name: Build docs
+        run: sphinx-build -b html ./docs/source ./docs/build/html
 
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        publish_branch: github-pages
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs/build/html
-      if: github.event_name != 'pull_request'
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          publish_branch: github-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/build/html
+        if: github.event_name != 'pull_request'
 
-    - name: Save Documentation
-      uses: actions/upload-artifact@v4
-      with:
-        name: Documentation
-        path: docs/build/html/
+      - name: Save Documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: Documentation
+          path: docs/build/html/
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
