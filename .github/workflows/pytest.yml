@@ -56,7 +56,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            core.setFailed('Pytest failed')
+            core.setFailed('PyTest workflow failed with ${{ steps.coverageComment.outputs.errors }} errors and ${{ steps.coverageComment.outputs.failures }} failures.')
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
