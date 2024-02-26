@@ -46,7 +46,7 @@ jobs:
           for script in $scripts
             do jupytext --set-kernel "python3" --update --output ${script//.py/.ipynb} $script
           done
-          
+
       - name: Check if any notebooks have been changed
         uses: tj-actions/verify-changed-files@v18
         id: verify-changed-notebooks
@@ -112,12 +112,16 @@ jobs:
         run: |
             echo ${RUNNER_TEMP}
             echo ${{ runner.temp }}
+            touch ${{ runner.temp }}/test.txt
+            echo testtest > ${{ runner.temp }}/test.txt
+            echo "ls -a ${{ runner.temp }}"
+            ls -a ${{ runner.temp }}
             TMP=${{ runner.temp }}"/nb-runner"
             echo $TMP
             echo "${TMP:1}" | tr '/' ','
             mkdir -p {home,runner,work,_temp}
             ls ${{ runner.temp }}
-            
+
       - name: Run notebook
         uses: yaananth/run-notebook@v2
         env:
