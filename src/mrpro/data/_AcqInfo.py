@@ -36,7 +36,14 @@ class AcqIdx:
     repetition: torch.Tensor
     set: torch.Tensor
     segment: torch.Tensor
-    user: torch.Tensor
+    user0: torch.Tensor
+    user1: torch.Tensor
+    user2: torch.Tensor
+    user3: torch.Tensor
+    user4: torch.Tensor
+    user5: torch.Tensor
+    user6: torch.Tensor
+    user7: torch.Tensor
 
 
 @dataclass(slots=True)
@@ -111,10 +118,17 @@ class AcqInfo:
                     data = data.astype(np.int32)
                 case np.uint32 | np.uint64:
                     data = data.astype(np.int64)
-
-            return torch.tensor(data).squeeze()
+            # Remove any uncessary dimensions and then ensure that data is (k1*k2*other, >=1)
+            data = np.squeeze(data)
+            if data.ndim == 1:
+                data = data[:, None]
+            return torch.tensor(data)
 
         def spatialdimension(data):
+            # Ensure spatial dimension is (k1*k2*other, 1, 3)
+            if data.ndim != 2:
+                raise ValueError('Spatial dimension is expected to be of shape (N,3)')
+            data = data[:, None, :]
             # all spatial dimensions are float32
             return SpatialDimension[torch.Tensor].from_array_xyz(torch.tensor(data.astype(np.float32)))
 
@@ -128,7 +142,14 @@ class AcqInfo:
             repetition=tensor(idx['repetition']),
             set=tensor(idx['set']),
             segment=tensor(idx['segment']),
-            user=tensor(idx['user']),
+            user0=tensor(idx['user'][:, 0]),
+            user1=tensor(idx['user'][:, 1]),
+            user2=tensor(idx['user'][:, 2]),
+            user3=tensor(idx['user'][:, 3]),
+            user4=tensor(idx['user'][:, 4]),
+            user5=tensor(idx['user'][:, 5]),
+            user6=tensor(idx['user'][:, 6]),
+            user7=tensor(idx['user'][:, 7]),
         )
 
         acq_info = cls(

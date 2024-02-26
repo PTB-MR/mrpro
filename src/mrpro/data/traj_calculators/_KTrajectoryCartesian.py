@@ -40,8 +40,8 @@ class KTrajectoryCartesian(KTrajectoryCalculator):
         kx = self._kfreq(kheader)
 
         # Trajectory along phase and slice encoding
-        ky = (kheader.acq_info.idx.k1 - kheader.encoding_limits.k1.center).to(torch.float32)
-        kz = (kheader.acq_info.idx.k2 - kheader.encoding_limits.k2.center).to(torch.float32)
+        ky = (kheader.acq_info.idx.k1[..., 0] - kheader.encoding_limits.k1.center).to(torch.float32)
+        kz = (kheader.acq_info.idx.k2[..., 0] - kheader.encoding_limits.k2.center).to(torch.float32)
 
         # Bring to correct dimensions
         kx = repeat(kx, 'k0-> other k2 k1 k0', other=1, k2=1, k1=1)

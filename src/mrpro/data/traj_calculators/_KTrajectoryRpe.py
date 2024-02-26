@@ -94,7 +94,7 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         -------
             angles of phase encoding lines
         """
-        return kheader.acq_info.idx.k2 * self.angle
+        return kheader.acq_info.idx.k2[..., 0] * self.angle
 
     def _krad(self, kheader: KHeader) -> torch.Tensor:
         """Calculate the k-space locations along the phase encoding lines.
@@ -108,8 +108,8 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         -------
             k-space locations along the phase encoding lines
         """
-        krad = (kheader.acq_info.idx.k1 - kheader.encoding_limits.k1.center).to(torch.float32)
-        krad = self._apply_shifts_between_rpe_lines(krad, kheader.acq_info.idx.k2)
+        krad = (kheader.acq_info.idx.k1[..., 0] - kheader.encoding_limits.k1.center).to(torch.float32)
+        krad = self._apply_shifts_between_rpe_lines(krad, kheader.acq_info.idx.k2[..., 0])
         return krad
 
     def __call__(self, kheader: KHeader) -> KTrajectory:
