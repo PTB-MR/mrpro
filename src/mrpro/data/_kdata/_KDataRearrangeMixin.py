@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 from einops import rearrange
 
 if TYPE_CHECKING:
-    from mrpro.data._kdata._KData import KDataProtocol
+    from mrpro.data._kdata._KData import _KDataProtocol
 
 from mrpro.utils import modify_acq_info
 
@@ -27,7 +27,7 @@ from mrpro.utils import modify_acq_info
 class KDataRearrangeMixin:
     """Rearrange KData."""
 
-    def rearrange_k2_k1_into_k1(self: KDataProtocol) -> KDataProtocol:
+    def rearrange_k2_k1_into_k1(self: _KDataProtocol) -> _KDataProtocol:
         """Rearrange kdata from (... k2 k1 ...) to (... 1 (k2 k1) ...).
 
         Parameters

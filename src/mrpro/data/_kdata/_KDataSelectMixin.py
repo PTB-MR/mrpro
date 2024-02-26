@@ -20,7 +20,7 @@ from typing import Literal
 import torch
 
 if TYPE_CHECKING:
-    from mrpro.data._kdata._KData import KDataProtocol
+    from mrpro.data._kdata._KData import _KDataProtocol
 
 from mrpro.utils import modify_acq_info
 
@@ -29,10 +29,10 @@ class KDataSelectMixin:
     """Select subset of KData."""
 
     def select_other_subset(
-        self: KDataProtocol,
+        self: _KDataProtocol,
         subset_idx: torch.Tensor,
         subset_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
-    ) -> KDataProtocol:
+    ) -> _KDataProtocol:
         """Select a subset from the other dimension of KData.
 
         Parameters

@@ -62,33 +62,6 @@ DEFAULT_IGNORE_FLAGS = (
 )
 
 
-class KDataProtocol(Protocol):
-    """Protocol for KData."""
-
-    @property
-    def header(self) -> KHeader:
-        """Useless docstring to pass pydocstyle."""
-        ...
-
-    @property
-    def data(self) -> torch.Tensor:
-        """Useless docstring to pass pydocstyle."""
-        ...
-
-    @property
-    def traj(self) -> KTrajectory:
-        """Useless docstring to pass pydocstyle."""
-        ...
-
-    def __init__(self, header: KHeader, data: torch.Tensor, traj: KTrajectory):
-        """Useless docstring to pass pydocstyle."""
-        ...
-
-    def _split_k2_or_k1_into_other(self, split_idx: torch.Tensor, other_label: str, split_dir: str) -> KDataProtocol:
-        """Useless docstring to pass pydocstyle."""
-        ...
-
-
 @dataclasses.dataclass(slots=True, frozen=True)
 class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin):
     """MR raw data / k-space data class."""
@@ -361,3 +334,31 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin):
             data=self.data.cpu(memory_format=memory_format),  # type: ignore [call-arg]
             traj=self.traj.cpu(memory_format=memory_format),
         )
+
+
+class _KDataProtocol(Protocol):
+    """Protocol for KData used for type hinting in KData mixins.
+
+    Note that the actual KData class can have more properties and methods than those defined here.
+
+    If you want to use a property or method of KData in a new KDataMixin class,
+    you must add it to this Protocol to make sure that the type hinting works.
+
+    For more information about Protocols see:
+    https://typing.readthedocs.io/en/latest/spec/protocol.html#protocols
+    """
+
+    @property
+    def header(self) -> KHeader: ...
+
+    @property
+    def data(self) -> torch.Tensor: ...
+
+    @property
+    def traj(self) -> KTrajectory: ...
+
+    def __init__(self, header: KHeader, data: torch.Tensor, traj: KTrajectory): ...
+
+    def _split_k2_or_k1_into_other(
+        self, split_idx: torch.Tensor, other_label: str, split_dir: str
+    ) -> _KDataProtocol: ...
