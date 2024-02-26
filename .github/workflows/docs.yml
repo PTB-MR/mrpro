@@ -114,7 +114,7 @@ jobs:
       #     echo ${{ runner.temp }}
       #     echo "ls -a ${ RUNNER_TEMP }"
       #     ls -a ${RUNNER_TEMP}
-      #     # TMP=${{ runner.temp }}"/nb-runner"
+      #     #git  TMP=${{ runner.temp }}"/nb-runner"
       #     # echo $TMP
       #     # echo "${TMP:1}" | tr '/' ','
       #     # mkdir -p {home,runner,work,_temp}
@@ -141,7 +141,7 @@ jobs:
         if: always()
         with:
           name: ${{ steps.artifact_names.outputs.ARTIFACT_NAME }}
-          path: ${{ RUNNER.temp }}/nb-runner/${{ steps.artifact_names.outputs.HTML_RESULT }}
+          path: ${{ github.workspace }}/nb-runner/${{ steps.artifact_names.outputs.HTML_RESULT }}
         env:
           RUNNER: ${{ toJson(runner) }}
 
