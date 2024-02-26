@@ -174,6 +174,7 @@ class SuperResOp(LinearOperator):
 
         self.num_stacks= num_stacks
         self.slices_per_stack = num_slices_per_stack
+        self.shape_HR = input_shape
 
         #calc offsets
         offset_range = num_slices_per_stack*(thickness_slice+gap_slices_inHR)
@@ -187,12 +188,11 @@ class SuperResOp(LinearOperator):
         for idx_stack in range(num_stacks):
             R.append(Rotation.from_euler('xyz', rot_per_stack[idx_stack], degrees=True))
 
-        self.projection_matrix = []
+        self.matrix = []
         for idx_stack in range(self.num_stacks):
             matrix_per_stack = []
             for idx_slice in range(self.slices_per_stack):
                 matrix_per_stack.append(self._generate_matrix(
-                    input_shape=input_shape,
                     rot=R[idx_stack],
                     offset_slicePos=offset[idx_slice],
                     length_normal=w,
@@ -200,7 +200,7 @@ class SuperResOp(LinearOperator):
                     rotation_center=rotation_center,
                 ))
 
-            self.projection_matrix.append(matrix_per_stack)
+            self.matrix.append(matrix_per_stack)
 
     def _rotate(self, vector: torch.Tensor, R: Rotation, rotation_center=None, inverse=False):
         """Rotate tensor by scipy Rotation around a rotation center."""
@@ -214,7 +214,7 @@ class SuperResOp(LinearOperator):
         return ret.reshape(vector.shape)
 
     def _generate_matrix(
-        self, input_shape: tuple, rot: Rotation, offset_slicePos: torch.Tensor, length_normal: int, slice_function, rotation_center=None
+        self,  rot: Rotation, offset_slicePos: torch.Tensor, length_normal: int, slice_function, rotation_center=None
     ):
         """Sample a sparse matrix that represents the projection of a volume
         onto a plane.
@@ -227,7 +227,7 @@ class SuperResOp(LinearOperator):
             Sparse matrix that represents the projection operator of the volume onto the plane
         """
 
-        X, Y, Z = input_shape
+        X, Y, Z = self.shape_HR
 
         # select slice position
         pos_xy = list(torch.meshgrid(torch.arange(X), torch.arange(Y)))
@@ -329,7 +329,7 @@ class SuperResOp(LinearOperator):
         return matrix
 
 
-    def forward(self, img_hr: torch.Tensor) -> tuple[torch.Tensor,]:
+    def forward(self, vol_HR: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the projection operatore to high resolution 3d volume.
 
         Parameters
@@ -341,24 +341,41 @@ class SuperResOp(LinearOperator):
         -------
             image data tensor with dimensions (other coils 1 y x) that represents 2d low resolution slice
         """
-        other, coils, z, y, x = img_hr.shape
-
+        other, coils, z, y, x = vol_HR.shape
+        print('volHR shape = '+str(vol_HR.shape))
+        print('self shape ='+str(self.shape_HR))
         list_stacks = []
         for idx_stack in range(self.num_stacks):
-
             list_slices = []
+            vol_HR_flat = einops.rearrange(vol_HR, 'other coils z y x -> (other coils) (x y z)')
             for idx_slice in range(self.slices_per_stack):
-                matrix = self.projection_matrix
-
-                # couldnt find another way to broadcast sparse matrix
-                flattened = einops.rearrange(img_hr, 'other coils z y x -> (other coils) (x y z)')
-                slice = torch.stack([matrix[idx_stack][idx_slice] @ flattened[i] for i in range(flattened.shape[0])], dim=0)
-                list_slices.append(einops.rearrange(slice, '(other coils) (x y) -> other coils 1 y x', coils=coils, y=y))
+                matrix = self.matrix[idx_stack][idx_slice]
+                slice_LR = torch.zeros((vol_HR_flat.shape[0], matrix.shape[0]))
+                for idx_coil in range(vol_HR_flat.shape[0]):
+                    slice_LR[idx_coil] = matrix @ vol_HR_flat[idx_coil]
+                list_slices.append(einops.rearrange(slice_LR, '(other coils) (x y) -> other coils 1 y x', coils=coils, y=y))
             list_stacks.append(list_slices)
         return list_stacks
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        return super().adjoint(x)
+    def adjoint(self, slices_LR: torch.Tensor) -> tuple[torch.Tensor,]:
+        other, coils, _, y, x = slices_LR[0][0].shape
+        z,y,x = self.shape_HR
+        vol_HR = torch.zeros((other, coils, z,y,x))
+        vol_HR_flat = einops.rearrange(vol_HR, 'other coils z y x -> (other coils) (x y z)')
+
+        for idx_stack in range(self.num_stacks):
+            for idx_slice in range(self.slices_per_stack):
+                slice_LR = slices_LR[idx_stack][idx_slice]
+                slice_LR = einops.rearrange(slice_LR, 'other coils 1 y x -> (other coils) (x y)', coils=coils, y=y)
+
+                matrix = self.matrix[idx_stack][idx_slice]
+                for idx_coil in range(vol_HR_flat.shape[0]):
+                    vol_HR_flat[idx_coil] += matrix.H @slice_LR[idx_coil]
+
+        vol_HR = einops.rearrange(vol_HR_flat, '(other coils) (x y z) -> other coils z y x', coils=coils, y=y, x = x, z = z)
+        return vol_HR
+
+        #return super().adjoint(slices_LR)
 
 
 class Settings_sliceProfile:
@@ -391,12 +408,12 @@ def simulHR(flag_show = True):
 #vol_HR = simulHR(flag_show = True)
 #vol_HR_exp = vol_HR.unsqueeze(0).unsqueeze(0).expand(-1, 2, -1, -1, -1)
 
-vol_XCAT_HR = torch.tensor(np.load('/../../echo/allgemein/projects/hufnag01/forMrPro/xcatRef.npy')[16:112, :,:96])
+vol_HR_orig = torch.tensor(np.load('/../../echo/allgemein/projects/hufnag01/forMrPro/xcatRef.npy')[16:112, :,:96])
 
 for idx_proj in range(3):
-    show_3D(vol_XCAT_HR, axs_proj = idx_proj, title = 'XCAT_HR')
+    show_3D(vol_HR_orig, axs_proj = idx_proj, title = 'vol_HR_orig')
 
-vol_XCAT_HR = vol_XCAT_HR.unsqueeze(0).unsqueeze(0).expand(-1, 2, -1, -1, -1)
+vol_HR_orig = vol_HR_orig.unsqueeze(0).unsqueeze(0).expand(-1, 2, -1, -1, -1)
 
 
 num_slices_per_stack = 5
@@ -417,11 +434,18 @@ srr_op = SuperResOp(input_shape=(96, 96, 96),
                     w= 3 * settings_sliceProfile.sigma,
                     slice_function=settings_sliceProfile.sliceProf_rect)
 
-slice_LR = srr_op.forward(vol_XCAT_HR)
+slices_LR = srr_op.forward(vol_HR_orig)
+vol_HR_upsampled = srr_op.adjoint(slices_LR)
+
+
+for idx_proj in range(3):
+    show_3D(vol_HR_upsampled[0,0], axs_proj = idx_proj, title = 'vol_HR_upsampled_0')
+    show_3D(vol_HR_upsampled[0,1], axs_proj = idx_proj, title = 'vol_HR_upsampled_0')
+
 
 for idx_stack in range(num_stacks):
     for idx_slice in range(num_slices_per_stack):
-        plt.matshow(slice_LR[idx_stack][idx_slice][0, 0, 0, ...],
+        plt.matshow(slices_LR[idx_stack][idx_slice][0, 0, 0, ...],
                     cmap = plt.get_cmap("inferno"), vmin = 0, vmax = 1.6)
         plt.title('stack'+str(idx_stack)+'_slice'+str(idx_slice))
 
