@@ -10,6 +10,12 @@ jobs:
       image: docker://ckolbptb/mrpro_py311:latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set ownership
+        run: |
+          # this is to fix GIT not liking owner of the checkout dir
+          chown -R $(id -u):$(id -g) $PWD
+          
       - uses: pre-commit/action@v3.0.1
 
 concurrency:
