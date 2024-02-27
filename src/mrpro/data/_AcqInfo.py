@@ -118,13 +118,18 @@ class AcqInfo:
                     data = data.astype(np.int32)
                 case np.uint32 | np.uint64:
                     data = data.astype(np.int64)
-            # Remove any uncessary dimensions and then ensure that data is (k1*k2*other, >=1)
-            data = np.squeeze(data)
+            # Remove any uncessary dimensions
+            return torch.tensor(np.squeeze(data))
+
+        def tensor_2d(data):
+            # Convert tensor to torch dtypes and ensure it is 2D
+            data = tensor(data)
+            # Ensure that data is (k1*k2*other, >=1)
             if data.ndim == 1:
                 data = data[:, None]
-            return torch.tensor(data)
+            return data
 
-        def spatialdimension(data):
+        def spatialdimension_2d(data):
             # Ensure spatial dimension is (k1*k2*other, 1, 3)
             if data.ndim != 2:
                 raise ValueError('Spatial dimension is expected to be of shape (N,3)')
@@ -154,28 +159,28 @@ class AcqInfo:
 
         acq_info = cls(
             idx=acq_idx,
-            acquisition_time_stamp=tensor(headers['acquisition_time_stamp']),
-            active_channels=tensor(headers['active_channels']),
-            available_channels=tensor(headers['available_channels']),
-            center_sample=tensor(headers['center_sample']),
-            channel_mask=tensor(headers['channel_mask']),
-            discard_post=tensor(headers['discard_post']),
-            discard_pre=tensor(headers['discard_pre']),
-            encoding_space_ref=tensor(headers['encoding_space_ref']),
-            flags=tensor(headers['flags']),
-            measurement_uid=tensor(headers['measurement_uid']),
-            number_of_samples=tensor(headers['number_of_samples']),
-            patient_table_position=spatialdimension(headers['patient_table_position']),
-            phase_dir=spatialdimension(headers['phase_dir']),
-            physiology_time_stamp=tensor(headers['physiology_time_stamp']),
-            position=spatialdimension(headers['position']),
-            read_dir=spatialdimension(headers['read_dir']),
-            sample_time_us=tensor(headers['sample_time_us']),
-            scan_counter=tensor(headers['scan_counter']),
-            slice_dir=spatialdimension(headers['slice_dir']),
-            trajectory_dimensions=tensor(headers['trajectory_dimensions']).fill_(3),  # see above
-            user_float=tensor(headers['user_float']),
-            user_int=tensor(headers['user_int']),
-            version=tensor(headers['version']),
+            acquisition_time_stamp=tensor_2d(headers['acquisition_time_stamp']),
+            active_channels=tensor_2d(headers['active_channels']),
+            available_channels=tensor_2d(headers['available_channels']),
+            center_sample=tensor_2d(headers['center_sample']),
+            channel_mask=tensor_2d(headers['channel_mask']),
+            discard_post=tensor_2d(headers['discard_post']),
+            discard_pre=tensor_2d(headers['discard_pre']),
+            encoding_space_ref=tensor_2d(headers['encoding_space_ref']),
+            flags=tensor_2d(headers['flags']),
+            measurement_uid=tensor_2d(headers['measurement_uid']),
+            number_of_samples=tensor_2d(headers['number_of_samples']),
+            patient_table_position=spatialdimension_2d(headers['patient_table_position']),
+            phase_dir=spatialdimension_2d(headers['phase_dir']),
+            physiology_time_stamp=tensor_2d(headers['physiology_time_stamp']),
+            position=spatialdimension_2d(headers['position']),
+            read_dir=spatialdimension_2d(headers['read_dir']),
+            sample_time_us=tensor_2d(headers['sample_time_us']),
+            scan_counter=tensor_2d(headers['scan_counter']),
+            slice_dir=spatialdimension_2d(headers['slice_dir']),
+            trajectory_dimensions=tensor_2d(headers['trajectory_dimensions']).fill_(3),  # see above
+            user_float=tensor_2d(headers['user_float']),
+            user_int=tensor_2d(headers['user_int']),
+            version=tensor_2d(headers['version']),
         )
         return acq_info

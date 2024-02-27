@@ -62,10 +62,10 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
         # Apply sunflower shift
         golden_ratio = 0.5 * (np.sqrt(5) + 1)
         for ind, shift in enumerate(shift_idx):
-            krad[kheader.acq_info.idx.k2[..., 0] == ind] += ((shift * golden_ratio) % 1) - 0.5
+            krad[kheader.acq_info.idx.k2 == ind] += ((shift * golden_ratio) % 1) - 0.5
 
         # Set asym k-space point to 0 because this point was used to obtain a self-navigator signal.
-        krad[kheader.acq_info.idx.k1[..., 0] == 0] = 0
+        krad[kheader.acq_info.idx.k1 == 0] = 0
 
         return krad
 
@@ -81,7 +81,7 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
         -------
             angles of phase encoding lines
         """
-        return (kheader.acq_info.idx.k2[..., 0] * self.angle) % torch.pi
+        return (kheader.acq_info.idx.k2 * self.angle) % torch.pi
 
     def _krad(self, kheader: KHeader) -> torch.Tensor:
         """Calculate the k-space locations along the phase encoding lines.
@@ -96,6 +96,6 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
             k-space locations along the phase encoding lines
         """
         kang = self._kang(kheader)
-        krad = (kheader.acq_info.idx.k1[..., 0] - kheader.encoding_limits.k1.center).to(torch.float32)
+        krad = (kheader.acq_info.idx.k1 - kheader.encoding_limits.k1.center).to(torch.float32)
         krad = self._apply_sunflower_shift_between_rpe_lines(krad, kang, kheader)
         return krad

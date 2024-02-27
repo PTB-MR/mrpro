@@ -206,7 +206,7 @@ class KData:
 
         # Sort the data according to the sorted indices
         sort_ki = np.stack([getattr(kheader.acq_info.idx, label) for label in KDIM_SORT_LABELS], axis=0)
-        sort_idx = np.lexsort(sort_ki[:, :, 0])  # last dimension is 1
+        sort_idx = np.lexsort(sort_ki)
         kdata = rearrange(kdata[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=num_k1, k2=num_k2)
 
         # Reshape the acquisition data and update the header acquisition infos accordingly

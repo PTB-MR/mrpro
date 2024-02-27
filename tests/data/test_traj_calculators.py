@@ -39,7 +39,7 @@ def valid_rad2d_kheader(monkeypatch, random_kheader):
     nk2 = 1
 
     # List of k1 indices in the shape
-    idx_k1 = torch.arange(nk1, dtype=torch.int32)[None, None, ..., None]
+    idx_k1 = torch.arange(nk1, dtype=torch.int32)[None, None, ...]
 
     # Set parameters for radial 2D trajectory
     monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + nk0)
@@ -85,8 +85,8 @@ def valid_rpe_kheader(monkeypatch, random_kheader):
     k1 = torch.linspace(0, nk1 - 1, nk1, dtype=torch.int32)
     k2 = torch.linspace(0, nk2 - 1, nk2, dtype=torch.int32)
     idx_k1, idx_k2 = torch.meshgrid(k1, k2, indexing='xy')
-    idx_k1 = torch.reshape(idx_k1, (1, nk2, nk1, 1))
-    idx_k2 = torch.reshape(idx_k2, (1, nk2, nk1, 1))
+    idx_k1 = torch.reshape(idx_k1, (1, nk2, nk1))
+    idx_k2 = torch.reshape(idx_k2, (1, nk2, nk1))
 
     # Set parameters for RPE trajectory
     monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + nk0)
@@ -161,8 +161,8 @@ def valid_cartesian_kheader(monkeypatch, random_kheader):
     k1 = torch.linspace(0, nk1 - 1, nk1, dtype=torch.int32)
     k2 = torch.linspace(0, nk2 - 1, nk2, dtype=torch.int32)
     idx_k1, idx_k2 = torch.meshgrid(k1, k2, indexing='xy')
-    idx_k1 = torch.reshape(idx_k1, (1, nk2, nk1, 1))
-    idx_k2 = torch.reshape(idx_k2, (1, nk2, nk1, 1))
+    idx_k1 = torch.reshape(idx_k1, (1, nk2, nk1))
+    idx_k2 = torch.reshape(idx_k2, (1, nk2, nk1))
 
     # Set parameters for Cartesian trajectory
     monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + nk0)
