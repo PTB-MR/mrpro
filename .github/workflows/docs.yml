@@ -108,25 +108,10 @@ jobs:
       - name: Notebook name
         run: echo ${{ matrix.notebook }}
 
-      # - name: Check paths
-      #   run: |
-      #     echo ${RUNNER_TEMP}
-      #     echo ${{ runner.temp }}
-      #     echo "ls -a ${ RUNNER_TEMP }"
-      #     ls -a ${RUNNER_TEMP}
-      #     #git  TMP=${{ runner.temp }}"/nb-runner"
-      #     # echo $TMP
-      #     # echo "${TMP:1}" | tr '/' ','
-      #     # mkdir -p {home,runner,work,_temp}
-      #     # ls ${{ runner.temp }}
-
       - name: Run notebook
         uses: fzimmermann89/run-notebook@v3
         env:
           RUNNER: ${{ toJson(runner) }}
-
-          # SECRETS: ${{ toJson(secrets) }}
-          # GITHUB: ${{ toJson(github) }}
         with:
           notebook: ./examples/${{ matrix.notebook }}
 
@@ -142,7 +127,7 @@ jobs:
         if: always()
         with:
           name: ${{ steps.artifact_names.outputs.ARTIFACT_NAME }}
-          path: ${{ github.workspace }}/nb-runner/${{ steps.artifact_names.outputs.HTML_RESULT }}
+          path: ${{ github.workspace }}/nb-runner.out/${{ steps.artifact_names.outputs.HTML_RESULT }}
         env:
           RUNNER: ${{ toJson(runner) }}
 
