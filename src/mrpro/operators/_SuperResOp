@@ -149,12 +149,12 @@ class SuperResOp(LinearOperator):
         self,
         num_slices_per_stack: int,
         thickness_slice: int,
-        gap_slices_inHR: float,
+        gap_slices: float,
         num_stacks: int,
-        input_shape: tuple,
+        shape_HR: tuple,
         w: int,
         rot_per_stack: list[list[int]],
-        slice_function: Callable,
+        slice_profile: Callable,
         rotation_center=None,
     ):
         """Super resolution operator class.
@@ -180,15 +180,15 @@ class SuperResOp(LinearOperator):
 
         self.num_stacks= num_stacks
         self.slices_per_stack = num_slices_per_stack
-        self.shape_HR = input_shape
+        self.shape_HR = shape_HR
 
         #calc offsets
-        range_slices = num_slices_per_stack*thickness_slice+(num_slices_per_stack-1)*gap_slices_inHR
-        offsets = np.arange(0,range_slices+1,step =thickness_slice+gap_slices_inHR, dtype = np.float32)
+        range_slices = num_slices_per_stack*thickness_slice+(num_slices_per_stack-1)*gap_slices
+        offsets = np.arange(0,range_slices+1,step =thickness_slice+gap_slices, dtype = np.float32)
         offsets-=np.mean(offsets)
-        offset = []
+        list_offsets = []
         for idx_slice in range(num_slices_per_stack):
-            offset.append(torch.tensor([0, 0, offsets[idx_slice]]))
+            list_offsets.append(torch.tensor([0, 0, offsets[idx_slice]]))
         #calc R
         R = []
         for idx_stack in range(num_stacks):
@@ -202,9 +202,9 @@ class SuperResOp(LinearOperator):
             for idx_slice in range(self.slices_per_stack):
                 matrix_per_stack.append(self._generate_matrix(
                     rot=R[idx_stack],
-                    offset_slicePos=offset[idx_slice],
+                    offset_slicePos=list_offsets[idx_slice],
                     length_normal=w,
-                    slice_function=slice_function,
+                    slice_function=slice_profile,
                     rotation_center=rotation_center,
                 ))
 
@@ -404,20 +404,23 @@ class SuperResOp(LinearOperator):
         vol_HR = einops.rearrange(vol_HR_flat, '(other coils) (x y z) -> other coils z y x', coils=coils, y=y, x = x, z = z)
         return vol_HR
 
+    def checkAdjointForward(self, slices_LR, vol_HR):
+        test = 0
+        #TODO: Check if y.H@A(x) = (AH(y).H@x holds for all x and y
 
-class Settings_sliceProfile:
+class Slice_profile:
     def __init__(self,
-                 sliceThickness: float,
+                 thickness_slice: float,
                  sigma = None,
                  ) -> None:
-        self.sliceThickness =  sliceThickness
+        self.sliceThickness =  thickness_slice
         self.sigma = 1 if sigma is None else sigma
 
     def sliceProf(self, distance_z):
         #unit of distance_z: high resolution voxel
         return torch.exp(-(distance_z**2) / (2 * self.sigma**2))
 
-    def sliceProf_rect(self, distance_z):
+    def rect(self, distance_z):
         return torch.where(distance_z <self.sliceThickness/2, 1., 0.)
 
 
@@ -436,6 +439,7 @@ def simulHR(flag_show = True):
 #vol_HR_exp = vol_HR.unsqueeze(0).unsqueeze(0).expand(-1, 2, -1, -1, -1)
 
 vol_HR_orig = torch.tensor(np.load('/../../echo/allgemein/projects/hufnag01/forMrPro/xcatRef.npy')[16:112, :,:96])
+shape_HR = vol_HR_orig.shape
 
 for idx_proj in range(3):
     show_3D(vol_HR_orig, axs_proj = idx_proj, title = 'vol_HR_orig')
@@ -444,39 +448,38 @@ vol_HR_orig = vol_HR_orig.unsqueeze(0).unsqueeze(0).expand(-1, 2, -1, -1, -1)
 
 
 num_slices_per_stack = 5
-gap_slices_inHR = 4
+gap_slices = 4
 thickness_slice = 4
 #stacks are rotated around the septum (using the septum as rotation axis)
-rot_per_stack = [[90,0,  0],[90,  0,45],[90,  0,90],[90,  0,135]]
+rot_per_stack = [[90, 0, 0],[90, 0, 45],[90, 0, 90],[90, 0, 135]]
 num_stacks = len(rot_per_stack)
 
-settings_sliceProfile = Settings_sliceProfile(sliceThickness=thickness_slice)
+slice_profile = Slice_profile(thickness_slice=thickness_slice)
 
-srr_op = SuperResOp(input_shape=(96, 96, 96),
+srr_op = SuperResOp(shape_HR=shape_HR,
                     num_slices_per_stack = num_slices_per_stack,
-                    gap_slices_inHR = gap_slices_inHR,
+                    gap_slices = gap_slices,
                     num_stacks = num_stacks,
                     thickness_slice = thickness_slice,
                     rot_per_stack = rot_per_stack,
-                    w= 3 * settings_sliceProfile.sigma,
-                    slice_function=settings_sliceProfile.sliceProf_rect)
+                    w= 3 * slice_profile.sigma,
+                    slice_profile=slice_profile.rect)
 
 slices_LR = srr_op.forward(vol_HR_orig)
-vol_HR_upsampled = srr_op.adjoint(slices_LR)
+vol_HR_adjoint = srr_op.adjoint(slices_LR)
 
 
 for idx_proj in range(3):
-    show_3D(vol_HR_upsampled[0,0], axs_proj = idx_proj, title = 'vol_HR_upsampled_0')
-    show_3D(vol_HR_upsampled[0,1], axs_proj = idx_proj, title = 'vol_HR_upsampled_1')
+    show_3D(vol_HR_adjoint[0,0], axs_proj = idx_proj, title = 'vol_HR_adjoint_0')
+    show_3D(vol_HR_adjoint[0,1], axs_proj = idx_proj, title = 'vol_HR_adjoint_1')
 
 
 flag_showLRstacks = False
 if flag_showLRstacks:
     for idx_stack in range(num_stacks):
         for idx_slice in range(num_slices_per_stack):
-            plt.matshow(slices_LR[idx_stack][idx_slice][0, 0, 0, ...],
-                        cmap = plt.get_cmap("inferno"), vmin = 0, vmax = 1.6)
-            plt.title('stack'+str(idx_stack)+'_slice'+str(idx_slice))
+            show_2D(slices_LR[idx_stack][idx_slice][0, 0, 0, ...],
+                    'stack'+str(idx_stack)+'_slice'+str(idx_slice))
 
 plt.show()
 # %%
