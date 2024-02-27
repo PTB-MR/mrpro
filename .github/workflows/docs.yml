@@ -121,9 +121,10 @@ jobs:
       #     # ls ${{ runner.temp }}
 
       - name: Run notebook
-        uses: yaananth/run-notebook@v2
+        uses: fzimmermann89/run-notebook@v3
         env:
-          RUNNER: '{"temp": "/github/workspace"}'
+          RUNNER: ${{ toJson(runner) }}
+
           # SECRETS: ${{ toJson(secrets) }}
           # GITHUB: ${{ toJson(github) }}
         with:
