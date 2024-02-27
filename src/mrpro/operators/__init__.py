@@ -1,4 +1,5 @@
 from mrpro.operators._Operator import Operator
+from mrpro.operators._ConstraintsOp import ConstraintsOp
 from mrpro.operators._SignalModel import SignalModel
 from mrpro.operators._LinearOperator import LinearOperator
 from mrpro.operators._SensitivityOp import SensitivityOp
