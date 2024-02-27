@@ -1,4 +1,6 @@
+import itertools
 from collections import OrderedDict
+from collections.abc import Iterator
 
 import torch
 
@@ -13,7 +15,7 @@ class DataBufferMixin(torch.nn.Module):
     _data
 
     The main use is to allow Data objects to be automatically moved to a
-    devices etc if one calles, for example DataBufferMixin.cuda() will 
+    devices etc if one calles, for example DataBufferMixin.cuda() will
     call .cuda() also on all register_buffer'ed Data attributes.
 
     Used in Operators, for example.
@@ -33,7 +35,7 @@ class DataBufferMixin(torch.nn.Module):
         behavior can be changed by setting :attr:`persistent` to ``False``. The
         only difference between a persistent buffer and a non-persistent buffer
         is that the latter will not be a part of this module's
-        :attr:`state_dict`.
+        :attr:`state_dict`. Data objects always considered non-persistant!
 
         Buffers can be accessed as attributes using given names.
 
@@ -48,6 +50,7 @@ class DataBufferMixin(torch.nn.Module):
                 If ``None``, the buffer is **not** included in the module's `state_dict`.
             persistent (bool)
                 whether the buffer is part of this module's `state_dict`.
+                Data objects are currently never added to the `state_dict`!
         """
         if not isinstance(data, Data):
             return super().register_buffer(name, data, persistent)
@@ -75,7 +78,12 @@ class DataBufferMixin(torch.nn.Module):
         # Also _apply it to the new _data
         for key, data in self._data.items():
             if data is not None:
-                self._data[key] = fn(data)
+                try:
+                    # For methods implemented on the Data object
+                    self._data[key] = fn(data)
+                except AttributeError:
+                    # otherwise skip
+                    pass
 
     def __getattr__(self, name: str):
         """Get Attribute."""
@@ -103,3 +111,44 @@ class DataBufferMixin(torch.nn.Module):
     def __init__(self, *args, **kwargs) -> None:
         self._data = OrderedDict()
         super().__init__(*args, **kwargs)
+
+    def named_buffers(
+        self, prefix: str = '', recurse: bool = True, remove_duplicate: bool = True
+    ) -> Iterator[tuple[str, torch.Tensor]]:
+        """Return an iterator yielding the name of and the buffer itself.
+
+        This also returns mrpro.data.Data derived buffers.
+
+        See also torch.nn.Module.named_buffers
+
+        Parameters
+        ----------
+            prefix
+                prefix to prepend to all buffer names.
+            recurse
+                if True, then yields buffers of this module and all submodules. Otherwise, yields only buffers that
+                are direct members of this module. Defaults to True.
+            remove_duplicate
+                whether to remove the duplicated buffers in the result. Defaults to True.
+
+        Yields
+        ------
+            Tuple containing the name and buffer
+        """
+
+        buffers = super().named_buffers(prefix, recurse, remove_duplicate)
+        data_buffers = self._named_members(
+            lambda module: module._data.items(), prefix=prefix, recurse=recurse, remove_duplicate=remove_duplicate
+        )
+        gen = itertools.chain(buffers, data_buffers)
+        yield from gen
+
+    def __dir__(self):
+        """List Attributes."""
+        data = list(self._data.keys())
+        keys = super().__dir__() + data
+        # Eliminate attrs that are not legal Python variable names
+        keys = [key for key in keys if not key[0].isdigit()]
+        return sorted(keys)
+
+    # TODO: implement state_dict logic.
