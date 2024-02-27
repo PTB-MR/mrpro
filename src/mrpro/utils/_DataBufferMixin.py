@@ -106,7 +106,8 @@ class DataBufferMixin(torch.nn.Module):
         if name in self._data:
             del self._data[name]
             self._non_persistent_buffers_set.discard(name)
-        super().__delattr__(name)
+        else:
+            super().__delattr__(name)
 
     def __init__(self, *args, **kwargs) -> None:
         self._data = OrderedDict()

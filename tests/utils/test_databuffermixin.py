@@ -79,6 +79,7 @@ def test_databuffer_setgetattr():
     other_data = DataObject(torch.tensor(2.0), None)
     obj.data = other_data
     assert obj.data is other_data
+    assert obj._data['data'] is other_data
 
 
 def test_databuffer_error_messages():
@@ -91,7 +92,8 @@ def test_databuffer_error_messages():
     with pytest.raises(KeyError):
         obj.register_buffer('', data)
     with pytest.raises(KeyError):
-        obj.register_buffer('data', data)
+        obj.existing_attribute = 1
+        obj.register_buffer('existing_attribute', data)
 
 
 def test_databuffer_to():
