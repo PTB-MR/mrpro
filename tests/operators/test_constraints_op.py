@@ -25,6 +25,7 @@ from tests import RandomGenerator
         ((None, 1.0),),  # case (-infty, 0.)
         ((1.0, None),),  # case (1, \infty)
         ((-5.0, 5.0),),  # case (-5, 5)
+        ((-torch.inf, torch.inf),),  # case (-5, 5)
     ],
 )
 def test_constraints_operator_bounds(bounds):
@@ -147,10 +148,10 @@ def test_constraints_operator_multiple_inputs(bounds):
     [
         ((1.0, -1.0), (-1.0, 1.0)),  # first one is invalid
         ((-1.0, 1.0), (1.0, -1.0)),  # second one is invalid
-        ((1.0, 1.0),),
-        ((torch.nan, 1),),
-        ((-1, torch.nan),),
-        ((torch.inf, -torch.inf),),
+        ((1.0, 1.0),),  # invalid due to 1 == 1
+        ((torch.nan, 1),),  # invalid due to first bound being nan
+        ((-1, torch.nan),),  # invalid due to second bound being nan
+        ((torch.inf, -torch.inf),),  # invalid due to a>b
     ],
 )
 def test_constraints_operator_illegal_bounds(bounds):

@@ -42,11 +42,15 @@ class ConstraintsOp(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]
         self.upper_bounds = [bound[1] for bound in bounds]
 
         for lb, ub in bounds:
-            if (ub is not None and lb is not None) and lb > ub:
-                raise ValueError(
-                    'bounds should be ( (a1,b1), (a2,b2), ...) with ai<=bi if neither ai or bi is None;'
-                    f'\nbound tuple {lb, ub} is invalid'
-                )
+            if lb is not None and ub is not None:
+                if torch.isnan(torch.tensor(lb)) or torch.isnan(torch.tensor(ub)):
+                    raise ValueError(' "nan" is not a valid lower or upper bound;' f'\nbound tuple {lb, ub} is invalid')
+
+                if lb >= ub:
+                    raise ValueError(
+                        'bounds should be ( (a1,b1), (a2,b2), ...) with ai < bi if neither ai or bi is None;'
+                        f'\nbound tuple {lb, ub} is invalid'
+                    )
 
     @staticmethod
     def sigmoid(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
@@ -91,18 +95,20 @@ class ConstraintsOp(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]
             lb, ub = self.lower_bounds[i], self.upper_bounds[i]
 
             # distiguish cases
-            if lb is not None and ub is not None:
+            if (lb is not None and not torch.isneginf(torch.tensor(lb))) and (
+                ub is not None and not torch.isposinf(torch.tensor(ub))
+            ):
                 # case (a,b) with a<b and a,b \in R
                 xc.append(lb + (ub - lb) * self.sigmoid(x[i], beta=self.beta_sigmoid))
 
-            elif lb is not None and ub is None:
+            elif lb is not None and (ub is None or torch.isposinf(torch.tensor(ub))):
                 # case (a,None); corresponds to (a, \infty)
                 xc.append(lb + self.softplus(x[i], beta=self.beta_softplus))
 
-            elif lb is None and ub is not None:
+            elif (lb is None or torch.isneginf(torch.tensor(lb))) and ub is not None:
                 # case (None,b); corresponds to (-\infty, b)
                 xc.append(ub - self.softplus(-x[i], beta=self.beta_softplus))
-            elif lb is None and ub is None:
+            elif (lb is None or torch.isneginf(torch.tensor(lb))) and (ub is None or torch.isposinf(torch.tensor(ub))):
                 # case (None,None); corresponds to (-\infty, \infty), i.e. no transformation
                 xc.append(x[i])
 
@@ -127,18 +133,21 @@ class ConstraintsOp(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]
             lb, ub = self.lower_bounds[i], self.upper_bounds[i]
 
             # distiguish cases
-            if lb is not None and ub is not None:
+            if (lb is not None and not torch.isneginf(torch.tensor(lb))) and (
+                ub is not None and not torch.isposinf(torch.tensor(ub))
+            ):
+
                 # case (a,b) with a<b and a,b \in R
                 x.append(self.sigmoid_inverse((xc[i] - lb) / (ub - lb), beta=self.beta_sigmoid))
 
-            elif lb is not None and ub is None:
+            elif lb is not None and (ub is None or torch.isposinf(torch.tensor(ub))):
                 # case (a,None); corresponds to (a, \infty)
                 x.append(self.softplus_inverse(xc[i] - lb, beta=self.beta_softplus))
 
-            elif lb is None and ub is not None:
+            elif (lb is None or torch.isneginf(torch.tensor(lb))) and ub is not None:
                 # case (None,b); corresponds to (-\infty, b)
                 x.append(-self.softplus_inverse(-(xc[i] - ub), beta=self.beta_softplus))
-            elif lb is None and ub is None:
+            elif (lb is None or torch.isneginf(torch.tensor(lb))) and (ub is None or torch.isposinf(torch.tensor(ub))):
                 # case (None,None); corresponds to (-\infty, \infty), i.e. no transformation
                 x.append(xc[i])
 
