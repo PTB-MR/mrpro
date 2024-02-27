@@ -13,8 +13,8 @@ class DataBufferMixin(torch.nn.Module):
     _data
 
     The main use is to allow Data objects to be automatically moved to a
-    devices etc if one calles, for example DataBufferMixin.cuda()
-    will call .cuda() also on all register_buffer'ed Data attributes.
+    devices etc if one calles, for example DataBufferMixin.cuda() will 
+    call .cuda() also on all register_buffer'ed Data attributes.
 
     Used in Operators, for example.
     """

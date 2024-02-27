@@ -16,8 +16,8 @@
 import pytest
 import torch
 
-from mrpro.utils import DataBufferMixin
 from mrpro.data import Data
+from mrpro.utils import DataBufferMixin
 
 
 class DataObject(Data):
@@ -30,7 +30,7 @@ class DataObject(Data):
 class Module(DataBufferMixin):
     """A module using the mixin"""
 
-    def __init__(self, value: torch.Tensor):
+    def __init__(self):
         super().__init__()
         self.register_buffer('data', DataObject())
 
@@ -40,7 +40,6 @@ def test_register_buffer():
     assert 'data' in obj._data
 
     # A tensor should still be registered as a buffer
-
     obj.register_buffer('data2', torch.tensor(1.0))
     assert 'data2' not in obj._data
     assert 'data2' in obj._buffer
