@@ -183,8 +183,8 @@ class SuperResOp(LinearOperator):
         self.shape_HR = input_shape
 
         #calc offsets
-        offset_range = num_slices_per_stack*(thickness_slice+gap_slices_inHR)
-        offsets = np.arange(0,offset_range+1,step =offset_range/num_slices_per_stack)
+        range_slices = num_slices_per_stack*thickness_slice+(num_slices_per_stack-1)*gap_slices_inHR
+        offsets = np.arange(0,range_slices+1,step =thickness_slice+gap_slices_inHR, dtype = np.float32)
         offsets-=np.mean(offsets)
         offset = []
         for idx_slice in range(num_slices_per_stack):
@@ -380,24 +380,26 @@ class SuperResOp(LinearOperator):
         vol_HR = torch.zeros((other, coils, z,y,x))
         vol_HR_flat = einops.rearrange(vol_HR, 'other coils z y x -> (other coils) (x y z)')
 
-        weightSum_HR = torch.zeros(vol_HR_flat.shape[1])
+        flag_normalize = False
+        if flag_normalize:
+            weightSum_HR = torch.zeros(vol_HR_flat.shape[1])
 
-        #normalize matrix for HR
-        for idx_stack in range(self.num_stacks):
-            for idx_slice in range(self.slices_per_stack):
-                #TODO: improve and calc sum without converting to dense
-                weightSum_HR+= self.matrix[idx_stack][idx_slice].to_dense().sum(0)
+            #normalize matrix for HR
+            for idx_stack in range(self.num_stacks):
+                for idx_slice in range(self.slices_per_stack):
+                    #TODO: improve and calc sum without converting to dense
+                    weightSum_HR+= self.matrix[idx_stack][idx_slice].to_dense().sum(0)
 
         for idx_stack in range(self.num_stacks):
             for idx_slice in range(self.slices_per_stack):
                 slice_LR = slices_LR[idx_stack][idx_slice]
                 slice_LR = einops.rearrange(slice_LR, 'other coils 1 y x -> (other coils) (x y)', coils=coils, y=y)
-
                 matrix = self.matrix[idx_stack][idx_slice]
                 for idx_coil in range(vol_HR_flat.shape[0]):
                     vol_HR_flat[idx_coil] += matrix.H @ slice_LR[idx_coil]
 
-        vol_HR_flat/=torch.where(weightSum_HR != 0., weightSum_HR.unsqueeze(0),1.)
+        if flag_normalize:
+            vol_HR_flat/=torch.where(weightSum_HR != 0., weightSum_HR.unsqueeze(0),1.)
 
         vol_HR = einops.rearrange(vol_HR_flat, '(other coils) (x y z) -> other coils z y x', coils=coils, y=y, x = x, z = z)
         return vol_HR
@@ -416,7 +418,7 @@ class Settings_sliceProfile:
         return torch.exp(-(distance_z**2) / (2 * self.sigma**2))
 
     def sliceProf_rect(self, distance_z):
-        return torch.where(distance_z <=self.sliceThickness/2, 1., 0.)
+        return torch.where(distance_z <self.sliceThickness/2, 1., 0.)
 
 
 def simulHR(flag_show = True):
