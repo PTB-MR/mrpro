@@ -5,6 +5,7 @@ on:
 
 jobs:
   pre-commit:
+    runs-on: ubuntu-latest
     container:
       image: docker://ckolbptb/mrpro_py311:latest
     steps:
