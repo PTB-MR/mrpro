@@ -14,6 +14,7 @@ class DataBufferMixin(torch.nn.Module):
 
     The main use is to allow Data objects to be automatically moved to a
     devices etc if one calles, for example DataBufferMixin.cuda()
+    will call .cuda() also on all register_buffer'ed Data attributes.
 
     Used in Operators, for example.
     """
@@ -24,7 +25,7 @@ class DataBufferMixin(torch.nn.Module):
     # call_super_init = True
 
     def register_buffer(self, name: str, data: torch.Tensor | None | Data, persistent: bool = True) -> None:
-        r"""Add a buffer to the module.
+        """Add a buffer to the module.
 
         This is typically used to register a buffer that should not to be
         considered a model parameter.
