@@ -1,4 +1,0 @@
-# Binder does not offer gpu support so we only install the cpu version of torch
---find-links https://download.pytorch.org/whl/cpu
-torch
-mrpro[notebook] @ git+https://github.com/PTB-MR/mrpro
