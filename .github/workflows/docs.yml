@@ -23,8 +23,8 @@ jobs:
     outputs:
       commit_hash: ${{ steps.add-commit-push.outputs.commit_hash }}
     container:
-      image: docker://ckolbptb/mrpro_py311:latest
-      options: --user 1001
+      image: docker://ckolbptb/mrpro_py313:latest
+      options: --user root
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -88,8 +88,8 @@ jobs:
       pull-requests: write
       contents: write
     container:
-      image: docker://ckolbptb/mrpro_py311:latest
-      options: --user runner
+      image: docker://ckolbptb/mrpro_py312:latest
+      options: --user root
     strategy:
       matrix:
         notebook: ${{ fromJson(needs.get_notebooks.outputs.notebooks) }}
