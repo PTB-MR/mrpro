@@ -30,8 +30,8 @@ classifiers = [
 dependencies = [
     "numpy>=1.23,<2.0",
     "torch>=2.2,<3.0",
-    "torchio",
     "ismrmrd",
+    "xsdata>=22.2,<23",
     "einops",
     "pydicom",
     "pypulseq@git+https://github.com/imr-framework/pypulseq",
@@ -49,6 +49,7 @@ test = [
 ]
 lint = ["mypy", "flake8", "isort", "pre-commit", "autopep8", "pydocstyle"]
 docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject"]
+notebook = ["zenodo_get", "ipykernel", "jupytext", "matplotlib", "pip-tools"]
 
 [project.urls]
 "repository" = "https://github.com/PTB-MR/mrpro"

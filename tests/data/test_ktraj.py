@@ -17,7 +17,9 @@ import pytest
 import torch
 
 from mrpro.data import KTrajectory
+from mrpro.data.enums import TrajType
 from tests import RandomGenerator
+from tests.conftest import COMMON_MR_TRAJECTORIES
 
 
 @pytest.fixture(params=({'seed': 0},))
@@ -41,6 +43,39 @@ def cartesian_grid(request):
         return kz.unsqueeze(0), ky.unsqueeze(0), kx.unsqueeze(0)
 
     return generate
+
+
+def create_uniform_traj(nk, k_shape):
+    """Create a tensor of uniform points with predefined shape nk."""
+    kidx = torch.where(torch.tensor(nk[1:]) > 1)[0]
+    if len(kidx) > 1:
+        raise ValueError('nk is allowed to have at most one non-singleton dimension')
+    if len(kidx) >= 1:
+        # kidx+1 because we searched in nk[1:]
+        n_kpoints = nk[kidx + 1]
+        # kidx+2 because k_shape also includes coils dimensions
+        k = torch.linspace(-k_shape[kidx + 2] // 2, k_shape[kidx + 2] // 2 - 1, n_kpoints, dtype=torch.float32)
+        views = [1 if i != n_kpoints else -1 for i in nk]
+        k = k.view(*views).expand(list(nk))
+    else:
+        k = torch.zeros(nk)
+    return k
+
+
+def create_traj(k_shape, nkx, nky, nkz, sx, sy, sz):
+    """Create trajectory with random entries."""
+    random_generator = RandomGenerator(seed=0)
+    k_list = []
+    for spacing, nk in zip([sz, sy, sx], [nkz, nky, nkx]):
+        if spacing == 'nuf':
+            k = random_generator.float32_tensor(size=nk)
+        elif spacing == 'uf':
+            k = create_uniform_traj(nk, k_shape=k_shape)
+        elif spacing == 'z':
+            k = torch.zeros(nk)
+        k_list.append(k)
+    ktraj = KTrajectory(*k_list)
+    return ktraj
 
 
 def test_ktraj_repeat_detection_tol(cartesian_grid):
@@ -147,3 +182,47 @@ def test_ktraj_cpu(cartesian_grid):
     assert ktraj_cpu.kz.is_cpu
     assert ktraj_cpu.ky.is_cpu
     assert ktraj_cpu.kx.is_cpu
+
+
+@COMMON_MR_TRAJECTORIES
+def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
+    """Test identification of traj types."""
+
+    # Generate random k-space trajectories
+    ktraj = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
+
+    # Find out the type of the kz, ky and kz dimensions
+    single_value_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx)) if s == 'z']
+    on_grid_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx)) if s == 'uf']
+    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx)) if s == 'nuf']
+
+    # check dimensions which are of shape 1 and do not need any transform
+    assert all([ktraj.type_along_kzyx[dim] & TrajType.SINGLEVALUE for dim in single_value_dims])
+
+    # Check dimensions which are on a grid and require FFT
+    assert all([ktraj.type_along_kzyx[dim] & TrajType.ONGRID for dim in on_grid_dims])
+
+    # Check dimensions which are not on a grid and require NUFFT
+    assert all([~(ktraj.type_along_kzyx[dim] & (TrajType.SINGLEVALUE | TrajType.ONGRID)) for dim in not_on_grid_dims])
+
+
+@COMMON_MR_TRAJECTORIES
+def test_ktype_along_k210(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
+    """Test identification of traj types."""
+
+    # Generate random k-space trajectories
+    ktraj = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
+
+    # Find out the type of the k2, k1 and k0 dimensions
+    single_value_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0)) if s == 'z']
+    on_grid_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0)) if s == 'uf']
+    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0)) if s == 'nuf']
+
+    # check dimensions which are of shape 1 and do not need any transform
+    assert all([ktraj.type_along_k210[dim] & TrajType.SINGLEVALUE for dim in single_value_dims])
+
+    # Check dimensions which are on a grid and require FFT
+    assert all([ktraj.type_along_k210[dim] & TrajType.ONGRID for dim in on_grid_dims])
+
+    # Check dimensions which are not on a grid and require NUFFT
+    assert all([~(ktraj.type_along_k210[dim] & (TrajType.SINGLEVALUE | TrajType.ONGRID)) for dim in not_on_grid_dims])

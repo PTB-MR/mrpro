@@ -61,7 +61,7 @@ html_theme_options = {
             # Label for this link
             'name': 'GitHub',
             # URL where the link will redirect
-            'url': 'https://github.com/ckolbPTB/mrpro',
+            'url': 'https://github.com/PTB-MR/mrpro',
             # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
             'icon': 'fa-brands fa-github',
         },

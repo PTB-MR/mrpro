@@ -134,3 +134,10 @@ class CalibrationMode(Enum):
     SEPARATE = 'separate'
     EXTERNAL = 'external'
     OTHER = 'other'
+
+
+class TrajType(Flag):
+    """Special Properties of the Trajectory."""
+
+    SINGLEVALUE = 1
+    ONGRID = 2
