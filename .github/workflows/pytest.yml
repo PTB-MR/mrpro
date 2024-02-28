@@ -17,6 +17,7 @@ jobs:
     # runs within Docker container
     container:
       image: ${{ matrix.container-python-version }}
+      options: --user runner
 
     steps:
       - name: Checkout repo
@@ -29,7 +30,6 @@ jobs:
         run: pip install pytest-github-actions-annotate-failures
 
       - name: Run PyTest
-
         run: |
           pytest -n 4 -m "not cuda" --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
 

@@ -9,3 +9,6 @@ ARG PYTHON="python3.12"
 COPY reco.sh .
 RUN bash reco.sh
 RUN rm reco.sh
+
+# set user
+USER runner

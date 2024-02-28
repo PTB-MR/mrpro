@@ -33,3 +33,11 @@ python -m pip install .[notebook,test,docs]
 # clean up
 rm -r /opt/mrpro
 apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# add user runner
+adduser --disabled-password --gecos "" --uid 1001 runner \
+    && groupadd docker --gid 123 \
+    && usermod -aG sudo runner \
+    && usermod -aG docker runner \
+    && echo "%sudo   ALL=(ALL:ALL) NOPASSWD:ALL" > /etc/sudoers \
+    && echo "Defaults env_keep += \"DEBIAN_FRONTEND\"" >> /etc/sudoers
