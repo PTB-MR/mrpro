@@ -40,15 +40,9 @@ def _dcm_pixelarray_to_tensor(ds: Dataset) -> torch.Tensor:
     intercept." (taken from
     https://www.kitware.com/dicom-rescale-intercept-rescale-slope-and-itk/)
     """
-    if 'RescaleSlope' in ds:
-        slope = float(ds.data_element('RescaleSlope').value)
-    else:
-        slope = 1.0
+    slope = float(ds.data_element('RescaleSlope').value) if 'RescaleSlope' in ds else 1.0
 
-    if 'RescaleIntercept' in ds:
-        intercept = float(ds.data_element('RescaleSlope').value)
-    else:
-        intercept = 0.0
+    intercept = float(ds.data_element('RescaleSlope').value) if 'RescaleIntercept' in ds else 0.0
 
     # Image data is 2D np.array of Uint16, which cannot directly be converted to tensor
     return slope * torch.as_tensor(ds.pixel_array.astype(np.complex64)) + intercept
@@ -105,10 +99,7 @@ class IData(Data):
         """
 
         # Get files
-        if suffix is None:  # Read all files in the folder
-            file_paths = list(Path(foldername).glob('*'))
-        else:
-            file_paths = list(Path(foldername).glob('*.' + suffix))
+        file_paths = list(Path(foldername).glob('*')) if suffix is None else list(Path(foldername).glob('*.' + suffix))
 
         if len(file_paths) == 0:
             raise ValueError(f'No dicom files with suffix {suffix} found in {foldername}')

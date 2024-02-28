@@ -122,10 +122,10 @@ class KHeader:
         enc: ismrmrdschema.encodingType = header.encoding[encoding_number]
 
         # These are guaranteed to exist
-        parameters = dict(
-            h1_freq=header.experimentalConditions.H1resonanceFrequency_Hz,
-            acq_info=acq_info,
-        )
+        parameters = {
+            'h1_freq': header.experimentalConditions.H1resonanceFrequency_Hz,
+            'acq_info': acq_info,
+        }
 
         if defaults is not None:
             parameters.update(defaults)

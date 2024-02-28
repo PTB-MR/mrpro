@@ -136,7 +136,6 @@ class ConstraintsOp(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]
             if (lb is not None and not torch.isneginf(torch.tensor(lb))) and (
                 ub is not None and not torch.isposinf(torch.tensor(ub))
             ):
-
                 # case (a,b) with a<b and a,b \in R
                 x.append(self.sigmoid_inverse((xc[i] - lb) / (ub - lb), beta=self.beta_sigmoid))
 

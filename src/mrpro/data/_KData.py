@@ -317,9 +317,7 @@ class KData:
         """
         return KData(
             header=self.header,
-            data=self.data.cuda(
-                device=device, non_blocking=non_blocking, memory_format=memory_format
-            ),  # type: ignore [call-arg]
+            data=self.data.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),  # type: ignore [call-arg]
             traj=self.traj.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),
         )
 

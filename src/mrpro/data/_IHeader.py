@@ -70,10 +70,7 @@ class IHeader:
         def get_item(ds, name: str | Tag):
             """Get item with a given name or Tag from a pydicom dataset."""
 
-            if isinstance(name, str):  # find item via value name
-                tag = Tag(name)
-            else:
-                tag = name
+            tag = Tag(name) if isinstance(name, str) else name  # find item via value name
 
             # iterall is recursive, so it will find all items with the given name
             found_item = [item.value for item in ds.iterall() if item.tag == tag]
