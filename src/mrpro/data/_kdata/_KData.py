@@ -17,7 +17,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 from pathlib import Path
-from typing import Literal
+from typing import Protocol
 
 import h5py
 import ismrmrd
@@ -30,6 +30,9 @@ from mrpro.data import KHeader
 from mrpro.data import KTrajectory
 from mrpro.data import KTrajectoryRawShape
 from mrpro.data import Limits
+from mrpro.data._kdata._KDataRearrangeMixin import KDataRearrangeMixin
+from mrpro.data._kdata._KDataSelectMixin import KDataSelectMixin
+from mrpro.data._kdata._KDataSplitMixin import KDataSplitMixin
 from mrpro.data.enums import AcqFlags
 from mrpro.data.traj_calculators import KTrajectoryCalculator
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
@@ -60,7 +63,7 @@ DEFAULT_IGNORE_FLAGS = (
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
-class KData:
+class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin):
     """MR raw data / k-space data class."""
 
     header: KHeader
@@ -332,86 +335,30 @@ class KData:
             traj=self.traj.cpu(memory_format=memory_format),
         )
 
-    def split_k1_into_other(
-        self,
-        split_idx: torch.Tensor,
-        other_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
-    ) -> KData:
-        """Based on an index tensor, split the data in e.g. phases.
 
-        Parameters
-        ----------
-        split_idx
-            2D index describing the k1 points in each block to be moved to other dimension  (other_split, k1_per_split)
-        other_label
-            Label of other dimension, e.g. repetition, phase
+class _KDataProtocol(Protocol):
+    """Protocol for KData used for type hinting in KData mixins.
 
-        Returns
-        -------
-            K-space data with new shape ((other other_split) coils k2 k1_per_split k0)
-        """
-        from mrpro.data._kdata._split_k2_or_k1_into_other import split_k2_or_k1_into_other
+    Note that the actual KData class can have more properties and methods than those defined here.
 
-        return split_k2_or_k1_into_other(self, split_idx, other_label, split_dir='k1')
+    If you want to use a property or method of KData in a new KDataMixin class,
+    you must add it to this Protocol to make sure that the type hinting works.
 
-    def split_k2_into_other(
-        self,
-        split_idx: torch.Tensor,
-        other_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
-    ) -> KData:
-        """Based on an index tensor, split the data in e.g. phases.
+    For more information about Protocols see:
+    https://typing.readthedocs.io/en/latest/spec/protocol.html#protocols
+    """
 
-        Parameters
-        ----------
-        split_idx
-            2D index describing the k2 points in each block to be moved to other dimension  (other_split, k2_per_split)
-        other_label
-            Label of other dimension, e.g. repetition, phase
+    @property
+    def header(self) -> KHeader: ...
 
-        Returns
-        -------
-            K-space data with new shape ((other other_split) coils k2_per_split k1 k0)
-        """
-        from mrpro.data._kdata._split_k2_or_k1_into_other import split_k2_or_k1_into_other
+    @property
+    def data(self) -> torch.Tensor: ...
 
-        return split_k2_or_k1_into_other(self, split_idx, other_label, split_dir='k2')
+    @property
+    def traj(self) -> KTrajectory: ...
 
-    def rearrange_k2_k1_into_k1(
-        self,
-    ) -> KData:
-        """Rearrange kdata from (... k2 k1 ...) to (... 1 (k2 k1) ...).
+    def __init__(self, header: KHeader, data: torch.Tensor, traj: KTrajectory): ...
 
-        Returns
-        -------
-            K-space data (other coils 1 (k2 k1) k0)
-        """
-        from mrpro.data._kdata._rearrange_k2_k1_into_k1 import rearrange_k2_k1_into_k1
-
-        return rearrange_k2_k1_into_k1(self)
-
-    def select_other_subset(
-        self,
-        subset_idx: torch.Tensor,
-        subset_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
-    ) -> KData:
-        """Select a subset from the other dimension of KData.
-
-        Parameters
-        ----------
-        subset_idx
-            Index which elements of the other subset to use, e.g. phase 0,1,2 and 5
-        subset_label
-            Name of the other label, e.g. phase
-
-        Returns
-        -------
-            K-space data (other_subset coils k2 k1 k0)
-
-        Raises
-        ------
-        ValueError
-            If the subset indices are not available in the data
-        """
-        from mrpro.data._kdata._select_other_subset import select_other_subset
-
-        return select_other_subset(self, subset_idx, subset_label)
+    def _split_k2_or_k1_into_other(
+        self, split_idx: torch.Tensor, other_label: str, split_dir: str
+    ) -> _KDataProtocol: ...
