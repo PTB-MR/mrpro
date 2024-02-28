@@ -23,7 +23,7 @@ jobs:
     outputs:
       commit_hash: ${{ steps.add-commit-push.outputs.commit_hash }}
     container:
-      image: docker://ckolbptb/mrpro_py311:latest
+      image: ghcr.io/ptb-mr/mrpro_py311:latest
       options: --user runner
     steps:
       - name: Checkout repo
@@ -88,7 +88,7 @@ jobs:
       pull-requests: write
       contents: write
     container:
-      image: docker://ckolbptb/mrpro_py311:latest
+      image: ghcr.io/ptb-mr/mrpro_py311:latest
       options: --user root
     strategy:
       matrix:
@@ -133,7 +133,7 @@ jobs:
     needs: [convert_scripts, run_notebook]
     runs-on: ubuntu-latest
     container:
-      image: docker://ckolbptb/mrpro_py311:latest
+      image: ghcr.io/ptb-mr/mrpro_py311:latest
       options: --user runner
     steps:
       - name: Checkout
