@@ -33,11 +33,6 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
-      #- name: Set ownership
-      #  run: |
-      #    # this is to fix GIT not liking owner of the checkout dir
-      #    chown -R $(id -u):$(id -g) $PWD
-
       - name: Install dependencies
         run: python -m pip install .[notebook]
 
@@ -94,6 +89,7 @@ jobs:
       contents: write
     container:
       image: docker://ckolbptb/mrpro_py311:latest
+      options: --user 1001
     strategy:
       matrix:
         notebook: ${{ fromJson(needs.get_notebooks.outputs.notebooks) }}
@@ -138,7 +134,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: docker://ckolbptb/mrpro_py311:latest
-
+      options: --user 1001
     steps:
       - name: Checkout
         uses: actions/checkout@v4
