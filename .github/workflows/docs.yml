@@ -23,7 +23,7 @@ jobs:
     outputs:
       commit_hash: ${{ steps.add-commit-push.outputs.commit_hash }}
     container:
-      image: docker://ckolbptb/mrpro_py313:latest
+      image: docker://ckolbptb/mrpro_py312:latest
       options: --user root
     steps:
       - name: Checkout repo
