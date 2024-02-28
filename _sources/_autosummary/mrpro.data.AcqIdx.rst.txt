@@ -35,6 +35,13 @@ mrpro.data.AcqIdx
       ~AcqIdx.repetition
       ~AcqIdx.set
       ~AcqIdx.segment
-      ~AcqIdx.user
+      ~AcqIdx.user0
+      ~AcqIdx.user1
+      ~AcqIdx.user2
+      ~AcqIdx.user3
+      ~AcqIdx.user4
+      ~AcqIdx.user5
+      ~AcqIdx.user6
+      ~AcqIdx.user7
    
    
