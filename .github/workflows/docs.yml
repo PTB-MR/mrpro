@@ -89,7 +89,7 @@ jobs:
       contents: write
     container:
       image: docker://ckolbptb/mrpro_py311:latest
-      options: --user 1001
+      options: --user runner
     strategy:
       matrix:
         notebook: ${{ fromJson(needs.get_notebooks.outputs.notebooks) }}
