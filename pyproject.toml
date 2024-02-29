@@ -92,9 +92,6 @@ ignore = [
 docstring-quotes = "double"
 inline-quotes = "single"
 
-[tool.ruff.lint.flake8-bugbear]
-extend-immutable-calls = ["torch.Tensor"]
-
 [tool.ruff.format]
 quote-style = "single"
 
