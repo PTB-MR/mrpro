@@ -28,6 +28,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
+          context: ./docker
           file: Dockerfile_py311
           push: true
           tags: ghcr.io/ptb-mr/mrpro_py311
