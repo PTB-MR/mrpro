@@ -82,7 +82,7 @@ include = ["src/**/*.py"]
 exclude = ["docs/**"]
 
 [tool.ruff.lint]
-extend-select = ["B", "C", "SIM", "UP", "Q", "CYP", "COM", "A", "S", "ANN", "D", "N", "I"]
+extend-select = ["B", "C", "SIM", "UP", "Q", "CPY", "COM", "A", "S", "ANN", "D", "N", "I"]
 ignore = [
     "C901", # function is too complex
     # "B904", # raise exception within except block
