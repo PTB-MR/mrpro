@@ -11,22 +11,24 @@ jobs:
     permissions:
       packages: write
       contents: read
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v2
         
-      - name: Build image
-        run: | 
-          cd docker
-          docker build . -f Dockerfile_py311 --tag ghcr.io/ptb-mr/mrpro_py311
+      - name: Login to GitHub Packages
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
           
-      - name: Log in to registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
-        
-      - name: Push image
-        run: docker push ghcr.io/ptb-mr/mrpro_py311
-        
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          file: ./docker/Dockerfile_py311
+          push: true
+          tags: ghcr.io/ptb-mr/mrpro_py311
+    
   test:
     runs-on: ubuntu-latest
     permissions:
