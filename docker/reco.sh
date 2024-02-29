@@ -17,6 +17,7 @@ ${APT_GET_INSTALL} $PYTHON-full
 
 # create alias for installed python version
 ln -s /usr/bin/$PYTHON /usr/local/bin/python
+ln -s /usr/bin/$PYTHON /usr/local/bin/python3
 
 # clone repo to get requirements
 git clone https://github.com/PTB-MR/mrpro --depth 1 /opt/mrpro
