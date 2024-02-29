@@ -28,7 +28,7 @@ jobs:
           context: ./docker
           file: ./docker/Dockerfile_py311
           push: true
-          tags: ghcr.io/ptb-mr/mrpro_py311
+          tags: ghcr.io/ptb-mr/mrpro_py310
     
   test:
     runs-on: ubuntu-latest
