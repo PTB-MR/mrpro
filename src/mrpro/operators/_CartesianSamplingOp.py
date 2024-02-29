@@ -53,29 +53,25 @@ class CartesianSamplingOp(LinearOperator):
         # If a dimension is irregular or singleton, we will not perform any reordering
         # in it, only dimensions on a cartesian grid will be reordered.
         if traj_type_kzyx[-1] == TrajType.ONGRID:  # kx
-            kx_idx = ktraj_tensor[-1, ...] + encoding_shape.x // 2
+            kx_idx = ktraj_tensor[-1, ...].to(dtype=torch.int64) + encoding_shape.x // 2
         else:
             encoding_shape.x = ktraj_tensor.shape[-1]
             kx_idx = rearrange(torch.arange(ktraj_tensor.shape[-1]), 'kx->1 1 1 kx')
 
         if traj_type_kzyx[-2] == TrajType.ONGRID:  # ky
-            ky_idx = ktraj_tensor[-2, ...] + encoding_shape.y // 2
+            ky_idx = ktraj_tensor[-2, ...].to(dtype=torch.int64) + encoding_shape.y // 2
         else:
             encoding_shape.y = ktraj_tensor.shape[-2]
             ky_idx = rearrange(torch.arange(ktraj_tensor.shape[-2]), 'ky->1 1 ky 1')
 
         if traj_type_kzyx[-3] == TrajType.ONGRID:  # kz
-            kz_idx = ktraj_tensor[-3, ...] + encoding_shape.z // 2
+            kz_idx = ktraj_tensor[-3, ...].to(dtype=torch.int64) + encoding_shape.z // 2
         else:
             encoding_shape.z = ktraj_tensor.shape[-3]
             kz_idx = rearrange(torch.arange(ktraj_tensor.shape[-3]), 'kz->1 kz 1 1')
 
-        # 1D indices into a flattened tensor
-        kidx = (
-            (kz_idx * encoding_shape.y * encoding_shape.x + ky_idx * encoding_shape.x + kx_idx)
-            .flatten()
-            .to(dtype=torch.int64)
-        )
+        # 1D indices into a flattened tensor.
+        kidx = (kz_idx * encoding_shape.y * encoding_shape.x + ky_idx * encoding_shape.x + kx_idx).flatten()
         self.register_buffer('_fft_idx', kidx.unsqueeze(0))
         # we can skip the indexing if the data is already sorted
         self._needs_indexing = not torch.all(torch.diff(kidx) == 1)
