@@ -71,6 +71,6 @@ def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1):
         # obtained solution should match analytical
         torch.testing.assert_close(torch.tensor(params_result), analytical_solution)
 
-        for p, before in zip(params_init, params_init_before, strict=False):
+        for p, before in zip(params_init, params_init_before, strict=True):
             assert p == before, 'the initial parameter should not have changed during optimization'
             assert p.grad == before, 'the inital paramters gradient should not have changed during optimization'

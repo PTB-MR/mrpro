@@ -42,7 +42,7 @@ def create_traj(k_shape, nkx, nky, nkz, sx, sy, sz):
     """Create trajectory with random entries."""
     random_generator = RandomGenerator(seed=0)
     k_list = []
-    for spacing, nk in zip([sz, sy, sx], [nkz, nky, nkx], strict=False):
+    for spacing, nk in zip([sz, sy, sx], [nkz, nky, nkx], strict=True):
         if spacing == 'nuf':
             k = random_generator.float32_tensor(size=nk)
         elif spacing == 'uf':
@@ -168,9 +168,9 @@ def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, 
     ktraj = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
 
     # Find out the type of the kz, ky and kz dimensions
-    single_value_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx), strict=False) if s == 'z']
-    on_grid_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx), strict=False) if s == 'uf']
-    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx), strict=False) if s == 'nuf']
+    single_value_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx), strict=True) if s == 'z']
+    on_grid_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx), strict=True) if s == 'uf']
+    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx), strict=True) if s == 'nuf']
 
     # check dimensions which are of shape 1 and do not need any transform
     assert all(ktraj.type_along_kzyx[dim] & TrajType.SINGLEVALUE for dim in single_value_dims)
@@ -190,9 +190,9 @@ def test_ktype_along_k210(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, 
     ktraj = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
 
     # Find out the type of the k2, k1 and k0 dimensions
-    single_value_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0), strict=False) if s == 'z']
-    on_grid_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0), strict=False) if s == 'uf']
-    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0), strict=False) if s == 'nuf']
+    single_value_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0), strict=True) if s == 'z']
+    on_grid_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0), strict=True) if s == 'uf']
+    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0), strict=True) if s == 'nuf']
 
     # check dimensions which are of shape 1 and do not need any transform
     assert all(ktraj.type_along_k210[dim] & TrajType.SINGLEVALUE for dim in single_value_dims)
