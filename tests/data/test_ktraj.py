@@ -12,7 +12,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import numpy as np
 import pytest
 import torch
 
@@ -20,29 +19,6 @@ from mrpro.data import KTrajectory
 from mrpro.data.enums import TrajType
 from tests import RandomGenerator
 from tests.conftest import COMMON_MR_TRAJECTORIES
-
-
-@pytest.fixture(params=({'seed': 0},))
-def cartesian_grid(request):
-    generator = RandomGenerator(request.param['seed'])
-
-    def generate(nk2: int, nk1: int, nk0: int, jitter: float) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        k0_range = torch.arange(nk0)
-        k1_range = torch.arange(nk1)
-        k2_range = torch.arange(nk2)
-        ky, kz, kx = torch.meshgrid(
-            k1_range,
-            k2_range,
-            k0_range,
-            indexing='xy',
-        )
-        if jitter > 0:
-            kx = kx + generator.float32_tensor((nk2, nk1, nk0), high=jitter)
-            ky = ky + generator.float32_tensor((nk2, nk1, nk0), high=jitter)
-            kz = kz + generator.float32_tensor((nk2, nk1, nk0), high=jitter)
-        return kz.unsqueeze(0), ky.unsqueeze(0), kx.unsqueeze(0)
-
-    return generate
 
 
 def create_uniform_traj(nk, k_shape):
@@ -66,7 +42,7 @@ def create_traj(k_shape, nkx, nky, nkz, sx, sy, sz):
     """Create trajectory with random entries."""
     random_generator = RandomGenerator(seed=0)
     k_list = []
-    for spacing, nk in zip([sz, sy, sx], [nkz, nky, nkx]):
+    for spacing, nk in zip([sz, sy, sx], [nkz, nky, nkx], strict=False):
         if spacing == 'nuf':
             k = random_generator.float32_tensor(size=nk)
         elif spacing == 'uf':
@@ -130,14 +106,14 @@ def test_ktraj_raise_not_broadcastable():
     kx = ky = torch.arange(1 * 2 * 3 * 4).reshape(1, 2, 3, 4)
     kz = torch.arange(1 * 2 * 3 * 100).reshape(1, 2, 3, 100)
     with pytest.raises(ValueError):
-        ktraj = KTrajectory(kz, ky, kx)
+        KTrajectory(kz, ky, kx)
 
 
 def test_ktraj_raise_wrong_dim():
     """Wrong number of dimensions after broadcasting should raise."""
     kx = ky = kz = torch.arange(1 * 2 * 3).reshape(1, 2, 3)
     with pytest.raises(ValueError):
-        ktraj = KTrajectory(kz, ky, kx)
+        KTrajectory(kz, ky, kx)
 
 
 def test_ktraj_to_float64(cartesian_grid):
@@ -192,18 +168,18 @@ def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, 
     ktraj = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
 
     # Find out the type of the kz, ky and kz dimensions
-    single_value_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx)) if s == 'z']
-    on_grid_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx)) if s == 'uf']
-    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx)) if s == 'nuf']
+    single_value_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx), strict=False) if s == 'z']
+    on_grid_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx), strict=False) if s == 'uf']
+    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx), strict=False) if s == 'nuf']
 
     # check dimensions which are of shape 1 and do not need any transform
-    assert all([ktraj.type_along_kzyx[dim] & TrajType.SINGLEVALUE for dim in single_value_dims])
+    assert all(ktraj.type_along_kzyx[dim] & TrajType.SINGLEVALUE for dim in single_value_dims)
 
     # Check dimensions which are on a grid and require FFT
-    assert all([ktraj.type_along_kzyx[dim] & TrajType.ONGRID for dim in on_grid_dims])
+    assert all(ktraj.type_along_kzyx[dim] & TrajType.ONGRID for dim in on_grid_dims)
 
     # Check dimensions which are not on a grid and require NUFFT
-    assert all([~(ktraj.type_along_kzyx[dim] & (TrajType.SINGLEVALUE | TrajType.ONGRID)) for dim in not_on_grid_dims])
+    assert all(~(ktraj.type_along_kzyx[dim] & (TrajType.SINGLEVALUE | TrajType.ONGRID)) for dim in not_on_grid_dims)
 
 
 @COMMON_MR_TRAJECTORIES
@@ -214,15 +190,15 @@ def test_ktype_along_k210(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, 
     ktraj = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
 
     # Find out the type of the k2, k1 and k0 dimensions
-    single_value_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0)) if s == 'z']
-    on_grid_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0)) if s == 'uf']
-    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0)) if s == 'nuf']
+    single_value_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0), strict=False) if s == 'z']
+    on_grid_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0), strict=False) if s == 'uf']
+    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0), strict=False) if s == 'nuf']
 
     # check dimensions which are of shape 1 and do not need any transform
-    assert all([ktraj.type_along_k210[dim] & TrajType.SINGLEVALUE for dim in single_value_dims])
+    assert all(ktraj.type_along_k210[dim] & TrajType.SINGLEVALUE for dim in single_value_dims)
 
     # Check dimensions which are on a grid and require FFT
-    assert all([ktraj.type_along_k210[dim] & TrajType.ONGRID for dim in on_grid_dims])
+    assert all(ktraj.type_along_k210[dim] & TrajType.ONGRID for dim in on_grid_dims)
 
     # Check dimensions which are not on a grid and require NUFFT
-    assert all([~(ktraj.type_along_k210[dim] & (TrajType.SINGLEVALUE | TrajType.ONGRID)) for dim in not_on_grid_dims])
+    assert all(~(ktraj.type_along_k210[dim] & (TrajType.SINGLEVALUE | TrajType.ONGRID)) for dim in not_on_grid_dims)

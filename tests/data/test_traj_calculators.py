@@ -23,11 +23,8 @@ from mrpro.data.traj_calculators import KTrajectoryPulseq
 from mrpro.data.traj_calculators import KTrajectoryRadial2D
 from mrpro.data.traj_calculators import KTrajectoryRpe
 from mrpro.data.traj_calculators import KTrajectorySunflowerGoldenRpe
-from tests.conftest import random_kheader
 from tests.data import IsmrmrdRawTestData
 from tests.data._PulseqRadialTestSeq import PulseqRadialTestSeq
-from tests.data.test_kdata import ismrmrd_cart
-from tests.phantoms.test_ellipse_phantom import ph_ellipse
 
 
 @pytest.fixture(scope='function')

@@ -93,4 +93,4 @@ def test_fourier_not_supported_traj(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz
     recon_shape = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
     encoding_shape = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
     with pytest.raises(NotImplementedError, match='Cartesian FFT dims need to be aligned'):
-        op = FourierOp(recon_shape=recon_shape, encoding_shape=encoding_shape, traj=ktraj)
+        FourierOp(recon_shape=recon_shape, encoding_shape=encoding_shape, traj=ktraj)

@@ -94,8 +94,8 @@ def test_sensitivity_op_other_dim_compatibility_fail(csm_other_dim, img_other_di
 
     with pytest.raises(RuntimeError, match='The size of tensor'):
         u = random_generator.complex64_tensor(size=(img_other_dim, 1, Nz, Ny, Nx))
-        forward = sensitivity_op.forward(u)
+        sensitivity_op.forward(u)
 
     with pytest.raises(RuntimeError, match='The size of tensor'):
         v = random_generator.complex64_tensor(size=(img_other_dim, num_coils, Nz, Ny, Nx))
-        adjoint = sensitivity_op.adjoint(v)
+        sensitivity_op.adjoint(v)

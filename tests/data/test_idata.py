@@ -17,10 +17,6 @@ import pytest
 import torch
 
 from mrpro.data import IData
-from tests.conftest import dcm_2d
-from tests.conftest import dcm_multi_te
-from tests.conftest import random_kheader
-from tests.conftest import random_test_data
 
 
 def test_IData_from_dcm_file(dcm_2d):

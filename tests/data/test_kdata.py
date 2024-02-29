@@ -21,7 +21,6 @@ from mrpro.data.traj_calculators._KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
 from tests.data import IsmrmrdRawTestData
 from tests.helper import rel_image_diff
-from tests.phantoms.test_ellipse_phantom import ph_ellipse
 
 
 @pytest.fixture(scope='session')

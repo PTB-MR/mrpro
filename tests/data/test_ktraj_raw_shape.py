@@ -13,13 +13,11 @@
 #   limitations under the License.
 
 import numpy as np
-import pytest
 import torch
 from einops import rearrange
 from einops import repeat
 
 from mrpro.data import KTrajectoryRawShape
-from tests.data.test_ktraj import cartesian_grid
 
 
 def make_ktraj_raw_shape(ksomething, sort_idx):

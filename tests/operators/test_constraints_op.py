@@ -29,7 +29,6 @@ from tests import RandomGenerator
     ],
 )
 def test_constraints_operator_bounds(bounds):
-
     random_generator = RandomGenerator(seed=0)
 
     # random tensor with arbitrary values
@@ -122,7 +121,6 @@ def test_constraints_operator_no_nans(bounds):
     ],
 )
 def test_constraints_operator_multiple_inputs(bounds):
-
     random_generator = RandomGenerator(seed=0)
 
     # random tensors with arbitrary values
@@ -156,4 +154,4 @@ def test_constraints_operator_multiple_inputs(bounds):
 )
 def test_constraints_operator_illegal_bounds(bounds):
     with pytest.raises(ValueError, match='invalid'):
-        Cop = ConstraintsOp(bounds)
+        ConstraintsOp(bounds)

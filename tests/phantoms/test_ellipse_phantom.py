@@ -18,12 +18,6 @@ import torch
 from mrpro.data import SpatialDimension
 from mrpro.operators import FastFourierOp
 from tests.helper import rel_image_diff
-from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData
-
-
-@pytest.fixture(scope='session')
-def ph_ellipse():
-    return EllipsePhantomTestData()
 
 
 def test_image_space(ph_ellipse):

@@ -1,6 +1,5 @@
 """Tests for the operators module."""
 
-import pytest
 import torch
 
 from mrpro.operators import LinearOperator

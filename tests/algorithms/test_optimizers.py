@@ -18,7 +18,6 @@ import torch
 from mrpro.algorithms import adam
 from mrpro.algorithms import lbfgs
 from mrpro.operators import ConstraintsOp
-from tests import RandomGenerator
 from tests.operators._OptimizationTestFunctions import Rosenbrock
 
 
@@ -31,12 +30,8 @@ from tests.operators._OptimizationTestFunctions import Rosenbrock
     ],
 )
 def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1):
-
     # TODO: remove once fixed in pytorch. see also issue #132 on GitHub
     with pytest.raises(ImportWarning):
-
-        random_generator = RandomGenerator(seed=0)
-
         # use Rosenbrock function as test case with 2D test data
         a, b = 1, 100
         rosen_brock = Rosenbrock(a, b)
@@ -50,7 +45,6 @@ def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1):
 
         # save to compare with later as optimization should not change the initial points
         params_init_before = [i.detach().clone for i in params_init]
-        params_init_grad_before = [i.grad.clone() for i in params_init]
 
         if enforce_bounds_on_x1:
             # the analytical solution for x_1 will be a, thus we can limit it into [0,2a]
@@ -77,6 +71,6 @@ def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1):
         # obtained solution should match analytical
         torch.testing.assert_close(torch.tensor(params_result), analytical_solution)
 
-        for p, before, grad_before in zip(params_init, params_init_before, params_init_grad_before):
+        for p, before in zip(params_init, params_init_before, strict=False):
             assert p == before, 'the initial parameter should not have changed during optimization'
             assert p.grad == before, 'the inital paramters gradient should not have changed during optimization'

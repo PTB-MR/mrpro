@@ -3,6 +3,7 @@ import tempfile
 import ismrmrd
 import pytest
 from ismrmrd import xsd
+import torch
 from xsdata.models.datatype import XmlDate
 from xsdata.models.datatype import XmlTime
 
@@ -11,7 +12,7 @@ from mrpro.data import KHeader
 from mrpro.data.enums import AcqFlags
 from tests import RandomGenerator
 from tests.data import Dicom2DTestImage
-from tests.phantoms.test_ellipse_phantom import ph_ellipse
+from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData
 
 
 def generate_random_encodingcounter_properties(generator: RandomGenerator):
@@ -64,6 +65,34 @@ def generate_random_data(
     shape=(32, 256),
 ):
     return generator.complex64_tensor(shape)
+
+
+@pytest.fixture(scope='session')
+def ph_ellipse():
+    return EllipsePhantomTestData()
+
+
+@pytest.fixture(params=({'seed': 0},))
+def cartesian_grid(request):
+    generator = RandomGenerator(request.param['seed'])
+
+    def generate(nk2: int, nk1: int, nk0: int, jitter: float) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        k0_range = torch.arange(nk0)
+        k1_range = torch.arange(nk1)
+        k2_range = torch.arange(nk2)
+        ky, kz, kx = torch.meshgrid(
+            k1_range,
+            k2_range,
+            k0_range,
+            indexing='xy',
+        )
+        if jitter > 0:
+            kx = kx + generator.float32_tensor((nk2, nk1, nk0), high=jitter)
+            ky = ky + generator.float32_tensor((nk2, nk1, nk0), high=jitter)
+            kz = kz + generator.float32_tensor((nk2, nk1, nk0), high=jitter)
+        return kz.unsqueeze(0), ky.unsqueeze(0), kx.unsqueeze(0)
+
+    return generate
 
 
 @pytest.fixture(params=({'seed': 0, 'Ncoils': 32, 'Nsamples': 256},))

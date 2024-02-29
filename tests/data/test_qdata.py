@@ -17,9 +17,6 @@ import torch
 
 from mrpro.data import IHeader
 from mrpro.data import QData
-from tests.conftest import dcm_2d
-from tests.conftest import random_kheader
-from tests.conftest import random_test_data
 
 
 def test_QData_from_kheader_and_tensor(random_kheader, random_test_data):

@@ -19,7 +19,6 @@ from mrpro.algorithms import prewhiten_kspace
 from mrpro.data import KData
 from mrpro.data import KNoise
 from mrpro.data import KTrajectory
-from tests.conftest import random_kheader
 
 
 def _calc_coil_cov(data):

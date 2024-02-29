@@ -21,7 +21,6 @@ from mrpro.data import KTrajectory
 from mrpro.data import SpatialDimension
 from mrpro.operators import FastFourierOp
 from tests import RandomGenerator
-from tests.conftest import random_kheader
 from tests.helper import rel_image_diff
 from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData
 

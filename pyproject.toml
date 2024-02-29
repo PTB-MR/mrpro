@@ -79,7 +79,7 @@ ignore_missing_imports = true
 line-length = 120
 extend-exclude = ["__init__.py"]
 include = ["src/**/*.py"]
-exclude = ["tests/**", "docs/**"]
+exclude = ["docs/**"]
 
 [tool.ruff.lint]
 extend-select = ["B", "C", "SIM", "UP", "Q"]

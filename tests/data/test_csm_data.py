@@ -14,7 +14,6 @@
 
 import dataclasses
 
-import numpy as np
 import pytest
 import torch
 
@@ -22,10 +21,7 @@ from mrpro.data import CsmData
 from mrpro.data import IData
 from mrpro.data import SpatialDimension
 from mrpro.phantoms.coils import birdcage_2d
-from tests.conftest import random_kheader
-from tests.conftest import random_test_data
 from tests.helper import rel_image_diff
-from tests.phantoms.test_ellipse_phantom import ph_ellipse
 
 
 def multi_coil_image(num_coils, ph_ellipse, random_kheader):

@@ -19,7 +19,6 @@ from typing import Literal
 
 import ismrmrd
 import ismrmrd.xsd
-import numpy as np
 import torch
 from einops import repeat
 
