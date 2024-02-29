@@ -85,14 +85,15 @@ exclude = ["docs/**"]
 extend-select = ["B", "C", "SIM", "UP", "Q"]
 ignore = [
     "C901", # function is too complex
-    "B006", # mutable data structures for argument defaults
-    "B008", # do not perform calls in argument defaults
-    "B904", # raise exception within except block
+    # "B904", # raise exception within except block
 ]
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
 inline-quotes = "single"
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["torch.Tensor"]
 
 [tool.ruff.format]
 quote-style = "single"
