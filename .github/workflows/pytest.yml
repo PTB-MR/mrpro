@@ -19,7 +19,7 @@ jobs:
       - name: Build image
         run: | 
           cd docker
-          docker build . -f Dockerfile_py312 --tag ghcr.io/ptb-mr/mrpro_py312
+          docker build . -f Dockerfile_py311 --tag ghcr.io/ptb-mr/mrpro_py311
           
       - name: Log in to registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
