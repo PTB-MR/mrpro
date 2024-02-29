@@ -6,15 +6,50 @@ on:
       - "**.md"
 
 jobs:
+  get_dockerfiles:
+    name: "Get list of dockerfiles for different containers"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout mrpro repo
+        uses: actions/checkout@v4
+
+      - id: set-matrix
+        run: |
+          cd ./docker/
+          ls
+          dockerfiles=$(ls Dockerfile_* | jq -R -s -c 'split("\n")[:-1]')
+          echo dockerfiles
+          imagenames=${dockerfiles/Dockerfile_/ghcr.io/ptb-mr/mrpro_}"
+          echo imagenames
+          echo "dockerfiles" >> $GITHUB_OUTPUT
+          echo "imagenames" >> $GITHUB_OUTPUT
+
+      - name: Dockerfile overview
+        run: |
+          echo ${{ steps.set-matrix.outputs.dockerfiles }}
+          echo ${{ steps.set-matrix.outputs.imagenames }}
+    outputs:
+      dockerfiles: ${{ steps.set-matrix.outputs.dockerfiles }}
+      imagenames: ${{ steps.set-matrix.outputs.imagenames }}
+
   push:
+    needs: get_dockerfiles
     runs-on: ubuntu-latest
     permissions:
       packages: write
-      #contents: read
+    strategy:
+      matrix:
+        dockerfile: ${{ fromJson(needs.get_dockerfiles.outputs.dockerfiles) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
+
+      - name: Create image name
+        id: image_name
+        run: |
+          dockerfile=${{ matrix.dockerfile }}
+          echo "image_name=${dockerfile/Dockerfile_/ghcr.io/ptb-mr/mrpro_}" >> $GITHUB_OUTPUT
+
       - name: Login to GitHub Packages
         uses: docker/login-action@v3
         with:
@@ -26,10 +61,10 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./docker
-          file: ./docker/Dockerfile_py311
+          file: ./docker/${{ matrix.dockerfile }}
           push: true
-          tags: ghcr.io/ptb-mr/mrpro_py311
-    
+          tags: ${{ steps.image_name.outputs.image_name }}
+
   test:
     needs: push
     runs-on: ubuntu-latest
@@ -41,7 +76,7 @@ jobs:
         container-python-version: ["ghcr.io/ptb-mr/mrpro_py311:latest", "ghcr.io/ptb-mr/mrpro_py312:latest"]
     # runs within Docker container
     container:
-      image: ${{ matrix.container-python-version }}
+      image: ${{ matrix.container-python-version }}:latest
       options: --user runner
 
     steps:
