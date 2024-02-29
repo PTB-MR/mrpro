@@ -247,7 +247,7 @@ class KData:
             raise ValueError(
                 f'Broadcasted shape trajectory do not match kdata: {shape} vs. {kdata.shape}. '
                 'Please check the trajectory.'
-            )
+            ) from None
 
         return cls(kheader, kdata, ktraj)
 

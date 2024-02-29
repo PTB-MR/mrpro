@@ -40,11 +40,12 @@ class KTrajectoryRpe(KTrajectoryCalculator):
     def __init__(
         self,
         angle: float,
-        shift_between_rpe_lines: torch.Tensor = torch.tensor([0, 0.5, 0.25, 0.75]),
+        shift_between_rpe_lines: tuple | torch.Tensor = (0, 0.5, 0.25, 0.75),
     ) -> None:
         super().__init__()
+
         self.angle: float = angle
-        self.shift_between_rpe_lines: torch.Tensor = shift_between_rpe_lines
+        self.shift_between_rpe_lines: torch.Tensor = torch.as_tensor(shift_between_rpe_lines)
 
     def _apply_shifts_between_rpe_lines(self, krad: torch.Tensor, kang_idx: torch.Tensor) -> torch.Tensor:
         """Shift radial phase encoding lines relative to each other.

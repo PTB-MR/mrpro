@@ -79,8 +79,11 @@ class IsmrmrdRawTestData:
         noise_level: float = 0.00005,
         trajectory_type: Literal['cartesian', 'radial'] = 'cartesian',
         sampling_order: Literal['linear', 'low_high', 'high_low', 'random'] = 'linear',
-        phantom: EllipsePhantom = EllipsePhantom(),
+        phantom: EllipsePhantom | None = None,
     ):
+        if not phantom:
+            phantom = EllipsePhantom()
+
         self.filename: str | Path = filename
         self.matrix_size: int = matrix_size
         self.ncoils: int = ncoils

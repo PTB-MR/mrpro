@@ -32,9 +32,7 @@ class FourierOp(LinearOperator):
         recon_shape: SpatialDimension[int],
         encoding_shape: SpatialDimension[int],
         traj: KTrajectory,
-        oversampling: SpatialDimension[float] = SpatialDimension(
-            2.0, 2.0, 2.0
-        ),  # TODO: maybe not the nicest, since only used for nuFFT
+        oversampling: float | SpatialDimension[float] = 2.0,  # only used for nuFFT
         numpoints: int = 6,
         kbwidth: float = 2.34,
     ) -> None:
@@ -57,6 +55,10 @@ class FourierOp(LinearOperator):
         """
 
         super().__init__()
+
+        # convert oversampling to SpatialDimension if float
+        if isinstance(oversampling, float):
+            oversampling = SpatialDimension(oversampling, oversampling, oversampling)
 
         def get_spatial_dims(spatial_dims, dims):
             return [

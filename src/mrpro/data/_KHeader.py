@@ -231,5 +231,5 @@ class KHeader:
             raise ValueError(
                 f'Could not create Header. Missing parameters: {missing}\n'
                 'Consider setting them via the defaults dictionary'
-            )
+            ) from None
         return instance

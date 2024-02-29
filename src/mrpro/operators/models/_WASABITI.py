@@ -24,10 +24,10 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         self,
         offsets: torch.Tensor,
         trec: torch.Tensor,
-        tp: torch.Tensor = torch.Tensor([0.005]),
-        b1_nom: torch.Tensor = torch.Tensor([3.75]),
-        gamma: torch.Tensor = torch.Tensor([42.5764]),
-        freq: torch.Tensor = torch.Tensor([127.7292]),
+        tp: float | torch.Tensor = 0.005,
+        b1_nom: float | torch.Tensor = 3.75,
+        gamma: float | torch.Tensor = 42.5764,
+        freq: float | torch.Tensor = 127.7292,
     ) -> None:
         """Initialize WASABITI signal model for mapping of B0, B1 and T1.
 
@@ -49,6 +49,13 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
             larmor frequency [MHz], by default 127.7292
         """
         super().__init__()
+        # convert all parameters to tensors
+        tp = torch.as_tensor(tp)
+        b1_nom = torch.as_tensor(b1_nom)
+        gamma = torch.as_tensor(gamma)
+        freq = torch.as_tensor(freq)
+
+        # nn.Parameters allow for grad calculation
         self.offsets = nn.Parameter(offsets, requires_grad=offsets.requires_grad)
         self.trec = nn.Parameter(trec, requires_grad=trec.requires_grad)
         self.tp = nn.Parameter(tp, requires_grad=tp.requires_grad)

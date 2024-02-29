@@ -68,7 +68,7 @@ class CsmData(QData):
     def from_idata_walsh(
         cls,
         idata: IData,
-        smoothing_width: SpatialDimension[int] = SpatialDimension(5, 5, 5),
+        smoothing_width: int | SpatialDimension[int] = 5,
         niter: int = 3,
         chunk_size_otherdim: int | None = None,
     ) -> CsmData:
@@ -86,6 +86,10 @@ class CsmData(QData):
             How many elements of the other dimensions should be processed at once.
             Default is None, which means that all elements are processed at once.
         """
+        # convert smoothing_width to SpatialDimension if int
+        if isinstance(smoothing_width, int):
+            smoothing_width = SpatialDimension(smoothing_width, smoothing_width, smoothing_width)
+
         csm_fun = torch.vmap(
             lambda img: CsmData._iterative_walsh_csm(img, smoothing_width, niter),
             chunk_size=chunk_size_otherdim,

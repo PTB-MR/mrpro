@@ -31,12 +31,14 @@ class EllipsePhantom:
 
     def __init__(
         self,
-        ellipses: list[EllipsePars] = [
-            EllipsePars(center_x=0.2, center_y=0.2, radius_x=0.1, radius_y=0.25, intensity=1),
-            EllipsePars(center_x=0.1, center_y=-0.1, radius_x=0.3, radius_y=0.1, intensity=2),
-            EllipsePars(center_x=-0.2, center_y=0.2, radius_x=0.18, radius_y=0.25, intensity=4),
-        ],
+        ellipses: list[EllipsePars] | None = None,
     ):
+        if not ellipses:
+            ellipses = [
+                EllipsePars(center_x=0.2, center_y=0.2, radius_x=0.1, radius_y=0.25, intensity=1),
+                EllipsePars(center_x=0.1, center_y=-0.1, radius_x=0.3, radius_y=0.1, intensity=2),
+                EllipsePars(center_x=-0.2, center_y=0.2, radius_x=0.18, radius_y=0.25, intensity=4),
+            ]
         self.ellipses: list[EllipsePars] = ellipses
 
     def kspace(self, ky: torch.Tensor, kx: torch.Tensor) -> torch.Tensor:

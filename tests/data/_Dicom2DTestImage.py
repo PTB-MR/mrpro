@@ -44,8 +44,11 @@ class Dicom2DTestImage:
         matrix_size_y: int = 128,
         matrix_size_x: int = 256,
         te: float = 3.7,
-        phantom: EllipsePhantom = EllipsePhantom(),
+        phantom: EllipsePhantom | None = None,
     ):
+        if not phantom:
+            phantom = EllipsePhantom()
+
         self.filename: str | Path = filename
         self.matrix_size_y: int = matrix_size_y
         self.matrix_size_x: int = matrix_size_x
