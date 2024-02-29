@@ -21,6 +21,7 @@ jobs:
           echo $dockerfiles
           imagenames=($(ls Dockerfile_*))
           imagenames=${imagenames[@]/Dockerfile_/ghcr.io/ptb-mr/mrpro_}
+          imagenames=$(imagenames[@] | jq -R -s -c 'split("\n")[:-1]')
           echo $imagenames
           echo "dockerfiles=$dockerfiles" >> $GITHUB_OUTPUT
           echo "imagenames=$imagenames" >> $GITHUB_OUTPUT
