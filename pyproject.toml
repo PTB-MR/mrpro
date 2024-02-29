@@ -63,7 +63,7 @@ markers = ["cuda : Tests only to be run when cuda device is available"]
 
 # MyPy section
 [tool.mypy]
-warn_return_any = false
+warn_return_any = true
 check_untyped_defs = true
 warn_no_return = true
 warn_unreachable = true
@@ -82,7 +82,7 @@ include = ["src/**/*.py"]
 exclude = ["docs/**"]
 
 [tool.ruff.lint]
-extend-select = ["B", "C", "SIM", "UP", "Q"]
+extend-select = ["B", "C", "SIM", "UP", "Q", "CYP", "COM", "A", "S", "ANN", "D", "N", "I"]
 ignore = [
     "C901", # function is too complex
     # "B904", # raise exception within except block
