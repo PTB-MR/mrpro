@@ -19,7 +19,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: ptb-mr
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Change to docker folder
