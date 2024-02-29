@@ -18,9 +18,9 @@ jobs:
           cd ./docker/
           ls
           dockerfiles=$(ls Dockerfile_* | jq -R -s -c 'split("\n")[:-1]')
-          echo dockerfiles
-          imagenames=${dockerfiles/Dockerfile_/ghcr.io/ptb-mr/mrpro_}"
-          echo imagenames
+          echo $dockerfiles
+          imagenames=${dockerfiles/Dockerfile_/ghcr.io/ptb-mr/mrpro_}
+          echo $imagenames
           echo "dockerfiles" >> $GITHUB_OUTPUT
           echo "imagenames" >> $GITHUB_OUTPUT
 
