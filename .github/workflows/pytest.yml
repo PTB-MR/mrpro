@@ -21,11 +21,14 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Change to docker folder
+        run: cd ./docker
           
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          file: ./docker/Dockerfile_py311
+          file: Dockerfile_py311
           push: true
           tags: ghcr.io/ptb-mr/mrpro_py311
     
