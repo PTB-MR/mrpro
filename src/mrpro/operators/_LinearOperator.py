@@ -69,7 +69,7 @@ class LinearOperatorComposition(LinearOperator, OperatorComposition[torch.Tensor
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint operator composition."""
-        return self._operator2.adjoint(self._operator1.adjoint(x))
+        return self._operator2.adjoint(*self._operator1.adjoint(x))
 
 
 class LinearOperatorSum(LinearOperator, OperatorSum[torch.Tensor, tuple[torch.Tensor,]]):
@@ -77,7 +77,7 @@ class LinearOperatorSum(LinearOperator, OperatorSum[torch.Tensor, tuple[torch.Te
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint operator addition."""
-        return self._operator1.adjoint(x) + self._operator2.adjoint(x)
+        return (self._operator1.adjoint(x)[0] + self._operator2.adjoint(x)[0],)
 
 
 class LinearOperatorElementwiseProduct(LinearOperator, OperatorElementwiseProduct[torch.Tensor, tuple[torch.Tensor,]]):
@@ -86,8 +86,8 @@ class LinearOperatorElementwiseProduct(LinearOperator, OperatorElementwiseProduc
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint Operator elementwise multiplication with scalar/tensor."""
         if self._tensor.is_complex():
-            return self._operator.adjoint(x) * self._tensor.conj()
-        return self._operator.adjoint(x) * self._tensor
+            return (self._operator.adjoint(x)[0] * self._tensor.conj(),)
+        return (self._operator.adjoint(x)[0] * self._tensor,)
 
 
 class AdjointLinearOperator(LinearOperator):
