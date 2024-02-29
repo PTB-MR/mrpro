@@ -19,10 +19,10 @@ jobs:
           ls
           dockerfiles=$(ls Dockerfile_* | jq -R -s -c 'split("\n")[:-1]')
           echo $dockerfiles
-          imagenames=${dockerfiles/Dockerfile_/ghcr.io/ptb-mr/mrpro_}
+          imagenames=${dockerfiles[@]/Dockerfile_/ghcr.io/ptb-mr/mrpro_}
           echo $imagenames
-          echo "dockerfiles" >> $GITHUB_OUTPUT
-          echo "imagenames" >> $GITHUB_OUTPUT
+          echo "dockerfiles=$dockerfiles" >> $GITHUB_OUTPUT
+          echo "imagenames=$imagenames" >> $GITHUB_OUTPUT
 
       - name: Dockerfile overview
         run: |
@@ -66,17 +66,17 @@ jobs:
           tags: ${{ steps.image_name.outputs.image_name }}
 
   test:
-    needs: push
+    needs: [get_dockerfiles, push]
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
       contents: write
     strategy:
       matrix:
-        container-python-version: ["ghcr.io/ptb-mr/mrpro_py311:latest", "ghcr.io/ptb-mr/mrpro_py312:latest"]
+        imagename: ${{ fromJson(needs.get_dockerfiles.outputs.imagenames) }}
     # runs within Docker container
     container:
-      image: ${{ matrix.container-python-version }}:latest
+      image: ${{ matrix.imagename }}:latest
       options: --user runner
 
     steps:
