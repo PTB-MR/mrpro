@@ -61,15 +61,15 @@ class FourierOp(LinearOperator):
         def get_spatial_dims(spatial_dims, dims):
             return [
                 s
-                for s, i in zip((spatial_dims.z, spatial_dims.y, spatial_dims.x), (-3, -2, -1), strict=False)
+                for s, i in zip((spatial_dims.z, spatial_dims.y, spatial_dims.x), (-3, -2, -1), strict=True)
                 if i in dims
             ]
 
         def get_traj(traj, dims):
-            return [k for k, i in zip((traj.kz, traj.ky, traj.kx), (-3, -2, -1), strict=False) if i in dims]
+            return [k for k, i in zip((traj.kz, traj.ky, traj.kx), (-3, -2, -1), strict=True) if i in dims]
 
         self._ignore_dims, self._fft_dims, self._nufft_dims = [], [], []
-        for dim, type in zip((-3, -2, -1), traj.type_along_kzyx, strict=False):
+        for dim, type in zip((-3, -2, -1), traj.type_along_kzyx, strict=True):
             if type & TrajType.SINGLEVALUE:
                 # dimension which do not require any transform
                 self._ignore_dims.append(dim)
@@ -102,12 +102,12 @@ class FourierOp(LinearOperator):
             self._nufft_im_size = get_spatial_dims(recon_shape, self._nufft_dims)
             grid_size = [
                 int(s * os)
-                for s, os in zip(self._nufft_im_size, get_spatial_dims(oversampling, self._nufft_dims), strict=False)
+                for s, os in zip(self._nufft_im_size, get_spatial_dims(oversampling, self._nufft_dims), strict=True)
             ]
             omega = [
                 k * 2 * torch.pi / ks
                 for k, ks in zip(
-                    get_traj(traj, self._nufft_dims), get_spatial_dims(encoding_shape, self._nufft_dims), strict=False
+                    get_traj(traj, self._nufft_dims), get_spatial_dims(encoding_shape, self._nufft_dims), strict=True
                 )
             ]
 

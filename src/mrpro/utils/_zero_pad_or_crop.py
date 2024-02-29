@@ -75,7 +75,7 @@ def zero_pad_or_crop(
         new_shape = tuple(new_shape[dim.index(i)] if i in dim else s for i, s in enumerate(data.shape))
 
     npad = []
-    for old, new in zip(data.shape, new_shape, strict=False):
+    for old, new in zip(data.shape, new_shape, strict=True):
         diff = new - old
         after = math.trunc(diff / 2)
         before = diff - after
