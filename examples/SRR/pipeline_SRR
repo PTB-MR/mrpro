@@ -12,14 +12,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 from __future__ import annotations
-import numpy as np
 import ismrmrd
 import os
-import torch
 from collections.abc import Callable
 
 from mrpro.data import KData
-from mrpro.data.traj_calculators import KTrajectoryRadial2D
 
 
 import matplotlib.pyplot as plt
@@ -29,12 +26,12 @@ import numpy as np
 from mrpro.data import CsmData
 from mrpro.data import DcfData
 from mrpro.data import IData
-from mrpro.data import KData
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.operators import FourierOp
 from mrpro.operators import SensitivityOp
 from mrpro.data import KData
-from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
+from mrpro.data.traj_calculators import KTrajectoryRadial2D
+
 
 import math
 
@@ -68,11 +65,10 @@ def angleBetweenVec(vectorA, vectorB, normal_plane = None ):
 def vectorLength(vector):
         return math.sqrt(sum(i * i for i in vector))
 
-"""
+
 def calc_distToStack0_mm( list_sGeometry, rots):
 
-    num_slicesPerStack = len(list_sGeometry[0].pos_slices)-1
-
+    num_slicesPerStack = len(list_sGeometry[0].pos_slices)
 
     def distBetweenTwoPoints_3D(pointOne, pointTwo):
         return math.sqrt((pointOne[0] - pointTwo[0]) ** 2 + (pointOne[1] - pointTwo[1]) ** 2 + (pointOne[2] - pointTwo[2]) ** 2)
@@ -101,14 +97,14 @@ def calc_distToStack0_mm( list_sGeometry, rots):
                     distToStack0_mm[idx_withSameRot] *= -1.0
         else:
             idx_sliceToCompare = 2
-            pos_stackGroup_0 = np.asarray(list_sGeometry[idx_withSameRot[0]].slicePos[idx_sliceToCompare])
+            pos_stackGroup_0 = np.asarray(list_sGeometry[idx_withSameRot[0]].pos_slices[idx_sliceToCompare])
             dist = np.zeros(len(idx_withSameRot))
             # check if all slice dirs within grouop are the same
             sliceDirs_perStackInRot = np.zeros([len(idx_withSameRot), 3])
             for idx_stackInGroup in range(0, len(idx_withSameRot)):
-                sliceDir = list_sGeometry[idx_withSameRot[idx_stackInGroup]].slicePos[
-                               num_slicesPerStack - 1] - \
-                            list_sGeometry[idx_withSameRot[idx_stackInGroup]].slicePos[0]
+                sliceDir = list_sGeometry[idx_withSameRot[idx_stackInGroup]].pos_slices[
+                                num_slicesPerStack - 1] - \
+                            list_sGeometry[idx_withSameRot[idx_stackInGroup]].pos_slices[0]
                 sliceDirs_perStackInRot[idx_stackInGroup] = normVector(sliceDir)
             for idx_stackInGroup in range(0, 1, len(idx_withSameRot)):
                 if distBetweenTwoPoints_3D(sliceDirs_perStackInRot[idx_stackInGroup],
@@ -117,10 +113,10 @@ def calc_distToStack0_mm( list_sGeometry, rots):
 
             for idx_stackInGroup in range(0, len(idx_withSameRot)):
                 pos_stack = np.asarray(
-                    list_sGeometry[idx_withSameRot[idx_stackInGroup]].slicePos[idx_sliceToCompare])
+                    list_sGeometry[idx_withSameRot[idx_stackInGroup]].pos_slices[idx_sliceToCompare])
                 stackDir = pos_stack - pos_stackGroup_0
                 dist[idx_stackInGroup] = distBetweenTwoPoints_3D(pos_stackGroup_0, list_sGeometry[
-                    idx_withSameRot[idx_stackInGroup]].slicePos[idx_sliceToCompare])
+                    idx_withSameRot[idx_stackInGroup]].pos_slices[idx_sliceToCompare])
                 dotProd = np.dot(normVector(stackDir), normVector(sliceDirs_perStackInRot[idx_stackInGroup]))
                 if abs(dotProd) > 0 and np.round((abs(dotProd) - 1), 5) > 0:
                     print('warning: stacks with same rot are not shifted along slice dir! ')
@@ -128,12 +124,18 @@ def calc_distToStack0_mm( list_sGeometry, rots):
                     dist[idx_stackInGroup] *= -1.0
 
             dist -= np.mean(dist)
+            for idx_stackInGroup in range(len(idx_withSameRot)):
+                distToStack0_mm[idx_withSameRot[idx_stackInGroup]] = dist[idx_stackInGroup]
 
-def calcGapBetweenLR():
-    print('... calcGapBetweenLR', end='')
-    time_start = time.time()
+    print('distToStack0_mm = '+str(np.round(distToStack0_mm,2)))
+    return distToStack0_mm
 
-    self.flagArray_slicePosBroken =np.zeros([self.sComb.num_stacks, self.slicesPerStack], dtype = bool)
+"""
+def calcGapBetweenLR(list_sGeometries):
+
+    num_stacks = len(list_sGeometries)
+    slicesPerStack = list_sGeometries[0].pos_slices.shape[0]
+    flagArray_slicePosBroken =np.zeros([self.sComb.num_stacks, self.slicesPerStack], dtype = bool)
     if self.slicesPerStack <= 1:
         gap = 0.0
     else:
@@ -149,8 +151,8 @@ def calcGapBetweenLR():
             gap = np.median(array_gapBetweenSlices)
             [idxStack_posBroken, idxSlice_posBroken] = np.where(array_gapBetweenSlices!=gap)
             if not isNone(idxStack_posBroken) and not isNone(idxSlice_posBroken):
-                self.flagArray_slicePosBroken[idxStack_posBroken, idxSlice_posBroken] = True
-                self.flagArray_slicePosBroken[idxStack_posBroken, idxSlice_posBroken+1] = True
+                flagArray_slicePosBroken[idxStack_posBroken, idxSlice_posBroken] = True
+                flagArray_slicePosBroken[idxStack_posBroken, idxSlice_posBroken+1] = True
 
                 print('warning: slice pos broken and thus exluced (idx_stack, idx_sliceLR)'+str(idxStack_posBroken)+'; '+str(idxSlice_posBroken))
 
@@ -164,7 +166,7 @@ def calcGapBetweenLR():
                     pos2 = None
                     dir_slices = None
                     for idx_slice in range(self.slicesPerStack):
-                        if not self.flagArray_slicePosBroken[idx_stack, idx_slice]:
+                        if not flagArray_slicePosBroken[idx_stack, idx_slice]:
                             if pos1 is None:
                                 pos1 = self.sComb.stacks[idx_stack].slicePos[ idx_slice]
                             else:
@@ -179,17 +181,17 @@ def calcGapBetweenLR():
                         continue
                     for run in range(5):
                         for idx_slice in range(self.slicesPerStack-1, -1, -1):
-                            if self.flagArray_slicePosBroken[idx_stack, idx_slice]:
-                                if ( idx_slice+1)<self.slicesPerStack and not self.flagArray_slicePosBroken[idx_stack, idx_slice+1]:
+                            if flagArray_slicePosBroken[idx_stack, idx_slice]:
+                                if ( idx_slice+1)<self.slicesPerStack and not flagArray_slicePosBroken[idx_stack, idx_slice+1]:
                                     pos_old = np.copy(self.sComb.stacks[idx_stack].slicePos[idx_slice])
                                     self.sComb.stacks[idx_stack].slicePos[idx_slice] = self.sComb.stacks[idx_stack].slicePos[idx_slice+1]-dir_slices*gap
                                     pos_new = np.copy(self.sComb.stacks[idx_stack].slicePos[idx_slice])
                                     print('corrected pos in stack '+str(idx_stack)+' slice '+str(idx_slice)+': '+str(pos_old)+' to '+str(pos_new))
-                                    self.flagArray_slicePosBroken[idx_stack, idx_slice] = False
+                                    flagArray_slicePosBroken[idx_stack, idx_slice] = False
                     for run in range(5):
                         for idx_slice in range(0,self.slicesPerStack):
-                            if self.flagArray_slicePosBroken[idx_stack, idx_slice]:
-                                if ( idx_slice-1)>=0 and not self.flagArray_slicePosBroken[idx_stack, idx_slice-1]:
+                            if flagArray_slicePosBroken[idx_stack, idx_slice]:
+                                if ( idx_slice-1)>=0 and not flagArray_slicePosBroken[idx_stack, idx_slice-1]:
                                     pos_old = np.copy(self.sComb.stacks[idx_stack].slicePos[idx_slice])
                                     self.sComb.stacks[idx_stack].slicePos[idx_slice] = \
                                     self.sComb.stacks[idx_stack].slicePos[idx_slice + 1] - dir_slices * gap
@@ -200,7 +202,7 @@ def calcGapBetweenLR():
                                     pos_new = np.copy(self.sComb.stacks[idx_stack].slicePos[idx_slice])
                                     print('corrected pos in stack ' + str(idx_stack) + ' slice ' + str(
                                         idx_slice) + ': ' + str(pos_old) + ' to ' + str(pos_new))
-                                    self.flagArray_slicePosBroken[idx_stack, idx_slice] = False
+                                    flagArray_slicePosBroken[idx_stack, idx_slice] = False
 
 
         else:
@@ -219,9 +221,9 @@ def calcGapBetweenLR():
 
     self.gapBetweenLR = GabBetweenLR(gap, self.voxelSize.HR_mm[2])
     print(' (took '+str(np.round(time.time()-time_start,0))+' sec)')
-
-
 """
+
+
 def calc_rotToStack0(list_sGeometries, img_stacks):
 
     num_stacks = len(list_sGeometries)
@@ -259,6 +261,34 @@ def calc_rotToStack0(list_sGeometries, img_stacks):
 
     print('calculated rot to stack 0 = '+str(np.round(rots_toStack0,2)))
     return rots_toStack0
+
+def getSliceOrder(num_slices):
+    if num_slices == 6:
+        order_slices = [3, 0, 4, 1, 5, 2]
+    elif num_slices == 5:
+        order_slices = [0,3,1,4,2]
+    elif num_slices == 12:
+        order_slices = [6,0,7,1,8,2,9,3,10,4,11,5]
+    else:
+        raise Exception
+
+    return order_slices
+
+def resortSlices(imgs, list_sGeometries):
+    num_stacks = imgs.shape[0]
+    num_slices = imgs.shape[1]
+    order_slices = getSliceOrder(num_slices=num_slices)
+
+    imgs_before = np.copy(imgs)
+    for slice in range(len(order_slices)):
+        imgs[:,  slice] = imgs_before[:, int(order_slices[slice])]
+
+    for idx_stack in range(imgs.shape[0]):
+        pos_before = np.copy(list_sGeometries[idx_stack].pos_slices)
+        for slice in range(len(order_slices)):
+            list_sGeometries[idx_stack].pos_slices[slice] = pos_before[int(order_slices[slice])]
+
+    print('resorted slices with order '+str(order_slices))
 
 
 class Directions:
@@ -647,4 +677,6 @@ for idx_stack in range(min(12,len(pathes_orig))):
 
 imgs_stacks = np.asarray(imgs_stacks)
 
-calc_rotToStack0(list_sGeometries=sGeometries_ofStacks, img_stacks=imgs_stacks)
+resortSlices(imgs = imgs_stacks, list_sGeometries = sGeometries_ofStacks)
+rots = calc_rotToStack0(list_sGeometries=sGeometries_ofStacks, img_stacks=imgs_stacks)
+distTo0 = calc_distToStack0_mm(rots=rots[:,0], list_sGeometry=sGeometries_ofStacks)
