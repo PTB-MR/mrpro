@@ -12,420 +12,43 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 from __future__ import annotations
-import ismrmrd
+
+import math
 import os
+import pickle
 from collections.abc import Callable
 
-from mrpro.data import KData
-
-
-import matplotlib.pyplot as plt
-import torch
+import ismrmrd
 import numpy as np
+import torch
+from matplotlib import pyplot as plt
 
 from mrpro.data import CsmData
 from mrpro.data import DcfData
 from mrpro.data import IData
+from mrpro.data import KData
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
+from mrpro.data.traj_calculators import KTrajectoryRadial2D
 from mrpro.operators import FourierOp
 from mrpro.operators import SensitivityOp
-from mrpro.data import KData
-from mrpro.data.traj_calculators import KTrajectoryRadial2D
-
-
-import math
-
-def toNpy(spaDim):
-    return np.array([spaDim.x[0,0,0,0], spaDim.y[0,0,0,0], spaDim.z[0,0,0,0]])
-
-def angleBetweenVec(vectorA, vectorB, normal_plane = None ):
-    vectorA = np.asarray(vectorA)
-    vectorB = np.asarray(vectorB)
-
-    vectorA_normalized = vectorA / vectorLength(vectorA)
-    vectorB_normalized = vectorB / vectorLength(vectorB)
-
-    if (np.array_equal(vectorA,vectorB)):
-        return 0.0
-    dotProduct =  np.dot(vectorA_normalized, vectorB_normalized)
-    if(dotProduct<-1.0):
-        return math.degrees(math.acos(-1.0))
-
-    if (dotProduct > 1.0):
-        return math.degrees(math.acos(1.0))
-    angleBetweenVector_radiant = math.acos(np.dot(vectorA_normalized, vectorB_normalized))
-
-    angleBetweenVector_degree = math.degrees(angleBetweenVector_radiant)
-
-    if normal_plane is not None:
-        if np.dot(normal_plane,np.cross(vectorA_normalized,vectorB_normalized))<0:
-            angleBetweenVector_degree *=-1.0
-    return  angleBetweenVector_degree
-
-def vectorLength(vector):
-        return math.sqrt(sum(i * i for i in vector))
-
-
-def calc_distToStack0_mm( list_sGeometry, rots):
-
-    num_slicesPerStack = len(list_sGeometry[0].pos_slices)
-
-    def distBetweenTwoPoints_3D(pointOne, pointTwo):
-        return math.sqrt((pointOne[0] - pointTwo[0]) ** 2 + (pointOne[1] - pointTwo[1]) ** 2 + (pointOne[2] - pointTwo[2]) ** 2)
-
-    def normVector(vector):
-        if vectorLength(vector)==0.0:
-            return vector
-        return vector/vectorLength(vector)
-
-    distToStack0_mm = np.zeros(len(rots))
-    for rot_unique in list(np.unique(rots)):
-        idx_withSameRot = list(np.where(rots == rot_unique))[0]
-        if list(rots).count(rot_unique) == 1:
-            if np.any(np.asarray(rots)):
-                distToStack0_mm[idx_withSameRot[0]] = 0.0
-            else:
-                idx_withSameRot = np.where(rots == rot_unique)[0][0]
-                sliceDir = list_sGeometry[idx_withSameRot].pos_slices[num_slicesPerStack-1]-list_sGeometry[idx_withSameRot].pos_slices[0]
-                stackDir = list_sGeometry[idx_withSameRot].pos_slices[0] -list_sGeometry[0].pos_slices[0]
-                distToStack0_mm[idx_withSameRot].distToStack0_mm = np.round(
-                    distBetweenTwoPoints_3D(list_sGeometry[idx_withSameRot].pos_slices[0],
-                                            list_sGeometry[0].pos_slices[0]), 2)
-
-                dotProduct = np.dot(normVector(stackDir), normVector(sliceDir))
-                if dotProduct < 0:
-                    distToStack0_mm[idx_withSameRot] *= -1.0
-        else:
-            idx_sliceToCompare = 2
-            pos_stackGroup_0 = np.asarray(list_sGeometry[idx_withSameRot[0]].pos_slices[idx_sliceToCompare])
-            dist = np.zeros(len(idx_withSameRot))
-            # check if all slice dirs within grouop are the same
-            sliceDirs_perStackInRot = np.zeros([len(idx_withSameRot), 3])
-            for idx_stackInGroup in range(0, len(idx_withSameRot)):
-                sliceDir = list_sGeometry[idx_withSameRot[idx_stackInGroup]].pos_slices[
-                                num_slicesPerStack - 1] - \
-                            list_sGeometry[idx_withSameRot[idx_stackInGroup]].pos_slices[0]
-                sliceDirs_perStackInRot[idx_stackInGroup] = normVector(sliceDir)
-            for idx_stackInGroup in range(0, 1, len(idx_withSameRot)):
-                if distBetweenTwoPoints_3D(sliceDirs_perStackInRot[idx_stackInGroup],
-                                            sliceDirs_perStackInRot[idx_stackInGroup - 1]) > 0.5:
-                    print('warning: not all stacks in rot group have same slice dir! ')
-
-            for idx_stackInGroup in range(0, len(idx_withSameRot)):
-                pos_stack = np.asarray(
-                    list_sGeometry[idx_withSameRot[idx_stackInGroup]].pos_slices[idx_sliceToCompare])
-                stackDir = pos_stack - pos_stackGroup_0
-                dist[idx_stackInGroup] = distBetweenTwoPoints_3D(pos_stackGroup_0, list_sGeometry[
-                    idx_withSameRot[idx_stackInGroup]].pos_slices[idx_sliceToCompare])
-                dotProd = np.dot(normVector(stackDir), normVector(sliceDirs_perStackInRot[idx_stackInGroup]))
-                if abs(dotProd) > 0 and np.round((abs(dotProd) - 1), 5) > 0:
-                    print('warning: stacks with same rot are not shifted along slice dir! ')
-                if np.dot(normVector(stackDir), normVector(sliceDirs_perStackInRot[idx_stackInGroup])) < 0:
-                    dist[idx_stackInGroup] *= -1.0
-
-            dist -= np.mean(dist)
-            for idx_stackInGroup in range(len(idx_withSameRot)):
-                distToStack0_mm[idx_withSameRot[idx_stackInGroup]] = dist[idx_stackInGroup]
-
-    print('distToStack0_mm = '+str(np.round(distToStack0_mm,2)))
-    return distToStack0_mm
+from mrpro.operators._SuperResOp import Slice_profile
+from mrpro.operators._SuperResOp import SuperResOp
 
 """
-def calcGapBetweenLR(list_sGeometries):
-
-    num_stacks = len(list_sGeometries)
-    slicesPerStack = list_sGeometries[0].pos_slices.shape[0]
-    flagArray_slicePosBroken =np.zeros([self.sComb.num_stacks, self.slicesPerStack], dtype = bool)
-    if self.slicesPerStack <= 1:
-        gap = 0.0
-    else:
-        flag_new = True
-        if flag_new:
-
-            array_gapBetweenSlices = np.zeros([self.sComb.num_stacks, self.slicesPerStack-1])
-            for idx_stack in range(0, self.sComb.num_stacks):
-                for idx_slice in range(0, self.slicesPerStack - 1):
-                    array_gapBetweenSlices[idx_stack,idx_slice] = np.round(distBetweenTwoPoints_3D(self.sComb.stacks[idx_stack].slicePos[ idx_slice],
-                                                                        self.sComb.stacks[idx_stack].slicePos[idx_slice + 1])-self.voxelSize.LR_mm[2],2)
-
-            gap = np.median(array_gapBetweenSlices)
-            [idxStack_posBroken, idxSlice_posBroken] = np.where(array_gapBetweenSlices!=gap)
-            if not isNone(idxStack_posBroken) and not isNone(idxSlice_posBroken):
-                flagArray_slicePosBroken[idxStack_posBroken, idxSlice_posBroken] = True
-                flagArray_slicePosBroken[idxStack_posBroken, idxSlice_posBroken+1] = True
-
-                print('warning: slice pos broken and thus exluced (idx_stack, idx_sliceLR)'+str(idxStack_posBroken)+'; '+str(idxSlice_posBroken))
-
-            flag_correctPos = True
-            if flag_correctPos:
-                for idx_stack in range(self.sComb.num_stacks):
-                    if not idx_stack in idxStack_posBroken:
-                        continue
-
-                    pos1 = None
-                    pos2 = None
-                    dir_slices = None
-                    for idx_slice in range(self.slicesPerStack):
-                        if not flagArray_slicePosBroken[idx_stack, idx_slice]:
-                            if pos1 is None:
-                                pos1 = self.sComb.stacks[idx_stack].slicePos[ idx_slice]
-                            else:
-                                if pos2 is None:
-                                    pos2 = self.sComb.stacks[idx_stack].slicePos[idx_slice]
-                                else:
-                                    dir_slices = normVector(pos2-pos1)
-                                    break
-
-                for idx_stack in range(self.sComb.num_stacks):
-                    if not idx_stack in idxStack_posBroken:
-                        continue
-                    for run in range(5):
-                        for idx_slice in range(self.slicesPerStack-1, -1, -1):
-                            if flagArray_slicePosBroken[idx_stack, idx_slice]:
-                                if ( idx_slice+1)<self.slicesPerStack and not flagArray_slicePosBroken[idx_stack, idx_slice+1]:
-                                    pos_old = np.copy(self.sComb.stacks[idx_stack].slicePos[idx_slice])
-                                    self.sComb.stacks[idx_stack].slicePos[idx_slice] = self.sComb.stacks[idx_stack].slicePos[idx_slice+1]-dir_slices*gap
-                                    pos_new = np.copy(self.sComb.stacks[idx_stack].slicePos[idx_slice])
-                                    print('corrected pos in stack '+str(idx_stack)+' slice '+str(idx_slice)+': '+str(pos_old)+' to '+str(pos_new))
-                                    flagArray_slicePosBroken[idx_stack, idx_slice] = False
-                    for run in range(5):
-                        for idx_slice in range(0,self.slicesPerStack):
-                            if flagArray_slicePosBroken[idx_stack, idx_slice]:
-                                if ( idx_slice-1)>=0 and not flagArray_slicePosBroken[idx_stack, idx_slice-1]:
-                                    pos_old = np.copy(self.sComb.stacks[idx_stack].slicePos[idx_slice])
-                                    self.sComb.stacks[idx_stack].slicePos[idx_slice] = \
-                                    self.sComb.stacks[idx_stack].slicePos[idx_slice + 1] - dir_slices * gap
-
-
-                                    self.sComb.stacks[idx_stack].slicePos[idx_slice] = self.sComb.stacks[idx_stack].slicePos[idx_slice-1] +dir_slices*gap
-
-                                    pos_new = np.copy(self.sComb.stacks[idx_stack].slicePos[idx_slice])
-                                    print('corrected pos in stack ' + str(idx_stack) + ' slice ' + str(
-                                        idx_slice) + ': ' + str(pos_old) + ' to ' + str(pos_new))
-                                    flagArray_slicePosBroken[idx_stack, idx_slice] = False
-
-
-        else:
-
-            array_gap = np.zeros([self.sComb.num_stacks * (self.slicesPerStack - 1)])
-            for stack in range(0, self.sComb.num_stacks):
-                for slice in range(0, self.slicesPerStack - 1):
-                    array_gap[stack * (self.slicesPerStack - 1) + slice] = distBetweenTwoPoints_3D(
-                        self.sComb.stacks[stack].slicePos[slice],
-                        self.sComb.stacks[stack].slicePos[slice + 1]) - self.voxelSize.LR_mm[2]
-
-            gap = np.median(array_gap)
-
-
-
-
-    self.gapBetweenLR = GabBetweenLR(gap, self.voxelSize.HR_mm[2])
-    print(' (took '+str(np.round(time.time()-time_start,0))+' sec)')
-"""
-
-
-def calc_rotToStack0(list_sGeometries, img_stacks):
-
-    num_stacks = len(list_sGeometries)
-
-    #search for sign change in angles
-    dir_slice_stack0 = list_sGeometries[0].dir.slice
-    dir_phase_stack0 = list_sGeometries[0].dir.phase
-    dir_read_stack0 = list_sGeometries[0].dir.read
-
-
-    #check if read and phase dir need to be swapped
-    for idx_stack in range(1,num_stacks):
-
-        angle_phase = np.round(angleBetweenVec(dir_phase_stack0, list_sGeometries[idx_stack].dir.phase), 0)
-
-        if abs(angle_phase-90.0)<10.0:
-            dir_read_old = np.copy( list_sGeometries[idx_stack].dir.read)
-            list_sGeometries[idx_stack].dir.read = list_sGeometries[idx_stack].dir.phase
-            list_sGeometries[idx_stack].dir.phase = dir_read_old
-            img_stacks[idx_stack] = np.swapaxes(img_stacks[idx_stack],1,2 )
-            print('... swap read and phase dir ')
-
-    rots_toStack0 = np.zeros([num_stacks,3])
-
-    for idx_stack in range(num_stacks):
-
-        angle_slice  = np.round(angleBetweenVec(dir_slice_stack0, list_sGeometries[idx_stack].dir.slice,normal_plane=list_sGeometries[idx_stack].dir.phase ),0)
-        angle_phase  = np.round(angleBetweenVec(dir_phase_stack0, list_sGeometries[idx_stack].dir.phase ),1)
-        angle_read  = np.round(angleBetweenVec(dir_read_stack0, list_sGeometries[idx_stack].dir.read,normal_plane=list_sGeometries[idx_stack].dir.phase),1)
-
-        print('angles of stack ' + str(idx_stack) + str(np.asarray([angle_read, angle_phase, angle_slice])))
-
-        rot = np.asarray([-angle_slice,0,0])
-        rots_toStack0[idx_stack] = rot
-
-    print('calculated rot to stack 0 = '+str(np.round(rots_toStack0,2)))
-    return rots_toStack0
-
-def getSliceOrder(num_slices):
-    if num_slices == 6:
-        order_slices = [3, 0, 4, 1, 5, 2]
-    elif num_slices == 5:
-        order_slices = [0,3,1,4,2]
-    elif num_slices == 12:
-        order_slices = [6,0,7,1,8,2,9,3,10,4,11,5]
-    else:
-        raise Exception
-
-    return order_slices
-
-def resortSlices(imgs, list_sGeometries):
-    num_stacks = imgs.shape[0]
-    num_slices = imgs.shape[1]
-    order_slices = getSliceOrder(num_slices=num_slices)
-
-    imgs_before = np.copy(imgs)
-    for slice in range(len(order_slices)):
-        imgs[:,  slice] = imgs_before[:, int(order_slices[slice])]
-
-    for idx_stack in range(imgs.shape[0]):
-        pos_before = np.copy(list_sGeometries[idx_stack].pos_slices)
-        for slice in range(len(order_slices)):
-            list_sGeometries[idx_stack].pos_slices[slice] = pos_before[int(order_slices[slice])]
-
-    print('resorted slices with order '+str(order_slices))
-
-
-class Directions:
-    def __init__(self) -> None:
-        self.read = None
-        self.slice = None
-        self.phase = None
-
-class SGeometry:
-    def __init__(self) -> None:
-        self.pos_slices = None
-        self.dir = Directions()
-
-def show_2D(img,  title = ''):
-    plt.matshow(img, cmap = plt.get_cmap('grey'))
-    if title == '':
-        title = 'img'
-    plt.title(title)
-    plt.show()
-
-
-# Golden angle radial acquisition of Kirstens T1 mapping sequence
-def traj_rad_kirsten_t1mapping(nkrad: int, nkang: int) -> np.ndarray:
-    krad = np.linspace(-nkrad//2, nkrad//2, nkrad)
-    ky = np.linspace(0, nkang-1, nkang)
-
-    # Check if angle is already specified:
-    angRad = ky * (np.pi / 180) * (180 * 0.618034)
-
-    # Calculate trajectory
-    rad_traj = np.zeros((nkrad, nkang, 2), dtype=np.float32)
-    rad_traj[:, :, 0] = krad.reshape(-1, 1) * np.cos(angRad)
-    rad_traj[:, :, 1] = krad.reshape(-1, 1) * np.sin(angRad)
-    rad_traj = np.moveaxis(rad_traj, 0, 1)
-    return rad_traj
-
-def prep_filename(full_filename_in: str, full_filename_out: str | None = None, suffix: str = 'traj') -> str:
-    if full_filename_out is None:
-        full_filename_out = full_filename_in.replace('.h5', f'_{suffix}.h5')
-
-    if full_filename_in == full_filename_out:
-        raise ValueError('Input and output filename are the same. This would overwrite the original data.')
-
-    # Set trajectory and save
-    if os.path.exists(full_filename_out) == 1:
-        os.remove(full_filename_out)
-        print('{} deleted'.format(full_filename_out))
-
-    return full_filename_out
-
-
-# Add 2D non-Cartesian trajectory to ISMRMD data file
-def add_2D_noncart_traj_to_ismrmrd(fun_calc_traj: Callable[[int, int], np.ndarray],
-                                   full_filename_in: str,
-                                   full_filename_out: str | None = None,
-                                   nrad: int | None = None,
-                                   sGeometry: SGeometry | None = None) -> str:
-
-    #full_filename_out = prep_filename(full_filename_in, full_filename_out)
-    if False and os.path.isfile(full_filename_out):
-        print('mofidied traj already available: '+str(full_filename_out))
-        return full_filename_out
-
-
-    # Get info and acquisitions from original data
-    data_orig = KData.from_file(full_filename_in, KTrajectoryRadial2D())
-    sGeometry.dir.read = toNpy(data_orig.header.acq_info.read_dir)
-    sGeometry.dir.slice = toNpy(data_orig.header.acq_info.slice_dir)
-    sGeometry.dir.phase = toNpy(data_orig.header.acq_info.phase_dir)
-
-    with ismrmrd.File(full_filename_in, 'r') as file:
-        ds = file[list(file.keys())[0]]
-        ismrmrd_header = ds.header
-        acquisitions = ds.acquisitions[:]
-
-        sliceThickness = ismrmrd_header.encoding[0].reconSpace.fieldOfView_mm.z
-
-    # Create new file
-    ds = ismrmrd.Dataset(full_filename_out)
-    ds.write_xml_header(ismrmrd_header.toXML())
-
-    # Calculate trajectory
-    grad_traj = fun_calc_traj(data_orig.data.shape[-1], data_orig.data.shape[-2])
-
-    # Acquisition time
-    acqt = torch.tensor([acq.acquisition_time_stamp for acq in acquisitions], dtype=torch.float32)
-
-    # Slice index
-    sl = torch.tensor([acq.idx.slice for acq in acquisitions], dtype=torch.float32)
-
-    sGeometry.pos_slices = []
-    # Go through all slices
-    for sl_idx in torch.unique(sl):
-        cidx = torch.where(sl == sl_idx)[0]
-
-        # Sort based on acquisition time step
-        acqt_slice_idx = torch.argsort(acqt[cidx])
-
-        # Remove noise sample
-        if len(acqt_slice_idx) == data_orig.data.shape[-2] + 1:
-            ds.append_acquisition(acquisitions[acqt_slice_idx[0]])
-            acqt_slice_idx = acqt_slice_idx[1:]
-
-        # Make sure all acquisitions are for imaging and not e.g. noise samples are present
-        if len(acqt_slice_idx) != data_orig.data.shape[-2]:
-            raise ValueError(f'Expected number of radial lines: {data_orig.data.shape[-2]} but found {len(acqt_slice_idx)}.')
-
-        # Select only nrad lines
-        if nrad is None:
-            nrad = len(acqt_slice_idx)
-
-        flag_posSet = False
-
-        for idx, acq_idx in enumerate(acqt_slice_idx[:nrad]):
-            acq = acquisitions[cidx[acq_idx]]
-            if not flag_posSet:
-                sGeometry.pos_slices.append(acq.position)
-                flag_posSet = True
-            acq.resize(number_of_samples=acq.number_of_samples, active_channels=acq.active_channels, trajectory_dimensions=2)
-            acq.traj[:] = grad_traj[idx,:,:]
-            ds.append_acquisition(acq)
-    ds.close()
-
-    return full_filename_out
-
-
 class ScanInfo:
-    def __init__(self,path_scanInfo,
-                 num_slices = None,
-                 roi_upper = [[0, 256], [0, 256]],
-                 roi_lower = [[0, 256], [0, 256]],
-                 roi_max = [[0, 256], [0, 256]],
-                 roi_polyVertices = None,
-                 FOV_cutOff_ref = None,
-                 pulseType ='inv',
-                 num_stacks = None):
-        fid = open(path_scanInfo, 'r')
+    def __init__(
+        self,
+        path_scanInfo,
+        num_slices=None,
+        roi_upper=[[0, 256], [0, 256]],
+        roi_lower=[[0, 256], [0, 256]],
+        roi_max=[[0, 256], [0, 256]],
+        roi_polyVertices=None,
+        FOV_cutOff_ref=None,
+        pulseType='inv',
+        num_stacks=None,
+    ):
+        fid = open(path_scanInfo)
 
         self.pathes_h5 = []
         self.shortIndexMeasur = []
@@ -480,7 +103,6 @@ class ScanInfo:
         lineIsFlipAngle = False
         lineIsResInPlane = False
 
-
         self.sliceThickness = 8
 
         while True:
@@ -494,11 +116,11 @@ class ScanInfo:
                 lineIsFolderPath = False
 
             elif lineIsSliceThickness:
-                self.sliceThickness =int(cline.split('\n')[0])
+                self.sliceThickness = int(cline.split('\n')[0])
                 lineIsSliceThickness = False
 
             elif lineIsResInPlane:
-                self.res_inPlane =int(cline.split('\n')[0])/10.0
+                self.res_inPlane = int(cline.split('\n')[0]) / 10.0
                 lineIsResInPlane = False
 
             elif lineIsShortIndexMeasurDay:
@@ -548,9 +170,8 @@ class ScanInfo:
                     point_int[1] = int(point_string.split(',')[1])
                     points.append(point_int)
 
-                self.roi_polyVertices =points
+                self.roi_polyVertices = points
                 lineIsRoi_polyVertices = False
-
 
             elif lineIs_numSlices:
                 self.num_slices = int(cline)
@@ -560,24 +181,23 @@ class ScanInfo:
                 self.num_stacks = int(cline)
                 lineIs_numStacks = False
 
-
             elif lineIsDatasetPath:
                 withoutLineBreak = cline.split('\n')[0]
-                if withoutLineBreak is '':
+                if withoutLineBreak == '':
                     lineIsDatasetPath = False
                     continue
                 if '#' not in withoutLineBreak:
                     if 'ref:' in withoutLineBreak:
                         self.referenceScanPath = withoutLineBreak.split(': ')[1]
                         lineIsDatasetPath = False
-                        #shortIndexMeasur.append(withoutLineBreak.split('ref')[0])
+                        # shortIndexMeasur.append(withoutLineBreak.split('ref')[0])
                     else:
                         self.shortIndexMeasur.append(int(withoutLineBreak.split(': ')[0]))
                         self.pathes_h5.append(withoutLineBreak.split(': ')[1])
 
             elif lineIsEcgPath:
                 withoutLineBreak = cline.split('\n')[0]
-                if withoutLineBreak is '':
+                if withoutLineBreak == '':
                     lineIsEcgPath = False
                     continue
                 if '#' not in withoutLineBreak:
@@ -621,14 +241,416 @@ class ScanInfo:
             elif 'flipAngle' in cline:
                 lineIsFlipAngle = True
 
+
+def distBetweenTwoPoints_3D(pointOne, pointTwo):
+    return math.sqrt(
+        (pointOne[0] - pointTwo[0]) ** 2 + (pointOne[1] - pointTwo[1]) ** 2 + (pointOne[2] - pointTwo[2]) ** 2
+    )
+
+
+def toNpy(spaDim):
+    return np.array([spaDim.x[0, 0, 0, 0], spaDim.y[0, 0, 0, 0], spaDim.z[0, 0, 0, 0]])
+
+
+def angleBetweenVec(vectorA, vectorB, normal_plane=None):
+    vectorA = np.asarray(vectorA)
+    vectorB = np.asarray(vectorB)
+
+    vectorA_normalized = vectorA / vectorLength(vectorA)
+    vectorB_normalized = vectorB / vectorLength(vectorB)
+
+    if np.array_equal(vectorA, vectorB):
+        return 0.0
+    dotProduct = np.dot(vectorA_normalized, vectorB_normalized)
+    if dotProduct < -1.0:
+        return math.degrees(math.acos(-1.0))
+
+    if dotProduct > 1.0:
+        return math.degrees(math.acos(1.0))
+    angleBetweenVector_radiant = math.acos(np.dot(vectorA_normalized, vectorB_normalized))
+
+    angleBetweenVector_degree = math.degrees(angleBetweenVector_radiant)
+
+    if normal_plane is not None:
+        if np.dot(normal_plane, np.cross(vectorA_normalized, vectorB_normalized)) < 0:
+            angleBetweenVector_degree *= -1.0
+    return angleBetweenVector_degree
+
+
+def vectorLength(vector):
+    return math.sqrt(sum(i * i for i in vector))
+
+
+def show_3D(vol, axs_proj, title='', idx_slice=None, cmap=None):
+    if cmap is None:
+        cmap = plt.get_cmap('gray')
+    shape_vol = vol.shape
+    if axs_proj == 0:
+        idx_slice = shape_vol[0] // 2 if idx_slice is None else idx_slice
+        img = vol[idx_slice]
+    elif axs_proj == 1:
+        idx_slice = shape_vol[1] // 2 if idx_slice is None else idx_slice
+
+        img = vol[:, idx_slice]
+    elif axs_proj == 2:
+        idx_slice = shape_vol[2] // 2 if idx_slice is None else idx_slice
+        img = vol[:, :, idx_slice]
+    else:
+        raise Exception()
+
+    plt.matshow(img)
+    if title == '':
+        title = 'img'
+    plt.title(title + '_proj' + str(axs_proj))
+
+
+def show_2D(img, title=''):
+    plt.matshow(img, cmap=plt.get_cmap('grey'))
+    if title == '':
+        title = 'img'
+    plt.title(title)
+    plt.show()
+
+
+def showImgsOfStack(im, idx_stack, num_slices):
+    # Visualize results
+    for idx_slice in range(num_slices):
+        show_2D(torch.abs(im[idx_slice, 0, 0, :, :]), title='stack ' + str(idx_stack) + '_slice' + str(idx_slice))
+
+
+def save_object(obj, filename):
+    with open(filename, 'wb') as output:
+        type_protocol = 4
+        pickle.dump(obj, output, type_protocol)
+    print('object saved in ' + str(filename))
+
+
+def load_object(filename):
+    filename = os.path.abspath(filename)
+    with open(filename, 'rb') as pickle_file:
+        storedConfig = pickle.load(pickle_file)
+    print('loaded object ' + str(filename))
+    return storedConfig
+
+
+def checkIfPathExists(path):
+    if not os.path.exists(path):
+        os.makedirs(os.path.abspath(path))
+        print('created path ' + str(path))
+
+
+def calc_distToStack0_mm(list_sGeometry, rots):
+
+    num_slicesPerStack = len(list_sGeometry[0].pos_slices)
+
+    def normVector(vector):
+        if vectorLength(vector) == 0.0:
+            return vector
+        return vector / vectorLength(vector)
+
+    distToStack0_mm = np.zeros(len(rots))
+    for rot_unique in list(np.unique(rots)):
+        idx_withSameRot = list(np.where(rots == rot_unique))[0]
+        if list(rots).count(rot_unique) == 1:
+            if np.any(np.asarray(rots)):
+                distToStack0_mm[idx_withSameRot[0]] = 0.0
+            else:
+                idx_withSameRot = np.where(rots == rot_unique)[0][0]
+                sliceDir = (
+                    list_sGeometry[idx_withSameRot].pos_slices[num_slicesPerStack - 1]
+                    - list_sGeometry[idx_withSameRot].pos_slices[0]
+                )
+                stackDir = list_sGeometry[idx_withSameRot].pos_slices[0] - list_sGeometry[0].pos_slices[0]
+                distToStack0_mm[idx_withSameRot].distToStack0_mm = np.round(
+                    distBetweenTwoPoints_3D(
+                        list_sGeometry[idx_withSameRot].pos_slices[0], list_sGeometry[0].pos_slices[0]
+                    ),
+                    2,
+                )
+
+                dotProduct = np.dot(normVector(stackDir), normVector(sliceDir))
+                if dotProduct < 0:
+                    distToStack0_mm[idx_withSameRot] *= -1.0
+        else:
+            idx_sliceToCompare = 2
+            pos_stackGroup_0 = np.asarray(list_sGeometry[idx_withSameRot[0]].pos_slices[idx_sliceToCompare])
+            dist = np.zeros(len(idx_withSameRot))
+            # check if all slice dirs within grouop are the same
+            sliceDirs_perStackInRot = np.zeros([len(idx_withSameRot), 3])
+            for idx_stackInGroup in range(0, len(idx_withSameRot)):
+                sliceDir = (
+                    list_sGeometry[idx_withSameRot[idx_stackInGroup]].pos_slices[num_slicesPerStack - 1]
+                    - list_sGeometry[idx_withSameRot[idx_stackInGroup]].pos_slices[0]
+                )
+                sliceDirs_perStackInRot[idx_stackInGroup] = normVector(sliceDir)
+            for idx_stackInGroup in range(0, 1, len(idx_withSameRot)):
+                if (
+                    distBetweenTwoPoints_3D(
+                        sliceDirs_perStackInRot[idx_stackInGroup], sliceDirs_perStackInRot[idx_stackInGroup - 1]
+                    )
+                    > 0.5
+                ):
+                    print('warning: not all stacks in rot group have same slice dir! ')
+
+            for idx_stackInGroup in range(0, len(idx_withSameRot)):
+                pos_stack = np.asarray(list_sGeometry[idx_withSameRot[idx_stackInGroup]].pos_slices[idx_sliceToCompare])
+                stackDir = pos_stack - pos_stackGroup_0
+                dist[idx_stackInGroup] = distBetweenTwoPoints_3D(
+                    pos_stackGroup_0, list_sGeometry[idx_withSameRot[idx_stackInGroup]].pos_slices[idx_sliceToCompare]
+                )
+                dotProd = np.dot(normVector(stackDir), normVector(sliceDirs_perStackInRot[idx_stackInGroup]))
+                if abs(dotProd) > 0 and np.round((abs(dotProd) - 1), 5) > 0:
+                    print('warning: stacks with same rot are not shifted along slice dir! ')
+                if np.dot(normVector(stackDir), normVector(sliceDirs_perStackInRot[idx_stackInGroup])) < 0:
+                    dist[idx_stackInGroup] *= -1.0
+
+            dist -= np.mean(dist)
+            for idx_stackInGroup in range(len(idx_withSameRot)):
+                distToStack0_mm[idx_withSameRot[idx_stackInGroup]] = dist[idx_stackInGroup]
+
+    print('distToStack0_mm = ' + str(np.round(distToStack0_mm, 2)))
+    return distToStack0_mm
+
+
+def calcGapBetweenLR(list_sGeometries, thickness_slice):
+    num_stacks = len(list_sGeometries)
+    slicesPerStack = len(list_sGeometries[0].pos_slices)
+    if slicesPerStack <= 1:
+        gap = 0.0
+    else:
+
+        array_gapBetweenSlices = np.zeros([num_stacks, slicesPerStack - 1])
+        for idx_stack in range(0, num_stacks):
+            for idx_slice in range(0, slicesPerStack - 1):
+                array_gapBetweenSlices[idx_stack, idx_slice] = np.round(
+                    distBetweenTwoPoints_3D(
+                        list_sGeometries[idx_stack].pos_slices[idx_slice],
+                        list_sGeometries[idx_stack].pos_slices[idx_slice + 1],
+                    )
+                    - thickness_slice,
+                    2,
+                )
+
+        gap = np.median(array_gapBetweenSlices)
+
+    print('gap between slices: ' + str(gap) + ' mm')
+    return gap
+
+
+def calc_rotToStack0(list_sGeometries, img_stacks):
+
+    num_stacks = len(list_sGeometries)
+
+    # search for sign change in angles
+    dir_slice_stack0 = list_sGeometries[0].dir.slice
+    dir_phase_stack0 = list_sGeometries[0].dir.phase
+    dir_read_stack0 = list_sGeometries[0].dir.read
+
+    # check if read and phase dir need to be swapped
+    for idx_stack in range(1, num_stacks):
+
+        angle_phase = np.round(angleBetweenVec(dir_phase_stack0, list_sGeometries[idx_stack].dir.phase), 0)
+
+        if abs(angle_phase - 90.0) < 10.0:
+            dir_read_old = np.copy(list_sGeometries[idx_stack].dir.read)
+            list_sGeometries[idx_stack].dir.read = list_sGeometries[idx_stack].dir.phase
+            list_sGeometries[idx_stack].dir.phase = dir_read_old
+            img_stacks[idx_stack] = np.swapaxes(img_stacks[idx_stack], 1, 2)
+            print('... swap read and phase dir ')
+
+    rots_toStack0 = np.zeros([num_stacks, 3])
+
+    for idx_stack in range(num_stacks):
+
+        angle_slice = np.round(
+            angleBetweenVec(
+                dir_slice_stack0,
+                list_sGeometries[idx_stack].dir.slice,
+                normal_plane=list_sGeometries[idx_stack].dir.phase,
+            ),
+            0,
+        )
+        angle_phase = np.round(angleBetweenVec(dir_phase_stack0, list_sGeometries[idx_stack].dir.phase), 1)
+        angle_read = np.round(
+            angleBetweenVec(
+                dir_read_stack0,
+                list_sGeometries[idx_stack].dir.read,
+                normal_plane=list_sGeometries[idx_stack].dir.phase,
+            ),
+            1,
+        )
+
+        print('angles of stack ' + str(idx_stack) + str(np.asarray([angle_read, angle_phase, angle_slice])))
+
+        rot = np.asarray([-angle_slice, 0, 0])
+        rots_toStack0[idx_stack] = rot
+
+    print('calculated rot to stack 0 = ' + str(np.round(rots_toStack0, 2)))
+    return rots_toStack0
+
+
+def getSliceOrder(num_slices):
+    if num_slices == 6:
+        order_slices = [3, 0, 4, 1, 5, 2]
+    elif num_slices == 5:
+        order_slices = [0, 3, 1, 4, 2]
+    elif num_slices == 12:
+        order_slices = [6, 0, 7, 1, 8, 2, 9, 3, 10, 4, 11, 5]
+    else:
+        raise Exception
+
+    return order_slices
+
+
+def resortSlices(imgs, list_sGeometries):
+    num_slices = imgs.shape[1]
+    order_slices = getSliceOrder(num_slices=num_slices)
+
+    imgs_before = np.copy(imgs)
+    for slice in range(len(order_slices)):
+        imgs[:, slice] = imgs_before[:, int(order_slices[slice])]
+
+    for idx_stack in range(imgs.shape[0]):
+        pos_before = np.copy(list_sGeometries[idx_stack].pos_slices)
+        for slice in range(len(order_slices)):
+            list_sGeometries[idx_stack].pos_slices[slice] = pos_before[int(order_slices[slice])]
+
+    print('resorted slices with order ' + str(order_slices))
+
+
+class Directions:
+    def __init__(self) -> None:
+        self.read = None
+        self.slice = None
+        self.phase = None
+
+
+class SGeometry:
+    def __init__(self) -> None:
+        self.pos_slices = None
+        self.dir = Directions()
+
+
+# Golden angle radial acquisition of Kirstens T1 mapping sequence
+def traj_rad_kirsten_t1mapping(nkrad: int, nkang: int) -> np.ndarray:
+    krad = np.linspace(-nkrad // 2, nkrad // 2, nkrad)
+    ky = np.linspace(0, nkang - 1, nkang)
+
+    # Check if angle is already specified:
+    angRad = ky * (np.pi / 180) * (180 * 0.618034)
+
+    # Calculate trajectory
+    rad_traj = np.zeros((nkrad, nkang, 2), dtype=np.float32)
+    rad_traj[:, :, 0] = krad.reshape(-1, 1) * np.cos(angRad)
+    rad_traj[:, :, 1] = krad.reshape(-1, 1) * np.sin(angRad)
+    rad_traj = np.moveaxis(rad_traj, 0, 1)
+    return rad_traj
+
+
+def prep_filename(full_filename_in: str, full_filename_out: str | None = None, suffix: str = 'traj') -> str:
+    if full_filename_out is None:
+        full_filename_out = full_filename_in.replace('.h5', f'_{suffix}.h5')
+
+    if full_filename_in == full_filename_out:
+        raise ValueError('Input and output filename are the same. This would overwrite the original data.')
+
+    # Set trajectory and save
+    if os.path.exists(full_filename_out) == 1:
+        os.remove(full_filename_out)
+        print(f'{full_filename_out} deleted')
+
+    return full_filename_out
+
+
+# Add 2D non-Cartesian trajectory to ISMRMD data file
+def add_2D_noncart_traj_to_ismrmrd(
+    fun_calc_traj: Callable[[int, int], np.ndarray],
+    full_filename_in: str,
+    full_filename_out: str | None = None,
+    nrad: int | None = None,
+    sGeometry: SGeometry | None = None,
+) -> str:
+
+    # full_filename_out = prep_filename(full_filename_in, full_filename_out)
+    if False and os.path.isfile(full_filename_out):
+        print('mofidied traj already available: ' + str(full_filename_out))
+        return full_filename_out
+
+    # Get info and acquisitions from original data
+    data_orig = KData.from_file(full_filename_in, KTrajectoryRadial2D())
+    sGeometry.dir.read = toNpy(data_orig.header.acq_info.read_dir)
+    sGeometry.dir.slice = toNpy(data_orig.header.acq_info.slice_dir)
+    sGeometry.dir.phase = toNpy(data_orig.header.acq_info.phase_dir)
+
+    with ismrmrd.File(full_filename_in, 'r') as file:
+        ds = file[list(file.keys())[0]]
+        ismrmrd_header = ds.header
+        acquisitions = ds.acquisitions[:]
+
+        # sliceThickness = ismrmrd_header.encoding[0].reconSpace.fieldOfView_mm.z
+        # fligAngle = ismrmrd_header.sequenceParameters.flipAngle_deg
+
+    # Create new file
+    ds = ismrmrd.Dataset(full_filename_out)
+    ds.write_xml_header(ismrmrd_header.toXML())
+
+    # Calculate trajectory
+    grad_traj = fun_calc_traj(data_orig.data.shape[-1], data_orig.data.shape[-2])
+
+    # Acquisition time
+    acqt = torch.tensor([acq.acquisition_time_stamp for acq in acquisitions], dtype=torch.float32)
+
+    # Slice index
+    sl = torch.tensor([acq.idx.slice for acq in acquisitions], dtype=torch.float32)
+
+    sGeometry.pos_slices = []
+    # Go through all slices
+    for sl_idx in torch.unique(sl):
+        cidx = torch.where(sl == sl_idx)[0]
+
+        # Sort based on acquisition time step
+        acqt_slice_idx = torch.argsort(acqt[cidx])
+
+        # Remove noise sample
+        if len(acqt_slice_idx) == data_orig.data.shape[-2] + 1:
+            ds.append_acquisition(acquisitions[acqt_slice_idx[0]])
+            acqt_slice_idx = acqt_slice_idx[1:]
+
+        # Make sure all acquisitions are for imaging and not e.g. noise samples are present
+        if len(acqt_slice_idx) != data_orig.data.shape[-2]:
+            raise ValueError(
+                f'Expected number of radial lines: {data_orig.data.shape[-2]} but found {len(acqt_slice_idx)}.'
+            )
+
+        # Select only nrad lines
+        if nrad is None:
+            nrad = len(acqt_slice_idx)
+
+        flag_posSet = False
+        for idx, acq_idx in enumerate(acqt_slice_idx[:nrad]):
+            acq = acquisitions[cidx[acq_idx]]
+            if not flag_posSet:
+                pos = acq.position
+                sGeometry.pos_slices.append(np.array([pos[0], pos[1], pos[2]]))
+                flag_posSet = True
+            acq.resize(
+                number_of_samples=acq.number_of_samples, active_channels=acq.active_channels, trajectory_dimensions=2
+            )
+            acq.traj[:] = grad_traj[idx, :, :]
+            ds.append_acquisition(acq)
+    ds.close()
+
+    return full_filename_out
+
+
 def writeTraj(filename_h5):
     sGeometry = SGeometry()
-    fname_traj = add_2D_noncart_traj_to_ismrmrd(traj_rad_kirsten_t1mapping,
-                                                filename_h5,
-                                                filename_h5.replace('.h5', '_traj_2s.h5'),
-                                                sGeometry=sGeometry)
+    fname_traj = add_2D_noncart_traj_to_ismrmrd(
+        traj_rad_kirsten_t1mapping, filename_h5, filename_h5.replace('.h5', '_traj_2s.h5'), sGeometry=sGeometry
+    )
 
     return [fname_traj, sGeometry]
+
 
 def recoStack(path_h5):
     kdata = KData.from_file(path_h5, KTrajectoryIsmrmrd())
@@ -654,29 +676,80 @@ def recoStack(path_h5):
 
     return im
 
-def showImgsOfStack(im, idx_stack):
-    # Visualize results
-    for idx_slice in range(scanInfo.num_slices):
-        show_2D(torch.abs(im[idx_slice, 0, 0, :, :]), title = 'stack '+str(idx_stack)+'_slice'+str(idx_slice))
+
+def calcDsize_HR(dsize_LR, voxelSize_HR, voxelSize_LR):
+    return np.round(
+        np.asarray(
+            [
+                dsize_LR[0] * voxelSize_LR[0] / voxelSize_HR[0],
+                dsize_LR[1] * voxelSize_LR[1] / voxelSize_HR[1],
+                dsize_LR[1] * voxelSize_LR[1] / voxelSize_HR[2],
+            ],
+            dtype=np.int64,
+        )
+    )
+
 
 # Read raw data and trajectory
-path_dset = '/../../echo/allgemein/projects/hufnag01/forMara/MR_Data/inVivo/12-2022_16__01/12stacks_5slices_4mm_gap14_rot/meas_MID67_12stacks_5slices_4mm_gap14_rot_group1_FID106796.h5'
-path_folder = '/../../echo/allgemein/projects/hufnag01/forMara/MR_Data/inVivo/12-2022_16__01/12stacks_5slices_4mm_gap14_rot/'
-
-scanInfo = ScanInfo(path_folder+'scanInfo')
+path_folder = (
+    '/../../echo/allgemein/projects/hufnag01/forMara/MR_Data/inVivo/12-2022_16__01/12stacks_5slices_4mm_gap14_rot/'
+)
+path_save = path_folder + 'results/'
+checkIfPathExists(path_save)
+scanInfo = ScanInfo(path_folder + 'scanInfo')
 pathes_orig = scanInfo.pathes_h5
-sGeometries_ofStacks = []
+list_sGeometries = []
 imgs_stacks = []
-for idx_stack in range(min(12,len(pathes_orig))):
-    print('idx path = '+str(idx_stack))
-    [path_new, sGeometry] = writeTraj(path_folder+pathes_orig[idx_stack])
-    sGeometries_ofStacks.append(sGeometry)
-    img_stack = recoStack(path_new)
+flag_useStored = True
+for idx_stack in range(len(pathes_orig)):
+    print('idx path = ' + str(idx_stack))
+    if not flag_useStored:
+        [path_new, sGeometry] = writeTraj(path_folder + pathes_orig[idx_stack])
+        img_stack = recoStack(path_new)
+        save_object(filename=path_save + 'sGeometry_' + str(idx_stack), obj=sGeometry)
+        np.save(path_save + 'img_stack_' + str(idx_stack), arr=img_stack)
+    else:
+        sGeometry = load_object(path_save + 'sGeometry_' + str(idx_stack))
+        img_stack = np.load(path_save + 'img_stack_' + str(idx_stack) + '.npy')
+
     imgs_stacks.append(img_stack)
-    showImgsOfStack(img_stack, idx_stack = idx_stack)
+    list_sGeometries.append(sGeometry)
 
-imgs_stacks = np.asarray(imgs_stacks)
+    # showImgsOfStack(img_stack, idx_stack = idx_stack, num_slices=img_stack.shape[0])
 
-resortSlices(imgs = imgs_stacks, list_sGeometries = sGeometries_ofStacks)
-rots = calc_rotToStack0(list_sGeometries=sGeometries_ofStacks, img_stacks=imgs_stacks)
-distTo0 = calc_distToStack0_mm(rots=rots[:,0], list_sGeometry=sGeometries_ofStacks)
+
+imgs_stacks = np.abs(np.asarray(imgs_stacks))
+imgs_stacks = imgs_stacks[:, :, 0, 0]
+
+
+voxelSize_HR = [1.3, 1.3, 1.3]
+voxelSize_LR = [1.3, 1.3, scanInfo.sliceThickness]
+shape_HR = calcDsize_HR(dsize_LR=imgs_stacks.shape[2:4], voxelSize_HR=voxelSize_HR, voxelSize_LR=voxelSize_LR)
+slice_profile = Slice_profile(thickness_slice=scanInfo.sliceThickness)
+
+resortSlices(imgs=imgs_stacks, list_sGeometries=list_sGeometries)
+rots = calc_rotToStack0(list_sGeometries=list_sGeometries, img_stacks=imgs_stacks)
+distTo0 = calc_distToStack0_mm(rots=rots[:, 0], list_sGeometry=list_sGeometries)
+gap_slices = calcGapBetweenLR(list_sGeometries=list_sGeometries, thickness_slice=scanInfo.sliceThickness)
+
+distTo0_3D = np.zeros([len(list_sGeometries), 3])
+distTo0_3D = distTo0[:, np.newaxis]
+srr_op = SuperResOp(
+    shape_HR=shape_HR,
+    num_slices_per_stack=scanInfo.num_slices,
+    gap_slices=gap_slices,
+    num_stacks=len(list_sGeometries),
+    thickness_slice=scanInfo.sliceThickness,
+    list_offsets_stack=distTo0_3D,
+    rot_per_stack=rots,
+    w=3 * slice_profile.sigma,
+    slice_profile=slice_profile.rect,
+)
+
+
+vol_HR_adjoint = srr_op.adjoint(torch.from_numpy(imgs_stacks[:, :, np.newaxis, np.newaxis, np.newaxis]))
+
+
+for idx_proj in range(3):
+    show_3D(vol_HR_adjoint[0, 0], axs_proj=idx_proj, title='vol_HR_adjoint_0')
+"""
