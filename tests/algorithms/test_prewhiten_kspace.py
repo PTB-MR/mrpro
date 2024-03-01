@@ -15,7 +15,9 @@
 import torch
 from einops import rearrange
 from mrpro.algorithms import prewhiten_kspace
-from mrpro.data import KData, KNoise, KTrajectory
+from mrpro.data import KData
+from mrpro.data import KNoise
+from mrpro.data import KTrajectory
 
 
 def _calc_coil_cov(data):

@@ -14,7 +14,8 @@
 
 import pytest
 import torch
-from mrpro.algorithms import adam, lbfgs
+from mrpro.algorithms import adam
+from mrpro.algorithms import lbfgs
 from mrpro.operators import ConstraintsOp
 from tests.operators._OptimizationTestFunctions import Rosenbrock
 

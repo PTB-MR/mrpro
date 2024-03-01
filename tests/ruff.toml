@@ -1,17 +1,3 @@
-line-length = 120
-extend-exclude = ["__init__.py"]
+extend = "../pyproject.toml"
 
-[lint]
-extend-select = ["B", "C", "SIM", "UP", "Q", "COM", "A", "S", "I"]
-
-ignore = [
-    "C901", # function is too complex
-    "S101", # use of assert detected
-]
-
-[lint.flake8-quotes]
-docstring-quotes = "double"
-inline-quotes = "single"
-
-[format]
-quote-style = "single"
+lint.extend-ignore = ["D", "S101"]

@@ -13,7 +13,8 @@
 #   limitations under the License.
 
 import torch
-from mrpro.phantoms import EllipsePars, EllipsePhantom
+from mrpro.phantoms import EllipsePars
+from mrpro.phantoms import EllipsePhantom
 
 
 class EllipsePhantomTestData:

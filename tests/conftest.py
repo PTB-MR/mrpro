@@ -4,9 +4,11 @@ import ismrmrd
 import pytest
 import torch
 from ismrmrd import xsd
-from mrpro.data import AcqInfo, KHeader
+from mrpro.data import AcqInfo
+from mrpro.data import KHeader
 from mrpro.data.enums import AcqFlags
-from xsdata.models.datatype import XmlDate, XmlTime
+from xsdata.models.datatype import XmlDate
+from xsdata.models.datatype import XmlTime
 
 from tests import RandomGenerator
 from tests.data import Dicom2DTestImage

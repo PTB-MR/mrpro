@@ -14,7 +14,8 @@
 
 import pytest
 import torch
-from mrpro.data import KTrajectory, SpatialDimension
+from mrpro.data import KTrajectory
+from mrpro.data import SpatialDimension
 from mrpro.operators import CartesianSamplingOp
 
 from tests import RandomGenerator

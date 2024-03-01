@@ -16,7 +16,8 @@ import math
 
 import pytest
 import torch
-from mrpro.data import DcfData, KTrajectory
+from mrpro.data import DcfData
+from mrpro.data import KTrajectory
 
 
 def example_traj_rpe(nkr, nka, nk0, broadcast=True):

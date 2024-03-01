@@ -14,7 +14,9 @@
 
 import pytest
 import torch
-from mrpro.data import CsmData, QHeader, SpatialDimension
+from mrpro.data import CsmData
+from mrpro.data import QHeader
+from mrpro.data import SpatialDimension
 from mrpro.operators import SensitivityOp
 
 from tests import RandomGenerator

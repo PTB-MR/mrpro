@@ -14,7 +14,8 @@
 
 import pytest
 import torch
-from mrpro.data import KData, KTrajectory
+from mrpro.data import KData
+from mrpro.data import KTrajectory
 from mrpro.data.traj_calculators._KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
 
