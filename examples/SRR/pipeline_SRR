@@ -34,7 +34,7 @@ from mrpro.operators import SensitivityOp
 from mrpro.operators._SuperResOp import Slice_profile
 from mrpro.operators._SuperResOp import SuperResOp
 
-"""
+
 class ScanInfo:
     def __init__(
         self,
@@ -752,4 +752,3 @@ vol_HR_adjoint = srr_op.adjoint(torch.from_numpy(imgs_stacks[:, :, np.newaxis, n
 
 for idx_proj in range(3):
     show_3D(vol_HR_adjoint[0, 0], axs_proj=idx_proj, title='vol_HR_adjoint_0')
-"""
