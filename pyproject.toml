@@ -82,7 +82,7 @@ include = ["src/**/*.py"]
 exclude = ["docs/**"]
 
 [tool.ruff.lint]
-extend-select = ["B", "C", "SIM", "UP", "Q", "COM", "A", "S", "I"]
+extend-select = ["B", "C", "SIM", "UP", "Q", "COM", "A", "S", "I", "D"]
 ignore = [
     "C901", # function is too complex
 ]
@@ -93,6 +93,9 @@ force-single-line = true
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
 inline-quotes = "single"
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
 
 [tool.ruff.format]
 quote-style = "single"
