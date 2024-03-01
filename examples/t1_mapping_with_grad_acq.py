@@ -1,4 +1,3 @@
-"""Example for T1 mapping from a continuous golden radial acquisition."""
 # %% [markdown]
 # # T1 mapping from a continuous golden radial acquisition
 
