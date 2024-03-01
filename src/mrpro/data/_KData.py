@@ -33,16 +33,7 @@ from mrpro.data.enums import AcqFlags
 from mrpro.data.traj_calculators import KTrajectoryCalculator
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 
-KDIM_SORT_LABELS = (
-    'k1',
-    'k2',
-    'average',
-    'slice',
-    'contrast',
-    'phase',
-    'repetition',
-    'set',
-)
+KDIM_SORT_LABELS = ('k1', 'k2', 'average', 'slice', 'contrast', 'phase', 'repetition', 'set')
 
 # Same criteria as https://github.com/wtclarke/pymapvbvd/blob/master/mapvbvd/mapVBVD.py uses
 DEFAULT_IGNORE_FLAGS = (
@@ -92,7 +83,6 @@ class KData:
                 Note: If ACQ_IS_PARALLEL_CALIBRATION is set without also setting ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING
                       we interpret it as: Ignore if IS_PARALLEL_CALIBRATION and not PARALLEL_CALIBRATION_AND_IMAGING
         """
-
         # Can raise FileNotFoundError
         with ismrmrd.File(filename, 'r') as file:
             ds = file[list(file.keys())[dataset_idx]]
@@ -116,7 +106,7 @@ class KData:
                     lambda acq: (AcqFlags.ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING.value & acq.flags)
                     or not (AcqFlags.ACQ_IS_PARALLEL_CALIBRATION.value & acq.flags),
                     acquisitions,
-                )
+                ),
             )
 
         acquisitions = list(filter(lambda acq: not (ignore_flags.value & acq.flags), acquisitions))
@@ -156,11 +146,11 @@ class KData:
                 & (kheader.acq_info.idx.contrast == contrast_idx)
                 & (kheader.acq_info.idx.phase == phase_idx)
                 & (kheader.acq_info.idx.repetition == repetition_idx)
-                & (kheader.acq_info.idx.set == set_idx)
+                & (kheader.acq_info.idx.set == set_idx),
             )
 
         idx_matches = idx_label_combination(
-            *[unique_idxs[label][0] for label in KDIM_SORT_LABELS if label not in ('k1', 'k2')]
+            *[unique_idxs[label][0] for label in KDIM_SORT_LABELS if label not in ('k1', 'k2')],
         )
 
         # Determine the number of k1 and k2 points
@@ -187,7 +177,12 @@ class KData:
         # Verify that k2 and k1 contain the same number of k-space points for all combinations of averages, slices...
         for average_idx, slice_idx, contrast_idx, phase_idx, repetition_idx, set_idx in idx_combinations:
             idx_matches = idx_label_combination(
-                average_idx, slice_idx, contrast_idx, phase_idx, repetition_idx, set_idx
+                average_idx,
+                slice_idx,
+                contrast_idx,
+                phase_idx,
+                repetition_idx,
+                set_idx,
             )
             label_str = (
                 f'[average {average_idx} | slice {slice_idx} | contrast {contrast_idx} | phase {phase_idx}'
@@ -237,7 +232,7 @@ class KData:
             case _:
                 raise TypeError(
                     'ktrajectory must be KTrajectoryIsmrmrd, KTrajectory or KTrajectoryCalculator,'
-                    f'not {type(ktrajectory)}'
+                    f'not {type(ktrajectory)}',
                 )
 
         try:
@@ -246,7 +241,7 @@ class KData:
         except RuntimeError:
             raise ValueError(
                 f'Broadcasted shape trajectory do not match kdata: {shape} vs. {kdata.shape}. '
-                'Please check the trajectory.'
+                'Please check the trajectory.',
             ) from None
 
         return cls(kheader, kdata, ktraj)
@@ -290,10 +285,18 @@ class KData:
         return KData(
             header=self.header,
             data=self.data.to(
-                device=device, dtype=dtype, non_blocking=non_blocking, copy=copy, memory_format=memory_format
+                device=device,
+                dtype=dtype,
+                non_blocking=non_blocking,
+                copy=copy,
+                memory_format=memory_format,
             ),
             traj=self.traj.to(
-                device=device, dtype=dtype_traj, non_blocking=non_blocking, copy=copy, memory_format=memory_format
+                device=device,
+                dtype=dtype_traj,
+                non_blocking=non_blocking,
+                copy=copy,
+                memory_format=memory_format,
             ),
         )
 

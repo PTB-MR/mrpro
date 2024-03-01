@@ -53,7 +53,6 @@ class FourierOp(LinearOperator):
         kbwidth
             size of the Kaiser-Bessel kernel for the nuFFT
         """
-
         super().__init__()
 
         # convert oversampling to SpatialDimension if float
@@ -71,11 +70,11 @@ class FourierOp(LinearOperator):
             return [k for k, i in zip((traj.kz, traj.ky, traj.kx), (-3, -2, -1), strict=True) if i in dims]
 
         self._ignore_dims, self._fft_dims, self._nufft_dims = [], [], []
-        for dim, type in zip((-3, -2, -1), traj.type_along_kzyx, strict=True):
-            if type & TrajType.SINGLEVALUE:
+        for dim, type_ in zip((-3, -2, -1), traj.type_along_kzyx, strict=True):
+            if type_ & TrajType.SINGLEVALUE:
                 # dimension which do not require any transform
                 self._ignore_dims.append(dim)
-            elif type & TrajType.ONGRID:
+            elif type_ & TrajType.ONGRID:
                 self._fft_dims.append(dim)
             else:
                 self._nufft_dims.append(dim)
@@ -98,7 +97,7 @@ class FourierOp(LinearOperator):
             if self._fft_dims != fft_dims_k210:
                 raise NotImplementedError(
                     'If both FFT and NUFFT dims are present, Cartesian FFT dims need to be aligned with the '
-                    'k-space dimension, i.e. kx along k0, ky along k1 and kz along k2'
+                    'k-space dimension, i.e. kx along k0, ky along k1 and kz along k2',
                 )
 
             self._nufft_im_size = get_spatial_dims(recon_shape, self._nufft_dims)
@@ -109,7 +108,9 @@ class FourierOp(LinearOperator):
             omega = [
                 k * 2 * torch.pi / ks
                 for k, ks in zip(
-                    get_traj(traj, self._nufft_dims), get_spatial_dims(encoding_shape, self._nufft_dims), strict=True
+                    get_traj(traj, self._nufft_dims),
+                    get_spatial_dims(encoding_shape, self._nufft_dims),
+                    strict=True,
                 )
             ]
 
@@ -118,10 +119,16 @@ class FourierOp(LinearOperator):
             self._omega = torch.stack(omega, dim=-4)  # use the 'coil' dim for the direction
 
             self._fwd_nufft_op = KbNufft(
-                im_size=self._nufft_im_size, grid_size=grid_size, numpoints=numpoints, kbwidth=kbwidth
+                im_size=self._nufft_im_size,
+                grid_size=grid_size,
+                numpoints=numpoints,
+                kbwidth=kbwidth,
             )
             self._adj_nufft_op = KbNufftAdjoint(
-                im_size=self._nufft_im_size, grid_size=grid_size, numpoints=numpoints, kbwidth=kbwidth
+                im_size=self._nufft_im_size,
+                grid_size=grid_size,
+                numpoints=numpoints,
+                kbwidth=kbwidth,
             )
 
             self._kshape = traj.broadcasted_shape
@@ -138,7 +145,6 @@ class FourierOp(LinearOperator):
         -------
             coil k-space data with shape: (... coils k2 k1 k0)
         """
-
         if len(self._fft_dims):
             # FFT
             (x,) = self._fast_fourier_op.forward(x)
@@ -180,7 +186,6 @@ class FourierOp(LinearOperator):
         -------
             coil image data with shape: (... coils z y x)
         """
-
         if self._fft_dims:
             # IFFT
             (x,) = self._fast_fourier_op.adjoint(x)

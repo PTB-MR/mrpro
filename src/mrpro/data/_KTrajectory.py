@@ -77,7 +77,6 @@ class KTrajectory:
 
         # TODO: consider non-integer positions that are on a grid, e.g. (0.5, 1, 1.5, ....)
         """
-
         # Matrix describing trajectory-type [(kz, ky, kx), (k2, k1, k0)]
         # Start with everything not on a grid (arbitrary k-space locations).
         # We use the value of the enum-type to make it easier to do array operations.
@@ -187,7 +186,6 @@ class KTrajectory:
         grid_detection_tolerance
             tolerance to detect if trajectory points are on integer grid positions
         """
-
         kz, ky, kx = torch.unbind(tensor, dim=stack_dim)
         return cls(
             kz,
@@ -205,7 +203,9 @@ class KTrajectory:
         documentation of torch.Tensor.to() for more details.
         """
         return KTrajectory(
-            kz=self.kz.to(*args, **kwargs), ky=self.ky.to(*args, **kwargs), kx=self.kx.to(*args, **kwargs)
+            kz=self.kz.to(*args, **kwargs),
+            ky=self.ky.to(*args, **kwargs),
+            kx=self.kx.to(*args, **kwargs),
         )
 
     def cuda(

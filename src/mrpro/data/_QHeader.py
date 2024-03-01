@@ -40,7 +40,6 @@ class QHeader:
         kheader
             MR raw data header (KHeader) containing required meta data.
         """
-
         return cls(fov=iheader.fov)
 
     @classmethod
@@ -52,7 +51,6 @@ class QHeader:
         kheader
             MR raw data header (KHeader) containing required meta data.
         """
-
         return cls(fov=kheader.recon_fov)
 
     @classmethod

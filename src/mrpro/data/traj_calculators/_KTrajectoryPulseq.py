@@ -34,10 +34,7 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         absolute path to .seq file
     """
 
-    def __init__(
-        self,
-        seq_path: str | Path,
-    ) -> None:
+    def __init__(self, seq_path: str | Path) -> None:
         super().__init__()
         self.seq_path = seq_path
 
@@ -53,7 +50,6 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         -------
             trajectory of type KTrajectoryRawShape
         """
-
         # create PyPulseq Sequence object and read .seq file
         seq = pp.Sequence()
         seq.read(file_path=str(self.seq_path))

@@ -74,7 +74,6 @@ def adam(
     -------
         list of optimized parameters
     """
-
     # define Adam routine
     optim = Adam(
         params=[p.detach().clone().requires_grad_(True) for p in params],

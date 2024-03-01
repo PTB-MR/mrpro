@@ -14,11 +14,10 @@
 
 import pytest
 import torch
-
-from mrpro.data import KData
-from mrpro.data import KTrajectory
+from mrpro.data import KData, KTrajectory
 from mrpro.data.traj_calculators._KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
+
 from tests.data import IsmrmrdRawTestData
 from tests.helper import rel_image_diff
 
@@ -28,7 +27,10 @@ def ismrmrd_cart(ph_ellipse, tmp_path_factory):
     """Fully sampled cartesian data set."""
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
     ismrmrd_kdat = IsmrmrdRawTestData(
-        filename=ismrmrd_filename, noise_level=0.0, repetitions=3, phantom=ph_ellipse.phantom
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        phantom=ph_ellipse.phantom,
     )
     return ismrmrd_kdat
 

@@ -42,7 +42,6 @@ def birdcage_2d(
     This function is strongly inspired by https://github.com/ismrmrd/ismrmrd-python-tools. The associated license
     information can be found at the end of this file.
     """
-
     dim = [number_of_coils, image_dimensions.y, image_dimensions.x]
     x_co, y_co = torch.meshgrid(
         torch.linspace(-dim[2] // 2, dim[2] // 2 - 1, dim[2]),

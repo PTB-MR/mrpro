@@ -35,7 +35,6 @@ class KTrajectoryCartesian(KTrajectoryCalculator):
         -------
             Cartesian trajectory for given KHeader
         """
-
         # K-space locations along readout lines
         kx = self._kfreq(kheader)
 

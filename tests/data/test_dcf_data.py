@@ -16,9 +16,7 @@ import math
 
 import pytest
 import torch
-
-from mrpro.data import DcfData
-from mrpro.data import KTrajectory
+from mrpro.data import DcfData, KTrajectory
 
 
 def example_traj_rpe(nkr, nka, nk0, broadcast=True):
@@ -147,14 +145,20 @@ def test_dcf_3d_cart_nonuniform_traj_voronoi(nk2, nk1, nk0, k2_steps, k1_steps, 
 
     ky_full, kz_full, kx_full = torch.meshgrid(k1_range, k2_range, k0_range, indexing='xy')
     ktraj_full = KTrajectory(
-        kz_full[None, ...], ky_full[None, ...], kx_full[None, ...], repeat_detection_tolerance=None
+        kz_full[None, ...],
+        ky_full[None, ...],
+        kx_full[None, ...],
+        repeat_detection_tolerance=None,
     )
 
     kx_broadcast = k0_range[None, None, :]
     ky_broadcast = k1_range[None, :, None]
     kz_broadcast = k2_range[:, None, None]
     ktraj_broadcast = KTrajectory(
-        kz_broadcast[None, ...], ky_broadcast[None, ...], kx_broadcast[None, ...], repeat_detection_tolerance=None
+        kz_broadcast[None, ...],
+        ky_broadcast[None, ...],
+        kx_broadcast[None, ...],
+        repeat_detection_tolerance=None,
     )
 
     # Sanity check inputs

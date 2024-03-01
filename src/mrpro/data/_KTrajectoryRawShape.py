@@ -38,7 +38,11 @@ class KTrajectoryRawShape:
     kx: torch.Tensor  # ((other,k2,k1),k0) #frequency encoding direction, k0 if Cartesian
 
     def reshape(
-        self, sort_idx: np.ndarray, num_k2: int, num_k1: int, repeat_detection_tolerance: float | None = 1e-8
+        self,
+        sort_idx: np.ndarray,
+        num_k2: int,
+        num_k1: int,
+        repeat_detection_tolerance: float | None = 1e-8,
     ) -> KTrajectory:
         """Resort and reshape the raw trajectory to KTrajectory.
 
@@ -59,7 +63,6 @@ class KTrajectoryRawShape:
         -------
             KTrajectory with kx, ky and kz each in the shape (other k2 k1 k0).
         """
-
         # Resort and reshape
         kz = rearrange(self.kz[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=num_k1, k2=num_k2)
         ky = rearrange(self.ky[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=num_k1, k2=num_k2)

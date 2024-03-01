@@ -16,11 +16,9 @@ import dataclasses
 
 import pytest
 import torch
-
-from mrpro.data import CsmData
-from mrpro.data import IData
-from mrpro.data import SpatialDimension
+from mrpro.data import CsmData, IData, SpatialDimension
 from mrpro.phantoms.coils import birdcage_2d
+
 from tests.helper import rel_image_diff
 
 

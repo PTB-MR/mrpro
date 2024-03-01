@@ -70,10 +70,7 @@ class EncodingLimits:
     user_7: Limits = dataclasses.field(default_factory=Limits)
 
     @classmethod
-    def from_ismrmrd_encodingLimitsType(
-        cls,
-        encodingLimits: encodingLimitsType,
-    ):
+    def from_ismrmrd_encodingLimitsType(cls, encodingLimits: encodingLimitsType):
         """Generate EncodingLimits from ismrmrd.encodingLimitsType."""
         values = {
             field.name: Limits.from_ismrmrd(getattr(encodingLimits, field.name))

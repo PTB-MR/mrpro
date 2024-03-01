@@ -21,7 +21,6 @@ import ismrmrd
 import ismrmrd.xsd
 import torch
 from einops import repeat
-
 from mrpro.data import SpatialDimension
 from mrpro.phantoms import EllipsePhantom
 

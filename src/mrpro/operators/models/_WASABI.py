@@ -60,7 +60,11 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         self.freq = nn.Parameter(freq, requires_grad=freq.requires_grad)
 
     def forward(
-        self, b0_shift: torch.Tensor, rb1: torch.Tensor, c: torch.Tensor, d: torch.Tensor
+        self,
+        b0_shift: torch.Tensor,
+        rb1: torch.Tensor,
+        c: torch.Tensor,
+        d: torch.Tensor,
     ) -> tuple[torch.Tensor,]:
         """Apply WASABI signal model.
 

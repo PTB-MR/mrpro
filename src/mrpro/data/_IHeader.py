@@ -48,14 +48,7 @@ class IHeader:
         kheader
             MR raw data header (KHeader) containing required meta data.
         """
-
-        return cls(
-            fov=kheader.recon_fov,
-            te=kheader.te,
-            ti=kheader.ti,
-            fa=kheader.fa,
-            tr=kheader.tr,
-        )
+        return cls(fov=kheader.recon_fov, te=kheader.te, ti=kheader.ti, fa=kheader.fa, tr=kheader.tr)
 
     @classmethod
     def from_dicom_list(cls, dicom_datasets: list[Dataset]) -> IHeader:
@@ -69,7 +62,6 @@ class IHeader:
 
         def get_item(ds, name: str | Tag):
             """Get item with a given name or Tag from a pydicom dataset."""
-
             tag = Tag(name) if isinstance(name, str) else name  # find item via value name
 
             # iterall is recursive, so it will find all items with the given name
@@ -112,7 +104,7 @@ class IHeader:
 
         fov_x_mm = get_float_items_from_all_dicoms('Rows')[0] * float(get_items_from_all_dicoms('PixelSpacing')[0][0])
         fov_y_mm = get_float_items_from_all_dicoms('Columns')[0] * float(
-            get_items_from_all_dicoms('PixelSpacing')[0][1]
+            get_items_from_all_dicoms('PixelSpacing')[0][1],
         )
         fov_z_mm = get_float_items_from_all_dicoms('SliceThickness')[0]
         fov = SpatialDimension(fov_x_mm / 1000.0, fov_y_mm / 1000.0, fov_z_mm / 1000.0)

@@ -122,10 +122,7 @@ class KHeader:
         enc: ismrmrdschema.encodingType = header.encoding[encoding_number]
 
         # These are guaranteed to exist
-        parameters = {
-            'h1_freq': header.experimentalConditions.H1resonanceFrequency_Hz,
-            'acq_info': acq_info,
-        }
+        parameters = {'h1_freq': header.experimentalConditions.H1resonanceFrequency_Hz, 'acq_info': acq_info}
 
         if defaults is not None:
             parameters.update(defaults)
@@ -169,7 +166,7 @@ class KHeader:
 
             if enc.parallelImaging.interleavingDimension is not None:
                 parameters['interleave_dim'] = enums.InterleavingDimension(
-                    enc.parallelImaging.interleavingDimension.value
+                    enc.parallelImaging.interleavingDimension.value,
                 )
 
         if enc.trajectory is not None:
@@ -230,6 +227,6 @@ class KHeader:
             ]
             raise ValueError(
                 f'Could not create Header. Missing parameters: {missing}\n'
-                'Consider setting them via the defaults dictionary'
+                'Consider setting them via the defaults dictionary',
             ) from None
         return instance

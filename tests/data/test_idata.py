@@ -15,7 +15,6 @@
 import numpy as np
 import pytest
 import torch
-
 from mrpro.data import IData
 
 

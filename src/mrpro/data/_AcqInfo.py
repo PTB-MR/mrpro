@@ -80,10 +80,7 @@ class AcqInfo:
     version: torch.Tensor
 
     @classmethod
-    def from_ismrmrd_acquisitions(
-        cls,
-        acquisitions: list[ismrmrd.Acquisition],
-    ) -> AcqInfo:
+    def from_ismrmrd_acquisitions(cls, acquisitions: list[ismrmrd.Acquisition]) -> AcqInfo:
         """Read the header of a list of acquisition and store information.
 
         Parameters
@@ -91,7 +88,6 @@ class AcqInfo:
         acquisitions:
             list of ismrmrd acquisistions to read from. Needs at least one acquisition.
         """
-
         # Idea: create array of structs, then a struct of arrays,
         # convert it into tensors to store in our dataclass.
         # TODO: there might be a faster way to do this.
@@ -105,7 +101,8 @@ class AcqInfo:
         # also, this needs to check the dtyoe only once.
         acquisition_head_dtype = np.dtype(ismrmrd.AcquisitionHeader)
         headers = np.frombuffer(
-            np.array([memoryview(a._head).cast('B') for a in acquisitions]), dtype=acquisition_head_dtype
+            np.array([memoryview(a._head).cast('B') for a in acquisitions]),
+            dtype=acquisition_head_dtype,
         )
 
         idx = headers['idx']

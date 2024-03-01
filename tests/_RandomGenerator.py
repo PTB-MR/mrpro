@@ -144,13 +144,13 @@ class RandomGenerator:
     def uint64(self, low: int = 0, high: int = 1 << 64) -> int:
         # pytorch does not support uint64, so we use int64 instead
         # and then convert to uint64
-        range = high - low
+        range_ = high - low
         if low < 0:
             raise ValueError('Low must be positive')
-        if range > 1 << 64:
+        if range_ > 1 << 64:
             raise ValueError('Range too large')
         new_low = -1 << 63
-        new_high = new_low + range
+        new_high = new_low + range_
         value = self.int64(new_low, new_high) - new_low + low
         return value
 

@@ -1,11 +1,21 @@
 import pytest
 import torch
-
 from mrpro.operators.models._WASABI import WASABI
 
 
 def create_data(
-    offset_max=250, offset_nr=101, b0_shift_in=0, rb1=1.0, c=1.0, d=2.0, p=4, other=1, coils=1, z=1, y=1, x=1
+    offset_max=250,
+    offset_nr=101,
+    b0_shift_in=0,
+    rb1=1.0,
+    c=1.0,
+    d=2.0,
+    p=4,
+    other=1,
+    coils=1,
+    z=1,
+    y=1,
+    x=1,
 ):
     offsets = torch.linspace(-offset_max, offset_max, offset_nr)
     b0_shift = torch.zeros([1, 1, 1, 1, 1])  # b0_shift
@@ -39,7 +49,9 @@ def test_WASABI_signal_model_shape(offset_max, offset_nr, b0_shift, rb1, c, d, p
 def test_WASABI_shift():
     """Test symmetry property of shifted and unshifted WASABITI spectra."""
     offsets_unshifted, b0_shift_unshifted, rb1_unshifted, c_unshifted, d_unshifted = create_data(
-        offset_max=500, offset_nr=100, b0_shift_in=0
+        offset_max=500,
+        offset_nr=100,
+        b0_shift_in=0,
     )
     wasabi_model = WASABI(offsets=offsets_unshifted)
     sig_unshifted = wasabi_model.forward(b0_shift_unshifted, rb1_unshifted, c_unshifted, d_unshifted)

@@ -51,8 +51,8 @@ def remove_readout_os(kdata: KData) -> KData:
         start_cropped_readout = (kdata.header.encoding_matrix.x - kdata.header.recon_matrix.x) // 2
         end_cropped_readout = start_cropped_readout + kdata.header.recon_matrix.x
 
-        def crop_readout(input):
-            return input[..., start_cropped_readout:end_cropped_readout]
+        def crop_readout(input_):
+            return input_[..., start_cropped_readout:end_cropped_readout]
 
         # Transform to image space, crop to reconstruction matrix size and transform back
         FFOp = FastFourierOp(dim=(-1,))

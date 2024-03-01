@@ -14,7 +14,6 @@
 
 
 import torch
-
 from mrpro.operators import Operator
 
 

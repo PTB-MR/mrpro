@@ -14,9 +14,9 @@
 
 import pytest
 import torch
-
 from mrpro.data import SpatialDimension
 from mrpro.operators import FastFourierOp
+
 from tests.helper import rel_image_diff
 
 

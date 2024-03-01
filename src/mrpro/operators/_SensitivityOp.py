@@ -21,10 +21,7 @@ from mrpro.operators import LinearOperator
 class SensitivityOp(LinearOperator):
     """Sensitivity operator class."""
 
-    def __init__(
-        self,
-        csm: CsmData,
-    ) -> None:
+    def __init__(self, csm: CsmData) -> None:
         self.C = csm.data
 
     def forward(self, img_data: torch.Tensor) -> tuple[torch.Tensor,]:
@@ -53,5 +50,4 @@ class SensitivityOp(LinearOperator):
         -------
             image data tensor with dimensions (other 1 z y x).
         """
-
         return ((self.C.conj() * img_data).sum(-4, keepdim=True),)

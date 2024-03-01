@@ -77,7 +77,6 @@ class IData(Data):
         filename
             path to DICOM file.
         """
-
         ds = dcmread(filename)
         idata = _dcm_pixelarray_to_tensor(ds)[None, :]
         idata = rearrange(idata, '(other coils z) y x -> other coils z y x', other=1, coils=1, z=1)
@@ -97,7 +96,6 @@ class IData(Data):
             file extension (without period/full stop) to identify the DICOM files.
             If None, then all files in the folder are read in.
         """
-
         # Get files
         file_paths = list(Path(foldername).glob('*')) if suffix is None else list(Path(foldername).glob('*.' + suffix))
 

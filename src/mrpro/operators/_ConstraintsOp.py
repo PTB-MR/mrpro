@@ -49,31 +49,27 @@ class ConstraintsOp(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]
                 if lb >= ub:
                     raise ValueError(
                         'bounds should be ( (a1,b1), (a2,b2), ...) with ai < bi if neither ai or bi is None;'
-                        f'\nbound tuple {lb, ub} is invalid'
+                        f'\nbound tuple {lb, ub} is invalid',
                     )
 
     @staticmethod
     def sigmoid(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
         """Constraint x to be in the range given by 'bounds'."""
-
         return F.sigmoid(beta * x)
 
     @staticmethod
     def sigmoid_inverse(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
         """Constraint x to be in the range given by 'bounds'."""
-
         return torch.logit(x) / beta
 
     @staticmethod
     def softplus(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
         """Constrain x to be in (bound,infty)."""
-
         return -(1 / beta) * torch.nn.functional.logsigmoid(-beta * x)
 
     @staticmethod
     def softplus_inverse(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
         """Inverse of 'softplus_transformation."""
-
         return beta * x + torch.log(-torch.expm1(-beta * x))
 
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:

@@ -27,7 +27,9 @@ class CsmData(QData):
 
     @staticmethod
     def _iterative_walsh_csm(
-        coil_images: torch.Tensor, smoothing_width: SpatialDimension[int], niter: int
+        coil_images: torch.Tensor,
+        smoothing_width: SpatialDimension[int],
+        niter: int,
     ) -> torch.Tensor:
         """Calculate csm using an iterative version of the Walsh method.
 

@@ -15,14 +15,16 @@
 import numpy as np
 import pytest
 import torch
-
 from mrpro.data import KData
-from mrpro.data.traj_calculators import KTrajectoryCartesian
-from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
-from mrpro.data.traj_calculators import KTrajectoryPulseq
-from mrpro.data.traj_calculators import KTrajectoryRadial2D
-from mrpro.data.traj_calculators import KTrajectoryRpe
-from mrpro.data.traj_calculators import KTrajectorySunflowerGoldenRpe
+from mrpro.data.traj_calculators import (
+    KTrajectoryCartesian,
+    KTrajectoryIsmrmrd,
+    KTrajectoryPulseq,
+    KTrajectoryRadial2D,
+    KTrajectoryRpe,
+    KTrajectorySunflowerGoldenRpe,
+)
+
 from tests.data import IsmrmrdRawTestData
 from tests.data._PulseqRadialTestSeq import PulseqRadialTestSeq
 
@@ -133,7 +135,8 @@ def test_KTrajectoryRpe_shift(valid_rpe_kheader):
     ktrajectory1 = KTrajectoryRpe(angle=torch.pi * 0.618034, shift_between_rpe_lines=torch.tensor([0.25]))
     ktraj1 = ktrajectory1(valid_rpe_kheader)
     ktrajectory2 = KTrajectoryRpe(
-        angle=torch.pi * 0.618034, shift_between_rpe_lines=torch.tensor([0.25, 0.25, 0.25, 0.25])
+        angle=torch.pi * 0.618034,
+        shift_between_rpe_lines=torch.tensor([0.25, 0.25, 0.25, 0.25]),
     )
     ktraj2 = ktrajectory2(valid_rpe_kheader)
     torch.testing.assert_close(ktraj1.as_tensor(), ktraj2.as_tensor())

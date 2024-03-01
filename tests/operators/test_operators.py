@@ -1,9 +1,7 @@
 """Tests for the operators module."""
 
 import torch
-
-from mrpro.operators import LinearOperator
-from mrpro.operators import Operator
+from mrpro.operators import LinearOperator, Operator
 
 
 class DummyOperator(Operator[torch.Tensor, torch.Tensor]):

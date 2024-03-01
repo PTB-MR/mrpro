@@ -37,11 +37,7 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         See _apply_shifts_between_rpe_lines() for more details
     """
 
-    def __init__(
-        self,
-        angle: float,
-        shift_between_rpe_lines: tuple | torch.Tensor = (0, 0.5, 0.25, 0.75),
-    ) -> None:
+    def __init__(self, angle: float, shift_between_rpe_lines: tuple | torch.Tensor = (0, 0.5, 0.25, 0.75)) -> None:
         super().__init__()
 
         self.angle: float = angle
@@ -73,7 +69,8 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         """
         for ind, shift in enumerate(self.shift_between_rpe_lines):
             curr_angle_idx = torch.nonzero(
-                torch.fmod(kang_idx, len(self.shift_between_rpe_lines)) == ind, as_tuple=True
+                torch.fmod(kang_idx, len(self.shift_between_rpe_lines)) == ind,
+                as_tuple=True,
             )
             curr_krad = krad[curr_angle_idx]
 
@@ -125,7 +122,6 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         -------
             radial phase encoding trajectory for given KHeader
         """
-
         # Trajectory along readout
         kfreq = self._kfreq(kheader)
 

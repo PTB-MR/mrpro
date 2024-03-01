@@ -18,7 +18,9 @@ import torch
 
 
 def smap(
-    fun: Callable[[torch.Tensor], torch.Tensor], tensor: torch.Tensor, fun_dims: tuple[int, ...] | int = (-1,)
+    fun: Callable[[torch.Tensor], torch.Tensor],
+    tensor: torch.Tensor,
+    fun_dims: tuple[int, ...] | int = (-1,),
 ) -> torch.Tensor:
     """Apply a function to a tensor serially along multiple dimensions.
 

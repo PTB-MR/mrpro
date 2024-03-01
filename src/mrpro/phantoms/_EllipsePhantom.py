@@ -29,10 +29,7 @@ class EllipsePhantom:
             ellipses defined by their center, radii and intensity
     """
 
-    def __init__(
-        self,
-        ellipses: list[EllipsePars] | None = None,
-    ):
+    def __init__(self, ellipses: list[EllipsePars] | None = None):
         if not ellipses:
             ellipses = [
                 EllipsePars(center_x=0.2, center_y=0.2, radius_x=0.1, radius_y=0.25, intensity=1),
@@ -85,7 +82,9 @@ class EllipsePhantom:
         # Calculate image representation of phantom
         ny, nx = image_dimensions.y, image_dimensions.x
         ix, iy = torch.meshgrid(
-            torch.linspace(-nx // 2, nx // 2 - 1, nx), torch.linspace(-ny // 2, ny // 2 - 1, ny), indexing='xy'
+            torch.linspace(-nx // 2, nx // 2 - 1, nx),
+            torch.linspace(-ny // 2, ny // 2 - 1, ny),
+            indexing='xy',
         )
 
         idat = torch.zeros((ny, nx), dtype=torch.complex64)

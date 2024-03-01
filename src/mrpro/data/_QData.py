@@ -63,7 +63,6 @@ class QData(Data):
         filename
             path to DICOM file
         """
-
         ds = dcmread(filename)
         # Image data is 2D np.array of Uint16, which cannot directly be converted to tensor
         qdata = torch.as_tensor(ds.pixel_array.astype(np.complex64))

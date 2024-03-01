@@ -14,7 +14,6 @@
 
 import pypulseq
 import torch
-
 from mrpro.data import KTrajectory
 
 

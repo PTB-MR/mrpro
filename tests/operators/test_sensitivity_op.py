@@ -14,11 +14,9 @@
 
 import pytest
 import torch
-
-from mrpro.data import CsmData
-from mrpro.data import QHeader
-from mrpro.data import SpatialDimension
+from mrpro.data import CsmData, QHeader, SpatialDimension
 from mrpro.operators import SensitivityOp
+
 from tests import RandomGenerator
 
 
@@ -40,7 +38,10 @@ def test_sensitivity_op_adjointness():
     (forward,) = sensitivity_op.forward(u)
     (adjoint,) = sensitivity_op.adjoint(v)
     torch.testing.assert_close(
-        torch.vdot(forward.ravel(), v.ravel()), torch.vdot(u.ravel(), adjoint.ravel()), rtol=1e-03, atol=1e-03
+        torch.vdot(forward.ravel(), v.ravel()),
+        torch.vdot(u.ravel(), adjoint.ravel()),
+        rtol=1e-03,
+        atol=1e-03,
     )
 
 

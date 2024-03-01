@@ -21,12 +21,7 @@ from mrpro.utils import zero_pad_or_crop
 class ZeroPadOp(LinearOperator):
     """Zero Pad operator class."""
 
-    def __init__(
-        self,
-        dim: tuple[int, ...],
-        orig_shape: tuple[int, ...],
-        padded_shape: tuple[int, ...],
-    ) -> None:
+    def __init__(self, dim: tuple[int, ...], orig_shape: tuple[int, ...], padded_shape: tuple[int, ...]) -> None:
         """Zero Pad Operator class.
 
         The operator carries out zero-padding if the padded_shape is larger than orig_shape and cropping if the

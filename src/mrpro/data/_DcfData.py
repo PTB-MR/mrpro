@@ -49,9 +49,11 @@ class DcfData:
         traj
             k-space positions, 1D tensor
         """
-
         traj_sorted, inverse, counts = torch.unique(
-            torch.round(traj, decimals=UNIQUE_ROUNDING_DECIMALS), sorted=True, return_inverse=True, return_counts=True
+            torch.round(traj, decimals=UNIQUE_ROUNDING_DECIMALS),
+            sorted=True,
+            return_inverse=True,
+            return_counts=True,
         )
 
         # For a sorted trajectory: x0 x1 x2 ... xN
@@ -94,7 +96,6 @@ class DcfData:
         -------
             density compensation values (1, k2, k1, k0)
         """
-
         # 2D and 3D trajectories supported
         dim = traj.shape[0]
         if dim not in (2, 3):

@@ -62,12 +62,11 @@ def lbfgs(
     -------
         list of optimized parameters
     """
-
     # TODO: remove after new pytorch release;
     if torch.tensor([torch.is_complex(p) for p in params]).any():
         raise ValueError(
             "at least one tensor in 'params' is complex-valued; \
-            \ncomplex-valued tensors will be allowed for lbfgs in future torch versions"
+            \ncomplex-valued tensors will be allowed for lbfgs in future torch versions",
         )
 
     # define lbfgs routine

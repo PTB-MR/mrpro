@@ -14,10 +14,9 @@
 
 import pytest
 import torch
-
-from mrpro.data import KTrajectory
-from mrpro.data import SpatialDimension
+from mrpro.data import KTrajectory, SpatialDimension
 from mrpro.operators import CartesianSamplingOp
+
 from tests import RandomGenerator
 from tests.data.test_ktraj import create_traj
 
@@ -59,7 +58,8 @@ def test_cart_sampling_op_data_match():
 
 
 @pytest.mark.parametrize(
-    'sampling', ['random', 'partial_echo', 'partial_fourier', 'regular_undersampling', 'random_undersampling']
+    'sampling',
+    ['random', 'partial_echo', 'partial_fourier', 'regular_undersampling', 'random_undersampling'],
 )
 def test_cart_sampling_op_fwd_adj(sampling):
     """Test adjoint property of Cartesian sampling operator."""

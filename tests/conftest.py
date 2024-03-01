@@ -2,14 +2,12 @@ import tempfile
 
 import ismrmrd
 import pytest
-from ismrmrd import xsd
 import torch
-from xsdata.models.datatype import XmlDate
-from xsdata.models.datatype import XmlTime
-
-from mrpro.data import AcqInfo
-from mrpro.data import KHeader
+from ismrmrd import xsd
+from mrpro.data import AcqInfo, KHeader
 from mrpro.data.enums import AcqFlags
+from xsdata.models.datatype import XmlDate, XmlTime
+
 from tests import RandomGenerator
 from tests.data import Dicom2DTestImage
 from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData

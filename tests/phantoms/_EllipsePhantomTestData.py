@@ -13,9 +13,7 @@
 #   limitations under the License.
 
 import torch
-
-from mrpro.phantoms import EllipsePars
-from mrpro.phantoms import EllipsePhantom
+from mrpro.phantoms import EllipsePars, EllipsePhantom
 
 
 class EllipsePhantomTestData:
@@ -34,7 +32,9 @@ class EllipsePhantomTestData:
         self.nx: int = nx
         self.ny: int = ny
         [self.kx, self.ky] = torch.meshgrid(
-            torch.linspace(-nx // 2, nx // 2 - 1, nx), torch.linspace(-ny // 2, ny // 2 - 1, ny), indexing='xy'
+            torch.linspace(-nx // 2, nx // 2 - 1, nx),
+            torch.linspace(-ny // 2, ny // 2 - 1, ny),
+            indexing='xy',
         )
 
         # Define five ellipses

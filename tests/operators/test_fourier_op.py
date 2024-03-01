@@ -14,9 +14,9 @@
 
 import pytest
 import torch
-
 from mrpro.data import SpatialDimension
 from mrpro.operators import FourierOp
+
 from tests import RandomGenerator
 from tests.conftest import COMMON_MR_TRAJECTORIES
 from tests.data.test_ktraj import create_traj

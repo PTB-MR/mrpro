@@ -29,11 +29,7 @@ class CartesianSamplingOp(LinearOperator):
     trajectory.
     """
 
-    def __init__(
-        self,
-        encoding_shape: SpatialDimension[int],
-        traj: KTrajectory,
-    ) -> None:
+    def __init__(self, encoding_shape: SpatialDimension[int], traj: KTrajectory) -> None:
         """Initialize Sampling Operator class.
 
         Parameters
@@ -117,7 +113,6 @@ class CartesianSamplingOp(LinearOperator):
         -------
             k-space data sorted into encoding_space matrix
         """
-
         if self._kshape[-3:] != y.shape[-3:]:
             raise ValueError('k-space data shape missmatch')
 
@@ -139,7 +134,10 @@ class CartesianSamplingOp(LinearOperator):
         ).scatter_(dim=-1, index=idx_expanded, src=y_2d)
         # reshape to  ..., other, coil, k2_enc, k1_enc, k0_enc
         y_reshaped = y_scattered.reshape(
-            *y.shape[:-3], self._encoding_shape.z, self._encoding_shape.y, self._encoding_shape.x
+            *y.shape[:-3],
+            self._encoding_shape.z,
+            self._encoding_shape.y,
+            self._encoding_shape.x,
         )
 
         return (y_reshaped,)

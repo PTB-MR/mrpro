@@ -42,7 +42,9 @@ def normalize_index(ndim: int, index: int):
 
 
 def zero_pad_or_crop(
-    data: torch.Tensor, new_shape: tuple[int, ...] | torch.Size, dim: None | tuple[int, ...] = None
+    data: torch.Tensor,
+    new_shape: tuple[int, ...] | torch.Size,
+    dim: None | tuple[int, ...] = None,
 ) -> torch.Tensor:
     """Change shape of data by cropping or zero-padding.
 
@@ -59,7 +61,6 @@ def zero_pad_or_crop(
     -------
         data zero padded or cropped to shape
     """
-
     if len(new_shape) > data.ndim:
         raise ValueError('length of new shape should not exceed dimensions of data')
 

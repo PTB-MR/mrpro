@@ -14,7 +14,6 @@
 
 import pytest
 import torch
-
 from mrpro.data import SpatialDimension
 from mrpro.utils.filters import spatial_uniform_filter_3d
 

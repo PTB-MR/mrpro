@@ -25,13 +25,12 @@
 # %%
 # Imports
 import shutil
-import subprocess
 import tempfile
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import torch
-
+import zenodo_get
 from mrpro.data import CsmData
 from mrpro.data import DcfData
 from mrpro.data import IData
@@ -43,8 +42,8 @@ from mrpro.operators import SensitivityOp
 # %%
 # Download raw data in ISMRMRD format from zenodo into a temporary directory
 data_folder = Path(tempfile.mkdtemp())
-zenodo_cmd = f'zenodo_get 10.5281/zenodo.10671597 -o {str(data_folder)}'
-out = subprocess.call(zenodo_cmd, shell=True)
+dataset = '10671597'
+zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 
 # %% [markdown]
 # ## Image reconstruction
@@ -61,11 +60,7 @@ kdata = KData.from_file(data_folder / '2D_GRad_map_t1.h5', KTrajectoryIsmrmrd())
 kdcf = DcfData.from_traj_voronoi(kdata.traj)
 
 # Reconstruct average image for coil map estimation
-FOp = FourierOp(
-    recon_shape=kdata.header.recon_matrix,
-    encoding_shape=kdata.header.encoding_matrix,
-    traj=kdata.traj,
-)
+FOp = FourierOp(recon_shape=kdata.header.recon_matrix, encoding_shape=kdata.header.encoding_matrix, traj=kdata.traj)
 (im,) = FOp.adjoint(kdata.data * kdcf.data[:, None, ...])
 
 # %%

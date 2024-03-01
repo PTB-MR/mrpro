@@ -37,11 +37,7 @@ class KNoise:
     data: torch.Tensor
 
     @classmethod
-    def from_file(
-        cls,
-        filename: str | Path,
-        dataset_idx: int = -1,
-    ) -> KNoise:
+    def from_file(cls, filename: str | Path, dataset_idx: int = -1) -> KNoise:
         """Load noise measurements from ISMRMRD file.
 
         Parameters
@@ -51,7 +47,6 @@ class KNoise:
             dataset_idx
                 Index of the dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
         """
-
         # Can raise FileNotFoundError
         with ismrmrd.File(filename, 'r') as file:
             ds = file[list(file.keys())[dataset_idx]]

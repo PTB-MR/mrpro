@@ -16,7 +16,6 @@ import datetime
 
 import pytest
 from ismrmrd import xsd
-
 from mrpro.data import KHeader
 
 

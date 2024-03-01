@@ -14,8 +14,8 @@
 
 import pytest
 import torch
-
 from mrpro.operators import ConstraintsOp
+
 from tests import RandomGenerator
 
 

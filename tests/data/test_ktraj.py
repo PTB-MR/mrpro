@@ -14,9 +14,9 @@
 
 import pytest
 import torch
-
 from mrpro.data import KTrajectory
 from mrpro.data.enums import TrajType
+
 from tests import RandomGenerator
 from tests.conftest import COMMON_MR_TRAJECTORIES
 
