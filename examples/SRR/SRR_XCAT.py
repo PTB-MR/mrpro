@@ -16,12 +16,21 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from scipy import ndimage
 
 from mrpro.operators._SuperResOp import Slice_profile
 from mrpro.operators._SuperResOp import SuperResOp
 
 
-def show_3D(vol, axs_proj, title='', idx_slice=None, cmap=None):
+def show_2D(img: torch.Tensor, title: str = ''):
+    plt.matshow(img, cmap=plt.get_cmap('grey'))
+    if title == '':
+        title = 'img'
+    plt.title(title)
+    plt.show()
+
+
+def show_3D(vol: torch.Tensor, axs_proj: int, title: str = '', idx_slice: int | None = None, cmap: plt.Colormap = None):
     if cmap is None:
         cmap = plt.get_cmap('gray')
     shape_vol = vol.shape
@@ -44,71 +53,75 @@ def show_3D(vol, axs_proj, title='', idx_slice=None, cmap=None):
     plt.title(title + '_proj' + str(axs_proj))
 
 
-def show_2D(img, title=''):
-    plt.matshow(img, cmap=plt.get_cmap('grey'))
-    if title == '':
-        title = 'img'
-    plt.title(title)
-    plt.show()
+path_XCAT = '/../../echo/allgemein/projects/hufnag01/forMrPro/xcatRef.npy'
+vol_HR = torch.Tensor(np.load(path_XCAT)[16:112, :, :96])
+shape_HR = vol_HR.shape
 
+vol_HR = torch.swapaxes(vol_HR, 1, 2)
+vol_HR = torch.flip(vol_HR, dims=[0, 2])
+vol_HR = ndimage.rotate(vol_HR, angle=20, axes=(1, 2))
 
-def simulHR(flag_show=True):
-    img_square = torch.zeros(64, 64)
-    img_square[22:42, 22:42] = 1
+flag_showOrig = True
+if flag_showOrig:
+    for idx_proj in range(3):
+        show_3D(vol_HR, axs_proj=idx_proj, title='vol_HR_orig')
 
-    square_vol = img_square.unsqueeze(0).repeat(64, 1, 1)
-
-    if flag_show:
-        plt.matshow(img_square)
-        plt.title('img_square')
-    return square_vol
-
-
-# vol_HR = simulHR(flag_show = True)
-# vol_HR_exp = vol_HR.unsqueeze(0).unsqueeze(0).expand(-1, 2, -1, -1, -1)
-
-vol_HR_orig = torch.tensor(np.load('/../../echo/allgemein/projects/hufnag01/forMrPro/xcatRef.npy')[16:112, :, :96])
-shape_HR = vol_HR_orig.shape
-
-for idx_proj in range(3):
-    show_3D(vol_HR_orig, axs_proj=idx_proj, title='vol_HR_orig')
-
-vol_HR_orig = vol_HR_orig.unsqueeze(0).unsqueeze(0).expand(-1, 2, -1, -1, -1)
+vol_HR = vol_HR.unsqueeze(0).unsqueeze(0).expand(-1, 2, -1, -1, -1)
 
 num_slices_per_stack = 5
-gap_slices = 4
+gap_slices = 14
 thickness_slice = 4
 # stacks are rotated around the septum (using the septum as rotation axis)
-rot_per_stack = [[90, 0, 0], [90, 0, 45], [90, 0, 90], [90, 0, 135]]
-num_stacks = len(rot_per_stack)
+rot_per_stack = np.array(
+    [
+        [90, 0, 0],
+        [90, 0, 135],
+        [90, 0, 90],
+        [90, 0, 45],
+        [90, 0, 0],
+        [90, 0, 0],
+        [90, 0, 135],
+        [90, 0, 135],
+        [90, 0, 90],
+        [90, 0, 90],
+        [90, 0, 45],
+        [90, 0, 45],
+    ]
+)
+
+offsets_stack = np.array([-6, 0, 0, 0, 0, 6, 6, -6, 6, -6, 6, -6])
+
+num_stacks = rot_per_stack.shape[0]
+
 
 slice_profile = Slice_profile(thickness_slice=thickness_slice)
 
+
+print('rots = ' + str(rot_per_stack))
+print('distToStack0 = ' + str(np.round(offsets_stack, 2)))
 srr_op = SuperResOp(
     shape_HR=shape_HR,
     num_slices_per_stack=num_slices_per_stack,
     gap_slices=gap_slices,
     num_stacks=num_stacks,
     thickness_slice=thickness_slice,
-    list_offsets_stack=np.zeros([num_stacks, 3]),
+    offsets_stack=offsets_stack,
     rot_per_stack=rot_per_stack,
     w=3 * slice_profile.sigma,
     slice_profile=slice_profile.rect,
 )
 
-slices_LR = srr_op.forward(vol_HR_orig)
+slices_LR = srr_op.forward(vol_HR)
 vol_HR_adjoint = srr_op.adjoint(slices_LR)
+
+flag_showLRstacks = False
+if flag_showLRstacks:
+    for idx_stack in range(num_stacks):
+        for idx_slice in range(1, 3):
+            show_2D(slices_LR[idx_stack][idx_slice][0, 0, 0, ...], 'stack' + str(idx_stack) + '_slice' + str(idx_slice))
 
 
 for idx_proj in range(3):
     show_3D(vol_HR_adjoint[0, 0], axs_proj=idx_proj, title='vol_HR_adjoint_0')
     show_3D(vol_HR_adjoint[0, 1], axs_proj=idx_proj, title='vol_HR_adjoint_1')
-
-
-flag_showLRstacks = False
-if flag_showLRstacks:
-    for idx_stack in range(num_stacks):
-        for idx_slice in range(num_slices_per_stack):
-            show_2D(slices_LR[idx_stack][idx_slice][0, 0, 0, ...], 'stack' + str(idx_stack) + '_slice' + str(idx_slice))
-
 plt.show()
