@@ -18,7 +18,7 @@ from mrpro.data import SpatialDimension
 from mrpro.utils.filters import spatial_uniform_filter_3d
 
 
-@pytest.fixture
+@pytest.fixture()
 def data():
     """Create a simple 3D tensor with a single voxel set to 1.0."""
     data = torch.zeros(1, 1, 5, 5, 5)

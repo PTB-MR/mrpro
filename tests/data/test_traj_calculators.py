@@ -27,7 +27,7 @@ from tests.data import IsmrmrdRawTestData
 from tests.data._PulseqRadialTestSeq import PulseqRadialTestSeq
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 def valid_rad2d_kheader(monkeypatch, random_kheader):
     """KHeader with all necessary parameters for radial 2D trajectories."""
     # K-space dimensions
@@ -70,7 +70,7 @@ def test_KTrajectoryRadial2D_golden(valid_rad2d_kheader):
     assert ktraj.kz.shape == valid_shape[0]
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 def valid_rpe_kheader(monkeypatch, random_kheader):
     """KHeader with all necessary parameters for RPE trajectories."""
     # K-space dimensions
@@ -147,7 +147,7 @@ def test_KTrajectorySunflowerGoldenRpe(valid_rpe_kheader):
     assert ktraj.broadcasted_shape == np.broadcast_shapes(*rpe_traj_shape(valid_rpe_kheader))
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 def valid_cartesian_kheader(monkeypatch, random_kheader):
     """KHeader with all necessary parameters for Cartesian trajectories."""
     # K-space dimensions

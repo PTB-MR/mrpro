@@ -59,7 +59,10 @@ class KTrajectory:
         shape = np.broadcast_shapes(self.kx.shape, self.ky.shape, self.kz.shape)
         return tuple(shape)
 
-    def _traj_types(self, tolerance) -> tuple[tuple[TrajType, TrajType, TrajType], tuple[TrajType, TrajType, TrajType]]:
+    def _traj_types(
+        self,
+        tolerance: float,
+    ) -> tuple[tuple[TrajType, TrajType, TrajType], tuple[TrajType, TrajType, TrajType]]:
         """Calculate the trajectory type along kzkykx and k2k1k0.
 
         Checks if the entries of the trajectory along certain dimensions
@@ -68,8 +71,8 @@ class KTrajectory:
 
         Parameters
         ----------
-            tolerance:
-                absolute tolerance in checking if points are on integer grid positions
+        tolerance:
+            absolute tolerance in checking if points are on integer grid positions
 
         Returns
         -------
@@ -107,7 +110,7 @@ class KTrajectory:
         """Type of trajectory along k2-k1-k0."""
         return self._traj_types(self.grid_detection_tolerance)[1]
 
-    def as_tensor(self, stack_dim=0) -> torch.Tensor:
+    def as_tensor(self, stack_dim: int = 0) -> torch.Tensor:
         """Tensor representation of the trajectory.
 
         Parameters

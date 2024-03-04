@@ -37,7 +37,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor,]]):
         ...
 
     @property
-    def H(self):
+    def H(self):  # noqa: N802
         """Adjoint operator."""
         return AdjointLinearOperator(self)
 
@@ -106,6 +106,6 @@ class AdjointLinearOperator(LinearOperator):
         return self._operator.forward(x)
 
     @property
-    def H(self):
+    def H(self):  # noqa: N802
         """Adjoint of adjoint operator."""
         return self.operator

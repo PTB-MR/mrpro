@@ -108,7 +108,7 @@ def test_KData_kspace(ismrmrd_cart):
     assert rel_image_diff(irec[0, 0, 0, ...], ismrmrd_cart.imref) <= 0.05
 
 
-@pytest.mark.parametrize('field,value', [('b0', 11.3), ('tr', [24.3])])
+@pytest.mark.parametrize(('field', 'value'), [('b0', 11.3), ('tr', [24.3])])
 def test_KData_modify_header(ismrmrd_cart, field, value):
     """Overwrite some parameters in the header."""
     par_dict = {field: value}
@@ -126,7 +126,7 @@ def test_KData_to_complex128(ismrmrd_cart):
     assert k_complex128.traj.kz.dtype == torch.float64
 
 
-@pytest.mark.cuda
+@pytest.mark.cuda()
 def test_KData_to_cuda(ismrmrd_cart):
     """Test KData.to to move data to CUDA memory."""
     k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
@@ -138,7 +138,7 @@ def test_KData_to_cuda(ismrmrd_cart):
     assert kcuda.traj.kx.is_cuda
 
 
-@pytest.mark.cuda
+@pytest.mark.cuda()
 def test_KData_cuda(ismrmrd_cart):
     """Move KData object to CUDA memory."""
     k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
@@ -149,7 +149,7 @@ def test_KData_cuda(ismrmrd_cart):
     assert kcuda.traj.kx.is_cuda
 
 
-@pytest.mark.cuda
+@pytest.mark.cuda()
 def test_KData_cpu(ismrmrd_cart):
     """Move KData object to CUDA memory and back to CPU memory."""
     k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())

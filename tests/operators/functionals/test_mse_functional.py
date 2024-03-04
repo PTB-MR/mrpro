@@ -15,11 +15,11 @@
 
 import pytest
 import torch
-from mrpro.operators.functionals._mse_data_discrepancy import mse_data_discrepancy
+from mrpro.operators.functionals._mse_data_discrepancy import MseDataDiscrepancy
 
 
 @pytest.mark.parametrize(
-    'data, x, expected_mse',
+    ('data', 'x', 'expected_mse'),
     [
         ((0.0, 0.0), (0.0, 0.0), (0.0)),  # zero-tensors deliver 0-error
         ((0.0 + 1j * 0, 0.0), (0.0 + 1j * 0, 0.0), (0.0)),  # zero-tensors deliver 0-error; complex-valued
@@ -40,6 +40,6 @@ def test_mse_functional(data, x, expected_mse):
     1/N*|| . - data||_2^2
     """
 
-    mse_dc = mse_data_discrepancy(torch.tensor(data))
+    mse_dc = MseDataDiscrepancy(torch.tensor(data))
     (mse,) = mse_dc(torch.tensor(x))
     torch.testing.assert_close(mse, torch.tensor(expected_mse))

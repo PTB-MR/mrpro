@@ -3,10 +3,9 @@ import torch
 from mrpro.operators.models._WASABITI import WASABITI
 
 
-def create_data(offset_max=250, offset_nr=101, b0_shift_in=0, rb1=1.0, t1=1.0, p=4, other=1, coils=1, z=1, y=1, x=1):
+def create_data(offset_max=250, offset_nr=101, b0_shift_in=0, rb1=1.0, t1=1.0):
     offsets = torch.linspace(-offset_max, offset_max, offset_nr)
-
-    b0_shift = torch.zeros([1, 1, 1, 1, 1])  # b0_shift
+    b0_shift = torch.zeros([1, 1, 1, 1, 1])
     b0_shift[0] = b0_shift_in
     rb1 = torch.Tensor([rb1])
     t1 = torch.Tensor([t1])
@@ -15,17 +14,16 @@ def create_data(offset_max=250, offset_nr=101, b0_shift_in=0, rb1=1.0, t1=1.0, p
 
 
 @pytest.mark.parametrize(
-    'offset_max, offset_nr, b0_shift, rb1, t1, p, other, coils, z, y, x',
+    ('offset_max', 'offset_nr', 'b0_shift', 'rb1', 't1', 'p', 'other', 'coils', 'z', 'y', 'x'),
     [
-        (250, 101, 0, 1.0, 1.0, 4, 1, 1, 1, 1, 1),
-        (200, 101, 0, 0, 1.0, 4, 1, 1, 1, 1, 1),
-        (10, 101, 10, 10, 1.0, 4, 1, 1, 1, 1, 1),
-        (200, 101, 0, 0, 1.0, 4, 1, 1, 1, 1, 1),
+        (250, 101, 0, 1.0, 1.0, 4, 1, 1, 1),
+        (200, 101, 0, 0, 1.0, 4, 1, 1, 1),
+        (10, 101, 10, 10, 1.0, 4, 1, 1, 1),
     ],
 )
-def test_WASABITI_signal_model_shape(offset_max, offset_nr, b0_shift, rb1, t1, p, other, coils, z, y, x):
+def test_WASABITI_signal_model_shape(offset_max, offset_nr, b0_shift, rb1, t1, coils, z, y, x):
     """Test for correct output shape."""
-    offsets, b0_shift, rb1, t1 = create_data(offset_max, offset_nr, b0_shift, rb1, t1, p, other, coils, z, y, x)
+    offsets, b0_shift, rb1, t1 = create_data(offset_max, offset_nr, b0_shift, rb1, t1)
     trec = torch.ones_like(offsets)
 
     wasabiti_model = WASABITI(offsets=offsets, trec=trec)

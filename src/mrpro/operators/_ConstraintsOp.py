@@ -14,7 +14,7 @@
 
 
 import torch
-import torch.nn.functional as F
+import torch.nn.functional as F  # noqa: N812
 
 from mrpro.operators import Operator
 

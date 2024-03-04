@@ -38,7 +38,7 @@ def test_zero_pad_op_content():
 
 
 @pytest.mark.parametrize(
-    'u_shape, v_shape',
+    ('u_shape', 'v_shape'),
     [
         ((101, 201, 50), (13, 221, 64)),
         ((100, 200, 50), (14, 220, 64)),

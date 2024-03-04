@@ -60,7 +60,7 @@ class IHeader:
             list of dataset objects containing the DICOM file.
         """
 
-        def get_item(ds, name: str | Tag):
+        def get_item(ds: Dataset, name: str | Tag):
             """Get item with a given name or Tag from a pydicom dataset."""
             tag = Tag(name) if isinstance(name, str) else name  # find item via value name
 

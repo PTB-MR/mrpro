@@ -55,7 +55,7 @@ def example_traj_spiral_2d(nkr, nki, nka, broadcast=True) -> KTrajectory:
 
 
 @pytest.mark.parametrize(
-    'nkr,nka,phi0,broadcast',
+    ('nkr', 'nka', 'phi0', 'broadcast'),
     [
         (100, 20, 0, True),
         (100, 1, 0, True),
@@ -88,7 +88,7 @@ def test_dcf_2d_rad_traj_voronoi(nkr, nka, phi0, broadcast):
         assert dcf.data.shape == ktraj.broadcasted_shape, 'DCF shape should match broadcasted trajectory shape'
 
 
-@pytest.mark.parametrize('nk2,nk1,nk0', [(40, 16, 20), (1, 2, 2)])
+@pytest.mark.parametrize(('nk2', 'nk1', 'nk0'), [(40, 16, 20), (1, 2, 2)])
 def test_dcf_3d_cart_traj_broadcast_voronoi(nk2, nk1, nk0):
     """Compare voronoi-based dcf calculation for broadcasted 3D regular
     Cartesian trajectory to analytical solution which is 1 for each k-space
@@ -107,7 +107,7 @@ def test_dcf_3d_cart_traj_broadcast_voronoi(nk2, nk1, nk0):
     torch.testing.assert_close(dcf.data[:, 1:-1, 1:-1, 1:-1], dcf_analytical[:, 1:-1, 1:-1, 1:-1])
 
 
-@pytest.mark.parametrize('nk2,nk1,nk0', [(40, 16, 20), (1, 2, 2)])
+@pytest.mark.parametrize(('nk2', 'nk1', 'nk0'), [(40, 16, 20), (1, 2, 2)])
 def test_dcf_3d_cart_full_traj_voronoi(nk2, nk1, nk0):
     """Compare voronoi-based dcf calculation for full 3D regular Cartesian
     trajectory to analytical solution which is 1 for each k-space point."""
@@ -128,7 +128,10 @@ def test_dcf_3d_cart_full_traj_voronoi(nk2, nk1, nk0):
     torch.testing.assert_close(dcf.data[:, 1:-1, 1:-1, 1:-1], dcf_analytical[:, 1:-1, 1:-1, 1:-1])
 
 
-@pytest.mark.parametrize('nk2,nk1,nk0,k2_steps,k1_steps,k0_steps', [(30, 20, 10, (1.0, 0.5, 0.25), (1.0, 0.5), (1.0,))])
+@pytest.mark.parametrize(
+    ('nk2', 'nk1', 'nk0', 'k2_steps', 'k1_steps', 'k0_steps'),
+    [(30, 20, 10, (1.0, 0.5, 0.25), (1.0, 0.5), (1.0,))],
+)
 def test_dcf_3d_cart_nonuniform_traj_voronoi(nk2, nk1, nk0, k2_steps, k1_steps, k0_steps):
     """Compare voronoi-based dcf calculation for 3D nonunifrm Cartesian
     trajectory to analytical solution which is 1 for each k-space point."""
@@ -177,7 +180,7 @@ def test_dcf_3d_cart_nonuniform_traj_voronoi(nk2, nk1, nk0, k2_steps, k1_steps, 
     torch.testing.assert_close(dcf_full.data[:, 1:-1, 1:-1, 1:-1], dcf_broadcast.data[:, 1:-1, 1:-1, 1:-1])
 
 
-@pytest.mark.parametrize('nkr,nka,nk0', [(10, 6, 20), (10, 1, 20), (10, 6, 1)])
+@pytest.mark.parametrize(('nkr', 'nka', 'nk0'), [(10, 6, 20), (10, 1, 20), (10, 6, 1)])
 def test_dcf_rpe_traj_voronoi(nkr, nka, nk0):
     """Voronoi-based dcf calculation for RPE trajectory."""
     ktraj = example_traj_rpe(nkr, nka, nk0)
@@ -185,7 +188,7 @@ def test_dcf_rpe_traj_voronoi(nkr, nka, nk0):
     assert dcf.data.shape == (1, nka, nkr, nk0)
 
 
-@pytest.mark.parametrize('nkr,nki,nka', [(10, 2, 1)])
+@pytest.mark.parametrize(('nkr', 'nki', 'nka'), [(10, 2, 1)])
 def test_dcf_spiral_traj_voronoi(nkr, nki, nka):
     """Voronoi-based dcf calculation for spiral trajectory."""
     # nkr points along each spiral arm, nki turns per spiral arm, nka spiral arms
@@ -221,13 +224,8 @@ def test_dcf_spiral_traj_voronoi_singlespiral():
     torch.testing.assert_close(dcf_three_broadcast.data[..., 1, :-ignore_last], dcf_single.data[..., 0, :-ignore_last])
 
 
-@pytest.mark.cuda
-@pytest.mark.parametrize(
-    'nkr,nka,nk0',
-    [
-        (10, 6, 20),
-    ],
-)
+@pytest.mark.cuda()
+@pytest.mark.parametrize(('nkr', 'nka', 'nk0'), [(10, 6, 20)])
 def test_dcf_rpe_traj_voronoi_cuda(nkr, nka, nk0):
     """Voronoi-based dcf calculation for RPE trajectory in CUDA memory."""
     ktraj = example_traj_rpe(nkr, nka, nk0)

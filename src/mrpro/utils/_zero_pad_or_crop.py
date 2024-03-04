@@ -15,7 +15,7 @@
 import math
 
 import torch
-import torch.nn.functional as F
+import torch.nn.functional as F  # noqa: N812
 
 
 def normalize_index(ndim: int, index: int):

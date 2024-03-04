@@ -51,14 +51,14 @@ def remove_readout_os(kdata: KData) -> KData:
         start_cropped_readout = (kdata.header.encoding_matrix.x - kdata.header.recon_matrix.x) // 2
         end_cropped_readout = start_cropped_readout + kdata.header.recon_matrix.x
 
-        def crop_readout(input_):
+        def crop_readout(input_: torch.Tensor):
             return input_[..., start_cropped_readout:end_cropped_readout]
 
         # Transform to image space, crop to reconstruction matrix size and transform back
-        FFOp = FastFourierOp(dim=(-1,))
-        (dat,) = FFOp.adjoint(kdata.data)
+        ff_op = FastFourierOp(dim=(-1,))
+        (dat,) = ff_op.adjoint(kdata.data)
         dat = crop_readout(dat)
-        (dat,) = FFOp.forward(dat)
+        (dat,) = ff_op.forward(dat)
 
         # Adapt trajectory
         ks = [kdata.traj.kz, kdata.traj.ky, kdata.traj.kx]

@@ -73,7 +73,7 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
 
         sample_size = num_samples.shape[0]
 
-        def reshape_pulseq_traj(k_traj, encoding_matrix):
+        def reshape_pulseq_traj(k_traj: torch.Tensor, encoding_matrix: int):
             with torch.no_grad():
                 k_traj *= encoding_matrix / (2 * torch.max(torch.abs(k_traj)))
             return rearrange(k_traj, '(other k2 k1 k0) -> (other k2 k1) k0', k0=k0, k2=k2, k1=k1, other=sample_size)

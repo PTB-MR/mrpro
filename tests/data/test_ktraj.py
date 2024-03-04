@@ -130,7 +130,7 @@ def test_ktraj_to_float64(cartesian_grid):
     assert ktraj_float64.kx.dtype == torch.float64
 
 
-@pytest.mark.cuda
+@pytest.mark.cuda()
 def test_ktraj_cuda(cartesian_grid):
     """Move KTrajectory object to CUDA memory."""
     nk0 = 10
@@ -145,7 +145,7 @@ def test_ktraj_cuda(cartesian_grid):
     assert ktraj_cuda.kx.is_cuda
 
 
-@pytest.mark.cuda
+@pytest.mark.cuda()
 def test_ktraj_cpu(cartesian_grid):
     """Move KTrajectory object to CUDA memory and back to CPU memory."""
     nk0 = 10
@@ -161,7 +161,7 @@ def test_ktraj_cpu(cartesian_grid):
 
 
 @COMMON_MR_TRAJECTORIES
-def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
+def test_ktype_along_kzyx(k_shape, nkx, nky, nkz, sx, sy, sz):
     """Test identification of traj types."""
 
     # Generate random k-space trajectories
@@ -183,7 +183,7 @@ def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, 
 
 
 @COMMON_MR_TRAJECTORIES
-def test_ktype_along_k210(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
+def test_ktype_along_k210(k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
     """Test identification of traj types."""
 
     # Generate random k-space trajectories

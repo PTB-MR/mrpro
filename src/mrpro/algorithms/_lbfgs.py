@@ -55,7 +55,7 @@ def lbfgs(
     history_size, optional
         update history size, by default 10
     line_search_fn, optional
-        line search algorithm, either ‘strong_wolfe’ or None,
+        line search algorithm, either 'strong_wolfe' or None,
         by default "strong_wolfe"
 
     Returns

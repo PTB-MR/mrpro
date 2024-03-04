@@ -3,22 +3,9 @@ import torch
 from mrpro.operators.models._WASABI import WASABI
 
 
-def create_data(
-    offset_max=250,
-    offset_nr=101,
-    b0_shift_in=0,
-    rb1=1.0,
-    c=1.0,
-    d=2.0,
-    p=4,
-    other=1,
-    coils=1,
-    z=1,
-    y=1,
-    x=1,
-):
+def create_data(offset_max=250, offset_nr=101, b0_shift_in=0, rb1=1.0, c=1.0, d=2.0):
     offsets = torch.linspace(-offset_max, offset_max, offset_nr)
-    b0_shift = torch.zeros([1, 1, 1, 1, 1])  # b0_shift
+    b0_shift = torch.zeros([1, 1, 1, 1, 1])
     b0_shift[0] = b0_shift_in
     rb1 = torch.Tensor([rb1])
     c = torch.Tensor([c])
@@ -28,17 +15,16 @@ def create_data(
 
 
 @pytest.mark.parametrize(
-    'offset_max, offset_nr, b0_shift, rb1, c, d, p, other, coils, z, y, x',
+    ('offset_max', 'offset_nr', 'b0_shift', 'rb1', 'c', 'd', 'p', 'other', 'coils', 'z', 'y', 'x'),
     [
-        (250, 101, 0, 1.0, 1.0, 2.0, 4, 1, 1, 1, 1, 1),
-        (200, 101, 0, 0, 1.0, 2.0, 4, 1, 1, 1, 1, 1),
-        (10, 101, 10, 10, 1.0, 2.0, 4, 1, 1, 1, 1, 1),
-        (200, 101, 0, 0, 1.0, 2.0, 4, 1, 1, 1, 1, 1),
+        (250, 101, 0, 1.0, 1.0, 2.0, 4, 1, 1, 1),
+        (200, 101, 0, 0, 1.0, 2.0, 4, 1, 1, 1),
+        (10, 101, 10, 10, 1.0, 2.0, 4, 1, 1, 1),
     ],
 )
-def test_WASABI_signal_model_shape(offset_max, offset_nr, b0_shift, rb1, c, d, p, other, coils, z, y, x):
+def test_WASABI_signal_model_shape(offset_max, offset_nr, b0_shift, rb1, c, d, coils, z, y, x):
     """Test for correct output shape."""
-    offsets, b0_shift, rb1, c, d = create_data(offset_max, offset_nr, b0_shift, rb1, c, d, p, other, coils, z, y, x)
+    offsets, b0_shift, rb1, c, d = create_data(offset_max, offset_nr, b0_shift, rb1, c, d)
     wasabi_model = WASABI(offsets=offsets)
     sig = wasabi_model.forward(b0_shift, rb1, c, d)
 

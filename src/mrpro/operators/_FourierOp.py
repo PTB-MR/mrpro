@@ -59,14 +59,14 @@ class FourierOp(LinearOperator):
         if isinstance(oversampling, float):
             oversampling = SpatialDimension(oversampling, oversampling, oversampling)
 
-        def get_spatial_dims(spatial_dims, dims):
+        def get_spatial_dims(spatial_dims: SpatialDimension, dims: list[int]):
             return [
                 s
                 for s, i in zip((spatial_dims.z, spatial_dims.y, spatial_dims.x), (-3, -2, -1), strict=True)
                 if i in dims
             ]
 
-        def get_traj(traj, dims):
+        def get_traj(traj: KTrajectory, dims: list[int]):
             return [k for k, i in zip((traj.kz, traj.ky, traj.kx), (-3, -2, -1), strict=True) if i in dims]
 
         self._ignore_dims, self._fft_dims, self._nufft_dims = [], [], []
@@ -153,7 +153,7 @@ class FourierOp(LinearOperator):
             # we need to move the nufft-dimensions to the end and flatten all other dimensions
             # so the new shape will be (... non_nufft_dims) coils nufft_dims
             # we could move the permute to __init__ but then we still would need to prepend if len(other)>1
-            keep_dims = [-4] + self._nufft_dims  # -4 is always coil
+            keep_dims = [-4, *self._nufft_dims]  # -4 is always coil
             permute = [i for i in range(-x.ndim, 0) if i not in keep_dims] + keep_dims
             unpermute = np.argsort(permute)
 
@@ -193,7 +193,7 @@ class FourierOp(LinearOperator):
         if self._nufft_dims:
             # we need to move the nufft-dimensions to the end, flatten them and flatten all other dimensions
             # so the new shape will be (... non_nufft_dims) coils (nufft_dims)
-            keep_dims = [-4] + self._nufft_dims  # -4 is coil
+            keep_dims = [-4, *self._nufft_dims]  # -4 is coil
             permute = [i for i in range(-x.ndim, 0) if i not in keep_dims] + keep_dims
             unpermute = np.argsort(permute)
 

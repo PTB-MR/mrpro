@@ -20,7 +20,7 @@ from mrpro.operators import FastFourierOp
 from tests import RandomGenerator
 
 
-@pytest.mark.parametrize('npoints, a', [(100, 20), (300, 20)])
+@pytest.mark.parametrize(('npoints', 'a'), [(100, 20), (300, 20)])
 def test_fast_fourier_op_forward(npoints, a):
     """Test Fast Fourier Op transformation using a Gaussian."""
     # Utilize that a Fourier transform of a Gaussian function is given by
@@ -46,7 +46,7 @@ def test_fast_fourier_op_forward(npoints, a):
 
 
 @pytest.mark.parametrize(
-    'encoding_shape, recon_shape',
+    ('encoding_shape', 'recon_shape'),
     [
         ((101, 201, 50), (13, 221, 64)),
         ((100, 200, 50), (14, 220, 64)),

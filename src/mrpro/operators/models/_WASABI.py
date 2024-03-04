@@ -11,8 +11,8 @@
 #   limitations under the License.
 
 import torch
-import torch.nn as nn
 from einops import rearrange
+from torch import nn
 
 from mrpro.operators import SignalModel
 

@@ -61,11 +61,11 @@ def adam(
         maximize the objective with respect to the params, instead of minimizing, by default False
     capturable, optional
         whether this instance is safe to capture in a CUDA graph. Passing True can impair ungraphed
-        performance, so if you don’t intend to graph capture this instance, leave it False, by default False
+        performance, so if you don`t intend to graph capture this instance, leave it False, by default False
     differentiable, optional
         whether autograd should occur through the optimizer step in training. Otherwise, the step() function
         runs in a torch.no_grad() context. Setting to True can impair performance, so leave it False if you
-        don’t intend to run autograd through this instance, by default False
+        don`t intend to run autograd through this instance, by default False
     fused, optional
         whether the fused implementation (CUDA only) is used. Currently, torch.float64, torch.float32,
         torch.float16, and torch.bfloat16 are supported., by default None

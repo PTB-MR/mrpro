@@ -48,7 +48,7 @@ def test_sensitivity_op_adjointness():
 
 
 @pytest.mark.parametrize(
-    'csm_other_dim,img_other_dim',
+    ('csm_other_dim', 'img_other_dim'),
     [
         (1, 1),
         (1, 6),
@@ -77,7 +77,7 @@ def test_sensitivity_op_other_dim_compatibility_pass(csm_other_dim, img_other_di
 
 
 @pytest.mark.parametrize(
-    'csm_other_dim,img_other_dim',
+    ('csm_other_dim', 'img_other_dim'),
     [
         (6, 3),
         (3, 6),
@@ -95,10 +95,10 @@ def test_sensitivity_op_other_dim_compatibility_fail(csm_other_dim, img_other_di
     random_csm = CsmData(data=random_tensor, header=QHeader(fov=SpatialDimension(1.0, 1.0, 1.0)))
     sensitivity_op = SensitivityOp(random_csm)
 
+    u = random_generator.complex64_tensor(size=(img_other_dim, 1, Nz, Ny, Nx))
     with pytest.raises(RuntimeError, match='The size of tensor'):
-        u = random_generator.complex64_tensor(size=(img_other_dim, 1, Nz, Ny, Nx))
         sensitivity_op.forward(u)
 
+    v = random_generator.complex64_tensor(size=(img_other_dim, num_coils, Nz, Ny, Nx))
     with pytest.raises(RuntimeError, match='The size of tensor'):
-        v = random_generator.complex64_tensor(size=(img_other_dim, num_coils, Nz, Ny, Nx))
         sensitivity_op.adjoint(v)

@@ -58,7 +58,7 @@ def test_CsmData_iterative_Walsh(ph_ellipse, random_kheader):
     assert rel_image_diff(torch.abs(csm.data), torch.abs(csm_ref)) <= 0.01
 
 
-@pytest.mark.cuda
+@pytest.mark.cuda()
 def test_CsmData_iterative_Walsh_cuda(ph_ellipse, random_kheader):
     """CsmData obtained with the iterative Walsh method in CUDA memory."""
     idat, csm_ref = multi_coil_image(num_coils=4, ph_ellipse=ph_ellipse, random_kheader=random_kheader)

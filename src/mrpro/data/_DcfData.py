@@ -21,6 +21,7 @@ from itertools import product
 
 import numpy as np
 import torch
+from numpy.typing import ArrayLike
 from scipy.spatial import ConvexHull
 from scipy.spatial import Voronoi
 
@@ -30,7 +31,7 @@ from mrpro.utils import smap
 UNIQUE_ROUNDING_DECIMALS = 15
 
 
-def _volume(v):
+def _volume(v: ArrayLike):
     return ConvexHull(v).volume
 
 

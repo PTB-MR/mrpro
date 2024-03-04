@@ -33,7 +33,7 @@ def create_data(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz):
 
 
 @COMMON_MR_TRAJECTORIES
-def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
+def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz):
     """Test adjoint property of Fourier operator."""
 
     # generate random images and k-space trajectories
@@ -65,7 +65,7 @@ def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, 
 
 
 @pytest.mark.parametrize(
-    'im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2',
+    ('im_shape', 'k_shape', 'nkx', 'nky', 'nkz', 'sx', 'sy', 'sz', 's0', 's1', 's2'),
     [
         # Cartesian FFT dimensions are not aligned with corresponding k2, k1, k0 dimensions
         (
@@ -77,13 +77,10 @@ def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, 
             'nuf',
             'uf',
             'nuf',
-            'nuf',
-            'nuf',
-            'uf',
         ),
     ],
 )
-def test_fourier_not_supported_traj(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
+def test_fourier_not_supported_traj(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz):
     """Test trajectory not supported by Fourier operator."""
 
     # generate random images and k-space trajectories

@@ -11,8 +11,8 @@
 #   limitations under the License.
 
 import torch
-import torch.nn as nn
 from einops import rearrange
+from torch import nn
 
 from mrpro.operators import SignalModel
 
@@ -86,9 +86,9 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         trec = self.trec[(...,) + (None,) * b0_shift.ndim]
 
         da = offsets - b0_shift
-        Mzi = 1.0 - torch.exp(torch.multiply(-1.0 / t1, trec))
+        mz_initial = 1.0 - torch.exp(torch.multiply(-1.0 / t1, trec))
 
-        res = Mzi * (
+        res = mz_initial * (
             1
             - 2
             * (torch.pi * b1 * self.gamma * self.tp) ** 2

@@ -49,7 +49,7 @@ def test_IData_to_complex128(random_kheader, random_test_data):
     assert idat_complex128.data.dtype == torch.complex128
 
 
-@pytest.mark.cuda
+@pytest.mark.cuda()
 def test_IData_cuda(random_kheader, random_test_data):
     """Move IData object to CUDA memory."""
     idat = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
@@ -57,7 +57,7 @@ def test_IData_cuda(random_kheader, random_test_data):
     assert idat_cuda.data.is_cuda
 
 
-@pytest.mark.cuda
+@pytest.mark.cuda()
 def test_IData_cpu(random_kheader, random_test_data):
     """Move IData object to CUDA memory and back to CPU memory."""
     idat = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)

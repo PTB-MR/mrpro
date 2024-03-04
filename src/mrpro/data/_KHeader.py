@@ -152,7 +152,7 @@ class KHeader:
             parameters['encoding_matrix'] = SpatialDimension[int].from_xyz(enc.encodedSpace.matrixSize)
 
         if enc.encodingLimits is not None:
-            parameters['encoding_limits'] = EncodingLimits.from_ismrmrd_encodingLimitsType(enc.encodingLimits)
+            parameters['encoding_limits'] = EncodingLimits.from_ismrmrd_encoding_limits_type(enc.encodingLimits)
 
         if enc.echoTrainLength is not None:
             parameters['echo_train_length'] = enc.echoTrainLength

@@ -30,7 +30,7 @@ from tests.operators._OptimizationTestFunctions import Rosenbrock
 )
 def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1):
     # TODO: remove once fixed in pytorch. see also issue #132 on GitHub
-    with pytest.raises(ImportWarning):
+    with pytest.raises(ImportWarning):  # noqa: PT012
         # use Rosenbrock function as test case with 2D test data
         a, b = 1, 100
         rosen_brock = Rosenbrock(a, b)

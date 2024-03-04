@@ -13,12 +13,12 @@
 #   limitations under the License.
 
 import torch
-import torch.nn.functional as F
+import torch.nn.functional as F  # noqa: N812
 
 from mrpro.operators import Operator
 
 
-class mse_data_discrepancy(Operator[*tuple[torch.Tensor], tuple[torch.Tensor]]):
+class MseDataDiscrepancy(Operator[*tuple[torch.Tensor], tuple[torch.Tensor]]):
     """Mean Squared Error (MSE) loss function.
 
         This class implements the function
@@ -58,11 +58,11 @@ class mse_data_discrepancy(Operator[*tuple[torch.Tensor], tuple[torch.Tensor]]):
             # F.mse_loss is only implemented for real tensors
             # Thus, we cast both to C and then to R^2
             # and undo the division by ten twice the number of elements in mse_loss
-            x_R2 = torch.view_as_real(x) if torch.is_complex(x) else torch.view_as_real(x + 1j * 0)
-            data_R2 = (
+            x_r2 = torch.view_as_real(x) if torch.is_complex(x) else torch.view_as_real(x + 1j * 0)
+            data_r2 = (
                 torch.view_as_real(self.data) if torch.is_complex(self.data) else torch.view_as_real(self.data + 1j * 0)
             )
-            mse = F.mse_loss(x_R2, data_R2) * 2.0
+            mse = F.mse_loss(x_r2, data_r2) * 2.0
         else:  # both are real
             mse = F.mse_loss(x, self.data)
         return (mse,)
