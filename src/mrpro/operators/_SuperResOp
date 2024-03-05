@@ -101,15 +101,15 @@ class SuperResOp(LinearOperator):
     def __init__(
         self,
         num_slices_per_stack: int,
-        thickness_slice: int,
-        gap_slices: float,
         num_stacks: int,
-        shape_HR: tuple,
-        w: int,
+        gap_slices_inHR: float,
+        offsets_stack_HR: list[float],
         rot_per_stack: list[list[int]],
+        shape_HR: tuple,
+        thickness_slice_inHR: float,
+        w: int,
         slice_profile: Callable,
-        list_offsets_stack,
-        rotation_center=None,
+        rotation_center: torch.Tensor | None = None,
     ):
         """Super resolution operator class.
 
@@ -136,15 +136,15 @@ class SuperResOp(LinearOperator):
         self.num_slices_per_stack = num_slices_per_stack
         self.shape_HR = shape_HR
 
+        self.print(gap_slices_inHR=gap_slices_inHR, offsets_stack_HR=offsets_stack_HR, rot_per_stack=rot_per_stack)
         self.matrix = []
 
         # calc offsets
-        range_slices = self.num_slices_per_stack * thickness_slice + (self.num_slices_per_stack - 1) * gap_slices
-        offsets = np.arange(0, range_slices + 1, step=thickness_slice + gap_slices, dtype=np.float32)
-        offsets -= np.mean(offsets)
-        list_offsets_slice = []
-        for idx_slice in range(self.num_slices_per_stack):
-            list_offsets_slice.append(torch.tensor([0, 0, offsets[idx_slice]]))
+        range_slices = (
+            self.num_slices_per_stack * thickness_slice_inHR + (self.num_slices_per_stack - 1) * gap_slices_inHR
+        )
+        offsets_slice = np.arange(0, range_slices + 1, step=thickness_slice_inHR + gap_slices_inHR, dtype=np.float32)
+        offsets_slice -= np.mean(offsets_slice)
 
         R = []
         for idx_stack in range(self.num_stacks):
@@ -154,10 +154,11 @@ class SuperResOp(LinearOperator):
             matrix_per_stack = []
 
             for idx_slice in range(self.num_slices_per_stack):
+                offset_slicePos = torch.tensor([0, 0, offsets_slice[idx_slice] + offsets_stack_HR[idx_stack]])
                 matrix_per_stack.append(
                     self._generate_matrix(
                         rot=R[idx_stack],
-                        offset_slicePos=list_offsets_slice[idx_slice] + list_offsets_stack[idx_stack],
+                        offset_slicePos=offset_slicePos,
                         length_normal=w,
                         slice_function=slice_profile,
                         rotation_center=rotation_center,
@@ -165,6 +166,17 @@ class SuperResOp(LinearOperator):
                 )
 
             self.matrix.append(matrix_per_stack)
+
+    def print(self, gap_slices_inHR: float, offsets_stack_HR: list[float], rot_per_stack: list[list[int]]):
+
+        print('_______created super res op with the following parameters:_____')
+        print('num_stacks = ' + str(self.num_stacks))
+        print('num_slices_per_stack = ' + str(self.num_slices_per_stack))
+        print('shape_HR = ' + str(self.shape_HR))
+        print('gap_slices_inHR = ' + str(gap_slices_inHR))
+        print('offsets_stack_HR = ' + str(offsets_stack_HR))
+        print('rot_per_stack = ' + str(rot_per_stack))
+        print('____________')
 
     def _rotate(self, vector: torch.Tensor, R: Rotation, rotation_center=None, inverse=False):
         """Rotate tensor by scipy Rotation around a rotation center."""
@@ -305,7 +317,7 @@ class SuperResOp(LinearOperator):
 
         return matrix
 
-    def forward(self, vol_HR: torch.Tensor) -> tuple[torch.Tensor,]:
+    def forward(self, vol_HR: torch.Tensor) -> tuple[torch.Tensor]:
         """Apply the projection operatore to high resolution 3d volume.
 
         Parameters
@@ -320,18 +332,19 @@ class SuperResOp(LinearOperator):
         other, coils, z, y, x = vol_HR.shape
         list_stacks = []
         for idx_stack in range(self.num_stacks):
-            list_slices = []
+            list_slices = torch.zeros([self.num_slices_per_stack, other, coils, 1, y, x])
             vol_HR_flat = einops.rearrange(vol_HR, 'other coils z y x -> (other coils) (x y z)')
             for idx_slice in range(self.num_slices_per_stack):
                 matrix = self.matrix[idx_stack][idx_slice]
                 slice_LR = torch.zeros((vol_HR_flat.shape[0], matrix.shape[0]))
                 for idx_coil in range(vol_HR_flat.shape[0]):
                     slice_LR[idx_coil] = matrix @ vol_HR_flat[idx_coil]
-                list_slices.append(
-                    einops.rearrange(slice_LR, '(other coils) (x y) -> other coils 1 y x', coils=coils, y=y)
+                list_slices[idx_slice] = einops.rearrange(
+                    slice_LR, '(other coils) (x y) -> other coils 1 y x', coils=coils, y=y
                 )
+
             list_stacks.append(list_slices)
-        return list_stacks
+        return tuple(list_stacks)
 
     def adjoint(self, slices_LR: torch.Tensor) -> tuple[torch.Tensor,]:
         other, coils, _, y, x = slices_LR[0][0].shape
@@ -339,7 +352,7 @@ class SuperResOp(LinearOperator):
         vol_HR = torch.zeros((other, coils, z, y, x))
         vol_HR_flat = einops.rearrange(vol_HR, 'other coils z y x -> (other coils) (x y z)')
 
-        flag_normalize = False
+        flag_normalize = True
         if flag_normalize:
             weightSum_HR = torch.zeros(vol_HR_flat.shape[1])
 
@@ -361,7 +374,7 @@ class SuperResOp(LinearOperator):
             vol_HR_flat /= torch.where(weightSum_HR != 0.0, weightSum_HR.unsqueeze(0), 1.0)
 
         vol_HR = einops.rearrange(vol_HR_flat, '(other coils) (x y z) -> other coils z y x', coils=coils, y=y, x=x, z=z)
-        return vol_HR
+        return (vol_HR,)
 
     # def checkAdjointForward(self, slices_LR, vol_HR):
     #     test = 0
