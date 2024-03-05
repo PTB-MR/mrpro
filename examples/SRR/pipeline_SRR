@@ -144,7 +144,11 @@ def toTensor(spaDim: SpatialDimension[torch.Tensor]) -> torch.Tensor:
     return torch.Tensor([spaDim.x[0, 0, 0, 0], spaDim.y[0, 0, 0, 0], spaDim.z[0, 0, 0, 0]])
 
 
-def angleBetweenVec(vectorA: torch.Tensor, vectorB: torch.Tensor, normal=Union[None, torch.Tensor]) -> float:
+def angleBetweenVec(
+    vectorA: None | torch.Tensor, vectorB: None | torch.Tensor, normal: None | torch.Tensor = None
+) -> float:
+
+    assert type(vectorA) is torch.Tensor and type(vectorB) is torch.Tensor
 
     vectorA_norm = vectorA / vectorLength(vectorA)
     vectorB_norm = vectorB / vectorLength(vectorB)
@@ -242,17 +246,17 @@ def normedVec(vector: torch.Tensor) -> torch.Tensor:
     return vector / vectorLength(vector)
 
 
-def calcDistToStack0(list_sGeometry: list[SGeometry], rots: list[float]) -> torch.Tensor:
+def calcDistToStack0(list_sGeometry: list[SGeometry], rots: torch.Tensor) -> torch.Tensor:
     num_slicesPerStack = list_sGeometry[0].pos_slices.shape[0]
-    dist = torch.zeros(len(rots))
+    array_dist = torch.zeros(len(rots))
     for rot_unique in list(torch.unique(rots)):
         idx_withSameRot = list(torch.where(rots == rot_unique))[0]
         if list(rots).count(rot_unique) == 1:
-            dist[idx_withSameRot[0]] = 0.0
+            array_dist[idx_withSameRot[0]] = 0.0
         else:
             idx_sliceToCompare = 2
             pos_stackGroup_0 = list_sGeometry[idx_withSameRot[0]].pos_slices[idx_sliceToCompare]
-            dist = torch.zeros(len(idx_withSameRot))
+            dist_withinRotGroup = torch.zeros(len(idx_withSameRot))
             # check if all slice dirs within grouop are the same
             sliceDirOfGroup = torch.zeros([len(idx_withSameRot), 3])
             for idx_inGroup in range(0, len(idx_withSameRot)):
@@ -265,17 +269,17 @@ def calcDistToStack0(list_sGeometry: list[SGeometry], rots: list[float]) -> torc
             for idx_inGroup in range(0, len(idx_withSameRot)):
                 pos_stack = torch.tensor(list_sGeometry[idx_withSameRot[idx_inGroup]].pos_slices[idx_sliceToCompare])
                 stackDir = pos_stack - pos_stackGroup_0
-                dist[idx_inGroup] = dist_3D(
+                dist_withinRotGroup[idx_inGroup] = dist_3D(
                     pos_stackGroup_0, list_sGeometry[idx_withSameRot[idx_inGroup]].pos_slices[idx_sliceToCompare]
                 )
 
                 if torch.dot(normedVec(stackDir), normedVec(sliceDirOfGroup[idx_inGroup])) < 0:
-                    dist[idx_inGroup] *= -1.0
+                    dist_withinRotGroup[idx_inGroup] *= -1.0
 
-            dist -= torch.mean(dist)
+            dist_withinRotGroup -= torch.mean(dist_withinRotGroup)
             for idx_inGroup in range(len(idx_withSameRot)):
-                dist[idx_withSameRot[idx_inGroup]] = dist[idx_inGroup]
-    return dist
+                array_dist[idx_withSameRot[idx_inGroup]] = dist_withinRotGroup[idx_inGroup]
+    return array_dist
 
 
 def calcGapBetweenLR(list_sGeometries: list[SGeometry], thickness_slice: float) -> float:
@@ -291,7 +295,7 @@ def calcGapBetweenLR(list_sGeometries: list[SGeometry], thickness_slice: float) 
                     list_sGeometries[idx_stack].pos_slices[idx_slice],
                     list_sGeometries[idx_stack].pos_slices[idx_slice + 1],
                 )
-                gap[idx_stack, idx_slice] = torch.round(input=dist - thickness_slice, decimals=2)
+                gap[idx_stack, idx_slice] = round(dist - thickness_slice, 2)
     return float(torch.median(gap))
 
 
@@ -305,7 +309,7 @@ def calc_rotToStack0(list_sGeometries: list[SGeometry], img_stacks: torch.Tensor
     # check if read and phase dir need to be swapped
     for idx_stack in range(1, num_stacks):
         dir_phase_stack = list_sGeometries[idx_stack].dir.phase
-        angle_phase = torch.round(input=angleBetweenVec(vectorA=dir_phase_stack0, vectorB=dir_phase_stack), decimals=0)
+        angle_phase = round(number=angleBetweenVec(vectorA=dir_phase_stack0, vectorB=dir_phase_stack), ndigits=0)
 
         if abs(angle_phase - 90.0) < 10.0:
             dir_read_old = torch.clone(list_sGeometries[idx_stack].dir.read)
@@ -317,7 +321,7 @@ def calc_rotToStack0(list_sGeometries: list[SGeometry], img_stacks: torch.Tensor
     rots_toStack0 = torch.zeros([num_stacks, 3])
 
     for idx_stack in range(num_stacks):
-        angle_slice = torch.round(
+        angle_slice = round(
             angleBetweenVec(
                 dir_slice_stack0,
                 list_sGeometries[idx_stack].dir.slice,
@@ -325,9 +329,7 @@ def calc_rotToStack0(list_sGeometries: list[SGeometry], img_stacks: torch.Tensor
             ),
             0,
         )
-        angle_phase = torch.round(
-            angleBetweenVec(vectorA=dir_phase_stack0, vectorB=list_sGeometries[idx_stack].dir.phase), 1
-        )
+        angle_phase = round(angleBetweenVec(vectorA=dir_phase_stack0, vectorB=list_sGeometries[idx_stack].dir.phase), 1)
 
         rot = torch.tensor([angle_slice, 0, 0])
         rots_toStack0[idx_stack] = rot
@@ -364,20 +366,20 @@ def resortSlices(imgs: torch.Tensor, list_sGeometries: list[SGeometry]) -> None:
 
 
 class Directions:
-    def __init__(
-        self,
-        read: torch.Tensor | None = None,
-        slice: torch.Tensor | None = None,
-        phase: torch.Tensor | None = None,
-    ) -> None:
-        self.read = read
-        self.slice = slice
-        self.phase = phase
+    def __init__(self) -> None:
+        self.read: torch.Tensor
+        self.slice: torch.Tensor
+        self.phase: torch.Tensor
+
+    def makeSureExists(self):
+        assert type(self.read) is torch.Tensor
+        assert type(self.slice) is torch.Tensor
+        assert type(self.phase) is torch.Tensor
 
 
 class SGeometry:
     def __init__(self) -> None:
-        self.pos_slices: torch.Tensor  = None
+        self.pos_slices: torch.Tensor
         self.dir = Directions()
 
 
@@ -416,9 +418,9 @@ def prep_filename(full_filename_in: str, full_filename_out: str | None = None, s
 def add_2D_noncart_traj_to_ismrmrd(
     fun_calc_traj: Callable[[int, int], np.ndarray],
     full_filename_in: str,
-    full_filename_out: str | None = None,
+    full_filename_out: str,
+    sGeometry: SGeometry,
     nrad: int | None = None,
-    sGeometry: SGeometry | None = None,
 ) -> str:
 
     # Get info and acquisitions from original data
@@ -448,7 +450,9 @@ def add_2D_noncart_traj_to_ismrmrd(
     # Slice index
     sl = torch.tensor([acq.idx.slice for acq in acquisitions], dtype=torch.float32)
 
-    sGeometry.pos_slices = torch.zeros([ torch.unique(sl),3])
+    num_slices = len(torch.unique(sl))
+    idx_slice = 0
+    sGeometry.pos_slices = torch.zeros([num_slices, 3])
     # Go through all slices
     for sl_idx in torch.unique(sl):
         cidx = torch.where(sl == sl_idx)[0]
@@ -476,8 +480,9 @@ def add_2D_noncart_traj_to_ismrmrd(
             acq = acquisitions[cidx[acq_idx]]
             if not flag_posSet:
                 pos = acq.position
-                sGeometry.pos_slices[sl_idx] = torch.Tensor([pos[0], pos[1], pos[2]])
+                sGeometry.pos_slices[idx_slice] = torch.Tensor([pos[0], pos[1], pos[2]])
                 flag_posSet = True
+                idx_slice += 1
             acq.resize(
                 number_of_samples=acq.number_of_samples, active_channels=acq.active_channels, trajectory_dimensions=2
             )
@@ -535,9 +540,13 @@ def calcDsize_HR(dsize_LR: torch.Tensor, voxelSize_HR: torch.Tensor, voxelSize_L
 
 
 # Read raw data and trajectory
-path_folder = (
+path_folder_inVivo = (
     '/../../echo/allgemein/projects/hufnag01/forMara/MR_Data/inVivo/12-2022_16__01/12stacks_5slices_4mm_gap14_rot/'
 )
+path_folder_phantom = (
+    '/../../echo/allgemein/projects/hufnag01/forMara/MR_Data/Phantom/02-2023_28/12stacks_5slices_4mm_gap14_rotFill3/'
+)
+path_folder = path_folder_inVivo
 scanInfo = ScanInfo(path_folder + 'scanInfo')
 pathes_orig = scanInfo.pathes_h5
 num_stacks = len(scanInfo.pathes_h5)
@@ -546,7 +555,7 @@ imgs_stacks = []
 path_save = path_folder + 'results/'
 checkIfPathExists(path_save)
 
-flag_useStored = False
+flag_useStored = True
 for idx_stack in range(num_stacks):  #
     if not flag_useStored:
         [path_new, sGeometry] = writeTraj(path_folder + scanInfo.pathes_h5[idx_stack])
@@ -560,66 +569,76 @@ for idx_stack in range(num_stacks):  #
     img_stack = img_stack[:, 0, 0]
     cutoff = 70
     img_stack = img_stack[:, cutoff : 256 - cutoff, cutoff : 256 - cutoff]
-    imgs_stacks.append(img_stack)
+    imgs_stacks.append(np.abs(img_stack))
+    sGeometry.dir.makeSureExists()
     list_sGeometries.append(sGeometry)
 
     # showImgsOfStack(img_stack, idx_stack = idx_stack, num_slices=img_stack.shape[0])
 
-imgs_stacks = torch.abs(torch.Tensor(imgs_stacks))
+imgs_stacks_tensor = [torch.from_numpy(item) for item in imgs_stacks]
+imgs_stacks = torch.stack(imgs_stacks_tensor, dim=0)
 
-voxelSize_HR = [1.3, 1.3, 1.3]
-voxelSize_LR = [1.3, 1.3, scanInfo.sliceThickness]
+voxelSize_HR = torch.Tensor([1.3, 1.3, 1.3])
+voxelSize_LR = torch.Tensor([1.3, 1.3, scanInfo.sliceThickness])
 shape_HR = calcDsize_HR(dsize_LR=imgs_stacks.shape[2:4], voxelSize_HR=voxelSize_HR, voxelSize_LR=voxelSize_LR)
 slice_profile = Slice_profile(thickness_slice=scanInfo.sliceThickness)
 
+# rot / dist sign: ++ falsch, -+ falsch, +- (evtl), -- (evtl)
 resortSlices(imgs=imgs_stacks, list_sGeometries=list_sGeometries)
-rots = calc_rotToStack0(list_sGeometries=list_sGeometries, img_stacks=imgs_stacks)
-distTo0 = calcDistToStack0(rots=rots[:, 0], list_sGeometry=list_sGeometries)
-gap_slices = calcGapBetweenLR(list_sGeometries=list_sGeometries, thickness_slice=scanInfo.sliceThickness)
+rots = -calc_rotToStack0(list_sGeometries=list_sGeometries, img_stacks=imgs_stacks)
+distTo0_mm = -calcDistToStack0(rots=rots[:, 0], list_sGeometry=list_sGeometries)
+gap_slices_mm = calcGapBetweenLR(list_sGeometries=list_sGeometries, thickness_slice=scanInfo.sliceThickness)
 
 rots_before = torch.clone(rots)
 rots = torch.zeros_like(rots_before)
 rots[:, 0] = 90
 rots[:, 2] = rots_before[:, 0]
 
-print('rots = ' + str(torch.round(rots, 0)))
-print('distToStack0 = ' + str(torch.round(distTo0, 0)))
+print('gap (mm) = ' + str(gap_slices_mm))
+print('rots = ' + str(rots))
+print('distToStack0 (mm)= ' + str(torch.round(distTo0_mm, decimals=1)))
+print('sliceThickness (mm)= ' + str(scanInfo.sliceThickness))
+
+
 srr_op = SuperResOp(
     shape_HR=shape_HR,
     num_slices_per_stack=scanInfo.num_slices,
-    gap_slices=gap_slices,
+    gap_slices_inHR=gap_slices_mm / voxelSize_HR[2],
     num_stacks=len(list_sGeometries),
-    thickness_slice=scanInfo.sliceThickness,
-    offsets_stack=distTo0,
+    thickness_slice_inHR=scanInfo.sliceThickness / voxelSize_HR[2],
+    offsets_stack_HR=distTo0_mm / voxelSize_HR[2],
     rot_per_stack=rots,
     w=3 * slice_profile.sigma,
     slice_profile=slice_profile.rect,
 )
 
-vol_HR = srr_op.adjoint(torch.from_numpy(imgs_stacks[:, :, np.newaxis, np.newaxis, np.newaxis]))
 
-flag_showLRstacks = False
+flag_showLRstacks = True
 if flag_showLRstacks:
     for idx_stack in range(num_stacks):
-        for idx_slice in range(1, 3):  # ,scanInfo.num_slices):
+        for idx_slice in range(1, 4):  # ,scanInfo.num_slices):
             show_2D(
                 imgs_stacks[idx_stack][idx_slice],
                 'stack' + str(idx_stack) + '_slice' + str(idx_slice),
                 vmin=0,
-                vmax=0.0005,
+                vmax=0.0003,
             )
+
+vol_HR = srr_op.adjoint(imgs_stacks[:, :, None, None, None])
 
 
 shape_vol_HR_adjoint = vol_HR.shape
 for idx_proj in range(3):
-    show_3D(vol_HR[0, 0], axs_proj=idx_proj, title='vol_HR_adjoint_0', vmin=0, vmax=0.00008 * len(list_sGeometries))
+    show_3D(vol_HR[0, 0], axs_proj=idx_proj, title='vol_HR_adjoint_0', vmin=0, vmax=0.000055)
 
-for slice_1 in range(int(0.4 * shape_vol_HR_adjoint[3]), int(0.6 * shape_vol_HR_adjoint[3])):
-    show_3D(
-        vol_HR[0, 0],
-        axs_proj=1,
-        idx_slice=slice_1,
-        title='vol_HR_adjoint_1_slice' + str(slice_1),
-        vmin=0,
-        vmax=0.00008 * len(list_sGeometries),
-    )
+flag_loopOverSlices = False
+if flag_loopOverSlices:
+    for slice_1 in range(int(0.4 * shape_vol_HR_adjoint[3]), int(0.6 * shape_vol_HR_adjoint[3])):
+        show_3D(
+            vol_HR[0, 0],
+            axs_proj=0,
+            idx_slice=slice_1,
+            title='vol_HR_adjoint_1_slice' + str(slice_1),
+            vmin=0,
+            vmax=0.00002 * len(list_sGeometries),
+        )
