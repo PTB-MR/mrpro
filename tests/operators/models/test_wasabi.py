@@ -15,11 +15,11 @@ def create_data(offset_max=250, offset_nr=101, b0_shift_in=0, rb1=1.0, c=1.0, d=
 
 
 @pytest.mark.parametrize(
-    ('offset_max', 'offset_nr', 'b0_shift', 'rb1', 'c', 'd', 'p', 'other', 'coils', 'z', 'y', 'x'),
+    ('offset_max', 'offset_nr', 'b0_shift', 'rb1', 'c', 'd', 'coils', 'z', 'y', 'x'),
     [
-        (250, 101, 0, 1.0, 1.0, 2.0, 4, 1, 1, 1),
-        (200, 101, 0, 0, 1.0, 2.0, 4, 1, 1, 1),
-        (10, 101, 10, 10, 1.0, 2.0, 4, 1, 1, 1),
+        (250, 101, 0, 1.0, 1.0, 2.0, 1, 1, 1, 1),
+        (200, 101, 0, 0, 1.0, 2.0, 1, 1, 1, 1),
+        (10, 101, 10, 10, 1.0, 2.0, 1, 1, 1, 1),
     ],
 )
 def test_WASABI_signal_model_shape(offset_max, offset_nr, b0_shift, rb1, c, d, coils, z, y, x):
@@ -54,7 +54,7 @@ def test_WASABI_shift():
 
 
 def test_WASABI_symmetry():
-    offsets, b0_shift, rb1, c, d = create_data(offset_max=300, offset_nr=3, b0_shift_in=0)
+    _, b0_shift, rb1, c, d = create_data(offset_max=300, offset_nr=3, b0_shift_in=0)
     offsets_new = torch.FloatTensor([30000, 500, 0, 200, 5000])
     wasabi_model = WASABI(offsets=offsets_new)
     sig = wasabi_model.forward(b0_shift, rb1, c, d)

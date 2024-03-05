@@ -14,11 +14,11 @@ def create_data(offset_max=250, offset_nr=101, b0_shift_in=0, rb1=1.0, t1=1.0):
 
 
 @pytest.mark.parametrize(
-    ('offset_max', 'offset_nr', 'b0_shift', 'rb1', 't1', 'p', 'other', 'coils', 'z', 'y', 'x'),
+    ('offset_max', 'offset_nr', 'b0_shift', 'rb1', 't1', 'coils', 'z', 'y', 'x'),
     [
-        (250, 101, 0, 1.0, 1.0, 4, 1, 1, 1),
-        (200, 101, 0, 0, 1.0, 4, 1, 1, 1),
-        (10, 101, 10, 10, 1.0, 4, 1, 1, 1),
+        (250, 101, 0, 1.0, 1.0, 1, 1, 1, 1),
+        (200, 101, 0, 0, 1.0, 1, 1, 1, 1),
+        (10, 101, 10, 10, 1.0, 1, 1, 1, 1),
     ],
 )
 def test_WASABITI_signal_model_shape(offset_max, offset_nr, b0_shift, rb1, t1, coils, z, y, x):
