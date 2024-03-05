@@ -59,7 +59,7 @@ shape_HR = vol_HR.shape
 
 vol_HR = torch.swapaxes(vol_HR, 1, 2)
 vol_HR = torch.flip(vol_HR, dims=[0, 2])
-vol_HR = ndimage.rotate(vol_HR, angle=20, axes=(1, 2))
+vol_HR = torch.Tensor(ndimage.rotate(vol_HR, angle=20, axes=(1, 2), reshape=False))
 
 flag_showOrig = True
 if flag_showOrig:
@@ -102,10 +102,10 @@ print('distToStack0 = ' + str(np.round(offsets_stack, 2)))
 srr_op = SuperResOp(
     shape_HR=shape_HR,
     num_slices_per_stack=num_slices_per_stack,
-    gap_slices=gap_slices,
+    gap_slices_inHR=gap_slices,
     num_stacks=num_stacks,
-    thickness_slice=thickness_slice,
-    offsets_stack=offsets_stack,
+    thickness_slice_inHR=thickness_slice,
+    offsets_stack_HR=offsets_stack,
     rot_per_stack=rot_per_stack,
     w=3 * slice_profile.sigma,
     slice_profile=slice_profile.rect,
