@@ -3,9 +3,10 @@ extend = "../pyproject.toml"
 lint.extend-select = ["PT"] # flake8-pytest-style
 
 lint.extend-ignore = [
-    "ANN",   # flake8-annotations
-    "D",     # pydocstyle
-    "N",     # pep8-naming
-    "S101",  # use of assert detected
-    "PT011", # pytest-raises-too-broad
+    "ARG001", # unused argument
+    "ANN",    # flake8-annotations
+    "D",      # pydocstyle
+    "N",      # pep8-naming
+    "S101",   # use of assert detected
+    "PT011",  # pytest-raises-too-broad
 ]

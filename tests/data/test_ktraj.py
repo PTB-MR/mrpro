@@ -161,7 +161,7 @@ def test_ktraj_cpu(cartesian_grid):
 
 
 @COMMON_MR_TRAJECTORIES
-def test_ktype_along_kzyx(k_shape, nkx, nky, nkz, sx, sy, sz):
+def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
     """Test identification of traj types."""
 
     # Generate random k-space trajectories
@@ -183,7 +183,7 @@ def test_ktype_along_kzyx(k_shape, nkx, nky, nkz, sx, sy, sz):
 
 
 @COMMON_MR_TRAJECTORIES
-def test_ktype_along_k210(k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
+def test_ktype_along_k210(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
     """Test identification of traj types."""
 
     # Generate random k-space trajectories

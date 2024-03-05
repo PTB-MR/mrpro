@@ -33,7 +33,7 @@ def create_data(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz):
 
 
 @COMMON_MR_TRAJECTORIES
-def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz):
+def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
     """Test adjoint property of Fourier operator."""
 
     # generate random images and k-space trajectories
@@ -65,7 +65,7 @@ def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz):
 
 
 @pytest.mark.parametrize(
-    ('im_shape', 'k_shape', 'nkx', 'nky', 'nkz', 'sx', 'sy', 'sz', 's0', 's1', 's2'),
+    ('im_shape', 'k_shape', 'nkx', 'nky', 'nkz', 'sx', 'sy', 'sz'),
     [
         # Cartesian FFT dimensions are not aligned with corresponding k2, k1, k0 dimensions
         (
