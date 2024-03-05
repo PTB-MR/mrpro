@@ -30,7 +30,7 @@ python -m pip install --upgrade pip
 # create alias to ensure pip works in the same way as pip3
 ln -s /usr/local/bin/pip3 /usr/local/bin/pip
 
-# pre-install cpu-version of torch to avoid installation of cuda-version via requirements.txt
+# pre-install cpu-version of torch to avoid installation of cuda-version via dependencies
 python -m pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 
 # install mrpro + dependencies
