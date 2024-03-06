@@ -104,7 +104,7 @@ class FourierOp(LinearOperator):
                 for k, ks in zip(get_traj(traj, self._nufft_dims), get_spatial_dims(encoding_shape, self._nufft_dims))
             ]
 
-            # Broadcast shapes (not always needed but also does not hurt) IMPORTANT CHANGE
+            # Broadcast shapes (not always needed but also does not hurt)
             omega = [k.expand(*np.broadcast_shapes(*[k.shape for k in omega])) for k in omega]
             self._omega = torch.stack(omega, dim=-4)  # use the 'coil' dim for the direction
 
