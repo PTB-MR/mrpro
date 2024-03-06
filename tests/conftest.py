@@ -60,10 +60,7 @@ def generate_random_trajectory(generator: RandomGenerator, shape=(256, 2)):
     return generator.float32_tensor(shape)
 
 
-def generate_random_data(
-    generator: RandomGenerator,
-    shape=(32, 256),
-):
+def generate_random_data(generator: RandomGenerator, shape=(32, 256)):
     return generator.complex64_tensor(shape)
 
 
@@ -80,12 +77,7 @@ def cartesian_grid(request):
         k0_range = torch.arange(nk0)
         k1_range = torch.arange(nk1)
         k2_range = torch.arange(nk2)
-        ky, kz, kx = torch.meshgrid(
-            k1_range,
-            k2_range,
-            k0_range,
-            indexing='xy',
-        )
+        ky, kz, kx = torch.meshgrid(k1_range, k2_range, k0_range, indexing='xy')
         if jitter > 0:
             kx = kx + generator.float32_tensor((nk2, nk1, nk0), high=jitter)
             ky = ky + generator.float32_tensor((nk2, nk1, nk0), high=jitter)
@@ -197,10 +189,7 @@ def random_mandatory_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
         encodingLimits=xsd.encodingLimitsType(),
     )
     experimentalConditions = xsd.experimentalConditionsType(H1resonanceFrequency_Hz=generator.int32())
-    return xsd.ismrmrdschema.ismrmrdHeader(
-        encoding=[encoding],
-        experimentalConditions=experimentalConditions,
-    )
+    return xsd.ismrmrdschema.ismrmrdHeader(encoding=[encoding], experimentalConditions=experimentalConditions)
 
 
 @pytest.fixture()

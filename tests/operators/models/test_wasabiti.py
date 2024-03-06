@@ -52,10 +52,7 @@ def test_WASABITI_shift_and_symmetry():
     assert sig_shifted[lower_index] == sig_shifted[upper_index]
 
 
-@pytest.mark.parametrize(
-    't1',
-    [(1), (2), (3)],
-)
+@pytest.mark.parametrize('t1', [(1), (2), (3)])
 def test_WASABITI_relaxation_term(t1):
     """Test relaxation term (Mzi) of WASABITI model."""
     _, b0_shift, rb1, t1 = create_data(offset_max=300, offset_nr=3, b0_shift_in=0, t1=t1)

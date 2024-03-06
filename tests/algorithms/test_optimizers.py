@@ -21,13 +21,7 @@ from tests.operators._OptimizationTestFunctions import Rosenbrock
 
 
 @pytest.mark.parametrize('enforce_bounds_on_x1', [True, False])
-@pytest.mark.parametrize(
-    'optimizer',
-    [
-        adam,
-        lbfgs,
-    ],
-)
+@pytest.mark.parametrize('optimizer', [adam, lbfgs])
 def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1):
     # TODO: remove once fixed in pytorch. see also issue #132 on GitHub
     with pytest.raises(ImportWarning):  # noqa: PT012
@@ -60,12 +54,7 @@ def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1):
         analytical_solution = torch.tensor([a, a**2])
 
         # estimate minimizer
-        params_result = optimizer(
-            functional,
-            params_init,
-            max_iter=max_iter,
-            lr=lr,
-        )
+        params_result = optimizer(functional, params_init, max_iter=max_iter, lr=lr)
 
         # obtained solution should match analytical
         torch.testing.assert_close(torch.tensor(params_result), analytical_solution)

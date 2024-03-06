@@ -47,14 +47,7 @@ def test_sensitivity_op_adjointness():
     )
 
 
-@pytest.mark.parametrize(
-    ('csm_other_dim', 'img_other_dim'),
-    [
-        (1, 1),
-        (1, 6),
-        (6, 6),
-    ],
-)
+@pytest.mark.parametrize(('csm_other_dim', 'img_other_dim'), [(1, 1), (1, 6), (6, 6)])
 def test_sensitivity_op_other_dim_compatibility_pass(csm_other_dim, img_other_dim):
     """Test paired-dimensions that have to pass applying the sensitivity
     operator."""
@@ -76,13 +69,7 @@ def test_sensitivity_op_other_dim_compatibility_pass(csm_other_dim, img_other_di
     assert adjoint.shape == (img_other_dim, 1, Nz, Ny, Nx)
 
 
-@pytest.mark.parametrize(
-    ('csm_other_dim', 'img_other_dim'),
-    [
-        (6, 3),
-        (3, 6),
-    ],
-)
+@pytest.mark.parametrize(('csm_other_dim', 'img_other_dim'), [(6, 3), (3, 6)])
 def test_sensitivity_op_other_dim_compatibility_fail(csm_other_dim, img_other_dim):
     """Test paired-dimensions that have to raise error for the sensitivity
     operator."""
