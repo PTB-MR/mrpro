@@ -14,8 +14,20 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl --request GET \
-          --url "https://api.github.com/orgs/ptb-mr/packages?package_type=container" \
+          --url "https://api.github.com/orgs/PTB-MR/packages?package_type=container" \
           --header "Authorization: Bearer $GH_TOKEN"
+
+  use_api2:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl --request GET \
+          --url "https://api.github.com/orgs/PTB-MR/packages/container/mrpro_py311/versions" \
+          --header "Authorization: Bearer $GH_TOKEN"
+
 
   use_api:
     runs-on: ubuntu-latest
