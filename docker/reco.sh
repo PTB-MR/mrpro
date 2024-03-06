@@ -34,7 +34,7 @@ ln -s /usr/local/bin/pip3 /usr/local/bin/pip
 python -m pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 
 # install mrpro and dependencies
-python -m pip install --upgrade --upgrade-strategy -e .[notebook,test,docs]
+python -m pip install --upgrade --upgrade-strategy "eager" .[notebook,test,docs]
 
 # clean up
 rm -r /opt/mrpro

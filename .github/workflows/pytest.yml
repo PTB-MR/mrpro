@@ -52,7 +52,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: python -m pip install --upgrade --upgrade-strategy -e .[test]
+        run: python -m pip install --upgrade --upgrade-strategy "eager" .[test]
 
       - name: Install pytest-github-actions-annotate-failures plugin
         run: pip install pytest-github-actions-annotate-failures

@@ -13,7 +13,7 @@ jobs:
       - name: Checkout mrpro repo
         uses: actions/checkout@v4
 
-      - name: Check if files in /docker/ or the toml file has been modified
+      - name: Check if files in docker or the toml file has been modified
         uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -30,11 +30,11 @@ jobs:
         id: verify-changed-docker
         with:
           files: |
-            'docker/'
+            './docker/'
             'pyproject.toml'
-            '/.github/docker.yml'
+            './.github/docker.yml'
 
-      - run: echo ${{ steps.verify-changed-docker.outputs.changed_files }}
+      - run: echo steps.verify-changed-docker.outputs.changed_files
 
       - id: set-matrix
         if: steps.filter.outputs.docker_toml == 'true'
