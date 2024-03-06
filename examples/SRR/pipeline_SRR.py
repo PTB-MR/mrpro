@@ -572,7 +572,7 @@ list_imgs_stacks = []
 path_save = path_folder + 'results/'
 checkIfPathExists(path_save)
 
-flag_useStored = False
+flag_useStored = True
 for idx_stack in range(num_stacks):  #
     if not flag_useStored:
         [path_new, sGeometry] = writeTraj(path_folder + scanInfo.pathes_h5[idx_stack])
@@ -595,8 +595,8 @@ for idx_stack in range(num_stacks):  #
         sGeometry = load_object(path_save + 'sGeometry_' + str(idx_stack))
         img_stack = np.load(path_save + 'img_stack_' + str(idx_stack) + '.npy')
 
-    # img_stack = torch.from_numpy(img_stack[:, 0, 0])
-    img_stack = img_stack[:, 0, 0]
+    img_stack = torch.from_numpy(img_stack[:, 0, 0])
+    # img_stack = img_stack[:, 0, 0]
 
     cutoff = 71
     img_stack = img_stack[:, cutoff : 240 - cutoff, cutoff : 240 - cutoff]
@@ -615,8 +615,9 @@ slice_profile = Slice_profile(thickness_slice=scanInfo.sliceThickness)
 
 # rot / dist sign: ++ falsch, -+ falsch, +- (evtl), -- (evtl)
 resortSlices(imgs=imgs_stacks, list_sGeometries=list_sGeometries)
-rots = -calc_rotToStack0(list_sGeometries=list_sGeometries, img_stacks=imgs_stacks)
-distTo0_mm = -calcDistToStack0(rots=rots[:, 0], list_sGeometry=list_sGeometries)
+# rot muss positiv sein!!!
+rots = calc_rotToStack0(list_sGeometries=list_sGeometries, img_stacks=imgs_stacks)
+distTo0_mm = calcDistToStack0(rots=rots[:, 0], list_sGeometry=list_sGeometries)
 gap_slices_mm = calcGapBetweenLR(list_sGeometries=list_sGeometries, thickness_slice=scanInfo.sliceThickness)
 
 rots_before = torch.clone(rots)
