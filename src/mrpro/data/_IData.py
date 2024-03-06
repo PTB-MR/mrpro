@@ -126,12 +126,12 @@ class IData(Data):
 
         if len(ds_list) > 1 and len(get_unique_slice_pos()) > 1:
             raise ValueError('Only dicoms with the same orientation can be read in.')
-
-        idata_list = [_dcm_pixelarray_to_tensor(ds) for ds in ds_list]
+        # stack required due to mypy: einops rearrange list[tensor]->tensor not recognized
+        idata = torch.stack([_dcm_pixelarray_to_tensor(ds) for ds in ds_list])
         idata = rearrange(
-            idata_list,
+            idata,
             '(other coils z) y x -> other coils z y x',
-            other=len(idata_list),
+            other=len(idata),
             coils=1,
             z=1,
         )
