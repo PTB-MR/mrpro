@@ -365,7 +365,7 @@ class Slice_prof:
         self.thickness_slice = thickness_slice
         self.sigma = 1 if sigma is None else sigma
 
-    def exp(self, distance_z: float):
+    def exp(self, distance_z: torch.Tensor):
         """Exponential slice profile.
 
         Parameters
@@ -380,7 +380,7 @@ class Slice_prof:
         # unit of distance_z: high resolution voxel
         return torch.exp(-(distance_z**2) / (2 * self.sigma**2))
 
-    def rect(self, distance_z: float):
+    def rect(self, distance_z: torch.Tensor):
         """Rectangular slice profile.
 
         Parameters
@@ -392,6 +392,4 @@ class Slice_prof:
         -------
             slice profile weight at respective distance
         """
-        if distance_z < self.thickness_slice / 2.0:
-            return 1.0
-        return 0.0
+        return torch.where(distance_z < self.thickness_slice / 2.0, 1.0, 0.0)

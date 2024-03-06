@@ -324,7 +324,8 @@ def calc_dsize_HR(dsize_LR: torch.Size, voxel_size_HR: torch.Tensor, voxel_size_
 # Read raw data and trajectory
 path_folder_invivo = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes_inVivo/'
 path_folder_phantom = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes_Phantom/'
-path_folder = path_folder_invivo
+path_folder = path_folder_phantom
+
 scan_info = ScanInfo(path_folder + 'scanInfo')
 pathes_orig = scan_info.pathes_h5
 num_stacks = len(scan_info.pathes_h5)
@@ -333,7 +334,7 @@ list_imgs_stacks = []
 path_save = path_folder + 'reconstructed_files/'
 check_if_path_exists(path_save)
 
-flag_use_stored = True
+flag_use_stored = False
 for idx_stack in range(num_stacks):
     if not flag_use_stored:
         sGeometry = SGeometry()
@@ -341,18 +342,6 @@ for idx_stack in range(num_stacks):
         filename_h5_new = filename_h5.replace('.h5', '_traj_2s.h5')
         add_2D_noncart_traj_to_ismrmrd(traj_rad_kirsten_t1mapping, filename_h5, filename_h5_new, sGeometry=sGeometry)
         img_stack = recoStack(filename_h5_new).numpy()
-        # if 'Phantom' in path_folder:
-        #     path_maps = '/../../echo/allgemein/projects/hufnag01/forMrPro/maps/stack'
-        #     list_im = []
-        #     for idx_slice in range(scanInfo.num_slices):
-        #         loaded = np.load(path_maps + str(idx_stack) + '/slice' + str(idx_slice) + '.npy')[:, :, 2]
-        #         loaded = np.swapaxes(loaded, 0, 1)
-        #         list_im.append(torch.from_numpy(loaded))
-        #         show_2D(torch.abs(list_im[idx_slice]), 'map')
-        #         show_2D(torch.abs(img_stack[idx_slice, 0, 0]) * 10000.0, 'reco')
-        #     img_stack = torch.stack(list_im)
-        #     img_stack = img_stack[:, None, None]
-        #     plt.show()
         save_object(filename=path_save + 'sGeometry_' + str(idx_stack), obj=sGeometry)
         np.save(path_save + 'img_stack_' + str(idx_stack), arr=img_stack)
     else:
