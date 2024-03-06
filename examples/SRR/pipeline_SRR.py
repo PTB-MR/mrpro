@@ -183,8 +183,16 @@ def show_3D(
     vmin: None | float = None,
     vmax: None | float = None,
 ) -> None:
-    if cmap is None:
+
+    flag_isT1map = True
+    if flag_isT1map:
+        cmap = plt.get_cmap('jet')
+        vmin = 0
+        vmax = 2.5
+    else:
         cmap = plt.get_cmap('gray')
+        vmin = vmin
+        vmax = vmax
     shape_vol = vol.shape
     if axs_proj == 0:
         idx_slice = shape_vol[0] // 2 if idx_slice is None else idx_slice
@@ -204,7 +212,16 @@ def show_3D(
 
 
 def show_2D(img: torch.Tensor, title: str = 'img', vmin: None | float = None, vmax: None | float = None) -> None:
-    plt.matshow(img, cmap=plt.get_cmap('grey'), vmin=vmin, vmax=vmax)
+    flag_isT1map = True
+    if flag_isT1map:
+        cmap = plt.get_cmap('jet')
+        vmin = 0
+        vmax = 2.5
+    else:
+        cmap = plt.get_cmap('gray')
+        vmin = vmin
+        vmax = vmax
+    plt.matshow(img, cmap=cmap, vmin=vmin, vmax=vmax)
     plt.title(title)
     plt.show()
 
@@ -546,29 +563,43 @@ path_folder_inVivo = (
 path_folder_phantom = (
     '/../../echo/allgemein/projects/hufnag01/forMara/MR_Data/Phantom/02-2023_28/12stacks_5slices_4mm_gap14_rotFill3/'
 )
-path_folder = path_folder_inVivo
+path_folder = path_folder_phantom
 scanInfo = ScanInfo(path_folder + 'scanInfo')
 pathes_orig = scanInfo.pathes_h5
-num_stacks = 2  # len(scanInfo.pathes_h5)
+num_stacks = 12  # len(scanInfo.pathes_h5)
 list_sGeometries = []
 list_imgs_stacks = []
 path_save = path_folder + 'results/'
 checkIfPathExists(path_save)
 
-flag_useStored = True
+flag_useStored = False
 for idx_stack in range(num_stacks):  #
     if not flag_useStored:
         [path_new, sGeometry] = writeTraj(path_folder + scanInfo.pathes_h5[idx_stack])
         img_stack = recoStack(path_new)
+        if 'Phantom' in path_folder:
+            path_maps = '/../../echo/allgemein/projects/hufnag01/forMrPro/maps/stack'
+            list_im = []
+            for idx_slice in range(scanInfo.num_slices):
+                loaded = np.load(path_maps + str(idx_stack) + '/slice' + str(idx_slice) + '.npy')[:, :, 2]
+                loaded = np.swapaxes(loaded, 0, 1)
+                list_im.append(torch.from_numpy(loaded))
+                show_2D(torch.abs(list_im[idx_slice]), 'map')
+                show_2D(torch.abs(img_stack[idx_slice, 0, 0]) * 10000.0, 'reco')
+            img_stack = torch.stack(list_im)
+            img_stack = img_stack[:, None, None]
+            plt.show()
         save_object(filename=path_save + 'sGeometry_' + str(idx_stack), obj=sGeometry)
         np.save(path_save + 'img_stack_' + str(idx_stack), arr=img_stack)
     else:
         sGeometry = load_object(path_save + 'sGeometry_' + str(idx_stack))
         img_stack = np.load(path_save + 'img_stack_' + str(idx_stack) + '.npy')
 
-    img_stack = torch.from_numpy(img_stack[:, 0, 0])
+    # img_stack = torch.from_numpy(img_stack[:, 0, 0])
+    img_stack = img_stack[:, 0, 0]
+
     cutoff = 71
-    img_stack = img_stack[:, cutoff : 256 - cutoff, cutoff : 256 - cutoff]
+    img_stack = img_stack[:, cutoff : 240 - cutoff, cutoff : 240 - cutoff]
     list_imgs_stacks.append(torch.abs(img_stack))
     sGeometry.dir.makeSureExists()
     list_sGeometries.append(sGeometry)
@@ -612,7 +643,7 @@ srr_op = SuperResOp(
 )
 
 
-flag_showLRstacks = True
+flag_showLRstacks = False
 if flag_showLRstacks:
     for idx_stack in range(num_stacks):
         for idx_slice in range(1, 4):  # ,scanInfo.num_slices):
