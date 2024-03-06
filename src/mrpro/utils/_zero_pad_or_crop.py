@@ -13,6 +13,7 @@
 #   limitations under the License.
 
 import math
+from collections.abc import Sequence
 
 import torch
 import torch.nn.functional as F  # noqa: N812
@@ -43,8 +44,8 @@ def normalize_index(ndim: int, index: int):
 
 def zero_pad_or_crop(
     data: torch.Tensor,
-    new_shape: tuple[int, ...] | torch.Size,
-    dim: None | tuple[int, ...] = None,
+    new_shape: Sequence[int] | torch.Size,
+    dim: None | Sequence[int] = None,
 ) -> torch.Tensor:
     """Change shape of data by cropping or zero-padding.
 
@@ -65,7 +66,7 @@ def zero_pad_or_crop(
         raise ValueError('length of new shape should not exceed dimensions of data')
 
     if dim is None:  # Use last dimensions
-        new_shape = data.shape[: -len(new_shape)] + new_shape
+        new_shape = (*data.shape[: -len(new_shape)], *new_shape)
     else:
         if len(new_shape) != len(dim):
             raise ValueError('length of shape should match length of dim')

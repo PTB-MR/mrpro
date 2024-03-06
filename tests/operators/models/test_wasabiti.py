@@ -27,10 +27,8 @@ def test_WASABITI_signal_model_shape(offset_max, offset_nr, b0_shift, rb1, t1, c
     trec = torch.ones_like(offsets)
 
     wasabiti_model = WASABITI(offsets=offsets, trec=trec)
-    sig = wasabiti_model.forward(b0_shift, rb1, t1)
-
-    signal_shape = torch.Tensor(offset_nr, coils, z, y, x)
-    assert sig.shape == signal_shape.shape
+    (signal,) = wasabiti_model.forward(b0_shift, rb1, t1)
+    assert signal.shape == (offset_nr, coils, z, y, x)
 
 
 def test_WASABITI_shift_and_symmetry():
@@ -38,18 +36,18 @@ def test_WASABITI_shift_and_symmetry():
     offsets_unshifted, b0_shift, rb1, t1 = create_data(offset_max=500, offset_nr=100, b0_shift_in=0)
     trec = torch.ones_like(offsets_unshifted)
     wasabiti_model = WASABITI(offsets=offsets_unshifted, trec=trec)
-    sig_unshifted = wasabiti_model.forward(b0_shift, rb1, t1)
+    (signal,) = wasabiti_model.forward(b0_shift, rb1, t1)
 
     offsets_shifted, b0_shift, rb1, t1 = create_data(offset_max=500, offset_nr=101, b0_shift_in=100)
     trec = torch.ones_like(offsets_shifted)
     wasabiti_model = WASABITI(offsets=offsets_shifted, trec=trec)
-    sig_shifted = wasabiti_model.forward(b0_shift, rb1, t1)
+    (signal_shifted,) = wasabiti_model.forward(b0_shift, rb1, t1)
 
     lower_index = (offsets_shifted == -300).nonzero()[0][0].item()
     upper_index = (offsets_shifted == 500).nonzero()[0][0].item()
 
-    assert sig_unshifted[0] == sig_unshifted[-1]
-    assert sig_shifted[lower_index] == sig_shifted[upper_index]
+    assert signal[0] == signal[-1]
+    assert signal_shifted[lower_index] == signal_shifted[upper_index]
 
 
 @pytest.mark.parametrize('t1', [(1), (2), (3)])

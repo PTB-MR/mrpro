@@ -12,12 +12,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from collections.abc import Sequence
+
 import numpy as np
 import torch
 from einops import repeat
 
 from mrpro.data import SpatialDimension
-from mrpro.phantoms.phantom_elements import EllipsePars
+from mrpro.phantoms.phantom_elements import EllipseParameters
 
 
 class EllipsePhantom:
@@ -26,17 +28,19 @@ class EllipsePhantom:
     Parameters
     ----------
         ellipses
-            ellipses defined by their center, radii and intensity
+            ellipses defined by their center, radii and intensity.
+            if None, defaults to three ellipses
     """
 
-    def __init__(self, ellipses: list[EllipsePars] | None = None):
-        if not ellipses:
-            ellipses = [
-                EllipsePars(center_x=0.2, center_y=0.2, radius_x=0.1, radius_y=0.25, intensity=1),
-                EllipsePars(center_x=0.1, center_y=-0.1, radius_x=0.3, radius_y=0.1, intensity=2),
-                EllipsePars(center_x=-0.2, center_y=0.2, radius_x=0.18, radius_y=0.25, intensity=4),
+    def __init__(self, ellipses: Sequence[EllipseParameters] | None = None):
+        if ellipses is None:
+            self.ellipses = [
+                EllipseParameters(center_x=0.2, center_y=0.2, radius_x=0.1, radius_y=0.25, intensity=1),
+                EllipseParameters(center_x=0.1, center_y=-0.1, radius_x=0.3, radius_y=0.1, intensity=2),
+                EllipseParameters(center_x=-0.2, center_y=0.2, radius_x=0.18, radius_y=0.25, intensity=4),
             ]
-        self.ellipses: list[EllipsePars] = ellipses
+        else:
+            self.ellipses = list(ellipses)
 
     def kspace(self, ky: torch.Tensor, kx: torch.Tensor) -> torch.Tensor:
         """Create 2D analytic kspace data based on given k-space locations.
@@ -57,18 +61,22 @@ class EllipsePhantom:
         if kx.shape != ky.shape:
             raise ValueError(f'shape mismatch between kx {kx.shape} and ky {ky.shape}')
 
-        kdat = torch.zeros_like(kx, dtype=torch.complex64)
-        for el in self.ellipses:
-            arg = torch.sqrt((el.radius_x * 2) ** 2 * kx**2 + (el.radius_y * 2) ** 2 * ky**2)
+        kdata = torch.zeros_like(kx, dtype=torch.complex64)
+        for ellipse in self.ellipses:
+            arg = torch.sqrt((ellipse.radius_x * 2) ** 2 * kx**2 + (ellipse.radius_y * 2) ** 2 * ky**2)
             arg[arg < 1e-6] = 1e-6  # avoid zeros
 
-            cdat = 2 * 2 * el.radius_x * el.radius_y * 0.5 * torch.special.bessel_j1(torch.pi * arg) / arg
-            kdat += torch.exp(-1j * 2 * torch.pi * (el.center_x * kx + el.center_y * ky)) * cdat * el.intensity
+            cdata = 2 * 2 * ellipse.radius_x * ellipse.radius_y * 0.5 * torch.special.bessel_j1(torch.pi * arg) / arg
+            kdata += (
+                torch.exp(-1j * 2 * torch.pi * (ellipse.center_x * kx + ellipse.center_y * ky))
+                * cdata
+                * ellipse.intensity
+            )
 
         # Scale k-space data by factor sqrt(number of points) to ensure correct scaling after FFT with
         # normalization "ortho". See e.g. https://docs.scipy.org/doc/scipy/tutorial/fft.html
-        kdat *= np.sqrt(torch.numel(kdat))
-        return kdat
+        kdata *= np.sqrt(torch.numel(kdata))
+        return kdata
 
     def image_space(self, image_dimensions: SpatialDimension[int]) -> torch.Tensor:
         """Create image representation of phantom.
@@ -87,12 +95,12 @@ class EllipsePhantom:
             indexing='xy',
         )
 
-        idat = torch.zeros((ny, nx), dtype=torch.complex64)
-        for el in self.ellipses:
-            curr_el = torch.zeros_like(idat)
-            curr_el[
-                ((ix / nx - el.center_x) ** 2 / el.radius_x**2 + (iy / ny - el.center_y) ** 2 / el.radius_y**2) <= 1
-            ] = el.intensity
-            idat += curr_el
+        idata = torch.zeros((ny, nx), dtype=torch.complex64)
+        for ellipse in self.ellipses:
+            in_ellipse = (
+                (ix / nx - ellipse.center_x) ** 2 / ellipse.radius_x**2
+                + (iy / ny - ellipse.center_y) ** 2 / ellipse.radius_y**2
+            ) <= 1
+            idata += ellipse.intensity * in_ellipse
 
-        return repeat(idat, 'y x->other coils z y x', other=1, coils=1, z=1)
+        return repeat(idata, 'y x->other coils z y x', other=1, coils=1, z=1)

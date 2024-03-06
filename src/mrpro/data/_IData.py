@@ -22,7 +22,7 @@ import torch
 from einops import rearrange
 from pydicom import dcmread
 from pydicom.dataset import Dataset
-from pydicom.tag import Tag
+from pydicom.tag import TagType
 
 from mrpro.data import Data
 from mrpro.data import IHeader
@@ -40,9 +40,16 @@ def _dcm_pixelarray_to_tensor(ds: Dataset) -> torch.Tensor:
     intercept." (taken from
     https://www.kitware.com/dicom-rescale-intercept-rescale-slope-and-itk/)
     """
-    slope = float(ds.data_element('RescaleSlope').value) if 'RescaleSlope' in ds else 1.0
-
-    intercept = float(ds.data_element('RescaleSlope').value) if 'RescaleIntercept' in ds else 0.0
+    slope = (
+        float(element.value)
+        if 'RescaleSlope' in ds and (element := ds.data_element('RescaleSlope')) is not None
+        else 1.0
+    )
+    intercept = (
+        float(element.value)
+        if 'RescaleIntercept' in ds and (element := ds.data_element('RescaleIntercept')) is not None
+        else 0.0
+    )
 
     # Image data is 2D np.array of Uint16, which cannot directly be converted to tensor
     return slope * torch.as_tensor(ds.pixel_array.astype(np.complex64)) + intercept
@@ -106,7 +113,7 @@ class IData(Data):
         ds_list = [dcmread(filename) for filename in file_paths]
 
         # Ensure they all have the same orientation (same (0019, 1015) SlicePosition_PCS tag)
-        def get_unique_slice_pos(slice_pos_tag: Tag = 0x00191015):
+        def get_unique_slice_pos(slice_pos_tag: TagType = 0x00191015):
             if not ds_list[0].get_item(slice_pos_tag):
                 return []
             else:
@@ -120,9 +127,14 @@ class IData(Data):
         if len(ds_list) > 1 and len(get_unique_slice_pos()) > 1:
             raise ValueError('Only dicoms with the same orientation can be read in.')
 
-        # torch.stack is necessary otherwises mypy does not realize that rearrange yields Tensor from list[Tensor]
-        idata = torch.stack([_dcm_pixelarray_to_tensor(ds) for ds in ds_list])
-        idata = rearrange(idata, '(other coils z) y x -> other coils z y x', other=len(idata), coils=1, z=1)
+        idata_list = [_dcm_pixelarray_to_tensor(ds) for ds in ds_list]
+        idata = rearrange(
+            idata_list,
+            '(other coils z) y x -> other coils z y x',
+            other=len(idata_list),
+            coils=1,
+            z=1,
+        )
 
         header = IHeader.from_dicom_list(ds_list)
         return cls(data=idata, header=header)

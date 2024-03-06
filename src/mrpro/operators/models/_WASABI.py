@@ -87,12 +87,11 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         delta_x = offsets - b0_shift
         b1 = self.b1_nom * rb1
 
-        res = (
+        signal = (
             c
             - d
             * (torch.pi * b1 * self.gamma * self.tp) ** 2
             * torch.sinc(self.tp * torch.sqrt((b1 * self.gamma) ** 2 + delta_x**2)) ** 2
         )
-
-        # c = coils, ... = other (may be multi-dimensional)
-        return rearrange(res, 'offsets ... c z y x -> (... offsets) c z y x')
+        signal = rearrange(signal, 'offsets ... c z y x -> (... offsets) c z y x')
+        return (signal,)

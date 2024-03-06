@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
+from collections.abc import Sequence
 from dataclasses import dataclass
 from math import pi
 from typing import TYPE_CHECKING
@@ -107,10 +108,10 @@ class KHeader:
         """
 
         # Conversion functions for units
-        def list_ms_to_s(ms: list[float]) -> list[float]:
+        def sequence_ms_to_s(ms: Sequence[float]) -> Sequence[float]:
             return [el / 1000 for el in ms]
 
-        def list_deg_to_rad(deg: list[float]) -> list[float]:
+        def sequence_deg_to_rad(deg: Sequence[float]) -> Sequence[float]:
             return [el * pi / 180 for el in deg]
 
         def mm_to_m(m: float) -> float:
@@ -134,11 +135,11 @@ class KHeader:
             parameters['num_coils'] = header.acquisitionSystemInformation.receiverChannels
 
         if header.sequenceParameters is not None:
-            parameters['tr'] = list_ms_to_s(header.sequenceParameters.TR)
-            parameters['te'] = list_ms_to_s(header.sequenceParameters.TE)
-            parameters['ti'] = list_ms_to_s(header.sequenceParameters.TI)
-            parameters['fa'] = list_deg_to_rad(header.sequenceParameters.flipAngle_deg)
-            parameters['echo_spacing'] = list_ms_to_s(header.sequenceParameters.echo_spacing)
+            parameters['tr'] = sequence_ms_to_s(header.sequenceParameters.TR)
+            parameters['te'] = sequence_ms_to_s(header.sequenceParameters.TE)
+            parameters['ti'] = sequence_ms_to_s(header.sequenceParameters.TI)
+            parameters['fa'] = sequence_deg_to_rad(header.sequenceParameters.flipAngle_deg)
+            parameters['echo_spacing'] = sequence_ms_to_s(header.sequenceParameters.echo_spacing)
 
             if header.sequenceParameters.sequence_type is not None:
                 parameters['seq_type'] = header.sequenceParameters.sequence_type

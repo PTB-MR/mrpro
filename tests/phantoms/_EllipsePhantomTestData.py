@@ -13,7 +13,7 @@
 #   limitations under the License.
 
 import torch
-from mrpro.phantoms import EllipsePars
+from mrpro.phantoms import EllipseParameters
 from mrpro.phantoms import EllipsePhantom
 
 
@@ -40,10 +40,10 @@ class EllipsePhantomTestData:
 
         # Define five ellipses
         self.test_ellipses = [
-            EllipsePars(center_x=0.1, center_y=0.0, radius_x=0.1, radius_y=0.25, intensity=1),
-            EllipsePars(center_x=0.3, center_y=0.3, radius_x=0.1, radius_y=0.1, intensity=2),
-            EllipsePars(center_x=0.1, center_y=0.1, radius_x=0.1, radius_y=0.1, intensity=3),
-            EllipsePars(center_x=-0.2, center_y=-0.2, radius_x=0.1, radius_y=0.1, intensity=4),
-            EllipsePars(center_x=-0.3, center_y=-0.3, radius_x=0.1, radius_y=0.1, intensity=5),
+            EllipseParameters(center_x=0.1, center_y=0.0, radius_x=0.1, radius_y=0.25, intensity=1),
+            EllipseParameters(center_x=0.3, center_y=0.3, radius_x=0.1, radius_y=0.1, intensity=2),
+            EllipseParameters(center_x=0.1, center_y=0.1, radius_x=0.1, radius_y=0.1, intensity=3),
+            EllipseParameters(center_x=-0.2, center_y=-0.2, radius_x=0.1, radius_y=0.1, intensity=4),
+            EllipseParameters(center_x=-0.3, center_y=-0.3, radius_x=0.1, radius_y=0.1, intensity=5),
         ]
         self.phantom = EllipsePhantom(self.test_ellipses)

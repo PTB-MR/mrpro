@@ -14,6 +14,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import ismrmrd
 import torch
 
@@ -35,7 +37,7 @@ class KTrajectoryIsmrmrd:
     def __init__(self):
         pass
 
-    def __call__(self, acquisitions: list[ismrmrd.Acquisition]) -> KTrajectoryRawShape:
+    def __call__(self, acquisitions: Sequence[ismrmrd.Acquisition]) -> KTrajectoryRawShape:
         """Read out the trajectory from the ISMRMRD data file.
 
         Parameters

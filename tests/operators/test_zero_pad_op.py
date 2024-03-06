@@ -28,7 +28,7 @@ def test_zero_pad_op_content():
     pad_dim = (-5, -3, -2)
     POp = ZeroPadOp(
         dim=pad_dim,
-        orig_shape=tuple([dshape_orig[d] for d in pad_dim]),
+        original_shape=tuple([dshape_orig[d] for d in pad_dim]),
         padded_shape=tuple([dshape_new[d] for d in pad_dim]),
     )
     (dnew,) = POp.forward(dorig)
@@ -51,7 +51,7 @@ def test_zero_pad_op_adjoint(u_shape, v_shape):
     generator = RandomGenerator(seed=0)
     u = generator.complex64_tensor(u_shape)
     v = generator.complex64_tensor(v_shape)
-    POp = ZeroPadOp(dim=(-3, -2, -1), orig_shape=u_shape, padded_shape=v_shape)
+    POp = ZeroPadOp(dim=(-3, -2, -1), original_shape=u_shape, padded_shape=v_shape)
     (Au,) = POp.forward(u)
     (AHv,) = POp.adjoint(v)
 

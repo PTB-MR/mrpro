@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 import ismrmrd
@@ -80,7 +81,7 @@ class AcqInfo:
     version: torch.Tensor
 
     @classmethod
-    def from_ismrmrd_acquisitions(cls, acquisitions: list[ismrmrd.Acquisition]) -> AcqInfo:
+    def from_ismrmrd_acquisitions(cls, acquisitions: Sequence[ismrmrd.Acquisition]) -> AcqInfo:
         """Read the header of a list of acquisition and store information.
 
         Parameters

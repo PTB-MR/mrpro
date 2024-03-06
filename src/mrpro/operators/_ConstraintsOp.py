@@ -12,6 +12,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from collections.abc import Sequence
+
 import torch
 import torch.nn.functional as F  # noqa: N812
 
@@ -23,7 +25,7 @@ class ConstraintsOp(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]
 
     def __init__(
         self,
-        bounds: tuple[tuple[float | None, float | None], ...],
+        bounds: Sequence[tuple[float | None, float | None]],
         beta_sigmoid: float = 1.0,
         beta_softplus: float = 1.0,
     ) -> None:

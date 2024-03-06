@@ -88,13 +88,12 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         da = offsets - b0_shift
         mz_initial = 1.0 - torch.exp(torch.multiply(-1.0 / t1, trec))
 
-        res = mz_initial * (
+        signal = mz_initial * (
             1
             - 2
             * (torch.pi * b1 * self.gamma * self.tp) ** 2
             * torch.sinc(self.tp * torch.sqrt((b1 * self.gamma) ** 2 + da**2)) ** 2
         )
 
-        print(res.shape)
-        # c = coils, ... = other (may be multi-dimensional)
-        return rearrange(res, 'offset ... c z y x -> (... offset) c z y x')
+        signal = rearrange(signal, 'offset ... c z y x -> (... offset) c z y x')
+        return (signal,)
