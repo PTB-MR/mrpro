@@ -34,7 +34,7 @@ jobs:
 
   test:
     name: "Run tests and get coverage report"
-    needs: [get_dockerfiles, push]
+    needs: get_dockerfiles
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
