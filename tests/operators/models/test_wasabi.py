@@ -26,7 +26,7 @@ def test_WASABI_signal_model_shape(offset_max, offset_nr, b0_shift, rb1, c, d, c
     """Test for correct output shape."""
     offsets, b0_shift, rb1, c, d = create_data(offset_max, offset_nr, b0_shift, rb1, c, d)
     wasabi_model = WASABI(offsets=offsets)
-    signal, = wasabi_model.forward(b0_shift, rb1, c, d)
+    (signal,) = wasabi_model.forward(b0_shift, rb1, c, d)
 
     assert signal.shape == (offset_nr, coils, z, y, x)
 
@@ -39,22 +39,22 @@ def test_WASABI_shift():
         b0_shift_in=0,
     )
     wasabi_model = WASABI(offsets=offsets_unshifted)
-    signal, = wasabi_model.forward(b0_shift_unshifted, rb1_unshifted, c_unshifted, d_unshifted)
+    (signal,) = wasabi_model.forward(b0_shift_unshifted, rb1_unshifted, c_unshifted, d_unshifted)
 
     offsets_shifted, b0_shift, rb1, c, d = create_data(offset_max=500, offset_nr=101, b0_shift_in=100)
     wasabi_model = WASABI(offsets=offsets_shifted)
-    signal_shifted, = wasabi_model.forward(b0_shift, rb1, c, d)
+    (signal_shifted,) = wasabi_model.forward(b0_shift, rb1, c, d)
 
     lower_index = (offsets_shifted == -300).nonzero()[0][0].item()
     upper_index = (offsets_shifted == 500).nonzero()[0][0].item()
 
-    assert signal[0] == signal[-1], "Result should be symmetric around center"
-    assert signal_shifted[lower_index] == signal_shifted[upper_index], "Result should be symmetric around shift"
+    assert signal[0] == signal[-1], 'Result should be symmetric around center'
+    assert signal_shifted[lower_index] == signal_shifted[upper_index], 'Result should be symmetric around shift'
 
 
 def test_WASABI_extreme_offset():
     offset, b0_shift, rb1, c, d = create_data(offset_max=30000, offset_nr=1, b0_shift_in=0)
     wasabi_model = WASABI(offsets=offset)
-    signal, = wasabi_model.forward(b0_shift, rb1, c, d)
+    (signal,) = wasabi_model.forward(b0_shift, rb1, c, d)
 
-    assert torch.isclose(signal, torch.tensor([1.])), "For an extreme offset, the signal should be unattenuated"
+    assert torch.isclose(signal, torch.tensor([1.0])), 'For an extreme offset, the signal should be unattenuated'

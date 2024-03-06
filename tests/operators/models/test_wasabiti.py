@@ -46,8 +46,8 @@ def test_WASABITI_shift_and_symmetry():
     lower_index = (offsets_shifted == -300).nonzero()[0][0].item()
     upper_index = (offsets_shifted == 500).nonzero()[0][0].item()
 
-    assert signal[0] == signal[-1], "Result should be symmetric around center"
-    assert signal_shifted[lower_index] == signal_shifted[upper_index], "Result should be symmetric around shift"
+    assert signal[0] == signal[-1], 'Result should be symmetric around center'
+    assert signal_shifted[lower_index] == signal_shifted[upper_index], 'Result should be symmetric around shift'
 
 
 @pytest.mark.parametrize('t1', [(1), (2), (3)])
