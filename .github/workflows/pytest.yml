@@ -6,6 +6,17 @@ on:
       - "**.md"
 
 jobs:
+  use_api1:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl --request GET \
+          --url "https://api.github.com/orgs/ptb-mr/packages?package_type=container" \
+          --header "Authorization: Bearer $GH_TOKEN"
+
   use_api:
     runs-on: ubuntu-latest
     permissions: {}
@@ -43,7 +54,7 @@ jobs:
                 -H "Accept: application/vnd.github+json" \
                 -H "Authorization: Bearer ${GHCR_TOKEN}" \
                 -H "X-GitHub-Api-Version: 2022-11-28" \
-                "https://api.github.com/orgs/ptb-mr/mrpro/packages?package_type=container"
+                "https://api.github.com/orgs/ptb-mr/packages?package_type=container"
 
       - id: set-matrix
         run: |
