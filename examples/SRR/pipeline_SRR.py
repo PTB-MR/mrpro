@@ -527,7 +527,7 @@ def recoStack(path_h5: str) -> torch.Tensor:
     return im
 
 
-def calcDsize_HR(dsize_LR: torch.Tensor, voxelSize_HR: torch.Tensor, voxelSize_LR: torch.Tensor) -> torch.Tensor:
+def calcDsize_HR(dsize_LR: torch.Size, voxelSize_HR: torch.Tensor, voxelSize_LR: torch.Tensor) -> torch.Tensor:
     return torch.round(
         torch.Tensor(
             [
@@ -549,7 +549,7 @@ path_folder_phantom = (
 path_folder = path_folder_inVivo
 scanInfo = ScanInfo(path_folder + 'scanInfo')
 pathes_orig = scanInfo.pathes_h5
-num_stacks = len(scanInfo.pathes_h5)
+num_stacks = 2  # len(scanInfo.pathes_h5)
 list_sGeometries = []
 list_imgs_stacks = []
 path_save = path_folder + 'results/'
@@ -579,9 +579,7 @@ imgs_stacks = torch.stack(list_imgs_stacks)
 
 voxelSize_HR = torch.Tensor([1.3, 1.3, 1.3])
 voxelSize_LR = torch.Tensor([1.3, 1.3, scanInfo.sliceThickness])
-shape_HR = calcDsize_HR(
-    dsize_LR=torch.Tensor(imgs_stacks.shape[2:4]), voxelSize_HR=voxelSize_HR, voxelSize_LR=voxelSize_LR
-)
+shape_HR = calcDsize_HR(dsize_LR=imgs_stacks.shape[2:4], voxelSize_HR=voxelSize_HR, voxelSize_LR=voxelSize_LR)
 slice_profile = Slice_profile(thickness_slice=scanInfo.sliceThickness)
 
 # rot / dist sign: ++ falsch, -+ falsch, +- (evtl), -- (evtl)
