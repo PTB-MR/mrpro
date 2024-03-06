@@ -9,3 +9,4 @@ from mrpro.operators._FourierOp import FourierOp
 from mrpro.operators._CartesianSamplingOp import CartesianSamplingOp
 from mrpro.operators.models._WASABI import WASABI
 from mrpro.operators.models._WASABITI import WASABITI
+from mrpro.operators._SuperResOp import SuperResOp

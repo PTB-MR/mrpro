@@ -34,7 +34,7 @@ class SuperResOp(LinearOperator):
         gap_slices_inHR: float,
         offsets_stack_HR: torch.Tensor,
         rot_per_stack: torch.Tensor,
-        shape_HR: tuple,
+        shape_HR: torch.Tensor,
         thickness_slice_inHR: float,
         w: int,
         slice_prof: Callable,
