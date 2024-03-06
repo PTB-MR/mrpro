@@ -125,7 +125,7 @@ jobs:
 
   push_latest:
     name: "Create latest images and push to GCR"
-    needs: [get_dockerfiles, tests]
+    needs: [get_dockerfiles, test]
     if: ${{ needs.get_dockerfiles.outputs.docker_toml == 'true' }}
     runs-on: ubuntu-latest
     permissions:
