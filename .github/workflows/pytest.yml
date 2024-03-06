@@ -13,6 +13,12 @@ jobs:
       - name: Checkout mrpro repo
         uses: actions/checkout@v4
 
+      - name: Get available images
+        run: |
+          export GHCR_TOKEN=$(echo -n $GITHUB_TOKEN | base64)
+          curl -H "Authorization: Bearer $GHCR_TOKEN" https://ghcr.io/v2/ptb-mr/mrpro_py311/tags/list
+          curl -H "Authorization: Bearer $GHCR_TOKEN" https://ghcr.io/v2/ptb-mr/_catalog
+
       - id: set-matrix
         run: |
           cd ./docker/
