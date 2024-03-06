@@ -8,7 +8,8 @@ on:
 jobs:
   use_api1:
     runs-on: ubuntu-latest
-    permissions: {}
+    permissions:
+      packages: read
     steps:
       - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -19,7 +20,8 @@ jobs:
 
   use_api2:
     runs-on: ubuntu-latest
-    permissions: {}
+    permissions:
+      packages: read
     steps:
       - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
