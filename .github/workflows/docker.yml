@@ -139,10 +139,8 @@ jobs:
           username: ptb-mr
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./docker
-          file: ./docker/${{ matrix.dockerfile }}
-          push: true
-          tags: ${{ steps.image_name.outputs.image_name }}:latest
+      - name: Pull and push Docker image with new tag
+        run: |
+            docker pull ${{ steps.image_name.outputs.image_name }}:test
+            docker tag ${{ steps.image_name.outputs.image_name }}:test ${{ steps.image_name.outputs.image_name }}:latest
+            docker push ${{ steps.image_name.outputs.image_name }}:latest
