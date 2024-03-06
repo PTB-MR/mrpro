@@ -119,6 +119,7 @@ extend-select = [
     "ANN401", #  any type annotation
     "BLE001", #  blind exception
     "COM812", #  missing-trailing-comma (conflict with formatter)
+    "D417",   #  undocumented-parameter
 ]
 ignore = [
     "N999", # invalid module name

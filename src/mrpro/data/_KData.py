@@ -69,19 +69,19 @@ class KData:
 
         Parameters
         ----------
-            filename
-                path to the ISMRMRD file
-            ktrajectory
-                KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory
-            header_overwrites
-                dictionary of key-value pairs to overwrite the header
-            dataset_idx
-                index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
-            ignore_flags
-                Acqisition flags to filter out. Defaults to all non-images as defined by pymapvbvd.
-                Use ACQ_NO_FLAG to disable the filter.
-                Note: If ACQ_IS_PARALLEL_CALIBRATION is set without also setting ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING
-                      we interpret it as: Ignore if IS_PARALLEL_CALIBRATION and not PARALLEL_CALIBRATION_AND_IMAGING
+        filename
+            path to the ISMRMRD file
+        ktrajectory
+            KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory
+        header_overwrites
+            dictionary of key-value pairs to overwrite the header
+        dataset_idx
+            index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
+        ignore_flags
+            Acqisition flags to filter out. Defaults to all non-images as defined by pymapvbvd.
+            Use ACQ_NO_FLAG to disable the filter.
+            Note: If ACQ_IS_PARALLEL_CALIBRATION is set without also setting ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING
+                    we interpret it as: Ignore if IS_PARALLEL_CALIBRATION and not PARALLEL_CALIBRATION_AND_IMAGING
         """
         # Can raise FileNotFoundError
         with ismrmrd.File(filename, 'r') as file:

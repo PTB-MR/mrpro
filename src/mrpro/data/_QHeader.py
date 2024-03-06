@@ -37,8 +37,8 @@ class QHeader:
 
         Parameters
         ----------
-        kheader
-            MR raw data header (KHeader) containing required meta data.
+        iheader
+            MR raw data header (IHeader) containing required meta data.
         """
         return cls(fov=iheader.fov)
 

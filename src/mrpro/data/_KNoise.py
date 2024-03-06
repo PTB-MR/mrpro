@@ -42,10 +42,10 @@ class KNoise:
 
         Parameters
         ----------
-            filename
-                Path to the ISMRMRD file
-            dataset_idx
-                Index of the dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
+        filename
+            Path to the ISMRMRD file
+        dataset_idx
+            Index of the dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
         """
         # Can raise FileNotFoundError
         with ismrmrd.File(filename, 'r') as file:

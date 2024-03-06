@@ -33,7 +33,7 @@ class ZeroPadOp(LinearOperator):
         ----------
         dim
             dimensions along which padding should be applied
-        orig_shape
+        original_shape
             shape of original data along dim, same length as dim
         padded_shape
             shape of padded data along dim, same length as dim

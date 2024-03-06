@@ -35,7 +35,7 @@ def smap(
         Should handle len(fun_dims) dimensions and not change the number of dimensions.
     tensor
         Tensor to apply the function to.
-    function_dimensions
+    passed_dimensions
         Dimensions NOT to be batched / dimensions that are passed to the function
         tuple of dimension indices (negative indices are supported) or an integer
         an integer n means the last n dimensions are passed to the function

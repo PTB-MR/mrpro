@@ -44,6 +44,8 @@ def adam(
         Sequence (for example list) of parameters to be optimized.
         Note that these parameters will not be changed. Instead, we create a copy and
         leave the initial values untouched.
+    max_iter
+        maximum number of iterations
     lr, optional
         learning rate, by default 1e-3
     betas, optional
