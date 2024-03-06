@@ -16,7 +16,6 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from scipy import ndimage
 
 from mrpro.operators._SuperResOp import Slice_profile
 from mrpro.operators._SuperResOp import SuperResOp
@@ -53,18 +52,39 @@ def show_3D(vol: torch.Tensor, axs_proj: int, title: str = '', idx_slice: int | 
     plt.title(title + '_proj' + str(axs_proj))
 
 
-path_XCAT = '/../../echo/allgemein/projects/hufnag01/forMrPro/xcatRef.npy'
-vol_HR = torch.Tensor(np.load(path_XCAT)[16:112, :, :96])
+path_XCAT = '/../../echo/allgemein/projects/hufnag01/forMrPro/forEcho.npy'
+vol_HR = torch.Tensor(np.load(path_XCAT))
+vol_HR_zeros = torch.zeros([256, 256, 256])
+size = 128
+
+vol_HR_zeros[
+    128 - size // 2 : 128 + size // 2,
+    128 - size // 2 : 128 + size // 2,
+    128 - size // 2 : 128 + size // 2,
+] = vol_HR
+vol_HR = torch.clone(vol_HR_zeros)
+
+pos_center = torch.IntTensor([128, 128, 128])
+
+vol_HR = vol_HR[
+    pos_center[0] - size // 2 : pos_center[0] + size // 2,
+    pos_center[1] - size // 2 : pos_center[1] + size // 2,
+    pos_center[2] - size // 2 : pos_center[2] + size // 2,
+]
+
 shape_HR = vol_HR.shape
 
-vol_HR = torch.swapaxes(vol_HR, 1, 2)
-vol_HR = torch.flip(vol_HR, dims=[0, 2])
-vol_HR = torch.Tensor(ndimage.rotate(vol_HR, angle=20, axes=(1, 2), reshape=False))
+vol_HR = torch.swapaxes(vol_HR, 0, 2)
+vol_HR = torch.swapaxes(vol_HR, 2, 1)
+
+vol_HR = torch.flip(vol_HR, dims=[0])
+vol_HR = torch.flip(vol_HR, dims=[2])
 
 flag_showOrig = True
 if flag_showOrig:
     for idx_proj in range(3):
         show_3D(vol_HR, axs_proj=idx_proj, title='vol_HR_orig')
+
 
 vol_HR = vol_HR.unsqueeze(0).unsqueeze(0).expand(-1, 2, -1, -1, -1)
 
@@ -112,14 +132,16 @@ srr_op = SuperResOp(
 )
 
 slices_LR = srr_op.forward(vol_HR)
-vol_HR_adjoint = srr_op.adjoint(slices_LR)
 
-flag_showLRstacks = False
+
+flag_showLRstacks = True
 if flag_showLRstacks:
     for idx_stack in range(num_stacks):
-        for idx_slice in range(1, 3):
+        for idx_slice in range(1, 4):
             show_2D(slices_LR[idx_stack][idx_slice][0, 0, 0, ...], 'stack' + str(idx_stack) + '_slice' + str(idx_slice))
 
+
+vol_HR_adjoint = srr_op.adjoint(slices_LR)[0]
 
 for idx_proj in range(3):
     show_3D(vol_HR_adjoint[0, 0], axs_proj=idx_proj, title='vol_HR_adjoint_0')
