@@ -13,217 +13,34 @@
 #   limitations under the License.
 from __future__ import annotations
 
-import math
 import os
-import pickle
 from collections.abc import Callable
-from typing import Any
-from typing import Union
 
 import ismrmrd
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
-from matplotlib.colors import Colormap
+from utils import ScanInfo
+from utils import angleBetweenVec
+from utils import check_if_path_exists
+from utils import dist_3D
+from utils import load_object
+from utils import normed_vec
+from utils import save_object
+from utils import show_2D
+from utils import show_3D
+from utils import toTensor
 
 from mrpro.data import CsmData
 from mrpro.data import DcfData
 from mrpro.data import IData
 from mrpro.data import KData
-from mrpro.data import SpatialDimension
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.data.traj_calculators import KTrajectoryRadial2D
 from mrpro.operators import FourierOp
 from mrpro.operators import SensitivityOp
 from mrpro.operators._SuperResOp import Slice_profile
 from mrpro.operators._SuperResOp import SuperResOp
-
-
-class ScanInfo:
-    def __init__(self, path_scanInfo: str, num_slices=Union[int, None], num_stacks=Union[int, None]):
-
-        fid = open(path_scanInfo)
-
-        self.pathes_h5 = []
-        self.pathes_ecg = []
-        self.ecgReferencePath = ''
-        self.num_slices = num_slices
-        self.sliceThickness = 8
-        self.flag_invertEcg = False
-        self.flipAngle = 9
-        self.res_inPlane = 1.3
-        self.num_stacks = num_stacks
-        self.flag_1SlicePerStack = False
-
-        flag_lineIsFolderPath = False
-        flag_lineIsSliceThickness = False
-        flag_lineIsNumSlices = False
-        flag_lineIsNumStacks = False
-        flag_lineIsDatasetPath = False
-        flag_lineIsEcgPath = False
-        flag_lineIsInvertEcg = False
-        flag_lineIs1SlicePerStack = False
-        flag_lineIsFlipAngle = False
-        flag_lineIsResInPlane = False
-
-        while True:
-            cline = fid.readline()
-            if not cline:
-                break
-            if '#' in cline:
-                continue
-            if flag_lineIsFolderPath:
-                self.folderPath = cline.split('\n')[0]
-                flag_lineIsFolderPath = False
-            elif flag_lineIsSliceThickness:
-                self.sliceThickness = int(cline.split('\n')[0])
-                flag_lineIsSliceThickness = False
-            elif flag_lineIsResInPlane:
-                self.res_inPlane = int(cline.split('\n')[0]) / 10.0
-                flag_lineIsResInPlane = False
-            elif flag_lineIsInvertEcg:
-                bool_str = cline.split('\n')[0]
-                self.flag_invertEcg = True if bool_str == 'True' else False
-                flag_lineIsInvertEcg = False
-            elif flag_lineIs1SlicePerStack:
-                bool_str = cline.split('\n')[0]
-                self.flag_1SlicePerStack = True if bool_str == 'True' else False
-                flag_lineIs1SlicePerStack = False
-            elif flag_lineIsFlipAngle:
-                self.flipAngle = int(cline.split('\n')[0])
-                flag_lineIsFlipAngle = False
-            elif flag_lineIsNumSlices:
-                self.num_slices = int(cline)
-                flag_lineIsNumSlices = False
-            elif flag_lineIsNumStacks:
-                self.num_stacks = int(cline)
-                flag_lineIsNumStacks = False
-            elif flag_lineIsDatasetPath:
-                withoutLineBreak = cline.split('\n')[0]
-                if withoutLineBreak == '':
-                    flag_lineIsDatasetPath = False
-                    continue
-                if '#' not in withoutLineBreak:
-                    self.pathes_h5.append(withoutLineBreak.split(': ')[1])
-            elif flag_lineIsEcgPath:
-                withoutLineBreak = cline.split('\n')[0]
-                if withoutLineBreak == '':
-                    flag_lineIsEcgPath = False
-                    continue
-                if '#' not in withoutLineBreak:
-                    self.pathes_ecg.append(withoutLineBreak.split(': ')[1])
-            elif 'folderpath' in cline or 'folderPath' in cline:
-                flag_lineIsFolderPath = True
-            elif 'sliceThickness' in cline:
-                flag_lineIsSliceThickness = True
-            elif 'res_inPlane' in cline:
-                flag_lineIsResInPlane = True
-            elif 'datasetPathes' in cline:
-                flag_lineIsDatasetPath = True
-            elif 'ecgFilePathes' in cline:
-                flag_lineIsEcgPath = True
-            elif 'numberOfSlices' in cline or 'num_slices' in cline:
-                flag_lineIsNumSlices = True
-            elif 'num_stacks' in cline:
-                flag_lineIsNumStacks = True
-            elif 'flag_invertEcg' in cline:
-                flag_lineIsInvertEcg = True
-            elif 'flag_oneSlicePerStack' in cline:
-                flag_lineIs1SlicePerStack = True
-            elif 'flipAngle' in cline:
-                flag_lineIsFlipAngle = True
-
-
-def dist_3D(pointOne: torch.Tensor, pointTwo: torch.Tensor) -> float:
-    return math.sqrt(
-        (pointOne[0] - pointTwo[0]) ** 2 + (pointOne[1] - pointTwo[1]) ** 2 + (pointOne[2] - pointTwo[2]) ** 2
-    )
-
-
-def toTensor(spaDim: SpatialDimension[torch.Tensor]) -> torch.Tensor:
-    return torch.Tensor([spaDim.x[0, 0, 0, 0], spaDim.y[0, 0, 0, 0], spaDim.z[0, 0, 0, 0]])
-
-
-def angleBetweenVec(
-    vectorA: None | torch.Tensor, vectorB: None | torch.Tensor, normal: None | torch.Tensor = None
-) -> float:
-
-    assert type(vectorA) is torch.Tensor and type(vectorB) is torch.Tensor
-
-    vectorA_norm = vectorA / vectorLength(vectorA)
-    vectorB_norm = vectorB / vectorLength(vectorB)
-
-    if torch.equal(vectorA, vectorB):
-        return 0.0
-    dotProduct = torch.dot(vectorA_norm, vectorB_norm)
-    if dotProduct < -1.0:
-        return math.degrees(math.acos(-1.0))
-    if dotProduct > 1.0:
-        return math.degrees(math.acos(1.0))
-
-    angle_rad = math.acos(torch.dot(vectorA_norm, vectorB_norm))
-    angle_deg = math.degrees(angle_rad)
-
-    if normal is not None:
-        if torch.dot(normal, torch.cross(vectorA_norm, vectorB_norm)) < 0:
-            angle_deg *= -1.0
-    return angle_deg
-
-
-def vectorLength(vector: torch.Tensor) -> float:
-    return math.sqrt(sum(i * i for i in vector))
-
-
-def show_3D(
-    vol: torch.Tensor,
-    axs_proj: int,
-    title: str = 'img',
-    idx_slice: None | int = None,
-    cmap: None | Colormap = None,
-    vmin: None | float = None,
-    vmax: None | float = None,
-) -> None:
-
-    flag_isT1map = True
-    if flag_isT1map:
-        cmap = plt.get_cmap('jet')
-        vmin = 0
-        vmax = 2.5
-    else:
-        cmap = plt.get_cmap('gray')
-        vmin = vmin
-        vmax = vmax
-    shape_vol = vol.shape
-    if axs_proj == 0:
-        idx_slice = shape_vol[0] // 2 if idx_slice is None else idx_slice
-        img = vol[idx_slice]
-    elif axs_proj == 1:
-        idx_slice = shape_vol[1] // 2 if idx_slice is None else idx_slice
-
-        img = vol[:, idx_slice]
-    elif axs_proj == 2:
-        idx_slice = shape_vol[2] // 2 if idx_slice is None else idx_slice
-        img = vol[:, :, idx_slice]
-    else:
-        raise Exception()
-
-    plt.matshow(img, cmap=cmap, vmin=vmin, vmax=vmax)
-    plt.title(title + '_proj' + str(axs_proj))
-
-
-def show_2D(img: torch.Tensor, title: str = 'img', vmin: None | float = None, vmax: None | float = None) -> None:
-    flag_isT1map = True
-    if flag_isT1map:
-        cmap = plt.get_cmap('jet')
-        vmin = 0
-        vmax = 2.5
-    else:
-        cmap = plt.get_cmap('gray')
-        vmin = vmin
-        vmax = vmax
-    plt.matshow(img, cmap=cmap, vmin=vmin, vmax=vmax)
-    plt.title(title)
-    plt.show()
 
 
 def showImgsOfStack(im: torch.Tensor, idx_stack: int) -> None:
@@ -234,33 +51,6 @@ def showImgsOfStack(im: torch.Tensor, idx_stack: int) -> None:
             torch.abs(im[idx_slice]),
             title='stack ' + str(idx_stack) + '_slice' + str(idx_slice),
         )
-
-
-def save_object(obj: Any, filename: str) -> None:
-    with open(filename, 'wb') as output:
-        type_protocol = 4
-        pickle.dump(obj, output, type_protocol)
-    print('object saved in ' + str(filename))
-
-
-def load_object(filename: str) -> Any:
-    filename = os.path.abspath(filename)
-    with open(filename, 'rb') as pickle_file:
-        storedConfig = pickle.load(pickle_file)
-    print('loaded object ' + str(filename))
-    return storedConfig
-
-
-def checkIfPathExists(path: str) -> None:
-    if not os.path.exists(path):
-        os.makedirs(os.path.abspath(path))
-        print('created path ' + str(path))
-
-
-def normedVec(vector: torch.Tensor) -> torch.Tensor:
-    if vectorLength(vector) == 0.0:
-        return vector
-    return vector / vectorLength(vector)
 
 
 def calcDistToStack0(list_sGeometry: list[SGeometry], rots: torch.Tensor) -> torch.Tensor:
@@ -281,7 +71,7 @@ def calcDistToStack0(list_sGeometry: list[SGeometry], rots: torch.Tensor) -> tor
                     list_sGeometry[idx_withSameRot[idx_inGroup]].pos_slices[num_slicesPerStack - 1]
                     - list_sGeometry[idx_withSameRot[idx_inGroup]].pos_slices[0]
                 )
-                sliceDirOfGroup[idx_inGroup] = normedVec(sliceDir)
+                sliceDirOfGroup[idx_inGroup] = normed_vec(sliceDir)
 
             for idx_inGroup in range(0, len(idx_withSameRot)):
                 pos_stack = torch.tensor(list_sGeometry[idx_withSameRot[idx_inGroup]].pos_slices[idx_sliceToCompare])
@@ -290,7 +80,7 @@ def calcDistToStack0(list_sGeometry: list[SGeometry], rots: torch.Tensor) -> tor
                     pos_stackGroup_0, list_sGeometry[idx_withSameRot[idx_inGroup]].pos_slices[idx_sliceToCompare]
                 )
 
-                if torch.dot(normedVec(stackDir), normedVec(sliceDirOfGroup[idx_inGroup])) < 0:
+                if torch.dot(normed_vec(stackDir), normed_vec(sliceDirOfGroup[idx_inGroup])) < 0:
                     dist_withinRotGroup[idx_inGroup] *= -1.0
 
             dist_withinRotGroup -= torch.mean(dist_withinRotGroup)
@@ -557,20 +347,16 @@ def calcDsize_HR(dsize_LR: torch.Size, voxelSize_HR: torch.Tensor, voxelSize_LR:
 
 
 # Read raw data and trajectory
-path_folder_inVivo = (
-    '/../../echo/allgemein/projects/hufnag01/forMara/MR_Data/inVivo/12-2022_16__01/12stacks_5slices_4mm_gap14_rot/'
-)
-path_folder_phantom = (
-    '/../../echo/allgemein/projects/hufnag01/forMara/MR_Data/Phantom/02-2023_28/12stacks_5slices_4mm_gap14_rotFill3/'
-)
-path_folder = path_folder_phantom
+path_folder_inVivo = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes_inVivo/'
+path_folder_phantom = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes_Phantom/'
+path_folder = path_folder_inVivo
 scanInfo = ScanInfo(path_folder + 'scanInfo')
 pathes_orig = scanInfo.pathes_h5
 num_stacks = 12  # len(scanInfo.pathes_h5)
 list_sGeometries = []
 list_imgs_stacks = []
 path_save = path_folder + 'results/'
-checkIfPathExists(path_save)
+check_if_path_exists(path_save)
 
 flag_useStored = True
 for idx_stack in range(num_stacks):  #
@@ -609,34 +395,26 @@ for idx_stack in range(num_stacks):  #
 imgs_stacks = torch.stack(list_imgs_stacks)
 
 voxelSize_HR = torch.Tensor([1.3, 1.3, 1.3])
-voxelSize_LR = torch.Tensor([1.3, 1.3, scanInfo.sliceThickness])
+voxelSize_LR = torch.Tensor([1.3, 1.3, scanInfo.thickness_slice])
 shape_HR = calcDsize_HR(dsize_LR=imgs_stacks.shape[2:4], voxelSize_HR=voxelSize_HR, voxelSize_LR=voxelSize_LR)
-slice_profile = Slice_profile(thickness_slice=scanInfo.sliceThickness)
+slice_profile = Slice_profile(thickness_slice=scanInfo.thickness_slice)
 
-# rot / dist sign: ++ falsch, -+ falsch, +- (evtl), -- (evtl)
 resortSlices(imgs=imgs_stacks, list_sGeometries=list_sGeometries)
-# rot muss positiv sein!!!
 rots = calc_rotToStack0(list_sGeometries=list_sGeometries, img_stacks=imgs_stacks)
 distTo0_mm = calcDistToStack0(rots=rots[:, 0], list_sGeometry=list_sGeometries)
-gap_slices_mm = calcGapBetweenLR(list_sGeometries=list_sGeometries, thickness_slice=scanInfo.sliceThickness)
+gap_slices_mm = calcGapBetweenLR(list_sGeometries=list_sGeometries, thickness_slice=scanInfo.thickness_slice)
 
 rots_before = torch.clone(rots)
 rots = torch.zeros_like(rots_before)
 rots[:, 0] = 90
 rots[:, 2] = rots_before[:, 0]
 
-print('gap (mm) = ' + str(gap_slices_mm))
-print('rots = ' + str(rots))
-print('distToStack0 (mm)= ' + str(torch.round(distTo0_mm, decimals=1)))
-print('sliceThickness (mm)= ' + str(scanInfo.sliceThickness))
-
-
 srr_op = SuperResOp(
     shape_HR=shape_HR,
     num_slices_per_stack=scanInfo.num_slices,
     gap_slices_inHR=gap_slices_mm / voxelSize_HR[2],
     num_stacks=len(list_sGeometries),
-    thickness_slice_inHR=scanInfo.sliceThickness / voxelSize_HR[2],
+    thickness_slice_inHR=scanInfo.thickness_slice / voxelSize_HR[2],
     offsets_stack_HR=distTo0_mm / voxelSize_HR[2],
     rot_per_stack=rots,
     w=3 * slice_profile.sigma,
