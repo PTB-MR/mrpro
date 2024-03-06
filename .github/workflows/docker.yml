@@ -47,8 +47,8 @@ jobs:
           echo ${{ steps.set-matrix.outputs.dockerfiles }}
           echo ${{ steps.set-matrix.outputs.imagenames }}
 
-  push:
-    name: "Create images and push to GCR"
+  push_test:
+    name: "Create test images and push to GCR"
     needs: get_dockerfiles
     if: ${{ needs.get_dockerfiles.outputs.docker_toml == 'true' }}
     runs-on: ubuntu-latest
@@ -80,11 +80,11 @@ jobs:
           context: ./docker
           file: ./docker/${{ matrix.dockerfile }}
           push: true
-          tags: ${{ steps.image_name.outputs.image_name }}
+          tags: ${{ steps.image_name.outputs.image_name }}:test
 
   test:
     name: "Test docker containers"
-    needs: [get_dockerfiles, push]
+    needs: [get_dockerfiles, push_test]
     if: ${{ needs.get_dockerfiles.outputs.docker_toml == 'true' }}
     runs-on: ubuntu-latest
     permissions:
@@ -95,7 +95,7 @@ jobs:
         imagename: ${{ fromJson(needs.get_dockerfiles.outputs.imagenames) }}
     # runs within Docker container
     container:
-      image: ${{ matrix.imagename }}:latest
+      image: ${{ matrix.imagename }}:test
       options: --user runner
 
     steps:
@@ -111,3 +111,49 @@ jobs:
       - name: Run PyTest
         run: |
           pytest -n 4 -m "not cuda"
+
+      - name: Delete test image
+        env:
+          GH_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: |
+          image_name=${{ matrix.imagename }}
+          $url=($image_name/ghcr.io/ptb-mr/https://api.github.com/orgs/PTB-MR/packages/container/)
+          echo "image_name=${dockerfile/Dockerfile_/ghcr.io/ptb-mr/mrpro_}" >> $GITHUB_OUTPUT
+          curl -L -X DELETE \
+          --url $url \
+          --header "Authorization: Bearer $GH_TOKEN"
+
+  push_latest:
+    name: "Create latest images and push to GCR"
+    needs: get_dockerfiles
+    if: ${{ needs.get_dockerfiles.outputs.docker_toml == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        dockerfile: ${{ fromJson(needs.get_dockerfiles.outputs.dockerfiles) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create image name
+        id: image_name
+        run: |
+          dockerfile=${{ matrix.dockerfile }}
+          echo "image_name=${dockerfile/Dockerfile_/ghcr.io/ptb-mr/mrpro_}" >> $GITHUB_OUTPUT
+
+      - name: Login to GitHub Packages
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ptb-mr
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker
+          file: ./docker/${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.image_name.outputs.image_name }}:latest
