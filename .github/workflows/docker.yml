@@ -9,6 +9,10 @@ jobs:
   get_dockerfiles:
     name: "Get list of dockerfiles for different containers"
     runs-on: ubuntu-latest
+    outputs:
+      docker_toml: ${{ steps.filter.outputs.docker_toml }}
+      dockerfiles: ${{ steps.set-matrix.outputs.dockerfiles }}
+      imagenames: ${{ steps.set-matrix.outputs.imagenames }}
     steps:
       - name: Checkout mrpro repo
         uses: actions/checkout@v4
@@ -24,17 +28,6 @@ jobs:
               - '/.github/docker.yml'
 
       - run: echo ${{ steps.filter.outputs.docker_toml }}
-
-      - name: Check if any files related to docker have changed
-        uses: tj-actions/verify-changed-files@v18
-        id: verify-changed-docker
-        with:
-          files: |
-            './docker/'
-            'pyproject.toml'
-            './.github/docker.yml'
-
-      - run: echo steps.verify-changed-docker.outputs.changed_files
 
       - id: set-matrix
         if: steps.filter.outputs.docker_toml == 'true'
@@ -53,9 +46,6 @@ jobs:
         run: |
           echo ${{ steps.set-matrix.outputs.dockerfiles }}
           echo ${{ steps.set-matrix.outputs.imagenames }}
-    outputs:
-      dockerfiles: ${{ steps.set-matrix.outputs.dockerfiles }}
-      imagenames: ${{ steps.set-matrix.outputs.imagenames }}
 
   push:
     name: "Create images and push to GCR"
