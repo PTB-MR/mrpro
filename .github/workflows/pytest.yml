@@ -6,40 +6,14 @@ on:
       - "**.md"
 
 jobs:
-  use_api1:
-    runs-on: ubuntu-latest
-    permissions:
-      packages: read
-    steps:
-      - env:
-          GH_TOKEN: ${{ secrets.GHCR_TOKEN }}
-        run: |
-          imagenames=$(curl -s --request GET \
-          --url "https://api.github.com/orgs/PTB-MR/packages?package_type=container" \
-          --header "Authorization: Bearer $GH_TOKEN"  | jq -r '.[].name' | jq -R -s -c 'split("\n")[:-1]' )
-          echo $imagenames
-
-  use_api2:
-    runs-on: ubuntu-latest
-    permissions:
-      packages: read
-    steps:
-      - env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          curl -v --request GET \
-          --url "https://api.github.com/orgs/PTB-MR/packages/container/mrpro_py311/versions" \
-          --header "Authorization: Bearer $GH_TOKEN"
-
-
-
-
   get_dockerfiles:
     name: "Get list of dockerfiles for different containers"
     runs-on: ubuntu-latest
     outputs:
       imagenames: ${{ steps.set-matrix.outputs.imagenames }}
     steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GHCR_TOKEN }}
       - name: Checkout mrpro repo
         uses: actions/checkout@v4
 
