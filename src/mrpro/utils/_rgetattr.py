@@ -13,8 +13,9 @@
 #   limitations under the License.
 
 import functools
+from typing import Any
 
 
-def rgetattr(obj, attr, *args):  # noqa: ANN001
+def rgetattr(obj: Any, attr: str, *args):  # noqa: ANN401
     """Recursive getattr for nested attributes."""
-    return functools.reduce(lambda obj, attr: getattr(obj, attr, *args), [obj] + attr.split('.'))  # noqa: RUF005
+    return functools.reduce(lambda obj, attr: getattr(obj, attr, *args), [obj, *attr.split('.')])
