@@ -47,9 +47,9 @@ def check_if_path_exists(path: str) -> None:
 
 
 def normed_vec(vector: torch.Tensor) -> torch.Tensor:
-    if vectorLength(vector) == 0.0:
+    if length_vector(vector) == 0.0:
         return vector
-    return vector / vectorLength(vector)
+    return vector / length_vector(vector)
 
 
 class ScanInfo:
@@ -146,43 +146,43 @@ class ScanInfo:
                 flag_line_is_flip_angle = True
 
 
-def dist_3D(pointOne: torch.Tensor, pointTwo: torch.Tensor) -> float:
+def dist_3D(point_one: torch.Tensor, point_two: torch.Tensor) -> float:
     return math.sqrt(
-        (pointOne[0] - pointTwo[0]) ** 2 + (pointOne[1] - pointTwo[1]) ** 2 + (pointOne[2] - pointTwo[2]) ** 2
+        (point_one[0] - point_two[0]) ** 2 + (point_one[1] - point_two[1]) ** 2 + (point_one[2] - point_two[2]) ** 2
     )
 
 
-def toTensor(spaDim: SpatialDimension[torch.Tensor]) -> torch.Tensor:
-    return torch.Tensor([spaDim.x[0, 0, 0, 0], spaDim.y[0, 0, 0, 0], spaDim.z[0, 0, 0, 0]])
+def spa_dim_to_tensor(spa_dim: SpatialDimension[torch.Tensor]) -> torch.Tensor:
+    return torch.Tensor([spa_dim.x[0, 0, 0, 0], spa_dim.y[0, 0, 0, 0], spa_dim.z[0, 0, 0, 0]])
 
 
-def angleBetweenVec(
-    vectorA: None | torch.Tensor, vectorB: None | torch.Tensor, normal: None | torch.Tensor = None
+def angle_between_vec(
+    vector_A: None | torch.Tensor, vector_B: None | torch.Tensor, normal: None | torch.Tensor = None
 ) -> float:
 
-    assert type(vectorA) is torch.Tensor and type(vectorB) is torch.Tensor
+    assert type(vector_A) is torch.Tensor and type(vector_B) is torch.Tensor
 
-    vectorA_norm = vectorA / vectorLength(vectorA)
-    vectorB_norm = vectorB / vectorLength(vectorB)
+    vector_A_norm = vector_A / length_vector(vector_A)
+    vector_B_norm = vector_B / length_vector(vector_B)
 
-    if torch.equal(vectorA, vectorB):
+    if torch.equal(vector_A, vector_B):
         return 0.0
-    dotProduct = torch.dot(vectorA_norm, vectorB_norm)
-    if dotProduct < -1.0:
+    dot_product = torch.dot(vector_A_norm, vector_B_norm)
+    if dot_product < -1.0:
         return math.degrees(math.acos(-1.0))
-    if dotProduct > 1.0:
+    if dot_product > 1.0:
         return math.degrees(math.acos(1.0))
 
-    angle_rad = math.acos(torch.dot(vectorA_norm, vectorB_norm))
+    angle_rad = math.acos(torch.dot(vector_A_norm, vector_B_norm))
     angle_deg = math.degrees(angle_rad)
 
     if normal is not None:
-        if torch.dot(normal, torch.cross(vectorA_norm, vectorB_norm)) < 0:
+        if torch.dot(normal, torch.cross(vector_A_norm, vector_B_norm)) < 0:
             angle_deg *= -1.0
     return angle_deg
 
 
-def vectorLength(vector: torch.Tensor) -> float:
+def length_vector(vector: torch.Tensor) -> float:
     return math.sqrt(sum(i * i for i in vector))
 
 
@@ -196,22 +196,14 @@ def show_3D(
     vmax: None | float = None,
 ) -> None:
 
-    flag_isT1map = False
-    if flag_isT1map:
-        cmap = plt.get_cmap('jet')
-        vmin = 0
-        vmax = 2.5
-    else:
+    if cmap is None:
         cmap = plt.get_cmap('gray')
-        vmin = vmin
-        vmax = vmax
     shape_vol = vol.shape
     if axs_proj == 0:
         idx_slice = shape_vol[0] // 2 if idx_slice is None else idx_slice
         img = vol[idx_slice]
     elif axs_proj == 1:
         idx_slice = shape_vol[1] // 2 if idx_slice is None else idx_slice
-
         img = vol[:, idx_slice]
     elif axs_proj == 2:
         idx_slice = shape_vol[2] // 2 if idx_slice is None else idx_slice
@@ -224,15 +216,7 @@ def show_3D(
 
 
 def show_2D(img: torch.Tensor, title: str = 'img', vmin: None | float = None, vmax: None | float = None) -> None:
-    flag_isT1map = False
-    if flag_isT1map:
-        cmap = plt.get_cmap('jet')
-        vmin = 0
-        vmax = 2.5
-    else:
-        cmap = plt.get_cmap('gray')
-        vmin = vmin
-        vmax = vmax
+    cmap = plt.get_cmap('gray')
     plt.matshow(img, cmap=cmap, vmin=vmin, vmax=vmax)
     plt.title(title)
     plt.show()
