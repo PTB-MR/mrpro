@@ -33,8 +33,8 @@ ln -s /usr/local/bin/pip3 /usr/local/bin/pip
 # pre-install cpu-version of torch to avoid installation of cuda-version via dependencies
 python -m pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 
-# install mrpro + dependencies
-python -m pip install .[notebook,test,docs]
+# install mrpro and dependencies
+python -m pip install --upgrade --upgrade-strategy -e .[notebook,test,docs]
 
 # clean up
 rm -r /opt/mrpro

@@ -33,8 +33,8 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
-      - name: Install dependencies
-        run: python -m pip install .[notebook]
+      - name: Install mrpro and dependencies
+        run: python -m pip install --upgrade --upgrade-strategy -e .[notebook]
 
       - name: Translate scripts to notebooks
         run: |
@@ -99,8 +99,8 @@ jobs:
         with:
           ref: ${{ needs.convert_scripts.outputs.commit_hash }}
 
-      - name: Install dependencies
-        run: python -m pip install .[notebook]
+      - name: Install mrpro and dependencies
+        run: python -m pip install --upgrade --upgrade-strategy -e .[notebook]
 
       - name: Notebook name
         run: echo ${{ matrix.notebook }}
@@ -141,8 +141,8 @@ jobs:
         with:
           ref: ${{ needs.convert_scripts.outputs.commit_hash }}
 
-      - name: Install dependencies
-        run: python -m pip install .[docs]
+      - name: Install mrpro and dependencies
+        run: python -m pip install --upgrade --upgrade-strategy -e .[docs]
 
       - name: Download notebook hmtl files
         id: download

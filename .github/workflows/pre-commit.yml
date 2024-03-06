@@ -5,6 +5,7 @@ on:
 
 jobs:
   pre-commit:
+    name: "Pre-commit"
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/ptb-mr/mrpro_py311:latest
