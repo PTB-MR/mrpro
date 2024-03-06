@@ -5,15 +5,29 @@ on:
     paths-ignore:
       - "**.md"
 
+jobs:
+  use_api1:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: |
+          imagenames=$(curl -s --request GET \
+          --url "https://api.github.com/orgs/PTB-MR/packages?package_type=container" \
+          --header "Authorization: Bearer $GH_TOKEN"  | jq -r '.[].name' | jq -R -s -c 'split("\n")[:-1]' )
+          echo $imagenames
+
+
   get_dockerfiles:
     name: "Get list of dockerfiles for different containers"
     runs-on: ubuntu-latest
+    permissions:
+      packages: read
     outputs:
       imagenames: ${{ steps.set-matrix.outputs.imagenames }}
     steps:
-      - name: Checkout mrpro repo
-        uses: actions/checkout@v4
-
       - id: set-matrix
         env:
           GH_TOKEN: ${{ secrets.GHCR_TOKEN }}
@@ -27,6 +41,7 @@ on:
       - name: Dockerfile overview
         run: |
           echo ${{ steps.set-matrix.outputs.imagenames }}
+
 
   test:
     name: "Run tests and get coverage report"
