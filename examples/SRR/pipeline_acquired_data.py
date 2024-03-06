@@ -37,7 +37,7 @@ from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.data.traj_calculators import KTrajectoryRadial2D
 from mrpro.operators import FourierOp
 from mrpro.operators import SensitivityOp
-from mrpro.operators._SuperResOp import Slice_profile
+from mrpro.operators._SuperResOp import Slice_prof
 from mrpro.operators._SuperResOp import SuperResOp
 
 
@@ -333,7 +333,7 @@ list_imgs_stacks = []
 path_save = path_folder + 'reconstructed_files/'
 check_if_path_exists(path_save)
 
-flag_use_stored = False
+flag_use_stored = True
 for idx_stack in range(num_stacks):
     if not flag_use_stored:
         sGeometry = SGeometry()
@@ -374,7 +374,7 @@ imgs_stacks = torch.stack(list_imgs_stacks)
 voxel_size_HR = torch.Tensor([1.3, 1.3, 1.3])
 voxel_size_LR = torch.Tensor([1.3, 1.3, scan_info.thickness_slice])
 shape_HR = calc_dsize_HR(dsize_LR=imgs_stacks.shape[2:4], voxel_size_HR=voxel_size_HR, voxel_size_LR=voxel_size_LR)
-slice_profile = Slice_profile(thickness_slice=scan_info.thickness_slice)
+slice_prof = Slice_prof(thickness_slice=scan_info.thickness_slice)
 
 resort_slices(imgs=imgs_stacks, list_sGeometries=list_sGeometries)
 rots = calc_rot_to_stack_0(list_sGeometries=list_sGeometries, img_stacks=imgs_stacks)
@@ -394,8 +394,8 @@ srr_op = SuperResOp(
     thickness_slice_inHR=scan_info.thickness_slice / voxel_size_HR[2],
     offsets_stack_HR=dist_To_0_mm / voxel_size_HR[2],
     rot_per_stack=rots,
-    w=3 * slice_profile.sigma,
-    slice_profile=slice_profile.rect,
+    w=3 * slice_prof.sigma,
+    slice_prof=slice_prof.rect,
 )
 
 
