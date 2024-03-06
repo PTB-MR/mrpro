@@ -19,8 +19,22 @@ jobs:
         with:
           filters: |
             docker_toml:
-              - 'docker/**'
+              - 'docker/*'
               - 'pyproject.toml'
+              - '/.github/docker.yml'
+
+      - run: echo ${{ steps.filter.outputs.docker_toml }}
+
+      - name: Check if any files related to docker have changed
+        uses: tj-actions/verify-changed-files@v18
+        id: verify-changed-docker
+        with:
+          files: |
+            'docker/'
+            'pyproject.toml'
+            '/.github/docker.yml'
+
+      - run: echo ${{ steps.verify-changed-docker.outputs.changed_files }}
 
       - id: set-matrix
         if: steps.filter.outputs.docker_toml == 'true'
