@@ -110,7 +110,14 @@ def test_constraints_operator_no_nans(bounds):
     assert not torch.isnan(xx).any()
 
 
-@pytest.mark.parametrize('bounds', [((None, None), (1.0, None), (None, 1.0))])
+@pytest.mark.parametrize(
+    'bounds',
+    [
+        ((None, None), (1.0, None), (None, 1.0)),  # matching number of bounds
+        ((None, None),),  # fewer bounds than parameters
+        ((None, None), (None, None), (None, None), (None, None)),  # more bounds
+    ],
+)
 def test_constraints_operator_multiple_inputs(bounds):
     random_generator = RandomGenerator(seed=0)
 

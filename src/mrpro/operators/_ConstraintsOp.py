@@ -142,6 +142,7 @@ class ConstraintsOp(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]
             elif (lb is None or torch.isneginf(torch.tensor(lb))) and (ub is None or torch.isposinf(torch.tensor(ub))):
                 # case (None,None); corresponds to (-\infty, \infty), i.e. no transformation
                 x.append(item)
-            # if there are more inputs than bounds, pass on the remaining inputs without transformation
-            x.extend(x_constrained[len(x) :])
+
+        # if there are more inputs than bounds, pass on the remaining inputs without transformation
+        x.extend(x_constrained[len(x) :])
         return tuple(x)
