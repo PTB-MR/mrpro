@@ -194,10 +194,18 @@ def show_3D(
     cmap: None | Colormap = None,
     vmin: None | float = None,
     vmax: None | float = None,
+    flag_T1map: bool = False,
 ) -> None:
 
-    if cmap is None:
+    if flag_T1map:
+        cmap = plt.get_cmap('jet')
+        vmin = 0
+        vmax = 2.5
+    else:
+        vmin = 0
+        vmax = 0.00017
         cmap = plt.get_cmap('gray')
+
     shape_vol = vol.shape
     if axs_proj == 0:
         idx_slice = shape_vol[0] // 2 if idx_slice is None else idx_slice
@@ -212,11 +220,25 @@ def show_3D(
         raise Exception()
 
     plt.matshow(img, cmap=cmap, vmin=vmin, vmax=vmax)
+    plt.colorbar()
     plt.title(title + '_proj' + str(axs_proj))
+    plt.show()
 
 
-def show_2D(img: torch.Tensor, title: str = 'img', vmin: None | float = None, vmax: None | float = None) -> None:
+def show_2D(
+    img: torch.Tensor,
+    title: str = 'img',
+    vmin: None | float = None,
+    vmax: None | float = None,
+    flag_T1map: bool = False,
+) -> None:
     cmap = plt.get_cmap('gray')
+
+    if flag_T1map:
+        cmap = plt.get_cmap('jet')
+        vmin = 0
+        vmax = 2.5
+
     plt.matshow(img, cmap=cmap, vmin=vmin, vmax=vmax)
     plt.title(title)
     plt.show()
