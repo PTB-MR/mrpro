@@ -34,3 +34,14 @@ def rel_image_diff(im1, im2):
     if imean == 0:
         raise ValueError('average of images should be larger than 0')
     return idiff / imean
+
+
+def dotproduct_adjointness_test(operator, u, v):
+    """Test if <Operator(u),v> == <u, Operator^H(v)> for u ∈ domain and v ∈
+    range of Operator."""
+    (forward_u,) = operator(u)
+    (adjoint_v,) = operator.adjoint(v)
+    dotproduct_range = torch.vdot(forward_u.flatten(), v.flatten())
+    dotproduct_domain = torch.vdot(u.flatten().flatten(), adjoint_v.flatten())
+    # tolerances relaxed to torch.float16 defaults.
+    torch.testing.assert_close(dotproduct_range, dotproduct_domain, rtol=1e-3, atol=1e-5)
