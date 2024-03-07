@@ -85,38 +85,36 @@ class ConstraintsOp(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]
         -------
             tensors transformed to the range defined by the chosen bounds
         """
-        # iterate over the tensors and constrain them if necessary according to the
-        # chosen bounds
-        xc = []
-        for i in range(len(self.lower_bounds)):
-            lb, ub = self.lower_bounds[i], self.upper_bounds[i]
-
+        x_constrained = []
+        for item, lb, ub in zip(x, self.lower_bounds, self.upper_bounds, strict=False):
             # distinguish cases
             if (lb is not None and not torch.isneginf(torch.tensor(lb))) and (
                 ub is not None and not torch.isposinf(torch.tensor(ub))
             ):
                 # case (a,b) with a<b and a,b \in R
-                xc.append(lb + (ub - lb) * self.sigmoid(x[i], beta=self.beta_sigmoid))
+                x_constrained.append(lb + (ub - lb) * self.sigmoid(item, beta=self.beta_sigmoid))
 
             elif lb is not None and (ub is None or torch.isposinf(torch.tensor(ub))):
                 # case (a,None); corresponds to (a, \infty)
-                xc.append(lb + self.softplus(x[i], beta=self.beta_softplus))
+                x_constrained.append(lb + self.softplus(item, beta=self.beta_softplus))
 
             elif (lb is None or torch.isneginf(torch.tensor(lb))) and ub is not None:
                 # case (None,b); corresponds to (-\infty, b)
-                xc.append(ub - self.softplus(-x[i], beta=self.beta_softplus))
+                x_constrained.append(ub - self.softplus(-item, beta=self.beta_softplus))
             elif (lb is None or torch.isneginf(torch.tensor(lb))) and (ub is None or torch.isposinf(torch.tensor(ub))):
                 # case (None,None); corresponds to (-\infty, \infty), i.e. no transformation
-                xc.append(x[i])
+                x_constrained.append(item)
 
-        return tuple(xc)
+        # if there are more inputs than bounds, pass on the remaining inputs without transformation
+        x_constrained.extend(x[len(x_constrained) :])
+        return tuple(x_constrained)
 
-    def inverse(self, *xc: torch.Tensor) -> tuple[torch.Tensor, ...]:
+    def inverse(self, *x_constrained: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Reverses the variable transformation.
 
         Parameters
         ----------
-        xc
+        x_constrained
             transformed tensors with values in the range defined by the bounds
 
         Returns
@@ -126,25 +124,24 @@ class ConstraintsOp(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]
         # iterate over the tensors and constrain them if necessary according to the
         # chosen bounds
         x = []
-        for i in range(len(self.lower_bounds)):
-            lb, ub = self.lower_bounds[i], self.upper_bounds[i]
-
+        for item, lb, ub in zip(x_constrained, self.lower_bounds, self.upper_bounds, strict=False):
             # distinguish cases
             if (lb is not None and not torch.isneginf(torch.tensor(lb))) and (
                 ub is not None and not torch.isposinf(torch.tensor(ub))
             ):
                 # case (a,b) with a<b and a,b \in R
-                x.append(self.sigmoid_inverse((xc[i] - lb) / (ub - lb), beta=self.beta_sigmoid))
+                x.append(self.sigmoid_inverse((item - lb) / (ub - lb), beta=self.beta_sigmoid))
 
             elif lb is not None and (ub is None or torch.isposinf(torch.tensor(ub))):
                 # case (a,None); corresponds to (a, \infty)
-                x.append(self.softplus_inverse(xc[i] - lb, beta=self.beta_softplus))
+                x.append(self.softplus_inverse(item - lb, beta=self.beta_softplus))
 
             elif (lb is None or torch.isneginf(torch.tensor(lb))) and ub is not None:
                 # case (None,b); corresponds to (-\infty, b)
-                x.append(-self.softplus_inverse(-(xc[i] - ub), beta=self.beta_softplus))
+                x.append(-self.softplus_inverse(-(item - ub), beta=self.beta_softplus))
             elif (lb is None or torch.isneginf(torch.tensor(lb))) and (ub is None or torch.isposinf(torch.tensor(ub))):
                 # case (None,None); corresponds to (-\infty, \infty), i.e. no transformation
-                x.append(xc[i])
-
+                x.append(item)
+            # if there are more inputs than bounds, pass on the remaining inputs without transformation
+            x.extend(x_constrained[len(x) :])
         return tuple(x)
