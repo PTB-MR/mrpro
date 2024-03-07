@@ -315,7 +315,7 @@ class SuperResOp(LinearOperator):
         vol_HR = torch.zeros((other, coils, z, y, x))
         vol_HR_flat = einops.rearrange(vol_HR, 'other coils z y x -> (other coils) (x y z)')
 
-        flag_normalize = False
+        flag_normalize = True
         if flag_normalize:
             weightSum_HR = torch.zeros(vol_HR_flat.shape[1])
 
