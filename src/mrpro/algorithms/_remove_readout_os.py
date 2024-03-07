@@ -34,7 +34,7 @@ def remove_readout_os(kdata: KData) -> KData:
 
     Returns
     -------
-        (A new copy of) K-space data with oversampling removed.
+        Copy of K-space data with oversampling removed.
 
     Raises
     ------
