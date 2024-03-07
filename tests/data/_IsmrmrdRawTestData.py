@@ -132,7 +132,7 @@ class IsmrmrdRawTestData:
         ktrue = [repeat(k, '... -> coils ... ', coils=self.ncoils) for k in ktrue]
 
         # Open the dataset
-        dset = ismrmrd.Dataset(self.filename, 'dataset', create_if_needed=True)
+        dataset = ismrmrd.Dataset(self.filename, 'dataset', create_if_needed=True)
 
         # Create the XML header and write it to the file
         header = ismrmrd.xsd.ismrmrdHeader()
@@ -164,34 +164,34 @@ class IsmrmrdRawTestData:
             encoding.trajectory = ismrmrd.xsd.trajectoryType('other')
 
         # Encoded and recon spaces
-        efov = ismrmrd.xsd.fieldOfViewMm()
-        efov.x = self.oversampling * 256
-        efov.y = 256
-        efov.z = 5
-        rfov = ismrmrd.xsd.fieldOfViewMm()
-        rfov.x = 256
-        rfov.y = 256
-        rfov.z = 5
+        encoding_fov = ismrmrd.xsd.fieldOfViewMm()
+        encoding_fov.x = self.oversampling * 256
+        encoding_fov.y = 256
+        encoding_fov.z = 5
+        recon_fov = ismrmrd.xsd.fieldOfViewMm()
+        recon_fov.x = 256
+        recon_fov.y = 256
+        recon_fov.z = 5
 
-        ematrix = ismrmrd.xsd.matrixSizeType()
-        ematrix.x = nfe
-        ematrix.y = npe
-        ematrix.z = 1
-        rmatrix = ismrmrd.xsd.matrixSizeType()
-        rmatrix.x = nx
-        rmatrix.y = ny
-        rmatrix.z = 1
+        encoding_matrix = ismrmrd.xsd.matrixSizeType()
+        encoding_matrix.x = nfe
+        encoding_matrix.y = npe
+        encoding_matrix.z = 1
+        recon_matrix = ismrmrd.xsd.matrixSizeType()
+        recon_matrix.x = nx
+        recon_matrix.y = ny
+        recon_matrix.z = 1
 
-        espace = ismrmrd.xsd.encodingSpaceType()
-        espace.matrixSize = ematrix
-        espace.fieldOfView_mm = efov
-        rspace = ismrmrd.xsd.encodingSpaceType()
-        rspace.matrixSize = rmatrix
-        rspace.fieldOfView_mm = rfov
+        encoding_space = ismrmrd.xsd.encodingSpaceType()
+        encoding_space.matrixSize = encoding_matrix
+        encoding_space.fieldOfView_mm = encoding_fov
+        recon_space = ismrmrd.xsd.encodingSpaceType()
+        recon_space.matrixSize = recon_matrix
+        recon_space.fieldOfView_mm = recon_fov
 
         # Set encoded and recon spaces
-        encoding.encodedSpace = espace
-        encoding.reconSpace = rspace
+        encoding.encodedSpace = encoding_space
+        encoding.reconSpace = recon_space
 
         # Encoding limits
         limits = ismrmrd.xsd.encodingLimitsType()
@@ -211,7 +211,7 @@ class IsmrmrdRawTestData:
         encoding.encodingLimits = limits
         header.encoding.append(encoding)
 
-        dset.write_xml_header(header.toXML('utf-8'))
+        dataset.write_xml_header(header.toXML('utf-8'))
 
         # Create an acquistion and reuse it
         acq = ismrmrd.Acquisition()
@@ -234,7 +234,7 @@ class IsmrmrdRawTestData:
             acq.clearAllFlags()
             acq.setFlag(ismrmrd.ACQ_IS_NOISE_MEASUREMENT)
             acq.data[:] = noise.numpy()
-            dset.append_acquisition(acq)
+            dataset.append_acquisition(acq)
             counter += 1  # increment the scan counter
 
         # Loop over the repetitions, add noise and write to disk
@@ -268,11 +268,11 @@ class IsmrmrdRawTestData:
 
                     # Set the data and append
                     acq.data[:] = K[:, :, pe_idx].numpy()
-                    dset.append_acquisition(acq)
+                    dataset.append_acquisition(acq)
                     counter += 1
 
         # Clean up
-        dset.close()
+        dataset.close()
 
     @staticmethod
     def _cartesian_trajectory(

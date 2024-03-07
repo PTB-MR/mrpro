@@ -91,7 +91,7 @@ class ConstraintsOp(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]
         for i in range(len(self.lower_bounds)):
             lb, ub = self.lower_bounds[i], self.upper_bounds[i]
 
-            # distiguish cases
+            # distinguish cases
             if (lb is not None and not torch.isneginf(torch.tensor(lb))) and (
                 ub is not None and not torch.isposinf(torch.tensor(ub))
             ):
@@ -129,7 +129,7 @@ class ConstraintsOp(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]
         for i in range(len(self.lower_bounds)):
             lb, ub = self.lower_bounds[i], self.upper_bounds[i]
 
-            # distiguish cases
+            # distinguish cases
             if (lb is not None and not torch.isneginf(torch.tensor(lb))) and (
                 ub is not None and not torch.isposinf(torch.tensor(ub))
             ):

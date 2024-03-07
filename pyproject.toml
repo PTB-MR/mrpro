@@ -139,9 +139,11 @@ convention = "numpy"
 quote-style = "single"
 skip-magic-trailing-comma = false
 
-[tool.codespell]
-builtin = "en-GB_to_en-US"
-ignore-words-list = "te,TE"
+[tool.typos.default]
+locale = "en-us"
+
+[tool.typos.default.extend-words]
+Reson = "Reson" # required for Proc. Intl. Soc. Mag. Reson. Med.
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]

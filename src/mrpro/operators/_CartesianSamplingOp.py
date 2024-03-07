@@ -41,7 +41,7 @@ class CartesianSamplingOp(LinearOperator):
         super().__init__()
         encoding_shape = SpatialDimension.from_xyz(encoding_shape)
 
-        # Cache as these migh take some time to compute
+        # Cache as these might take some time to compute
         traj_type_kzyx = traj.type_along_kzyx
         ktraj_tensor = traj.as_tensor()
 
@@ -87,7 +87,7 @@ class CartesianSamplingOp(LinearOperator):
             k-space data in original (i.e. acquired) dimensions
         """
         if self._encoding_shape != SpatialDimension(*x.shape[-3:]):
-            raise ValueError('k-space data shape missmatch')
+            raise ValueError('k-space data shape mismatch')
 
         if not self._needs_indexing:
             return (x,)
@@ -113,7 +113,7 @@ class CartesianSamplingOp(LinearOperator):
             k-space data sorted into encoding_space matrix
         """
         if self._kshape[-3:] != y.shape[-3:]:
-            raise ValueError('k-space data shape missmatch')
+            raise ValueError('k-space data shape mismatch')
 
         if not self._needs_indexing:
             return (y,)

@@ -14,7 +14,7 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.0
+    rev: v0.3.1
     hooks:
       - id: ruff # linter
         args: [--fix]
@@ -27,12 +27,10 @@ repos:
         args:
           - "--in-place"
 
-  - repo: "https://github.com/codespell-project/codespell"
-    rev: v2.2.6
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.19.0
     hooks:
-      - id: codespell
-        additional_dependencies:
-          - tomli
+      - id: typos
 
   - repo: "https://github.com/pre-commit/mirrors-mypy"
     rev: v1.8.0

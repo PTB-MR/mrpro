@@ -48,7 +48,7 @@ class MseDataDiscrepancy(Operator[*tuple[torch.Tensor], tuple[torch.Tensor]]):
         Parameters
         ----------
         x
-            tensor whose MSE with respect to the data given at initilization should be calculated
+            tensor whose MSE with respect to the data given at initialization should be calculated
 
         Returns
         -------

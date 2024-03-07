@@ -36,7 +36,7 @@ script such as e.g.:
 
     import ismrmrd
 
-    # Get info and acquisitons from original data
+    # Get info and acquisitions from original data
     with ismrmrd.File(fname_wrong_header, 'r') as file:
         ds = file[list(file.keys())[0]]
         mrd_header = ds.header

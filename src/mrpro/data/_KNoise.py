@@ -55,7 +55,7 @@ class KNoise:
         # Read out noise measurements
         acquisitions = list(filter(lambda acq: (AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value & acq.flags), acquisitions))
         if len(acquisitions) == 0:
-            raise ValueError(f'No noise measurments found in {filename}')
+            raise ValueError(f'No noise measurements found in {filename}')
         noise_data = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 
         # Reshape to standard dimensions

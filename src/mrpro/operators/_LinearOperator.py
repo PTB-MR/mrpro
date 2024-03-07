@@ -26,7 +26,7 @@ from mrpro.operators._Operator import Tin2
 
 
 # LinearOperators have exactly one input and one output,
-# and are fullfill f(a*x + b*y) = a*f(x) + b*f(y)
+# and are fulfill f(a*x + b*y) = a*f(x) + b*f(y)
 # with a,b scalars and x,y tensors.
 class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor,]]):
     """General Linear Operator."""

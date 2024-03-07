@@ -137,7 +137,7 @@ def test_dcf_3d_cart_nonuniform_traj_voronoi(nk2, nk1, nk0, k2_steps, k1_steps, 
     trajectory to analytical solution which is 1 for each k-space point."""
 
     def k_range(N: int, *steps: float):
-        """Create a tensor with N values, steps appart."""
+        """Create a tensor with N values, steps apart."""
         r = torch.tensor(steps).repeat(math.ceil(N / len(steps))).ravel()[:N]
         r = torch.cumsum(r, 0)
         r -= r.mean()

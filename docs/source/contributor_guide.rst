@@ -50,7 +50,7 @@ src/mrpro structure
 **data**
     All the data classes such as ``KData``, ``ImageData`` or ``CsmData``.
     As the name suggestions these should mainly contain data and meta information.
-    Any functionaly beyond what is absolutely required for the classes should be put as separate functions.
+    Any functionality beyond what is absolutely required for the classes should be put as separate functions.
 
 **operators**
     Linear and non-linear algorithms describing e.g. the transformation from image to k-space (``FourierOp``), the
