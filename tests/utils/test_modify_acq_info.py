@@ -22,12 +22,12 @@ from tests.data.test_kdata import random_kheader_shape
 def test_modify_acq_info(random_kheader_shape):
     """Test the modification of the acquisition info."""
     # Create random header where AcqInfo fields are of shape [nk1*nk2] and reshape to [other, nk2, nk1]
-    kheader, nother, _, nk2, nk1, _ = random_kheader_shape
+    kheader, num_other, _, num_k2, num_k1, _ = random_kheader_shape
 
     def reshape_acq_data(data):
-        return rearrange(data, '(other k2 k1) ... -> other k2 k1 ...', other=nother, k2=nk2, k1=nk1)
+        return rearrange(data, '(other k2 k1) ... -> other k2 k1 ...', other=num_other, k2=num_k2, k1=num_k1)
 
     kheader.acq_info = modify_acq_info(reshape_acq_data, kheader.acq_info)
 
-    # Verfiy shape
-    assert kheader.acq_info.center_sample.shape == (nother, nk2, nk1)
+    # Verify shape
+    assert kheader.acq_info.center_sample.shape == (num_other, num_k2, num_k1, 1)
