@@ -13,75 +13,142 @@
 #   limitations under the License.
 
 import pytest
+import scipy
 import torch
+from scipy.sparse.linalg import cg as cg_scp
 
-from mrpro.algorithms import cg
-from mrpro.operators import LinearOperator
+from mrpro.algorithms import conjugate_gradient
+from mrpro.operators import MatrixOp
 from tests import RandomGenerator
 
 
-def create_self_adjoint_op(N, complex_valued_flag):
-    """Create self-adjoint operator H and wrap as LinearOperator."""
+@pytest.fixture(
+    params=[
+        (1, 32, True),  # (batch-size, vector-size, flag for complex-valued system or not)
+        (1, 32, False),
+        (4, 32, True),
+        (4, 32, False),
+    ]
+)
+def system(request):
+    """Generate data for creating a system Hx=b with linear and self-adjoint
+    H."""
     random_generator = RandomGenerator(seed=0)
-    N = 32
 
-    # generate random matrices (avoid zeros by using ab offset of 1.)
-    if complex_valued_flag:
-        A = 1 + random_generator.complex64_tensor(size=(N, N))
-        H = A.conj().T @ A
-    else:
-        A = 1 + random_generator.float32_tensor(size=(N, N))
-        H = A.T @ A
+    # get parameters for the test
+    batchsize, vectorsize, complex_valued = request.param
 
-    class MatMult(LinearOperator):
-        """Simple Linear Operator that implements matrix multiplication."""
-
-        def __init__(self, Mat: torch.Tensor) -> None:
-            super().__init__()
-            self.Mat = Mat
-
-        def forward(self, x) -> tuple[torch.Tensor]:
-            return (self.Mat @ x,)
-
-        def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-            return (self.Mat.conj().T @ x,) if self.Mat.is_complex() else (self.Mat.T @ x,)
-
-    HOp = MatMult(H)
-    return HOp
-
-
-@pytest.mark.parametrize('complex_valued_flag', [True, False])
-def test_cg_convergence(complex_valued_flag):
-    """Test if CG delivers accurate solution."""
-    N = 32
-    random_generator = RandomGenerator(seed=0)
-    HOp = create_self_adjoint_op(N, complex_valued_flag)
-    xtrue = (
-        1 + random_generator.complex64_tensor(size=(N,))
-        if complex_valued_flag
-        else 5 * random_generator.float32_tensor(size=(N,))
+    # if mb=1, it corresponds to one linear system; for mb>1, multiple systems
+    # are considered simultaneously
+    matrix_shape = (batchsize, vectorsize, vectorsize) if batchsize > 1 else (vectorsize, vectorsize)
+    vector_shape = (batchsize, vectorsize, 1) if batchsize > 1 else (vectorsize,)
+    a_matrix = (
+        random_generator.complex64_tensor(size=matrix_shape, high=1.0)
+        if complex_valued
+        else random_generator.float32_tensor(size=matrix_shape, low=-1.0, high=1.0)
     )
-    (b,) = HOp(xtrue)
-    x0 = torch.ones_like(xtrue)
-    xcg = cg(HOp, b, x0=x0, max_iter=N)
-    rtol = 1e-3 * torch.vdot(b.flatten(), b.flatten())
-    atol = 1e-3
+
+    # make sure H is self-adjoint
+    h_matrix = a_matrix.mH @ a_matrix
+
+    # construct matrix multiplication as LinearOperator
+    h_operator = MatrixOp(h_matrix)
+
+    # create ground-truth data and right-hand side of the system
+    vector = (
+        random_generator.complex64_tensor(
+            size=vector_shape,
+            high=1.0,
+        )
+        if complex_valued
+        else random_generator.float32_tensor(
+            size=vector_shape,
+            low=-1.0,
+            high=1.0,
+        )
+    )
+    (right_hand_side,) = h_operator(vector)
+
+    return h_operator, right_hand_side, vector
+
+
+def test_cg_convergence(system):
+    """Test if CG delivers accurate solution."""
+
+    # create operator, right-hand side and ground-truth data
+    h_operator, right_hand_side, solution = system
+
+    starting_value = torch.ones_like(solution)
+    cg_solution = conjugate_gradient(h_operator, right_hand_side, starting_value=starting_value, max_iterations=256)
 
     # test if solution is accurate
-    torch.testing.assert_close(xcg, xtrue, rtol=rtol, atol=atol)
-
-    # test if cg stops if the ground-truth is the initial guess
-    xcg_one_iter = cg(HOp, b, x0=xtrue, max_iter=1)
-    assert (xtrue == xcg_one_iter).all()
+    torch.testing.assert_close(cg_solution, solution, rtol=5e-3, atol=5e-3)
 
 
-def test_invalid_shapes():
+def test_cg_stopping_after_one_iteration(system):
+    """Test if cg stops after one iteration if the ground-truth is the initial
+    guess."""
+    # create operator, right-hand side and ground-truth data
+    h_operator, right_hand_side, solution = system
 
-    # check if wrongly set-up linear system throws error
-    N = 32
-    random_generator = RandomGenerator(seed=0)
-    HOp = create_self_adjoint_op(N, complex_valued_flag=False)
-    x0 = random_generator.complex64_tensor(size=(N,))
-    b = random_generator.complex64_tensor(size=(N + 1,))
+    # callback function; should not be called since cg should exit for loop
+    def callback(solution):
+        assert False
+
+    # the test should fail if we reach the callback
+    xcg_one_iteration = conjugate_gradient(
+        h_operator, right_hand_side, starting_value=solution, max_iterations=10, tolerance=1e-4, callback=callback
+    )
+    assert (xcg_one_iteration == solution).all()
+
+
+def test_implementation(system):
+    """Test if our implementation is close to the one of scipy."""
+    # create operator, right-hand side and ground-truth data
+    h_operator, right_hand_side, solution = system
+
+    # generate invalid initial value
+    starting_value = torch.zeros_like(right_hand_side)
+
+    # distinguish cases with mb>1 or mb=1 to appropriately construct the operator
+    # for scipy's cg
+    batchsize = right_hand_side.shape[0] if len(right_hand_side.shape) == 3 else 1
+
+    # if batchsize>1, construct H = diag(H1,...,H_mb) and b=[b1,...,b_mb]^T, otherwise just take the matrix
+    h_matrix_np = scipy.linalg.block_diag(*h_operator.matrix.numpy()) if batchsize > 1 else h_operator.matrix.numpy()
+
+    # choose small tolerance to avoid exiting the for loop in the cg
+    tolerance = 1e-12
+
+    # test for different maximal number of iterations
+    for max_iterations in [1, 2, 4, 8]:
+        # run our cg and scipy's cg and compare the results
+        (xcg_scp, _) = cg_scp(
+            h_matrix_np,
+            right_hand_side.flatten().numpy(),
+            x0=starting_value.flatten().numpy(),
+            maxiter=max_iterations,
+            atol=tolerance,
+        )
+        cg_solution_scp = xcg_scp.reshape(right_hand_side.shape) if batchsize > 1 else xcg_scp
+        cg_solution_torch = conjugate_gradient(
+            h_operator,
+            right_hand_side,
+            starting_value=starting_value,
+            max_iterations=max_iterations,
+            tolerance=tolerance,
+        )
+        torch.testing.assert_close(cg_solution_torch, torch.tensor(cg_solution_scp), atol=1e-5, rtol=1e-5)
+
+
+def test_invalid_shapes(system):
+    """Test if CG throws error in case of shape-mismatch."""
+    # create operator, right-hand side and ground-truth data
+    h_operator, right_hand_side, _ = system
+
+    # generate invalid initial starting point
+    starting_value = torch.zeros(
+        h_operator.matrix.shape[-1] + 1,
+    )
     with pytest.raises(ValueError, match='incompatible'):
-        _ = cg(HOp, b, x0=x0, max_iter=N)
+        _ = conjugate_gradient(h_operator, right_hand_side, starting_value=starting_value, max_iterations=10)
