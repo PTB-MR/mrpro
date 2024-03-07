@@ -26,7 +26,7 @@ path_XCAT = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/Sup
 vol_HR = torch.Tensor(np.load(path_XCAT))
 
 # prepare simulated data to match in vivo data
-shape_HR = vol_HR.shape
+shape_HR = torch.IntTensor([vol_HR.shape[0], vol_HR.shape[1], vol_HR.shape[2]])
 vol_HR = torch.swapaxes(vol_HR, 0, 2)
 vol_HR = torch.swapaxes(vol_HR, 2, 1)
 vol_HR = torch.flip(vol_HR, dims=[0])
@@ -66,7 +66,7 @@ slice_profile = Slice_prof(thickness_slice=thickness_slice_LR_mm)
 
 # parametrize SuperResOp
 srr_op = SuperResOp(
-    shape_HR=torch.Tensor(shape_HR),
+    shape_HR=shape_HR,
     num_slices_per_stack=num_slices_per_stack,
     gap_slices_inHR=gap_slices_mm / thickness_slice_HR_mm,
     num_stacks=num_stacks,
