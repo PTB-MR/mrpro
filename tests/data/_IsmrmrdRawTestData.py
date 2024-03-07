@@ -92,7 +92,7 @@ class IsmrmrdRawTestData:
         self.acceleration: int = acceleration
         self.noise_level: float = noise_level
         self.trajectory_type: Literal['cartesian', 'radial'] = trajectory_type
-        self.sampling_order: Literal['linear', 'low_high', 'high_low'] = sampling_order
+        self.sampling_order: Literal['linear', 'low_high', 'high_low', 'random'] = sampling_order
         self.phantom: EllipsePhantom = phantom
         self.img_ref: torch.Tensor
 
