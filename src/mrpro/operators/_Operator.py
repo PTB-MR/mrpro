@@ -18,6 +18,7 @@ from abc import abstractmethod
 from typing import Generic
 from typing import TypeVar
 from typing import TypeVarTuple
+from typing import cast
 
 import torch
 
@@ -61,7 +62,7 @@ class OperatorComposition(Operator[*Tin, Tout]):
 
     def forward(self, *args: *Tin) -> Tout:
         """Operator composition."""
-        return self._operator1(self._operator2(*args))
+        return self._operator1(*self._operator2(*args))
 
 
 class OperatorSum(Operator[*Tin, Tout]):
@@ -74,7 +75,7 @@ class OperatorSum(Operator[*Tin, Tout]):
 
     def forward(self, *args: *Tin) -> Tout:
         """Operator addition."""
-        return self._operator1(*args) + self._operator2(*args)
+        return cast(Tout, tuple(a + b for a, b in zip(self._operator1(*args), self._operator2(*args), strict=True)))
 
 
 class OperatorElementwiseProduct(Operator[*Tin, Tout]):
@@ -87,4 +88,5 @@ class OperatorElementwiseProduct(Operator[*Tin, Tout]):
 
     def forward(self, *args: *Tin) -> Tout:
         """Operator elementwise multiplication."""
-        return self._tensor * self._operator(*args)
+        out = self._operator(*args)
+        return cast(Tout, tuple(a * self._tensor for a in out))
