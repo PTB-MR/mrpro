@@ -120,11 +120,13 @@ class AcqInfo:
             return torch.tensor(np.squeeze(data))
 
         def tensor_2d(data: np.ndarray) -> torch.Tensor:
-            # Convert tensor to torch dtypes and ensure it is 2D
+            # Convert tensor to torch dtypes and ensure it is atleast 2D
             data_tensor = tensor(data)
             # Ensure that data is (k1*k2*other, >=1)
-            if data.ndim == 1:
+            if data_tensor.ndim == 1:
                 data_tensor = data_tensor[:, None]
+            elif data_tensor.ndim == 0:
+                data_tensor = data_tensor[None, None]
             return data_tensor
 
         def spatialdimension_2d(data: np.ndarray) -> SpatialDimension[torch.Tensor]:
