@@ -85,7 +85,6 @@ ignore_missing_imports = true
 [tool.ruff]
 line-length = 120
 extend-exclude = ["__init__.py"]
-include = ["src/**/*.py"]
 exclude = ["docs/**"]
 
 [tool.ruff.lint]

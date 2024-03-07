@@ -57,26 +57,28 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 kdata = KData.from_file(data_folder / '2D_GRad_map_t1.h5', KTrajectoryIsmrmrd())
 
 # Calculate dcf
-kdcf = DcfData.from_traj_voronoi(kdata.traj)
+dcf = DcfData.from_traj_voronoi(kdata.traj)
 
 # Reconstruct average image for coil map estimation
-FOp = FourierOp(recon_shape=kdata.header.recon_matrix, encoding_shape=kdata.header.encoding_matrix, traj=kdata.traj)
-(im,) = FOp.adjoint(kdata.data * kdcf.data[:, None, ...])
+fourier_op = FourierOp(
+    recon_shape=kdata.header.recon_matrix, encoding_shape=kdata.header.encoding_matrix, traj=kdata.traj
+)
+(img,) = fourier_op.adjoint(kdata.data * dcf.data[:, None, ...])
 
 # %%
 # Calculate coilmaps
-idat = IData.from_tensor_and_kheader(im, kdata.header)
-csm = CsmData.from_idata_walsh(idat)
+idata = IData.from_tensor_and_kheader(img, kdata.header)
+csm = CsmData.from_idata_walsh(idata)
 csm_op = SensitivityOp(csm)
 
 # %%
 # Coil combination
-(im,) = csm_op.adjoint(im)
+(img,) = csm_op.adjoint(img)
 
 # %%
 # Visualize results
 plt.figure()
-plt.imshow(torch.abs(im[0, 0, 0, :, :]))
+plt.imshow(torch.abs(img[0, 0, 0, :, :]))
 
 # %%
 # Clean-up by removing temporary directory
