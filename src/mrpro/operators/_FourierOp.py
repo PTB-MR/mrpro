@@ -49,7 +49,7 @@ class FourierOp(LinearOperator):
         traj
             the k-space trajectories where the frequencies are sampled
         nufft_oversampling
-            oversampling used for interpolation in non-uniform FFTs 
+            oversampling used for interpolation in non-uniform FFTs
         nufft_numpoints
             number of neighbors for interpolation in non-uniform FFTs
         nufft_kbwidth
