@@ -12,6 +12,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from copy import deepcopy
+
 import torch
 
 from mrpro.data import KData
@@ -23,6 +25,7 @@ def remove_readout_os(kdata: KData) -> KData:
     """Remove any oversampling along the readout (k0) direction.
 
     This function is inspired by https://github.com/gadgetron/gadgetron-python.
+    Returns a copy of the data.
 
     Parameters
     ----------
@@ -31,49 +34,46 @@ def remove_readout_os(kdata: KData) -> KData:
 
     Returns
     -------
-        K-space data with oversampling removed.
+        Copy of K-space data with oversampling removed.
 
     Raises
     ------
     ValueError
         If the recon matrix along x is larger than the encoding matrix along x.
     """
-    # Ratio between encoded and recon space
-    dim_ratio = kdata.header.recon_matrix.x / kdata.header.encoding_matrix.x
-
-    # If the encoded and recon space is the same we don't have to do anything
-    if dim_ratio == 1:
-        return kdata
-    elif dim_ratio > 1:
+    # Ratio of k0/x between encoded and recon space
+    x_ratio = kdata.header.recon_matrix.x / kdata.header.encoding_matrix.x
+    if x_ratio == 1:
+        # If the encoded and recon space is the same we don't have to do anything
+        return deepcopy(kdata)
+    elif x_ratio > 1:
         raise ValueError('Recon matrix along x should be equal or larger than encoding matrix along x.')
-    else:
-        # Starting and end point of image after removing oversampling
-        start_cropped_readout = (kdata.header.encoding_matrix.x - kdata.header.recon_matrix.x) // 2
-        end_cropped_readout = start_cropped_readout + kdata.header.recon_matrix.x
 
-        def crop_readout(input_: torch.Tensor):
-            return input_[..., start_cropped_readout:end_cropped_readout]
+    # Starting and end point of image after removing oversampling
+    start_cropped_readout = (kdata.header.encoding_matrix.x - kdata.header.recon_matrix.x) // 2
+    end_cropped_readout = start_cropped_readout + kdata.header.recon_matrix.x
 
-        # Transform to image space, crop to reconstruction matrix size and transform back
-        ff_op = FastFourierOp(dim=(-1,))
-        (dat,) = ff_op.adjoint(kdata.data)
-        dat = crop_readout(dat)
-        (dat,) = ff_op.forward(dat)
+    def crop_readout(data_to_crop: torch.Tensor):
+        # returns a cropped copy
+        return data_to_crop[..., start_cropped_readout:end_cropped_readout].clone()
 
-        # Adapt trajectory
-        ks = [kdata.traj.kz, kdata.traj.ky, kdata.traj.kx]
-        for ax in range(3):
-            if ks[ax].shape[-1] > 1:
-                ks[ax] = crop_readout(ks[ax])
-        traj = KTrajectory(kz=ks[0], ky=ks[1], kx=ks[2])
+    # Transform to image space along readout, crop to reconstruction matrix size and transform back
+    fourier_k0_op = FastFourierOp(dim=(-1,))
+    (cropped_data,) = fourier_k0_op(crop_readout(*fourier_k0_op.H(kdata.data)))
 
-        # Adapt header parameters
-        hdr = kdata.header
-        hdr.acq_info.center_sample -= start_cropped_readout
-        hdr.acq_info.number_of_samples[:] = dat.shape[-1]
-        hdr.encoding_matrix.x = dat.shape[-1]
+    # Adapt trajectory
+    ks = [kdata.traj.kz, kdata.traj.ky, kdata.traj.kx]
+    # only cropped ks that are not broadcasted/singleton along k0
+    cropped_ks = [crop_readout(k) if k.shape[-1] > 1 else k.clone() for k in ks]
+    cropped_traj = KTrajectory(*cropped_ks)
 
-        hdr.acq_info.discard_post = (hdr.acq_info.discard_post * dim_ratio).to(torch.int32)
-        hdr.acq_info.discard_pre = (hdr.acq_info.discard_pre * dim_ratio).to(torch.int32)
+    # Adapt header parameters
+    header = deepcopy(kdata.header)
+    header.acq_info.center_sample -= start_cropped_readout
+    header.acq_info.number_of_samples[:] = cropped_data.shape[-1]
+    header.encoding_matrix.x = cropped_data.shape[-1]
 
-    return KData(hdr, dat, traj)
+    header.acq_info.discard_post = (header.acq_info.discard_post * x_ratio).to(torch.int32)
+    header.acq_info.discard_pre = (header.acq_info.discard_pre * x_ratio).to(torch.int32)
+
+    return KData(header, cropped_data, cropped_traj)
