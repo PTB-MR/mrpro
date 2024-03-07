@@ -13,23 +13,23 @@
 #   limitations under the License.
 
 import pytest
-import torch
 from mrpro.data import SpatialDimension
 from mrpro.operators import FourierOp
 
 from tests import RandomGenerator
 from tests.conftest import COMMON_MR_TRAJECTORIES
-from tests.data.test_ktraj import create_traj
+from tests.data.test_trajectory import create_traj
+from tests.helper import dotproduct_adjointness_test
 
 
 def create_data(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz):
     random_generator = RandomGenerator(seed=0)
 
     # generate random image
-    image = random_generator.complex64_tensor(size=im_shape)
+    img = random_generator.complex64_tensor(size=im_shape)
     # create random trajectories
-    ktraj = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
-    return image, ktraj
+    trajectory = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
+    return img, trajectory
 
 
 @COMMON_MR_TRAJECTORIES
@@ -37,31 +37,21 @@ def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, 
     """Test adjoint property of Fourier operator."""
 
     # generate random images and k-space trajectories
-    image, ktraj = create_data(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz)
+    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz)
 
     # create operator
     recon_shape = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
     encoding_shape = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
-    op = FourierOp(recon_shape=recon_shape, encoding_shape=encoding_shape, traj=ktraj)
+    fourier_op = FourierOp(recon_shape=recon_shape, encoding_shape=encoding_shape, traj=trajectory)
 
-    # apply forward and adjoint operator
-    (kdata,) = op(image)
-    (reco,) = op.H(kdata)
+    # apply forward operator
+    (kdata,) = fourier_op(img)
 
     # test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v
     random_generator = RandomGenerator(seed=0)
-    u = random_generator.complex64_tensor(size=image.shape)
+    u = random_generator.complex64_tensor(size=img.shape)
     v = random_generator.complex64_tensor(size=kdata.shape)
-    (Fu,) = op(u)
-    (FHv,) = op.H(v)
-    Fu_v = torch.vdot(Fu.flatten(), v.flatten())
-    u_FHv = torch.vdot(u.flatten(), FHv.flatten())
-
-    # Check that the dimensions are correct
-    assert reco.shape == image.shape
-
-    # Check the adjoint property
-    assert torch.isclose(Fu_v, u_FHv, rtol=1e-3)
+    dotproduct_adjointness_test(fourier_op, u, v)
 
 
 @pytest.mark.parametrize(
@@ -84,10 +74,10 @@ def test_fourier_not_supported_traj(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz
     """Test trajectory not supported by Fourier operator."""
 
     # generate random images and k-space trajectories
-    image, ktraj = create_data(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz)
+    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz)
 
     # create operator
     recon_shape = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
     encoding_shape = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
     with pytest.raises(NotImplementedError, match='Cartesian FFT dims need to be aligned'):
-        FourierOp(recon_shape=recon_shape, encoding_shape=encoding_shape, traj=ktraj)
+        FourierOp(recon_shape=recon_shape, encoding_shape=encoding_shape, traj=trajectory)

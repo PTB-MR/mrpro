@@ -15,7 +15,7 @@
 import torch
 
 
-def rel_image_diff(im1, im2):
+def relative_image_difference(im1, im2):
     """Calculate mean absolute relative difference between two images.
 
     Parameters
@@ -29,11 +29,11 @@ def rel_image_diff(im1, im2):
     -------
         mean absolute relative difference between images
     """
-    idiff = torch.mean(torch.abs(im1 - im2))
-    imean = 0.5 * torch.mean(torch.abs(im1) + torch.abs(im2))
-    if imean == 0:
+    image_difference = torch.mean(torch.abs(im1 - im2))
+    image_mean = 0.5 * torch.mean(torch.abs(im1) + torch.abs(im2))
+    if image_mean == 0:
         raise ValueError('average of images should be larger than 0')
-    return idiff / imean
+    return image_difference / image_mean
 
 
 def dotproduct_adjointness_test(operator, u, v):

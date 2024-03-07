@@ -17,10 +17,10 @@ from mrpro.phantoms.coils import birdcage_2d
 
 
 def test_birdcage_sensitivities_shape():
-    nz = 1
-    ny = 200
-    nx = 150
-    num_coils = 4
-    im_dim = SpatialDimension(z=nz, y=ny, x=nx)
-    sim_coil = birdcage_2d(num_coils, im_dim)
-    assert sim_coil.shape == (1, num_coils, nz, ny, nx)
+    n_z = 1
+    n_y = 200
+    n_x = 150
+    n_coils = 4
+    image_dimension = SpatialDimension(z=n_z, y=n_y, x=n_x)
+    simulated_coil_sensitivities = birdcage_2d(n_coils, image_dimension)
+    assert simulated_coil_sensitivities.shape == (1, n_coils, n_z, n_y, n_x)

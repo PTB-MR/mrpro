@@ -18,7 +18,7 @@ from mrpro.data import KTrajectory
 
 
 class PulseqRadialTestSeq:
-    def __init__(self, seq_filename: str, Nx=256, Nspokes=10):
+    def __init__(self, seq_filename: str, n_x=256, n_spokes=10):
         """
         A radial 2D trajectory in pulseq.
         Cave: Not a real sequence as delays, spoiler, etc are nonsense.
@@ -27,25 +27,25 @@ class PulseqRadialTestSeq:
         ----------
         seq_filename
             targetfilename
-        Nx, optional
+        n_x, optional
             number of frequency encoding points
-        Nspokes, optional
+        n_spokes, optional
             number of spokes
         """
         seq = pypulseq.Sequence()
         fov = 200e-3
 
-        delta = torch.pi / Nspokes
+        delta = torch.pi / n_spokes
         deltak = 1 / fov
 
         system = pypulseq.Opts()
         rf, gz, _ = pypulseq.make_sinc_pulse(flip_angle=0.1, slice_thickness=1e-3, system=system, return_gz=True)
-        gx = pypulseq.make_trapezoid(channel='x', flat_area=Nx * deltak, flat_time=2e-3, system=system)
-        adc = pypulseq.make_adc(num_samples=Nx, duration=gx.flat_time, delay=gx.rise_time, system=system)
+        gx = pypulseq.make_trapezoid(channel='x', flat_area=n_x * deltak, flat_time=2e-3, system=system)
+        adc = pypulseq.make_adc(num_samples=n_x, duration=gx.flat_time, delay=gx.rise_time, system=system)
         gx_pre = pypulseq.make_trapezoid(channel='x', area=-gx.area / 2 - deltak / 2, duration=2e-3, system=system)
         gz_reph = pypulseq.make_trapezoid(channel='z', area=-gz.area / 2, duration=2e-3, system=system)
 
-        for spoke in range(Nspokes):
+        for spoke in range(n_spokes):
             phi = delta * spoke
             seq.add_block(rf, gz)
             seq.add_block(*pypulseq.rotate(gx_pre, gz_reph, angle=phi, axis='z'))
@@ -56,14 +56,14 @@ class PulseqRadialTestSeq:
 
         seq.write(str(seq_filename))
 
-        self.Nx = Nx
-        self.Nspokes = Nspokes
+        self.n_x = n_x
+        self.n_spokes = n_spokes
         self.seq = seq
         self.seq_filename = seq_filename
 
-        kz = torch.zeros(1, 1, Nspokes, Nx)
-        phi = torch.pi / Nspokes * torch.arange(Nspokes)
-        k0 = deltak * torch.linspace(-Nx / 2, Nx / 2 - 1, Nx)
+        kz = torch.zeros(1, 1, n_spokes, n_x)
+        phi = torch.pi / n_spokes * torch.arange(n_spokes)
+        k0 = deltak * torch.linspace(-n_x / 2, n_x / 2 - 1, n_x)
         kx = (torch.cos(phi)[:, None] * k0)[None, None, ...]
         ky = (torch.sin(phi)[:, None] * k0)[None, None, ...]
 

@@ -55,45 +55,45 @@ class Dicom2DTestImage:
         self.phantom: EllipsePhantom = phantom
 
         # Create image
-        im_dim = SpatialDimension(z=1, y=matrix_size_y, x=matrix_size_x)
-        self.imref = torch.abs(self.phantom.image_space(im_dim))
+        img_dimension = SpatialDimension(z=1, y=matrix_size_y, x=matrix_size_x)
+        self.imref = torch.abs(self.phantom.image_space(img_dimension))
         self.imref = self.imref[0, 0, 0, ...]  # we can only store a 2D image in the dicom here
         self.imref /= torch.max(self.imref) * 2  # *2 to make sure we are well within uint16 range later on
         self.imref = torch.round(self.imref * 2**16)
 
         # Metadata
-        fileMeta = pydicom.dataset.FileMetaDataset()
-        fileMeta.MediaStorageSOPClassUID = pydicom._storage_sopclass_uids.MRImageStorage
-        fileMeta.MediaStorageSOPInstanceUID = pydicom.uid.generate_uid()
-        fileMeta.TransferSyntaxUID = pydicom.uid.ExplicitVRLittleEndian
+        file_meta = pydicom.dataset.FileMetaDataset()
+        file_meta.MediaStorageSOPClassUID = pydicom._storage_sopclass_uids.MRImageStorage
+        file_meta.MediaStorageSOPInstanceUID = pydicom.uid.generate_uid()
+        file_meta.TransferSyntaxUID = pydicom.uid.ExplicitVRLittleEndian
 
         # Dataset
-        ds = pydicom.Dataset()
-        ds.file_meta = fileMeta
+        dataset = pydicom.Dataset()
+        dataset.file_meta = file_meta
 
         # When accessing the data using ds.pixel_array pydicom will return an image with dimensions (rows columns).
         # According to the dicom standard rows corresponds to the vertical dimension (i.e. y) and columns corresponds
         # to the horizontal dimension (i.e. x)
-        ds.Rows = self.imref.shape[0]
-        ds.Columns = self.imref.shape[1]
-        ds.NumberOfFrames = 1
+        dataset.Rows = self.imref.shape[0]
+        dataset.Columns = self.imref.shape[1]
+        dataset.NumberOfFrames = 1
 
-        ds.PixelSpacing = [1, 1]  # in mm
-        ds.SliceThickness = 1  # in mm
+        dataset.PixelSpacing = [1, 1]  # in mm
+        dataset.SliceThickness = 1  # in mm
 
         elem = pydicom.DataElement(0x00191015, 'FD', [1.0, 2.0, 3.0])
-        ds.add(elem)
+        dataset.add(elem)
 
-        ds.FlipAngle = 15.0
-        ds.EchoTime = te
-        ds.RepetitionTime = 25.2
+        dataset.FlipAngle = 15.0
+        dataset.EchoTime = te
+        dataset.RepetitionTime = 25.2
 
-        ds.BitsAllocated = 16
-        ds.PixelRepresentation = 0  # uint
-        ds.SamplesPerPixel = 1
-        ds.PhotometricInterpretation = 'MONOCHROME2'
-        ds.BitsStored = 16
-        ds.PixelData = self.imref.numpy().astype(np.uint16).tobytes()
+        dataset.BitsAllocated = 16
+        dataset.PixelRepresentation = 0  # uint
+        dataset.SamplesPerPixel = 1
+        dataset.PhotometricInterpretation = 'MONOCHROME2'
+        dataset.BitsStored = 16
+        dataset.PixelData = self.imref.numpy().astype(np.uint16).tobytes()
 
         # Save
-        ds.save_as(self.filename, write_like_original=False)
+        dataset.save_as(self.filename, write_like_original=False)

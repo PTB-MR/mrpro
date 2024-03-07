@@ -21,22 +21,22 @@ from mrpro.data import IData
 from mrpro.data import SpatialDimension
 from mrpro.phantoms.coils import birdcage_2d
 
-from tests.helper import rel_image_diff
+from tests.helper import relative_image_difference
 
 
-def multi_coil_image(num_coils, ph_ellipse, random_kheader):
+def multi_coil_image(n_coils, ph_ellipse, random_kheader):
     """Create multi-coil image."""
-    im_dim = SpatialDimension(z=1, y=ph_ellipse.ny, x=ph_ellipse.nx)
+    image_dimensions = SpatialDimension(z=1, y=ph_ellipse.n_y, x=ph_ellipse.n_x)
 
     # Create reference coil sensitivities
-    csm_ref = birdcage_2d(num_coils, im_dim)
+    csm_ref = birdcage_2d(n_coils, image_dimensions)
 
     # Create multi-coil phantom image data
-    im = ph_ellipse.phantom.image_space(im_dim)
+    img = ph_ellipse.phantom.image_space(image_dimensions)
     # +1 to ensure that there is signal everywhere, for voxel == 0 csm cannot be determined.
-    im_multi_coil = (im + 1) * csm_ref
-    idat = IData.from_tensor_and_kheader(data=im_multi_coil, kheader=random_kheader)
-    return (idat, csm_ref)
+    img_multi_coil = (img + 1) * csm_ref
+    idata = IData.from_tensor_and_kheader(data=img_multi_coil, kheader=random_kheader)
+    return (idata, csm_ref)
 
 
 def test_CsmData_is_frozen_dataclass(random_test_data, random_kheader):
@@ -46,26 +46,26 @@ def test_CsmData_is_frozen_dataclass(random_test_data, random_kheader):
         csm.data = random_test_data
 
 
-def test_CsmData_iterative_Walsh(ph_ellipse, random_kheader):
+def test_CsmData_iterative_Walsh(ellipse_phantom, random_kheader):
     """CsmData obtained with the iterative Walsh method."""
-    idat, csm_ref = multi_coil_image(num_coils=4, ph_ellipse=ph_ellipse, random_kheader=random_kheader)
+    idata, csm_ref = multi_coil_image(n_coils=4, ph_ellipse=ellipse_phantom, random_kheader=random_kheader)
 
     # Estimate coil sensitivity maps
     smoothing_width = SpatialDimension(z=1, y=5, x=5)
-    csm = CsmData.from_idata_walsh(idat, smoothing_width)
+    csm = CsmData.from_idata_walsh(idata, smoothing_width)
 
     # Phase is only relative in csm calculation, therefore only the abs values are compared.
-    assert rel_image_diff(torch.abs(csm.data), torch.abs(csm_ref)) <= 0.01
+    assert relative_image_difference(torch.abs(csm.data), torch.abs(csm_ref)) <= 0.01
 
 
 @pytest.mark.cuda()
-def test_CsmData_iterative_Walsh_cuda(ph_ellipse, random_kheader):
+def test_CsmData_iterative_Walsh_cuda(ellipse_phantom, random_kheader):
     """CsmData obtained with the iterative Walsh method in CUDA memory."""
-    idat, csm_ref = multi_coil_image(num_coils=4, ph_ellipse=ph_ellipse, random_kheader=random_kheader)
+    idata, csm_ref = multi_coil_image(n_coils=4, ph_ellipse=ellipse_phantom, random_kheader=random_kheader)
 
     # Estimate coil sensitivity maps
     smoothing_width = SpatialDimension(z=1, y=5, x=5)
-    csm = CsmData.from_idata_walsh(idat.cuda(), smoothing_width)
+    csm = CsmData.from_idata_walsh(idata.cuda(), smoothing_width)
 
     # Phase is only relative in csm calculation, therefore only the abs values are compared.
-    assert rel_image_diff(torch.abs(csm.data), torch.abs(csm_ref.cuda())) <= 0.01
+    assert relative_image_difference(torch.abs(csm.data), torch.abs(csm_ref.cuda())) <= 0.01

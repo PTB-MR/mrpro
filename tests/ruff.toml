@@ -6,7 +6,7 @@ lint.extend-ignore = [
     "ARG001", # unused argument
     "ANN",    # flake8-annotations
     "D",      # pydocstyle
-    "N",      # pep8-naming
+    "N802",   # function name should be lowercase
     "S101",   # use of assert detected
     "PT011",  # pytest-raises-too-broad
 ]

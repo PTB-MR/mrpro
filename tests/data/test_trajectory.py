@@ -50,48 +50,48 @@ def create_traj(k_shape, nkx, nky, nkz, sx, sy, sz):
         elif spacing == 'z':
             k = torch.zeros(nk)
         k_list.append(k)
-    ktraj = KTrajectory(*k_list)
-    return ktraj
+    trajectory = KTrajectory(*k_list)
+    return trajectory
 
 
-def test_ktraj_repeat_detection_tol(cartesian_grid):
+def test_trajectory_repeat_detection_tol(cartesian_grid):
     """Test the automatic detection of repeated values."""
-    nk0 = 10
-    nk1 = 20
-    nk2 = 30
-    kz_full, ky_full, kx_full = cartesian_grid(nk2, nk1, nk0, jitter=0.1)
-    ktraj_sparse = KTrajectory(kz_full, ky_full, kx_full, repeat_detection_tolerance=0.1)
+    n_k0 = 10
+    n_k1 = 20
+    n_k2 = 30
+    kz_full, ky_full, kx_full = cartesian_grid(n_k2, n_k1, n_k0, jitter=0.1)
+    trajectory_sparse = KTrajectory(kz_full, ky_full, kx_full, repeat_detection_tolerance=0.1)
 
-    assert ktraj_sparse.broadcasted_shape == (1, nk2, nk1, nk0)
-    assert ktraj_sparse.kx.shape == (1, 1, 1, nk0)
-    assert ktraj_sparse.ky.shape == (1, 1, nk1, 1)
-    assert ktraj_sparse.kz.shape == (1, nk2, 1, 1)
+    assert trajectory_sparse.broadcasted_shape == (1, n_k2, n_k1, n_k0)
+    assert trajectory_sparse.kx.shape == (1, 1, 1, n_k0)
+    assert trajectory_sparse.ky.shape == (1, 1, n_k1, 1)
+    assert trajectory_sparse.kz.shape == (1, n_k2, 1, 1)
 
 
-def test_ktraj_repeat_detection_exact(cartesian_grid):
+def test_trajectory_repeat_detection_exact(cartesian_grid):
     """Test the automatic detection of repeated values."""
-    nk0 = 10
-    nk1 = 20
-    nk2 = 30
-    kz_full, ky_full, kx_full = cartesian_grid(nk2, nk1, nk0, jitter=0.1)
-    ktraj_full = KTrajectory(kz_full, ky_full, kx_full, repeat_detection_tolerance=None)
+    n_k0 = 10
+    n_k1 = 20
+    n_k2 = 30
+    kz_full, ky_full, kx_full = cartesian_grid(n_k2, n_k1, n_k0, jitter=0.1)
+    trajectory_full = KTrajectory(kz_full, ky_full, kx_full, repeat_detection_tolerance=None)
 
-    assert ktraj_full.broadcasted_shape == (1, nk2, nk1, nk0)
-    assert ktraj_full.kx.shape == (1, nk2, nk1, nk0)
-    assert ktraj_full.ky.shape == (1, nk2, nk1, nk0)
-    assert ktraj_full.kz.shape == (1, nk2, nk1, nk0)
+    assert trajectory_full.broadcasted_shape == (1, n_k2, n_k1, n_k0)
+    assert trajectory_full.kx.shape == (1, n_k2, n_k1, n_k0)
+    assert trajectory_full.ky.shape == (1, n_k2, n_k1, n_k0)
+    assert trajectory_full.kz.shape == (1, n_k2, n_k1, n_k0)
 
 
-def test_ktraj_tensor_conversion(cartesian_grid):
-    nk0 = 10
-    nk1 = 20
-    nk2 = 30
-    kz_full, ky_full, kx_full = cartesian_grid(nk2, nk1, nk0, jitter=0.0)
-    ktraj = KTrajectory(kz_full, ky_full, kx_full)
+def test_trajectory_tensor_conversion(cartesian_grid):
+    n_k0 = 10
+    n_k1 = 20
+    n_k2 = 30
+    kz_full, ky_full, kx_full = cartesian_grid(n_k2, n_k1, n_k0, jitter=0.0)
+    trajectory = KTrajectory(kz_full, ky_full, kx_full)
     tensor = torch.stack((kz_full, ky_full, kx_full), dim=0)
 
-    tensor_from_traj = ktraj.as_tensor()  # stack_dim=0
-    tensor_from_traj_dim2 = ktraj.as_tensor(stack_dim=2).moveaxis(2, 0)
+    tensor_from_traj = trajectory.as_tensor()  # stack_dim=0
+    tensor_from_traj_dim2 = trajectory.as_tensor(stack_dim=2).moveaxis(2, 0)
     tensor_from_traj_from_tensor_dim3 = KTrajectory.from_tensor(tensor.moveaxis(0, 3), stack_dim=3).as_tensor()
     tensor_from_traj_from_tensor = KTrajectory.from_tensor(tensor).as_tensor()  # stack_dim=0
 
@@ -101,7 +101,7 @@ def test_ktraj_tensor_conversion(cartesian_grid):
     torch.testing.assert_close(tensor, tensor_from_traj_from_tensor_dim3)
 
 
-def test_ktraj_raise_not_broadcastable():
+def test_trajectory_raise_not_broadcastable():
     """Non broadcastable shapes should raise."""
     kx = ky = torch.arange(1 * 2 * 3 * 4).reshape(1, 2, 3, 4)
     kz = torch.arange(1 * 2 * 3 * 100).reshape(1, 2, 3, 100)
@@ -109,55 +109,55 @@ def test_ktraj_raise_not_broadcastable():
         KTrajectory(kz, ky, kx)
 
 
-def test_ktraj_raise_wrong_dim():
+def test_trajectory_raise_wrong_dim():
     """Wrong number of dimensions after broadcasting should raise."""
     kx = ky = kz = torch.arange(1 * 2 * 3).reshape(1, 2, 3)
     with pytest.raises(ValueError):
         KTrajectory(kz, ky, kx)
 
 
-def test_ktraj_to_float64(cartesian_grid):
+def test_trajectory_to_float64(cartesian_grid):
     """Change KTrajectory dtype to float64."""
-    nk0 = 10
-    nk1 = 20
-    nk2 = 30
-    kz_full, ky_full, kx_full = cartesian_grid(nk2, nk1, nk0, jitter=0.0)
-    ktraj = KTrajectory(kz_full, ky_full, kx_full)
+    n_k0 = 10
+    n_k1 = 20
+    n_k2 = 30
+    kz_full, ky_full, kx_full = cartesian_grid(n_k2, n_k1, n_k0, jitter=0.0)
+    trajectory = KTrajectory(kz_full, ky_full, kx_full)
 
-    ktraj_float64 = ktraj.to(dtype=torch.float64)
-    assert ktraj_float64.kz.dtype == torch.float64
-    assert ktraj_float64.ky.dtype == torch.float64
-    assert ktraj_float64.kx.dtype == torch.float64
+    trajectory_float64 = trajectory.to(dtype=torch.float64)
+    assert trajectory_float64.kz.dtype == torch.float64
+    assert trajectory_float64.ky.dtype == torch.float64
+    assert trajectory_float64.kx.dtype == torch.float64
 
 
 @pytest.mark.cuda()
-def test_ktraj_cuda(cartesian_grid):
+def test_trajectory_cuda(cartesian_grid):
     """Move KTrajectory object to CUDA memory."""
-    nk0 = 10
-    nk1 = 20
-    nk2 = 30
-    kz_full, ky_full, kx_full = cartesian_grid(nk2, nk1, nk0, jitter=0.0)
-    ktraj = KTrajectory(kz_full, ky_full, kx_full)
+    n_k0 = 10
+    n_k1 = 20
+    n_k2 = 30
+    kz_full, ky_full, kx_full = cartesian_grid(n_k2, n_k1, n_k0, jitter=0.0)
+    trajectory = KTrajectory(kz_full, ky_full, kx_full)
 
-    ktraj_cuda = ktraj.cuda()
-    assert ktraj_cuda.kz.is_cuda
-    assert ktraj_cuda.ky.is_cuda
-    assert ktraj_cuda.kx.is_cuda
+    trajectory_cuda = trajectory.cuda()
+    assert trajectory_cuda.kz.is_cuda
+    assert trajectory_cuda.ky.is_cuda
+    assert trajectory_cuda.kx.is_cuda
 
 
 @pytest.mark.cuda()
-def test_ktraj_cpu(cartesian_grid):
+def test_trajectory_cpu(cartesian_grid):
     """Move KTrajectory object to CUDA memory and back to CPU memory."""
-    nk0 = 10
-    nk1 = 20
-    nk2 = 30
-    kz_full, ky_full, kx_full = cartesian_grid(nk2, nk1, nk0, jitter=0.0)
-    ktraj = KTrajectory(kz_full, ky_full, kx_full)
+    n_k0 = 10
+    n_k1 = 20
+    n_k2 = 30
+    kz_full, ky_full, kx_full = cartesian_grid(n_k2, n_k1, n_k0, jitter=0.0)
+    trajectory = KTrajectory(kz_full, ky_full, kx_full)
 
-    ktraj_cpu = ktraj.cuda().cpu()
-    assert ktraj_cpu.kz.is_cpu
-    assert ktraj_cpu.ky.is_cpu
-    assert ktraj_cpu.kx.is_cpu
+    trajectory_cpu = trajectory.cuda().cpu()
+    assert trajectory_cpu.kz.is_cpu
+    assert trajectory_cpu.ky.is_cpu
+    assert trajectory_cpu.kx.is_cpu
 
 
 @COMMON_MR_TRAJECTORIES
@@ -165,7 +165,7 @@ def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, 
     """Test identification of traj types."""
 
     # Generate random k-space trajectories
-    ktraj = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
+    trajectory = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
 
     # Find out the type of the kz, ky and kz dimensions
     single_value_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx), strict=True) if s == 'z']
@@ -173,13 +173,15 @@ def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, 
     not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx), strict=True) if s == 'nuf']
 
     # check dimensions which are of shape 1 and do not need any transform
-    assert all(ktraj.type_along_kzyx[dim] & TrajType.SINGLEVALUE for dim in single_value_dims)
+    assert all(trajectory.type_along_kzyx[dim] & TrajType.SINGLEVALUE for dim in single_value_dims)
 
     # Check dimensions which are on a grid and require FFT
-    assert all(ktraj.type_along_kzyx[dim] & TrajType.ONGRID for dim in on_grid_dims)
+    assert all(trajectory.type_along_kzyx[dim] & TrajType.ONGRID for dim in on_grid_dims)
 
     # Check dimensions which are not on a grid and require NUFFT
-    assert all(~(ktraj.type_along_kzyx[dim] & (TrajType.SINGLEVALUE | TrajType.ONGRID)) for dim in not_on_grid_dims)
+    assert all(
+        ~(trajectory.type_along_kzyx[dim] & (TrajType.SINGLEVALUE | TrajType.ONGRID)) for dim in not_on_grid_dims
+    )
 
 
 @COMMON_MR_TRAJECTORIES
@@ -187,7 +189,7 @@ def test_ktype_along_k210(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, 
     """Test identification of traj types."""
 
     # Generate random k-space trajectories
-    ktraj = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
+    trajectory = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
 
     # Find out the type of the k2, k1 and k0 dimensions
     single_value_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0), strict=True) if s == 'z']
@@ -195,10 +197,12 @@ def test_ktype_along_k210(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, 
     not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0), strict=True) if s == 'nuf']
 
     # check dimensions which are of shape 1 and do not need any transform
-    assert all(ktraj.type_along_k210[dim] & TrajType.SINGLEVALUE for dim in single_value_dims)
+    assert all(trajectory.type_along_k210[dim] & TrajType.SINGLEVALUE for dim in single_value_dims)
 
     # Check dimensions which are on a grid and require FFT
-    assert all(ktraj.type_along_k210[dim] & TrajType.ONGRID for dim in on_grid_dims)
+    assert all(trajectory.type_along_k210[dim] & TrajType.ONGRID for dim in on_grid_dims)
 
     # Check dimensions which are not on a grid and require NUFFT
-    assert all(~(ktraj.type_along_k210[dim] & (TrajType.SINGLEVALUE | TrajType.ONGRID)) for dim in not_on_grid_dims)
+    assert all(
+        ~(trajectory.type_along_k210[dim] & (TrajType.SINGLEVALUE | TrajType.ONGRID)) for dim in not_on_grid_dims
+    )

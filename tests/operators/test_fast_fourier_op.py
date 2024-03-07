@@ -18,6 +18,7 @@ import torch
 from mrpro.operators import FastFourierOp
 
 from tests import RandomGenerator
+from tests.helper import dotproduct_adjointness_test
 
 
 @pytest.mark.parametrize(('npoints', 'a'), [(100, 20), (300, 20)])
@@ -37,8 +38,8 @@ def test_fast_fourier_op_forward(npoints, a):
     kgauss = np.sqrt(torch.pi * a) * torch.exp(-a * torch.pi**2 * k**2).to(torch.complex64)
 
     # Transform image to k-space
-    FFOp = FastFourierOp(dim=(0,))
-    (igauss_fwd,) = FFOp.forward(igauss)
+    ff_op = FastFourierOp(dim=(0,))
+    (igauss_fwd,) = ff_op.forward(igauss)
 
     # Scaling to "undo" fft scaling
     igauss_fwd *= np.sqrt(npoints) / 2
@@ -63,8 +64,5 @@ def test_fast_fourier_op_adjoint(encoding_shape, recon_shape):
     y = generator.complex64_tensor(encoding_shape)
 
     # Create operator and apply
-    FFOp = FastFourierOp(recon_shape=recon_shape, encoding_shape=encoding_shape)
-    (Ax,) = FFOp.forward(x)
-    (AHy,) = FFOp.adjoint(y)
-
-    assert torch.isclose(torch.vdot(Ax.flatten(), y.flatten()), torch.vdot(x.flatten(), AHy.flatten()), rtol=1e-3)
+    ff_op = FastFourierOp(recon_shape=recon_shape, encoding_shape=encoding_shape)
+    dotproduct_adjointness_test(ff_op, x, y)

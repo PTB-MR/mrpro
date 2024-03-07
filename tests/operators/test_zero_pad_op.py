@@ -17,24 +17,25 @@ import torch
 from mrpro.operators import ZeroPadOp
 
 from tests import RandomGenerator
+from tests.helper import dotproduct_adjointness_test
 
 
 def test_zero_pad_op_content():
     """Test correct padding."""
-    dshape_orig = (2, 100, 3, 200, 50, 2)
-    dshape_new = (2, 80, 3, 100, 240, 2)
+    original_shape = (2, 100, 3, 200, 50, 2)
+    padded_shape = (2, 80, 3, 100, 240, 2)
     generator = RandomGenerator(seed=0)
-    dorig = generator.complex64_tensor(dshape_orig)
-    pad_dim = (-5, -3, -2)
-    POp = ZeroPadOp(
-        dim=pad_dim,
-        original_shape=tuple([dshape_orig[d] for d in pad_dim]),
-        padded_shape=tuple([dshape_new[d] for d in pad_dim]),
+    original_data = generator.complex64_tensor(original_shape)
+    padding_dimensions = (-5, -3, -2)
+    zero_padding_op = ZeroPadOp(
+        dim=padding_dimensions,
+        original_shape=tuple([original_shape[d] for d in padding_dimensions]),
+        padded_shape=tuple([padded_shape[d] for d in padding_dimensions]),
     )
-    (dnew,) = POp.forward(dorig)
+    (padded_data,) = zero_padding_op.forward(original_data)
 
     # Compare overlapping region
-    torch.testing.assert_close(dorig[:, 10:90, :, 50:150, :, :], dnew[:, :, :, :, 95:145, :])
+    torch.testing.assert_close(original_data[:, 10:90, :, 50:150, :, :], padded_data[:, :, :, :, 95:145, :])
 
 
 @pytest.mark.parametrize(
@@ -51,8 +52,5 @@ def test_zero_pad_op_adjoint(u_shape, v_shape):
     generator = RandomGenerator(seed=0)
     u = generator.complex64_tensor(u_shape)
     v = generator.complex64_tensor(v_shape)
-    POp = ZeroPadOp(dim=(-3, -2, -1), original_shape=u_shape, padded_shape=v_shape)
-    (Au,) = POp.forward(u)
-    (AHv,) = POp.adjoint(v)
-
-    assert torch.isclose(torch.vdot(Au.flatten(), v.flatten()), torch.vdot(u.flatten(), AHv.flatten()), rtol=1e-3)
+    zero_padding_op = ZeroPadOp(dim=(-3, -2, -1), original_shape=u_shape, padded_shape=v_shape)
+    dotproduct_adjointness_test(zero_padding_op, u, v)

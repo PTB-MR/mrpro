@@ -22,19 +22,19 @@ class EllipsePhantomTestData:
 
     Parameters
     ----------
-    ny
+    n_y
         number of voxels along y
-    nx
+    n_x
         number of voxels along x
     """
 
-    def __init__(self, ny: int = 512, nx: int = 256):
+    def __init__(self, n_y: int = 512, n_x: int = 256):
         # Define image size and k-space matrix
-        self.nx: int = nx
-        self.ny: int = ny
+        self.n_x: int = n_x
+        self.n_y: int = n_y
         [self.kx, self.ky] = torch.meshgrid(
-            torch.linspace(-nx // 2, nx // 2 - 1, nx),
-            torch.linspace(-ny // 2, ny // 2 - 1, ny),
+            torch.linspace(-n_x // 2, n_x // 2 - 1, n_x),
+            torch.linspace(-n_y // 2, n_y // 2 - 1, n_y),
             indexing='xy',
         )
 

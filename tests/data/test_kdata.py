@@ -20,73 +20,78 @@ from mrpro.data.traj_calculators._KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
 
 from tests.data import IsmrmrdRawTestData
-from tests.helper import rel_image_diff
+from tests.helper import relative_image_difference
 
 
 @pytest.fixture(scope='session')
-def ismrmrd_cart(ph_ellipse, tmp_path_factory):
+def ismrmrd_cart(ellipse_phantom, tmp_path_factory):
     """Fully sampled cartesian data set."""
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
-    ismrmrd_kdat = IsmrmrdRawTestData(
+    ismrmrd_kdata = IsmrmrdRawTestData(
         filename=ismrmrd_filename,
         noise_level=0.0,
         repetitions=3,
-        phantom=ph_ellipse.phantom,
+        phantom=ellipse_phantom.phantom,
     )
-    return ismrmrd_kdat
+    return ismrmrd_kdata
 
 
 @pytest.fixture(scope='session')
 def ismrmrd_cart_invalid_reps(tmp_path_factory):
     """Fully sampled cartesian data set."""
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
-    ismrmrd_kdat = IsmrmrdRawTestData(filename=ismrmrd_filename, noise_level=0.0, repetitions=3, flag_invalid_reps=True)
-    return ismrmrd_kdat
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        flag_invalid_reps=True,
+    )
+    return ismrmrd_kdata
 
 
 @pytest.fixture(scope='session')
-def ismrmrd_cart_random_us(ph_ellipse, tmp_path_factory):
+def ismrmrd_cart_random_us(ellipse_phantom, tmp_path_factory):
     """Randomly undersampled cartesian data set with repetitions."""
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
-    ismrmrd_kdat = IsmrmrdRawTestData(
+    ismrmrd_kdata = IsmrmrdRawTestData(
         filename=ismrmrd_filename,
         noise_level=0.0,
         repetitions=3,
         acceleration=4,
         sampling_order='random',
-        phantom=ph_ellipse.phantom,
+        phantom=ellipse_phantom.phantom,
     )
-    return ismrmrd_kdat
+    return ismrmrd_kdata
 
 
 def test_KData_from_file(ismrmrd_cart):
     """Read in data from file."""
-    k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
-    assert k is not None
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    assert kdata is not None
 
 
 def test_KData_random_cart_undersampling(ismrmrd_cart_random_us):
     """Read data with different random Cartesian undersampling in multiple
     repetitions."""
-    k = KData.from_file(ismrmrd_cart_random_us.filename, DummyTrajectory())
-    assert k is not None
+    kdata = KData.from_file(ismrmrd_cart_random_us.filename, DummyTrajectory())
+    assert kdata is not None
 
 
 def test_KData_random_cart_undersampling_shape(ismrmrd_cart_random_us):
     """Check shape of KData with random Cartesian undersampling."""
-    k = KData.from_file(ismrmrd_cart_random_us.filename, DummyTrajectory())
+    kdata = KData.from_file(ismrmrd_cart_random_us.filename, DummyTrajectory())
     # check if the number of repetitions is correct
-    assert k.data.shape[-5] == ismrmrd_cart_random_us.repetitions
+    assert kdata.data.shape[-5] == ismrmrd_cart_random_us.repetitions
     # check if the number of phase encoding lines per repetition is correct
-    assert k.data.shape[-2] == ismrmrd_cart_random_us.matrix_size // ismrmrd_cart_random_us.acceleration
+    assert kdata.data.shape[-2] == ismrmrd_cart_random_us.matrix_size // ismrmrd_cart_random_us.acceleration
 
 
-def test_KData_raise_wrong_ktraj_shape(ismrmrd_cart):
+def test_KData_raise_wrong_trajectory_shape(ismrmrd_cart):
     """Wrong KTrajectory shape raises exception."""
     kx = ky = kz = torch.zeros(1, 2, 3, 4)
-    ktraj = KTrajectory(kz, ky, kx, repeat_detection_tolerance=None)
+    trajectory = KTrajectory(kz, ky, kx, repeat_detection_tolerance=None)
     with pytest.raises(ValueError):
-        _ = KData.from_file(ismrmrd_cart.filename, ktraj)
+        _ = KData.from_file(ismrmrd_cart.filename, trajectory)
 
 
 def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
@@ -98,63 +103,63 @@ def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
 
 def test_KData_kspace(ismrmrd_cart):
     """Read in data and verify k-space by comparing reconstructed image."""
-    k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
-    FFOp = FastFourierOp(dim=(-1, -2))
-    (irec,) = FFOp.adjoint(k.data)
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    ff_op = FastFourierOp(dim=(-1, -2))
+    (reconstructed_img,) = ff_op.adjoint(kdata.data)
 
     # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
     # differences along the edges of the elliptic objects.
-    assert rel_image_diff(irec[0, 0, 0, ...], ismrmrd_cart.imref) <= 0.05
+    assert relative_image_difference(reconstructed_img[0, 0, 0, ...], ismrmrd_cart.imref) <= 0.05
 
 
 @pytest.mark.parametrize(('field', 'value'), [('b0', 11.3), ('tr', [24.3])])
 def test_KData_modify_header(ismrmrd_cart, field, value):
     """Overwrite some parameters in the header."""
-    par_dict = {field: value}
-    k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory(), header_overwrites=par_dict)
-    assert getattr(k.header, field) == value
+    parameter_dict = {field: value}
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory(), header_overwrites=parameter_dict)
+    assert getattr(kdata.header, field) == value
 
 
 def test_KData_to_complex128(ismrmrd_cart):
     """Change KData dtype complex128."""
-    k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
-    k_complex128 = k.to(dtype=torch.complex128)
-    assert k_complex128.data.dtype == torch.complex128
-    assert k_complex128.traj.kx.dtype == torch.float64
-    assert k_complex128.traj.ky.dtype == torch.float64
-    assert k_complex128.traj.kz.dtype == torch.float64
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kdata_complex128 = kdata.to(dtype=torch.complex128)
+    assert kdata_complex128.data.dtype == torch.complex128
+    assert kdata_complex128.traj.kx.dtype == torch.float64
+    assert kdata_complex128.traj.ky.dtype == torch.float64
+    assert kdata_complex128.traj.kz.dtype == torch.float64
 
 
 @pytest.mark.cuda()
 def test_KData_to_cuda(ismrmrd_cart):
     """Test KData.to to move data to CUDA memory."""
-    k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     cuda_device = f'cuda:{torch.cuda.current_device()}'
-    kcuda = k.to(device=cuda_device)
-    assert kcuda.data.is_cuda
-    assert kcuda.traj.kz.is_cuda
-    assert kcuda.traj.ky.is_cuda
-    assert kcuda.traj.kx.is_cuda
+    kdata_cuda = kdata.to(device=cuda_device)
+    assert kdata_cuda.data.is_cuda
+    assert kdata_cuda.traj.kz.is_cuda
+    assert kdata_cuda.traj.ky.is_cuda
+    assert kdata_cuda.traj.kx.is_cuda
 
 
 @pytest.mark.cuda()
 def test_KData_cuda(ismrmrd_cart):
     """Move KData object to CUDA memory."""
-    k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
-    kcuda = k.cuda()
-    assert kcuda.data.is_cuda
-    assert kcuda.traj.kz.is_cuda
-    assert kcuda.traj.ky.is_cuda
-    assert kcuda.traj.kx.is_cuda
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kdata_cuda = kdata.cuda()
+    assert kdata_cuda.data.is_cuda
+    assert kdata_cuda.traj.kz.is_cuda
+    assert kdata_cuda.traj.ky.is_cuda
+    assert kdata_cuda.traj.kx.is_cuda
 
 
 @pytest.mark.cuda()
 def test_KData_cpu(ismrmrd_cart):
     """Move KData object to CUDA memory and back to CPU memory."""
-    k = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
-    kcpu = k.cuda().cpu()
-    assert kcpu.data.is_cpu
-    assert kcpu.traj.kz.is_cpu
-    assert kcpu.traj.ky.is_cpu
-    assert kcpu.traj.kx.is_cpu
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kdata_cpu = kdata.cuda().cpu()
+    assert kdata_cpu.data.is_cpu
+    assert kdata_cpu.traj.kz.is_cpu
+    assert kdata_cpu.traj.ky.is_cpu
+    assert kdata_cpu.traj.kx.is_cpu
