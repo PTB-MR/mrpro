@@ -108,7 +108,7 @@ class AcqInfo:
 
         idx = headers['idx']
 
-        def tensor(data: np.ndarray):
+        def tensor(data: np.ndarray) -> torch.Tensor:
             # we have to convert first as pytoch cant create tensors from np.uint16 arrays
             # we use int32 for uint16 and int64 for uint32 to fit largest values.
             match data.dtype:
@@ -119,15 +119,15 @@ class AcqInfo:
             # Remove any uncessary dimensions
             return torch.tensor(np.squeeze(data))
 
-        def tensor_2d(input_: np.ndarray):
+        def tensor_2d(data: np.ndarray) -> torch.Tensor:
             # Convert tensor to torch dtypes and ensure it is 2D
-            data: torch.Tensor = tensor(input_)
+            data_tensor = tensor(data)
             # Ensure that data is (k1*k2*other, >=1)
             if data.ndim == 1:
-                data = data[:, None]
-            return data
+                data_tensor = data_tensor[:, None]
+            return data_tensor
 
-        def spatialdimension_2d(data: np.ndarray):
+        def spatialdimension_2d(data: np.ndarray) -> SpatialDimension[torch.Tensor]:
             # Ensure spatial dimension is (k1*k2*other, 1, 3)
             if data.ndim != 2:
                 raise ValueError('Spatial dimension is expected to be of shape (N,3)')
