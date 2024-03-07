@@ -80,6 +80,10 @@ def conjugate_gradient(
     # assign starting value to the solution
     solution = starting_value.clone() if starting_value is not None else right_hand_side.clone()
 
+    # for the case where the residual is exactly zero
+    if torch.vdot(residual.flatten(), residual.flatten()) == 0:
+        return solution
+
     # squared tolerance;
     # (we will check ||residual||^2 < tolerance^2 instead of ||residual|| < tol
     # #to avoid the computation of the root for the norm)
@@ -98,9 +102,6 @@ def conjugate_gradient(
         # check if the solution is already accurate enough
         if tolerance != 0:
             if square_norm_residual_new < squared_tolerance:
-                return solution
-        else:
-            if square_norm_residual_new == 0:
                 return solution
 
         if i > 0:
