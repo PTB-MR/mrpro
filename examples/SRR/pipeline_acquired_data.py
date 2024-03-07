@@ -1,5 +1,3 @@
-"""Class for Super Resolution Operator."""
-
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,6 +9,7 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -54,6 +53,8 @@ def show_imgs_of_stack(im: torch.Tensor, idx_stack: int) -> None:
 def calc_dist_to_stack0(list_sGeometry: list[SGeometry], rots: torch.Tensor) -> torch.Tensor:
     num_slices_per_stack = list_sGeometry[0].pos_slices.shape[0]
     array_dist = torch.zeros(len(rots))
+
+    # loop over all unique rotations
     for rot_unique in list(torch.unique(rots)):
         idx_with_same_rot = list(torch.where(rots == rot_unique))[0]
         if list(rots).count(rot_unique) == 1:
@@ -322,62 +323,59 @@ def calc_dsize_HR(dsize_LR: torch.Size, voxel_size_HR: torch.Tensor, voxel_size_
 path_invivo_rot = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes_inVivo/'
 path_invivo_transl = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes_inVivo_transl/'
 path_phantom = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes_Phantom/'
+path_phantom_T1 = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes_Phantom_T1/'
 
-path_folder = path_phantom = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes_Phantom/'
+path_folder = path_invivo_transl
 
-flag_useT1Maps = True and path_folder == path_phantom
-
+# read through scanInfo of dataset and gather information as e.g. the h5 file pathes
 scan_info = ScanInfo(path_folder + 'scanInfo')
+
 num_stacks = len(scan_info.pathes_h5)
 list_sGeometries = []
 list_imgs_stacks = []
 path_save = path_folder + 'reconstructed_files/'
 check_if_path_exists(path_save)
 
-flag_use_stored = True
+flag_use_stored_recon = True
 for idx_stack in range(num_stacks):
-    if flag_useT1Maps:
-        if 'Phantom' in path_folder:
+    if not flag_use_stored_recon:
+        sGeometry = SGeometry()
+        filename_h5 = path_folder + scan_info.pathes_h5[idx_stack]
+        filename_h5_new = filename_h5.replace('.h5', '_traj_2s.h5')
 
-            path_maps = path_phantom + 'maps/stack'
+        # modify tratectory
+        add_2D_noncart_traj_to_ismrmrd(traj_rad_kirsten_t1mapping, filename_h5, filename_h5_new, sGeometry=sGeometry)
+        # save gathered information about geometry of stacks
+        save_object(filename=path_save + 'sGeometry_' + str(idx_stack), obj=sGeometry)
+
+        # if t1 maps have been reconstructed externally, use these as data_LR_loaded
+        if path_folder == path_phantom_T1:
             list_im = []
             for idx_slice in range(scan_info.num_slices):
-                loaded = np.load(path_maps + str(idx_stack) + '/slice' + str(idx_slice) + '.npy')[:, :, 2]
+                loaded = np.load(path_phantom_T1 + 'maps/stack' + str(idx_stack) + '/slice' + str(idx_slice) + '.npy')[
+                    :, :, 2
+                ]
                 loaded = np.swapaxes(loaded, 0, 1)
                 list_im.append(loaded)
             data_LR_loaded = np.array(list_im)
             data_LR_loaded = data_LR_loaded[:, np.newaxis, np.newaxis]
-
-            if not flag_use_stored:
-                sGeometry = SGeometry()
-                filename_h5 = path_folder + scan_info.pathes_h5[idx_stack]
-                filename_h5_new = filename_h5.replace('.h5', '_traj_2s.h5')
-                add_2D_noncart_traj_to_ismrmrd(
-                    traj_rad_kirsten_t1mapping, filename_h5, filename_h5_new, sGeometry=sGeometry
-                )
-                save_object(filename=path_save + 'sGeometry_' + str(idx_stack), obj=sGeometry)
-            else:
-                sGeometry = load_object(path_save + 'sGeometry_' + str(idx_stack))
-
-    else:
-        if not flag_use_stored:
-            sGeometry = SGeometry()
-            filename_h5 = path_folder + scan_info.pathes_h5[idx_stack]
-            filename_h5_new = filename_h5.replace('.h5', '_traj_2s.h5')
-            add_2D_noncart_traj_to_ismrmrd(
-                traj_rad_kirsten_t1mapping, filename_h5, filename_h5_new, sGeometry=sGeometry
-            )
-            data_LR_loaded = recoStack(filename_h5_new).numpy()
-            save_object(filename=path_save + 'sGeometry_' + str(idx_stack), obj=sGeometry)
             np.save(path_save + 'img_stack_' + str(idx_stack), arr=data_LR_loaded)
+
+        # if not, reconstruct data_LR_loaded
         else:
-            sGeometry = load_object(path_save + 'sGeometry_' + str(idx_stack))
-            data_LR_loaded = np.load(path_save + 'img_stack_' + str(idx_stack) + '.npy')
+            data_LR_loaded = recoStack(filename_h5_new).numpy()
+            np.save(path_save + 'img_stack_' + str(idx_stack), arr=data_LR_loaded)
+    else:
+        sGeometry = load_object(path_save + 'sGeometry_' + str(idx_stack))
+        data_LR_loaded = np.load(path_save + 'img_stack_' + str(idx_stack) + '.npy')
 
     data_LR = torch.from_numpy(data_LR_loaded[:, 0, 0])
 
+    # crop data_LR to center to accelerate computation
     cutoff = 71
     data_LR = data_LR[:, cutoff : 240 - cutoff, cutoff : 240 - cutoff]
+
+    # combine information of all stacks
     list_imgs_stacks.append(torch.abs(data_LR))
     sGeometry.dir.makeSureExists()
     list_sGeometries.append(sGeometry)
@@ -391,14 +389,22 @@ voxel_size_LR = torch.Tensor([1.3, 1.3, scan_info.thickness_slice])
 shape_HR = calc_dsize_HR(dsize_LR=imgs_stacks.shape[2:4], voxel_size_HR=voxel_size_HR, voxel_size_LR=voxel_size_LR)
 slice_prof = Slice_prof(thickness_slice=scan_info.thickness_slice)
 
+# resort slices due to their interleaved acquisition scheme
 resort_slices(imgs=imgs_stacks, list_sGeometries=list_sGeometries)
+
+# calc rotation of all stacks with respect to stack 0
 rots = calc_rot_to_stack_0(list_sGeometries=list_sGeometries, img_stacks=imgs_stacks)
+
+# calc distance of all stacks in mm with respect to stack 0
 dist_To_0_mm = calc_dist_to_stack0(rots=rots[:, 2], list_sGeometry=list_sGeometries)
+
+# calc distance between slices within a single stack in mm
 gap_slices_mm = calc_gap_between_LRslices(list_sGeometries=list_sGeometries, thickness_slice=scan_info.thickness_slice)
 
-# set to 90 degree in 0 dim to rotate around phase encoding direction (depends on the acquired data)
+# set rotation to 90 degree in 0 dim to rotate around phase encoding direction (depends on the acquired data)
 rots[:, 0] = 90
 
+# pass calculcated data into super res op
 srr_op = SuperResOp(
     shape_HR=shape_HR,
     num_slices_per_stack=scan_info.num_slices,
@@ -421,14 +427,21 @@ if flag_show_LR_stacks:
                 'stack' + str(idx_stack) + '_slice' + str(idx_slice),
                 vmin=0,
                 vmax=0.0003,
-                flag_T1map=flag_useT1Maps,
+                flag_T1map=path_folder == path_phantom_T1,
             )
 
 vol_HR = srr_op.adjoint(imgs_stacks[:, :, None, None, None])[0]
 vol_HR = torch.nan_to_num(vol_HR, nan=0.0)
 shape_vol_HR_adjoint = vol_HR.shape
 for idx_proj in range(3):
-    show_3D(vol_HR[0, 0], axs_proj=idx_proj, title='vol_HR_adjoint_0', vmin=0, vmax=0.00017, flag_T1map=flag_useT1Maps)
+    show_3D(
+        vol_HR[0, 0],
+        axs_proj=idx_proj,
+        title='vol_HR_adjoint_0',
+        vmin=0,
+        vmax=0.00017,
+        flag_T1map=path_folder == path_phantom_T1,
+    )
 
 flag_loop_over_slices = False
 if flag_loop_over_slices:
@@ -440,5 +453,5 @@ if flag_loop_over_slices:
             title='vol_HR_adjoint_1_slice' + str(slice),
             vmin=0,
             vmax=0.00002 * len(list_sGeometries),
-            flag_T1map=flag_useT1Maps,
+            flag_T1map=path_folder == path_phantom_T1,
         )
