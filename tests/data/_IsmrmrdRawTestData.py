@@ -94,7 +94,7 @@ class IsmrmrdRawTestData:
         self.trajectory_type: Literal['cartesian', 'radial'] = trajectory_type
         self.sampling_order: Literal['linear', 'low_high', 'high_low'] = sampling_order
         self.phantom: EllipsePhantom = phantom
-        self.imref: torch.Tensor
+        self.img_ref: torch.Tensor
 
         # The number of points in image space (x,y) and kspace (fe,pe)
         n_x = self.matrix_size
@@ -134,7 +134,7 @@ class IsmrmrdRawTestData:
 
         # Reference image is the same for all repetitions
         image_dimension = SpatialDimension(z=1, y=n_phase_encoding, x=n_freq_encoding)
-        self.imref = self.phantom.image_space(image_dimension)
+        self.img_ref = self.phantom.image_space(image_dimension)
 
         # Multi-coil acquisition
         # TODO: proper application of coils

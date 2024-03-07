@@ -252,8 +252,8 @@ def random_test_data(request):
 def dcm_2d(ellipse_phantom, tmp_path_factory):
     """Single 2D dicom image."""
     dcm_filename = tmp_path_factory.mktemp('mrpro') / 'dicom_2d.dcm'
-    dcm_idat = Dicom2DTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom)
-    return dcm_idat
+    dcm_idata = Dicom2DTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom)
+    return dcm_idata
 
 
 @pytest.fixture(scope='session', params=({'num_images': 7},))

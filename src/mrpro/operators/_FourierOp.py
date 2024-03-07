@@ -34,7 +34,7 @@ class FourierOp(LinearOperator):
         recon_shape: SpatialDimension[int],
         encoding_shape: SpatialDimension[int],
         traj: KTrajectory,
-        nufft_oversampling: float = 2.0,  
+        nufft_oversampling: float = 2.0,
         nufft_numpoints: int = 6,
         nufft_kbwidth: float = 2.34,
     ) -> None:
@@ -111,7 +111,7 @@ class FourierOp(LinearOperator):
 
             # Broadcast shapes not always needed but also does not hurt
             omega = [k.expand(*np.broadcast_shapes(*[k.shape for k in omega])) for k in omega]
-            self.register_buffer('_omega', torch.stack(omega, dim=-4)) # use the 'coil' dim for the direction
+            self.register_buffer('_omega', torch.stack(omega, dim=-4))  # use the 'coil' dim for the direction
 
             self._fwd_nufft_op = KbNufft(
                 im_size=self._nufft_im_size,
@@ -153,19 +153,19 @@ class FourierOp(LinearOperator):
             unpermute = np.argsort(permute)
 
             x = x.permute(*permute)
-            xpermutedshape = x.shape
+            permuted_x_shape = x.shape
             x = x.flatten(end_dim=-len(keep_dims) - 1)
 
             # omega should be (... non_nufft_dims) n_nufft_dims (nufft_dims)
             # TODO: consider moving the broadcast along fft dimensions to __init__ (independent of x shape).
             omega = self._omega.permute(*permute)
-            omega = omega.broadcast_to(*xpermutedshape[: -len(keep_dims)], *omega.shape[-len(keep_dims) :])
+            omega = omega.broadcast_to(*permuted_x_shape[: -len(keep_dims)], *omega.shape[-len(keep_dims) :])
             omega = omega.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
 
             x = self._fwd_nufft_op(x, omega, norm='ortho')
 
             shape_nufft_dims = [self._kshape[i] for i in self._nufft_dims]
-            x = x.reshape(*xpermutedshape[: -len(keep_dims)], -1, *shape_nufft_dims)  # -1 is coils
+            x = x.reshape(*permuted_x_shape[: -len(keep_dims)], -1, *shape_nufft_dims)  # -1 is coils
             x = x.permute(*unpermute)
         return (x,)
 
@@ -193,16 +193,16 @@ class FourierOp(LinearOperator):
             unpermute = np.argsort(permute)
 
             x = x.permute(*permute)
-            xpermutedshape = x.shape
+            permuted_x_shape = x.shape
             x = x.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
 
             omega = self._omega.permute(*permute)
-            omega = omega.broadcast_to(*xpermutedshape[: -len(keep_dims)], *omega.shape[-len(keep_dims) :])
+            omega = omega.broadcast_to(*permuted_x_shape[: -len(keep_dims)], *omega.shape[-len(keep_dims) :])
             omega = omega.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
 
             x = self._adj_nufft_op(x, omega, norm='ortho')
 
-            x = x.reshape(*xpermutedshape[: -len(keep_dims)], *x.shape[-len(keep_dims) :])
+            x = x.reshape(*permuted_x_shape[: -len(keep_dims)], *x.shape[-len(keep_dims) :])
             x = x.permute(*unpermute)
 
         return (x,)

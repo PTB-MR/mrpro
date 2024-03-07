@@ -110,7 +110,7 @@ def test_KData_kspace(ismrmrd_cart):
     # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
     # differences along the edges of the elliptic objects.
-    assert relative_image_difference(reconstructed_img[0, 0, 0, ...], ismrmrd_cart.imref) <= 0.05
+    assert relative_image_difference(reconstructed_img[0, 0, 0, ...], ismrmrd_cart.img_ref) <= 0.05
 
 
 @pytest.mark.parametrize(('field', 'value'), [('b0', 11.3), ('tr', [24.3])])

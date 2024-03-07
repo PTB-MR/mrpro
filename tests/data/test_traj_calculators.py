@@ -208,7 +208,7 @@ def test_KTrajectoryCartesian(valid_cartesian_kheader):
 def ismrmrd_rad(ellipse_phantom, tmp_path_factory):
     """Data set with uniform radial k-space sampling."""
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_rad.h5'
-    ismrmrd_kdat = IsmrmrdRawTestData(
+    ismrmrd_data = IsmrmrdRawTestData(
         filename=ismrmrd_filename,
         noise_level=0.0,
         repetitions=3,
@@ -216,7 +216,7 @@ def ismrmrd_rad(ellipse_phantom, tmp_path_factory):
         trajectory_type='radial',
         acceleration=4,
     )
-    return ismrmrd_kdat
+    return ismrmrd_data
 
 
 def test_KTrajectoryIsmrmrdRadial(ismrmrd_rad):

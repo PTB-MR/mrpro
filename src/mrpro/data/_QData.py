@@ -63,10 +63,10 @@ class QData(Data):
         filename
             path to DICOM file
         """
-        ds = dcmread(filename)
+        dataset = dcmread(filename)
         # Image data is 2D np.array of Uint16, which cannot directly be converted to tensor
-        qdata = torch.as_tensor(ds.pixel_array.astype(np.complex64))
+        qdata = torch.as_tensor(dataset.pixel_array.astype(np.complex64))
         qdata = rearrange(qdata[None, ...], '(other coils z) y x -> other coils z y x', other=1, coils=1, z=1)
 
-        header = QHeader.from_dicom(ds)
+        header = QHeader.from_dicom(dataset)
         return cls(data=qdata, header=header)

@@ -23,7 +23,7 @@ def test_IData_from_dcm_file(dcm_2d):
     idata = IData.from_single_dicom(dcm_2d.filename)
     # IData uses complex values but dicom only supports real values
     img = torch.real(idata.data[0, 0, 0, ...])
-    torch.testing.assert_close(img, dcm_2d.imref)
+    torch.testing.assert_close(img, dcm_2d.img_ref)
 
 
 def test_IData_from_dcm_folder(dcm_multi_echo_times):

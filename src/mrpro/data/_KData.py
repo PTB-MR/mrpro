@@ -85,11 +85,11 @@ class KData:
         """
         # Can raise FileNotFoundError
         with ismrmrd.File(filename, 'r') as file:
-            ds = file[list(file.keys())[dataset_idx]]
-            ismrmrd_header = ds.header
-            acquisitions = ds.acquisitions[:]
+            dataset = file[list(file.keys())[dataset_idx]]
+            ismrmrd_header = dataset.header
+            acquisitions = dataset.acquisitions[:]
             try:
-                mtime: int = h5py.h5g.get_objinfo(ds['data']._contents.id).mtime
+                mtime: int = h5py.h5g.get_objinfo(dataset['data']._contents.id).mtime
             except AttributeError:
                 mtime = 0
             modification_time = datetime.datetime.fromtimestamp(mtime)
