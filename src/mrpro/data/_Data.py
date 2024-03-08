@@ -71,3 +71,25 @@ class Data(ABC):
             The desired memory format of returned tensor.
         """
         return Data(header=self.header, data=self.data.cpu(memory_format=memory_format))  # type: ignore [call-arg]
+
+    def is_floating_point(self) -> bool:
+        """Is the data (real) floating point.
+
+        Returns True if the data type of .data is a floating point data
+        type i.e., one of torch.float64, torch.float32, torch.float16,
+        and torch.bfloat16.
+        """
+        return self.data.is_floating_point()
+
+    def is_complex(self) -> bool:
+        """Is the data complex valued.
+
+        Returns True if the data type of .data is a complex point data
+        type i.e., one of torch.complex64 or torch.complex128.
+        """
+        return self.data.is_complex()
+
+    @property
+    def device(self) -> torch.device:
+        """The device on which .data is currently saved."""
+        return self.data.device
