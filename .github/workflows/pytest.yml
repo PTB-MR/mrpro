@@ -28,7 +28,7 @@ jobs:
           do
             echo "> $image"
             if docker manifest inspect "ghcr.io/ptb-mr/"$image":latest" >/dev/null; then
-              imagenames_latest+=$image
+              imagenames_latest+=($image" ")
             fi
           done
           echo $imagenames_latest
