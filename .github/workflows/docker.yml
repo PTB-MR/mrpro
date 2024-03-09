@@ -102,7 +102,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install mrpro and dependencies
         run: pip install --upgrade --upgrade-strategy "eager" .[test]
 
       - name: Install pytest-github-actions-annotate-failures plugin

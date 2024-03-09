@@ -34,7 +34,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install mrpro and dependencies
-        run: python -m pip install --upgrade --upgrade-strategy "eager" .[notebook]
+        run: pip install --upgrade --upgrade-strategy "eager" .[notebook]
 
       - name: Translate scripts to notebooks
         run: |
@@ -100,7 +100,7 @@ jobs:
           ref: ${{ needs.convert_scripts.outputs.commit_hash }}
 
       - name: Install mrpro and dependencies
-        run: python -m pip install --upgrade --upgrade-strategy "eager" .[notebook]
+        run: pip install --upgrade --upgrade-strategy "eager" .[notebook]
 
       - name: Notebook name
         run: echo ${{ matrix.notebook }}
@@ -142,7 +142,7 @@ jobs:
           ref: ${{ needs.convert_scripts.outputs.commit_hash }}
 
       - name: Install mrpro and dependencies
-        run: python -m pip install --upgrade --upgrade-strategy "eager" .[docs]
+        run: pip install --upgrade --upgrade-strategy "eager" .[docs]
 
       - name: Download notebook hmtl files
         id: download
