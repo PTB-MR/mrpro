@@ -27,7 +27,7 @@ jobs:
         run: |
           imagenames=$(curl -s --request GET \
           --url "https://api.github.com/orgs/PTB-MR/packages?package_type=container" \
-          --header "Authorization: Bearer $GH_TOKEN"  | jq -r '.[].name' | jq -R -s -c 'split("\n")[:-1]' )
+          --header "Authorization: Bearer $GH_TOKEN"  | jq -r '.[].name')
           echo $imagenames
 
           imagenames_latest=()
