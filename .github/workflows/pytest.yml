@@ -27,7 +27,7 @@ jobs:
           for image in $(echo $imagenames)
           do
             echo "checking $image ..."
-            if docker manifest inspect "ghcr.io/ptb-mr/"$image":latest" >/dev/null; then
+            if docker manifest inspect "ghcr.io/ptb-mr/"$image":latest2" >/dev/null; then
               echo "... $image added"
               imagenames_latest+=$image":"
             fi
