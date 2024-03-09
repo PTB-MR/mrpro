@@ -55,7 +55,7 @@ jobs:
     # runs within Docker container
     container:
       image: ghcr.io/ptb-mr/${{ matrix.imagename }}:latest
-      options: --user runner
+      options: --user root
 
     steps:
       - name: Checkout repo
