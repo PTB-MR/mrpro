@@ -28,11 +28,11 @@ jobs:
           do
             echo "> $image"
             if docker manifest inspect "ghcr.io/ptb-mr/"$image":latest" >/dev/null; then
-              imagenames_latest+=($image" ")
+              imagenames_latest+=($image\\n)
             fi
           done
           echo $imagenames_latest
-          imagenames_latest=$(echo $imagenames_latest | jq -R -c 'split(" ")')
+          imagenames_latest=$(echo $imagenames_latest | jq -R -c 'split("\n")[:-1]')
           echo $imagenames_latest
           echo "imagenames=$imagenames_latest" >> $GITHUB_OUTPUT
 
