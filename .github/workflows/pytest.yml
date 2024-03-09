@@ -55,14 +55,14 @@ jobs:
     # runs within Docker container
     container:
       image: ghcr.io/ptb-mr/${{ matrix.imagename }}:latest
-      options: --user root
+      options: --user runner
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: python -m pip install --upgrade --upgrade-strategy "eager" .[test]
+        run: pip install --upgrade --upgrade-strategy "eager" .[test]
 
       - name: Install pytest-github-actions-annotate-failures plugin
         run: pip install pytest-github-actions-annotate-failures
