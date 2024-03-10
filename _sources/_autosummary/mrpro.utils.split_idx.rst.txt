@@ -1,0 +1,6 @@
+mrpro.utils.split\_idx
+======================
+
+.. currentmodule:: mrpro.utils
+
+.. autofunction:: split_idx

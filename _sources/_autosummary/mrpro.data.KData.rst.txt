@@ -20,6 +20,10 @@ mrpro.data.KData
       ~KData.cpu
       ~KData.cuda
       ~KData.from_file
+      ~KData.rearrange_k2_k1_into_k1
+      ~KData.select_other_subset
+      ~KData.split_k1_into_other
+      ~KData.split_k2_into_other
       ~KData.to
    
    

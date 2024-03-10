@@ -42,7 +42,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/mrpro.utils';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="mrpro.utils.remove_repeat" href="mrpro.utils.remove_repeat.html" />
+    <link rel="next" title="mrpro.utils.modify_acq_info" href="mrpro.utils.modify_acq_info.html" />
     <link rel="prev" title="mrpro.phantoms.phantom_elements.EllipsePars" href="mrpro.phantoms.phantom_elements.EllipsePars.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -402,9 +402,11 @@ document.write(`
 </ul>
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">mrpro.utils</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-5"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="mrpro.utils.modify_acq_info.html">mrpro.utils.modify_acq_info</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.remove_repeat.html">mrpro.utils.remove_repeat</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.rgetattr.html">mrpro.utils.rgetattr</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.smap.html">mrpro.utils.smap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mrpro.utils.split_idx.html">mrpro.utils.split_idx</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.zero_pad_or_crop.html">mrpro.utils.zero_pad_or_crop</a></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="mrpro.utils.filters.html">mrpro.utils.filters</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-6"><i class="fa-solid fa-chevron-down"></i></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.repeat.html">mrpro.utils.filters.repeat</a></li>
@@ -476,14 +478,20 @@ document.write(`
 <p class="rubric">Functions</p>
 <table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.utils.remove_repeat.html#mrpro.utils.remove_repeat" title="mrpro.utils.remove_repeat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_repeat</span></code></a>(tensor, tol)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.utils.modify_acq_info.html#mrpro.utils.modify_acq_info" title="mrpro.utils.modify_acq_info"><code class="xref py py-obj docutils literal notranslate"><span class="pre">modify_acq_info</span></code></a>(fun_modify, acq_info)</p></td>
+<td><p>Go through all fields of AcqInfo object and apply changes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.utils.remove_repeat.html#mrpro.utils.remove_repeat" title="mrpro.utils.remove_repeat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_repeat</span></code></a>(tensor, tol)</p></td>
 <td><p>Replace dimensions with all equal values with singletons.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="mrpro.utils.rgetattr.html#mrpro.utils.rgetattr" title="mrpro.utils.rgetattr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rgetattr</span></code></a>(obj, attr, *args)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.utils.rgetattr.html#mrpro.utils.rgetattr" title="mrpro.utils.rgetattr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rgetattr</span></code></a>(obj, attr, *args)</p></td>
 <td><p>Recursive getattr for nested attributes.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.utils.smap.html#mrpro.utils.smap" title="mrpro.utils.smap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">smap</span></code></a>(fun, tensor[, fun_dims])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.utils.smap.html#mrpro.utils.smap" title="mrpro.utils.smap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">smap</span></code></a>(fun, tensor[, fun_dims])</p></td>
 <td><p>Apply a function to a tensor serially along multiple dimensions.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.utils.split_idx.html#mrpro.utils.split_idx" title="mrpro.utils.split_idx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_idx</span></code></a>(idx, np_per_block[, np_overlap, ...])</p></td>
+<td><p>Split a tensor of indices into different blocks.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="mrpro.utils.zero_pad_or_crop.html#mrpro.utils.zero_pad_or_crop" title="mrpro.utils.zero_pad_or_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">zero_pad_or_crop</span></code></a>(data, new_shape[, dim])</p></td>
 <td><p>Change shape of data by cropping or zero-padding.</p></td>
@@ -520,11 +528,11 @@ document.write(`
       </div>
     </a>
     <a class="right-next"
-       href="mrpro.utils.remove_repeat.html"
+       href="mrpro.utils.modify_acq_info.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">mrpro.utils.remove_repeat</p>
+        <p class="prev-next-title">mrpro.utils.modify_acq_info</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
