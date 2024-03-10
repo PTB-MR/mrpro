@@ -17,6 +17,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 from pathlib import Path
+from typing import Protocol
 
 import h5py
 import ismrmrd
@@ -29,9 +30,13 @@ from mrpro.data import KHeader
 from mrpro.data import KTrajectory
 from mrpro.data import KTrajectoryRawShape
 from mrpro.data import Limits
+from mrpro.data._kdata._KDataRearrangeMixin import KDataRearrangeMixin
+from mrpro.data._kdata._KDataSelectMixin import KDataSelectMixin
+from mrpro.data._kdata._KDataSplitMixin import KDataSplitMixin
 from mrpro.data.enums import AcqFlags
 from mrpro.data.traj_calculators import KTrajectoryCalculator
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
+from mrpro.utils import modify_acq_info
 
 KDIM_SORT_LABELS = (
     'k1',
@@ -58,7 +63,7 @@ DEFAULT_IGNORE_FLAGS = (
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
-class KData:
+class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin):
     """MR raw data / k-space data class."""
 
     header: KHeader
@@ -213,14 +218,7 @@ class KData:
         def reshape_acq_data(data):
             return rearrange(data[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=num_k1, k2=num_k2)
 
-        for field in dataclasses.fields(kheader.acq_info):
-            current = getattr(kheader.acq_info, field.name)
-            if isinstance(current, torch.Tensor):
-                setattr(kheader.acq_info, field.name, reshape_acq_data(current))
-            elif dataclasses.is_dataclass(current):
-                for subfield in dataclasses.fields(current):
-                    subcurrent = getattr(current, subfield.name)
-                    setattr(current, subfield.name, reshape_acq_data(subcurrent))
+        kheader.acq_info = modify_acq_info(reshape_acq_data, kheader.acq_info)
 
         # Calculate trajectory and check if it matches the kdata shape
         match ktrajectory:
@@ -336,3 +334,31 @@ class KData:
             data=self.data.cpu(memory_format=memory_format),  # type: ignore [call-arg]
             traj=self.traj.cpu(memory_format=memory_format),
         )
+
+
+class _KDataProtocol(Protocol):
+    """Protocol for KData used for type hinting in KData mixins.
+
+    Note that the actual KData class can have more properties and methods than those defined here.
+
+    If you want to use a property or method of KData in a new KDataMixin class,
+    you must add it to this Protocol to make sure that the type hinting works.
+
+    For more information about Protocols see:
+    https://typing.readthedocs.io/en/latest/spec/protocol.html#protocols
+    """
+
+    @property
+    def header(self) -> KHeader: ...
+
+    @property
+    def data(self) -> torch.Tensor: ...
+
+    @property
+    def traj(self) -> KTrajectory: ...
+
+    def __init__(self, header: KHeader, data: torch.Tensor, traj: KTrajectory): ...
+
+    def _split_k2_or_k1_into_other(
+        self, split_idx: torch.Tensor, other_label: str, split_dir: str
+    ) -> _KDataProtocol: ...
