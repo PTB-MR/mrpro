@@ -31,7 +31,7 @@ def lbfgs(
     tolerance_change: float = 1e-09,
     history_size: int = 10,
     line_search_fn: None | Literal['strong_wolfe'] = 'strong_wolfe',
-) -> list[torch.Tensor]:
+) -> tuple[torch.Tensor, ...]:
     """LBFGS for non-linear minimization problems.
 
     Parameters
@@ -92,4 +92,4 @@ def lbfgs(
     # run lbfgs
     optim.step(closure)
 
-    return list(parameters)
+    return tuple(parameters)
