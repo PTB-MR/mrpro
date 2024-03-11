@@ -117,6 +117,8 @@ extend-select = [
     "ANN205", #  return type annonation static method
     "ANN401", #  any type annotation
     "BLE001", #  blind exception
+    "D107",   #  missing docstring in __init__
+    "D415",   #  first line should end with punctuation
     "D417",   #  undocumented-parameter
 ]
 ignore = [

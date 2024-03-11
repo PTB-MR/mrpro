@@ -20,13 +20,6 @@ repos:
         args: [--fix]
       - id: ruff-format # formatter
 
-  - repo: https://github.com/myint/docformatter
-    rev: v1.7.5
-    hooks:
-      - id: docformatter
-        args:
-          - "--in-place"
-
   - repo: https://github.com/crate-ci/typos
     rev: v1.19.0
     hooks:
