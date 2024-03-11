@@ -320,12 +320,13 @@ def calc_dsize_HR(dsize_LR: torch.Size, voxel_size_HR: torch.Tensor, voxel_size_
     )
 
 
-path_invivo_rot = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes_inVivo/'
-path_invivo_transl = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes_inVivo_transl/'
-path_phantom = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes_Phantom/'
-path_phantom_T1 = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes_Phantom_T1/'
+path_invivo_rot = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes/inVivo_rot/'
+path_invivo_transl = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes/inVivo_transl/'
+path_phantom_rot = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes/Phantom_rot/'
+path_phantom_rot_T1 = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes/Phantom_rot_T1/'
+path_phantom_transl = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes/Phantom_transl/'
 
-path_folder = path_invivo_transl
+path_folder = path_phantom_transl
 
 # read through scanInfo of dataset and gather information as e.g. the h5 file pathes
 scan_info = ScanInfo(path_folder + 'scanInfo')
@@ -336,7 +337,7 @@ list_imgs_stacks = []
 path_save = path_folder + 'reconstructed_files/'
 check_if_path_exists(path_save)
 
-flag_use_stored_recon = True
+flag_use_stored_recon = False
 for idx_stack in range(num_stacks):
     if not flag_use_stored_recon:
         sGeometry = SGeometry()
@@ -349,12 +350,12 @@ for idx_stack in range(num_stacks):
         save_object(filename=path_save + 'sGeometry_' + str(idx_stack), obj=sGeometry)
 
         # if t1 maps have been reconstructed externally, use these as data_LR_loaded
-        if path_folder == path_phantom_T1:
+        if path_folder == path_phantom_rot_T1:
             list_im = []
             for idx_slice in range(scan_info.num_slices):
-                loaded = np.load(path_phantom_T1 + 'maps/stack' + str(idx_stack) + '/slice' + str(idx_slice) + '.npy')[
-                    :, :, 2
-                ]
+                loaded = np.load(
+                    path_phantom_rot_T1 + 'maps/stack' + str(idx_stack) + '/slice' + str(idx_slice) + '.npy'
+                )[:, :, 2]
                 loaded = np.swapaxes(loaded, 0, 1)
                 list_im.append(loaded)
             data_LR_loaded = np.array(list_im)
@@ -427,7 +428,7 @@ if flag_show_LR_stacks:
                 'stack' + str(idx_stack) + '_slice' + str(idx_slice),
                 vmin=0,
                 vmax=0.0003,
-                flag_T1map=path_folder == path_phantom_T1,
+                flag_T1map=path_folder == path_phantom_rot_T1,
             )
 
 vol_HR = srr_op.adjoint(imgs_stacks[:, :, None, None, None])[0]
@@ -440,7 +441,7 @@ for idx_proj in range(3):
         title='vol_HR_adjoint_0',
         vmin=0,
         vmax=0.00017,
-        flag_T1map=path_folder == path_phantom_T1,
+        flag_T1map=path_folder == path_phantom_rot_T1,
     )
 
 flag_loop_over_slices = False
@@ -453,5 +454,5 @@ if flag_loop_over_slices:
             title='vol_HR_adjoint_1_slice' + str(slice),
             vmin=0,
             vmax=0.00002 * len(list_sGeometries),
-            flag_T1map=path_folder == path_phantom_T1,
+            flag_T1map=path_folder == path_phantom_rot_T1,
         )
