@@ -16,9 +16,7 @@ import pytest
 import torch
 from einops import rearrange
 from einops import repeat
-from mrpro.data import AcqInfo
 from mrpro.data import KData
-from mrpro.data import KHeader
 from mrpro.data import KTrajectory
 from mrpro.data.traj_calculators._KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
@@ -27,7 +25,6 @@ from mrpro.utils import split_idx
 
 from tests.conftest import RandomGenerator
 from tests.conftest import generate_random_data
-from tests.conftest import generate_random_trajectory
 from tests.data import IsmrmrdRawTestData
 from tests.helper import relative_image_difference
 
@@ -71,31 +68,6 @@ def ismrmrd_cart_random_us(ellipse_phantom, tmp_path_factory):
         phantom=ellipse_phantom.phantom,
     )
     return ismrmrd_kdata
-
-
-@pytest.fixture(params=({'seed': 0, 'n_other': 10, 'n_k2': 40, 'n_k1': 20},))
-def random_kheader_shape(request, random_acquisition, random_full_ismrmrd_header):
-    """Random (not necessarily valid) KHeader with defined shape."""
-    # Get dimensions
-    seed, n_other, n_k2, n_k1 = (
-        request.param['seed'],
-        request.param['n_other'],
-        request.param['n_k2'],
-        request.param['n_k1'],
-    )
-    generator = RandomGenerator(seed)
-
-    # Generate acquisitions
-    random_acq_info = AcqInfo.from_ismrmrd_acquisitions([random_acquisition for _ in range(n_k1 * n_k2 * n_other)])
-    n_k0 = int(random_acq_info.number_of_samples[0])
-    n_coils = int(random_acq_info.active_channels[0])
-
-    # Generate trajectory
-    ktraj = [generate_random_trajectory(generator, shape=(n_k0, 2)) for _ in range(n_k1 * n_k2 * n_other)]
-
-    # Put it all together to a KHeader object
-    kheader = KHeader.from_ismrmrd(random_full_ismrmrd_header, acq_info=random_acq_info, defaults={'trajectory': ktraj})
-    return kheader, n_other, n_coils, n_k2, n_k1, n_k0
 
 
 @pytest.fixture(params=({'seed': 0},))
