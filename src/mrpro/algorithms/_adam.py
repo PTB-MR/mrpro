@@ -33,7 +33,7 @@ def adam(
     maximize: bool = False,
     differentiable: bool = False,
     fused: bool | None = None,
-) -> list[torch.Tensor]:
+) -> tuple[torch.Tensor, ...]:
     """Adam for non-linear minimization problems.
 
     Parameters
@@ -102,4 +102,4 @@ def adam(
     for _ in range(max_iter):
         optim.step(closure)
 
-    return list(parameters)
+    return tuple(parameters)
