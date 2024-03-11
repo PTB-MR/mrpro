@@ -22,7 +22,7 @@ from mrpro.operators._SuperResOp import Slice_prof
 from mrpro.operators._SuperResOp import SuperResOp
 
 # load simulated data
-path_XCAT = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes_Simul/XCAT.npy'
+path_XCAT = '/../../echo/allgemein/projects/8_13/MRPro/example_data/raw_data/SuperRes/Simul/XCAT.npy'
 vol_HR = torch.Tensor(np.load(path_XCAT))
 
 # prepare simulated data to match in vivo data
