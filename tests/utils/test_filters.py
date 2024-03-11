@@ -40,7 +40,7 @@ def test_spatial_uniform_filter_3d_tuple(data):
     assert torch.sum(res) == torch.sum(data)
 
 
-def test_spatial_unfirm_filter_wrong_width(data):
+def test_spatial_uniform_filter_wrong_width(data):
     """Test spatial_uniform_filter_3d with wrong width."""
 
     with pytest.raises(ValueError, match='Invalid filter width'):

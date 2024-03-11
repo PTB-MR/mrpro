@@ -35,18 +35,18 @@ class PulseqRadialTestSeq:
         seq = pypulseq.Sequence()
         fov = 200e-3
 
-        delta = torch.pi / n_spokes
-        deltak = 1 / fov
+        delta_angle = torch.pi / n_spokes
+        delta_k = 1 / fov
 
         system = pypulseq.Opts()
         rf, gz, _ = pypulseq.make_sinc_pulse(flip_angle=0.1, slice_thickness=1e-3, system=system, return_gz=True)
-        gx = pypulseq.make_trapezoid(channel='x', flat_area=n_x * deltak, flat_time=2e-3, system=system)
+        gx = pypulseq.make_trapezoid(channel='x', flat_area=n_x * delta_k, flat_time=2e-3, system=system)
         adc = pypulseq.make_adc(num_samples=n_x, duration=gx.flat_time, delay=gx.rise_time, system=system)
-        gx_pre = pypulseq.make_trapezoid(channel='x', area=-gx.area / 2 - deltak / 2, duration=2e-3, system=system)
+        gx_pre = pypulseq.make_trapezoid(channel='x', area=-gx.area / 2 - delta_k / 2, duration=2e-3, system=system)
         gz_reph = pypulseq.make_trapezoid(channel='z', area=-gz.area / 2, duration=2e-3, system=system)
 
         for spoke in range(n_spokes):
-            phi = delta * spoke
+            phi = delta_angle * spoke
             seq.add_block(rf, gz)
             seq.add_block(*pypulseq.rotate(gx_pre, gz_reph, angle=phi, axis='z'))
             seq.add_block(pypulseq.make_delay(10e-3))
@@ -63,7 +63,7 @@ class PulseqRadialTestSeq:
 
         kz = torch.zeros(1, 1, n_spokes, n_x)
         phi = torch.pi / n_spokes * torch.arange(n_spokes)
-        k0 = deltak * torch.linspace(-n_x / 2, n_x / 2 - 1, n_x)
+        k0 = delta_k * torch.linspace(-n_x / 2, n_x / 2 - 1, n_x)
         kx = (torch.cos(phi)[:, None] * k0)[None, None, ...]
         ky = (torch.sin(phi)[:, None] * k0)[None, None, ...]
 

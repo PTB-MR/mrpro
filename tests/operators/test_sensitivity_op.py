@@ -31,8 +31,8 @@ def test_sensitivity_op_adjointness():
 
     # Generate sensitivity operator
     random_tensor = random_generator.complex64_tensor(size=(1, n_coils, n_z, n_y, n_x))
-    random_csm = CsmData(data=random_tensor, header=QHeader(fov=SpatialDimension(1.0, 1.0, 1.0)))
-    sensitivity_op = SensitivityOp(random_csm)
+    random_csmdata = CsmData(data=random_tensor, header=QHeader(fov=SpatialDimension(1.0, 1.0, 1.0)))
+    sensitivity_op = SensitivityOp(random_csmdata)
 
     # Check adjoint property
     u = random_generator.complex64_tensor(size=(1, 1, n_z, n_y, n_x))
@@ -58,8 +58,8 @@ def test_sensitivity_op_other_dim_compatibility_pass(csm_other_dim, img_other_di
 
     # Generate sensitivity operator
     random_tensor = random_generator.complex64_tensor(size=(csm_other_dim, n_coils, n_z, n_y, n_x))
-    random_csm = CsmData(data=random_tensor, header=QHeader(fov=SpatialDimension(1.0, 1.0, 1.0)))
-    sensitivity_op = SensitivityOp(random_csm)
+    random_csmdata = CsmData(data=random_tensor, header=QHeader(fov=SpatialDimension(1.0, 1.0, 1.0)))
+    sensitivity_op = SensitivityOp(random_csmdata)
 
     u = random_generator.complex64_tensor(size=(img_other_dim, 1, n_z, n_y, n_x))
     v = random_generator.complex64_tensor(size=(img_other_dim, n_coils, n_z, n_y, n_x))
@@ -79,8 +79,8 @@ def test_sensitivity_op_other_dim_compatibility_fail(csm_other_dim, img_other_di
 
     # Generate sensitivity operator
     random_tensor = random_generator.complex64_tensor(size=(csm_other_dim, n_coils, n_z, n_y, n_x))
-    random_csm = CsmData(data=random_tensor, header=QHeader(fov=SpatialDimension(1.0, 1.0, 1.0)))
-    sensitivity_op = SensitivityOp(random_csm)
+    random_csmdata = CsmData(data=random_tensor, header=QHeader(fov=SpatialDimension(1.0, 1.0, 1.0)))
+    sensitivity_op = SensitivityOp(random_csmdata)
 
     u = random_generator.complex64_tensor(size=(img_other_dim, 1, n_z, n_y, n_x))
     with pytest.raises(RuntimeError, match='The size of tensor'):

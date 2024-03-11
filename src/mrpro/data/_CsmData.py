@@ -29,7 +29,7 @@ class CsmData(QData):
     def _iterative_walsh_csm(
         coil_images: torch.Tensor,
         smoothing_width: SpatialDimension[int],
-        niter: int,
+        power_iterations: int,
     ) -> torch.Tensor:
         """Calculate csm using an iterative version of the Walsh method.
 
@@ -44,8 +44,8 @@ class CsmData(QData):
             images for each coil element.
         smoothing_width
             width smoothing filter.
-        niter
-            number of iterations of Walsh method.
+        power_iterations
+            number of iterations used to determine dominant eigenvector
         """
         # Compute the pointwise covariance between coils
         coil_cov = torch.einsum('azyx,bzyx->abzyx', coil_images, coil_images.conj())
@@ -56,7 +56,7 @@ class CsmData(QData):
         # At each point in the image, find the dominant eigenvector
         # of the signal covariance matrix using the power method
         v = coil_cov.sum(dim=0)
-        for _ in range(niter):
+        for _ in range(power_iterations):
             v /= v.norm(dim=0)
             v = torch.einsum('abzyx,bzyx->azyx', coil_cov, v)
         csm_data = v / v.norm(dim=0)
@@ -71,7 +71,7 @@ class CsmData(QData):
         cls,
         idata: IData,
         smoothing_width: int | SpatialDimension[int] = 5,
-        niter: int = 3,
+        power_iterations: int = 3,
         chunk_size_otherdim: int | None = None,
     ) -> CsmData:
         """Create csm object from image data using iterative Walsh method.
@@ -82,8 +82,8 @@ class CsmData(QData):
             IData object containing the images for each coil element.
         smoothing_width
             width of smoothing filter.
-        niter
-            number of iterations of Walsh method.
+        power_iterations
+            number of iterations used to determine dominant eigenvector
         chunk_size_otherdim:
             How many elements of the other dimensions should be processed at once.
             Default is None, which means that all elements are processed at once.
@@ -93,7 +93,7 @@ class CsmData(QData):
             smoothing_width = SpatialDimension(smoothing_width, smoothing_width, smoothing_width)
 
         csm_fun = torch.vmap(
-            lambda img: CsmData._iterative_walsh_csm(img, smoothing_width, niter),
+            lambda img: CsmData._iterative_walsh_csm(img, smoothing_width, power_iterations),
             chunk_size=chunk_size_otherdim,
         )
         csm_data = csm_fun(idata.data)

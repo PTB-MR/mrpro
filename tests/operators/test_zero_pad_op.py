@@ -21,7 +21,7 @@ from tests.helper import dotproduct_adjointness_test
 
 
 def test_zero_pad_op_content():
-    """Test correct padding."""
+    """Test correct padding and cropping (i.e. negative padding size)."""
     original_shape = (2, 100, 3, 200, 50, 2)
     padded_shape = (2, 80, 3, 100, 240, 2)
     generator = RandomGenerator(seed=0)
