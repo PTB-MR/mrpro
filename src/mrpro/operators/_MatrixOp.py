@@ -1,4 +1,4 @@
-"""Fourier Operator."""
+"""Matrix Multiplication Operator."""
 
 # Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
@@ -23,12 +23,34 @@ class MatrixOp(LinearOperator):
 
     def __init__(self, matrix: torch.Tensor) -> None:
         super().__init__()
-        self.matrix = matrix
+        self.register_buffer('matrix', matrix)
 
     def forward(self, x) -> tuple[torch.Tensor]:
-        """Multiplication of input with matrix."""
+        """Multiplication of input with matrix.
+
+        Parameters
+        ----------
+        x
+            tensor to be multiplied with matrix
+
+        Returns
+        -------
+            result of matrix-vector multiplication
+        """
+
         return (self.matrix @ x,)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Multiplication of input with adjoint/hermitian matrix."""
+        """Multiplication of input with the adjoint/hermitian matrix.
+
+        Parameters
+        ----------
+        x
+            tensor to be multiplied with hermitian/adjoint matrix
+
+        Returns
+        -------
+            result of adjoint/hermitian matrix-vector multiplication
+        """
+
         return (self.matrix.mH @ x,)
