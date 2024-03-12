@@ -156,7 +156,7 @@
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -286,7 +286,7 @@ document.write(`
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -448,14 +448,11 @@ document.write(`
 
 <div class="viewcode-block" id="KTrajectoryRpe.__init__">
 <a class="viewcode-back" href="../../../../_autosummary/mrpro.data.traj_calculators.KTrajectoryRpe.html#mrpro.data.traj_calculators.KTrajectoryRpe.__init__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-        <span class="n">shift_between_rpe_lines</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">]),</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">shift_between_rpe_lines</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">angle</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">angle</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">shift_between_rpe_lines</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="n">shift_between_rpe_lines</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shift_between_rpe_lines</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">shift_between_rpe_lines</span><span class="p">)</span></div>
 
 
     <span class="k">def</span> <span class="nf">_apply_shifts_between_rpe_lines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">krad</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">kang_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
@@ -484,7 +481,8 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">ind</span><span class="p">,</span> <span class="n">shift</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shift_between_rpe_lines</span><span class="p">):</span>
             <span class="n">curr_angle_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span>
-                <span class="n">torch</span><span class="o">.</span><span class="n">fmod</span><span class="p">(</span><span class="n">kang_idx</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shift_between_rpe_lines</span><span class="p">))</span> <span class="o">==</span> <span class="n">ind</span><span class="p">,</span> <span class="n">as_tuple</span><span class="o">=</span><span class="kc">True</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">fmod</span><span class="p">(</span><span class="n">kang_idx</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shift_between_rpe_lines</span><span class="p">))</span> <span class="o">==</span> <span class="n">ind</span><span class="p">,</span>
+                <span class="n">as_tuple</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">curr_krad</span> <span class="o">=</span> <span class="n">krad</span><span class="p">[</span><span class="n">curr_angle_idx</span><span class="p">]</span>
 
@@ -536,7 +534,6 @@ document.write(`
 <span class="sd">        -------</span>
 <span class="sd">            radial phase encoding trajectory for given KHeader</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="c1"># Trajectory along readout</span>
         <span class="n">kfreq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kfreq</span><span class="p">(</span><span class="n">kheader</span><span class="p">)</span>
 

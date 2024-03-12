@@ -156,7 +156,7 @@
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -286,7 +286,7 @@ document.write(`
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -477,13 +477,12 @@ document.write(`
 <span class="sd">        filename</span>
 <span class="sd">            path to DICOM file</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">dcmread</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">dcmread</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
         <span class="c1"># Image data is 2D np.array of Uint16, which cannot directly be converted to tensor</span>
-        <span class="n">qdata</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">pixel_array</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">))</span>
+        <span class="n">qdata</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">pixel_array</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">))</span>
         <span class="n">qdata</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">qdata</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s1">&#39;(other coils z) y x -&gt; other coils z y x&#39;</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">coils</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
-        <span class="n">header</span> <span class="o">=</span> <span class="n">QHeader</span><span class="o">.</span><span class="n">from_dicom</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="n">QHeader</span><span class="o">.</span><span class="n">from_dicom</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">qdata</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span></div>
 </div>
 

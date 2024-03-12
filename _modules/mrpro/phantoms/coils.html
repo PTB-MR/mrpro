@@ -156,7 +156,7 @@
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -286,7 +286,7 @@ document.write(`
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -438,20 +438,19 @@ document.write(`
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">        number_of_coils</span>
-<span class="sd">            number of coil elements</span>
-<span class="sd">        image_dimensions</span>
-<span class="sd">            number of voxels in the image</span>
-<span class="sd">            This is a 2D simulation so the output will be (1 number_of_coils 1 image_dimensions.y image_dimensions.x)</span>
-<span class="sd">        relative_radius</span>
-<span class="sd">            relative radius of birdcage</span>
-<span class="sd">        normalize_with_rss</span>
-<span class="sd">            If set to true, the calculated sensitivities are normalized by the root-sum-of-squares</span>
+<span class="sd">    number_of_coils</span>
+<span class="sd">        number of coil elements</span>
+<span class="sd">    image_dimensions</span>
+<span class="sd">        number of voxels in the image</span>
+<span class="sd">        This is a 2D simulation so the output will be (1 number_of_coils 1 image_dimensions.y image_dimensions.x)</span>
+<span class="sd">    relative_radius</span>
+<span class="sd">        relative radius of birdcage</span>
+<span class="sd">    normalize_with_rss</span>
+<span class="sd">        If set to true, the calculated sensitivities are normalized by the root-sum-of-squares</span>
 
 <span class="sd">    This function is strongly inspired by https://github.com/ismrmrd/ismrmrd-python-tools. The associated license</span>
 <span class="sd">    information can be found at the end of this file.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
     <span class="n">dim</span> <span class="o">=</span> <span class="p">[</span><span class="n">number_of_coils</span><span class="p">,</span> <span class="n">image_dimensions</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">image_dimensions</span><span class="o">.</span><span class="n">x</span><span class="p">]</span>
     <span class="n">x_co</span><span class="p">,</span> <span class="n">y_co</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">dim</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dim</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>

@@ -156,7 +156,7 @@
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -286,7 +286,7 @@ document.write(`
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -430,7 +430,8 @@ document.write(`
 <div class="viewcode-block" id="spatial_uniform_filter_3d">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.utils.filters.spatial_uniform_filter_3d.html#mrpro.utils.filters.spatial_uniform_filter_3d">[docs]</a>
 <span class="k">def</span> <span class="nf">spatial_uniform_filter_3d</span><span class="p">(</span>
-    <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">filter_width</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">filter_width</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Spatial smoothing using convolution with box function.</span>
 
@@ -442,7 +443,6 @@ document.write(`
 <span class="sd">        Width of 3D the filter as SpatialDimension(z, y, x) or tuple(z, y, x).</span>
 <span class="sd">        The filter width is clipped to the data shape.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
     <span class="c1"># Create a box-shaped filter kernel</span>
     <span class="k">match</span> <span class="n">filter_width</span><span class="p">:</span>
         <span class="k">case</span> <span class="n">SpatialDimension</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>

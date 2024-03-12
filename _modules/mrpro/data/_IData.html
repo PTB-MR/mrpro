@@ -156,7 +156,7 @@
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -286,7 +286,7 @@ document.write(`
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -429,14 +429,14 @@ document.write(`
 <span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">rearrange</span>
 <span class="kn">from</span> <span class="nn">pydicom</span> <span class="kn">import</span> <span class="n">dcmread</span>
 <span class="kn">from</span> <span class="nn">pydicom.dataset</span> <span class="kn">import</span> <span class="n">Dataset</span>
-<span class="kn">from</span> <span class="nn">pydicom.tag</span> <span class="kn">import</span> <span class="n">Tag</span>
+<span class="kn">from</span> <span class="nn">pydicom.tag</span> <span class="kn">import</span> <span class="n">TagType</span>
 
 <span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">Data</span>
 <span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">IHeader</span>
 <span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KHeader</span>
 
 
-<span class="k">def</span> <span class="nf">_dcm_pixelarray_to_tensor</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">_dcm_pixelarray_to_tensor</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform pixel array in dicom file to tensor.</span>
 
 <span class="sd">    &quot;Rescale intercept, (0028|1052), and rescale slope (0028|1053) are</span>
@@ -447,18 +447,19 @@ document.write(`
 <span class="sd">    intercept.&quot; (taken from</span>
 <span class="sd">    https://www.kitware.com/dicom-rescale-intercept-rescale-slope-and-itk/)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="s1">&#39;RescaleSlope&#39;</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">:</span>
-        <span class="n">slope</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">data_element</span><span class="p">(</span><span class="s1">&#39;RescaleSlope&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">slope</span> <span class="o">=</span> <span class="mf">1.0</span>
-
-    <span class="k">if</span> <span class="s1">&#39;RescaleIntercept&#39;</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">:</span>
-        <span class="n">intercept</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">data_element</span><span class="p">(</span><span class="s1">&#39;RescaleSlope&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">intercept</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">slope</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;RescaleSlope&#39;</span> <span class="ow">in</span> <span class="n">dataset</span> <span class="ow">and</span> <span class="p">(</span><span class="n">element</span> <span class="o">:=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">data_element</span><span class="p">(</span><span class="s1">&#39;RescaleSlope&#39;</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">else</span> <span class="mf">1.0</span>
+    <span class="p">)</span>
+    <span class="n">intercept</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;RescaleIntercept&#39;</span> <span class="ow">in</span> <span class="n">dataset</span> <span class="ow">and</span> <span class="p">(</span><span class="n">element</span> <span class="o">:=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">data_element</span><span class="p">(</span><span class="s1">&#39;RescaleIntercept&#39;</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">else</span> <span class="mf">0.0</span>
+    <span class="p">)</span>
 
     <span class="c1"># Image data is 2D np.array of Uint16, which cannot directly be converted to tensor</span>
-    <span class="k">return</span> <span class="n">slope</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">pixel_array</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">))</span> <span class="o">+</span> <span class="n">intercept</span>
+    <span class="k">return</span> <span class="n">slope</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">pixel_array</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">complex64</span><span class="p">))</span> <span class="o">+</span> <span class="n">intercept</span>
 
 
 <div class="viewcode-block" id="IData">
@@ -497,12 +498,11 @@ document.write(`
 <span class="sd">        filename</span>
 <span class="sd">            path to DICOM file.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">dcmread</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-        <span class="n">idata</span> <span class="o">=</span> <span class="n">_dcm_pixelarray_to_tensor</span><span class="p">(</span><span class="n">ds</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">dcmread</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">idata</span> <span class="o">=</span> <span class="n">_dcm_pixelarray_to_tensor</span><span class="p">(</span><span class="n">dataset</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
         <span class="n">idata</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="s1">&#39;(other coils z) y x -&gt; other coils z y x&#39;</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">coils</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
-        <span class="n">header</span> <span class="o">=</span> <span class="n">IHeader</span><span class="o">.</span><span class="n">from_dicom_list</span><span class="p">([</span><span class="n">ds</span><span class="p">])</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="n">IHeader</span><span class="o">.</span><span class="n">from_dicom_list</span><span class="p">([</span><span class="n">dataset</span><span class="p">])</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">idata</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span></div>
 
 
@@ -520,39 +520,40 @@ document.write(`
 <span class="sd">            file extension (without period/full stop) to identify the DICOM files.</span>
 <span class="sd">            If None, then all files in the folder are read in.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="c1"># Get files</span>
-        <span class="k">if</span> <span class="n">suffix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># Read all files in the folder</span>
-            <span class="n">file_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">foldername</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">file_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">foldername</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*.&#39;</span> <span class="o">+</span> <span class="n">suffix</span><span class="p">))</span>
+        <span class="n">file_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">foldername</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">))</span> <span class="k">if</span> <span class="n">suffix</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">foldername</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*.&#39;</span> <span class="o">+</span> <span class="n">suffix</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">file_paths</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;No dicom files with suffix </span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s1"> found in </span><span class="si">{</span><span class="n">foldername</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
         <span class="c1"># Read in all files</span>
-        <span class="n">ds_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">dcmread</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">file_paths</span><span class="p">]</span>
+        <span class="n">dataset_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">dcmread</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">file_paths</span><span class="p">]</span>
 
         <span class="c1"># Ensure they all have the same orientation (same (0019, 1015) SlicePosition_PCS tag)</span>
-        <span class="k">def</span> <span class="nf">get_unique_slice_pos</span><span class="p">(</span><span class="n">slice_pos_tag</span><span class="p">:</span> <span class="n">Tag</span> <span class="o">=</span> <span class="mh">0x00191015</span><span class="p">):</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">ds_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_item</span><span class="p">(</span><span class="n">slice_pos_tag</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">get_unique_slice_positions</span><span class="p">(</span><span class="n">slice_pos_tag</span><span class="p">:</span> <span class="n">TagType</span> <span class="o">=</span> <span class="mh">0x00191015</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">dataset_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_item</span><span class="p">(</span><span class="n">slice_pos_tag</span><span class="p">):</span>
                 <span class="k">return</span> <span class="p">[]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">sl_pos</span> <span class="o">=</span> <span class="p">[</span><span class="n">ds_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_item</span><span class="p">(</span><span class="n">slice_pos_tag</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">]</span>
-                <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">ds_list</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
-                    <span class="n">_val</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">get_item</span><span class="p">(</span><span class="n">slice_pos_tag</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-                    <span class="k">if</span> <span class="n">_val</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sl_pos</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_val</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
-                        <span class="n">sl_pos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_val</span><span class="p">)</span>
-                <span class="k">return</span> <span class="n">sl_pos</span>
+                <span class="n">slice_positions</span> <span class="o">=</span> <span class="p">[</span><span class="n">dataset_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_item</span><span class="p">(</span><span class="n">slice_pos_tag</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">dataset_list</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">get_item</span><span class="p">(</span><span class="n">slice_pos_tag</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+                    <span class="k">if</span> <span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">slice_positions</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+                        <span class="n">slice_positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">slice_positions</span>
 
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ds_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">get_unique_slice_pos</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">get_unique_slice_positions</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Only dicoms with the same orientation can be read in.&#39;</span><span class="p">)</span>
+        <span class="c1"># stack required due to mypy: einops rearrange list[tensor]-&gt;tensor not recognized</span>
+        <span class="n">idata</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">_dcm_pixelarray_to_tensor</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span> <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">dataset_list</span><span class="p">])</span>
+        <span class="n">idata</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span>
+            <span class="n">idata</span><span class="p">,</span>
+            <span class="s1">&#39;(other coils z) y x -&gt; other coils z y x&#39;</span><span class="p">,</span>
+            <span class="n">other</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">idata</span><span class="p">),</span>
+            <span class="n">coils</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">z</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
 
-        <span class="c1"># torch.stack is necessary otherwises mypy does not realize that rearrange yields Tensor from list[Tensor]</span>
-        <span class="n">idata</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">_dcm_pixelarray_to_tensor</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span> <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">ds_list</span><span class="p">])</span>
-        <span class="n">idata</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="s1">&#39;(other coils z) y x -&gt; other coils z y x&#39;</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">idata</span><span class="p">),</span> <span class="n">coils</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="n">header</span> <span class="o">=</span> <span class="n">IHeader</span><span class="o">.</span><span class="n">from_dicom_list</span><span class="p">(</span><span class="n">ds_list</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="n">IHeader</span><span class="o">.</span><span class="n">from_dicom_list</span><span class="p">(</span><span class="n">dataset_list</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">idata</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span></div>
 </div>
 

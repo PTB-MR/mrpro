@@ -156,7 +156,7 @@
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -286,7 +286,7 @@ document.write(`
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -441,11 +441,11 @@ document.write(`
 <div class="viewcode-block" id="Limits.from_ismrmrd">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.Limits.html#mrpro.data.Limits.from_ismrmrd">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_ismrmrd</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">limitType</span><span class="p">:</span> <span class="n">limitType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Limits</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_ismrmrd</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">limit_type</span><span class="p">:</span> <span class="n">limitType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Limits</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create Limits from ismrmrd.limitType.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">limitType</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">limit_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">cls</span><span class="p">()</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">*</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">astuple</span><span class="p">(</span><span class="n">limitType</span><span class="p">))</span></div>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">*</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">astuple</span><span class="p">(</span><span class="n">limit_type</span><span class="p">))</span></div>
 
 
     <span class="nd">@property</span>
@@ -484,17 +484,14 @@ document.write(`
     <span class="n">user_6</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
     <span class="n">user_7</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
 
-<div class="viewcode-block" id="EncodingLimits.from_ismrmrd_encodingLimitsType">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.data.EncodingLimits.html#mrpro.data.EncodingLimits.from_ismrmrd_encodingLimitsType">[docs]</a>
+<div class="viewcode-block" id="EncodingLimits.from_ismrmrd_encoding_limits_type">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.EncodingLimits.html#mrpro.data.EncodingLimits.from_ismrmrd_encoding_limits_type">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_ismrmrd_encodingLimitsType</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span>
-        <span class="n">encodingLimits</span><span class="p">:</span> <span class="n">encodingLimitsType</span><span class="p">,</span>
-    <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">from_ismrmrd_encoding_limits_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">encoding_limits</span><span class="p">:</span> <span class="n">encodingLimitsType</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate EncodingLimits from ismrmrd.encodingLimitsType.&quot;&quot;&quot;</span>
         <span class="n">values</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">Limits</span><span class="o">.</span><span class="n">from_ismrmrd</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">encodingLimits</span><span class="p">,</span> <span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
-            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">fields</span><span class="p">(</span><span class="n">encodingLimits</span><span class="p">)</span>
+            <span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">Limits</span><span class="o">.</span><span class="n">from_ismrmrd</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">encoding_limits</span><span class="p">,</span> <span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">fields</span><span class="p">(</span><span class="n">encoding_limits</span><span class="p">)</span>
         <span class="p">}</span>
 
         <span class="c1"># adjust from ISMRMRD to MRPro naming convention</span>

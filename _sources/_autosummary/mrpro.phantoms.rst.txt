@@ -19,7 +19,7 @@
       :toctree:
       :template: class_template.rst
    
-      EllipsePars
+      EllipseParameters
       EllipsePhantom
    
    

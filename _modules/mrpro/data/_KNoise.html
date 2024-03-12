@@ -156,7 +156,7 @@
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -286,7 +286,7 @@ document.write(`
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -448,21 +448,16 @@ document.write(`
 <div class="viewcode-block" id="KNoise.from_file">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.KNoise.html#mrpro.data.KNoise.from_file">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_file</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span>
-        <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
-        <span class="n">dataset_idx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KNoise</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_file</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">dataset_idx</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KNoise</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load noise measurements from ISMRMRD file.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">            filename</span>
-<span class="sd">                Path to the ISMRMRD file</span>
-<span class="sd">            dataset_idx</span>
-<span class="sd">                Index of the dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)</span>
+<span class="sd">        filename</span>
+<span class="sd">            Path to the ISMRMRD file</span>
+<span class="sd">        dataset_idx</span>
+<span class="sd">            Index of the dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="c1"># Can raise FileNotFoundError</span>
         <span class="k">with</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
             <span class="n">ds</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="n">dataset_idx</span><span class="p">]]</span>
@@ -471,7 +466,7 @@ document.write(`
         <span class="c1"># Read out noise measurements</span>
         <span class="n">acquisitions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">acq</span><span class="p">:</span> <span class="p">(</span><span class="n">AcqFlags</span><span class="o">.</span><span class="n">ACQ_IS_NOISE_MEASUREMENT</span><span class="o">.</span><span class="n">value</span> <span class="o">&amp;</span> <span class="n">acq</span><span class="o">.</span><span class="n">flags</span><span class="p">),</span> <span class="n">acquisitions</span><span class="p">))</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">acquisitions</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;No noise measurments found in </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;No noise measurements found in </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="n">noise_data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">acq</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span> <span class="k">for</span> <span class="n">acq</span> <span class="ow">in</span> <span class="n">acquisitions</span><span class="p">])</span>
 
         <span class="c1"># Reshape to standard dimensions</span>

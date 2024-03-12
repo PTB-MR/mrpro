@@ -156,7 +156,7 @@
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -286,7 +286,7 @@ document.write(`
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -431,7 +431,6 @@ document.write(`
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">rearrange</span>
-
 <span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">AcqInfo</span>
 <span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KHeader</span>
 <span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KTrajectory</span>
@@ -445,16 +444,7 @@ document.write(`
 <span class="kn">from</span> <span class="nn">mrpro.data.traj_calculators</span> <span class="kn">import</span> <span class="n">KTrajectoryIsmrmrd</span>
 <span class="kn">from</span> <span class="nn">mrpro.utils</span> <span class="kn">import</span> <span class="n">modify_acq_info</span>
 
-<span class="n">KDIM_SORT_LABELS</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s1">&#39;k1&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;k2&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;average&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;slice&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;contrast&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;phase&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;repetition&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;set&#39;</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="n">KDIM_SORT_LABELS</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;k1&#39;</span><span class="p">,</span> <span class="s1">&#39;k2&#39;</span><span class="p">,</span> <span class="s1">&#39;average&#39;</span><span class="p">,</span> <span class="s1">&#39;slice&#39;</span><span class="p">,</span> <span class="s1">&#39;contrast&#39;</span><span class="p">,</span> <span class="s1">&#39;phase&#39;</span><span class="p">,</span> <span class="s1">&#39;repetition&#39;</span><span class="p">,</span> <span class="s1">&#39;set&#39;</span><span class="p">)</span>
 
 <span class="c1"># Same criteria as https://github.com/wtclarke/pymapvbvd/blob/master/mapvbvd/mapVBVD.py uses</span>
 <span class="n">DEFAULT_IGNORE_FLAGS</span> <span class="o">=</span> <span class="p">(</span>
@@ -494,28 +484,27 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">            filename</span>
-<span class="sd">                path to the ISMRMRD file</span>
-<span class="sd">            ktrajectory</span>
-<span class="sd">                KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory</span>
-<span class="sd">            header_overwrites</span>
-<span class="sd">                dictionary of key-value pairs to overwrite the header</span>
-<span class="sd">            dataset_idx</span>
-<span class="sd">                index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)</span>
-<span class="sd">            ignore_flags</span>
-<span class="sd">                Acqisition flags to filter out. Defaults to all non-images as defined by pymapvbvd.</span>
-<span class="sd">                Use ACQ_NO_FLAG to disable the filter.</span>
-<span class="sd">                Note: If ACQ_IS_PARALLEL_CALIBRATION is set without also setting ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING</span>
-<span class="sd">                      we interpret it as: Ignore if IS_PARALLEL_CALIBRATION and not PARALLEL_CALIBRATION_AND_IMAGING</span>
+<span class="sd">        filename</span>
+<span class="sd">            path to the ISMRMRD file</span>
+<span class="sd">        ktrajectory</span>
+<span class="sd">            KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory</span>
+<span class="sd">        header_overwrites</span>
+<span class="sd">            dictionary of key-value pairs to overwrite the header</span>
+<span class="sd">        dataset_idx</span>
+<span class="sd">            index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)</span>
+<span class="sd">        ignore_flags</span>
+<span class="sd">            Acqisition flags to filter out. Defaults to all non-images as defined by pymapvbvd.</span>
+<span class="sd">            Use ACQ_NO_FLAG to disable the filter.</span>
+<span class="sd">            Note: If ACQ_IS_PARALLEL_CALIBRATION is set without also setting ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING</span>
+<span class="sd">                    we interpret it as: Ignore if IS_PARALLEL_CALIBRATION and not PARALLEL_CALIBRATION_AND_IMAGING</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="c1"># Can raise FileNotFoundError</span>
         <span class="k">with</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-            <span class="n">ds</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="n">dataset_idx</span><span class="p">]]</span>
-            <span class="n">ismrmrd_header</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">header</span>
-            <span class="n">acquisitions</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">acquisitions</span><span class="p">[:]</span>
+            <span class="n">dataset</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">file</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="n">dataset_idx</span><span class="p">]]</span>
+            <span class="n">ismrmrd_header</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">header</span>
+            <span class="n">acquisitions</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">acquisitions</span><span class="p">[:]</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">mtime</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">h5g</span><span class="o">.</span><span class="n">get_objinfo</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">_contents</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">mtime</span>
+                <span class="n">mtime</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">h5g</span><span class="o">.</span><span class="n">get_objinfo</span><span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">_contents</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">mtime</span>
             <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
                 <span class="n">mtime</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">modification_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">mtime</span><span class="p">)</span>
@@ -532,7 +521,7 @@ document.write(`
                     <span class="k">lambda</span> <span class="n">acq</span><span class="p">:</span> <span class="p">(</span><span class="n">AcqFlags</span><span class="o">.</span><span class="n">ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING</span><span class="o">.</span><span class="n">value</span> <span class="o">&amp;</span> <span class="n">acq</span><span class="o">.</span><span class="n">flags</span><span class="p">)</span>
                     <span class="ow">or</span> <span class="ow">not</span> <span class="p">(</span><span class="n">AcqFlags</span><span class="o">.</span><span class="n">ACQ_IS_PARALLEL_CALIBRATION</span><span class="o">.</span><span class="n">value</span> <span class="o">&amp;</span> <span class="n">acq</span><span class="o">.</span><span class="n">flags</span><span class="p">),</span>
                     <span class="n">acquisitions</span><span class="p">,</span>
-                <span class="p">)</span>
+                <span class="p">),</span>
             <span class="p">)</span>
 
         <span class="n">acquisitions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">acq</span><span class="p">:</span> <span class="ow">not</span> <span class="p">(</span><span class="n">ignore_flags</span><span class="o">.</span><span class="n">value</span> <span class="o">&amp;</span> <span class="n">acq</span><span class="o">.</span><span class="n">flags</span><span class="p">),</span> <span class="n">acquisitions</span><span class="p">))</span>
@@ -565,18 +554,25 @@ document.write(`
         <span class="n">num_total_unique</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">unique_idxs</span><span class="p">[</span><span class="n">label</span><span class="p">])</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">KDIM_SORT_LABELS</span><span class="p">])</span><span class="o">.</span><span class="n">prod</span><span class="p">()</span>
 
         <span class="c1"># Define function to find index label combinations. This is used to determine the dimensions of k1 and k2.</span>
-        <span class="k">def</span> <span class="nf">idx_label_combination</span><span class="p">(</span><span class="n">average_idx</span><span class="p">,</span> <span class="n">slice_idx</span><span class="p">,</span> <span class="n">contrast_idx</span><span class="p">,</span> <span class="n">phase_idx</span><span class="p">,</span> <span class="n">repetition_idx</span><span class="p">,</span> <span class="n">set_idx</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">idx_label_combination</span><span class="p">(</span>
+            <span class="n">average_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+            <span class="n">slice_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+            <span class="n">contrast_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+            <span class="n">phase_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+            <span class="n">repetition_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+            <span class="n">set_idx</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="p">):</span>
             <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span>
                 <span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">average</span> <span class="o">==</span> <span class="n">average_idx</span><span class="p">)</span>
                 <span class="o">&amp;</span> <span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">slice</span> <span class="o">==</span> <span class="n">slice_idx</span><span class="p">)</span>
                 <span class="o">&amp;</span> <span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">contrast</span> <span class="o">==</span> <span class="n">contrast_idx</span><span class="p">)</span>
                 <span class="o">&amp;</span> <span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">phase</span> <span class="o">==</span> <span class="n">phase_idx</span><span class="p">)</span>
                 <span class="o">&amp;</span> <span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">repetition</span> <span class="o">==</span> <span class="n">repetition_idx</span><span class="p">)</span>
-                <span class="o">&amp;</span> <span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">set</span> <span class="o">==</span> <span class="n">set_idx</span><span class="p">)</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">set</span> <span class="o">==</span> <span class="n">set_idx</span><span class="p">),</span>
             <span class="p">)</span>
 
         <span class="n">idx_matches</span> <span class="o">=</span> <span class="n">idx_label_combination</span><span class="p">(</span>
-            <span class="o">*</span><span class="p">[</span><span class="n">unique_idxs</span><span class="p">[</span><span class="n">label</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">KDIM_SORT_LABELS</span> <span class="k">if</span> <span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;k1&#39;</span><span class="p">,</span> <span class="s1">&#39;k2&#39;</span><span class="p">)]</span>
+            <span class="o">*</span><span class="p">[</span><span class="n">unique_idxs</span><span class="p">[</span><span class="n">label</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">KDIM_SORT_LABELS</span> <span class="k">if</span> <span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;k1&#39;</span><span class="p">,</span> <span class="s1">&#39;k2&#39;</span><span class="p">)],</span>
         <span class="p">)</span>
 
         <span class="c1"># Determine the number of k1 and k2 points</span>
@@ -603,7 +599,12 @@ document.write(`
         <span class="c1"># Verify that k2 and k1 contain the same number of k-space points for all combinations of averages, slices...</span>
         <span class="k">for</span> <span class="n">average_idx</span><span class="p">,</span> <span class="n">slice_idx</span><span class="p">,</span> <span class="n">contrast_idx</span><span class="p">,</span> <span class="n">phase_idx</span><span class="p">,</span> <span class="n">repetition_idx</span><span class="p">,</span> <span class="n">set_idx</span> <span class="ow">in</span> <span class="n">idx_combinations</span><span class="p">:</span>
             <span class="n">idx_matches</span> <span class="o">=</span> <span class="n">idx_label_combination</span><span class="p">(</span>
-                <span class="n">average_idx</span><span class="p">,</span> <span class="n">slice_idx</span><span class="p">,</span> <span class="n">contrast_idx</span><span class="p">,</span> <span class="n">phase_idx</span><span class="p">,</span> <span class="n">repetition_idx</span><span class="p">,</span> <span class="n">set_idx</span>
+                <span class="n">average_idx</span><span class="p">,</span>
+                <span class="n">slice_idx</span><span class="p">,</span>
+                <span class="n">contrast_idx</span><span class="p">,</span>
+                <span class="n">phase_idx</span><span class="p">,</span>
+                <span class="n">repetition_idx</span><span class="p">,</span>
+                <span class="n">set_idx</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">label_str</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="sa">f</span><span class="s1">&#39;[average </span><span class="si">{</span><span class="n">average_idx</span><span class="si">}</span><span class="s1"> | slice </span><span class="si">{</span><span class="n">slice_idx</span><span class="si">}</span><span class="s1"> | contrast </span><span class="si">{</span><span class="n">contrast_idx</span><span class="si">}</span><span class="s1"> | phase </span><span class="si">{</span><span class="n">phase_idx</span><span class="si">}</span><span class="s1">&#39;</span>
@@ -616,9 +617,8 @@ document.write(`
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of k1 points in </span><span class="si">{</span><span class="n">label_str</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">current_num_k1</span><span class="si">}</span><span class="s1">. Expected: </span><span class="si">{</span><span class="n">num_k1</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">current_num_k2</span> <span class="o">!=</span> <span class="n">num_k2</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of k2 points in </span><span class="si">{</span><span class="n">label_str</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">current_num_k2</span><span class="si">}</span><span class="s1">. Expected: </span><span class="si">{</span><span class="n">num_k2</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx_matches</span><span class="p">)</span> <span class="o">!=</span> <span class="n">num_k1</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of (k2 k1) points in </span><span class="si">{</span><span class="n">label_str</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">idx_matches</span><span class="p">)</span><span class="si">}</span><span class="s1">. Expected: </span><span class="si">{</span><span class="n">num_k1</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx_matches</span><span class="p">)</span> <span class="o">!=</span> <span class="n">num_k1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Number of (k2 k1) points in </span><span class="si">{</span><span class="n">label_str</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">idx_matches</span><span class="p">)</span><span class="si">}</span><span class="s1">. Expected: </span><span class="si">{</span><span class="n">num_k1</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
         <span class="c1"># Sort the data according to the sorted indices</span>
         <span class="n">sort_ki</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="nb">getattr</span><span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">KDIM_SORT_LABELS</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -626,7 +626,7 @@ document.write(`
         <span class="n">kdata</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">kdata</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">],</span> <span class="s1">&#39;(other k2 k1) coils k0 -&gt; other coils k2 k1 k0&#39;</span><span class="p">,</span> <span class="n">k1</span><span class="o">=</span><span class="n">num_k1</span><span class="p">,</span> <span class="n">k2</span><span class="o">=</span><span class="n">num_k2</span><span class="p">)</span>
 
         <span class="c1"># Reshape the acquisition data and update the header acquisition infos accordingly</span>
-        <span class="k">def</span> <span class="nf">reshape_acq_data</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">reshape_acq_data</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">],</span> <span class="s1">&#39;(other k2 k1) ... -&gt; other k2 k1 ...&#39;</span><span class="p">,</span> <span class="n">k1</span><span class="o">=</span><span class="n">num_k1</span><span class="p">,</span> <span class="n">k2</span><span class="o">=</span><span class="n">num_k2</span><span class="p">)</span>
 
         <span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span> <span class="o">=</span> <span class="n">modify_acq_info</span><span class="p">(</span><span class="n">reshape_acq_data</span><span class="p">,</span> <span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="p">)</span>
@@ -646,7 +646,7 @@ document.write(`
             <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
                     <span class="s1">&#39;ktrajectory must be KTrajectoryIsmrmrd, KTrajectory or KTrajectoryCalculator,&#39;</span>
-                    <span class="sa">f</span><span class="s1">&#39;not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">ktrajectory</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">ktrajectory</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
                 <span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
@@ -655,8 +655,8 @@ document.write(`
         <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s1">&#39;Broadcasted shape trajectory do not match kdata: </span><span class="si">{</span><span class="n">shape</span><span class="si">}</span><span class="s1"> vs. </span><span class="si">{</span><span class="n">kdata</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">. &#39;</span>
-                <span class="s1">&#39;Please check the trajectory.&#39;</span>
-            <span class="p">)</span>
+                <span class="s1">&#39;Please check the trajectory.&#39;</span><span class="p">,</span>
+            <span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
 
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">kheader</span><span class="p">,</span> <span class="n">kdata</span><span class="p">,</span> <span class="n">ktraj</span><span class="p">)</span></div>
 
@@ -702,10 +702,18 @@ document.write(`
         <span class="k">return</span> <span class="n">KData</span><span class="p">(</span>
             <span class="n">header</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="p">,</span>
             <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">to</span><span class="p">(</span>
-                <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="n">non_blocking</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="n">copy</span><span class="p">,</span> <span class="n">memory_format</span><span class="o">=</span><span class="n">memory_format</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span>
+                <span class="n">non_blocking</span><span class="o">=</span><span class="n">non_blocking</span><span class="p">,</span>
+                <span class="n">copy</span><span class="o">=</span><span class="n">copy</span><span class="p">,</span>
+                <span class="n">memory_format</span><span class="o">=</span><span class="n">memory_format</span><span class="p">,</span>
             <span class="p">),</span>
             <span class="n">traj</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="o">.</span><span class="n">to</span><span class="p">(</span>
-                <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype_traj</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="n">non_blocking</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="n">copy</span><span class="p">,</span> <span class="n">memory_format</span><span class="o">=</span><span class="n">memory_format</span>
+                <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="n">dtype_traj</span><span class="p">,</span>
+                <span class="n">non_blocking</span><span class="o">=</span><span class="n">non_blocking</span><span class="p">,</span>
+                <span class="n">copy</span><span class="o">=</span><span class="n">copy</span><span class="p">,</span>
+                <span class="n">memory_format</span><span class="o">=</span><span class="n">memory_format</span><span class="p">,</span>
             <span class="p">),</span>
         <span class="p">)</span></div>
 
@@ -732,9 +740,7 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">KData</span><span class="p">(</span>
             <span class="n">header</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="p">,</span>
-            <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cuda</span><span class="p">(</span>
-                <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="n">non_blocking</span><span class="p">,</span> <span class="n">memory_format</span><span class="o">=</span><span class="n">memory_format</span>
-            <span class="p">),</span>  <span class="c1"># type: ignore [call-arg]</span>
+            <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cuda</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="n">non_blocking</span><span class="p">,</span> <span class="n">memory_format</span><span class="o">=</span><span class="n">memory_format</span><span class="p">),</span>  <span class="c1"># type: ignore [call-arg]</span>
             <span class="n">traj</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">traj</span><span class="o">.</span><span class="n">cuda</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="n">non_blocking</span><span class="p">,</span> <span class="n">memory_format</span><span class="o">=</span><span class="n">memory_format</span><span class="p">),</span>
         <span class="p">)</span></div>
 

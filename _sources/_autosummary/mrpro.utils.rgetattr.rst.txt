@@ -1,6 +1,0 @@
-mrpro.utils.rgetattr
-====================
-
-.. currentmodule:: mrpro.utils
-
-.. autofunction:: rgetattr

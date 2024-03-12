@@ -40,7 +40,7 @@ MRpro provides a range of functionality to prepare the data for image reconstruc
 * Noise prewhiting
 * Removal of oversampling along readout direction
 * Calculation of the density compensation function
-* Estimation of coil sensitiviy maps
+* Estimation of coil sensitivity maps
 * ...
 
 Data reconstruction

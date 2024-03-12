@@ -26,7 +26,7 @@ mrpro.phantoms.phantom\_elements
       :toctree:
       :template: class_template.rst
    
-      EllipsePars
+      EllipseParameters
    
    
 

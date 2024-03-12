@@ -156,7 +156,7 @@
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -286,7 +286,7 @@ document.write(`
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -439,10 +439,7 @@ document.write(`
 
 <div class="viewcode-block" id="KTrajectoryRadial2D.__init__">
 <a class="viewcode-back" href="../../../../_autosummary/mrpro.data.traj_calculators.KTrajectoryRadial2D.html#mrpro.data.traj_calculators.KTrajectoryRadial2D.__init__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="mf">0.618034</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="mf">0.618034</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">angle</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">angle</span></div>
 
@@ -459,7 +456,6 @@ document.write(`
 <span class="sd">        -------</span>
 <span class="sd">            radial 2D trajectory for given KHeader</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="c1"># K-space locations along readout lines</span>
         <span class="n">krad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kfreq</span><span class="p">(</span><span class="n">kheader</span><span class="p">)</span>
 

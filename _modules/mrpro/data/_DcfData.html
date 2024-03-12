@@ -156,7 +156,7 @@
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -286,7 +286,7 @@ document.write(`
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -428,6 +428,7 @@ document.write(`
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">numpy.typing</span> <span class="kn">import</span> <span class="n">ArrayLike</span>
 <span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="kn">import</span> <span class="n">ConvexHull</span>
 <span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="kn">import</span> <span class="n">Voronoi</span>
 
@@ -437,7 +438,7 @@ document.write(`
 <span class="n">UNIQUE_ROUNDING_DECIMALS</span> <span class="o">=</span> <span class="mi">15</span>
 
 
-<span class="k">def</span> <span class="nf">_volume</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_volume</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">ConvexHull</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">volume</span>
 
 
@@ -458,9 +459,11 @@ document.write(`
 <span class="sd">        traj</span>
 <span class="sd">            k-space positions, 1D tensor</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="n">traj_sorted</span><span class="p">,</span> <span class="n">inverse</span><span class="p">,</span> <span class="n">counts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">torch</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">traj</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="n">UNIQUE_ROUNDING_DECIMALS</span><span class="p">),</span> <span class="nb">sorted</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">traj</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="n">UNIQUE_ROUNDING_DECIMALS</span><span class="p">),</span>
+            <span class="nb">sorted</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># For a sorted trajectory: x0 x1 x2 ... xN</span>
@@ -503,7 +506,6 @@ document.write(`
 <span class="sd">        -------</span>
 <span class="sd">            density compensation values (1, k2, k1, k0)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="c1"># 2D and 3D trajectories supported</span>
         <span class="n">dim</span> <span class="o">=</span> <span class="n">traj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">dim</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
@@ -546,9 +548,9 @@ document.write(`
         <span class="n">iqr</span> <span class="o">=</span> <span class="n">q3</span> <span class="o">-</span> <span class="n">q1</span>
         <span class="n">upper_bound</span> <span class="o">=</span> <span class="n">q3</span> <span class="o">+</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">iqr</span>
         <span class="n">idx_outliers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">dcf</span> <span class="o">&gt;</span> <span class="n">upper_bound</span><span class="p">)</span>
-        <span class="n">num_outliers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx_outliers</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="n">high_values_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.99</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dcf_sorted</span><span class="p">)</span> <span class="o">-</span> <span class="n">num_outliers</span><span class="p">))</span>
-        <span class="n">high_values_end</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dcf_sorted</span><span class="p">)</span> <span class="o">-</span> <span class="n">num_outliers</span>  <span class="c1"># this works also for num_outliers==0</span>
+        <span class="n">n_outliers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx_outliers</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">high_values_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.99</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dcf_sorted</span><span class="p">)</span> <span class="o">-</span> <span class="n">n_outliers</span><span class="p">))</span>
+        <span class="n">high_values_end</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dcf_sorted</span><span class="p">)</span> <span class="o">-</span> <span class="n">n_outliers</span>  <span class="c1"># this works also for n_outliers==0</span>
         <span class="n">fill_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">dcf_sorted</span><span class="p">[</span><span class="n">high_values_start</span><span class="p">:</span><span class="n">high_values_end</span><span class="p">])</span>
         <span class="n">dcf</span><span class="p">[</span><span class="n">idx_outliers</span><span class="p">]</span> <span class="o">=</span> <span class="n">fill_value</span>
 

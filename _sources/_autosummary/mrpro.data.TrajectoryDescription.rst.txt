@@ -28,9 +28,9 @@ mrpro.data.TrajectoryDescription
    .. autosummary::
    
       ~TrajectoryDescription.identifier
-      ~TrajectoryDescription.userParameterLong
-      ~TrajectoryDescription.userParameterDouble
-      ~TrajectoryDescription.userParameterString
+      ~TrajectoryDescription.user_parameter_long
+      ~TrajectoryDescription.user_parameter_double
+      ~TrajectoryDescription.user_parameter_string
       ~TrajectoryDescription.comment
    
    

@@ -156,7 +156,7 @@
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -286,7 +286,7 @@ document.write(`
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -434,23 +434,22 @@ document.write(`
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;TrajectoryDescription dataclass.&quot;&quot;&quot;</span>
 
     <span class="n">identifier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-    <span class="n">userParameterLong</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
-    <span class="n">userParameterDouble</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
-    <span class="n">userParameterString</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">user_parameter_long</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">user_parameter_double</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">user_parameter_string</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
     <span class="n">comment</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
 
 <div class="viewcode-block" id="TrajectoryDescription.from_ismrmrd">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.TrajectoryDescription.html#mrpro.data.TrajectoryDescription.from_ismrmrd">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_ismrmrd</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">trajectoryDescription</span><span class="p">:</span> <span class="n">trajectoryDescriptionType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TrajectoryDescription</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_ismrmrd</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">trajectory_description</span><span class="p">:</span> <span class="n">trajectoryDescriptionType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TrajectoryDescription</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create TrajectoryDescription from ismrmrd traj description.&quot;&quot;&quot;</span>
-
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
-            <span class="n">userParameterLong</span><span class="o">=</span><span class="p">{</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">trajectoryDescription</span><span class="o">.</span><span class="n">userParameterLong</span><span class="p">},</span>
-            <span class="n">userParameterDouble</span><span class="o">=</span><span class="p">{</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">trajectoryDescription</span><span class="o">.</span><span class="n">userParameterDouble</span><span class="p">},</span>
-            <span class="n">userParameterString</span><span class="o">=</span><span class="p">{</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">trajectoryDescription</span><span class="o">.</span><span class="n">userParameterString</span><span class="p">},</span>
-            <span class="n">comment</span><span class="o">=</span><span class="n">trajectoryDescription</span><span class="o">.</span><span class="n">comment</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
-            <span class="n">identifier</span><span class="o">=</span><span class="n">trajectoryDescription</span><span class="o">.</span><span class="n">identifier</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+            <span class="n">user_parameter_long</span><span class="o">=</span><span class="p">{</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">trajectory_description</span><span class="o">.</span><span class="n">userParameterLong</span><span class="p">},</span>
+            <span class="n">user_parameter_double</span><span class="o">=</span><span class="p">{</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">trajectory_description</span><span class="o">.</span><span class="n">userParameterDouble</span><span class="p">},</span>
+            <span class="n">user_parameter_string</span><span class="o">=</span><span class="p">{</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">trajectory_description</span><span class="o">.</span><span class="n">userParameterString</span><span class="p">},</span>
+            <span class="n">comment</span><span class="o">=</span><span class="n">trajectory_description</span><span class="o">.</span><span class="n">comment</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+            <span class="n">identifier</span><span class="o">=</span><span class="n">trajectory_description</span><span class="o">.</span><span class="n">identifier</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
         <span class="p">)</span></div>
 </div>
 

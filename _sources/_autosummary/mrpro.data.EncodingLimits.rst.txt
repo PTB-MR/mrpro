@@ -17,7 +17,7 @@ mrpro.data.EncodingLimits
    .. autosummary::
    
       ~EncodingLimits.__init__
-      ~EncodingLimits.from_ismrmrd_encodingLimitsType
+      ~EncodingLimits.from_ismrmrd_encoding_limits_type
    
    
 

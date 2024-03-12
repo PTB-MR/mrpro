@@ -34,7 +34,7 @@ mrpro.data.KHeader
       ~KHeader.recon_fov
       ~KHeader.encoding_matrix
       ~KHeader.encoding_fov
-      ~KHeader.num_coils
+      ~KHeader.n_coils
       ~KHeader.acq_info
       ~KHeader.datetime
       ~KHeader.h1_freq
@@ -49,7 +49,7 @@ mrpro.data.KHeader
       ~KHeader.vendor
       ~KHeader.protocol_name
       ~KHeader.misc
-      ~KHeader.calib_mode
+      ~KHeader.calibration_mode
       ~KHeader.interleave_dim
       ~KHeader.traj_type
       ~KHeader.measurement_id

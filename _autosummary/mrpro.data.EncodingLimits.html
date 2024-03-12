@@ -159,7 +159,7 @@
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -291,7 +291,7 @@ document.write(`
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -384,7 +384,7 @@ document.write(`
 </ul>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1 has-children"><a class="reference internal" href="mrpro.phantoms.html">mrpro.phantoms</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.phantoms.EllipsePars.html">mrpro.phantoms.EllipsePars</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mrpro.phantoms.EllipseParameters.html">mrpro.phantoms.EllipseParameters</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.phantoms.EllipsePhantom.html">mrpro.phantoms.EllipsePhantom</a></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="mrpro.phantoms.coils.html">mrpro.phantoms.coils</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="mrpro.phantoms.coils.birdcage_2d.html">mrpro.phantoms.coils.birdcage_2d</a></li>
@@ -394,7 +394,7 @@ document.write(`
 </li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="mrpro.phantoms.phantom_elements.html">mrpro.phantoms.phantom_elements</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="mrpro.phantoms.phantom_elements.dataclass.html">mrpro.phantoms.phantom_elements.dataclass</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.phantoms.phantom_elements.EllipsePars.html">mrpro.phantoms.phantom_elements.EllipsePars</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.phantoms.phantom_elements.EllipseParameters.html">mrpro.phantoms.phantom_elements.EllipseParameters</a></li>
 </ul>
 </li>
 </ul>
@@ -404,7 +404,6 @@ document.write(`
 <li class="toctree-l1 has-children"><a class="reference internal" href="mrpro.utils.html">mrpro.utils</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-5"><i class="fa-solid fa-chevron-down"></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.modify_acq_info.html">mrpro.utils.modify_acq_info</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.remove_repeat.html">mrpro.utils.remove_repeat</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.utils.rgetattr.html">mrpro.utils.rgetattr</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.smap.html">mrpro.utils.smap</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.split_idx.html">mrpro.utils.split_idx</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.zero_pad_or_crop.html">mrpro.utils.zero_pad_or_crop</a></li>
@@ -496,7 +495,7 @@ DOI: 10.1002/mrm.26089 (Fig. 3)</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.EncodingLimits.__init__" title="mrpro.data.EncodingLimits.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([k0, k1, k2, average, slice, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.EncodingLimits.from_ismrmrd_encodingLimitsType" title="mrpro.data.EncodingLimits.from_ismrmrd_encodingLimitsType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_ismrmrd_encodingLimitsType</span></code></a>(encodingLimits)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.EncodingLimits.from_ismrmrd_encoding_limits_type" title="mrpro.data.EncodingLimits.from_ismrmrd_encoding_limits_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_ismrmrd_encoding_limits_type</span></code></a>(...)</p></td>
 <td><p>Generate EncodingLimits from ismrmrd.encodingLimitsType.</p></td>
 </tr>
 </tbody>
@@ -561,8 +560,8 @@ DOI: 10.1002/mrm.26089 (Fig. 3)</p>
 </tbody>
 </table>
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.from_ismrmrd_encodingLimitsType">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_ismrmrd_encodingLimitsType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">encodingLimits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">encodingLimitsType</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/_EncodingLimits.html#EncodingLimits.from_ismrmrd_encodingLimitsType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.EncodingLimits.from_ismrmrd_encodingLimitsType" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.from_ismrmrd_encoding_limits_type">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_ismrmrd_encoding_limits_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">encoding_limits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">encodingLimitsType</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/_EncodingLimits.html#EncodingLimits.from_ismrmrd_encoding_limits_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.EncodingLimits.from_ismrmrd_encoding_limits_type" title="Link to this definition">#</a></dt>
 <dd><p>Generate EncodingLimits from ismrmrd.encodingLimitsType.</p>
 </dd></dl>
 
@@ -618,7 +617,7 @@ DOI: 10.1002/mrm.26089 (Fig. 3)</p>
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.EncodingLimits"><code class="docutils literal notranslate"><span class="pre">EncodingLimits</span></code></a><ul class="visible nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.EncodingLimits.__init__"><code class="docutils literal notranslate"><span class="pre">EncodingLimits.__init__()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.EncodingLimits.from_ismrmrd_encodingLimitsType"><code class="docutils literal notranslate"><span class="pre">EncodingLimits.from_ismrmrd_encodingLimitsType()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.EncodingLimits.from_ismrmrd_encoding_limits_type"><code class="docutils literal notranslate"><span class="pre">EncodingLimits.from_ismrmrd_encoding_limits_type()</span></code></a></li>
 </ul>
 </li>
 </ul>

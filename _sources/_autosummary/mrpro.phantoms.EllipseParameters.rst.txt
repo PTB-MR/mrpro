@@ -1,0 +1,35 @@
+mrpro.phantoms.EllipseParameters
+================================
+
+.. currentmodule:: mrpro.phantoms
+
+.. autoclass:: EllipseParameters
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~EllipseParameters.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~EllipseParameters.center_x
+      ~EllipseParameters.center_y
+      ~EllipseParameters.radius_x
+      ~EllipseParameters.radius_y
+      ~EllipseParameters.intensity
+   
+   

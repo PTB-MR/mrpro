@@ -156,7 +156,7 @@
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -286,7 +286,7 @@ document.write(`
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -420,6 +420,7 @@ document.write(`
 <span class="c1">#   limitations under the License.</span>
 
 <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 
@@ -427,7 +428,9 @@ document.write(`
 <div class="viewcode-block" id="smap">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.utils.smap.html#mrpro.utils.smap">[docs]</a>
 <span class="k">def</span> <span class="nf">smap</span><span class="p">(</span>
-    <span class="n">fun</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">fun_dims</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,)</span>
+    <span class="n">function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
+    <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">passed_dimensions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,),</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply a function to a tensor serially along multiple dimensions.</span>
 
@@ -436,33 +439,33 @@ document.write(`
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    fun</span>
+<span class="sd">    function</span>
 <span class="sd">        Function to apply to the tensor.</span>
 <span class="sd">        Should handle len(fun_dims) dimensions and not change the number of dimensions.</span>
 <span class="sd">    tensor</span>
 <span class="sd">        Tensor to apply the function to.</span>
-<span class="sd">    fun_dims</span>
+<span class="sd">    passed_dimensions</span>
 <span class="sd">        Dimensions NOT to be batched / dimensions that are passed to the function</span>
 <span class="sd">        tuple of dimension indices (negative indices are supported) or an integer</span>
 <span class="sd">        an integer n means the last n dimensions are passed to the function</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fun_dims</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">passed_dimensions</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
         <span class="c1"># use the last fun_dims dimensions for the function</span>
         <span class="n">moved</span> <span class="o">=</span> <span class="n">tensor</span>
-        <span class="n">first_fun_dim</span> <span class="o">=</span> <span class="o">-</span><span class="n">fun_dims</span>
+        <span class="n">first_fun_dim</span> <span class="o">=</span> <span class="o">-</span><span class="n">passed_dimensions</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># Move fun_dims to the end</span>
-        <span class="n">fun_dims_dst</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">fun_dims</span><span class="p">),</span> <span class="mi">0</span><span class="p">))</span>
-        <span class="n">moved</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">fun_dims</span><span class="p">,</span> <span class="n">fun_dims_dst</span><span class="p">)</span>
+        <span class="n">fun_dims_dst</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">passed_dimensions</span><span class="p">),</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">moved</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">passed_dimensions</span><span class="p">),</span> <span class="n">fun_dims_dst</span><span class="p">)</span>
         <span class="n">first_fun_dim</span> <span class="o">=</span> <span class="n">fun_dims_dst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="n">reshaped</span> <span class="o">=</span> <span class="n">moved</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">end_dim</span><span class="o">=</span><span class="n">first_fun_dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># shape: (prod(batch_dims), fun_dim_1, ..., fun_dim_n)</span>
-    <span class="n">result_reshaped</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">fun</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">reshaped</span><span class="p">])</span>
+    <span class="n">result_reshaped</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">function</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">reshaped</span><span class="p">])</span>
     <span class="n">result</span> <span class="o">=</span> <span class="n">result_reshaped</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">moved</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="n">first_fun_dim</span><span class="p">]</span> <span class="o">+</span> <span class="n">result_reshaped</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fun_dims</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">passed_dimensions</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
         <span class="c1"># Move fun_dims back to their original position if we moved them</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">fun_dims_dst</span><span class="p">,</span> <span class="n">fun_dims</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="n">fun_dims_dst</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">passed_dimensions</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">result</span></div>
 
 </pre></div>

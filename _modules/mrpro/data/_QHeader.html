@@ -156,7 +156,7 @@
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -286,7 +286,7 @@ document.write(`
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../contributer_guide.html">
+                      <a class="nav-link nav-internal" href="../../../contributor_guide.html">
                         Guide for MRPro Contributors
                       </a>
                     </li>
@@ -448,10 +448,9 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        kheader</span>
-<span class="sd">            MR raw data header (KHeader) containing required meta data.</span>
+<span class="sd">        iheader</span>
+<span class="sd">            MR raw data header (IHeader) containing required meta data.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">fov</span><span class="o">=</span><span class="n">iheader</span><span class="o">.</span><span class="n">fov</span><span class="p">)</span></div>
 
 
@@ -466,7 +465,6 @@ document.write(`
 <span class="sd">        kheader</span>
 <span class="sd">            MR raw data header (KHeader) containing required meta data.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">fov</span><span class="o">=</span><span class="n">kheader</span><span class="o">.</span><span class="n">recon_fov</span><span class="p">)</span></div>
 
 
@@ -482,14 +480,14 @@ document.write(`
 <span class="sd">            dataset object containing the DICOM file.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">def</span> <span class="nf">getItems</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>  <span class="c1"># Todo: move to utils and reuse logic in IHeader</span>
+        <span class="k">def</span> <span class="nf">get_items</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>  <span class="c1"># Todo: move to utils and reuse logic in IHeader</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Get all items with a given name from a pydicom dataset.&quot;&quot;&quot;</span>
             <span class="c1"># iterall is recursive, so it will find all items with the given name</span>
             <span class="k">return</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">dicom_dataset</span><span class="o">.</span><span class="n">iterall</span><span class="p">()</span> <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">tag</span> <span class="o">==</span> <span class="n">Tag</span><span class="p">(</span><span class="n">name</span><span class="p">)]</span>
 
-        <span class="n">fov_x_mm</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">getItems</span><span class="p">(</span><span class="s1">&#39;Rows&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">getItems</span><span class="p">(</span><span class="s1">&#39;PixelSpacing&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">fov_y_mm</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">getItems</span><span class="p">(</span><span class="s1">&#39;Columns&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">getItems</span><span class="p">(</span><span class="s1">&#39;PixelSpacing&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">fov_z_mm</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">getItems</span><span class="p">(</span><span class="s1">&#39;SliceThickness&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">fov_x_mm</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">get_items</span><span class="p">(</span><span class="s1">&#39;Rows&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">get_items</span><span class="p">(</span><span class="s1">&#39;PixelSpacing&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">fov_y_mm</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">get_items</span><span class="p">(</span><span class="s1">&#39;Columns&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">get_items</span><span class="p">(</span><span class="s1">&#39;PixelSpacing&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">fov_z_mm</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">get_items</span><span class="p">(</span><span class="s1">&#39;SliceThickness&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">fov</span> <span class="o">=</span> <span class="n">SpatialDimension</span><span class="p">(</span><span class="n">fov_x_mm</span> <span class="o">/</span> <span class="mf">1000.0</span><span class="p">,</span> <span class="n">fov_y_mm</span> <span class="o">/</span> <span class="mf">1000.0</span><span class="p">,</span> <span class="n">fov_z_mm</span> <span class="o">/</span> <span class="mf">1000.0</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">fov</span><span class="o">=</span><span class="n">fov</span><span class="p">)</span></div>
 </div>
