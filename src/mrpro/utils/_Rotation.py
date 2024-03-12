@@ -46,8 +46,8 @@ from scipy.spatial.transform import Rotation as Rotation_scipy
 
 from mrpro.data import SpatialDimension
 
-AXIS_ORDER = ('x', 'y', 'z')  # This can be modified
-QUAT_AXIS_ORDER = (*AXIS_ORDER, 'w')  # Do not modify
+AXIS_ORDER = 'zyx'  # This can be modified
+QUAT_AXIS_ORDER = AXIS_ORDER + 'w'  # Do not modify
 assert QUAT_AXIS_ORDER[:3] == AXIS_ORDER, 'Quaternion axis order has to match axis order'  # noqa: S101
 
 
@@ -67,24 +67,29 @@ def _compose_quaternions_single(p: torch.Tensor, q: torch.Tensor) -> torch.Tenso
 
 
 def _compose_quaternions(p: torch.Tensor, q: torch.Tensor) -> torch.Tensor:
+    """Calculate p * q, with p and q batched quaternions."""
     p, q = torch.broadcast_tensors(p, q)
     product = torch.vmap(_compose_quaternions_single)(p.reshape(-1, 4), q.reshape(-1, 4)).reshape(p.shape)
     return product
 
 
-def _canonical_quaternion(q: torch.Tensor) -> torch.Tensor:
-    x, y, z, w = (q[..., QUAT_AXIS_ORDER.index(axis)] for axis in 'xyzw')
+def _canonical_quaternion(quaternion: torch.Tensor) -> torch.Tensor:
+    """Convert to canonical form, i.e. positive w."""
+    x, y, z, w = (quaternion[..., QUAT_AXIS_ORDER.index(axis)] for axis in 'xyzw')
     needs_inversion = (w < 0) | ((w == 0) & ((x < 0) | ((x == 0) & ((y < 0) | ((y == 0) & (z < 0))))))
-    q = torch.where(needs_inversion.unsqueeze(-1), -q, q)
-    return q
+    canonical_quaternion = torch.where(needs_inversion.unsqueeze(-1), -quaternion, quaternion)
+    return canonical_quaternion
 
 
 def _matrix_to_quaternion(matrix: torch.Tensor) -> torch.Tensor:
+    """Convert matrix to quaternion."""
     if matrix.shape[-2:] != (3, 3):
         raise ValueError(f'Invalid rotation matrix shape {matrix.shape}.')
-    batch_shape = matrix.shape[:-2]
-    m00, m01, m02, m10, m11, m12, m20, m21, m22 = torch.unbind(matrix.flatten(start_dim=-2), -1)
 
+    batch_shape = matrix.shape[:-2]
+    # matrix elements
+    m00, m01, m02, m10, m11, m12, m20, m21, m22 = torch.unbind(matrix.flatten(start_dim=-2), -1)
+    # q,r,s are some permutation of x,y,z
     qrsw = torch.nn.functional.relu(
         torch.stack(
             [
@@ -97,7 +102,9 @@ def _matrix_to_quaternion(matrix: torch.Tensor) -> torch.Tensor:
         )
     )
     q, r, s, w = qrsw.unbind(-1)
-
+    # all these are the same except in edge cases.
+    # we will choose the one that is most numerically stable.
+    # we calculate all choices as this is faster
     candidates = torch.stack(
         (
             *(q, m10 + m01, m02 + m20, m21 - m12),
@@ -107,7 +114,7 @@ def _matrix_to_quaternion(matrix: torch.Tensor) -> torch.Tensor:
         ),
         dim=-1,
     ).reshape(*batch_shape, 4, 4)
-
+    # now we make the choice.
     # the choice will not influence the gradients.
     choice = qrsw.argmax(dim=-1)
     quaternion = candidates.take_along_dim(choice[..., None, None], -2).squeeze(-2) / (
@@ -117,6 +124,7 @@ def _matrix_to_quaternion(matrix: torch.Tensor) -> torch.Tensor:
 
 
 def _make_elementary_quat(axis: str, angles: torch.Tensor):
+    """Make a quaternion for the rotation around one of the axes."""
     quat = torch.zeros(*angles.shape, 4, device=angles.device, dtype=angles.dtype)
     axis_index = QUAT_AXIS_ORDER.index(axis)
     w_index = QUAT_AXIS_ORDER.index('w')
@@ -126,6 +134,7 @@ def _make_elementary_quat(axis: str, angles: torch.Tensor):
 
 
 def _quaternion_to_matrix(quaternion: torch.Tensor) -> torch.Tensor:
+    """Convert quaternion to rotation matrix."""
     # use same order for quaternions as for matrix. this saves two index lookups.
     # we use q, r, s for same permutation of "xyz"
     # as this function will be used for the application of the rotatoin matrix, it should be fast.
@@ -152,7 +161,18 @@ def _quaternion_to_matrix(quaternion: torch.Tensor) -> torch.Tensor:
     return matrix
 
 
-def _quaternion_to_euler(quat: torch.Tensor, seq: str, extrinsic: bool):
+def _quaternion_to_euler(quaternion: torch.Tensor, seq: str, extrinsic: bool):
+    """Convert quaternion to euler angles.
+
+    Parameters
+    ----------
+    quaternion
+        The batched quaternions
+    seq
+        The axes sequence, lower case. For example 'xyz'
+    extrinsic
+        If the rotations are extrinsic (True) or intrinsic (False)
+    """
     # The algorithm assumes extrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation quaternions, which are stored
     # directly by Rotation.
@@ -161,34 +181,29 @@ def _quaternion_to_euler(quat: torch.Tensor, seq: str, extrinsic: bool):
 
     if not extrinsic:
         seq = seq[::-1]
-
-    q, r, s = (QUAT_AXIS_ORDER.index(axis) for axis in seq)
+    q, r, s = (QUAT_AXIS_ORDER.index(axis) for axis in seq)  # one of x,y,z
     w = QUAT_AXIS_ORDER.index('w')
 
+    # proper angles, with first and last axis the same
     if symmetric := q == s:
         s = 3 - q - r  # get third axis
 
-    # Step 0
     # Check if permutation is even (+1) or odd (-1)
     sign = (q - r) * (r - s) * (s - q) // 2
 
     if symmetric:
-        a = quat[..., w]
-        b = quat[..., q]
-        c = quat[..., r]
-        d = quat[..., s] * sign
+        a = quaternion[..., w]
+        b = quaternion[..., q]
+        c = quaternion[..., r]
+        d = quaternion[..., s] * sign
     else:
-        a = quat[..., w] - quat[..., r]
-        b = quat[..., q] + quat[..., s] * sign
-        c = quat[..., r] + quat[..., w]
-        d = quat[..., s] * sign - quat[..., q]
+        a = quaternion[..., w] - quaternion[..., r]
+        b = quaternion[..., q] + quaternion[..., s] * sign
+        c = quaternion[..., r] + quaternion[..., w]
+        d = quaternion[..., s] * sign - quaternion[..., q]
 
-    # Step 2
-    # Compute second angle...
+    # Compute angles
     angles_1 = 2 * torch.atan2(torch.hypot(c, d), torch.hypot(a, b))
-
-    # Step 3
-    # compute first and third angles
     half_sum = torch.atan2(b, a)
     half_diff = torch.atan2(d, c)
 
@@ -199,11 +214,13 @@ def _quaternion_to_euler(quat: torch.Tensor, seq: str, extrinsic: bool):
         angles_2 *= sign
         angles_1 -= torch.pi / 2
     if not extrinsic:
+        # flip first and last rotation
         angles_2, angles_0 = angles_0, angles_2
 
-    # and check if angles_1 is equal to is 0 (case=1) or pi (case=2), causing a singularity,
+    # Check if angles_1 is equal to is 0 (case=1) or pi (case=2), causing a singularity,
     # i.e. a gimble lock. case=0 is the normal.
     case = 1 * (torch.abs(angles_1) <= 1e-7) + 2 * (torch.abs(angles_1 - torch.pi) <= 1e-7)
+    # if Gimbal lock, sett last angle to 0 and use 2 * half_sum / 2 * half_diff for first angle.
     angles_2 = (case == 0) * angles_2
     angles_0 = (
         (case == 0) * angles_0 + (case == 1) * 2 * half_sum + (case == 2) * 2 * half_diff * (-1 if extrinsic else 1)
@@ -221,7 +238,7 @@ class Rotation(torch.nn.Module):
     Differences compared to scipy.spatial.transform.Rotation:
     - torch.nn.Module based, the quaternions are a Parameter
     - .apply is replaced by call/forward.
-    - not all features are implemented. Notably, mrp, davenport and reduce are missing.
+    - not all features are implemented. Notably, mrp, davenport, and reduce are missing.
     - arbitrary number of batching dimensions
     """
 
@@ -899,49 +916,57 @@ class Rotation(torch.nn.Module):
     @property
     def quaternion_x(self) -> torch.Tensor:
         """Get x component of the quaternion."""
-        axis = AXIS_ORDER.index('x')
+        axis = QUAT_AXIS_ORDER.index('x')
+        if self._single:
+            return self._quaternions[0, axis]
         return self._quaternions[..., axis]
 
     @quaternion_x.setter
     def quaternion_x(self, quat_x: torch.Tensor):
         """Set x component of the quaternion."""
-        axis = AXIS_ORDER.index('x')
+        axis = QUAT_AXIS_ORDER.index('x')
         self._quaternions[..., axis] = quat_x
 
     @property
     def quaternion_y(self) -> torch.Tensor:
         """Get y component of the quaternion."""
-        axis = AXIS_ORDER.index('y')
+        axis = QUAT_AXIS_ORDER.index('y')
+        if self._single:
+            return self._quaternions[0, axis]
         return self._quaternions[..., axis]
 
     @quaternion_y.setter
     def quaternion_y(self, quat_y: torch.Tensor):
         """Set y component of the quaternion."""
-        axis = AXIS_ORDER.index('y')
+        axis = QUAT_AXIS_ORDER.index('y')
         self._quaternions[..., axis] = quat_y
 
     @property
     def quaternion_z(self) -> torch.Tensor:
         """Get z component of the quaternion."""
-        axis = AXIS_ORDER.index('z')
+        axis = QUAT_AXIS_ORDER.index('z')
+        if self._single:
+            return self._quaternions[0, axis]
         return self._quaternions[..., axis]
 
     @quaternion_z.setter
     def quaternion_z(self, quat_z: torch.Tensor):
         """Set z component of the quaternion."""
-        axis = AXIS_ORDER.index('z')
+        axis = QUAT_AXIS_ORDER.index('z')
         self._quaternions[..., axis] = quat_z
 
     @property
     def quaternion_w(self) -> torch.Tensor:
         """Get w component of the quaternion."""
-        axis = AXIS_ORDER.index('w')
+        axis = QUAT_AXIS_ORDER.index('w')
+        if self._single:
+            return self._quaternions[0, axis]
         return self._quaternions[..., axis]
 
     @quaternion_w.setter
     def quaternion_w(self, quat_w: torch.Tensor):
         """Set w component of the quaternion."""
-        axis = AXIS_ORDER.index('w')
+        axis = QUAT_AXIS_ORDER.index('w')
         self._quaternions[..., axis] = quat_w
 
     def __setitem__(self, indexer: int | slice | torch.Tensor, value: Rotation):
@@ -1064,7 +1089,7 @@ class Rotation(torch.nn.Module):
         if self._single:
             return f'Rotation({self._quaternions.tolist()})'
         else:
-            return f'{self.shape}-Batched Rotation()'
+            return f'{tuple(self.shape)}-Batched Rotation()'
 
     def mean(self, weights: torch.Tensor | None = None, dim: None | int | Sequence[int] = None, keepdim: bool = False):
         r"""Get the mean of the rotations.
