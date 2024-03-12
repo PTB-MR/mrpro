@@ -11,7 +11,9 @@ This package supports ismrmrd-format for MR raw data. All data containers utiliz
 If you want to give MRpro a try you can use
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/PTB-MR/mrpro.git/main?labpath=examples)
 
-## Installation for developers
+## Contributing
+
+### Installation for developers
 
 1. Clone the repo
 2. Create/select a python environment
@@ -19,16 +21,14 @@ If you want to give MRpro a try you can use
 4. Install "MRpro" in editable mode with linting and testing: ``` pip install -e ".[lint,test]" ```
 5. Setup Pre-Commit Hook: ``` pre-commit install ```
 
-## Recommended IDE and Extensions
+### Recommended IDE and Extensions
 
 We recommend to use [Microsoft Visual Studio Code](https://code.visualstudio.com/download).
 
 A list of recommended extensions for VSCode is given in the [.vscode/extensions.json](.vscode\extensions.json)
 
-Further extensions that might be useful:
+### Naming Convention
+We try to follow the [pep8](https://peps.python.org/pep-0008/) naming convention (e.g., all lowercase variable names, CapWords class names). We deviate for the names of source code file names containing a single class. These are named as the class.
 
-- IntelliCode (Microsoft)
-- Remote - SHH (Microsoft)
-- GitHub Copilot (GitHub - **fee-based** )
-- Git Graph (mhutchie)
-- GitLens (GitKraken)
+We try to use descriptive variable names when applicable (e.g., "result" instead of "res", "tolerance_squared" instead of "sqtol", "batchsize" instead of "m"). A name starting with "n_" is used for variables describing a number of... (e.g., "n_coils" instead of "ncoils" or "num_coils"), variable names ending with "_op" for operators (e.g., "fourier_op"). We use "img" as a variable name for images. 
+
