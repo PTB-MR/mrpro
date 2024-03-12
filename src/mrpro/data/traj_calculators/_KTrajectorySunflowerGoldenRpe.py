@@ -30,15 +30,15 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
         undersampling factor along radial phase encoding direction.
     """
 
-    def __init__(
-        self,
-        rad_us_factor: float = 1.0,
-    ) -> None:
+    def __init__(self, rad_us_factor: float = 1.0) -> None:
         super().__init__(angle=torch.pi * 0.618034)
         self.rad_us_factor: float = rad_us_factor
 
     def _apply_sunflower_shift_between_rpe_lines(
-        self, krad: torch.Tensor, kang: torch.Tensor, kheader: KHeader
+        self,
+        krad: torch.Tensor,
+        kang: torch.Tensor,
+        kheader: KHeader,
     ) -> torch.Tensor:
         """Shift radial phase encoding lines relative to each other.
 

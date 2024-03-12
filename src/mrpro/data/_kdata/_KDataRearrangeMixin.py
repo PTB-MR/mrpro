@@ -21,6 +21,7 @@ from einops import rearrange
 if TYPE_CHECKING:
     from mrpro.data._kdata._KData import _KDataProtocol
 
+from mrpro.data import AcqInfo
 from mrpro.utils import modify_acq_info
 
 
@@ -39,7 +40,6 @@ class KDataRearrangeMixin:
         -------
             K-space data (other coils 1 (k2 k1) k0)
         """
-
         # Rearrange data
         kdat = rearrange(self.data, '... coils k2 k1 k0->... coils 1 (k2 k1) k0')
 
@@ -50,7 +50,7 @@ class KDataRearrangeMixin:
         kheader = copy.deepcopy(self.header)
 
         # Update shape of acquisition info index
-        def reshape_acq_info(info):
+        def reshape_acq_info(info: AcqInfo):
             return rearrange(info, 'other k2 k1 ... -> other 1 (k2 k1) ...')
 
         kheader.acq_info = modify_acq_info(reshape_acq_info, kheader.acq_info)

@@ -30,11 +30,11 @@ class Limits:
     center: int = 0
 
     @classmethod
-    def from_ismrmrd(cls, limitType: limitType) -> Limits:
+    def from_ismrmrd(cls, limit_type: limitType) -> Limits:
         """Create Limits from ismrmrd.limitType."""
-        if limitType is None:
+        if limit_type is None:
             return cls()
-        return cls(*dataclasses.astuple(limitType))
+        return cls(*dataclasses.astuple(limit_type))
 
     @property
     def length(self) -> int:
@@ -70,14 +70,11 @@ class EncodingLimits:
     user_7: Limits = dataclasses.field(default_factory=Limits)
 
     @classmethod
-    def from_ismrmrd_encodingLimitsType(
-        cls,
-        encodingLimits: encodingLimitsType,
-    ):
+    def from_ismrmrd_encoding_limits_type(cls, encoding_limits: encodingLimitsType):
         """Generate EncodingLimits from ismrmrd.encodingLimitsType."""
         values = {
-            field.name: Limits.from_ismrmrd(getattr(encodingLimits, field.name))
-            for field in dataclasses.fields(encodingLimits)
+            field.name: Limits.from_ismrmrd(getattr(encoding_limits, field.name))
+            for field in dataclasses.fields(encoding_limits)
         }
 
         # adjust from ISMRMRD to MRPro naming convention

@@ -72,7 +72,7 @@ class SpatialDimension(Generic[T]):
         conversion, optional
             will be called for each value to convert it, by default None
         """
-        if not isinstance(data, (np.ndarray, torch.Tensor)):
+        if not isinstance(data, np.ndarray | torch.Tensor):
             data = np.asarray(data)
         data = np.asarray(data)
         if np.size(data, -1) != 3:

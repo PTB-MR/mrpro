@@ -15,12 +15,11 @@
 import pytest
 import torch
 from einops import repeat
-
 from mrpro.utils import split_idx
 
 
 @pytest.mark.parametrize(
-    'ni_per_block,ni_overlap,cyclic,unique_values_in_last_block',
+    ('ni_per_block', 'ni_overlap', 'cyclic', 'unique_values_in_last_block'),
     [
         (5, 0, False, torch.tensor([3])),
         (6, 2, False, torch.tensor([2, 3])),

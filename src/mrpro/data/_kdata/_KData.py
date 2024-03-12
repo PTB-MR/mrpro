@@ -24,7 +24,6 @@ import ismrmrd
 import numpy as np
 import torch
 from einops import rearrange
-
 from mrpro.data import AcqInfo
 from mrpro.data import KHeader
 from mrpro.data import KTrajectory
@@ -38,16 +37,7 @@ from mrpro.data.traj_calculators import KTrajectoryCalculator
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.utils import modify_acq_info
 
-KDIM_SORT_LABELS = (
-    'k1',
-    'k2',
-    'average',
-    'slice',
-    'contrast',
-    'phase',
-    'repetition',
-    'set',
-)
+KDIM_SORT_LABELS = ('k1', 'k2', 'average', 'slice', 'contrast', 'phase', 'repetition', 'set')
 
 # Same criteria as https://github.com/wtclarke/pymapvbvd/blob/master/mapvbvd/mapVBVD.py uses
 DEFAULT_IGNORE_FLAGS = (
@@ -83,28 +73,27 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin):
 
         Parameters
         ----------
-            filename
-                path to the ISMRMRD file
-            ktrajectory
-                KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory
-            header_overwrites
-                dictionary of key-value pairs to overwrite the header
-            dataset_idx
-                index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
-            ignore_flags
-                Acqisition flags to filter out. Defaults to all non-images as defined by pymapvbvd.
-                Use ACQ_NO_FLAG to disable the filter.
-                Note: If ACQ_IS_PARALLEL_CALIBRATION is set without also setting ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING
-                      we interpret it as: Ignore if IS_PARALLEL_CALIBRATION and not PARALLEL_CALIBRATION_AND_IMAGING
+        filename
+            path to the ISMRMRD file
+        ktrajectory
+            KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory
+        header_overwrites
+            dictionary of key-value pairs to overwrite the header
+        dataset_idx
+            index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
+        ignore_flags
+            Acqisition flags to filter out. Defaults to all non-images as defined by pymapvbvd.
+            Use ACQ_NO_FLAG to disable the filter.
+            Note: If ACQ_IS_PARALLEL_CALIBRATION is set without also setting ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING
+                    we interpret it as: Ignore if IS_PARALLEL_CALIBRATION and not PARALLEL_CALIBRATION_AND_IMAGING
         """
-
         # Can raise FileNotFoundError
         with ismrmrd.File(filename, 'r') as file:
-            ds = file[list(file.keys())[dataset_idx]]
-            ismrmrd_header = ds.header
-            acquisitions = ds.acquisitions[:]
+            dataset = file[list(file.keys())[dataset_idx]]
+            ismrmrd_header = dataset.header
+            acquisitions = dataset.acquisitions[:]
             try:
-                mtime: int = h5py.h5g.get_objinfo(ds['data']._contents.id).mtime
+                mtime: int = h5py.h5g.get_objinfo(dataset['data']._contents.id).mtime
             except AttributeError:
                 mtime = 0
             modification_time = datetime.datetime.fromtimestamp(mtime)
@@ -121,7 +110,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin):
                     lambda acq: (AcqFlags.ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING.value & acq.flags)
                     or not (AcqFlags.ACQ_IS_PARALLEL_CALIBRATION.value & acq.flags),
                     acquisitions,
-                )
+                ),
             )
 
         acquisitions = list(filter(lambda acq: not (ignore_flags.value & acq.flags), acquisitions))
@@ -154,18 +143,25 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin):
         num_total_unique = torch.as_tensor([len(unique_idxs[label]) for label in KDIM_SORT_LABELS]).prod()
 
         # Define function to find index label combinations. This is used to determine the dimensions of k1 and k2.
-        def idx_label_combination(average_idx, slice_idx, contrast_idx, phase_idx, repetition_idx, set_idx):
+        def idx_label_combination(
+            average_idx: list[int],
+            slice_idx: list[int],
+            contrast_idx: list[int],
+            phase_idx: list[int],
+            repetition_idx: list[int],
+            set_idx: list[int],
+        ):
             return torch.nonzero(
                 (kheader.acq_info.idx.average == average_idx)
                 & (kheader.acq_info.idx.slice == slice_idx)
                 & (kheader.acq_info.idx.contrast == contrast_idx)
                 & (kheader.acq_info.idx.phase == phase_idx)
                 & (kheader.acq_info.idx.repetition == repetition_idx)
-                & (kheader.acq_info.idx.set == set_idx)
+                & (kheader.acq_info.idx.set == set_idx),
             )
 
         idx_matches = idx_label_combination(
-            *[unique_idxs[label][0] for label in KDIM_SORT_LABELS if label not in ('k1', 'k2')]
+            *[unique_idxs[label][0] for label in KDIM_SORT_LABELS if label not in ('k1', 'k2')],
         )
 
         # Determine the number of k1 and k2 points
@@ -192,7 +188,12 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin):
         # Verify that k2 and k1 contain the same number of k-space points for all combinations of averages, slices...
         for average_idx, slice_idx, contrast_idx, phase_idx, repetition_idx, set_idx in idx_combinations:
             idx_matches = idx_label_combination(
-                average_idx, slice_idx, contrast_idx, phase_idx, repetition_idx, set_idx
+                average_idx,
+                slice_idx,
+                contrast_idx,
+                phase_idx,
+                repetition_idx,
+                set_idx,
             )
             label_str = (
                 f'[average {average_idx} | slice {slice_idx} | contrast {contrast_idx} | phase {phase_idx}'
@@ -205,9 +206,8 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin):
                     raise ValueError(f'Number of k1 points in {label_str}: {current_num_k1}. Expected: {num_k1}')
                 if current_num_k2 != num_k2:
                     raise ValueError(f'Number of k2 points in {label_str}: {current_num_k2}. Expected: {num_k2}')
-            else:
-                if len(idx_matches) != num_k1:
-                    raise ValueError(f'Number of (k2 k1) points in {label_str}: {len(idx_matches)}. Expected: {num_k1}')
+            elif len(idx_matches) != num_k1:
+                raise ValueError(f'Number of (k2 k1) points in {label_str}: {len(idx_matches)}. Expected: {num_k1}')
 
         # Sort the data according to the sorted indices
         sort_ki = np.stack([getattr(kheader.acq_info.idx, label) for label in KDIM_SORT_LABELS], axis=0)
@@ -215,7 +215,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin):
         kdata = rearrange(kdata[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=num_k1, k2=num_k2)
 
         # Reshape the acquisition data and update the header acquisition infos accordingly
-        def reshape_acq_data(data):
+        def reshape_acq_data(data: torch.Tensor):
             return rearrange(data[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=num_k1, k2=num_k2)
 
         kheader.acq_info = modify_acq_info(reshape_acq_data, kheader.acq_info)
@@ -235,7 +235,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin):
             case _:
                 raise TypeError(
                     'ktrajectory must be KTrajectoryIsmrmrd, KTrajectory or KTrajectoryCalculator,'
-                    f'not {type(ktrajectory)}'
+                    f'not {type(ktrajectory)}',
                 )
 
         try:
@@ -244,8 +244,8 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin):
         except RuntimeError:
             raise ValueError(
                 f'Broadcasted shape trajectory do not match kdata: {shape} vs. {kdata.shape}. '
-                'Please check the trajectory.'
-            )
+                'Please check the trajectory.',
+            ) from None
 
         return cls(kheader, kdata, ktraj)
 
@@ -288,10 +288,18 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin):
         return KData(
             header=self.header,
             data=self.data.to(
-                device=device, dtype=dtype, non_blocking=non_blocking, copy=copy, memory_format=memory_format
+                device=device,
+                dtype=dtype,
+                non_blocking=non_blocking,
+                copy=copy,
+                memory_format=memory_format,
             ),
             traj=self.traj.to(
-                device=device, dtype=dtype_traj, non_blocking=non_blocking, copy=copy, memory_format=memory_format
+                device=device,
+                dtype=dtype_traj,
+                non_blocking=non_blocking,
+                copy=copy,
+                memory_format=memory_format,
             ),
         )
 
@@ -315,9 +323,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin):
         """
         return KData(
             header=self.header,
-            data=self.data.cuda(
-                device=device, non_blocking=non_blocking, memory_format=memory_format
-            ),  # type: ignore [call-arg]
+            data=self.data.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),  # type: ignore [call-arg]
             traj=self.traj.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),
         )
 

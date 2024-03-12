@@ -9,7 +9,8 @@
         "test_*.py"
     ],
     "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter"
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true
     },
     "python.testing.pytestArgs": [
         "tests",

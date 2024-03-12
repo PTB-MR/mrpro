@@ -26,7 +26,7 @@ from mrpro.operators._Operator import Tin2
 
 
 # LinearOperators have exactly one input and one output,
-# and are fullfill f(a*x + b*y) = a*f(x) + b*f(y)
+# and fulfill f(a*x + b*y) = a*f(x) + b*f(y)
 # with a,b scalars and x,y tensors.
 class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor,]]):
     """General Linear Operator."""
@@ -37,7 +37,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor,]]):
         ...
 
     @property
-    def H(self):
+    def H(self):  # noqa: N802
         """Adjoint operator."""
         return AdjointLinearOperator(self)
 
@@ -106,6 +106,6 @@ class AdjointLinearOperator(LinearOperator):
         return self._operator.forward(x)
 
     @property
-    def H(self):
+    def H(self):  # noqa: N802
         """Adjoint of adjoint operator."""
         return self.operator

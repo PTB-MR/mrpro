@@ -30,7 +30,6 @@ def modify_acq_info(fun_modify: Callable, acq_info: AcqInfo) -> AcqInfo:
     acq_info
         AcqInfo object
     """
-
     # Apply function to all fields of acq_info
     for field in dataclasses.fields(acq_info):
         current = getattr(acq_info, field.name)

@@ -59,14 +59,14 @@ class KDataSelectMixin:
 
         # Verify that the subset_idx is available
         label_idx = getattr(kheader.acq_info.idx, subset_label)
-        if not all([el in torch.unique(label_idx) for el in subset_idx]):
+        if not all(el in torch.unique(label_idx) for el in subset_idx):
             raise ValueError('Subset indices are outside of the available index range')
 
         # Find subset index in acq_info index
         other_idx = torch.cat([torch.where(idx == label_idx[:, 0, 0])[0] for idx in subset_idx], dim=0)
 
         # Adapt header
-        def select_acq_info(info):
+        def select_acq_info(info: torch.Tensor):
             return info[other_idx, ...]
 
         kheader.acq_info = modify_acq_info(select_acq_info, kheader.acq_info)

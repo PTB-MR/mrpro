@@ -37,21 +37,16 @@ class KNoise:
     data: torch.Tensor
 
     @classmethod
-    def from_file(
-        cls,
-        filename: str | Path,
-        dataset_idx: int = -1,
-    ) -> KNoise:
+    def from_file(cls, filename: str | Path, dataset_idx: int = -1) -> KNoise:
         """Load noise measurements from ISMRMRD file.
 
         Parameters
         ----------
-            filename
-                Path to the ISMRMRD file
-            dataset_idx
-                Index of the dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
+        filename
+            Path to the ISMRMRD file
+        dataset_idx
+            Index of the dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
         """
-
         # Can raise FileNotFoundError
         with ismrmrd.File(filename, 'r') as file:
             ds = file[list(file.keys())[dataset_idx]]
@@ -60,7 +55,7 @@ class KNoise:
         # Read out noise measurements
         acquisitions = list(filter(lambda acq: (AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value & acq.flags), acquisitions))
         if len(acquisitions) == 0:
-            raise ValueError(f'No noise measurments found in {filename}')
+            raise ValueError(f'No noise measurements found in {filename}')
         noise_data = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 
         # Reshape to standard dimensions

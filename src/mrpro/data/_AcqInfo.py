@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 import ismrmrd
@@ -80,10 +81,7 @@ class AcqInfo:
     version: torch.Tensor
 
     @classmethod
-    def from_ismrmrd_acquisitions(
-        cls,
-        acquisitions: list[ismrmrd.Acquisition],
-    ) -> AcqInfo:
+    def from_ismrmrd_acquisitions(cls, acquisitions: Sequence[ismrmrd.Acquisition]) -> AcqInfo:
         """Read the header of a list of acquisition and store information.
 
         Parameters
@@ -91,7 +89,6 @@ class AcqInfo:
         acquisitions:
             list of ismrmrd acquisistions to read from. Needs at least one acquisition.
         """
-
         # Idea: create array of structs, then a struct of arrays,
         # convert it into tensors to store in our dataclass.
         # TODO: there might be a faster way to do this.
@@ -105,12 +102,13 @@ class AcqInfo:
         # also, this needs to check the dtyoe only once.
         acquisition_head_dtype = np.dtype(ismrmrd.AcquisitionHeader)
         headers = np.frombuffer(
-            np.array([memoryview(a._head).cast('B') for a in acquisitions]), dtype=acquisition_head_dtype
+            np.array([memoryview(a._head).cast('B') for a in acquisitions]),
+            dtype=acquisition_head_dtype,
         )
 
         idx = headers['idx']
 
-        def tensor(data):
+        def tensor(data: np.ndarray) -> torch.Tensor:
             # we have to convert first as pytoch cant create tensors from np.uint16 arrays
             # we use int32 for uint16 and int64 for uint32 to fit largest values.
             match data.dtype:
@@ -121,15 +119,17 @@ class AcqInfo:
             # Remove any uncessary dimensions
             return torch.tensor(np.squeeze(data))
 
-        def tensor_2d(data):
-            # Convert tensor to torch dtypes and ensure it is 2D
-            data = tensor(data)
+        def tensor_2d(data: np.ndarray) -> torch.Tensor:
+            # Convert tensor to torch dtypes and ensure it is atleast 2D
+            data_tensor = tensor(data)
             # Ensure that data is (k1*k2*other, >=1)
-            if data.ndim == 1:
-                data = data[:, None]
-            return data
+            if data_tensor.ndim == 1:
+                data_tensor = data_tensor[:, None]
+            elif data_tensor.ndim == 0:
+                data_tensor = data_tensor[None, None]
+            return data_tensor
 
-        def spatialdimension_2d(data):
+        def spatialdimension_2d(data: np.ndarray) -> SpatialDimension[torch.Tensor]:
             # Ensure spatial dimension is (k1*k2*other, 1, 3)
             if data.ndim != 2:
                 raise ValueError('Spatial dimension is expected to be of shape (N,3)')

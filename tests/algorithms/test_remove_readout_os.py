@@ -14,70 +14,68 @@
 
 import torch
 from einops import repeat
-
 from mrpro.algorithms import remove_readout_os
 from mrpro.data import KData
 from mrpro.data import KTrajectory
 from mrpro.data import SpatialDimension
 from mrpro.operators import FastFourierOp
 from tests import RandomGenerator
-from tests.conftest import random_kheader
-from tests.helper import rel_image_diff
+from tests.helper import relative_image_difference
 from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData
 
 
 def test_remove_readout_os(monkeypatch, random_kheader):
     # Dimensions
-    ncoils = 4
-    nk0 = 240
-    nk1 = 240
-    nk0_os = 320
+    n_coils = 4
+    n_k0 = 240
+    n_k1 = 240
+    n_k0_oversampled = 320
     discard_pre = 10
     discard_post = 20
 
     random_generator = RandomGenerator(seed=0)
 
     # List of k1 indices in the shape
-    idx_k1 = torch.arange(nk1, dtype=torch.int32)[None, None, ...]
+    idx_k1 = torch.arange(n_k1, dtype=torch.int32)[None, None, ...]
 
     # Set parameters need in remove_os
-    monkeypatch.setattr(random_kheader.encoding_matrix, 'x', nk0_os)
-    monkeypatch.setattr(random_kheader.recon_matrix, 'x', nk0)
-    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + nk0_os // 2)
-    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + nk0_os)
+    monkeypatch.setattr(random_kheader.encoding_matrix, 'x', n_k0_oversampled)
+    monkeypatch.setattr(random_kheader.recon_matrix, 'x', n_k0)
+    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + n_k0_oversampled // 2)
+    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + n_k0_oversampled)
     monkeypatch.setattr(random_kheader.acq_info, 'discard_pre', torch.tensor(discard_pre, dtype=torch.int32))
     monkeypatch.setattr(random_kheader.acq_info, 'discard_post', torch.tensor(discard_post, dtype=torch.int32))
 
     # Create kspace and image with oversampling
-    ph_os = EllipsePhantomTestData(ny=nk1, nx=nk0_os)
-    kdat_os = ph_os.phantom.kspace(ph_os.ky, ph_os.kx)
-    im_dim = SpatialDimension(z=1, y=nk1, x=nk0_os)
-    idat = ph_os.phantom.image_space(im_dim)
+    phantom_os = EllipsePhantomTestData(n_y=n_k1, n_x=n_k0_oversampled)
+    kdata_os = phantom_os.phantom.kspace(phantom_os.ky, phantom_os.kx)
+    img_dim = SpatialDimension(z=1, y=n_k1, x=n_k0_oversampled)
+    img_tensor = phantom_os.phantom.image_space(img_dim)
 
     # Crop image data
-    idat_start = (nk0_os - nk0) // 2
-    idat = idat[..., idat_start : idat_start + nk0]
+    start = (n_k0_oversampled - n_k0) // 2
+    img_tensor = img_tensor[..., start : start + n_k0]
 
     # Create k-space data with correct dimensions
-    kdat = repeat(kdat_os, 'k1 k0 -> other coils k2 k1 k0', other=1, coils=ncoils, k2=1)
+    k_tensor = repeat(kdata_os, 'k1 k0 -> other coils k2 k1 k0', other=1, coils=n_coils, k2=1)
 
     # Create random 2D Cartesian trajectory
-    kx = random_generator.float32_tensor(size=(1, 1, 1, nk0_os))
-    ky = random_generator.float32_tensor(size=(1, 1, nk1, 1))
+    kx = random_generator.float32_tensor(size=(1, 1, 1, n_k0_oversampled))
+    ky = random_generator.float32_tensor(size=(1, 1, n_k1, 1))
     kz = random_generator.float32_tensor(size=(1, 1, 1, 1))
-    ktraj = KTrajectory(kz, ky, kx)
+    trajectory = KTrajectory(kz, ky, kx)
 
     # Create KData
-    kdata = KData(header=random_kheader, data=kdat, traj=ktraj)
+    kdata = KData(header=random_kheader, data=k_tensor, traj=trajectory)
 
     # Remove oversampling
     kdata = remove_readout_os(kdata)
 
     # Reconstruct image from k-space data of one coil and compare to phantom image
-    FFOp = FastFourierOp(dim=(-1, -2))
-    (idat_rec,) = FFOp.adjoint(kdata.data[:, 0, ...])
+    fourier_op = FastFourierOp(dim=(-1, -2))
+    (img_recon,) = fourier_op.adjoint(kdata.data[:, 0, ...])
 
     # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
     # differences along the edges of the elliptic objects.
-    assert rel_image_diff(torch.abs(idat_rec), idat[:, 0, ...]) <= 0.05
+    assert relative_image_difference(torch.abs(img_recon), img_tensor[:, 0, ...]) <= 0.05

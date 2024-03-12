@@ -2,16 +2,17 @@ import tempfile
 
 import ismrmrd
 import pytest
+import torch
 from ismrmrd import xsd
-from xsdata.models.datatype import XmlDate
-from xsdata.models.datatype import XmlTime
-
 from mrpro.data import AcqInfo
 from mrpro.data import KHeader
 from mrpro.data.enums import AcqFlags
+from xsdata.models.datatype import XmlDate
+from xsdata.models.datatype import XmlTime
+
 from tests import RandomGenerator
 from tests.data import Dicom2DTestImage
-from tests.phantoms.test_ellipse_phantom import ph_ellipse
+from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData
 
 
 def generate_random_encodingcounter_properties(generator: RandomGenerator):
@@ -59,33 +60,61 @@ def generate_random_trajectory(generator: RandomGenerator, shape=(256, 2)):
     return generator.float32_tensor(shape)
 
 
-def generate_random_data(
-    generator: RandomGenerator,
-    shape=(32, 256),
-):
+def generate_random_data(generator: RandomGenerator, shape=(32, 256)):
     return generator.complex64_tensor(shape)
 
 
-@pytest.fixture(params=({'seed': 0, 'Ncoils': 32, 'Nsamples': 256},))
+@pytest.fixture(scope='session')
+def ellipse_phantom():
+    return EllipsePhantomTestData()
+
+
+@pytest.fixture(params=({'seed': 0},))
+def cartesian_grid(request):
+    generator = RandomGenerator(request.param['seed'])
+
+    def generate(n_k2: int, n_k1: int, n_k0: int, jitter: float) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        k0_range = torch.arange(n_k0)
+        k1_range = torch.arange(n_k1)
+        k2_range = torch.arange(n_k2)
+        ky, kz, kx = torch.meshgrid(k1_range, k2_range, k0_range, indexing='xy')
+        if jitter > 0:
+            kx = kx + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
+            ky = ky + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
+            kz = kz + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
+        return kz.unsqueeze(0), ky.unsqueeze(0), kx.unsqueeze(0)
+
+    return generate
+
+
+@pytest.fixture(params=({'seed': 0, 'n_coils': 32, 'n_samples': 256},))
 def random_acquisition(request):
-    seed, Ncoils, Nsamples = request.param['seed'], request.param['Ncoils'], request.param['Nsamples']
+    seed, n_coils, n_samples = (
+        request.param['seed'],
+        request.param['n_coils'],
+        request.param['n_samples'],
+    )
     generator = RandomGenerator(seed)
-    kdata = generate_random_data(generator, (Ncoils, Nsamples))
-    traj = generate_random_trajectory(generator, (Nsamples, 2))
+    kdata = generate_random_data(generator, (n_coils, n_samples))
+    trajectory = generate_random_trajectory(generator, (n_samples, 2))
     header = generate_random_acquisition_properties(generator)
     header['flags'] &= ~AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value
-    return ismrmrd.Acquisition.from_array(kdata, traj, **header)
+    return ismrmrd.Acquisition.from_array(kdata, trajectory, **header)
 
 
-@pytest.fixture(params=({'seed': 1, 'Ncoils': 32, 'Nsamples': 256},))
+@pytest.fixture(params=({'seed': 1, 'n_coils': 32, 'n_samples': 256},))
 def random_noise_acquisition(request):
-    seed, Ncoils, Nsamples = request.param['seed'], request.param['Ncoils'], request.param['Nsamples']
+    seed, n_coils, n_samples = (
+        request.param['seed'],
+        request.param['n_coils'],
+        request.param['n_samples'],
+    )
     generator = RandomGenerator(seed)
-    kdata = generate_random_data(generator, (Ncoils, Nsamples))
-    traj = generate_random_trajectory(generator, (Nsamples, 2))
+    kdata = generate_random_data(generator, (n_coils, n_samples))
+    trajectory = generate_random_trajectory(generator, (n_samples, 2))
     header = generate_random_acquisition_properties(generator)
     header['flags'] |= AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value
-    return ismrmrd.Acquisition.from_array(kdata, traj, **header)
+    return ismrmrd.Acquisition.from_array(kdata, trajectory, **header)
 
 
 @pytest.fixture(params=({'seed': 0},))
@@ -115,21 +144,21 @@ def random_full_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
             kspace_encoding_step_2=xsd.limitType(0, 0, 0),
         ),
     )
-    measurementInformation = xsd.measurementInformationType(
+    measurement_information = xsd.measurementInformationType(
         measurementID=generator.ascii(10),
         seriesDate=XmlDate(generator.uint16(1970, 2030), generator.uint8(1, 12), generator.uint8(0, 30)),
         seriesTime=XmlTime(generator.uint8(0, 23), generator.uint8(0, 59), generator.uint8(0, 59)),
         sequenceName=generator.ascii(10),
     )
 
-    acquisitionSystemInformation = xsd.acquisitionSystemInformationType(
+    acquisition_system_information = xsd.acquisitionSystemInformationType(
         systemFieldStrength_T=generator.float32(0, 12),
         systemVendor=generator.ascii(10),
         systemModel=generator.ascii(10),
         receiverChannels=generator.uint16(1, 32),
     )
 
-    sequenceParameters = xsd.sequenceParametersType(
+    sequence_parameters = xsd.sequenceParametersType(
         TR=[generator.float32()],
         TE=[generator.float32()],
         flipAngle_deg=[generator.float32(low=10, high=90)],
@@ -140,11 +169,11 @@ def random_full_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
     # TODO: add everything that to the header
     return xsd.ismrmrdschema.ismrmrdHeader(
         encoding=[encoding],
-        sequenceParameters=sequenceParameters,
+        sequenceParameters=sequence_parameters,
         version=generator.int16(),
         experimentalConditions=xsd.experimentalConditionsType(H1resonanceFrequency_Hz=generator.int32()),
-        measurementInformation=measurementInformation,
-        acquisitionSystemInformation=acquisitionSystemInformation,
+        measurementInformation=measurement_information,
+        acquisitionSystemInformation=acquisition_system_information,
     )
 
 
@@ -167,11 +196,8 @@ def random_mandatory_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
         ),
         encodingLimits=xsd.encodingLimitsType(),
     )
-    experimentalConditions = xsd.experimentalConditionsType(H1resonanceFrequency_Hz=generator.int32())
-    return xsd.ismrmrdschema.ismrmrdHeader(
-        encoding=[encoding],
-        experimentalConditions=experimentalConditions,
-    )
+    experimental_conditions = xsd.experimentalConditionsType(H1resonanceFrequency_Hz=generator.int32())
+    return xsd.ismrmrdschema.ismrmrdHeader(encoding=[encoding], experimentalConditions=experimental_conditions)
 
 
 @pytest.fixture()
@@ -198,46 +224,75 @@ def random_kheader(request, random_full_ismrmrd_header, random_acq_info):
     """Random (not necessarily valid) KHeader."""
     seed = request.param['seed']
     generator = RandomGenerator(seed)
-    ktraj = generate_random_trajectory(generator)
-    kheader = KHeader.from_ismrmrd(random_full_ismrmrd_header, acq_info=random_acq_info, defaults={'trajectory': ktraj})
+    trajectory = generate_random_trajectory(generator)
+    kheader = KHeader.from_ismrmrd(
+        random_full_ismrmrd_header,
+        acq_info=random_acq_info,
+        defaults={'trajectory': trajectory},
+    )
     return kheader
 
 
-@pytest.fixture(params=({'seed': 0, 'Nother': 2, 'Ncoils': 16, 'Nz': 32, 'Ny': 128, 'Nx': 256},))
-def random_test_data(request):
-    seed, Nother, Ncoils, Nz, Ny, Nx = (
+@pytest.fixture(params=({'seed': 0, 'n_other': 10, 'n_k2': 40, 'n_k1': 20},))
+def random_kheader_shape(request, random_acquisition, random_full_ismrmrd_header):
+    """Random (not necessarily valid) KHeader with defined shape."""
+    # Get dimensions
+    seed, n_other, n_k2, n_k1 = (
         request.param['seed'],
-        request.param['Nother'],
-        request.param['Ncoils'],
-        request.param['Nz'],
-        request.param['Ny'],
-        request.param['Nx'],
+        request.param['n_other'],
+        request.param['n_k2'],
+        request.param['n_k1'],
     )
     generator = RandomGenerator(seed)
-    test_data = generate_random_data(generator, (Nother, Ncoils, Nz, Ny, Nx))
+
+    # Generate acquisitions
+    random_acq_info = AcqInfo.from_ismrmrd_acquisitions([random_acquisition for _ in range(n_k1 * n_k2 * n_other)])
+    n_k0 = int(random_acq_info.number_of_samples[0])
+    n_coils = int(random_acq_info.active_channels[0])
+
+    # Generate trajectory
+    ktraj = [generate_random_trajectory(generator, shape=(n_k0, 2)) for _ in range(n_k1 * n_k2 * n_other)]
+
+    # Put it all together to a KHeader object
+    kheader = KHeader.from_ismrmrd(random_full_ismrmrd_header, acq_info=random_acq_info, defaults={'trajectory': ktraj})
+    return kheader, n_other, n_coils, n_k2, n_k1, n_k0
+
+
+@pytest.fixture(params=({'seed': 0, 'n_other': 2, 'n_coils': 16, 'n_z': 32, 'n_y': 128, 'n_x': 256},))
+def random_test_data(request):
+    seed, n_other, n_coils, n_z, n_y, n_x = (
+        request.param['seed'],
+        request.param['n_other'],
+        request.param['n_coils'],
+        request.param['n_z'],
+        request.param['n_y'],
+        request.param['n_x'],
+    )
+    generator = RandomGenerator(seed)
+    test_data = generate_random_data(generator, (n_other, n_coils, n_z, n_y, n_x))
     return test_data
 
 
 @pytest.fixture(scope='session')
-def dcm_2d(ph_ellipse, tmp_path_factory):
+def dcm_2d(ellipse_phantom, tmp_path_factory):
     """Single 2D dicom image."""
     dcm_filename = tmp_path_factory.mktemp('mrpro') / 'dicom_2d.dcm'
-    dcm_idat = Dicom2DTestImage(filename=dcm_filename, phantom=ph_ellipse.phantom)
-    return dcm_idat
+    dcm_idata = Dicom2DTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom)
+    return dcm_idata
 
 
-@pytest.fixture(scope='session', params=({'num_images': 7},))
-def dcm_multi_te(request, ph_ellipse, tmp_path_factory):
+@pytest.fixture(scope='session', params=({'n_images': 7},))
+def dcm_multi_echo_times(request, ellipse_phantom, tmp_path_factory):
     """Multiple 2D dicom images with different echo times."""
-    num_images = request.param['num_images']
+    n_images = request.param['n_images']
     path = tmp_path_factory.mktemp('mrpro_multi_dcm')
     te = 2.0
-    dcm_idat = []
-    for _ in range(num_images):
+    dcm_image_data = []
+    for _ in range(n_images):
         dcm_filename = path / f'dicom_te_{int(te)}.dcm'
-        dcm_idat.append(Dicom2DTestImage(filename=dcm_filename, phantom=ph_ellipse.phantom, te=te))
+        dcm_image_data.append(Dicom2DTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom, te=te))
         te += 1.0
-    return dcm_idat
+    return dcm_image_data
 
 
 COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
@@ -245,7 +300,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
     [
         # (0) 2d cart mri with 1 coil, no oversampling
         (
-            (1, 1, 1, 96, 128),  # im shape
+            (1, 1, 1, 96, 128),  # img shape
             (1, 1, 1, 96, 128),  # k shape
             (1, 1, 1, 128),  # kx
             (1, 1, 96, 1),  # ky

@@ -19,7 +19,9 @@ charset-normalizer==3.3.2
 click==8.1.7
     # via pip-tools
 comm==0.2.0
-    # via ipykernel
+    # via
+    #   ipykernel
+    #   ipywidgets
 contourpy==1.2.0
     # via matplotlib
 coverage==7.3.2
@@ -51,7 +53,11 @@ idna==3.6
 ipykernel==6.27.1
     # via mrpro (pyproject.toml)
 ipython==8.18.1
-    # via ipykernel
+    # via
+    #   ipykernel
+    #   ipywidgets
+ipywidgets==8.1.2
+    # via mrpro (pyproject.toml)
 ismrmrd==1.14.0
     # via mrpro (pyproject.toml)
 jedi==0.19.1
@@ -69,6 +75,8 @@ jupyter-core==5.5.0
     #   ipykernel
     #   jupyter-client
     #   nbformat
+jupyterlab-widgets==3.0.10
+    # via ipywidgets
 jupytext==1.16.0
     # via mrpro (pyproject.toml)
 kiwisolver==1.4.5
@@ -237,6 +245,7 @@ traitlets==5.14.0
     #   comm
     #   ipykernel
     #   ipython
+    #   ipywidgets
     #   jupyter-client
     #   jupyter-core
     #   matplotlib-inline
@@ -253,6 +262,8 @@ wget==3.2
     # via zenodo-get
 wheel==0.42.0
     # via pip-tools
+widgetsnbextension==4.0.10
+    # via ipywidgets
 xsdata==22.12
     # via
     #   ismrmrd
