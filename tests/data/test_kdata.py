@@ -82,7 +82,7 @@ def consistently_shaped_kdata(request, random_kheader_shape):
     kheader.acq_info = modify_acq_info(reshape_acq_data, kheader.acq_info)
 
     # Create kdata with consistent shape
-    kdat = generate_random_data(RandomGenerator(request.param['seed']), (n_other, n_coils, n_k2, n_k1, n_k0))
+    kdata = generate_random_data(RandomGenerator(request.param['seed']), (n_other, n_coils, n_k2, n_k1, n_k0))
 
     # Create ktraj with consistent shape
     kx = repeat(torch.linspace(0, n_k0 - 1, n_k0, dtype=torch.float32), 'k0->other k2 k1 k0', other=1, k2=1, k1=1)
@@ -90,7 +90,7 @@ def consistently_shaped_kdata(request, random_kheader_shape):
     kz = repeat(torch.linspace(0, n_k2 - 1, n_k2, dtype=torch.float32), 'k2->other k2 k1 k0', other=1, k1=1, k0=1)
     ktraj = KTrajectory(kz, ky, kx)
 
-    return KData(header=kheader, data=kdat, traj=ktraj)
+    return KData(header=kheader, data=kdata, traj=ktraj)
 
 
 def test_KData_from_file(ismrmrd_cart):
@@ -287,7 +287,7 @@ def test_KData_split_k2_into_other(consistently_shaped_kdata, monkeypatch, n_oth
 def test_KData_select_other_subset(consistently_shaped_kdata, monkeypatch, subset_label, subset_idx):
     """Test selection of a subset from other dimension."""
     # Create KData
-    n_other, ncoil, n_k2, n_k1, n_k0 = consistently_shaped_kdata.data.shape
+    n_other, n_coils, n_k2, n_k1, n_k0 = consistently_shaped_kdata.data.shape
 
     # Set required parameters used in sel_kdata_subset.
     _, iother, _ = torch.meshgrid(torch.arange(n_k2), torch.arange(n_other), torch.arange(n_k1), indexing='xy')
@@ -297,6 +297,6 @@ def test_KData_select_other_subset(consistently_shaped_kdata, monkeypatch, subse
     kdata_subset = consistently_shaped_kdata.select_other_subset(subset_idx, subset_label)
 
     # Verify shape of data
-    assert kdata_subset.data.shape == (subset_idx.shape[0], ncoil, n_k2, n_k1, n_k0)
-    # Verify other labe describes subset data
+    assert kdata_subset.data.shape == (subset_idx.shape[0], n_coils, n_k2, n_k1, n_k0)
+    # Verify other label describes subset data
     assert all(torch.unique(getattr(kdata_subset.header.acq_info.idx, subset_label)) == torch.unique(subset_idx))

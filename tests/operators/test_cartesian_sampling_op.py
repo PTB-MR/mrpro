@@ -51,7 +51,7 @@ def test_cart_sampling_op_data_match():
     )
     sampling_op_sub = CartesianSamplingOp(encoding_shape=encoding_shape, traj=trajectory_sub)
 
-    # Verify that the fully-sampled sampling operator does not do an_ything because the data is already sorted
+    # Verify that the fully-sampled sampling operator does not do anything because the data is already sorted
     assert not sampling_op._needs_indexing
 
     # Verify identical shape

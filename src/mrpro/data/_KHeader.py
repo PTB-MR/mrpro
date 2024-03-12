@@ -23,7 +23,6 @@ from typing import TYPE_CHECKING
 
 import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
 
-# from mrpro.data import AccelerationFactor
 from mrpro.data import AcqInfo
 from mrpro.data import EncodingLimits
 from mrpro.data import SpatialDimension
@@ -50,12 +49,11 @@ class KHeader:
     trajectory: KTrajectoryCalculator
     b0: float
     encoding_limits: EncodingLimits
-    # acc_factor: AccelerationFactor # TODO: decide if we want to keep this
     recon_matrix: SpatialDimension[int]
     recon_fov: SpatialDimension[float]
     encoding_matrix: SpatialDimension[int]
     encoding_fov: SpatialDimension[float]
-    num_coils: int
+    n_coils: int
     acq_info: AcqInfo
     datetime: datetime.datetime
     h1_freq: float
@@ -70,7 +68,7 @@ class KHeader:
     vendor: str = UNKNOWN
     protocol_name: str = UNKNOWN
     misc: dict = dataclasses.field(default_factory=dict)  # do not use {} here!
-    calib_mode: enums.CalibrationMode = enums.CalibrationMode.OTHER
+    calibration_mode: enums.CalibrationMode = enums.CalibrationMode.OTHER
     interleave_dim: enums.InterleavingDimension = enums.InterleavingDimension.OTHER
     traj_type: enums.TrajectoryType = enums.TrajectoryType.OTHER
     measurement_id: str = UNKNOWN
@@ -132,7 +130,7 @@ class KHeader:
             header.acquisitionSystemInformation is not None
             and header.acquisitionSystemInformation.receiverChannels is not None
         ):
-            parameters['num_coils'] = header.acquisitionSystemInformation.receiverChannels
+            parameters['n_coils'] = header.acquisitionSystemInformation.receiverChannels
 
         if header.sequenceParameters is not None:
             parameters['tr'] = sequence_ms_to_s(header.sequenceParameters.TR)
@@ -159,11 +157,8 @@ class KHeader:
             parameters['echo_train_length'] = enc.echoTrainLength
 
         if enc.parallelImaging is not None:
-            # if enc.parallelImaging.accelerationFactor is not None:
-            #    parameters['acc_factor'] = AccelerationFactor.from_ismrmrd(enc.parallelImaging.accelerationFactor)
-
             if enc.parallelImaging.calibrationMode is not None:
-                parameters['calib_mode'] = enums.CalibrationMode(enc.parallelImaging.calibrationMode.value)
+                parameters['calibration_mode'] = enums.CalibrationMode(enc.parallelImaging.calibrationMode.value)
 
             if enc.parallelImaging.interleavingDimension is not None:
                 parameters['interleave_dim'] = enums.InterleavingDimension(

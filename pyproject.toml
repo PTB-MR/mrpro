@@ -97,9 +97,10 @@ select = [
     "D",   # pydocstyle
     "E",   # pycodestyle errors
     "F",   # Pyflakes
+    "FA",  # flake8-future-annotations
     "I",   # isort
     "N",   # pep8-naming
-    # "NPY", # NumPy-specific rules
+    "NPY", # NumPy-specific rules
     "RUF", # Ruff-specific rules
     "S",   # flake8-bandit
     "SIM", # flake8-simplify
@@ -107,9 +108,11 @@ select = [
     "PIE", # flake8-pie
     # "PL",  # PyLint
     "PTH", # flake8-use-pathlib
+    "T20", # flake8-print
     "Q",   # flake8-quotes
     "W",   # pycodestyle warnings
     "YTT", # flake8-2020
+    "ERA", # flake8-eradicate
 ]
 extend-select = [
     "ANN001", #  type annotation for function argument
@@ -122,8 +125,9 @@ extend-select = [
     "D417",   #  undocumented-parameter
 ]
 ignore = [
-    "N999",   # invalid module name
+    "N999",   #  invalid module name
     "COM812", #  missing-trailing-comma (conflict with formatter)
+    "SIM108", #  if-else-block-instead-of-if-exp
 ]
 
 [tool.ruff.lint.isort]

@@ -61,7 +61,7 @@ class KDataSplitMixin:
             Already existing "other_label" can only be of length 1
         """
         # Number of other
-        num_other = split_idx.shape[0]
+        n_other = split_idx.shape[0]
 
         # Verify that the specified label of the other dimension is unused
         if getattr(self.header.encoding_limits, other_label).length > 1:
@@ -119,11 +119,11 @@ class KDataSplitMixin:
         kheader.acq_info = modify_acq_info(reshape_acq_info, kheader.acq_info)
 
         # Update other label limits and acquisition info
-        setattr(kheader.encoding_limits, other_label, Limits(min=0, max=num_other - 1, center=0))
+        setattr(kheader.encoding_limits, other_label, Limits(min=0, max=n_other - 1, center=0))
 
         # acq_info for new other dimensions
         acq_info_other_split = repeat(
-            torch.linspace(0, num_other - 1, num_other), 'other-> other k2 k1', k2=kdat.shape[-3], k1=kdat.shape[-2]
+            torch.linspace(0, n_other - 1, n_other), 'other-> other k2 k1', k2=kdat.shape[-3], k1=kdat.shape[-2]
         )
         setattr(kheader.acq_info.idx, other_label, acq_info_other_split)
 

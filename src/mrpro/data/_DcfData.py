@@ -139,9 +139,9 @@ class DcfData:
         iqr = q3 - q1
         upper_bound = q3 + 1.5 * iqr
         idx_outliers = np.nonzero(dcf > upper_bound)
-        num_outliers = len(idx_outliers[0])
-        high_values_start = int(0.99 * (len(dcf_sorted) - num_outliers))
-        high_values_end = len(dcf_sorted) - num_outliers  # this works also for num_outliers==0
+        n_outliers = len(idx_outliers[0])
+        high_values_start = int(0.99 * (len(dcf_sorted) - n_outliers))
+        high_values_end = len(dcf_sorted) - n_outliers  # this works also for n_outliers==0
         fill_value = np.average(dcf_sorted[high_values_start:high_values_end])
         dcf[idx_outliers] = fill_value
 

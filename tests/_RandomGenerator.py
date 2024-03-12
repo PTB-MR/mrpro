@@ -97,11 +97,11 @@ class RandomGenerator:
 
     # There is no uint32 in pytorch yet
     # def uint32_tensor(self, size: Sequence[int] = (1,), low: int = 0, high: int = 1 << 32):
-    #     return self._randint(size, low, high, dtype=torch.int32)
+    #     return self._randint(size, low, high, dtype=torch.int32) # noqa: ERA001
 
     # There is no uint64 in pytorch yet
     # def uint64_tensor(self, size: Sequence[int] = (1,), low: int = 0, high: int = 1 << 64):
-    #    return self._randint(size, low, high, dtype=torch.uint64)
+    #    return self._randint(size, low, high, dtype=torch.uint64) # noqa: ERA001
 
     def uint8_tensor(self, size: Sequence[int] = (1,), low: int = 0, high: int = 1 << 8):
         return self._randint(size, low, high, dtype=torch.uint8)

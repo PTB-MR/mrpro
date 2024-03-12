@@ -281,14 +281,14 @@ def dcm_2d(ellipse_phantom, tmp_path_factory):
     return dcm_idata
 
 
-@pytest.fixture(scope='session', params=({'num_images': 7},))
+@pytest.fixture(scope='session', params=({'n_images': 7},))
 def dcm_multi_echo_times(request, ellipse_phantom, tmp_path_factory):
     """Multiple 2D dicom images with different echo times."""
-    num_images = request.param['num_images']
+    n_images = request.param['n_images']
     path = tmp_path_factory.mktemp('mrpro_multi_dcm')
     te = 2.0
     dcm_image_data = []
-    for _ in range(num_images):
+    for _ in range(n_images):
         dcm_filename = path / f'dicom_te_{int(te)}.dcm'
         dcm_image_data.append(Dicom2DTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom, te=te))
         te += 1.0
@@ -300,7 +300,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
     [
         # (0) 2d cart mri with 1 coil, no oversampling
         (
-            (1, 1, 1, 96, 128),  # im shape
+            (1, 1, 1, 96, 128),  # img shape
             (1, 1, 1, 96, 128),  # k shape
             (1, 1, 1, 128),  # kx
             (1, 1, 96, 1),  # ky

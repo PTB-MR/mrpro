@@ -27,7 +27,7 @@ def test_kheader_fail_from_mandatory_ismrmrd_header(random_mandatory_ismrmrd_hea
 def test_kheader_overwrite_missing_parameter(random_mandatory_ismrmrd_header, random_acq_info):
     overwrite = {
         'trajectory': xsd.trajectoryType('other'),
-        'num_coils': 1,
+        'n_coils': 1,
         'datetime': datetime.datetime.now(),
         'te': [0.01],
         'ti': [1.0],
@@ -42,7 +42,7 @@ def test_kheader_overwrite_missing_parameter(random_mandatory_ismrmrd_header, ra
 def test_kheader_set_missing_defaults(random_mandatory_ismrmrd_header, random_acq_info):
     defaults = {
         'trajectory': xsd.trajectoryType('other'),
-        'num_coils': 1,
+        'n_coils': 1,
         'datetime': datetime.datetime.now(),
         'te': [1],
         'ti': [1],

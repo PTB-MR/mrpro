@@ -46,7 +46,7 @@ def test_trajectory_raw_reshape(cartesian_grid):
     kx_full = repeat(kx_full, '1 k2 k1 k0->other k2 k1 k0', other=n_other)
 
     # Reshape and repeat from (n_other n_k2 n_k1 n_k0) to (n_other*n_k2*n_k1 n_k0) and permute randomly
-    sort_idx = np.random.permutation(np.linspace(0, n_other * n_k2 * n_k1 - 1, n_other * n_k2 * n_k1))
+    sort_idx = np.random.default_rng(0).permutation(np.linspace(0, n_other * n_k2 * n_k1 - 1, n_other * n_k2 * n_k1))
     kz_raw = make_trajectory_raw_shape(kz_full, sort_idx)
     ky_raw = make_trajectory_raw_shape(ky_full, sort_idx)
     kx_raw = make_trajectory_raw_shape(kx_full, sort_idx)

@@ -125,14 +125,14 @@ def test_KTrajectoryRpe_golden(valid_rpe_kheader):
 def test_KTrajectoryRpe_uniform(valid_rpe_kheader):
     """Calculate RPE trajectory with uniform angle."""
     n_rpe_lines = valid_rpe_kheader.acq_info.idx.k1.shape[1]
-    trajectory_calculator_1 = KTrajectoryRpe(angle=torch.pi / n_rpe_lines, shift_between_rpe_lines=torch.tensor([0]))
-    trajectory1 = trajectory_calculator_1(valid_rpe_kheader)
+    trajectory1_calculator = KTrajectoryRpe(angle=torch.pi / n_rpe_lines, shift_between_rpe_lines=torch.tensor([0]))
+    trajectory1 = trajectory1_calculator(valid_rpe_kheader)
     # Calculate trajectory with half the angular gap such that every second line should be the same as above
-    trajectory_calculator_2 = KTrajectoryRpe(
+    trajectory2_calculator = KTrajectoryRpe(
         angle=torch.pi / (2 * n_rpe_lines),
         shift_between_rpe_lines=torch.tensor([0]),
     )
-    trajectory2 = trajectory_calculator_2(valid_rpe_kheader)
+    trajectory2 = trajectory2_calculator(valid_rpe_kheader)
 
     torch.testing.assert_close(trajectory1.kx[:, : n_rpe_lines // 2, :, :], trajectory2.kx[:, ::2, :, :])
     torch.testing.assert_close(trajectory1.ky[:, : n_rpe_lines // 2, :, :], trajectory2.ky[:, ::2, :, :])
@@ -141,13 +141,13 @@ def test_KTrajectoryRpe_uniform(valid_rpe_kheader):
 
 def test_KTrajectoryRpe_shift(valid_rpe_kheader):
     """Evaluate radial shifts for RPE trajectory."""
-    trajectory_calculator_1 = KTrajectoryRpe(angle=torch.pi * 0.618034, shift_between_rpe_lines=torch.tensor([0.25]))
-    trajectory1 = trajectory_calculator_1(valid_rpe_kheader)
-    trajectory_calculator_2 = KTrajectoryRpe(
+    trajectory1_calculator = KTrajectoryRpe(angle=torch.pi * 0.618034, shift_between_rpe_lines=torch.tensor([0.25]))
+    trajectory1 = trajectory1_calculator(valid_rpe_kheader)
+    trajectory2_calculator = KTrajectoryRpe(
         angle=torch.pi * 0.618034,
         shift_between_rpe_lines=torch.tensor([0.25, 0.25, 0.25, 0.25]),
     )
-    trajectory2 = trajectory_calculator_2(valid_rpe_kheader)
+    trajectory2 = trajectory2_calculator(valid_rpe_kheader)
     torch.testing.assert_close(trajectory1.as_tensor(), trajectory2.as_tensor())
 
 

@@ -19,14 +19,14 @@ from mrpro.data import KTrajectory
 
 class PulseqRadialTestSeq:
     def __init__(self, seq_filename: str, n_x=256, n_spokes=10):
-        """
-        A radial 2D trajectory in pulseq.
-        Cave: Not a real sequence as delays, spoiler, etc are nonsense.
+        """A radial 2D trajectory in Pulseq.
+
+        Please note: this is not a working sequence as delays, spoiler, etc are nonsense.
 
         Parameters
         ----------
         seq_filename
-            targetfilename
+            target filename
         n_x, optional
             number of frequency encoding points
         n_spokes, optional
@@ -46,13 +46,12 @@ class PulseqRadialTestSeq:
         gz_reph = pypulseq.make_trapezoid(channel='z', area=-gz.area / 2, duration=2e-3, system=system)
 
         for spoke in range(n_spokes):
-            phi = delta_angle * spoke
+            angle = delta_angle * spoke
             seq.add_block(rf, gz)
-            seq.add_block(*pypulseq.rotate(gx_pre, gz_reph, angle=phi, axis='z'))
+            seq.add_block(*pypulseq.rotate(gx_pre, gz_reph, angle=angle, axis='z'))
             seq.add_block(pypulseq.make_delay(10e-3))
-            seq.add_block(*pypulseq.rotate(gx, adc, angle=phi, axis='z'))
+            seq.add_block(*pypulseq.rotate(gx, adc, angle=angle, axis='z'))
             seq.add_block(pypulseq.make_delay(100e-3))
-            print(phi)
 
         seq.write(str(seq_filename))
 
@@ -62,9 +61,9 @@ class PulseqRadialTestSeq:
         self.seq_filename = seq_filename
 
         kz = torch.zeros(1, 1, n_spokes, n_x)
-        phi = torch.pi / n_spokes * torch.arange(n_spokes)
+        angle = torch.pi / n_spokes * torch.arange(n_spokes)
         k0 = delta_k * torch.linspace(-n_x / 2, n_x / 2 - 1, n_x)
-        kx = (torch.cos(phi)[:, None] * k0)[None, None, ...]
-        ky = (torch.sin(phi)[:, None] * k0)[None, None, ...]
+        kx = (torch.cos(angle)[:, None] * k0)[None, None, ...]
+        ky = (torch.sin(angle)[:, None] * k0)[None, None, ...]
 
         self.traj_analytical = KTrajectory(kz, ky, kx)

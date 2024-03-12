@@ -15,22 +15,22 @@
 import torch
 
 
-def relative_image_difference(im1, im2):
+def relative_image_difference(img1, img2):
     """Calculate mean absolute relative difference between two images.
 
     Parameters
     ----------
-    im1
+    img1
         first image
-    im2
+    img2
         second image
 
     Returns
     -------
         mean absolute relative difference between images
     """
-    image_difference = torch.mean(torch.abs(im1 - im2))
-    image_mean = 0.5 * torch.mean(torch.abs(im1) + torch.abs(im2))
+    image_difference = torch.mean(torch.abs(img1 - img2))
+    image_mean = 0.5 * torch.mean(torch.abs(img1) + torch.abs(img2))
     if image_mean == 0:
         raise ValueError('average of images should be larger than 0')
     return image_difference / image_mean
