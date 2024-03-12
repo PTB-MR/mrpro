@@ -74,8 +74,8 @@ def conjugate_gradient(
     # initial residual
     residual = right_hand_side - operator(starting_value)[0] if starting_value is not None else right_hand_side.clone()
 
-    # initialize conjugate direction
-    conjugate_direction = residual.clone()
+    # initialize conjugate vector
+    conjugate_vector = residual.clone()
 
     # assign starting value to the solution
     solution = starting_value.clone() if starting_value is not None else right_hand_side.clone()
@@ -87,36 +87,36 @@ def conjugate_gradient(
     # squared tolerance;
     # (we will check ||residual||^2 < tolerance^2 instead of ||residual|| < tol
     # #to avoid the computation of the root for the norm)
-    squared_tolerance = tolerance**2
+    tolerance_squared = tolerance**2
 
     # dummy value the old squared norm of the residual;
     # #only required for initialization
-    square_norm_residual_previous = None
+    norm_squared_residual = None
 
     for i in range(max_iterations):
 
         # calculate the square norm of the residual
-        residual_flat_new = residual.flatten()
-        square_norm_residual_new = torch.vdot(residual_flat_new, residual_flat_new).real
+        residual_flat = residual.flatten()
+        norm_squared_residual_new = torch.vdot(residual_flat, residual_flat).real
 
         # check if the solution is already accurate enough
         if tolerance != 0:
-            if square_norm_residual_new < squared_tolerance:
+            if norm_squared_residual_new < tolerance_squared:
                 return solution
 
         if i > 0:
-            beta = square_norm_residual_new / square_norm_residual_previous
-            conjugate_direction = residual + beta * conjugate_direction
+            beta = norm_squared_residual_new / norm_squared_residual
+            conjugate_vector = residual + beta * conjugate_vector
 
         # update estimates of the solution and the residual
-        (operator_conjugate_direction,) = operator(conjugate_direction)
-        alpha = square_norm_residual_new / (
-            torch.vdot(conjugate_direction.flatten(), operator_conjugate_direction.flatten())
+        (operator_conjugate_vector,) = operator(conjugate_vector)
+        alpha = norm_squared_residual_new / (
+            torch.vdot(conjugate_vector.flatten(), operator_conjugate_vector.flatten())
         )
-        solution += alpha * conjugate_direction
-        residual -= alpha * operator_conjugate_direction
+        solution += alpha * conjugate_vector
+        residual -= alpha * operator_conjugate_vector
 
-        square_norm_residual_previous = square_norm_residual_new
+        norm_squared_residual = norm_squared_residual_new
 
         if callback is not None:
             callback(solution)
