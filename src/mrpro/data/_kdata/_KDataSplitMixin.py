@@ -42,13 +42,13 @@ class KDataSplitMixin:
 
         Parameters
         ----------
-        kdata
-            K-space data (other coils k2 k1 k0)
         split_idx
             2D index describing the k2 or k1 points in each block to be moved to the other dimension
             (other_split, k1_per_split) or (other_split, k2_per_split)
         other_label
             Label of other dimension, e.g. repetition, phase
+        split_dir
+            Dimension to split, either 'k1' or 'k2'
 
         Returns
         -------
@@ -58,11 +58,10 @@ class KDataSplitMixin:
         Raises
         ------
         ValueError
-            Already exisiting "other_label" can only be of length 1
+            Already existing "other_label" can only be of length 1
         """
-
         # Number of other
-        num_other = split_idx.shape[0]
+        n_other = split_idx.shape[0]
 
         # Verify that the specified label of the other dimension is unused
         if getattr(self.header.encoding_limits, other_label).length > 1:
@@ -71,10 +70,10 @@ class KDataSplitMixin:
         # Set-up splitting
         if split_dir == 'k1':
             # Split along k1 dimensions
-            def split_data_traj(dat_traj):
+            def split_data_traj(dat_traj: torch.Tensor) -> torch.Tensor:
                 return dat_traj[:, :, :, split_idx, :]
 
-            def split_acq_info(acq_info):
+            def split_acq_info(acq_info: torch.Tensor) -> torch.Tensor:
                 return acq_info[:, :, split_idx, ...]
 
             # Rearrange other_split and k1 dimension
@@ -84,10 +83,10 @@ class KDataSplitMixin:
 
         elif split_dir == 'k2':
             # Split along k2 dimensions
-            def split_data_traj(dat_traj):
+            def split_data_traj(dat_traj: torch.Tensor) -> torch.Tensor:
                 return dat_traj[:, :, split_idx, :, :]
 
-            def split_acq_info(acq_info):
+            def split_acq_info(acq_info: torch.Tensor) -> torch.Tensor:
                 return acq_info[:, split_idx, ...]
 
             # Rearrange other_split and k1 dimension
@@ -114,17 +113,17 @@ class KDataSplitMixin:
         kheader = copy.deepcopy(self.header)
 
         # Update shape of acquisition info index
-        def reshape_acq_info(info):
+        def reshape_acq_info(info: torch.Tensor):
             return rearrange(split_acq_info(info), rearrange_pattern_acq_info)
 
         kheader.acq_info = modify_acq_info(reshape_acq_info, kheader.acq_info)
 
         # Update other label limits and acquisition info
-        setattr(kheader.encoding_limits, other_label, Limits(min=0, max=num_other - 1, center=0))
+        setattr(kheader.encoding_limits, other_label, Limits(min=0, max=n_other - 1, center=0))
 
         # acq_info for new other dimensions
         acq_info_other_split = repeat(
-            torch.linspace(0, num_other - 1, num_other), 'other-> other k2 k1', k2=kdat.shape[-3], k1=kdat.shape[-2]
+            torch.linspace(0, n_other - 1, n_other), 'other-> other k2 k1', k2=kdat.shape[-3], k1=kdat.shape[-2]
         )
         setattr(kheader.acq_info.idx, other_label, acq_info_other_split)
 

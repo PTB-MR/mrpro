@@ -12,6 +12,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from collections.abc import Sequence
+from typing import Literal
 
 import torch
 from torch.optim import LBFGS
@@ -21,23 +23,23 @@ from mrpro.operators import Operator
 
 def lbfgs(
     f: Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor]],
-    params: list,
+    initial_parameters: Sequence[torch.Tensor],
     lr: float = 1.0,
     max_iter: int = 100,
     max_eval: int | None = 100,
     tolerance_grad: float = 1e-07,
     tolerance_change: float = 1e-09,
     history_size: int = 10,
-    line_search_fn: str | None = 'strong_wolfe',
-) -> list[torch.Tensor]:
+    line_search_fn: None | Literal['strong_wolfe'] = 'strong_wolfe',
+) -> tuple[torch.Tensor, ...]:
     """LBFGS for non-linear minimization problems.
 
     Parameters
     ----------
     f
         scalar function to be minimized
-    params
-        list with parameters to be optimized.
+    initial_parameters
+        Sequence (for example list) of parameters to be optimized.
         Note that these parameters will not be changed. Instead, we create a copy and
         leave the initial values untouched.
     lr, optional
@@ -55,24 +57,23 @@ def lbfgs(
     history_size, optional
         update history size, by default 10
     line_search_fn, optional
-        line search algorithm, either ‘strong_wolfe’ or None,
+        line search algorithm, either 'strong_wolfe' or None (meaning constant step size)
         by default "strong_wolfe"
 
     Returns
     -------
         list of optimized parameters
     """
-
     # TODO: remove after new pytorch release;
-    if torch.tensor([torch.is_complex(p) for p in params]).any():
+    if torch.tensor([torch.is_complex(p) for p in initial_parameters]).any():
         raise ValueError(
             "at least one tensor in 'params' is complex-valued; \
-            \ncomplex-valued tensors will be allowed for lbfgs in future torch versions"
+            \ncomplex-valued tensors will be allowed for lbfgs in future torch versions",
         )
 
-    # define lbfgs routine
+    parameters = [p.detach().clone().requires_grad_(True) for p in initial_parameters]
     optim = LBFGS(
-        params=[p.detach().clone().requires_grad_(True) for p in params],
+        params=parameters,
         lr=lr,
         history_size=history_size,
         max_iter=max_iter,
@@ -84,11 +85,11 @@ def lbfgs(
 
     def closure():
         optim.zero_grad()
-        (objective,) = f(*params)
+        (objective,) = f(*parameters)
         objective.backward()
         return objective
 
     # run lbfgs
     optim.step(closure)
 
-    return params
+    return tuple(parameters)

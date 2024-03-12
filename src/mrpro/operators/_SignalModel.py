@@ -25,5 +25,3 @@ Tin = TypeVarTuple('Tin')
 # SignalModel has multiple inputs and one output
 class SignalModel(Operator[*Tin, tuple[torch.Tensor,]]):
     """Signal Model Operator."""
-
-    ...

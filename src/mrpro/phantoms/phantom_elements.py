@@ -16,7 +16,7 @@ from dataclasses import dataclass
 
 
 @dataclass(slots=True)
-class EllipsePars:
+class EllipseParameters:
     """Parameters of ellipse."""
 
     center_x: float

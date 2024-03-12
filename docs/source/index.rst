@@ -13,7 +13,7 @@ Welcome to MRPro's documentation!
    faq
    examples
    api
-   contributer_guide
+   contributor_guide
 
 
 

@@ -59,7 +59,10 @@ class KTrajectory:
         shape = np.broadcast_shapes(self.kx.shape, self.ky.shape, self.kz.shape)
         return tuple(shape)
 
-    def _traj_types(self, tolerance) -> tuple[tuple[TrajType, TrajType, TrajType], tuple[TrajType, TrajType, TrajType]]:
+    def _traj_types(
+        self,
+        tolerance: float,
+    ) -> tuple[tuple[TrajType, TrajType, TrajType], tuple[TrajType, TrajType, TrajType]]:
         """Calculate the trajectory type along kzkykx and k2k1k0.
 
         Checks if the entries of the trajectory along certain dimensions
@@ -68,8 +71,8 @@ class KTrajectory:
 
         Parameters
         ----------
-            tolerance:
-                absolute tolerance in checking if points are on integer grid positions
+        tolerance:
+            absolute tolerance in checking if points are on integer grid positions
 
         Returns
         -------
@@ -77,7 +80,6 @@ class KTrajectory:
 
         # TODO: consider non-integer positions that are on a grid, e.g. (0.5, 1, 1.5, ....)
         """
-
         # Matrix describing trajectory-type [(kz, ky, kx), (k2, k1, k0)]
         # Start with everything not on a grid (arbitrary k-space locations).
         # We use the value of the enum-type to make it easier to do array operations.
@@ -108,7 +110,7 @@ class KTrajectory:
         """Type of trajectory along k2-k1-k0."""
         return self._traj_types(self.grid_detection_tolerance)[1]
 
-    def as_tensor(self, stack_dim=0) -> torch.Tensor:
+    def as_tensor(self, stack_dim: int = 0) -> torch.Tensor:
         """Tensor representation of the trajectory.
 
         Parameters
@@ -155,7 +157,8 @@ class KTrajectory:
         try:
             shape = self.broadcasted_shape
         except ValueError:
-            raise ValueError('The k-space trajectory dimensions must be broadcastable.')
+            raise ValueError('The k-space trajectory dimensions must be broadcastable.') from None
+
         if len(shape) < 4:
             raise ValueError('The k-space trajectory tensors should each have at least 4 dimensions.')
 
@@ -186,7 +189,6 @@ class KTrajectory:
         grid_detection_tolerance
             tolerance to detect if trajectory points are on integer grid positions
         """
-
         kz, ky, kx = torch.unbind(tensor, dim=stack_dim)
         return cls(
             kz,
@@ -204,7 +206,9 @@ class KTrajectory:
         documentation of torch.Tensor.to() for more details.
         """
         return KTrajectory(
-            kz=self.kz.to(*args, **kwargs), ky=self.ky.to(*args, **kwargs), kx=self.kx.to(*args, **kwargs)
+            kz=self.kz.to(*args, **kwargs),
+            ky=self.ky.to(*args, **kwargs),
+            kx=self.kx.to(*args, **kwargs),
         )
 
     def cuda(
@@ -226,15 +230,9 @@ class KTrajectory:
             The desired memory format of returned Tensor.
         """
         return KTrajectory(
-            kz=self.kz.cuda(
-                device=device, non_blocking=non_blocking, memory_format=memory_format
-            ),  # type: ignore [call-arg]
-            ky=self.ky.cuda(
-                device=device, non_blocking=non_blocking, memory_format=memory_format
-            ),  # type: ignore [call-arg]
-            kx=self.kx.cuda(
-                device=device, non_blocking=non_blocking, memory_format=memory_format
-            ),  # type: ignore [call-arg]
+            kz=self.kz.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),  # type: ignore [call-arg]
+            ky=self.ky.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),  # type: ignore [call-arg]
+            kx=self.kx.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),  # type: ignore [call-arg]
         )
 
     def cpu(self, memory_format: torch.memory_format = torch.preserve_format) -> KTrajectory:

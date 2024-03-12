@@ -13,8 +13,7 @@
 #   limitations under the License.
 
 import torch
-
-from mrpro.phantoms import EllipsePars
+from mrpro.phantoms import EllipseParameters
 from mrpro.phantoms import EllipsePhantom
 
 
@@ -23,26 +22,28 @@ class EllipsePhantomTestData:
 
     Parameters
     ----------
-    ny
+    n_y
         number of voxels along y
-    nx
+    n_x
         number of voxels along x
     """
 
-    def __init__(self, ny: int = 512, nx: int = 256):
+    def __init__(self, n_y: int = 512, n_x: int = 256):
         # Define image size and k-space matrix
-        self.nx: int = nx
-        self.ny: int = ny
+        self.n_x: int = n_x
+        self.n_y: int = n_y
         [self.kx, self.ky] = torch.meshgrid(
-            torch.linspace(-nx // 2, nx // 2 - 1, nx), torch.linspace(-ny // 2, ny // 2 - 1, ny), indexing='xy'
+            torch.linspace(-n_x // 2, n_x // 2 - 1, n_x),
+            torch.linspace(-n_y // 2, n_y // 2 - 1, n_y),
+            indexing='xy',
         )
 
         # Define five ellipses
         self.test_ellipses = [
-            EllipsePars(center_x=0.1, center_y=0.0, radius_x=0.1, radius_y=0.25, intensity=1),
-            EllipsePars(center_x=0.3, center_y=0.3, radius_x=0.1, radius_y=0.1, intensity=2),
-            EllipsePars(center_x=0.1, center_y=0.1, radius_x=0.1, radius_y=0.1, intensity=3),
-            EllipsePars(center_x=-0.2, center_y=-0.2, radius_x=0.1, radius_y=0.1, intensity=4),
-            EllipsePars(center_x=-0.3, center_y=-0.3, radius_x=0.1, radius_y=0.1, intensity=5),
+            EllipseParameters(center_x=0.1, center_y=0.0, radius_x=0.1, radius_y=0.25, intensity=1),
+            EllipseParameters(center_x=0.3, center_y=0.3, radius_x=0.1, radius_y=0.1, intensity=2),
+            EllipseParameters(center_x=0.1, center_y=0.1, radius_x=0.1, radius_y=0.1, intensity=3),
+            EllipseParameters(center_x=-0.2, center_y=-0.2, radius_x=0.1, radius_y=0.1, intensity=4),
+            EllipseParameters(center_x=-0.3, center_y=-0.3, radius_x=0.1, radius_y=0.1, intensity=5),
         ]
         self.phantom = EllipsePhantom(self.test_ellipses)

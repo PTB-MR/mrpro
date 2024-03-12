@@ -12,6 +12,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from collections.abc import Sequence
+
 import torch
 from torch.optim import Adam
 
@@ -20,7 +22,7 @@ from mrpro.operators import Operator
 
 def adam(
     f: Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor]],
-    params: list,
+    initial_parameters: Sequence[torch.Tensor],
     max_iter: int,
     lr: float = 1e-3,
     betas: tuple[float, float] = (0.9, 0.999),
@@ -29,20 +31,21 @@ def adam(
     amsgrad: bool = False,
     foreach: bool | None = None,
     maximize: bool = False,
-    capturable: bool = False,
     differentiable: bool = False,
     fused: bool | None = None,
-) -> list[torch.Tensor]:
+) -> tuple[torch.Tensor, ...]:
     """Adam for non-linear minimization problems.
 
     Parameters
     ----------
     f
         scalar-valued function to be optimized
-    params
-        list of parameters to be optimized.
+    initial_parameters
+        Sequence (for example list) of parameters to be optimized.
         Note that these parameters will not be changed. Instead, we create a copy and
         leave the initial values untouched.
+    max_iter
+        maximum number of iterations
     lr, optional
         learning rate, by default 1e-3
     betas, optional
@@ -59,13 +62,8 @@ def adam(
         whether `foreach` implementation of optimizer is used, by default None
     maximize, optional
         maximize the objective with respect to the params, instead of minimizing, by default False
-    capturable, optional
-        whether this instance is safe to capture in a CUDA graph. Passing True can impair ungraphed
-        performance, so if you don’t intend to graph capture this instance, leave it False, by default False
     differentiable, optional
-        whether autograd should occur through the optimizer step in training. Otherwise, the step() function
-        runs in a torch.no_grad() context. Setting to True can impair performance, so leave it False if you
-        don’t intend to run autograd through this instance, by default False
+        whether autograd should occur through the optimizer step. This is currently not implemented.
     fused, optional
         whether the fused implementation (CUDA only) is used. Currently, torch.float64, torch.float32,
         torch.float16, and torch.bfloat16 are supported., by default None
@@ -74,10 +72,15 @@ def adam(
     -------
         list of optimized parameters
     """
+    if not differentiable:
+        parameters = [p.detach().clone().requires_grad_(True) for p in initial_parameters]
+    else:
+        # TODO: If differentiable is set, it is reasonable to expect that the result backpropagates to
+        # initial parameters. This is currently not implemented (due to detach).
+        raise NotImplementedError('Differentiable Optimization is not implemented')
 
-    # define Adam routine
     optim = Adam(
-        params=[p.detach().clone().requires_grad_(True) for p in params],
+        params=parameters,
         lr=lr,
         betas=betas,
         eps=eps,
@@ -85,14 +88,13 @@ def adam(
         amsgrad=amsgrad,
         foreach=foreach,
         maximize=maximize,
-        capturable=capturable,
         differentiable=differentiable,
         fused=fused,
     )
 
     def closure():
         optim.zero_grad()
-        (objective,) = f(*params)
+        (objective,) = f(*parameters)
         objective.backward()
         return objective
 
@@ -100,4 +102,4 @@ def adam(
     for _ in range(max_iter):
         optim.step(closure)
 
-    return params
+    return tuple(parameters)

@@ -16,13 +16,13 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
+from collections.abc import Sequence
 from dataclasses import dataclass
 from math import pi
 from typing import TYPE_CHECKING
 
 import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
 
-# from mrpro.data import AccelerationFactor
 from mrpro.data import AcqInfo
 from mrpro.data import EncodingLimits
 from mrpro.data import SpatialDimension
@@ -49,12 +49,11 @@ class KHeader:
     trajectory: KTrajectoryCalculator
     b0: float
     encoding_limits: EncodingLimits
-    # acc_factor: AccelerationFactor # TODO: decide if we want to keep this
     recon_matrix: SpatialDimension[int]
     recon_fov: SpatialDimension[float]
     encoding_matrix: SpatialDimension[int]
     encoding_fov: SpatialDimension[float]
-    num_coils: int
+    n_coils: int
     acq_info: AcqInfo
     datetime: datetime.datetime
     h1_freq: float
@@ -69,7 +68,7 @@ class KHeader:
     vendor: str = UNKNOWN
     protocol_name: str = UNKNOWN
     misc: dict = dataclasses.field(default_factory=dict)  # do not use {} here!
-    calib_mode: enums.CalibrationMode = enums.CalibrationMode.OTHER
+    calibration_mode: enums.CalibrationMode = enums.CalibrationMode.OTHER
     interleave_dim: enums.InterleavingDimension = enums.InterleavingDimension.OTHER
     traj_type: enums.TrajectoryType = enums.TrajectoryType.OTHER
     measurement_id: str = UNKNOWN
@@ -107,10 +106,10 @@ class KHeader:
         """
 
         # Conversion functions for units
-        def list_ms_to_s(ms: list[float]) -> list[float]:
+        def sequence_ms_to_s(ms: Sequence[float]) -> Sequence[float]:
             return [el / 1000 for el in ms]
 
-        def list_deg_to_rad(deg: list[float]) -> list[float]:
+        def sequence_deg_to_rad(deg: Sequence[float]) -> Sequence[float]:
             return [el * pi / 180 for el in deg]
 
         def mm_to_m(m: float) -> float:
@@ -122,10 +121,7 @@ class KHeader:
         enc: ismrmrdschema.encodingType = header.encoding[encoding_number]
 
         # These are guaranteed to exist
-        parameters = dict(
-            h1_freq=header.experimentalConditions.H1resonanceFrequency_Hz,
-            acq_info=acq_info,
-        )
+        parameters = {'h1_freq': header.experimentalConditions.H1resonanceFrequency_Hz, 'acq_info': acq_info}
 
         if defaults is not None:
             parameters.update(defaults)
@@ -134,14 +130,14 @@ class KHeader:
             header.acquisitionSystemInformation is not None
             and header.acquisitionSystemInformation.receiverChannels is not None
         ):
-            parameters['num_coils'] = header.acquisitionSystemInformation.receiverChannels
+            parameters['n_coils'] = header.acquisitionSystemInformation.receiverChannels
 
         if header.sequenceParameters is not None:
-            parameters['tr'] = list_ms_to_s(header.sequenceParameters.TR)
-            parameters['te'] = list_ms_to_s(header.sequenceParameters.TE)
-            parameters['ti'] = list_ms_to_s(header.sequenceParameters.TI)
-            parameters['fa'] = list_deg_to_rad(header.sequenceParameters.flipAngle_deg)
-            parameters['echo_spacing'] = list_ms_to_s(header.sequenceParameters.echo_spacing)
+            parameters['tr'] = sequence_ms_to_s(header.sequenceParameters.TR)
+            parameters['te'] = sequence_ms_to_s(header.sequenceParameters.TE)
+            parameters['ti'] = sequence_ms_to_s(header.sequenceParameters.TI)
+            parameters['fa'] = sequence_deg_to_rad(header.sequenceParameters.flipAngle_deg)
+            parameters['echo_spacing'] = sequence_ms_to_s(header.sequenceParameters.echo_spacing)
 
             if header.sequenceParameters.sequence_type is not None:
                 parameters['seq_type'] = header.sequenceParameters.sequence_type
@@ -155,21 +151,18 @@ class KHeader:
             parameters['encoding_matrix'] = SpatialDimension[int].from_xyz(enc.encodedSpace.matrixSize)
 
         if enc.encodingLimits is not None:
-            parameters['encoding_limits'] = EncodingLimits.from_ismrmrd_encodingLimitsType(enc.encodingLimits)
+            parameters['encoding_limits'] = EncodingLimits.from_ismrmrd_encoding_limits_type(enc.encodingLimits)
 
         if enc.echoTrainLength is not None:
             parameters['echo_train_length'] = enc.echoTrainLength
 
         if enc.parallelImaging is not None:
-            # if enc.parallelImaging.accelerationFactor is not None:
-            #    parameters['acc_factor'] = AccelerationFactor.from_ismrmrd(enc.parallelImaging.accelerationFactor)
-
             if enc.parallelImaging.calibrationMode is not None:
-                parameters['calib_mode'] = enums.CalibrationMode(enc.parallelImaging.calibrationMode.value)
+                parameters['calibration_mode'] = enums.CalibrationMode(enc.parallelImaging.calibrationMode.value)
 
             if enc.parallelImaging.interleavingDimension is not None:
                 parameters['interleave_dim'] = enums.InterleavingDimension(
-                    enc.parallelImaging.interleavingDimension.value
+                    enc.parallelImaging.interleavingDimension.value,
                 )
 
         if enc.trajectory is not None:
@@ -230,6 +223,6 @@ class KHeader:
             ]
             raise ValueError(
                 f'Could not create Header. Missing parameters: {missing}\n'
-                'Consider setting them via the defaults dictionary'
-            )
+                'Consider setting them via the defaults dictionary',
+            ) from None
         return instance

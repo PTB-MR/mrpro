@@ -12,6 +12,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from collections.abc import Sequence
+
 import torch
 
 from mrpro.operators import LinearOperator
@@ -23,9 +25,9 @@ class FastFourierOp(LinearOperator):
 
     def __init__(
         self,
-        dim: tuple[int, ...] = (-3, -2, -1),
-        recon_shape: tuple[int, ...] | None = None,
-        encoding_shape: tuple[int, ...] | None = None,
+        dim: Sequence[int] = (-3, -2, -1),
+        recon_shape: Sequence[int] | None = None,
+        encoding_shape: Sequence[int] | None = None,
     ) -> None:
         """Fast Fourier Operator class.
 
@@ -45,13 +47,13 @@ class FastFourierOp(LinearOperator):
             shape of reconstructed data
         """
         super().__init__()
-        self._dim: tuple[int, ...] = dim
+        self._dim = tuple(dim)
         self._pad_op: ZeroPadOp
         if encoding_shape is not None and recon_shape is not None:
-            self._pad_op = ZeroPadOp(dim=dim, orig_shape=recon_shape, padded_shape=encoding_shape)
+            self._pad_op = ZeroPadOp(dim=dim, original_shape=recon_shape, padded_shape=encoding_shape)
         else:
             # No padding
-            self._pad_op = ZeroPadOp(dim=(), orig_shape=(), padded_shape=())
+            self._pad_op = ZeroPadOp(dim=(), original_shape=(), padded_shape=())
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """FFT from image space to k-space.
@@ -86,6 +88,7 @@ class FastFourierOp(LinearOperator):
         # FFT
         return self._pad_op.adjoint(
             torch.fft.fftshift(
-                torch.fft.ifftn(torch.fft.ifftshift(y, dim=self._dim), dim=self._dim, norm='ortho'), dim=self._dim
-            )
+                torch.fft.ifftn(torch.fft.ifftshift(y, dim=self._dim), dim=self._dim, norm='ortho'),
+                dim=self._dim,
+            ),
         )

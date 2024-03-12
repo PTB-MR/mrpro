@@ -29,20 +29,19 @@ def birdcage_2d(
 
     Parameters
     ----------
-        number_of_coils
-            number of coil elements
-        image_dimensions
-            number of voxels in the image
-            This is a 2D simulation so the output will be (1 number_of_coils 1 image_dimensions.y image_dimensions.x)
-        relative_radius
-            relative radius of birdcage
-        normalize_with_rss
-            If set to true, the calculated sensitivities are normalized by the root-sum-of-squares
+    number_of_coils
+        number of coil elements
+    image_dimensions
+        number of voxels in the image
+        This is a 2D simulation so the output will be (1 number_of_coils 1 image_dimensions.y image_dimensions.x)
+    relative_radius
+        relative radius of birdcage
+    normalize_with_rss
+        If set to true, the calculated sensitivities are normalized by the root-sum-of-squares
 
     This function is strongly inspired by https://github.com/ismrmrd/ismrmrd-python-tools. The associated license
     information can be found at the end of this file.
     """
-
     dim = [number_of_coils, image_dimensions.y, image_dimensions.x]
     x_co, y_co = torch.meshgrid(
         torch.linspace(-dim[2] // 2, dim[2] // 2 - 1, dim[2]),

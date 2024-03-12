@@ -1,10 +1,10 @@
 """Tests for the operators module."""
 
-import pytest
 import torch
-
 from mrpro.operators import LinearOperator
 from mrpro.operators import Operator
+
+from tests.helper import dotproduct_adjointness_test
 
 
 class DummyOperator(Operator[torch.Tensor, torch.Tensor]):
@@ -185,10 +185,8 @@ def test_adjoint_composition_operators():
     b = DummyLinearOperator(torch.tensor(3.0 + 2j))
     u = torch.tensor(4 + 5j)
     v = torch.tensor(7 + 8j)
-    A = a @ b
-    (Au,) = A(u)
-    (AHv,) = A.H(v)
-    torch.testing.assert_close(Au * v.conj(), u * AHv.conj())
+    linear_op_composition = a @ b
+    dotproduct_adjointness_test(linear_op_composition, u, v)
 
 
 def test_adjoint_product():
@@ -196,10 +194,8 @@ def test_adjoint_product():
     b = torch.tensor(3.0 + 2j)
     u = torch.tensor(4 + 5j)
     v = torch.tensor(7 + 8j)
-    A = a * b
-    (Au,) = A(u)
-    (AHv,) = A.H(v)
-    torch.testing.assert_close(Au * v.conj(), u * AHv.conj())
+    linear_op_product = a * b
+    dotproduct_adjointness_test(linear_op_product, u, v)
 
 
 def test_adjoint_sum():
@@ -207,7 +203,5 @@ def test_adjoint_sum():
     b = DummyLinearOperator(torch.tensor(3.0 + 2j))
     u = torch.tensor(4 + 5j)
     v = torch.tensor(7 + 8j)
-    A = a + b
-    (Au,) = A(u)
-    (AHv,) = A.H(v)
-    torch.testing.assert_close(Au * v.conj(), u * AHv.conj())
+    linear_op_sum = a + b
+    dotproduct_adjointness_test(linear_op_sum, u, v)

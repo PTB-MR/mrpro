@@ -164,7 +164,7 @@ jobs:
         pip install --upgrade pip
         pip install ".[docs]"
 
-    - name: Download notebook hmtl files
+    - name: Download notebook html files
       id: download
       uses: actions/download-artifact@v4
       with:

@@ -21,7 +21,8 @@ from mrpro.data import SpatialDimension
 
 
 def spatial_uniform_filter_3d(
-    data: torch.Tensor, filter_width: SpatialDimension[int] | tuple[int, int, int]
+    data: torch.Tensor,
+    filter_width: SpatialDimension[int] | tuple[int, int, int],
 ) -> torch.Tensor:
     """Spatial smoothing using convolution with box function.
 
@@ -33,7 +34,6 @@ def spatial_uniform_filter_3d(
         Width of 3D the filter as SpatialDimension(z, y, x) or tuple(z, y, x).
         The filter width is clipped to the data shape.
     """
-
     # Create a box-shaped filter kernel
     match filter_width:
         case SpatialDimension(z, y, x) | (z, y, x):

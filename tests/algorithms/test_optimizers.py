@@ -14,69 +14,53 @@
 
 import pytest
 import torch
-
 from mrpro.algorithms import adam
 from mrpro.algorithms import lbfgs
 from mrpro.operators import ConstraintsOp
-from tests import RandomGenerator
 from tests.operators._OptimizationTestFunctions import Rosenbrock
 
 
 @pytest.mark.parametrize('enforce_bounds_on_x1', [True, False])
 @pytest.mark.parametrize(
-    'optimizer',
-    [
-        adam,
-        lbfgs,
-    ],
+    ('optimizer', 'optimizer_kwargs'), [(adam, {'lr': 0.02, 'max_iter': 10000}), (lbfgs, {'lr': 1.0})]
 )
-def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1):
+@pytest.mark.filterwarnings('ignore:allow_ops_in_compiled_graph')
+def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1, optimizer_kwargs):
+    # use Rosenbrock function as test case with 2D test data
+    a, b = 1.0, 100.0
+    rosen_brock = Rosenbrock(a, b)
 
-    # TODO: remove once fixed in pytorch. see also issue #132 on GitHub
-    with pytest.raises(ImportWarning):
+    # initial point of optimization
+    x1 = torch.tensor([a / 3.14])
+    x2 = torch.tensor([3.14])
+    x1.grad = torch.tensor([2.78])
+    x2.grad = torch.tensor([-1.0])
+    params_init = [x1, x2]
 
-        random_generator = RandomGenerator(seed=0)
+    # save to compare with later as optimization should not change the initial points
+    params_init_before = [i.detach().clone() for i in params_init]
+    params_init_grad_before = [i.grad.detach().clone() for i in params_init]
 
-        # use Rosenbrock function as test case with 2D test data
-        a, b = 1, 100
-        rosen_brock = Rosenbrock(a, b)
+    if enforce_bounds_on_x1:
+        # the analytical solution for x_1 will be a, thus we can limit it into [0,2a]
+        constrain_op = ConstraintsOp(bounds=((0, 2 * a),))
+        functional = rosen_brock @ constrain_op
+    else:
+        functional = rosen_brock
 
-        # initial point of optimization
-        x1 = torch.tensor([42.0])
-        x2 = torch.tensor([3.14])
-        x1.grad = torch.tensor([2.7])
-        x2.grad = torch.tensor([-1.0])
-        params_init = [x1, x2]
+    # minimizer of Rosenbrock function
+    analytical_solution = torch.tensor([a, a**2])
 
-        # save to compare with later as optimization should not change the initial points
-        params_init_before = [i.detach().clone for i in params_init]
-        params_init_grad_before = [i.grad.clone() for i in params_init]
+    params_result = optimizer(functional, params_init, **optimizer_kwargs)
 
-        if enforce_bounds_on_x1:
-            # the analytical solution for x_1 will be a, thus we can limit it into [0,2a]
-            constrain_op = ConstraintsOp(bounds=((0, 2 * a),))
-            functional = rosen_brock @ constrain_op
-        else:
-            functional = rosen_brock
+    if enforce_bounds_on_x1:
+        # the parameters are currently the unbounded values, by applying the operator again
+        # we obtain the bounded true values
+        params_result = constrain_op(*params_result)
 
-        # hyperparams for optimizer
-        lr = 1e-2
-        max_iter = 250
+    # obtained solution should match analytical
+    torch.testing.assert_close(torch.tensor(params_result), analytical_solution)
 
-        # minimizer of Rosenbrock function
-        analytical_solution = torch.tensor([a, a**2])
-
-        # estimate minimizer
-        params_result = optimizer(
-            functional,
-            params_init,
-            max_iter=max_iter,
-            lr=lr,
-        )
-
-        # obtained solution should match analytical
-        torch.testing.assert_close(torch.tensor(params_result), analytical_solution)
-
-        for p, before, grad_before in zip(params_init, params_init_before, params_init_grad_before):
-            assert p == before, 'the initial parameter should not have changed during optimization'
-            assert p.grad == before, 'the inital paramters gradient should not have changed during optimization'
+    for p, before, grad_before in zip(params_init, params_init_before, params_init_grad_before, strict=True):
+        assert p == before, 'the initial parameter should not have changed during optimization'
+        assert p.grad == grad_before, 'the initial parameters gradient should not have changed during optimization'

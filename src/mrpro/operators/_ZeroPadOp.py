@@ -12,6 +12,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from collections.abc import Sequence
+
 import torch
 
 from mrpro.operators import LinearOperator
@@ -21,12 +23,7 @@ from mrpro.utils import zero_pad_or_crop
 class ZeroPadOp(LinearOperator):
     """Zero Pad operator class."""
 
-    def __init__(
-        self,
-        dim: tuple[int, ...],
-        orig_shape: tuple[int, ...],
-        padded_shape: tuple[int, ...],
-    ) -> None:
+    def __init__(self, dim: Sequence[int], original_shape: Sequence[int], padded_shape: Sequence[int]) -> None:
         """Zero Pad Operator class.
 
         The operator carries out zero-padding if the padded_shape is larger than orig_shape and cropping if the
@@ -35,19 +32,19 @@ class ZeroPadOp(LinearOperator):
         Parameters
         ----------
         dim
-            dim along which padding should be applied
-        orig_shape
+            dimensions along which padding should be applied
+        original_shape
             shape of original data along dim, same length as dim
         padded_shape
             shape of padded data along dim, same length as dim
         """
-        if len(dim) != len(orig_shape) or len(dim) != len(padded_shape):
+        if len(dim) != len(original_shape) or len(dim) != len(padded_shape):
             raise ValueError('Dim, orig_shape and padded_shape have to be of same length')
 
         super().__init__()
-        self.dim: tuple[int, ...] = dim
-        self.orig_shape: tuple[int, ...] = orig_shape
-        self.padded_shape: tuple[int, ...] = padded_shape
+        self.dim = dim
+        self.original_shape = original_shape
+        self.padded_shape = padded_shape
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Pad or crop data.
@@ -75,4 +72,4 @@ class ZeroPadOp(LinearOperator):
         -------
             data with shape orig_shape
         """
-        return (zero_pad_or_crop(x, self.orig_shape, self.dim),)
+        return (zero_pad_or_crop(x, self.original_shape, self.dim),)
