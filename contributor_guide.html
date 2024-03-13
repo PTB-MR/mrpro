@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Guide for MRPro Contributors &#8212; mrpro</title>
+    <title>Guide for Contributors &#8212; mrpro</title>
   
   
   
@@ -42,7 +42,8 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'contributor_guide';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="mrpro.utils.filters.SpatialDimension" href="_autosummary/mrpro.utils.filters.SpatialDimension.html" />
+    <link rel="next" title="Examples" href="examples.html" />
+    <link rel="prev" title="Guide for Users" href="user_guide.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -131,7 +132,21 @@
     
                     <li class="nav-item">
                       <a class="nav-link nav-internal" href="user_guide.html">
-                        Guide for MRPro Users
+                        Guide for Users
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="#">
+                        Guide for Contributors
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="examples.html">
+                        Examples
                       </a>
                     </li>
                 
@@ -144,22 +159,8 @@
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="examples.html">
-                        MRPro Examples
-                      </a>
-                    </li>
-                
-
-                    <li class="nav-item">
                       <a class="nav-link nav-internal" href="api.html">
                         API
-                      </a>
-                    </li>
-                
-
-                    <li class="nav-item current active">
-                      <a class="nav-link nav-internal" href="#">
-                        Guide for MRPro Contributors
                       </a>
                     </li>
                 
@@ -263,7 +264,21 @@ document.write(`
     
                     <li class="nav-item">
                       <a class="nav-link nav-internal" href="user_guide.html">
-                        Guide for MRPro Users
+                        Guide for Users
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="#">
+                        Guide for Contributors
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="examples.html">
+                        Examples
                       </a>
                     </li>
                 
@@ -276,22 +291,8 @@ document.write(`
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="examples.html">
-                        MRPro Examples
-                      </a>
-                    </li>
-                
-
-                    <li class="nav-item">
                       <a class="nav-link nav-internal" href="api.html">
                         API
-                      </a>
-                    </li>
-                
-
-                    <li class="nav-item current active">
-                      <a class="nav-link nav-internal" href="#">
-                        Guide for MRPro Contributors
                       </a>
                     </li>
                 
@@ -411,8 +412,8 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="guide-for-mrpro-contributors">
-<h1>Guide for MRPro Contributors<a class="headerlink" href="#guide-for-mrpro-contributors" title="Link to this heading">#</a></h1>
+  <section id="guide-for-contributors">
+<h1>Guide for Contributors<a class="headerlink" href="#guide-for-contributors" title="Link to this heading">#</a></h1>
 <section id="repo-structure">
 <h2>Repo structure<a class="headerlink" href="#repo-structure" title="Link to this heading">#</a></h2>
 <p>This repository uses a <em>pyproject.toml</em> file to specify all the requirements.
@@ -464,6 +465,17 @@ batch dimension (<code class="docutils literal notranslate"><span class="pre">sm
 </dd>
 </dl>
 </section>
+<section id="naming-convention">
+<h2>Naming convention<a class="headerlink" href="#naming-convention" title="Link to this heading">#</a></h2>
+<p>We try to follow the [pep8](<a class="reference external" href="https://peps.python.org/pep-0008/">https://peps.python.org/pep-0008/</a>) naming convention (e.g., all lowercase variable names,
+CapWords class names). We deviate for the names of source code file names containing a single class.
+These are named as the class.</p>
+<p>We try to use descriptive variable names when applicable (e.g., <code class="docutils literal notranslate"><span class="pre">result</span></code> instead of <code class="docutils literal notranslate"><span class="pre">res</span></code>, <code class="docutils literal notranslate"><span class="pre">tolerance_squared</span></code> instead
+of <code class="docutils literal notranslate"><span class="pre">sqtol</span></code>, <code class="docutils literal notranslate"><span class="pre">batchsize</span></code> instead of <code class="docutils literal notranslate"><span class="pre">m</span></code>).</p>
+<p>A name starting with <code class="docutils literal notranslate"><span class="pre">n_</span></code> is used for variables describing a number of… (e.g., <code class="docutils literal notranslate"><span class="pre">n_coils</span></code> instead of <code class="docutils literal notranslate"><span class="pre">ncoils</span></code> or
+<code class="docutils literal notranslate"><span class="pre">num_coils</span></code>), variable names ending with <code class="docutils literal notranslate"><span class="pre">_op</span></code> for operators (e.g., <code class="docutils literal notranslate"><span class="pre">fourier_op</span></code>). We use <code class="docutils literal notranslate"><span class="pre">img</span></code> as a variable name
+for images.</p>
+</section>
 </section>
 
 
@@ -477,13 +489,22 @@ batch dimension (<code class="docutils literal notranslate"><span class="pre">sm
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="_autosummary/mrpro.utils.filters.SpatialDimension.html"
+       href="user_guide.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">mrpro.utils.filters.SpatialDimension</p>
+        <p class="prev-next-title">Guide for Users</p>
       </div>
+    </a>
+    <a class="right-next"
+       href="examples.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Examples</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
     </a>
 </div>
                 </footer>
@@ -505,6 +526,7 @@ batch dimension (<code class="docutils literal notranslate"><span class="pre">sm
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#repo-structure">Repo structure</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#src-mrpro-structure">src/mrpro structure</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#naming-convention">Naming convention</a></li>
 </ul>
   </nav></div>
 
