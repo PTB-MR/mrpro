@@ -1,6 +1,6 @@
-============================
-Guide for MRPro Contributors
-============================
+======================
+Guide for Contributors
+======================
 
 Repo structure
 ==============
