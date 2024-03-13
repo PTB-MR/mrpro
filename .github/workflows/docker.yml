@@ -7,7 +7,7 @@ on:
 
 jobs:
   get_dockerfiles:
-    name: "Get list of dockerfiles for different containers"
+    name: Get list of dockerfiles for different containers
     runs-on: ubuntu-latest
     outputs:
       docker_toml: ${{ steps.filter.outputs.docker_toml }}
@@ -48,7 +48,7 @@ jobs:
           echo ${{ steps.set-matrix.outputs.imagenames }}
 
   push_test:
-    name: "Create test images and push to GCR"
+    name: Create test images and push to GCR
     needs: get_dockerfiles
     if: ${{ needs.get_dockerfiles.outputs.docker_toml == 'true' }}
     runs-on: ubuntu-latest
@@ -83,7 +83,7 @@ jobs:
           tags: ${{ steps.image_name.outputs.image_name }}:test
 
   test:
-    name: "Test docker containers"
+    name: Test docker containers
     needs: [get_dockerfiles, push_test]
     if: ${{ needs.get_dockerfiles.outputs.docker_toml == 'true' }}
     runs-on: ubuntu-latest
@@ -113,7 +113,7 @@ jobs:
           pytest -n 4 -m "not cuda"
 
   push_latest:
-    name: "Create latest images and push to GCR"
+    name: Create latest images and push to GCR
     needs: [get_dockerfiles, test]
     if: ${{ needs.get_dockerfiles.outputs.docker_toml == 'true' }}
     runs-on: ubuntu-latest

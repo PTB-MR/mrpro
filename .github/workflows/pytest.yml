@@ -7,7 +7,7 @@ on:
 
 jobs:
   get_dockerfiles:
-    name: "Get list of dockerfiles for different containers"
+    name: Get list of dockerfiles for different containers
     runs-on: ubuntu-latest
     permissions:
       packages: read
@@ -43,7 +43,7 @@ jobs:
 
 
   test:
-    name: "Run tests and get coverage report"
+    name: Run tests and get coverage report
     needs: get_dockerfiles
     runs-on: ubuntu-latest
     permissions:

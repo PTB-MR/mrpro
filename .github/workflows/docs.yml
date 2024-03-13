@@ -15,7 +15,7 @@ defaults:
 
 jobs:
   convert_scripts:
-    name: "Translate scripts to notebooks"
+    name: Translate scripts to notebooks
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -60,7 +60,7 @@ jobs:
         run: echo "commit_hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
   get_notebooks:
-    name: "Get list of notebooks"
+    name: Get list of notebooks
     needs: convert_scripts
     runs-on: ubuntu-latest
     steps:
@@ -81,7 +81,7 @@ jobs:
       notebooks: ${{ steps.set-matrix.outputs.notebooks }}
 
   run_notebook:
-    name: "Run notebook"
+    name: Run notebook
     needs: [convert_scripts, get_notebooks]
     runs-on: ubuntu-latest
     permissions:
