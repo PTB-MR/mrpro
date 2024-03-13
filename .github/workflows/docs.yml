@@ -7,17 +7,24 @@ on:
   pull_request:
 
 permissions:
-    contents: write
+  contents: write
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   convert_scripts:
-    name: 'Translate scripts to notebooks'
+    name: Translate scripts to notebooks
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
       contents: write
     outputs:
       commit_hash: ${{ steps.add-commit-push.outputs.commit_hash }}
+    container:
+      image: ghcr.io/ptb-mr/mrpro_py311:latest
+      options: --user runner
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -26,20 +33,8 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install .[notebook]
-
-      - name: Create requirements.txt from toml
-        run: |
-          pip-compile --extra notebook -o ./binder/requirements.txt pyproject.toml
+      - name: Install mrpro and dependencies
+        run: pip install --upgrade --upgrade-strategy "eager" .[notebook]
 
       - name: Translate scripts to notebooks
         run: |
@@ -49,12 +44,10 @@ jobs:
           done
 
       - name: Check if any notebooks have been changed
-        uses: tj-actions/verify-changed-files@v18
+        uses: tj-actions/verify-changed-files@v19
         id: verify-changed-notebooks
         with:
-          files: |
-            ./examples/*.ipynb
-            ./binder/requirements.txt
+          files: ./examples/*.ipynb
 
       - name: Commit notebooks
         if: steps.verify-changed-notebooks.outputs.files_changed == 'true'
@@ -67,7 +60,7 @@ jobs:
         run: echo "commit_hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
   get_notebooks:
-    name: 'Get list of notebooks'
+    name: Get list of notebooks
     needs: convert_scripts
     runs-on: ubuntu-latest
     steps:
@@ -83,17 +76,21 @@ jobs:
           echo "notebooks=$(ls *.ipynb | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
       - name: Notebook overview
-        run: echo ${{ steps.set-matrix.outputs.notebooks }}
+        run: |
+          echo "jupyter-notebooks: ${{ steps.set-matrix.outputs.notebooks }}"
     outputs:
       notebooks: ${{ steps.set-matrix.outputs.notebooks }}
 
   run_notebook:
-    name: 'Run notebook'
+    name: Run notebook
     needs: [convert_scripts, get_notebooks]
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
       contents: write
+    container:
+      image: ghcr.io/ptb-mr/mrpro_py311:latest
+      options: --user root
     strategy:
       matrix:
         notebook: ${{ fromJson(needs.get_notebooks.outputs.notebooks) }}
@@ -103,26 +100,17 @@ jobs:
         with:
           ref: ${{ needs.convert_scripts.outputs.commit_hash }}
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install .[notebook]
+      - name: Install mrpro and dependencies
+        run: pip install --upgrade --upgrade-strategy "eager" .[notebook]
 
       - name: Notebook name
-        run: echo ${{ matrix.notebook }}
+        run: |
+          echo "current jupyter-notebook: ${{ matrix.notebook }}"
 
       - name: Run notebook
-        uses: yaananth/run-notebook@v2
+        uses: fzimmermann89/run-notebook@v3
         env:
           RUNNER: ${{ toJson(runner) }}
-          SECRETS: ${{ toJson(secrets) }}
-          GITHUB: ${{ toJson(github) }}
         with:
           notebook: ./examples/${{ matrix.notebook }}
 
@@ -138,51 +126,45 @@ jobs:
         if: always()
         with:
           name: ${{ steps.artifact_names.outputs.ARTIFACT_NAME }}
-          path: ${{ RUNNER.temp }}/nb-runner/${{ steps.artifact_names.outputs.HTML_RESULT }}
+          path: ${{ github.workspace }}/nb-runner.out/${{ steps.artifact_names.outputs.HTML_RESULT }}
         env:
           RUNNER: ${{ toJson(runner) }}
 
   create_documentation:
-    name: 'Build and deploy documentation'
+    name: Build and deploy documentation
     needs: [convert_scripts, run_notebook]
     runs-on: ubuntu-latest
-
+    container:
+      image: ghcr.io/ptb-mr/mrpro_py311:latest
+      options: --user runner
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ needs.convert_scripts.outputs.commit_hash }}
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.convert_scripts.outputs.commit_hash }}
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        cache: 'pip'
+      - name: Install mrpro and dependencies
+        run: pip install --upgrade --upgrade-strategy "eager" .[docs]
 
-    - name: Install dependencies
-      run: |
-        pip install --upgrade pip
-        pip install ".[docs]"
+      - name: Download notebook html files
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          path: ./docs/source/notebook_artifact/
 
-    - name: Download notebook html files
-      id: download
-      uses: actions/download-artifact@v4
-      with:
-        path: ./docs/source/notebook_artifact/
-
-    - name: Copy notebook html files
-      run: |
+      - name: Copy notebook html files
+        run: |
           mkdir ./docs/source/_notebooks
           cd ./docs/source/notebook_artifact/
           notebooks=$(grep -rl --include='*' './')
           for nb in $notebooks
           do
-            echo $nb
+            echo "current jupyter-notebook: $nb"
             cp ./$nb ../_notebooks/
           done
 
-    - name: List of notebooks
-      run: |
+      - name: List of notebooks
+        run: |
           cd ./docs/source/_notebooks/
           notebooks=$(grep -rl --include='*.html' './')
           cd ../
@@ -198,22 +180,22 @@ jobs:
             echo "   :file: ./_notebooks/$nb" >> "notebook_${nb/.html/.rst}"
           done
 
-    - name: Build docs
-      run: sphinx-build -b html ./docs/source ./docs/build/html
+      - name: Build docs
+        run: sphinx-build -b html ./docs/source ./docs/build/html
 
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        publish_branch: github-pages
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs/build/html
-      if: github.event_name != 'pull_request'
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          publish_branch: github-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/build/html
+        if: github.event_name != 'pull_request'
 
-    - name: Save Documentation
-      uses: actions/upload-artifact@v4
-      with:
-        name: Documentation
-        path: docs/build/html/
+      - name: Save Documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: Documentation
+          path: docs/build/html/
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

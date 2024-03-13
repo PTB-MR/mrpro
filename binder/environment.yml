@@ -1,0 +1,9 @@
+name: Binder
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pytorch::pytorch
+  - pytorch::cpuonly
+  - pip:
+    - mrpro[notebook] @ git+https://github.com/PTB-MR/mrpro
