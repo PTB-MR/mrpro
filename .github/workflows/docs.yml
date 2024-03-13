@@ -44,7 +44,7 @@ jobs:
           done
 
       - name: Check if any notebooks have been changed
-        uses: tj-actions/verify-changed-files@v18
+        uses: tj-actions/verify-changed-files@v19
         id: verify-changed-notebooks
         with:
           files: ./examples/*.ipynb
@@ -76,7 +76,8 @@ jobs:
           echo "notebooks=$(ls *.ipynb | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
       - name: Notebook overview
-        run: echo ${{ steps.set-matrix.outputs.notebooks }}
+        run: |
+          echo "jupyter-notebooks: ${{ steps.set-matrix.outputs.notebooks }}"
     outputs:
       notebooks: ${{ steps.set-matrix.outputs.notebooks }}
 
@@ -103,7 +104,8 @@ jobs:
         run: pip install --upgrade --upgrade-strategy "eager" .[notebook]
 
       - name: Notebook name
-        run: echo ${{ matrix.notebook }}
+        run: |
+          echo "current jupyter-notebook: ${{ matrix.notebook }}"
 
       - name: Run notebook
         uses: fzimmermann89/run-notebook@v3
@@ -157,7 +159,7 @@ jobs:
           notebooks=$(grep -rl --include='*' './')
           for nb in $notebooks
           do
-            echo $nb
+            echo "current jupyter-notebook: $nb"
             cp ./$nb ../_notebooks/
           done
 

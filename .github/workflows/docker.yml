@@ -27,7 +27,8 @@ jobs:
               - 'pyproject.toml'
               - '/.github/docker.yml'
 
-      - run: echo ${{ steps.filter.outputs.docker_toml }}
+      - run: |
+          echo "Rebuild containers? ${{ steps.filter.outputs.docker_toml }}"
 
       - id: set-matrix
         if: steps.filter.outputs.docker_toml == 'true'
@@ -35,17 +36,17 @@ jobs:
           cd ./docker/
           ls
           dockerfiles=$(ls Dockerfile_* | jq -R -s -c 'split("\n")[:-1]')
-          echo $dockerfiles
+          echo "dockerfiles: $dockerfiles"
           echo "dockerfiles=$dockerfiles" >> $GITHUB_OUTPUT
           imagenames=$(ls Dockerfile_* | sed -e 's/Dockerfile_/ghcr.io\/ptb-mr\/mrpro_/' | jq -R -s -c 'split("\n")[:-1]')
-          echo $imagenames
+          echo "image names: $imagenames"
           echo "imagenames=$imagenames" >> $GITHUB_OUTPUT
 
       - name: Dockerfile overview
         if: steps.filter.outputs.docker_toml == 'true'
         run: |
-          echo ${{ steps.set-matrix.outputs.dockerfiles }}
-          echo ${{ steps.set-matrix.outputs.imagenames }}
+          echo "final list of dockerfiles: ${{ steps.set-matrix.outputs.dockerfiles }}"
+          echo "final list of images: ${{ steps.set-matrix.outputs.imagenames }}"
 
   push_test:
     name: Create test images and push to GCR

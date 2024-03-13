@@ -21,7 +21,7 @@ jobs:
           imagenames=$(curl -s --request GET \
           --url "https://api.github.com/orgs/PTB-MR/packages?package_type=container" \
           --header "Authorization: Bearer $GH_TOKEN"  | jq -r '.[].name')
-          echo $imagenames
+          echo "image names: $imagenames"
 
           imagenames_latest=()
           for image in $(echo $imagenames)
@@ -32,14 +32,14 @@ jobs:
               imagenames_latest+=$image":"
             fi
           done
-          echo $imagenames_latest
+          echo "image names with tag latest: $imagenames_latest"
           imagenames_latest=$(echo $imagenames_latest | jq -R -c 'split(":")[:-1]')
-          echo $imagenames_latest
+          echo "image names with tag latest: $imagenames_latest"
           echo "imagenames=$imagenames_latest" >> $GITHUB_OUTPUT
 
       - name: Dockerfile overview
         run: |
-          echo ${{ steps.set-matrix.outputs.imagenames }}
+          echo "final list of images with tag latest: ${{ steps.set-matrix.outputs.imagenames }}"
 
 
   test:

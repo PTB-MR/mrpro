@@ -5,10 +5,10 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 ARG PYTHON="python3.11"
 
-# install python and dependencies
-COPY reco.sh .
-RUN bash reco.sh
-RUN rm reco.sh
+# install python and mrpro dependencies
+COPY install_mrpro.sh .
+RUN bash install_mrpro.sh
+RUN rm install_mrpro.sh
 
 # set user
 USER runner
