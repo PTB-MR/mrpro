@@ -16,8 +16,8 @@ from collections.abc import Sequence
 
 import torch
 
-from mrpro.operators import LinearOperator
-from mrpro.operators import ZeroPadOp
+from mrpro.operators._LinearOperator import LinearOperator
+from mrpro.operators._ZeroPadOp import ZeroPadOp
 
 
 class FastFourierOp(LinearOperator):

@@ -18,7 +18,7 @@ from typing import Literal
 import torch
 from torch.optim import LBFGS
 
-from mrpro.operators import Operator
+from mrpro.operators._Operator import Operator
 
 
 def lbfgs(

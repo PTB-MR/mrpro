@@ -15,7 +15,7 @@
 import torch
 import torch.nn.functional as F  # noqa: N812
 
-from mrpro.operators import Operator
+from mrpro.operators._Operator import Operator
 
 
 class MSEDataDiscrepancy(Operator[*tuple[torch.Tensor], tuple[torch.Tensor]]):

@@ -21,7 +21,7 @@ from einops import rearrange
 if TYPE_CHECKING:
     from mrpro.data._kdata._KData import _KDataProtocol
 
-from mrpro.data import AcqInfo
+from mrpro.data._AcqInfo import AcqInfo
 from mrpro.utils import modify_acq_info
 
 

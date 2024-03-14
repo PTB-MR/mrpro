@@ -18,7 +18,7 @@ import numpy as np
 import torch
 from einops import repeat
 
-from mrpro.data import SpatialDimension
+from mrpro.data._SpatialDimension import SpatialDimension
 from mrpro.phantoms.phantom_elements import EllipseParameters
 
 

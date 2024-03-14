@@ -17,7 +17,7 @@ from collections.abc import Callable
 
 import torch
 
-from mrpro.data import AcqInfo
+from mrpro.data._AcqInfo import AcqInfo
 
 
 def modify_acq_info(fun_modify: Callable, acq_info: AcqInfo) -> AcqInfo:

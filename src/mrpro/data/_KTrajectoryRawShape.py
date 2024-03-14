@@ -20,7 +20,7 @@ import numpy as np
 import torch
 from einops import rearrange
 
-from mrpro.data import KTrajectory
+from mrpro.data._KTrajectory import KTrajectory
 
 
 @dataclass(slots=True, frozen=True)

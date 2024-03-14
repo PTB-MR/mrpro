@@ -19,7 +19,7 @@ from collections.abc import Sequence
 import ismrmrd
 import torch
 
-from mrpro.data import KTrajectoryRawShape
+from mrpro.data._KTrajectoryRawShape import KTrajectoryRawShape
 
 
 class KTrajectoryIsmrmrd:

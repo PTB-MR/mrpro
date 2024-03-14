@@ -17,7 +17,7 @@ from __future__ import annotations
 import numpy as np
 import torch
 
-from mrpro.data import KHeader
+from mrpro.data._KHeader import KHeader
 from mrpro.data.traj_calculators import KTrajectoryRpe
 
 

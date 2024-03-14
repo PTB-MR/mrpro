@@ -19,9 +19,9 @@ from abc import abstractmethod
 
 import torch
 
-from mrpro.data import KHeader
-from mrpro.data import KTrajectory
-from mrpro.data import KTrajectoryRawShape
+from mrpro.data._KHeader import KHeader
+from mrpro.data._KTrajectory import KTrajectory
+from mrpro.data._KTrajectoryRawShape import KTrajectoryRawShape
 
 
 class KTrajectoryCalculator(ABC):

@@ -17,7 +17,7 @@ from copy import deepcopy
 from typing import TYPE_CHECKING
 
 import torch
-from mrpro.data import KTrajectory
+from mrpro.data._KTrajectory import KTrajectory
 from mrpro.operators._FastFourierOp import FastFourierOp
 
 if TYPE_CHECKING:

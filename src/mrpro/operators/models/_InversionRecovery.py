@@ -12,7 +12,7 @@
 import torch
 from einops import rearrange
 
-from mrpro.operators import SignalModel
+from mrpro.operators._SignalModel import SignalModel
 
 
 class InversionRecovery(SignalModel[torch.Tensor, torch.Tensor]):

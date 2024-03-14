@@ -20,8 +20,8 @@ import pypulseq as pp
 import torch
 from einops import rearrange
 
-from mrpro.data import KHeader
-from mrpro.data import KTrajectoryRawShape
+from mrpro.data._KHeader import KHeader
+from mrpro.data._KTrajectoryRawShape import KTrajectoryRawShape
 from mrpro.data.traj_calculators import KTrajectoryCalculator
 
 

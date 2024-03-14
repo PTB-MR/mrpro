@@ -18,8 +18,8 @@ import numpy as np
 import torch
 from einops import rearrange
 
-from mrpro.data import KData
-from mrpro.data import KNoise
+from mrpro.data._kdata._KData import KData
+from mrpro.data._KNoise import KNoise
 
 
 def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float = 1.0) -> KData:

@@ -16,10 +16,10 @@ from __future__ import annotations
 
 import torch
 
-from mrpro.algorithms.csm import iterative_walsh
-from mrpro.data import IData
-from mrpro.data import QData
-from mrpro.data import SpatialDimension
+from mrpro.algorithms.csm._iterative_walsh import iterative_walsh
+from mrpro.data._IData import IData
+from mrpro.data._QData import QData
+from mrpro.data._SpatialDimension import SpatialDimension
 
 
 class CsmData(QData):

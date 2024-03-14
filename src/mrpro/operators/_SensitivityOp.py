@@ -16,8 +16,8 @@ from __future__ import annotations
 
 import torch
 
-from mrpro.data import CsmData
-from mrpro.operators import LinearOperator
+from mrpro.data._CsmData import CsmData
+from mrpro.operators._LinearOperator import LinearOperator
 
 
 class SensitivityOp(LinearOperator):

@@ -24,9 +24,9 @@ from pydicom import dcmread
 from pydicom.dataset import Dataset
 from pydicom.tag import TagType
 
-from mrpro.data import Data
-from mrpro.data import IHeader
-from mrpro.data import KHeader
+from mrpro.data._Data import Data
+from mrpro.data._IHeader import IHeader
+from mrpro.data._KHeader import KHeader
 
 
 def _dcm_pixelarray_to_tensor(dataset: Dataset) -> torch.Tensor:

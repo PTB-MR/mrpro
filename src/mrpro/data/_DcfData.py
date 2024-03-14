@@ -25,7 +25,7 @@ from numpy.typing import ArrayLike
 from scipy.spatial import ConvexHull
 from scipy.spatial import Voronoi
 
-from mrpro.data import KTrajectory
+from mrpro.data._KTrajectory import KTrajectory
 from mrpro.utils import smap
 
 UNIQUE_ROUNDING_DECIMALS = 15

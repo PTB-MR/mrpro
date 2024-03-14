@@ -23,8 +23,8 @@ from pydicom.dataset import Dataset
 from pydicom.tag import Tag
 from pydicom.tag import TagType
 
-from mrpro.data import KHeader
-from mrpro.data import SpatialDimension
+from mrpro.data._KHeader import KHeader
+from mrpro.data._SpatialDimension import SpatialDimension
 
 MISC_TAGS = {'TimeAfterStart': 0x00191016}
 

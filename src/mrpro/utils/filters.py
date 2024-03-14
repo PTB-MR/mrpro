@@ -17,7 +17,7 @@ from __future__ import annotations
 import torch
 from einops import repeat
 
-from mrpro.data import SpatialDimension
+from mrpro.data._SpatialDimension import SpatialDimension
 
 
 def spatial_uniform_filter_3d(

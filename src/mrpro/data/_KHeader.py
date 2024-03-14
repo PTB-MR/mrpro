@@ -23,11 +23,11 @@ from typing import TYPE_CHECKING
 
 import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
 
-from mrpro.data import AcqInfo
-from mrpro.data import EncodingLimits
-from mrpro.data import SpatialDimension
-from mrpro.data import TrajectoryDescription
 from mrpro.data import enums
+from mrpro.data._AcqInfo import AcqInfo
+from mrpro.data._EncodingLimits import EncodingLimits
+from mrpro.data._SpatialDimension import SpatialDimension
+from mrpro.data._TrajectoryDescription import TrajectoryDescription
 
 if TYPE_CHECKING:
     # avoid circular imports by importing only when type checking
