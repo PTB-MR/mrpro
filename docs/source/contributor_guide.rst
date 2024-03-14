@@ -1,6 +1,6 @@
-============================
-Guide for MRPro Contributors
-============================
+======================
+Guide for Contributors
+======================
 
 Repo structure
 ==============
@@ -50,7 +50,7 @@ src/mrpro structure
 **data**
     All the data classes such as ``KData``, ``ImageData`` or ``CsmData``.
     As the name suggestions these should mainly contain data and meta information.
-    Any functionaly beyond what is absolutely required for the classes should be put as separate functions.
+    Any functionality beyond what is absolutely required for the classes should be put as separate functions.
 
 **operators**
     Linear and non-linear algorithms describing e.g. the transformation from image to k-space (``FourierOp``), the
@@ -62,3 +62,19 @@ src/mrpro structure
 **utils**
     Utilities such as spatial filters and also more basic functionality such as applying functions serially along the
     batch dimension (``smap``).
+
+
+Naming convention
+=================
+We try to follow the [pep8](https://peps.python.org/pep-0008/) naming convention (e.g., all lowercase variable names,
+CapWords class names). We deviate for the names of source code file names containing a single class.
+These are named as the class.
+
+We try to use descriptive variable names when applicable (e.g., ``result`` instead of ``res``, ``tolerance_squared`` instead
+of ``sqtol``, ``batchsize`` instead of ``m``).
+
+A name starting with ``n_`` is used for variables describing a number of... (e.g., ``n_coils`` instead of ``ncoils`` or
+``num_coils``), variable names ending with ``_op`` for operators (e.g., ``fourier_op``). We use ``img`` as a variable name
+for images.
+
+

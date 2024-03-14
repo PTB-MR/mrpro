@@ -13,18 +13,18 @@
 #   limitations under the License.
 
 import torch
-
 from mrpro.utils._zero_pad_or_crop import zero_pad_or_crop
+
 from tests import RandomGenerator
 
 
 def test_zero_pad_or_crop_content():
     """Test changing data by cropping and padding."""
     generator = RandomGenerator(seed=0)
-    dshape_orig = (100, 200, 50)
-    dshape_new = (80, 100, 240)
-    dorig = generator.complex64_tensor(dshape_orig)
-    dnew = zero_pad_or_crop(dorig, dshape_new, dim=(-3, -2, -1))
+    original_data_shape = (100, 200, 50)
+    new_data_shape = (80, 100, 240)
+    original_data = generator.complex64_tensor(original_data_shape)
+    new_data = zero_pad_or_crop(original_data, new_data_shape, dim=(-3, -2, -1))
 
     # Compare overlapping region
-    torch.testing.assert_close(dorig[10:90, 50:150, :], dnew[:, :, 95:145])
+    torch.testing.assert_close(original_data[10:90, 50:150, :], new_data[:, :, 95:145])

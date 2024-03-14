@@ -15,11 +15,13 @@
 from __future__ import annotations
 
 import dataclasses
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 import numpy as np
 from pydicom.dataset import Dataset
 from pydicom.tag import Tag
+from pydicom.tag import TagType
 
 from mrpro.data import KHeader
 from mrpro.data import SpatialDimension
@@ -48,17 +50,10 @@ class IHeader:
         kheader
             MR raw data header (KHeader) containing required meta data.
         """
-
-        return cls(
-            fov=kheader.recon_fov,
-            te=kheader.te,
-            ti=kheader.ti,
-            fa=kheader.fa,
-            tr=kheader.tr,
-        )
+        return cls(fov=kheader.recon_fov, te=kheader.te, ti=kheader.ti, fa=kheader.fa, tr=kheader.tr)
 
     @classmethod
-    def from_dicom_list(cls, dicom_datasets: list[Dataset]) -> IHeader:
+    def from_dicom_list(cls, dicom_datasets: Sequence[Dataset]) -> IHeader:
         """Read DICOM files and return IHeader object.
 
         Parameters
@@ -67,16 +62,12 @@ class IHeader:
             list of dataset objects containing the DICOM file.
         """
 
-        def get_item(ds, name: str | Tag):
+        def get_item(dataset: Dataset, name: str | TagType):
             """Get item with a given name or Tag from a pydicom dataset."""
-
-            if isinstance(name, str):  # find item via value name
-                tag = Tag(name)
-            else:
-                tag = name
+            tag = Tag(name) if isinstance(name, str) else name  # find item via value name
 
             # iterall is recursive, so it will find all items with the given name
-            found_item = [item.value for item in ds.iterall() if item.tag == tag]
+            found_item = [item.value for item in dataset.iterall() if item.tag == tag]
 
             if len(found_item) == 0:
                 return None
@@ -85,16 +76,16 @@ class IHeader:
             else:
                 raise ValueError(f'Item {name} found {len(found_item)} times.')
 
-        def get_items_from_all_dicoms(name: str | Tag):
+        def get_items_from_all_dicoms(name: str | TagType):
             """Get list of items for all dataset objects in the list."""
             return [get_item(ds, name) for ds in dicom_datasets]
 
-        def get_float_items_from_all_dicoms(name: str | Tag):
+        def get_float_items_from_all_dicoms(name: str | TagType):
             """Convert items to float."""
             items = get_items_from_all_dicoms(name)
             return [float(val) if val is not None else None for val in items]
 
-        def make_unique(values: list[float]):
+        def make_unique(values: Sequence[float]):
             """If all the values are the same only return one."""
             if any(val is None for val in values):
                 return []
@@ -115,7 +106,7 @@ class IHeader:
 
         fov_x_mm = get_float_items_from_all_dicoms('Rows')[0] * float(get_items_from_all_dicoms('PixelSpacing')[0][0])
         fov_y_mm = get_float_items_from_all_dicoms('Columns')[0] * float(
-            get_items_from_all_dicoms('PixelSpacing')[0][1]
+            get_items_from_all_dicoms('PixelSpacing')[0][1],
         )
         fov_z_mm = get_float_items_from_all_dicoms('SliceThickness')[0]
         fov = SpatialDimension(fov_x_mm / 1000.0, fov_y_mm / 1000.0, fov_z_mm / 1000.0)

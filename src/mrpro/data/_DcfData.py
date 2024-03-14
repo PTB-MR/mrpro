@@ -21,6 +21,7 @@ from itertools import product
 
 import numpy as np
 import torch
+from numpy.typing import ArrayLike
 from scipy.spatial import ConvexHull
 from scipy.spatial import Voronoi
 
@@ -30,7 +31,7 @@ from mrpro.utils import smap
 UNIQUE_ROUNDING_DECIMALS = 15
 
 
-def _volume(v):
+def _volume(v: ArrayLike):
     return ConvexHull(v).volume
 
 
@@ -49,9 +50,11 @@ class DcfData:
         traj
             k-space positions, 1D tensor
         """
-
         traj_sorted, inverse, counts = torch.unique(
-            torch.round(traj, decimals=UNIQUE_ROUNDING_DECIMALS), sorted=True, return_inverse=True, return_counts=True
+            torch.round(traj, decimals=UNIQUE_ROUNDING_DECIMALS),
+            sorted=True,
+            return_inverse=True,
+            return_counts=True,
         )
 
         # For a sorted trajectory: x0 x1 x2 ... xN
@@ -94,7 +97,6 @@ class DcfData:
         -------
             density compensation values (1, k2, k1, k0)
         """
-
         # 2D and 3D trajectories supported
         dim = traj.shape[0]
         if dim not in (2, 3):
@@ -137,9 +139,9 @@ class DcfData:
         iqr = q3 - q1
         upper_bound = q3 + 1.5 * iqr
         idx_outliers = np.nonzero(dcf > upper_bound)
-        num_outliers = len(idx_outliers[0])
-        high_values_start = int(0.99 * (len(dcf_sorted) - num_outliers))
-        high_values_end = len(dcf_sorted) - num_outliers  # this works also for num_outliers==0
+        n_outliers = len(idx_outliers[0])
+        high_values_start = int(0.99 * (len(dcf_sorted) - n_outliers))
+        high_values_end = len(dcf_sorted) - n_outliers  # this works also for n_outliers==0
         fill_value = np.average(dcf_sorted[high_values_start:high_values_end])
         dcf[idx_outliers] = fill_value
 

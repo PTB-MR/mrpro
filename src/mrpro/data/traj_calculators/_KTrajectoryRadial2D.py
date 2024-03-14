@@ -28,10 +28,7 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         angle in rad between two radial lines
     """
 
-    def __init__(
-        self,
-        angle: float = torch.pi * 0.618034,
-    ) -> None:
+    def __init__(self, angle: float = torch.pi * 0.618034) -> None:
         super().__init__()
         self.angle: float = angle
 
@@ -47,7 +44,6 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         -------
             radial 2D trajectory for given KHeader
         """
-
         # K-space locations along readout lines
         krad = self._kfreq(kheader)
 

@@ -14,53 +14,49 @@
 
 import pytest
 import torch
-
 from mrpro.data import IHeader
 from mrpro.data import QData
-from tests.conftest import dcm_2d
-from tests.conftest import random_kheader
-from tests.conftest import random_test_data
 
 
 def test_QData_from_kheader_and_tensor(random_kheader, random_test_data):
     """QData from KHeader and data tensor."""
-    qdat = QData(data=random_test_data, header=random_kheader)
-    assert qdat.header.fov == random_kheader.recon_fov
+    qdata = QData(data=random_test_data, header=random_kheader)
+    assert qdata.header.fov == random_kheader.recon_fov
 
 
 def test_QData_from_iheader_and_tensor(random_kheader, random_test_data):
     """QData from IHeader (created from KHeader) and data tensor."""
     iheader_from_kheader = IHeader.from_kheader(random_kheader)
-    qdat = QData(data=random_test_data, header=iheader_from_kheader)
-    assert qdat.header.fov == iheader_from_kheader.fov
+    qdata = QData(data=random_test_data, header=iheader_from_kheader)
+    assert qdata.header.fov == iheader_from_kheader.fov
 
 
 def test_QData_from_dcm_file(dcm_2d):
     """QData from single dicom file."""
-    qdat = QData.from_single_dicom(dcm_2d.filename)
+    qdata = QData.from_single_dicom(dcm_2d.filename)
     # QData uses complex values but dicom only supports real values
-    im = torch.real(qdat.data[0, 0, 0, ...])
-    torch.testing.assert_close(im, dcm_2d.imref)
+    img = torch.real(qdata.data[0, 0, 0, ...])
+    torch.testing.assert_close(img, dcm_2d.img_ref)
 
 
 def test_QData_to_complex128(random_kheader, random_test_data):
     """Change IData dtype complex128."""
-    qdat = QData(data=random_test_data, header=random_kheader)
-    qdat_complex128 = qdat.to(dtype=torch.complex128)
-    assert qdat_complex128.data.dtype == torch.complex128
+    qdata = QData(data=random_test_data, header=random_kheader)
+    qdata_complex128 = qdata.to(dtype=torch.complex128)
+    assert qdata_complex128.data.dtype == torch.complex128
 
 
-@pytest.mark.cuda
+@pytest.mark.cuda()
 def test_QData_cuda(random_kheader, random_test_data):
     """Move IData object to CUDA memory."""
-    qdat = QData(data=random_test_data, header=random_kheader)
-    qdat_cuda = qdat.cuda()
-    assert qdat_cuda.data.is_cuda
+    qdata = QData(data=random_test_data, header=random_kheader)
+    qdata_cuda = qdata.cuda()
+    assert qdata_cuda.data.is_cuda
 
 
-@pytest.mark.cuda
+@pytest.mark.cuda()
 def test_QData_cpu(random_kheader, random_test_data):
     """Move IData object to CUDA memory and back to CPU memory."""
-    qdat = QData(data=random_test_data, header=random_kheader)
-    qdat_cpu = qdat.cuda().cpu()
-    assert qdat_cpu.data.is_cpu
+    qdata = QData(data=random_test_data, header=random_kheader)
+    qdata_cpu = qdata.cuda().cpu()
+    assert qdata_cpu.data.is_cpu

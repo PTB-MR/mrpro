@@ -14,6 +14,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import ismrmrd
 import torch
 
@@ -35,7 +37,7 @@ class KTrajectoryIsmrmrd:
     def __init__(self):
         pass
 
-    def __call__(self, acquisitions: list[ismrmrd.Acquisition]) -> KTrajectoryRawShape:
+    def __call__(self, acquisitions: Sequence[ismrmrd.Acquisition]) -> KTrajectoryRawShape:
         """Read out the trajectory from the ISMRMRD data file.
 
         Parameters
@@ -47,7 +49,6 @@ class KTrajectoryIsmrmrd:
         -------
             trajectory in the shape of the original raw data.
         """
-
         # Read out the trajectory
         ktraj_mrd = torch.stack([torch.as_tensor(acq.traj, dtype=torch.float32) for acq in acquisitions])
 
@@ -56,7 +57,9 @@ class KTrajectoryIsmrmrd:
 
         if ktraj_mrd.shape[2] == 2:
             ktraj = KTrajectoryRawShape(
-                kz=torch.zeros_like(ktraj_mrd[..., 1]), ky=ktraj_mrd[..., 1], kx=ktraj_mrd[..., 0]
+                kz=torch.zeros_like(ktraj_mrd[..., 1]),
+                ky=ktraj_mrd[..., 1],
+                kx=ktraj_mrd[..., 0],
             )
         else:
             ktraj = KTrajectoryRawShape(kz=ktraj_mrd[..., 2], ky=ktraj_mrd[..., 1], kx=ktraj_mrd[..., 0])

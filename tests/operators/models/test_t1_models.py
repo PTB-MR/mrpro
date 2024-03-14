@@ -1,6 +1,5 @@
 import pytest
 import torch
-
 from mrpro.operators.models._InversionRecovery import InversionRecovery
 from mrpro.operators.models._MOLLI import MOLLI
 from mrpro.operators.models._SaturationRecovery import SaturationRecovery
@@ -15,12 +14,10 @@ def create_data(other=10, coils=5, z=100, y=100, x=100):
 
 
 @pytest.mark.parametrize(
-    't, result',
+    ('t', 'result'),
     [
-        # short ti
-        (0, '0'),
-        # long ti
-        (20, 'm0'),
+        (0, '0'),  # short ti
+        (20, 'm0'),  # long ti
     ],
 )
 def test_saturation_recovery(t, result):
@@ -48,12 +45,10 @@ def test_saturation_recovery(t, result):
 
 
 @pytest.mark.parametrize(
-    't, result',
+    ('t', 'result'),
     [
-        # short ti
-        (0, '-m0'),
-        # long ti
-        (20, 'm0'),
+        (0, '-m0'),  # short ti
+        (20, 'm0'),  # long ti
     ],
 )
 def test_inversion_recovery(t, result):
@@ -80,12 +75,10 @@ def test_inversion_recovery(t, result):
 
 
 @pytest.mark.parametrize(
-    't, result',
+    ('t', 'result'),
     [
-        # short ti
-        (0, 'a-b'),
-        # long ti
-        (20, 'a'),
+        (0, 'a-b'),  # short ti
+        (20, 'a'),  # long ti
     ],
 )
 def test_molli(t, result):

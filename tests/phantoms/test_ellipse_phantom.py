@@ -14,50 +14,44 @@
 
 import pytest
 import torch
-
 from mrpro.data import SpatialDimension
 from mrpro.operators import FastFourierOp
-from tests.helper import rel_image_diff
-from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData
+
+from tests.helper import relative_image_difference
 
 
-@pytest.fixture(scope='session')
-def ph_ellipse():
-    return EllipsePhantomTestData()
-
-
-def test_image_space(ph_ellipse):
+def test_image_space(ellipse_phantom):
     """Check if image space has correct shape."""
-    im_dim = SpatialDimension(z=1, y=ph_ellipse.ny, x=ph_ellipse.nx)
-    im = ph_ellipse.phantom.image_space(im_dim)
-    assert im.shape[-2:] == (ph_ellipse.ny, ph_ellipse.nx)
+    img_dimension = SpatialDimension(z=1, y=ellipse_phantom.n_y, x=ellipse_phantom.n_x)
+    img = ellipse_phantom.phantom.image_space(img_dimension)
+    assert img.shape[-2:] == (ellipse_phantom.n_y, ellipse_phantom.n_x)
 
 
-def test_kspace_correct_shape(ph_ellipse):
+def test_kspace_correct_shape(ellipse_phantom):
     """Check if kspace has correct shape."""
-    kdat = ph_ellipse.phantom.kspace(ph_ellipse.ky, ph_ellipse.kx)
-    assert kdat.shape == (ph_ellipse.ny, ph_ellipse.nx)
+    kdata = ellipse_phantom.phantom.kspace(ellipse_phantom.ky, ellipse_phantom.kx)
+    assert kdata.shape == (ellipse_phantom.n_y, ellipse_phantom.n_x)
 
 
-def test_kspace_raises_error(ph_ellipse):
+def test_kspace_raises_error(ellipse_phantom):
     """Check if kspace raises error if kx and ky have different shapes."""
     [kx_, _] = torch.meshgrid(
-        torch.linspace(-ph_ellipse.nx // 2, ph_ellipse.nx // 2, ph_ellipse.nx + 1),
-        torch.linspace(-ph_ellipse.ny // 2, ph_ellipse.ny // 2 + 1, ph_ellipse.ny),
+        torch.linspace(-ellipse_phantom.n_x // 2, ellipse_phantom.n_x // 2, ellipse_phantom.n_x + 1),
+        torch.linspace(-ellipse_phantom.n_y // 2, ellipse_phantom.n_y // 2 + 1, ellipse_phantom.n_y),
         indexing='xy',
     )
     with pytest.raises(ValueError):
-        ph_ellipse.phantom.kspace(ph_ellipse.ky, kx_)
+        ellipse_phantom.phantom.kspace(ellipse_phantom.ky, kx_)
 
 
-def test_kspace_image_match(ph_ellipse):
+def test_kspace_image_match(ellipse_phantom):
     """Check if fft of kspace matches image."""
-    im_dim = SpatialDimension(z=1, y=ph_ellipse.ny, x=ph_ellipse.nx)
-    im = ph_ellipse.phantom.image_space(im_dim)
-    kdat = ph_ellipse.phantom.kspace(ph_ellipse.ky, ph_ellipse.kx)
-    FFOp = FastFourierOp(dim=(-1, -2))
-    (irec,) = FFOp.adjoint(kdat)
-    # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
+    img_dimension = SpatialDimension(z=1, y=ellipse_phantom.n_y, x=ellipse_phantom.n_x)
+    img = ellipse_phantom.phantom.image_space(img_dimension)
+    kdata = ellipse_phantom.phantom.kspace(ellipse_phantom.ky, ellipse_phantom.kx)
+    fourier_op = FastFourierOp(dim=(-1, -2))
+    (reconstructed_img,) = fourier_op.adjoint(kdata)
+    # Due to discretization artifacts the reconstructed image will be different to the reference image. Using standard
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
     # differences along the edges of the elliptic objects.
-    assert rel_image_diff(irec, im[0, 0, 0, :, :]) <= 0.05
+    assert relative_image_difference(reconstructed_img, img[0, 0, 0, :, :]) <= 0.05

@@ -55,18 +55,18 @@ class KTrajectoryCalculator(ABC):
         ValueError
             Center sample has to be the same for each readout
         """
-        num_samples = kheader.acq_info.number_of_samples
+        n_samples = kheader.acq_info.number_of_samples
         center_sample = kheader.acq_info.center_sample
 
         # Verify that each readout has the same number of samples and same center sample
-        if len(torch.unique(num_samples)) > 1:
+        if len(torch.unique(n_samples)) > 1:
             raise ValueError('Trajectory can only be calculated if each acquisition has the same number of samples')
         if len(torch.unique(center_sample)) > 1:
             raise ValueError('Trajectory can only be calculated if each acquisition has the same center sample')
 
         # Calculate points along readout
-        nk0 = int(num_samples[0, 0, 0])
-        k0 = torch.linspace(0, nk0 - 1, nk0, dtype=torch.float32) - center_sample[0, 0, 0]
+        n_k0 = int(n_samples[0, 0, 0])
+        k0 = torch.linspace(0, n_k0 - 1, n_k0, dtype=torch.float32) - center_sample[0, 0, 0]
         return k0
 
 

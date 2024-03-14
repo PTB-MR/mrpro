@@ -11,8 +11,8 @@
 #   limitations under the License.
 
 import torch
-import torch.nn as nn
 from einops import rearrange
+from torch import nn
 
 from mrpro.operators import SignalModel
 
@@ -23,10 +23,10 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
     def __init__(
         self,
         offsets: torch.Tensor,
-        tp: torch.Tensor = torch.Tensor([0.005]),
-        b1_nom: torch.Tensor = torch.Tensor([3.70]),
-        gamma: torch.Tensor = torch.Tensor([42.5764]),
-        freq: torch.Tensor = torch.Tensor([127.7292]),
+        tp: float | torch.Tensor = 0.005,
+        b1_nom: float | torch.Tensor = 3.70,
+        gamma: float | torch.Tensor = 42.5764,
+        freq: float | torch.Tensor = 127.7292,
     ) -> None:
         """Initialize WASABI signal model for mapping of B0 and B1.
 
@@ -46,6 +46,12 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
             larmor frequency [MHz], by default 127.7292
         """
         super().__init__()
+        # convert all parameters to tensors
+        tp = torch.as_tensor(tp)
+        b1_nom = torch.as_tensor(b1_nom)
+        gamma = torch.as_tensor(gamma)
+        freq = torch.as_tensor(freq)
+
         # nn.Parameters allow for grad calculation
         self.offsets = nn.Parameter(offsets, requires_grad=offsets.requires_grad)
         self.tp = nn.Parameter(tp, requires_grad=tp.requires_grad)
@@ -54,7 +60,11 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         self.freq = nn.Parameter(freq, requires_grad=freq.requires_grad)
 
     def forward(
-        self, b0_shift: torch.Tensor, rb1: torch.Tensor, c: torch.Tensor, d: torch.Tensor
+        self,
+        b0_shift: torch.Tensor,
+        rb1: torch.Tensor,
+        c: torch.Tensor,
+        d: torch.Tensor,
     ) -> tuple[torch.Tensor,]:
         """Apply WASABI signal model.
 
@@ -77,12 +87,11 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         delta_x = offsets - b0_shift
         b1 = self.b1_nom * rb1
 
-        res = (
+        signal = (
             c
             - d
             * (torch.pi * b1 * self.gamma * self.tp) ** 2
             * torch.sinc(self.tp * torch.sqrt((b1 * self.gamma) ** 2 + delta_x**2)) ** 2
         )
-
-        # c = coils, ... = other (may be multi-dimensional)
-        return rearrange(res, 'offsets ... c z y x -> (... offsets) c z y x')
+        signal = rearrange(signal, 'offsets ... c z y x -> (... offsets) c z y x')
+        return (signal,)

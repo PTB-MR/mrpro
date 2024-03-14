@@ -43,7 +43,7 @@ def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float = 1.0) ->
     knoise
         Noise measurements.
     scale_factor, optional
-        Square root is applied on the noise covariance matrix. Used to adjust for effective noise bandwith
+        Square root is applied on the noise covariance matrix. Used to adjust for effective noise bandwidth
         and difference in sampling rate between noise calibration and actual measurement:
         scale_factor = (T_acq_dwell/T_noise_dwell)*NoiseReceiverBandwidthRatio, by default 1.0
 

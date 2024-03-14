@@ -22,7 +22,7 @@ ensure the correct voxel size.
 Finally the acquired data was also oversampled by a factor of 2 along the readout. This then needs to be cropped. The
 recon-space is therefore half the encoded-space along k1.
 
-More information on this can also be found here: `MRD-docu <https://ismrmrd.readthedocs.io/en/latest/mrd_header.html/>`_
+More information on this can also be found here: `MRD-docu <https://ismrmrd.readthedocs.io/en/latest/mrd_header.html>`_
 
 Some parameters in my MRD-file are wrong. What shall I do?
 ==========================================================
@@ -36,7 +36,7 @@ script such as e.g.:
 
     import ismrmrd
 
-    # Get info and acquisitons from original data
+    # Get info and acquisitions from original data
     with ismrmrd.File(fname_wrong_header, 'r') as file:
         ds = file[list(file.keys())[0]]
         mrd_header = ds.header

@@ -1,7 +1,4 @@
-.. MRPro documentation master file, created by
-   sphinx-quickstart on Sun Oct 15 09:52:11 2023.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. MRPro documentation
 
 Welcome to MRPro's documentation!
 =================================
@@ -10,10 +7,11 @@ Welcome to MRPro's documentation!
    :maxdepth: 1
 
    user_guide
-   faq
+   contributor_guide
    examples
+   faq
    api
-   contributer_guide
+
 
 
 

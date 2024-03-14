@@ -11,7 +11,11 @@ This package supports ismrmrd-format for MR raw data. All data containers utiliz
 If you want to give MRpro a try you can use
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/PTB-MR/mrpro.git/main?labpath=examples)
 
-## Installation for developers
+You find the documentation [here](https://ptb-mr.github.io/mrpro/)
+
+## Contributing
+
+### Installation for developers
 
 1. Clone the repo
 2. Create/select a python environment
@@ -19,16 +23,13 @@ If you want to give MRpro a try you can use
 4. Install "MRpro" in editable mode with linting and testing: ``` pip install -e ".[lint,test]" ```
 5. Setup Pre-Commit Hook: ``` pre-commit install ```
 
-## Recommended IDE and Extensions
+### Recommended IDE and Extensions
 
 We recommend to use [Microsoft Visual Studio Code](https://code.visualstudio.com/download).
 
 A list of recommended extensions for VSCode is given in the [.vscode/extensions.json](.vscode\extensions.json)
 
-Further extensions that might be useful:
 
-- IntelliCode (Microsoft)
-- Remote - SHH (Microsoft)
-- GitHub Copilot (GitHub - **fee-based** )
-- Git Graph (mhutchie)
-- GitLens (GitKraken)
+### Documentation
+
+Please have a look at our [contributor guide](https://ptb-mr.github.io/mrpro/contributor_guide.html) for more information on the structure of the repository, naming conventions and other useful information. 

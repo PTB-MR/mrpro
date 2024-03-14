@@ -14,12 +14,10 @@
 
 import torch
 from einops import rearrange
-
 from mrpro.algorithms import prewhiten_kspace
 from mrpro.data import KData
 from mrpro.data import KNoise
 from mrpro.data import KTrajectory
-from tests.conftest import random_kheader
 
 
 def _calc_coil_cov(data):
@@ -32,16 +30,16 @@ def test_prewhiten_kspace(random_kheader):
     """Prewhitening of k-space data."""
 
     # Dimensions
-    ncoils = 4
-    nkx = 128
+    n_coils = 4
+    n_kx = 128
 
     # Create random noise samples
-    knoise_data = torch.randn(1, ncoils, 1, 1, nkx, dtype=torch.complex64)
+    knoise_data = torch.randn(1, n_coils, 1, 1, n_kx, dtype=torch.complex64)
     knoise = KNoise(data=knoise_data)
 
     # Create KData from same data with random trajectory
-    ktraj = KTrajectory(torch.zeros(1, 1, 1, 1), torch.zeros(1, 1, 1, 1), torch.zeros(1, 1, 1, 1))
-    kdata = KData(header=random_kheader, data=knoise_data, traj=ktraj)
+    trajectory = KTrajectory(torch.zeros(1, 1, 1, 1), torch.zeros(1, 1, 1, 1), torch.zeros(1, 1, 1, 1))
+    kdata = KData(header=random_kheader, data=knoise_data, traj=trajectory)
 
     kdata = prewhiten_kspace(kdata, knoise)
-    torch.testing.assert_close(_calc_coil_cov(kdata.data), torch.eye(ncoils, dtype=torch.complex64))
+    torch.testing.assert_close(_calc_coil_cov(kdata.data), torch.eye(n_coils, dtype=torch.complex64))

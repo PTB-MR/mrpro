@@ -13,9 +13,10 @@
 #   limitations under the License.
 
 import math
+from collections.abc import Sequence
 
 import torch
-import torch.nn.functional as F
+import torch.nn.functional as F  # noqa: N812
 
 
 def normalize_index(ndim: int, index: int):
@@ -42,7 +43,9 @@ def normalize_index(ndim: int, index: int):
 
 
 def zero_pad_or_crop(
-    data: torch.Tensor, new_shape: tuple[int, ...] | torch.Size, dim: None | tuple[int, ...] = None
+    data: torch.Tensor,
+    new_shape: Sequence[int] | torch.Size,
+    dim: None | Sequence[int] = None,
 ) -> torch.Tensor:
     """Change shape of data by cropping or zero-padding.
 
@@ -59,12 +62,11 @@ def zero_pad_or_crop(
     -------
         data zero padded or cropped to shape
     """
-
     if len(new_shape) > data.ndim:
         raise ValueError('length of new shape should not exceed dimensions of data')
 
     if dim is None:  # Use last dimensions
-        new_shape = data.shape[: -len(new_shape)] + new_shape
+        new_shape = (*data.shape[: -len(new_shape)], *new_shape)
     else:
         if len(new_shape) != len(dim):
             raise ValueError('length of shape should match length of dim')
@@ -75,7 +77,7 @@ def zero_pad_or_crop(
         new_shape = tuple(new_shape[dim.index(i)] if i in dim else s for i, s in enumerate(data.shape))
 
     npad = []
-    for old, new in zip(data.shape, new_shape):
+    for old, new in zip(data.shape, new_shape, strict=True):
         diff = new - old
         after = math.trunc(diff / 2)
         before = diff - after

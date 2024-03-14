@@ -26,7 +26,7 @@ from mrpro.operators._Operator import Tin2
 
 
 # LinearOperators have exactly one input and one output,
-# and are fullfill f(a*x + b*y) = a*f(x) + b*f(y)
+# and fulfill f(a*x + b*y) = a*f(x) + b*f(y)
 # with a,b scalars and x,y tensors.
 class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor,]]):
     """General Linear Operator."""
@@ -37,7 +37,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor,]]):
         ...
 
     @property
-    def H(self):
+    def H(self):  # noqa: N802
         """Adjoint operator."""
         return AdjointLinearOperator(self)
 
@@ -69,7 +69,7 @@ class LinearOperatorComposition(LinearOperator, OperatorComposition[torch.Tensor
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint operator composition."""
-        return self._operator2.adjoint(self._operator1.adjoint(x))
+        return self._operator2.adjoint(*self._operator1.adjoint(x))
 
 
 class LinearOperatorSum(LinearOperator, OperatorSum[torch.Tensor, tuple[torch.Tensor,]]):
@@ -77,7 +77,7 @@ class LinearOperatorSum(LinearOperator, OperatorSum[torch.Tensor, tuple[torch.Te
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint operator addition."""
-        return self._operator1.adjoint(x) + self._operator2.adjoint(x)
+        return (self._operator1.adjoint(x)[0] + self._operator2.adjoint(x)[0],)
 
 
 class LinearOperatorElementwiseProduct(LinearOperator, OperatorElementwiseProduct[torch.Tensor, tuple[torch.Tensor,]]):
@@ -86,8 +86,8 @@ class LinearOperatorElementwiseProduct(LinearOperator, OperatorElementwiseProduc
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint Operator elementwise multiplication with scalar/tensor."""
         if self._tensor.is_complex():
-            return self._operator.adjoint(x) * self._tensor.conj()
-        return self._operator.adjoint(x) * self._tensor
+            return (self._operator.adjoint(x)[0] * self._tensor.conj(),)
+        return (self._operator.adjoint(x)[0] * self._tensor,)
 
 
 class AdjointLinearOperator(LinearOperator):
@@ -106,6 +106,6 @@ class AdjointLinearOperator(LinearOperator):
         return self._operator.forward(x)
 
     @property
-    def H(self):
+    def H(self):  # noqa: N802
         """Adjoint of adjoint operator."""
         return self.operator
