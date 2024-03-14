@@ -1,6 +1,6 @@
-=====================
-Guide for MRPro Users
-=====================
+===============
+Guide for Users
+===============
 
 MRpro is a MR image reconstruction and processing framework specifically developed to work well with pytorch.
 The data classes utilize torch tensors for storing data such as MR raw data or reconstructed image data.

@@ -11,6 +11,8 @@ This package supports ismrmrd-format for MR raw data. All data containers utiliz
 If you want to give MRpro a try you can use
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/PTB-MR/mrpro.git/main?labpath=examples)
 
+You find the documentation [here](https://ptb-mr.github.io/mrpro/)
+
 ## Contributing
 
 ### Installation for developers
@@ -27,8 +29,7 @@ We recommend to use [Microsoft Visual Studio Code](https://code.visualstudio.com
 
 A list of recommended extensions for VSCode is given in the [.vscode/extensions.json](.vscode\extensions.json)
 
-### Naming Convention
-We try to follow the [pep8](https://peps.python.org/pep-0008/) naming convention (e.g., all lowercase variable names, CapWords class names). We deviate for the names of source code file names containing a single class. These are named as the class.
 
-We try to use descriptive variable names when applicable (e.g., "result" instead of "res", "tolerance_squared" instead of "sqtol", "batchsize" instead of "m"). A name starting with "n_" is used for variables describing a number of... (e.g., "n_coils" instead of "ncoils" or "num_coils"), variable names ending with "_op" for operators (e.g., "fourier_op"). We use "img" as a variable name for images. 
+### Documentation
 
+Please have a look at our [contributor guide](https://ptb-mr.github.io/mrpro/contributor_guide.html) for more information on the structure of the repository, naming conventions and other useful information. 
