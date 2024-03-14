@@ -30,6 +30,7 @@ from mrpro.data import KTrajectory
 from mrpro.data import KTrajectoryRawShape
 from mrpro.data import Limits
 from mrpro.data._kdata._KDataRearrangeMixin import KDataRearrangeMixin
+from mrpro.data._kdata._KDataRemoveOsMixin import KDataRemoveOsMixin
 from mrpro.data._kdata._KDataSelectMixin import KDataSelectMixin
 from mrpro.data._kdata._KDataSplitMixin import KDataSplitMixin
 from mrpro.data.enums import AcqFlags
@@ -53,7 +54,7 @@ DEFAULT_IGNORE_FLAGS = (
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
-class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin):
+class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveOsMixin):
     """MR raw data / k-space data class."""
 
     header: KHeader
