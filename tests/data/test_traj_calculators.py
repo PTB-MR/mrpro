@@ -39,8 +39,9 @@ def valid_rad2d_kheader(monkeypatch, random_kheader):
     idx_k1 = torch.arange(n_k1, dtype=torch.int32)[None, None, ...]
 
     # Set parameters for radial 2D trajectory
-    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + n_k0)
-    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + n_k0 // 2)
+    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1)[..., None] + n_k0)
+    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1)[..., None] + n_k0 // 2)
+    monkeypatch.setattr(random_kheader.acq_info, 'flags', torch.zeros_like(idx_k1)[..., None])
     monkeypatch.setattr(random_kheader.acq_info.idx, 'k1', idx_k1)
 
     # This is only needed for Pulseq trajectory calculation
@@ -90,8 +91,9 @@ def valid_rpe_kheader(monkeypatch, random_kheader):
     idx_k2 = torch.reshape(idx_k2, (1, n_k2, n_k1))
 
     # Set parameters for RPE trajectory
-    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + n_k0)
-    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + n_k0 // 2)
+    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1)[..., None] + n_k0)
+    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1)[..., None] + n_k0 // 2)
+    monkeypatch.setattr(random_kheader.acq_info, 'flags', torch.zeros_like(idx_k1)[..., None])
     monkeypatch.setattr(random_kheader.acq_info.idx, 'k1', idx_k1)
     monkeypatch.setattr(random_kheader.acq_info.idx, 'k2', idx_k2)
     monkeypatch.setattr(random_kheader.encoding_limits.k1, 'center', int(n_k1 // 2))
@@ -174,8 +176,9 @@ def valid_cartesian_kheader(monkeypatch, random_kheader):
     idx_k2 = torch.reshape(idx_k2, (1, n_k2, n_k1))
 
     # Set parameters for Cartesian trajectory
-    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + n_k0)
-    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + n_k0 // 2)
+    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1)[..., None] + n_k0)
+    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1)[..., None] + n_k0 // 2)
+    monkeypatch.setattr(random_kheader.acq_info, 'flags', torch.zeros_like(idx_k1)[..., None])
     monkeypatch.setattr(random_kheader.acq_info.idx, 'k1', idx_k1)
     monkeypatch.setattr(random_kheader.acq_info.idx, 'k2', idx_k2)
     monkeypatch.setattr(random_kheader.encoding_limits.k1, 'center', int(n_k1 // 2))

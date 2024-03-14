@@ -125,7 +125,7 @@ class KTrajectoryRpe(KTrajectoryCalculator):
             radial phase encoding trajectory for given KHeader
         """
         # Trajectory along readout
-        kfreq = self._kfreq(kheader)
+        kx = self._kfreq(kheader)
 
         # Angles of phase encoding lines
         kang = self._kang(kheader)
@@ -135,5 +135,4 @@ class KTrajectoryRpe(KTrajectoryCalculator):
 
         kz = (krad * torch.sin(kang))[..., None]
         ky = (krad * torch.cos(kang))[..., None]
-        kx = kfreq[None, None, None, :]
         return KTrajectory(kz, ky, kx)
