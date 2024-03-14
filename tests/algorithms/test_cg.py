@@ -15,10 +15,9 @@
 import pytest
 import scipy
 import torch
-from scipy.sparse.linalg import cg as cg_scp
-
 from mrpro.algorithms import conjugate_gradient
-from mrpro.operators import EinSumOp
+from mrpro.operators import EinsumOp
+from scipy.sparse.linalg import cg as cg_scp
 from tests import RandomGenerator
 
 
@@ -40,12 +39,8 @@ def system(request):
 
     # if batchsize=1, it corresponds to one linear system; for batchsize>1, multiple systems
     # are considered simultaneously
-    if batchsize > 1:
-        matrix_shape = (batchsize, vectorsize, vectorsize)
-        vector_shape = (batchsize, vectorsize, 1)
-    else:
-        matrix_shape = (vectorsize, vectorsize)
-        vector_shape = (vectorsize,)
+    matrix_shape: tuple[int, int, int] = (batchsize, vectorsize, vectorsize)
+    vector_shape: tuple[int, int, int] = (batchsize, vectorsize)
 
     if complex_valued:
         matrix = random_generator.complex64_tensor(size=matrix_shape, high=1.0)
@@ -56,7 +51,7 @@ def system(request):
     self_adjoint_matrix = matrix.mH @ matrix
 
     # construct matrix multiplication as LinearOperator
-    operator = EinSumOp(self_adjoint_matrix)
+    operator = EinsumOp(self_adjoint_matrix)
 
     # create ground-truth data and right-hand side of the system
     if complex_valued:
@@ -90,7 +85,7 @@ def test_cg_stopping_after_one_iteration(system):
 
     # callback function; should not be called since cg should exit for loop
     def callback(solution):
-        assert False, 'CG did not exit'
+        pytest.fail('CG did immediately not exit')
 
     # the test should fail if we reach the callback
     xcg_one_iteration = conjugate_gradient(
@@ -107,12 +102,8 @@ def test_implementation(system):
     # generate invalid initial value
     starting_value = torch.zeros_like(right_hand_side)
 
-    # distinguish cases with batchsize>1 or batchsize=1 to appropriately construct the operator
-    # for scipy's cg
-    batchsize = right_hand_side.shape[0] if len(right_hand_side.shape) == 3 else 1
-
-    # if batchsize>1, construct H = diag(H1,...,H_mb) and b=[b1,...,b_mb]^T, otherwise just take the matrix
-    matrix_np = scipy.linalg.block_diag(*operator.matrix.numpy()) if batchsize > 1 else operator.matrix.numpy()
+    # if batchsize>1, construct H = diag(H1,...,H_batchsize) and b=[b1,...,b_batchsize]^T, otherwise just take the matrix
+    matrix_np = scipy.linalg.block_diag(*operator.matrix.numpy())
 
     # choose zero tolerance to avoid exiting the for loop in the cg
     tolerance = 0.0
@@ -127,7 +118,7 @@ def test_implementation(system):
             maxiter=max_iterations,
             atol=tolerance,
         )
-        cg_solution_scp = xcg_scp.reshape(right_hand_side.shape) if batchsize > 1 else xcg_scp
+        cg_solution_scp = xcg_scp.reshape(right_hand_side.shape)
         cg_solution_torch = conjugate_gradient(
             operator,
             right_hand_side,
@@ -147,5 +138,5 @@ def test_invalid_shapes(system):
     starting_value = torch.zeros(
         h_operator.matrix.shape[-1] + 1,
     )
-    with pytest.raises(ValueError, match='incompatible'):
+    with pytest.raises(ValueError, match='match'):
         _ = conjugate_gradient(h_operator, right_hand_side, starting_value=starting_value, max_iterations=10)

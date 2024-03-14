@@ -12,7 +12,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-
 from collections.abc import Callable
 
 import torch
@@ -64,12 +63,11 @@ def conjugate_gradient(
     -------
         an approximate solution of the linear system Hx=b
     """
-
-    # throw an error if the shapes of the starting value and the right-hand side
-    # do not coincide
-    if starting_value is not None:
-        if starting_value.shape != right_hand_side.shape:
-            raise ValueError(f'\nshapes {starting_value.shape, right_hand_side.shape} are incompatible')
+    if starting_value is not None and (starting_value.shape != right_hand_side.shape):
+        raise ValueError(
+            'Shapes of starting_value and right_hand_side must match,'
+            f'got {starting_value.shape, right_hand_side.shape}'
+        )
 
     # initial residual
     residual = right_hand_side - operator(starting_value)[0] if starting_value is not None else right_hand_side.clone()
@@ -94,15 +92,13 @@ def conjugate_gradient(
     norm_squared_residual = None
 
     for i in range(max_iterations):
-
         # calculate the square norm of the residual
         residual_flat = residual.flatten()
         norm_squared_residual_new = torch.vdot(residual_flat, residual_flat).real
 
         # check if the solution is already accurate enough
-        if tolerance != 0:
-            if norm_squared_residual_new < tolerance_squared:
-                return solution
+        if tolerance != 0 and (norm_squared_residual_new < tolerance_squared):
+            return solution
 
         if i > 0:
             beta = norm_squared_residual_new / norm_squared_residual
