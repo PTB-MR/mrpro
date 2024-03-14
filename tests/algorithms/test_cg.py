@@ -18,7 +18,7 @@ import torch
 from scipy.sparse.linalg import cg as cg_scp
 
 from mrpro.algorithms import conjugate_gradient
-from mrpro.operators import MatrixOp
+from mrpro.operators import EinSumOp
 from tests import RandomGenerator
 
 
@@ -53,10 +53,10 @@ def system(request):
         matrix = random_generator.float32_tensor(size=matrix_shape, low=-1.0, high=1.0)
 
     # make sure H is self-adjoint
-    self_adoint_matrix = matrix.mH @ matrix
+    self_adjoint_matrix = matrix.mH @ matrix
 
     # construct matrix multiplication as LinearOperator
-    operator = MatrixOp(self_adoint_matrix)
+    operator = EinSumOp(self_adjoint_matrix)
 
     # create ground-truth data and right-hand side of the system
     if complex_valued:
