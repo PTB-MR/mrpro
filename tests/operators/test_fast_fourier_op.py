@@ -15,6 +15,7 @@
 import numpy as np
 import pytest
 import torch
+from mrpro.data import SpatialDimension
 from mrpro.operators import FastFourierOp
 
 from tests import RandomGenerator
@@ -60,9 +61,43 @@ def test_fast_fourier_op_adjoint(encoding_matrix, recon_matrix):
 
     # Create test data
     generator = RandomGenerator(seed=0)
-    x = generator.complex64_tensor(recon_matrix)
-    y = generator.complex64_tensor(encoding_matrix)
+    u = generator.complex64_tensor(recon_matrix)
+    v = generator.complex64_tensor(encoding_matrix)
 
     # Create operator and apply
     ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix)
-    dotproduct_adjointness_test(ff_op, x, y)
+    dotproduct_adjointness_test(ff_op, u, v)
+
+
+def test_fast_fourier_op_spatial_dim():
+    """Test for equal results if matrices are spatial dimension or lists"""
+    # Create test data
+    recon_matrix = SpatialDimension(z=101, y=201, x=61)
+    encoding_matrix = SpatialDimension(z=14, y=220, x=61)
+    generator = RandomGenerator(seed=0)
+    u = generator.complex64_tensor(size=(3, 2, recon_matrix.z, recon_matrix.y, recon_matrix.x))
+    v = generator.complex64_tensor(size=(3, 2, encoding_matrix.z, encoding_matrix.y, encoding_matrix.x))
+    # these should not matter and are set to arbitrary values
+    recon_matrix.x = -13
+    encoding_matrix.x = -13
+    ff_op_list = FastFourierOp(
+        recon_matrix=[recon_matrix.y, recon_matrix.z],
+        encoding_matrix=[encoding_matrix.y, encoding_matrix.z],
+        dim=(-2, -3),
+    )
+    ff_op_spatialdim = FastFourierOp(
+        recon_matrix=recon_matrix,
+        encoding_matrix=encoding_matrix,
+        dim=(-2, -3),
+    )
+    assert torch.equal(*ff_op_list(u), *ff_op_spatialdim(u))
+    assert torch.equal(*ff_op_list.H(v), *ff_op_spatialdim.H(v))
+
+
+def test_fast_fourier_op_onematrix():
+    recon_matrix = SpatialDimension(z=101, y=201, x=61)
+    encoding_matrix = SpatialDimension(z=14, y=220, x=61)
+    with pytest.raises(ValueError, match='None'):
+        FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=None)
+    with pytest.raises(ValueError, match='None'):
+        FastFourierOp(recon_matrix=None, encoding_matrix=encoding_matrix)
