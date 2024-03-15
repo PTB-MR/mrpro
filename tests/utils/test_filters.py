@@ -16,8 +16,8 @@ import pytest
 import torch
 from mrpro.data import SpatialDimension
 from mrpro.utils.filters import gaussian_filter
-from mrpro.utils.filters import spatial_uniform_filter_3d
 from mrpro.utils.filters import uniform_filter
+from mrpro.utils.filters import uniform_filter_3d
 
 
 @pytest.fixture()
@@ -31,7 +31,7 @@ def data():
 def test_spatial_uniform_filter_3d(data):
     """Test spatial_uniform_filter_3d with SpatialDimension."""
 
-    result = spatial_uniform_filter_3d(data, SpatialDimension(3, 3, 3))
+    result = uniform_filter_3d(data, SpatialDimension(3, 3, 3))
     assert data.shape == result.shape
     assert torch.isclose(torch.sum(result), torch.sum(data))
 
@@ -39,7 +39,7 @@ def test_spatial_uniform_filter_3d(data):
 def test_spatial_uniform_filter_3d_tuple(data):
     """Test spatial_uniform_filter_3d with tuple."""
 
-    result = spatial_uniform_filter_3d(data, (3, 3, 3))
+    result = uniform_filter_3d(data, (3, 3, 3))
     assert data.shape == result.shape
     assert torch.isclose(torch.sum(result), torch.sum(data))
 
@@ -48,14 +48,21 @@ def test_spatial_uniform_filter_wrong_width(data):
     """Test spatial_uniform_filter_3d with wrong width."""
 
     with pytest.raises(ValueError, match='Invalid filter width'):
-        spatial_uniform_filter_3d(data, (3, 3))
+        uniform_filter_3d(data, (3, 3))
 
 
 def test_gaussian_filter_int_axis(data):
     result = gaussian_filter(data, 0.5, -1)
-    assert result.nonzero() == torch.tensor(
-        [[0, 0, 2, 2, 0], [0, 0, 2, 2, 1], [0, 0, 2, 2, 2], [0, 0, 2, 2, 3], [0, 0, 2, 2, 4]]
+    expected = torch.tensor(
+        [
+            [0, 0, 2, 2, 0],
+            [0, 0, 2, 2, 1],
+            [0, 0, 2, 2, 2],
+            [0, 0, 2, 2, 3],
+            [0, 0, 2, 2, 4],
+        ],
     )
+    assert torch.equal(result.nonzero(), expected)
     assert result.shape == data.shape
     torch.testing.assert_close(result.sum(), torch.tensor(1.0), atol=1e-3, rtol=0)
 
@@ -116,6 +123,9 @@ def test_uniform_filter_noaxis(data):
     result = uniform_filter(data, width=torch.tensor(3))
     assert result.shape == data.shape
     torch.testing.assert_close(result.sum(), torch.tensor(1.0), atol=1e-3, rtol=0)
+    # result should be the same along different axes of same size
+    assert torch.equal(result[0, 0, :, 2, 2], result[0, 0, 2, :, 2])
+    assert torch.equal(result[0, 0, :, 2, 2], result[0, 0, 2, 2, :])
 
 
 def test_uniform_invalid_width(data):

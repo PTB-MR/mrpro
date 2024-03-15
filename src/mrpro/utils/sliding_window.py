@@ -70,7 +70,7 @@ def sliding_window(
         raise ValueError('Must provide matching length window_shape and axis arguments. ')
     if len(strides) != len(axis):
         raise ValueError('Must provide matching length strides and axis arguments.')
-    # out_stides should be the original strides, but for sliding windows axis the stride should be increased
+    # out_strides should be the original strides, but for sliding windows axis the stride should be increased
     # and a new dimension should be added
     out_strides = torch.tensor([x.stride(i) for i in range(x.ndim)] + [x.stride(ax) for ax in axis])
     out_strides[axis,] = out_strides[axis,] * strides_tensor

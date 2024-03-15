@@ -14,7 +14,7 @@
 
 import pytest
 import torch
-from mrpro.utils.window import sliding_window
+from mrpro.utils.sliding_window import sliding_window
 
 from tests import RandomGenerator
 
