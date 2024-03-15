@@ -91,30 +91,28 @@ def cg(
 
     # dummy value the old squared norm of the residual;
     # #only required for initialization
-    residual_norm_squared = None
+    residual_norm_squared_previous = None
 
     for iteration in range(max_iterations):
         # calculate the square norm of the residual
         residual_flat = residual.flatten()
-        residual_norm_squared_new = torch.vdot(residual_flat, residual_flat).real
+        residual_norm_squared = torch.vdot(residual_flat, residual_flat).real
 
         # check if the solution is already accurate enough
-        if tolerance != 0 and (residual_norm_squared_new < tolerance_squared):
+        if tolerance != 0 and (residual_norm_squared < tolerance_squared):
             return solution
 
         if iteration > 0:
-            beta = residual_norm_squared_new / residual_norm_squared
+            beta = residual_norm_squared / residual_norm_squared_previous
             conjugate_vector = residual + beta * conjugate_vector
 
         # update estimates of the solution and the residual
         (operator_conjugate_vector,) = operator(conjugate_vector)
-        alpha = residual_norm_squared_new / (
-            torch.vdot(conjugate_vector.flatten(), operator_conjugate_vector.flatten())
-        )
+        alpha = residual_norm_squared / (torch.vdot(conjugate_vector.flatten(), operator_conjugate_vector.flatten()))
         solution += alpha * conjugate_vector
         residual -= alpha * operator_conjugate_vector
 
-        residual_norm_squared = residual_norm_squared_new
+        residual_norm_squared_previous = residual_norm_squared
 
         if callback is not None:
             callback(solution)
