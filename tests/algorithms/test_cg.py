@@ -85,7 +85,7 @@ def test_cg_stopping_after_one_iteration(system):
 
     # callback function; should not be called since cg should exit for loop
     def callback(solution):
-        pytest.fail('CG did immediately not exit')
+        pytest.fail('CG did not exit before performing any iterations')
 
     # the test should fail if we reach the callback
     xcg_one_iteration = cg(
