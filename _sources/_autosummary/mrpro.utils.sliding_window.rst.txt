@@ -1,0 +1,38 @@
+mrpro.utils.sliding\_window
+===========================
+
+.. automodule:: mrpro.utils.sliding_window
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+   
+      sliding_window
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class_template.rst
+   
+      Sequence
+   
+   
+
+   
+   
+   
+
+
+

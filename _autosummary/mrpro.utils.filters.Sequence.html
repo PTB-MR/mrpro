@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>mrpro.utils.filters.spatial_uniform_filter_3d &#8212; mrpro</title>
+    <title>mrpro.utils.filters.Sequence &#8212; mrpro</title>
   
   
   
@@ -39,11 +39,11 @@
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/mrpro.utils.filters.spatial_uniform_filter_3d';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/mrpro.utils.filters.Sequence';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="mrpro.utils.filters.SpatialDimension" href="mrpro.utils.filters.SpatialDimension.html" />
-    <link rel="prev" title="mrpro.utils.filters.repeat" href="mrpro.utils.filters.repeat.html" />
+    <link rel="prev" title="mrpro.utils.filters.uniform_filter_3d" href="mrpro.utils.filters.uniform_filter_3d.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -408,9 +408,17 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.split_idx.html">mrpro.utils.split_idx</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.zero_pad_or_crop.html">mrpro.utils.zero_pad_or_crop</a></li>
 <li class="toctree-l2 current active has-children"><a class="reference internal" href="mrpro.utils.filters.html">mrpro.utils.filters</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-6"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.repeat.html">mrpro.utils.filters.repeat</a></li>
-<li class="toctree-l3 current active"><a class="current reference internal" href="#">mrpro.utils.filters.spatial_uniform_filter_3d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.ceil.html">mrpro.utils.filters.ceil</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.gaussian_filter.html">mrpro.utils.filters.gaussian_filter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.uniform_filter.html">mrpro.utils.filters.uniform_filter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.uniform_filter_3d.html">mrpro.utils.filters.uniform_filter_3d</a></li>
+<li class="toctree-l3 current active"><a class="current reference internal" href="#">mrpro.utils.filters.Sequence</a></li>
 <li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.SpatialDimension.html">mrpro.utils.filters.SpatialDimension</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="mrpro.utils.sliding_window.html">mrpro.utils.sliding_window</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-7"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.sliding_window.sliding_window.html">mrpro.utils.sliding_window.sliding_window</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.sliding_window.Sequence.html">mrpro.utils.sliding_window.Sequence</a></li>
 </ul>
 </li>
 </ul>
@@ -480,21 +488,47 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="mrpro-utils-filters-spatial-uniform-filter-3d">
-<h1>mrpro.utils.filters.spatial_uniform_filter_3d<a class="headerlink" href="#mrpro-utils-filters-spatial-uniform-filter-3d" title="Link to this heading">#</a></h1>
-<dl class="py function">
-<dt class="sig sig-object py" id="mrpro.utils.filters.spatial_uniform_filter_3d">
-<span class="sig-prename descclassname"><span class="pre">mrpro.utils.filters.</span></span><span class="sig-name descname"><span class="pre">spatial_uniform_filter_3d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.filters.SpatialDimension.html#mrpro.utils.filters.SpatialDimension" title="mrpro.data._SpatialDimension.SpatialDimension"><span class="pre">SpatialDimension</span></a><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/mrpro/utils/filters.html#spatial_uniform_filter_3d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.utils.filters.spatial_uniform_filter_3d" title="Link to this definition">#</a></dt>
-<dd><p>Spatial smoothing using convolution with box function.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> – Data to be smoothed in the shape (… z y x)</p></li>
-<li><p><strong>filter_width</strong> – Width of 3D the filter as SpatialDimension(z, y, x) or tuple(z, y, x).
-The filter width is clipped to the data shape.</p></li>
-</ul>
-</dd>
-</dl>
+  <section id="mrpro-utils-filters-sequence">
+<h1>mrpro.utils.filters.Sequence<a class="headerlink" href="#mrpro-utils-filters-sequence" title="Link to this heading">#</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="mrpro.utils.filters.Sequence">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.utils.filters.</span></span><span class="sig-name descname"><span class="pre">Sequence</span></span><a class="headerlink" href="#mrpro.utils.filters.Sequence" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Reversible</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Collection</span></code></p>
+<p>All the operations on a read-only sequence.</p>
+<p>Concrete subclasses must override __new__ or __init__,
+__getitem__, and __len__.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.utils.filters.Sequence.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.utils.filters.Sequence.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.utils.filters.Sequence.__init__" title="mrpro.utils.filters.Sequence.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.utils.filters.Sequence.count" title="mrpro.utils.filters.Sequence.count"><code class="xref py py-obj docutils literal notranslate"><span class="pre">count</span></code></a>(value)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.utils.filters.Sequence.index" title="mrpro.utils.filters.Sequence.index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">index</span></code></a>(value, [start, [stop]])</p></td>
+<td><p>Raises ValueError if the value is not present.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.utils.filters.Sequence.count">
+<span class="sig-name descname"><span class="pre">count</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">integer</span> <span class="pre">--</span> <span class="pre">return</span> <span class="pre">number</span> <span class="pre">of</span> <span class="pre">occurrences</span> <span class="pre">of</span> <span class="pre">value</span></span></span><a class="headerlink" href="#mrpro.utils.filters.Sequence.count" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.utils.filters.Sequence.index">
+<span class="sig-name descname"><span class="pre">index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">stop</span></span></em><span class="optional">]</span><span class="optional">]</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">integer</span> <span class="pre">--</span> <span class="pre">return</span> <span class="pre">first</span> <span class="pre">index</span> <span class="pre">of</span> <span class="pre">value.</span></span></span><a class="headerlink" href="#mrpro.utils.filters.Sequence.index" title="Link to this definition">#</a></dt>
+<dd><p>Raises ValueError if the value is not present.</p>
+<p>Supporting start and stop arguments is optional, but
+recommended.</p>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -510,12 +544,12 @@ The filter width is clipped to the data shape.</p></li>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="mrpro.utils.filters.repeat.html"
+       href="mrpro.utils.filters.uniform_filter_3d.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">mrpro.utils.filters.repeat</p>
+        <p class="prev-next-title">mrpro.utils.filters.uniform_filter_3d</p>
       </div>
     </a>
     <a class="right-next"
@@ -545,14 +579,19 @@ The filter width is clipped to the data shape.</p></li>
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.utils.filters.spatial_uniform_filter_3d"><code class="docutils literal notranslate"><span class="pre">spatial_uniform_filter_3d()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.utils.filters.Sequence"><code class="docutils literal notranslate"><span class="pre">Sequence</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.utils.filters.Sequence.__init__"><code class="docutils literal notranslate"><span class="pre">Sequence.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.utils.filters.Sequence.count"><code class="docutils literal notranslate"><span class="pre">Sequence.count()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.utils.filters.Sequence.index"><code class="docutils literal notranslate"><span class="pre">Sequence.index()</span></code></a></li>
+</ul>
+</li>
 </ul>
   </nav></div>
 
   <div class="sidebar-secondary-item">
 
   <div class="tocsection sourcelink">
-    <a href="../_sources/_autosummary/mrpro.utils.filters.spatial_uniform_filter_3d.rst.txt">
+    <a href="../_sources/_autosummary/mrpro.utils.filters.Sequence.rst.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>

@@ -408,9 +408,17 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.split_idx.html">mrpro.utils.split_idx</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.zero_pad_or_crop.html">mrpro.utils.zero_pad_or_crop</a></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="mrpro.utils.filters.html">mrpro.utils.filters</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-6"><i class="fa-solid fa-chevron-down"></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.repeat.html">mrpro.utils.filters.repeat</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.spatial_uniform_filter_3d.html">mrpro.utils.filters.spatial_uniform_filter_3d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.ceil.html">mrpro.utils.filters.ceil</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.gaussian_filter.html">mrpro.utils.filters.gaussian_filter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.uniform_filter.html">mrpro.utils.filters.uniform_filter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.uniform_filter_3d.html">mrpro.utils.filters.uniform_filter_3d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.Sequence.html">mrpro.utils.filters.Sequence</a></li>
 <li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.SpatialDimension.html">mrpro.utils.filters.SpatialDimension</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="mrpro.utils.sliding_window.html">mrpro.utils.sliding_window</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-7"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.sliding_window.sliding_window.html">mrpro.utils.sliding_window.sliding_window</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.sliding_window.Sequence.html">mrpro.utils.sliding_window.Sequence</a></li>
 </ul>
 </li>
 </ul>
@@ -526,7 +534,7 @@ document.write(`
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.IHeader.from_dicom_list">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dicom_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dicom_datasets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#mrpro.data.IHeader" title="mrpro.data._IHeader.IHeader"><span class="pre">IHeader</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_IHeader.html#IHeader.from_dicom_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.IHeader.from_dicom_list" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dicom_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dicom_datasets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.sliding_window.Sequence.html#mrpro.utils.sliding_window.Sequence" title="collections.abc.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Dataset</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#mrpro.data.IHeader" title="mrpro.data._IHeader.IHeader"><span class="pre">IHeader</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_IHeader.html#IHeader.from_dicom_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.IHeader.from_dicom_list" title="Link to this definition">#</a></dt>
 <dd><p>Read DICOM files and return IHeader object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>

@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>mrpro.utils.filters.repeat &#8212; mrpro</title>
+    <title>mrpro.utils.sliding_window &#8212; mrpro</title>
   
   
   
@@ -39,11 +39,11 @@
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/mrpro.utils.filters.repeat';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/mrpro.utils.sliding_window';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="mrpro.utils.filters.spatial_uniform_filter_3d" href="mrpro.utils.filters.spatial_uniform_filter_3d.html" />
-    <link rel="prev" title="mrpro.utils.filters" href="mrpro.utils.filters.html" />
+    <link rel="next" title="mrpro.utils.sliding_window.sliding_window" href="mrpro.utils.sliding_window.sliding_window.html" />
+    <link rel="prev" title="mrpro.utils.filters.SpatialDimension" href="mrpro.utils.filters.SpatialDimension.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -407,10 +407,18 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.smap.html">mrpro.utils.smap</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.split_idx.html">mrpro.utils.split_idx</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.zero_pad_or_crop.html">mrpro.utils.zero_pad_or_crop</a></li>
-<li class="toctree-l2 current active has-children"><a class="reference internal" href="mrpro.utils.filters.html">mrpro.utils.filters</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-6"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
-<li class="toctree-l3 current active"><a class="current reference internal" href="#">mrpro.utils.filters.repeat</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.spatial_uniform_filter_3d.html">mrpro.utils.filters.spatial_uniform_filter_3d</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="mrpro.utils.filters.html">mrpro.utils.filters</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-6"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.ceil.html">mrpro.utils.filters.ceil</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.gaussian_filter.html">mrpro.utils.filters.gaussian_filter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.uniform_filter.html">mrpro.utils.filters.uniform_filter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.uniform_filter_3d.html">mrpro.utils.filters.uniform_filter_3d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.Sequence.html">mrpro.utils.filters.Sequence</a></li>
 <li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.SpatialDimension.html">mrpro.utils.filters.SpatialDimension</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current active has-children"><a class="current reference internal" href="#">mrpro.utils.sliding_window</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-7"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.sliding_window.sliding_window.html">mrpro.utils.sliding_window.sliding_window</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.sliding_window.Sequence.html">mrpro.utils.sliding_window.Sequence</a></li>
 </ul>
 </li>
 </ul>
@@ -444,8 +452,6 @@ document.write(`
 
 
 
-
-
 <nav aria-label="Breadcrumb">
   <ul class="bd-breadcrumbs">
     
@@ -458,10 +464,7 @@ document.write(`
     <li class="breadcrumb-item"><a href="../api.html" class="nav-link">API</a></li>
     
     
-    <li class="breadcrumb-item"><i class="fa-solid fa-ellipsis"></i></li>
-    
-    
-    <li class="breadcrumb-item"><a href="mrpro.utils.filters.html" class="nav-link">mrpro.utils.filters</a></li>
+    <li class="breadcrumb-item"><a href="mrpro.utils.html" class="nav-link">mrpro.utils</a></li>
     
     <li class="breadcrumb-item active" aria-current="page">mrpro.utils....</li>
   </ul>
@@ -480,51 +483,25 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="mrpro-utils-filters-repeat">
-<h1>mrpro.utils.filters.repeat<a class="headerlink" href="#mrpro-utils-filters-repeat" title="Link to this heading">#</a></h1>
-<dl class="py function">
-<dt class="sig sig-object py" id="mrpro.utils.filters.repeat">
-<span class="sig-prename descclassname"><span class="pre">mrpro.utils.filters.</span></span><span class="sig-name descname"><span class="pre">repeat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">axes_lengths</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/einops/einops.html#repeat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.utils.filters.repeat" title="Link to this definition">#</a></dt>
-<dd><p>einops.repeat allows reordering elements and repeating them in arbitrary combinations.
-This operation includes functionality of repeat, tile, broadcast functions.</p>
-<p>Examples for repeat operation:</p>
-<p><a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>python
-# a grayscale image (of shape height x width)
-&gt;&gt;&gt; image = np.random.randn(30, 40)</p>
-<p># change it to RGB format by repeating in each channel
-&gt;&gt;&gt; repeat(image, ‘h w -&gt; h w c’, c=3).shape
-(30, 40, 3)</p>
-<p># repeat image 2 times along height (vertical axis)
-&gt;&gt;&gt; repeat(image, ‘h w -&gt; (repeat h) w’, repeat=2).shape
-(60, 40)</p>
-<p># repeat image 2 time along height and 3 times along width
-&gt;&gt;&gt; repeat(image, ‘h w -&gt; (h2 h) (w3 w)’, h2=2, w3=3).shape
-(60, 120)</p>
-<p># convert each pixel to a small square 2x2. Upsample image by 2x
-&gt;&gt;&gt; repeat(image, ‘h w -&gt; (h h2) (w w2)’, h2=2, w2=2).shape
-(60, 80)</p>
-<p># pixelate image first by downsampling by 2x, then upsampling
-&gt;&gt;&gt; downsampled = reduce(image, ‘(h h2) (w w2) -&gt; h w’, ‘mean’, h2=2, w2=2)
-&gt;&gt;&gt; repeat(downsampled, ‘h w -&gt; (h h2) (w w2)’, h2=2, w2=2).shape
-(30, 40)</p>
-<p><a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
-<p>When composing axes, C-order enumeration used (consecutive elements have different last axis)
-Find more examples in einops tutorial.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>tensor</strong> – tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch).
-list of tensors is also accepted, those should be of the same type and shape</p></li>
-<li><p><strong>pattern</strong> – string, rearrangement pattern</p></li>
-<li><p><strong>axes_lengths</strong> – any additional specifications for dimensions</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Tensor of the same type as input. If possible, a view to the original tensor is returned.</p>
-</dd>
-</dl>
-</dd></dl>
-
+  <section id="module-mrpro.utils.sliding_window">
+<span id="mrpro-utils-sliding-window"></span><h1>mrpro.utils.sliding_window<a class="headerlink" href="#module-mrpro.utils.sliding_window" title="Link to this heading">#</a></h1>
+<p>Sliding window view.</p>
+<p class="rubric">Functions</p>
+<table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.utils.sliding_window.sliding_window.html#mrpro.utils.sliding_window.sliding_window" title="mrpro.utils.sliding_window.sliding_window"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sliding_window</span></code></a>(x, window_shape[, axis, strides])</p></td>
+<td><p>Sliding window view into the tensor x.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Classes</p>
+<table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.utils.sliding_window.Sequence.html#mrpro.utils.sliding_window.Sequence" title="mrpro.utils.sliding_window.Sequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sequence</span></code></a>()</p></td>
+<td><p>All the operations on a read-only sequence.</p></td>
+</tr>
+</tbody>
+</table>
 </section>
 
 
@@ -538,20 +515,20 @@ list of tensors is also accepted, those should be of the same type and shape</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="mrpro.utils.filters.html"
+       href="mrpro.utils.filters.SpatialDimension.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">mrpro.utils.filters</p>
+        <p class="prev-next-title">mrpro.utils.filters.SpatialDimension</p>
       </div>
     </a>
     <a class="right-next"
-       href="mrpro.utils.filters.spatial_uniform_filter_3d.html"
+       href="mrpro.utils.sliding_window.sliding_window.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">mrpro.utils.filters.spatial_uniform_filter_3d</p>
+        <p class="prev-next-title">mrpro.utils.sliding_window.sliding_window</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -566,21 +543,9 @@ list of tensors is also accepted, those should be of the same type and shape</p>
 
 
   <div class="sidebar-secondary-item">
-<div
-    id="pst-page-navigation-heading-2"
-    class="page-toc tocsection onthispage">
-    <i class="fa-solid fa-list"></i> On this page
-  </div>
-  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
-    <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.utils.filters.repeat"><code class="docutils literal notranslate"><span class="pre">repeat()</span></code></a></li>
-</ul>
-  </nav></div>
-
-  <div class="sidebar-secondary-item">
 
   <div class="tocsection sourcelink">
-    <a href="../_sources/_autosummary/mrpro.utils.filters.repeat.rst.txt">
+    <a href="../_sources/_autosummary/mrpro.utils.sliding_window.rst.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>

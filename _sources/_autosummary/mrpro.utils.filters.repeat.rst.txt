@@ -1,6 +1,0 @@
-mrpro.utils.filters.repeat
-==========================
-
-.. currentmodule:: mrpro.utils.filters
-
-.. autofunction:: repeat

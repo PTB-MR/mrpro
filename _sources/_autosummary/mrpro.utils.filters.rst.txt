@@ -14,8 +14,10 @@ mrpro.utils.filters
    .. autosummary::
       :toctree:
    
-      repeat
-      spatial_uniform_filter_3d
+      ceil
+      gaussian_filter
+      uniform_filter
+      uniform_filter_3d
    
    
 
@@ -27,6 +29,7 @@ mrpro.utils.filters
       :toctree:
       :template: class_template.rst
    
+      Sequence
       SpatialDimension
    
    

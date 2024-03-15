@@ -1,0 +1,6 @@
+mrpro.utils.filters.ceil
+========================
+
+.. currentmodule:: mrpro.utils.filters
+
+.. autofunction:: ceil

@@ -42,7 +42,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/mrpro.utils.filters';</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="mrpro.utils.filters.repeat" href="mrpro.utils.filters.repeat.html" />
+    <link rel="next" title="mrpro.utils.filters.ceil" href="mrpro.utils.filters.ceil.html" />
     <link rel="prev" title="mrpro.utils.zero_pad_or_crop" href="mrpro.utils.zero_pad_or_crop.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -408,9 +408,17 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.split_idx.html">mrpro.utils.split_idx</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.utils.zero_pad_or_crop.html">mrpro.utils.zero_pad_or_crop</a></li>
 <li class="toctree-l2 current active has-children"><a class="current reference internal" href="#">mrpro.utils.filters</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-6"><i class="fa-solid fa-chevron-down"></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.repeat.html">mrpro.utils.filters.repeat</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.spatial_uniform_filter_3d.html">mrpro.utils.filters.spatial_uniform_filter_3d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.ceil.html">mrpro.utils.filters.ceil</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.gaussian_filter.html">mrpro.utils.filters.gaussian_filter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.uniform_filter.html">mrpro.utils.filters.uniform_filter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.uniform_filter_3d.html">mrpro.utils.filters.uniform_filter_3d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.Sequence.html">mrpro.utils.filters.Sequence</a></li>
 <li class="toctree-l3"><a class="reference internal" href="mrpro.utils.filters.SpatialDimension.html">mrpro.utils.filters.SpatialDimension</a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="mrpro.utils.sliding_window.html">mrpro.utils.sliding_window</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-7"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.sliding_window.sliding_window.html">mrpro.utils.sliding_window.sliding_window</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.utils.sliding_window.Sequence.html">mrpro.utils.sliding_window.Sequence</a></li>
 </ul>
 </li>
 </ul>
@@ -481,10 +489,16 @@ document.write(`
 <p class="rubric">Functions</p>
 <table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.utils.filters.repeat.html#mrpro.utils.filters.repeat" title="mrpro.utils.filters.repeat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">repeat</span></code></a>(tensor, pattern, **axes_lengths)</p></td>
-<td><p>einops.repeat allows reordering elements and repeating them in arbitrary combinations.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.utils.filters.ceil.html#mrpro.utils.filters.ceil" title="mrpro.utils.filters.ceil"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ceil</span></code></a>(x, /)</p></td>
+<td><p>Return the ceiling of x as an Integral.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="mrpro.utils.filters.spatial_uniform_filter_3d.html#mrpro.utils.filters.spatial_uniform_filter_3d" title="mrpro.utils.filters.spatial_uniform_filter_3d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">spatial_uniform_filter_3d</span></code></a>(data, filter_width)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.utils.filters.gaussian_filter.html#mrpro.utils.filters.gaussian_filter" title="mrpro.utils.filters.gaussian_filter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gaussian_filter</span></code></a>(x, sigmas[, axis, truncate])</p></td>
+<td><p>Apply a and-Gaussian filter.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.utils.filters.uniform_filter.html#mrpro.utils.filters.uniform_filter" title="mrpro.utils.filters.uniform_filter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">uniform_filter</span></code></a>(x, width[, axis])</p></td>
+<td><p>Apply a and-uniform filter.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.utils.filters.uniform_filter_3d.html#mrpro.utils.filters.uniform_filter_3d" title="mrpro.utils.filters.uniform_filter_3d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">uniform_filter_3d</span></code></a>(data, filter_width)</p></td>
 <td><p>Spatial smoothing using convolution with box function.</p></td>
 </tr>
 </tbody>
@@ -492,7 +506,10 @@ document.write(`
 <p class="rubric">Classes</p>
 <table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.utils.filters.SpatialDimension.html#mrpro.utils.filters.SpatialDimension" title="mrpro.utils.filters.SpatialDimension"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpatialDimension</span></code></a>(z, y, x)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.utils.filters.Sequence.html#mrpro.utils.filters.Sequence" title="mrpro.utils.filters.Sequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sequence</span></code></a>()</p></td>
+<td><p>All the operations on a read-only sequence.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.utils.filters.SpatialDimension.html#mrpro.utils.filters.SpatialDimension" title="mrpro.utils.filters.SpatialDimension"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpatialDimension</span></code></a>(z, y, x)</p></td>
 <td><p>Spatial dataclass of float/int/tensors (z, y, x).</p></td>
 </tr>
 </tbody>
@@ -519,11 +536,11 @@ document.write(`
       </div>
     </a>
     <a class="right-next"
-       href="mrpro.utils.filters.repeat.html"
+       href="mrpro.utils.filters.ceil.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">mrpro.utils.filters.repeat</p>
+        <p class="prev-next-title">mrpro.utils.filters.ceil</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

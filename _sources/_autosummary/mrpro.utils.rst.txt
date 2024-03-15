@@ -40,4 +40,5 @@
    :recursive:
 
    mrpro.utils.filters
+   mrpro.utils.sliding_window
 

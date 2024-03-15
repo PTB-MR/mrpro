@@ -426,7 +426,7 @@ document.write(`
 <span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">IData</span>
 <span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">QData</span>
 <span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">SpatialDimension</span>
-<span class="kn">from</span> <span class="nn">mrpro.utils.filters</span> <span class="kn">import</span> <span class="n">spatial_uniform_filter_3d</span>
+<span class="kn">from</span> <span class="nn">mrpro.utils.filters</span> <span class="kn">import</span> <span class="n">uniform_filter_3d</span>
 
 
 <div class="viewcode-block" id="CsmData">
@@ -460,7 +460,7 @@ document.write(`
         <span class="n">coil_cov</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;azyx,bzyx-&gt;abzyx&#39;</span><span class="p">,</span> <span class="n">coil_images</span><span class="p">,</span> <span class="n">coil_images</span><span class="o">.</span><span class="n">conj</span><span class="p">())</span>
 
         <span class="c1"># Smooth the covariance along y-x for 2D and z-y-x for 3D data</span>
-        <span class="n">coil_cov</span> <span class="o">=</span> <span class="n">spatial_uniform_filter_3d</span><span class="p">(</span><span class="n">coil_cov</span><span class="p">,</span> <span class="n">filter_width</span><span class="o">=</span><span class="n">smoothing_width</span><span class="p">)</span>
+        <span class="n">coil_cov</span> <span class="o">=</span> <span class="n">uniform_filter_3d</span><span class="p">(</span><span class="n">coil_cov</span><span class="p">,</span> <span class="n">filter_width</span><span class="o">=</span><span class="n">smoothing_width</span><span class="p">)</span>
 
         <span class="c1"># At each point in the image, find the dominant eigenvector</span>
         <span class="c1"># of the signal covariance matrix using the power method</span>
