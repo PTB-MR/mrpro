@@ -30,12 +30,15 @@ def uniform_filter_3d(
 ) -> torch.Tensor:
     """Spatial smoothing using convolution with box function.
 
+    Filters along the last three dimensions of the data tensor.
+    
     Parameters
     ----------
     data
         Data to be smoothed in the shape (... z y x)
     filter_width
-        Width of 3D the filter as SpatialDimension(z, y, x) or tuple(z, y, x).
+        Width of the filter as SpatialDimension(z, y, x) or tuple(z, y, x).
+        If a single integer is supplied, it is used as the width along z, y, and x.
         The filter width is clipped to the data shape.
     """
     match filter_width:
