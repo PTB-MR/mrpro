@@ -89,8 +89,7 @@ def cg(
     # to avoid the computation of the root for the norm)
     tolerance_squared = tolerance**2
 
-    # dummy value the old squared norm of the residual;
-    # #only required for initialization
+    # dummy value. new value will be set in loop before first usage
     residual_norm_squared_previous = None
 
     for iteration in range(max_iterations):
