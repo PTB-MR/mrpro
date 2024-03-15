@@ -99,7 +99,7 @@ def test_compare_cg_to_scipy(system):
     # create operator, right-hand side and ground-truth data
     operator, right_hand_side, _ = system
 
-    # generate invalid initial value
+    # generate initial value
     initial_value = torch.zeros_like(right_hand_side)
 
     # if batchsize>1, construct H = diag(H1,...,H_batchsize)
