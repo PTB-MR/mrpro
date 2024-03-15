@@ -35,7 +35,7 @@ class EinsumOp(LinearOperator):
       of N vectors x1, x2, ..., xN. Then, the operation defined by
         A @ x := diag(A, A, ..., A) * [x1, x2, ..., xN]^T = [A*x1, A*x2, ..., A*xN]^T
       can be implemented by the einsum rule
-        "...ij,j->...i"
+        "ij,...j->...i"
 
     - matrix-vector multiplication of a matrix A consisting of N different matrices
       A1, A2, ... AN with one vector x. Then, the operation defined by
@@ -48,7 +48,7 @@ class EinsumOp(LinearOperator):
       of N vectors x1, x2, ..., xN. Then, the operation defined by
         A @ x: = diag(A1, A2,..., AN) * [x1, x2, ..., xN]^T
       can be implemented by the einsum rule
-        "...ij,j->...i""...ij,...j->...i"
+        "...ij,...j->...i"
       This is the default behaviour of the operator.
     """
 
