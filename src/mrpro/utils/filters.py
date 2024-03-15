@@ -31,7 +31,7 @@ def uniform_filter_3d(
     """Spatial smoothing using convolution with box function.
 
     Filters along the last three dimensions of the data tensor.
-    
+
     Parameters
     ----------
     data
