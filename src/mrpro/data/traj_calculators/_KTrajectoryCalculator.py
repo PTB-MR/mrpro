@@ -81,8 +81,8 @@ class DummyTrajectory(KTrajectoryCalculator):
     Shape will fit to all data. Only used as dummy for testing.
     """
 
-    def __call__(self, header: KHeader) -> KTrajectory:
-        """Calculate dummy trajectory for given KHeader."""
-        kx = torch.zeros(1, 1, 1, header.encoding_limits.k0.length)
+    def __call__(self, header: KHeader) -> KTrajectory:  # noqa: ARG002
+        """Calculate dummy trajectory."""
+        kx = torch.zeros(1, 1, 1, 1)
         ky = kz = torch.zeros(1, 1, 1, 1)
         return KTrajectory(kz, ky, kx)
