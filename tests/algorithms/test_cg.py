@@ -15,7 +15,7 @@
 import pytest
 import scipy
 import torch
-from mrpro.algorithms import conjugate_gradient
+from mrpro.algorithms import cg
 from mrpro.operators import EinsumOp
 from scipy.sparse.linalg import cg as cg_scp
 from tests import RandomGenerator
@@ -70,8 +70,8 @@ def test_cg_convergence(system):
     # create operator, right-hand side and ground-truth data
     operator, right_hand_side, solution = system
 
-    starting_value = torch.ones_like(solution)
-    cg_solution = conjugate_gradient(operator, right_hand_side, starting_value=starting_value, max_iterations=256)
+    initial_value = torch.ones_like(solution)
+    cg_solution = cg(operator, right_hand_side, initial_value=initial_value, max_iterations=256)
 
     # test if solution is accurate
     torch.testing.assert_close(cg_solution, solution, rtol=5e-3, atol=5e-3)
@@ -88,21 +88,22 @@ def test_cg_stopping_after_one_iteration(system):
         pytest.fail('CG did immediately not exit')
 
     # the test should fail if we reach the callback
-    xcg_one_iteration = conjugate_gradient(
-        operator, right_hand_side, starting_value=solution, max_iterations=10, tolerance=1e-4, callback=callback
+    xcg_one_iteration = cg(
+        operator, right_hand_side, initial_value=solution, max_iterations=10, tolerance=1e-4, callback=callback
     )
     assert (xcg_one_iteration == solution).all()
 
 
-def test_implementation(system):
+def test_compare_cg_to_scipy(system):
     """Test if our implementation is close to the one of scipy."""
     # create operator, right-hand side and ground-truth data
     operator, right_hand_side, _ = system
 
     # generate invalid initial value
-    starting_value = torch.zeros_like(right_hand_side)
+    initial_value = torch.zeros_like(right_hand_side)
 
-    # if batchsize>1, construct H = diag(H1,...,H_batchsize) and b=[b1,...,b_batchsize]^T, otherwise just take the matrix
+    # if batchsize>1, construct H = diag(H1,...,H_batchsize)
+    # and b=[b1,...,b_batchsize]^T, otherwise just take the matrix
     matrix_np = scipy.linalg.block_diag(*operator.matrix.numpy())
 
     # choose zero tolerance to avoid exiting the for loop in the cg
@@ -114,19 +115,19 @@ def test_implementation(system):
         (xcg_scp, _) = cg_scp(
             matrix_np,
             right_hand_side.flatten().numpy(),
-            x0=starting_value.flatten().numpy(),
+            x0=initial_value.flatten().numpy(),
             maxiter=max_iterations,
             atol=tolerance,
         )
-        cg_solution_scp = xcg_scp.reshape(right_hand_side.shape)
-        cg_solution_torch = conjugate_gradient(
+        cg_solution_scipy = xcg_scp.reshape(right_hand_side.shape)
+        cg_solution_torch = cg(
             operator,
             right_hand_side,
-            starting_value=starting_value,
+            initial_value=initial_value,
             max_iterations=max_iterations,
             tolerance=tolerance,
         )
-        torch.testing.assert_close(cg_solution_torch, torch.tensor(cg_solution_scp), atol=1e-5, rtol=1e-5)
+        torch.testing.assert_close(cg_solution_torch, torch.tensor(cg_solution_scipy), atol=1e-5, rtol=1e-5)
 
 
 def test_invalid_shapes(system):
@@ -134,9 +135,23 @@ def test_invalid_shapes(system):
     # create operator, right-hand side and ground-truth data
     h_operator, right_hand_side, _ = system
 
-    # generate invalid initial starting point
-    starting_value = torch.zeros(
+    # generate invalid initial point due to shape mismatch of
+    # right_hand_side and input
+    initial_value = torch.zeros(
         h_operator.matrix.shape[-1] + 1,
     )
     with pytest.raises(ValueError, match='match'):
-        _ = conjugate_gradient(h_operator, right_hand_side, starting_value=starting_value, max_iterations=10)
+        cg(h_operator, right_hand_side, initial_value=initial_value, max_iterations=10)
+
+
+def test_callback(system):
+    """Test if the callback function is called if a callback function is set."""
+    # create operator, right-hand side
+    h_operator, right_hand_side, _ = system
+
+    # callback function; if the function is called during the iterations, the
+    # test is successful
+    def callback(solution):
+        assert True
+
+    cg(h_operator, right_hand_side, callback=callback)

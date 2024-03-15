@@ -19,10 +19,10 @@ import torch
 from mrpro.operators import LinearOperator
 
 
-def conjugate_gradient(
+def cg(
     operator: LinearOperator,
     right_hand_side: torch.Tensor,
-    starting_value: torch.Tensor | None = None,
+    initial_value: torch.Tensor | None = None,
     max_iterations: int = 128,
     tolerance: float = 1e-4,
     callback: Callable | None = None,
@@ -32,16 +32,17 @@ def conjugate_gradient(
     Thereby, H is a linear self-adjoint operator, b is the right-hand-side
     of the system and x is the sought solution.
 
-    Note that this implementation allows for simultaneously solving a batch of B problems
+    Note that this implementation allows for simultaneously solving a batch of N problems
     of the form
-        H_i x_i = b_i,      i=1,...,B.
+        H_i x_i = b_i,      i=1,...,N.
     Thereby, the underlying assumption is that the considered problem is H x = b with
-        H:= diag(H_1, ..., H_B), b:= [b_1, ..., b_B]^T.
+        H:= diag(H_1, ..., H_N), b:= [b_1, ..., b_N]^T.
     Thus, if all H_i are self-adjoint, so is H and the CG can be applied.
     Note however, that the accuracy of the obtained solutions might vary among the different
     problems.
+    Note also that we don't test if the input operator is self-adjoint or not.
 
-    Also, note that if the condition of H is very large, a small residual does not necessarily
+    Further, note that if the condition of H is very large, a small residual does not necessarily
     imply that the solution is accurate.
 
     Parameters
@@ -50,12 +51,13 @@ def conjugate_gradient(
         self-adjoint operator (named H above)
     right_hand_side
         right-hand-side of the system (named b above)
-    starting_value, optional
-        starting value of the iteration; if None, it will be set to b
+    initial_value, optional
+        initial value of the algorithm; if None, it will be set to right_hand_side
     max_iterations, optional
         maximal number of iterations
     tolerance, optional
-        tolerance for the residual
+        tolerance for the residual; if set to zero, the maximal number of iterations
+        is the only stopping criterion used to stop the cg
     callback, optional
         user-provided function to be called at each iteration
 
@@ -63,20 +65,20 @@ def conjugate_gradient(
     -------
         an approximate solution of the linear system Hx=b
     """
-    if starting_value is not None and (starting_value.shape != right_hand_side.shape):
+    if initial_value is not None and (initial_value.shape != right_hand_side.shape):
         raise ValueError(
             'Shapes of starting_value and right_hand_side must match,'
-            f'got {starting_value.shape, right_hand_side.shape}'
+            f'got {initial_value.shape, right_hand_side.shape}'
         )
 
     # initial residual
-    residual = right_hand_side - operator(starting_value)[0] if starting_value is not None else right_hand_side.clone()
+    residual = right_hand_side - operator(initial_value)[0] if initial_value is not None else right_hand_side.clone()
 
     # initialize conjugate vector
     conjugate_vector = residual.clone()
 
     # assign starting value to the solution
-    solution = starting_value.clone() if starting_value is not None else right_hand_side.clone()
+    solution = initial_value.clone() if initial_value is not None else right_hand_side.clone()
 
     # for the case where the residual is exactly zero
     if torch.vdot(residual.flatten(), residual.flatten()) == 0:
@@ -84,35 +86,35 @@ def conjugate_gradient(
 
     # squared tolerance;
     # (we will check ||residual||^2 < tolerance^2 instead of ||residual|| < tol
-    # #to avoid the computation of the root for the norm)
+    # to avoid the computation of the root for the norm)
     tolerance_squared = tolerance**2
 
     # dummy value the old squared norm of the residual;
     # #only required for initialization
-    norm_squared_residual = None
+    residual_norm_squared = None
 
-    for i in range(max_iterations):
+    for iteration in range(max_iterations):
         # calculate the square norm of the residual
         residual_flat = residual.flatten()
-        norm_squared_residual_new = torch.vdot(residual_flat, residual_flat).real
+        residual_norm_squared_new = torch.vdot(residual_flat, residual_flat).real
 
         # check if the solution is already accurate enough
-        if tolerance != 0 and (norm_squared_residual_new < tolerance_squared):
+        if tolerance != 0 and (residual_norm_squared_new < tolerance_squared):
             return solution
 
-        if i > 0:
-            beta = norm_squared_residual_new / norm_squared_residual
+        if iteration > 0:
+            beta = residual_norm_squared_new / residual_norm_squared
             conjugate_vector = residual + beta * conjugate_vector
 
         # update estimates of the solution and the residual
         (operator_conjugate_vector,) = operator(conjugate_vector)
-        alpha = norm_squared_residual_new / (
+        alpha = residual_norm_squared_new / (
             torch.vdot(conjugate_vector.flatten(), operator_conjugate_vector.flatten())
         )
         solution += alpha * conjugate_vector
         residual -= alpha * operator_conjugate_vector
 
-        norm_squared_residual = norm_squared_residual_new
+        residual_norm_squared = residual_norm_squared_new
 
         if callback is not None:
             callback(solution)
