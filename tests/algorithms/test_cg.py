@@ -40,7 +40,7 @@ def system(request):
     # if batchsize=1, it corresponds to one linear system; for batchsize>1, multiple systems
     # are considered simultaneously
     matrix_shape: tuple[int, int, int] = (batchsize, vectorsize, vectorsize)
-    vector_shape: tuple[int, int, int] = (batchsize, vectorsize)
+    vector_shape: tuple[int, int] = (batchsize, vectorsize)
 
     if complex_valued:
         matrix = random_generator.complex64_tensor(size=matrix_shape, high=1.0)
