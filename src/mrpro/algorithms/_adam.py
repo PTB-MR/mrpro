@@ -3,14 +3,16 @@
 # Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at:
+#
 #       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 from collections.abc import Sequence
 
@@ -46,25 +48,25 @@ def adam(
         leave the initial values untouched.
     max_iter
         maximum number of iterations
-    lr, optional
+    lr
         learning rate, by default 1e-3
-    betas, optional
+    betas
         coefficients used for computing running averages of gradient and its square,
         by default (0.9, 0.999)
-    eps, optional
+    eps
         term added to the denominator to improve numerical stability, by default 1e-8
-    weight_decay, optional
+    weight_decay
         weight decay (L2 penalty), by default 0
-    amsgrad, optional
+    amsgrad
         whether to use the AMSGrad variant of this algorithm from the paper
         `On the Convergence of Adam and Beyond`, by default False
-    foreach, optional
+    foreach
         whether `foreach` implementation of optimizer is used, by default None
-    maximize, optional
+    maximize
         maximize the objective with respect to the params, instead of minimizing, by default False
-    differentiable, optional
+    differentiable
         whether autograd should occur through the optimizer step. This is currently not implemented.
-    fused, optional
+    fused
         whether the fused implementation (CUDA only) is used. Currently, torch.float64, torch.float32,
         torch.float16, and torch.bfloat16 are supported., by default None
 
