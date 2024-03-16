@@ -7931,7 +7931,7 @@ a.anchor-link {
 </style>
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
-<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=ee11c2ea">
+<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=1b270455">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8087,7 +8087,7 @@ All files have been downloaded.
 
 <span class="c1"># Reconstruct average image for coil map estimation</span>
 <span class="n">fourier_op</span> <span class="o">=</span> <span class="n">FourierOp</span><span class="p">(</span>
-    <span class="n">recon_shape</span><span class="o">=</span><span class="n">kdata</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">recon_matrix</span><span class="p">,</span> <span class="n">encoding_shape</span><span class="o">=</span><span class="n">kdata</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">encoding_matrix</span><span class="p">,</span> <span class="n">traj</span><span class="o">=</span><span class="n">kdata</span><span class="o">.</span><span class="n">traj</span>
+    <span class="n">recon_matrix</span><span class="o">=</span><span class="n">kdata</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">recon_matrix</span><span class="p">,</span> <span class="n">encoding_matrix</span><span class="o">=</span><span class="n">kdata</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">encoding_matrix</span><span class="p">,</span> <span class="n">traj</span><span class="o">=</span><span class="n">kdata</span><span class="o">.</span><span class="n">traj</span>
 <span class="p">)</span>
 <span class="p">(</span><span class="n">img</span><span class="p">,)</span> <span class="o">=</span> <span class="n">fourier_op</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">data</span> <span class="o">*</span> <span class="n">dcf</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span>
 </pre></div>
@@ -8150,7 +8150,7 @@ All files have been downloaded.
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>&lt;matplotlib.image.AxesImage at 0x7950068abc50&gt;</pre>
+<pre>&lt;matplotlib.image.AxesImage at 0x7f112c866f50&gt;</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">

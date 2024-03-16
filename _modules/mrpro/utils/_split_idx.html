@@ -410,14 +410,16 @@ document.write(`
 <span class="c1"># Copyright 2023 Physikalisch-Technische Bundesanstalt</span>
 <span class="c1">#</span>
 <span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="c1">#   you may not use this file except in compliance with the License.</span>
-<span class="c1">#   You may obtain a copy of the License at</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at:</span>
+<span class="c1">#</span>
 <span class="c1">#       http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="c1">#   Unless required by applicable law or agreed to in writing, software</span>
-<span class="c1">#   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="c1">#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="c1">#   See the License for the specific language governing permissions and</span>
-<span class="c1">#   limitations under the License.</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 
@@ -433,9 +435,9 @@ document.write(`
 <span class="sd">        1D indices to be split into different blocks.</span>
 <span class="sd">    np_per_block</span>
 <span class="sd">        Number of points per block.</span>
-<span class="sd">    np_overlap, optional</span>
+<span class="sd">    np_overlap</span>
 <span class="sd">        Number of points overlapping between blocks, by default 0, i.e. no overlap between blocks</span>
-<span class="sd">    cyclic, optional</span>
+<span class="sd">    cyclic</span>
 <span class="sd">        Last block is filled up with points from the first block, e.g. due to cyclic cardiac motion, by default False</span>
 
 
