@@ -26,8 +26,9 @@ from mrpro.operators import LinearOperator
 class CartesianSamplingOp(LinearOperator):
     """Cartesian Sampling Operator.
 
-    Puts the data on a Cartesian sampled grid based on the k-space
-    trajectory.
+    Selects points on a Cartisian grid based on the the k-space trajectory.
+    Thus, the adjoint sorts the data into regular Cartesian sampled grid based on the k-space
+    trajectory. Non-acquired points are zero-filled.
     """
 
     def __init__(self, encoding_matrix: SpatialDimension[int], traj: KTrajectory) -> None:
@@ -36,46 +37,53 @@ class CartesianSamplingOp(LinearOperator):
         Parameters
         ----------
         encoding_matrix
-            dimension of the encoded k-space
+            shape of the encoded k-space.
+            Only values for directions in which the trajectory is Cartesian will be used
+            in the adjoint to determine the shape after reordering,
+            i.e., the operator's domain.
         traj
-            the k-space trajectories where the frequencies are sampled
+            the k-space trajectory describing at which frequencies data is sampled.
+            Its broadcasted shape will be used to determine the shape after sampling,
+            i.e., the operator's range
         """
         super().__init__()
-        encoding_matrix = SpatialDimension.from_xyz(encoding_matrix)
+        # the shape of the k data,
+        sorted_grid_shape = SpatialDimension.from_xyz(encoding_matrix)
 
         # Cache as these might take some time to compute
         traj_type_kzyx = traj.type_along_kzyx
         ktraj_tensor = traj.as_tensor()
 
         # If a dimension is irregular or singleton, we will not perform any reordering
-        # in it, only dimensions on a cartesian grid will be reordered.
+        # in it and the shape of data will remain.
+        # only dimensions on a cartesian grid will be reordered.
         if traj_type_kzyx[-1] == TrajType.ONGRID:  # kx
-            kx_idx = ktraj_tensor[-1, ...].to(dtype=torch.int64) + encoding_matrix.x // 2
+            kx_idx = ktraj_tensor[-1, ...].to(dtype=torch.int64) + sorted_grid_shape.x // 2
         else:
-            encoding_matrix.x = ktraj_tensor.shape[-1]
+            sorted_grid_shape.x = ktraj_tensor.shape[-1]
             kx_idx = rearrange(torch.arange(ktraj_tensor.shape[-1]), 'kx->1 1 1 kx')
 
         if traj_type_kzyx[-2] == TrajType.ONGRID:  # ky
-            ky_idx = ktraj_tensor[-2, ...].to(dtype=torch.int64) + encoding_matrix.y // 2
+            ky_idx = ktraj_tensor[-2, ...].to(dtype=torch.int64) + sorted_grid_shape.y // 2
         else:
-            encoding_matrix.y = ktraj_tensor.shape[-2]
+            sorted_grid_shape.y = ktraj_tensor.shape[-2]
             ky_idx = rearrange(torch.arange(ktraj_tensor.shape[-2]), 'ky->1 1 ky 1')
 
         if traj_type_kzyx[-3] == TrajType.ONGRID:  # kz
-            kz_idx = ktraj_tensor[-3, ...].to(dtype=torch.int64) + encoding_matrix.z // 2
+            kz_idx = ktraj_tensor[-3, ...].to(dtype=torch.int64) + sorted_grid_shape.z // 2
         else:
-            encoding_matrix.z = ktraj_tensor.shape[-3]
+            sorted_grid_shape.z = ktraj_tensor.shape[-3]
             kz_idx = rearrange(torch.arange(ktraj_tensor.shape[-3]), 'kz->1 kz 1 1')
 
         # 1D indices into a flattened tensor.
-        kidx = kz_idx * encoding_matrix.y * encoding_matrix.x + ky_idx * encoding_matrix.x + kx_idx
+        kidx = kz_idx * sorted_grid_shape.y * sorted_grid_shape.x + ky_idx * sorted_grid_shape.x + kx_idx
         kidx = rearrange(kidx, '... kz ky kx -> ... 1 (kz ky kx)')
         self.register_buffer('_fft_idx', kidx)
         # we can skip the indexing if the data is already sorted
         self._needs_indexing = not torch.all(torch.diff(kidx) == 1)
 
-        self._kshape = traj.broadcasted_shape
-        self._encoding_matrix = encoding_matrix
+        self._trajectory_shape = traj.broadcasted_shape
+        self._sorted_grid_shape = sorted_grid_shape
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Forward operator which selects acquired k-space data from k-space.
@@ -83,11 +91,12 @@ class CartesianSamplingOp(LinearOperator):
         Parameters
         ----------
         x
-            k-space with dimensions given by encoding_matrix
+            k-space, fully sampled (or zerofilled) and sorted in Cartesian dimensions
+            with shape given by encoding_matrix
 
         Returns
         -------
-            k-space data in original (i.e. acquired) dimensions
+            selected k-space data in acquired shape (as described by the trajectory)
         """
         if self._encoding_matrix != SpatialDimension(*x.shape[-3:]):
             raise ValueError('k-space data shape mismatch')
@@ -99,7 +108,7 @@ class CartesianSamplingOp(LinearOperator):
         # take_along_dim does broadcast, so no need for extending here
         x_indexed = torch.take_along_dim(x_kflat, self._fft_idx, dim=-1)
         # reshape to (... other coil, k2, k1, k0)
-        x_reshaped = x_indexed.reshape(x.shape[:-3] + self._kshape[-3:])
+        x_reshaped = x_indexed.reshape(x.shape[:-3] + self._trajectory_shape[-3:])
 
         return (x_reshaped,)
 
@@ -109,13 +118,13 @@ class CartesianSamplingOp(LinearOperator):
         Parameters
         ----------
         y
-            k-space data in original (i.e. acquired) shape
+            k-space data in acquired shape
 
         Returns
         -------
             k-space data sorted into encoding_space matrix
         """
-        if self._kshape[-3:] != y.shape[-3:]:
+        if self._trajectory_shape[-3:] != y.shape[-3:]:
             raise ValueError('k-space data shape mismatch')
 
         if not self._needs_indexing:
