@@ -27,9 +27,9 @@ class PulseqRadialTestSeq:
         ----------
         seq_filename
             target filename
-        n_x, optional
+        n_x
             number of frequency encoding points
-        n_spokes, optional
+        n_spokes
             number of spokes
         """
         seq = pypulseq.Sequence()
