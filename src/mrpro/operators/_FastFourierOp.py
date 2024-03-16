@@ -27,8 +27,8 @@ from mrpro.operators import ZeroPadOp
 class FastFourierOp(LinearOperator):
     """Fast Fourier operator class.
 
-    Applies a Fast Fourier Transformation along selection dimensions with cropping/zero-padding
-    along selected dimensions
+    Applies a Fast Fourier Transformation along selected dimensions with cropping/zero-padding
+    along these selected dimensions
 
     The transformation is done with 'ortho' normalization, i.e. the normalization constant is split between
     forward and adjoint. See https://numpy.org/doc/stable/reference/routines.fft.html for an explanation.
@@ -52,8 +52,8 @@ class FastFourierOp(LinearOperator):
         If both recon_matrix and encoding_matrix are set, the operator will perform padding/cropping before and
         after the transforms to match the shape in image space (recon_matrix) and k-shape (encoding_matrix).
         If both are set to None, no padding or cropping will be performed.
-        If these are `SpatialDimension`s, the transform dimensions must be within the last three dimensions,
-        typically corresponding to the  (k2,k1,k0) and (z,y,x) axes of KData and IData, respectively.
+        If these are SpatialDimension, the transform dimensions must be within the last three dimensions,
+        typically corresponding to the (k2,k1,k0) and (z,y,x) axes of KData and IData, respectively.
 
 
         Parameters
