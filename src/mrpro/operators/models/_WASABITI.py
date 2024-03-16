@@ -39,13 +39,13 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
             frequency offsets [Hz]
         trec
             recovery time between offsets [s]
-        tp, optional
+        tp
             RF pulse duration [s], by default 0.005
-        b1_nom, optional
+        b1_nom
             nominal B1 amplitude [µT], by default 3.75
-        gamma, optional
+        gamma
             gyromagnetic ratio [MHz/T], by default 42.5764
-        freq, optional
+        freq
             larmor frequency [MHz], by default 127.7292
         """
         super().__init__()

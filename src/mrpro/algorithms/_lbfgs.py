@@ -42,21 +42,21 @@ def lbfgs(
         Sequence (for example list) of parameters to be optimized.
         Note that these parameters will not be changed. Instead, we create a copy and
         leave the initial values untouched.
-    lr, optional
+    lr
         learning rate
-    max_iter, optional
+    max_iter
         maximal number of iterations, by default 100
-    max_eval, optional
+    max_eval
         maximal number of evaluations of f per optimization step,
         by default 100
-    tolerance_grad, optional
+    tolerance_grad
         termination tolerance on first order optimality,
         by default 1e-07
-    tolerance_change, optional
+    tolerance_change
         termination tolerance on function value/parameter changes, by default 1e-09
-    history_size, optional
+    history_size
         update history size, by default 10
-    line_search_fn, optional
+    line_search_fn
         line search algorithm, either 'strong_wolfe' or None (meaning constant step size)
         by default "strong_wolfe"
 

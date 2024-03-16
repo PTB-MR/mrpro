@@ -26,8 +26,8 @@ class FastFourierOp(LinearOperator):
     def __init__(
         self,
         dim: Sequence[int] = (-3, -2, -1),
-        recon_shape: Sequence[int] | None = None,
-        encoding_shape: Sequence[int] | None = None,
+        recon_matrix: Sequence[int] | None = None,
+        encoding_matrix: Sequence[int] | None = None,
     ) -> None:
         """Fast Fourier Operator class.
 
@@ -39,18 +39,18 @@ class FastFourierOp(LinearOperator):
 
         Parameters
         ----------
-        dim, optional
+        dim
             dim along which FFT and IFFT are applied, by default last three dimensions (-1, -2, -3)
-        encoding_shape, optional
+        encoding_matrix
             shape of encoded data
-        recon_shape, optional
+        recon_matrix
             shape of reconstructed data
         """
         super().__init__()
         self._dim = tuple(dim)
         self._pad_op: ZeroPadOp
-        if encoding_shape is not None and recon_shape is not None:
-            self._pad_op = ZeroPadOp(dim=dim, original_shape=recon_shape, padded_shape=encoding_shape)
+        if encoding_matrix is not None and recon_matrix is not None:
+            self._pad_op = ZeroPadOp(dim=dim, original_shape=recon_matrix, padded_shape=encoding_matrix)
         else:
             # No padding
             self._pad_op = ZeroPadOp(dim=(), original_shape=(), padded_shape=())

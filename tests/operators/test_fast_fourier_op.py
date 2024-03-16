@@ -47,7 +47,7 @@ def test_fast_fourier_op_forward(npoints, a):
 
 
 @pytest.mark.parametrize(
-    ('encoding_shape', 'recon_shape'),
+    ('encoding_matrix', 'recon_matrix'),
     [
         ((101, 201, 50), (13, 221, 64)),
         ((100, 200, 50), (14, 220, 64)),
@@ -55,14 +55,14 @@ def test_fast_fourier_op_forward(npoints, a):
         ((100, 200, 50), (13, 221, 64)),
     ],
 )
-def test_fast_fourier_op_adjoint(encoding_shape, recon_shape):
+def test_fast_fourier_op_adjoint(encoding_matrix, recon_matrix):
     """Test adjointness of Fast Fourier Op."""
 
     # Create test data
     generator = RandomGenerator(seed=0)
-    x = generator.complex64_tensor(recon_shape)
-    y = generator.complex64_tensor(encoding_shape)
+    x = generator.complex64_tensor(recon_matrix)
+    y = generator.complex64_tensor(encoding_matrix)
 
     # Create operator and apply
-    ff_op = FastFourierOp(recon_shape=recon_shape, encoding_shape=encoding_shape)
+    ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix)
     dotproduct_adjointness_test(ff_op, x, y)

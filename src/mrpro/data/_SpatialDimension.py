@@ -69,7 +69,7 @@ class SpatialDimension(Generic[T]):
         ----------
         data
             shape (..., 3) in the order (x,y,z)
-        conversion, optional
+        conversion
             will be called for each value to convert it, by default None
         """
         if not isinstance(data, np.ndarray | torch.Tensor):

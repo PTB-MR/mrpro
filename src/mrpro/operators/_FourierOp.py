@@ -31,8 +31,8 @@ class FourierOp(LinearOperator):
 
     def __init__(
         self,
-        recon_shape: SpatialDimension[int],
-        encoding_shape: SpatialDimension[int],
+        recon_matrix: SpatialDimension[int],
+        encoding_matrix: SpatialDimension[int],
         traj: KTrajectory,
         nufft_oversampling: float = 2.0,
         nufft_numpoints: int = 6,
@@ -42,9 +42,9 @@ class FourierOp(LinearOperator):
 
         Parameters
         ----------
-        recon_shape
+        recon_matrix
             dimension of the reconstructed image
-        encoding_shape
+        encoding_matrix
             dimension of the encoded k-space
         traj
             the k-space trajectories where the frequencies are sampled
@@ -80,8 +80,8 @@ class FourierOp(LinearOperator):
         if self._fft_dims:
             self._fast_fourier_op = FastFourierOp(
                 dim=tuple(self._fft_dims),
-                recon_shape=get_spatial_dims(recon_shape, self._fft_dims),
-                encoding_shape=get_spatial_dims(encoding_shape, self._fft_dims),
+                recon_matrix=get_spatial_dims(recon_matrix, self._fft_dims),
+                encoding_matrix=get_spatial_dims(encoding_matrix, self._fft_dims),
             )
 
         # Find dimensions which require NUFFT
@@ -98,13 +98,13 @@ class FourierOp(LinearOperator):
                     'k-space dimension, i.e. kx along k0, ky along k1 and kz along k2',
                 )
 
-            self._nufft_im_size = get_spatial_dims(recon_shape, self._nufft_dims)
+            self._nufft_im_size = get_spatial_dims(recon_matrix, self._nufft_dims)
             grid_size = [int(size * nufft_oversampling) for size in self._nufft_im_size]
             omega = [
                 k * 2 * torch.pi / ks
                 for k, ks in zip(
                     get_traj(traj, self._nufft_dims),
-                    get_spatial_dims(encoding_shape, self._nufft_dims),
+                    get_spatial_dims(encoding_matrix, self._nufft_dims),
                     strict=True,
                 )
             ]

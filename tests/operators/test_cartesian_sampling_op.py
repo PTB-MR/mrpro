@@ -39,8 +39,8 @@ def test_cart_sampling_op_data_match():
     kdata = random_generator.complex64_tensor(size=k_shape)
 
     # Create sampling operator
-    encoding_shape = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
-    sampling_op = CartesianSamplingOp(encoding_shape=encoding_shape, traj=trajectory)
+    encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
 
     # Subsample data and trajectory
     kdata_sub = kdata[:, :, ::2, ::4, ::3]
@@ -49,7 +49,7 @@ def test_cart_sampling_op_data_match():
         ky=trajectory.ky[:, :, ::4, :],
         kx=trajectory.kx[:, :, :, ::3],
     )
-    sampling_op_sub = CartesianSamplingOp(encoding_shape=encoding_shape, traj=trajectory_sub)
+    sampling_op_sub = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory_sub)
 
     # Verify that the fully-sampled sampling operator does not do anything because the data is already sorted
     assert not sampling_op._needs_indexing
@@ -110,8 +110,8 @@ def test_cart_sampling_op_fwd_adj(sampling):
         case _:
             raise NotImplementedError(f'Test {sampling} not implemented.')
 
-    encoding_shape = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
-    sampling_op = CartesianSamplingOp(encoding_shape=encoding_shape, traj=trajectory)
+    encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
 
     # Test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v
     random_generator = RandomGenerator(seed=0)
