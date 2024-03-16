@@ -98,7 +98,7 @@ class CartesianSamplingOp(LinearOperator):
         -------
             selected k-space data in acquired shape (as described by the trajectory)
         """
-        if self._encoding_matrix != SpatialDimension(*x.shape[-3:]):
+        if self._sorted_grid_shape != SpatialDimension(*x.shape[-3:]):
             raise ValueError('k-space data shape mismatch')
 
         if not self._needs_indexing:
@@ -140,7 +140,7 @@ class CartesianSamplingOp(LinearOperator):
         # is always constant zero and gradients w.r.t. src work as expected.
         y_scattered = torch.zeros(
             *broadcast_shape,
-            self._encoding_matrix.z * self._encoding_matrix.y * self._encoding_matrix.x,
+            self._sorted_grid_shape.z * self._sorted_grid_shape.y * self._sorted_grid_shape.x,
             dtype=y.dtype,
             device=y.device,
         ).scatter_(dim=-1, index=idx_expanded, src=y_kflat)
@@ -148,9 +148,9 @@ class CartesianSamplingOp(LinearOperator):
         # reshape to  ..., other, coil, k2_enc, k1_enc, k0_enc
         y_reshaped = y_scattered.reshape(
             *y.shape[:-3],
-            self._encoding_matrix.z,
-            self._encoding_matrix.y,
-            self._encoding_matrix.x,
+            self._sorted_grid_shape.z,
+            self._sorted_grid_shape.y,
+            self._sorted_grid_shape.x,
         )
 
         return (y_reshaped,)
