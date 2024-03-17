@@ -58,21 +58,18 @@ class KTrajectoryCalculator(ABC):
         ValueError
             Center sample has to be the same for each readout
         """
-        n_samples = kheader.acq_info.number_of_samples.flatten()
-        center_sample = kheader.acq_info.center_sample.flatten()
-        if len(torch.unique(n_samples)) > 1:
+        n_samples = torch.unique(kheader.acq_info.number_of_samples)
+        center_sample = kheader.acq_info.center_sample
+        if len(n_samples) > 1:
             raise ValueError('Trajectory can only be calculated if each acquisition has the same number of samples')
-        n_k0 = int(n_samples[0])
+        n_k0 = int(n_samples.item())
 
         # Data can be obtained with standard or reversed readout (e.g. bipolar readout).
-        k0 = torch.linspace(0, n_k0 - 1, n_k0, dtype=torch.float32)[None, :] - center_sample[:, None]
-        reversed_readout_idx = torch.where(kheader.acq_info.flags.flatten() & AcqFlags.ACQ_IS_REVERSE.value)[0]
-        # pytorch does not yet allow for negative indexing. torch.flip makes a copy of the data. providing a reversed
-        # index should be fastest
-        reversed_index = torch.linspace(n_k0 - 1, 0, n_k0, dtype=torch.int64)
-        k0[reversed_readout_idx, :] = k0[reversed_readout_idx[:, None], reversed_index[None, :]]
-
-        return k0.reshape(kheader.acq_info.center_sample.shape[:-1] + (n_k0,))
+        k0 = torch.linspace(0, n_k0 - 1, n_k0, dtype=torch.float32) - center_sample
+        # Data can be obtained with standard or reversed readout (e.g. bipolar readout).
+        reversed_readout_mask = (kheader.acq_info.flags[..., 0] & AcqFlags.ACQ_IS_REVERSE.value).bool()
+        k0[reversed_readout_mask, :] = torch.flip(k0[reversed_readout_mask, :], (-1,))
+        return k0
 
 
 class DummyTrajectory(KTrajectoryCalculator):
