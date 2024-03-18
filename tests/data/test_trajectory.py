@@ -50,7 +50,7 @@ def create_traj(k_shape, nkx, nky, nkz, sx, sy, sz):
         elif spacing == 'z':
             k = torch.zeros(nk)
         k_list.append(k)
-    trajectory = KTrajectory(*k_list)
+    trajectory = KTrajectory(*k_list, repeat_detection_tolerance=None)
     return trajectory
 
 

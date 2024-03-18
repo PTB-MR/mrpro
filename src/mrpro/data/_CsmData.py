@@ -3,14 +3,16 @@
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at:
+#
 #       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 from __future__ import annotations
 
@@ -19,7 +21,7 @@ import torch
 from mrpro.data import IData
 from mrpro.data import QData
 from mrpro.data import SpatialDimension
-from mrpro.utils.filters import spatial_uniform_filter_3d
+from mrpro.utils.filters import uniform_filter_3d
 
 
 class CsmData(QData):
@@ -51,7 +53,7 @@ class CsmData(QData):
         coil_cov = torch.einsum('azyx,bzyx->abzyx', coil_images, coil_images.conj())
 
         # Smooth the covariance along y-x for 2D and z-y-x for 3D data
-        coil_cov = spatial_uniform_filter_3d(coil_cov, filter_width=smoothing_width)
+        coil_cov = uniform_filter_3d(coil_cov, filter_width=smoothing_width)
 
         # At each point in the image, find the dominant eigenvector
         # of the signal covariance matrix using the power method

@@ -3,14 +3,16 @@
 # Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at:
+#
 #       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 from collections.abc import Sequence
 from typing import Literal
@@ -42,21 +44,21 @@ def lbfgs(
         Sequence (for example list) of parameters to be optimized.
         Note that these parameters will not be changed. Instead, we create a copy and
         leave the initial values untouched.
-    lr, optional
+    lr
         learning rate
-    max_iter, optional
+    max_iter
         maximal number of iterations, by default 100
-    max_eval, optional
+    max_eval
         maximal number of evaluations of f per optimization step,
         by default 100
-    tolerance_grad, optional
+    tolerance_grad
         termination tolerance on first order optimality,
         by default 1e-07
-    tolerance_change, optional
+    tolerance_change
         termination tolerance on function value/parameter changes, by default 1e-09
-    history_size, optional
+    history_size
         update history size, by default 10
-    line_search_fn, optional
+    line_search_fn
         line search algorithm, either 'strong_wolfe' or None (meaning constant step size)
         by default "strong_wolfe"
 

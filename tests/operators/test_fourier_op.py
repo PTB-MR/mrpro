@@ -40,9 +40,9 @@ def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, 
     img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz)
 
     # create operator
-    recon_shape = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
-    encoding_shape = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
-    fourier_op = FourierOp(recon_shape=recon_shape, encoding_shape=encoding_shape, traj=trajectory)
+    recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
+    encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
 
     # apply forward operator
     (kdata,) = fourier_op(img)
@@ -77,7 +77,7 @@ def test_fourier_not_supported_traj(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz
     img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz)
 
     # create operator
-    recon_shape = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
-    encoding_shape = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
+    encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
     with pytest.raises(NotImplementedError, match='Cartesian FFT dims need to be aligned'):
-        FourierOp(recon_shape=recon_shape, encoding_shape=encoding_shape, traj=trajectory)
+        FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
