@@ -23,7 +23,6 @@ from typing import Protocol
 
 import h5py
 import ismrmrd
-import mrpro.operators  # noqa:F401 # keep unused import. used for circular import.
 import numpy as np
 import torch
 from einops import rearrange
