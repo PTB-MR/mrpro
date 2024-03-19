@@ -73,12 +73,11 @@ jobs:
       - name: Check for pytest.xml
         run: |
           if [ -f pytest.xml ]; then
-            echo "Coverage file exists"
+            echo "pytest.xml file found. Continuing..."
           else
-            echo "Coverage file does not exist. Please check the 'Run PyTest' step."
+            echo "pytest.xml file not found. Please check previous 'Run PyTest' section for errors."
             exit 1
           fi
-        shell: bash
 
       - name: Pytest coverage comment
         id: coverageComment
