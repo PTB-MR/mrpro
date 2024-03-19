@@ -135,7 +135,13 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin):
 
         # Fill k0 limits if they were set to zero / not set in the header
         if kheader.encoding_limits.k0.length == 1:
-            kheader.encoding_limits.k0 = Limits(0, kdata.shape[-1] - 1, kdata.shape[-1] // 2)
+            # The encodig limits should describe the encoded space of all readout lines. If we have two readouts with
+            # (number_of_samples, center_sample) of (100, 20) (e.g. partial Fourier in the negative k0 direction) and
+            # (100, 80) (e.g. partial Fourier in the positive k0 direction) then this should lead to encoding limits of
+            # [min=0, max=159, center=80]
+            max_center_sample = int(torch.max(kheader.acq_info.center_sample))
+            max_pos_k0_extend = int(torch.max(kheader.acq_info.number_of_samples - kheader.acq_info.center_sample))
+            kheader.encoding_limits.k0 = Limits(0, max_center_sample + max_pos_k0_extend - 1, max_center_sample)
 
         # Sort kdata and acq_info into ("all other dim", coils, k2, k1, k0) / ("all other dim", k2, k1, acq_info_dims)
         # Fist, ensure each the non k1/k2 dimensions covers the same number of k1 and k2 points

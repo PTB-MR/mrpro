@@ -15,7 +15,9 @@
 import numpy as np
 import pytest
 import torch
+from einops import repeat
 from mrpro.data import KData
+from mrpro.data.enums import AcqFlags
 from mrpro.data.traj_calculators import KTrajectoryCartesian
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.data.traj_calculators import KTrajectoryPulseq
@@ -39,8 +41,9 @@ def valid_rad2d_kheader(monkeypatch, random_kheader):
     idx_k1 = torch.arange(n_k1, dtype=torch.int32)[None, None, ...]
 
     # Set parameters for radial 2D trajectory
-    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + n_k0)
-    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + n_k0 // 2)
+    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1)[..., None] + n_k0)
+    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1)[..., None] + n_k0 // 2)
+    monkeypatch.setattr(random_kheader.acq_info, 'flags', torch.zeros_like(idx_k1)[..., None])
     monkeypatch.setattr(random_kheader.acq_info.idx, 'k1', idx_k1)
 
     # This is only needed for Pulseq trajectory calculation
@@ -90,8 +93,9 @@ def valid_rpe_kheader(monkeypatch, random_kheader):
     idx_k2 = torch.reshape(idx_k2, (1, n_k2, n_k1))
 
     # Set parameters for RPE trajectory
-    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + n_k0)
-    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + n_k0 // 2)
+    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1)[..., None] + n_k0)
+    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1)[..., None] + n_k0 // 2)
+    monkeypatch.setattr(random_kheader.acq_info, 'flags', torch.zeros_like(idx_k1)[..., None])
     monkeypatch.setattr(random_kheader.acq_info.idx, 'k1', idx_k1)
     monkeypatch.setattr(random_kheader.acq_info.idx, 'k2', idx_k2)
     monkeypatch.setattr(random_kheader.encoding_limits.k1, 'center', int(n_k1 // 2))
@@ -165,17 +169,19 @@ def valid_cartesian_kheader(monkeypatch, random_kheader):
     n_k0 = 200
     n_k1 = 20
     n_k2 = 10
+    n_other = 2
 
     # List of k1 and k2 indices in the shape (other, k2, k1)
     k1 = torch.linspace(0, n_k1 - 1, n_k1, dtype=torch.int32)
     k2 = torch.linspace(0, n_k2 - 1, n_k2, dtype=torch.int32)
     idx_k1, idx_k2 = torch.meshgrid(k1, k2, indexing='xy')
-    idx_k1 = torch.reshape(idx_k1, (1, n_k2, n_k1))
-    idx_k2 = torch.reshape(idx_k2, (1, n_k2, n_k1))
+    idx_k1 = repeat(torch.reshape(idx_k1, (n_k2, n_k1)), 'k2 k1->other k2 k1', other=n_other)
+    idx_k2 = repeat(torch.reshape(idx_k2, (n_k2, n_k1)), 'k2 k1->other k2 k1', other=n_other)
 
     # Set parameters for Cartesian trajectory
-    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + n_k0)
-    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + n_k0 // 2)
+    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1)[..., None] + n_k0)
+    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1)[..., None] + n_k0 // 2)
+    monkeypatch.setattr(random_kheader.acq_info, 'flags', torch.zeros_like(idx_k1)[..., None])
     monkeypatch.setattr(random_kheader.acq_info.idx, 'k1', idx_k1)
     monkeypatch.setattr(random_kheader.acq_info.idx, 'k2', idx_k2)
     monkeypatch.setattr(random_kheader.encoding_limits.k1, 'center', int(n_k1 // 2))
@@ -190,7 +196,7 @@ def cartesian_traj_shape(valid_cartesian_kheader):
     n_k0 = valid_cartesian_kheader.acq_info.number_of_samples[0, 0, 0]
     n_k1 = valid_cartesian_kheader.acq_info.idx.k1.shape[2]
     n_k2 = valid_cartesian_kheader.acq_info.idx.k1.shape[1]
-    n_other = 1
+    n_other = 1  # trajectory along other is the same
     return (torch.Size([n_other, n_k2, 1, 1]), torch.Size([n_other, 1, n_k1, 1]), torch.Size([n_other, 1, 1, n_k0]))
 
 
@@ -202,6 +208,23 @@ def test_KTrajectoryCartesian(valid_cartesian_kheader):
     assert trajectory.kz.shape == valid_shape[0]
     assert trajectory.ky.shape == valid_shape[1]
     assert trajectory.kx.shape == valid_shape[2]
+
+
+@pytest.fixture()
+def valid_cartesian_kheader_bipolar(monkeypatch, valid_cartesian_kheader):
+    """Set readout of other==1 to reversed."""
+    acq_info_flags = valid_cartesian_kheader.acq_info.flags
+    acq_info_flags[1, ...] = AcqFlags.ACQ_IS_REVERSE.value
+    monkeypatch.setattr(valid_cartesian_kheader.acq_info, 'flags', acq_info_flags)
+    return valid_cartesian_kheader
+
+
+def test_KTrajectoryCartesian_bipolar(valid_cartesian_kheader_bipolar):
+    """Calculate Cartesian trajectory with bipolar readout."""
+    trajectory_calculator = KTrajectoryCartesian()
+    trajectory = trajectory_calculator(valid_cartesian_kheader_bipolar)
+    # Verify that the readout for the second part of the bipolar readout is reversed
+    torch.testing.assert_close(trajectory.kx[0, ...], torch.flip(trajectory.kx[1, ...], dims=(-1,)))
 
 
 @pytest.fixture(scope='session')
