@@ -68,8 +68,16 @@ jobs:
 
       - name: Run PyTest
         run: |
-          set -o pipefail
           pytest -n 4 -m "not cuda" --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
+
+      - name: Check for pytest-coverage.txt
+        run: |
+          if [ -f pytest-coverage.txt ]; then
+            echo "Coverage file exists"
+          else
+            echo "Coverage file does not exist. Please check the 'Run PyTest' step."
+            exit 1
+          fi
         shell: bash
 
       - name: Pytest coverage comment
