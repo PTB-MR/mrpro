@@ -55,8 +55,6 @@ class KTrajectoryCalculator(ABC):
         ------
         ValueError
             Number of samples have to be the same for each readout
-        ValueError
-            Center sample has to be the same for each readout
         """
         n_samples = torch.unique(kheader.acq_info.number_of_samples)
         center_sample = kheader.acq_info.center_sample
