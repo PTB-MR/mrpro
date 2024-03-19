@@ -537,7 +537,7 @@ document.write(`
 <span class="sd">            radial phase encoding trajectory for given KHeader</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Trajectory along readout</span>
-        <span class="n">kfreq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kfreq</span><span class="p">(</span><span class="n">kheader</span><span class="p">)</span>
+        <span class="n">kx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kfreq</span><span class="p">(</span><span class="n">kheader</span><span class="p">)</span>
 
         <span class="c1"># Angles of phase encoding lines</span>
         <span class="n">kang</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kang</span><span class="p">(</span><span class="n">kheader</span><span class="p">)</span>
@@ -547,7 +547,6 @@ document.write(`
 
         <span class="n">kz</span> <span class="o">=</span> <span class="p">(</span><span class="n">krad</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">kang</span><span class="p">))[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
         <span class="n">ky</span> <span class="o">=</span> <span class="p">(</span><span class="n">krad</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">kang</span><span class="p">))[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
-        <span class="n">kx</span> <span class="o">=</span> <span class="n">kfreq</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
         <span class="k">return</span> <span class="n">KTrajectory</span><span class="p">(</span><span class="n">kz</span><span class="p">,</span> <span class="n">ky</span><span class="p">,</span> <span class="n">kx</span><span class="p">)</span></div>
 
 </pre></div>
