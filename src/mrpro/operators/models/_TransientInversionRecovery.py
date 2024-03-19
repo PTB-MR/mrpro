@@ -80,17 +80,14 @@ class TransientInversionRecovery(SignalModel):
         super().__init__()
         tr = torch.Tensor(tr)
         time_inversion_adc = torch.Tensor(time_inversion_adc)
-        if first_adc_time_point is not None:
-            first_adc_time_point = torch.Tensor(first_adc_time_point)
-            self.first_adc_time_point = torch.nn.Parameter(
-                first_adc_time_point, requires_grad=first_adc_time_point.requires_grad
-            )
 
         self.signal_time_points = torch.nn.Parameter(signal_time_points, requires_grad=signal_time_points.requires_grad)
         self.tr = torch.nn.Parameter(tr, requires_grad=tr.requires_grad)
         self.time_inversion_adc = torch.nn.Parameter(time_inversion_adc, requires_grad=time_inversion_adc.requires_grad)
 
+        self.first_adc_time_point = torch.Tensor(first_adc_time_point) if first_adc_time_point is not None else None
         self.index_before_first_inversion = torch.where(signal_time_points < inversion_time_points[0])[0]
+
         if len(self.index_before_first_inversion) > 0 and self.first_adc_time_point is None:
             raise ValueError(
                 'If data has been acquired before the first inversion pulse,',
