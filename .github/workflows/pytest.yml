@@ -70,6 +70,7 @@ jobs:
         run: |
           set -o pipefail
           pytest -n 4 -m "not cuda" --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
+        shell: bash
 
       - name: Pytest coverage comment
         id: coverageComment
