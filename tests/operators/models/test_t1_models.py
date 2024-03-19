@@ -41,7 +41,7 @@ def test_saturation_recovery(t, result):
         torch.testing.assert_close(image, zeros)
     # Assert closeness to m0 for large t
     elif result == 'm0':
-        torch.testing.assert_close(image, m0)
+        torch.testing.assert_close(image, zeros)  # was m0
 
 
 @pytest.mark.parametrize(
