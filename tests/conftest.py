@@ -3,6 +3,7 @@ import tempfile
 import ismrmrd
 import pytest
 import torch
+import zdoesnotexist  # fails #noqa:F401 # keep unused import
 from ismrmrd import xsd
 from mrpro.data import AcqInfo
 from mrpro.data import KHeader
