@@ -57,10 +57,10 @@ class TransientInversionRecovery(SignalModel):
     def __init__(
         self,
         signal_time_points: torch.Tensor,
-        tr: torch.Tensor,
+        tr: float | torch.Tensor,
         inversion_time_points: torch.Tensor,
-        time_inversion_adc: torch.Tensor,
-        first_adc_time_point: torch.Tensor | None = None,
+        time_inversion_adc: float | torch.Tensor,
+        first_adc_time_point: float | torch.Tensor | None = None,
     ):
         """Initialize continuous acquisition with inversion pulses.
 
@@ -78,14 +78,19 @@ class TransientInversionRecovery(SignalModel):
             time stamp of first acquisition
         """
         super().__init__()
-        self.signal_time_points: torch.Tensor = signal_time_points
-        self.tr: torch.Tensor = tr
-        self.time_inversion_adc: torch.Tensor = time_inversion_adc
-        self.inversion_time_points: torch.Tensor = inversion_time_points
-        self.first_adc_time_point: torch.Tensor | None = first_adc_time_point
+        tr = torch.Tensor(tr)
+        time_inversion_adc = torch.Tensor(time_inversion_adc)
+        if first_adc_time_point is not None:
+            first_adc_time_point = torch.Tensor(first_adc_time_point)
+            self.first_adc_time_point = torch.nn.Parameter(
+                first_adc_time_point, requires_grad=first_adc_time_point.requires_grad
+            )
+
+        self.signal_time_points = torch.nn.Parameter(signal_time_points, requires_grad=signal_time_points.requires_grad)
+        self.tr = torch.nn.Parameter(tr, requires_grad=tr.requires_grad)
+        self.time_inversion_adc = torch.nn.Parameter(time_inversion_adc, requires_grad=time_inversion_adc.requires_grad)
 
         self.index_before_first_inversion = torch.where(signal_time_points < inversion_time_points[0])[0]
-
         if len(self.index_before_first_inversion) > 0 and self.first_adc_time_point is None:
             raise ValueError(
                 'If data has been acquired before the first inversion pulse,',
@@ -97,8 +102,9 @@ class TransientInversionRecovery(SignalModel):
             raise ValueError('Acquisitions detected before start of acquisition.')
 
         # Add final "virtual" inversion pulse to allow for easier looping later
-        self.inversion_time_points = torch.concat(
-            (inversion_time_points, (signal_time_points.max() + 1).reshape(1)), dim=0
+        inversion_time_points = torch.concat((inversion_time_points, (signal_time_points.max() + 1).reshape(1)), dim=0)
+        self.inversion_time_points = torch.nn.Parameter(
+            inversion_time_points, requires_grad=inversion_time_points.requires_grad
         )
 
         # Get index of data points between different inversion pulses
@@ -143,13 +149,13 @@ class TransientInversionRecovery(SignalModel):
         signal = torch.zeros((len(self.signal_time_points), *m0.shape), dtype=torch.complex64)
 
         if len(self.index_before_first_inversion) > 0:
-            # Inversion times relative to current inversion pulse
-            inversion_time = (self.signal_time_points[self.index_before_first_inversion] - self.first_adc_time_point)[
-                (...,) + (None,) * (m0.ndim)
-            ]
+            # Time relative to first acquisition
+            time_since_fist_acquisition = (
+                self.signal_time_points[self.index_before_first_inversion] - self.first_adc_time_point
+            )[(...,) + (None,) * (m0.ndim)]
 
             signal[self.index_before_first_inversion, ...] = (
-                m0_star + (m0 - m0_star) * torch.exp(-inversion_time / t1_star)
+                m0_star + (m0 - m0_star) * torch.exp(-time_since_fist_acquisition / t1_star)
             ).to(dtype=torch.complex64)
 
         # Signal just before first inversion pulse
@@ -160,11 +166,12 @@ class TransientInversionRecovery(SignalModel):
             m0_plus = m0
 
         for inversion_index, index_of_time_points in enumerate(self.index_between_inversions):
-            # Calculate signal after spoiler gradient of inversion pulse and any possible delay
+            # Calculate signal at the beginning of acquisition after the inversion pulse
             m0_tau = -m0_plus * (1 - 2 * torch.exp(-self.time_inversion_adc / t1))
 
             if len(index_of_time_points) > 0:
-                # Inversion times relative to current inversion pulse
+                # Inversion times relative to current inversion pulse + time between inversion pulse and start of
+                # acquisition
                 inversion_time = (
                     self.signal_time_points[index_of_time_points]
                     - self.inversion_time_points[inversion_index]
