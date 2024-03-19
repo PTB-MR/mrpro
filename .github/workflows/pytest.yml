@@ -41,7 +41,6 @@ jobs:
         run: |
           echo "final list of images with tag latest: ${{ steps.set-matrix.outputs.imagenames }}"
 
-
   test:
     name: Run tests and get coverage report
     needs: get_dockerfiles
@@ -69,6 +68,7 @@ jobs:
 
       - name: Run PyTest
         run: |
+          set -o pipefail
           pytest -n 4 -m "not cuda" --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
 
       - name: Pytest coverage comment
