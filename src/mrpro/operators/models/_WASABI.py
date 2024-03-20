@@ -64,7 +64,7 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
     def forward(
         self,
         b0_shift: torch.Tensor,
-        rb1: torch.Tensor,
+        relative_b1: torch.Tensor,
         c: torch.Tensor,
         d: torch.Tensor,
     ) -> tuple[torch.Tensor,]:
@@ -74,20 +74,27 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         ----------
         b0_shift
             B0 shift [Hz]
-        rb1
+        relative_b1
             relative B1 amplitude
+            with shape ... other, coils, z, y, x)
         c
             additional fit parameter for the signal model
+            with shape ... other, coils, z, y, x)
         d
             additional fit parameter for the signal model
+            with shape ... other, coils, z, y, x)
 
         Returns
         -------
-            signal with dimensions ((... offsets), coils, z, y, x)
+            signal with dimensions ... (other offsets), coils, z, y, x)
         """
-        offsets = self.offsets[(...,) + (None,) * b0_shift.ndim]
+        b0_shift = b0_shift.unsqueeze(-5)
+        relative_b1 = relative_b1.unsqueeze(-5)
+        c = c.unsqueeze(-5)
+        d = d.unsqueeze(-5)
+        offsets = self.offsets[..., None, :, None, None, None, None]
         delta_x = offsets - b0_shift
-        b1 = self.b1_nom * rb1
+        b1 = self.b1_nom * relative_b1
 
         signal = (
             c
@@ -95,5 +102,5 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
             * (torch.pi * b1 * self.gamma * self.tp) ** 2
             * torch.sinc(self.tp * torch.sqrt((b1 * self.gamma) ** 2 + delta_x**2)) ** 2
         )
-        signal = rearrange(signal, 'offsets ... c z y x -> (... offsets) c z y x')
+        signal = rearrange(signal, '... other offsets c z y x ->.... (other offsets) c z y x')
         return (signal,)

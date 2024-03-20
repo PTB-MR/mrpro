@@ -47,10 +47,12 @@ class MOLLI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         -------
             signal with dimensions ((... inv_times), coils, z, y, x)
         """
-        t1 = torch.where(t1 == 0, 1e-10, t1)
-        a = torch.where(a == 0 | torch.equal((b / a), torch.ones_like(a)), a + 1e-10, a)
-        ti = self.ti[(...,) + (None,) * (a.ndim)]
-        t1_star = t1 / ((b / a) - 1)
-        y = a - b * torch.exp(-(ti / (t1_star)))
-        res = rearrange(y, 't ... c z y x -> (... t) c z y x')
-        return (res,)
+        ti = self.ti[..., None, :, None, None, None, None]  # *other t=1, c, z, y, x
+        a = a.unsqueeze(-5)  # *other t=1, c, z, y, x
+        b = b.unsqueeze(-5)
+        t1 = t1.unsqueeze(-5)
+        c = b / torch.where(a == 0, 1e-10, a)
+        t1 = torch.where(t1 == 0, t1 + 1e-10, t1)
+        signal = a * (1 - c * torch.exp(ti / t1 * (1 - c)))  # *other t=len(ti), c, z, y, x
+        signal = rearrange(signal, '... other t c z y x -> ... (other t) c z y x')
+        return (signal,)

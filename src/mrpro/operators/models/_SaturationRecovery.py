@@ -26,7 +26,7 @@ class SaturationRecovery(SignalModel[torch.Tensor, torch.Tensor]):
         Parameters
         ----------
         ti
-            inversion times
+            saturation times
         """
         super().__init__()
         self.ti = torch.nn.Parameter(ti, requires_grad=ti.requires_grad)
@@ -38,15 +38,19 @@ class SaturationRecovery(SignalModel[torch.Tensor, torch.Tensor]):
         ----------
         m0
             equilibrium signal / proton density
+            with shape ... other, coils, z, y, x)
         t1
             longitudinal relaxation time T1
+            with shape ... other, coils, z, y, x)
 
         Returns
         -------
-            signal with dimensions ((... sat_times), coils, z, y, x)
+            signal
+            with shape ... (other inv_times), coils, z, y, x)
         """
-        t1 = torch.where(t1 == 0, 1e-10, t1)
-        ti = self.ti[(...,) + (None,) * (m0.ndim)]
-        y = m0 * (1 - torch.exp(-(ti / t1)))
-        res = rearrange(y, 't ... c z y x -> (... t) c z y x')
-        return (res,)
+        ti = self.ti[..., None, :, None, None, None, None]  # *other t, c, z, y, x
+        m0 = m0.unsqueeze(-5)  # *other t, c, z, y, x
+        t1 = t1.unsqueeze(-5)  # *other t, c, z, y, x
+        signal = m0 * (1 - torch.exp(-(ti / t1)))
+        signal = rearrange(signal, '... other t c z y x -> ... ( other t ) c z y x')
+        return (signal,)
