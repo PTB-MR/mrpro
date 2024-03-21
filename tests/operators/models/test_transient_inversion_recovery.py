@@ -22,7 +22,7 @@ def create_data(other=10, coils=5, z=100, y=100, x=100):
     random_generator = RandomGenerator(seed=0)
     m0 = random_generator.complex64_tensor(size=(other, coils, z, y, x))
     t1 = random_generator.float32_tensor(size=(other, coils, z, y, x), low=1e-10)
-    alpha = random_generator.float32_tensor(size=(other, coils, z, y, x), low=3, high=9)
+    alpha = random_generator.float32_tensor(size=(other, coils, z, y, x), low=0.01, high=0.1)
     return m0, t1, alpha
 
 
@@ -47,9 +47,9 @@ def test_signal_boundaries_single_inversion(t, result):
 
     model = TransientInversionRecovery(
         signal_time_points=torch.tensor([t]),
-        tr=torch.tensor([tr]),
+        tr=tr,
         inversion_time_points=torch.tensor([0]),
-        time_inversion_adc=torch.tensor([0]),
+        delay_inversion_adc=0,
     )
     m0, t1, alpha = create_data()
     (signal,) = model.forward(m0, t1, alpha)
@@ -67,9 +67,9 @@ def test_invalid_signal_during_tau():
     with pytest.raises(ValueError, match='No data points should lie between inversion'):
         TransientInversionRecovery(
             signal_time_points=torch.tensor([0]),
-            tr=torch.tensor([0.005]),
-            inversion_time_points=torch.tensor([0]),
-            time_inversion_adc=torch.tensor([0.02]),
+            tr=0.005,
+            inversion_time_points=0,
+            delay_inversion_adc=0.02,
         )
 
 
@@ -78,16 +78,16 @@ def test_invalid_signal_before_inv():
     with pytest.raises(ValueError, match='If data has been acquired before the first'):
         TransientInversionRecovery(
             signal_time_points=torch.tensor([-1]),
-            tr=torch.tensor([0.005]),
-            inversion_time_points=torch.tensor([0]),
-            time_inversion_adc=torch.tensor([0.02]),
+            tr=0.005,
+            inversion_time_points=0,
+            delay_inversion_adc=0.02,
         )
 
     with pytest.raises(ValueError, match='Acquisitions detected before start of acquisition'):
         TransientInversionRecovery(
             signal_time_points=torch.tensor([-1]),
-            tr=torch.tensor([0.005]),
+            tr=0.005,
             inversion_time_points=torch.tensor([0]),
-            time_inversion_adc=torch.tensor([0.02]),
-            first_adc_time_point=torch.tensor([-0.5]),
+            delay_inversion_adc=0.02,
+            first_adc_time_point=-0.5,
         )
