@@ -19,7 +19,7 @@ from mrpro.operators import SignalModel
 class SaturationRecovery(SignalModel[torch.Tensor, torch.Tensor]):
     """Signal model for saturation recovery."""
 
-    def __init__(self, ti: torch.Tensor):
+    def __init__(self, ti: float | torch.Tensor):
         """Initialize saturation recovery signal model for T1 mapping.
 
         Parameters
@@ -33,7 +33,7 @@ class SaturationRecovery(SignalModel[torch.Tensor, torch.Tensor]):
         self.ti = torch.nn.Parameter(ti, requires_grad=ti.requires_grad)
 
     def forward(self, m0: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply Saturation Recovery signal model.
+        """Apply saturation recovery signal model.
 
         Parameters
         ----------
