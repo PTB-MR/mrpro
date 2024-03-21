@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import torch
-from einops import rearrange
 
 from mrpro.operators import SignalModel
 
@@ -27,6 +26,7 @@ class SaturationRecovery(SignalModel[torch.Tensor, torch.Tensor]):
         ----------
         ti
             saturation times
+            with shape (time, ...)
         """
         super().__init__()
         self.ti = torch.nn.Parameter(ti, requires_grad=ti.requires_grad)
@@ -38,19 +38,17 @@ class SaturationRecovery(SignalModel[torch.Tensor, torch.Tensor]):
         ----------
         m0
             equilibrium signal / proton density
-            with shape ... other, coils, z, y, x)
+            with shape (... other, coils, z, y, x)
         t1
             longitudinal relaxation time T1
-            with shape ... other, coils, z, y, x)
+            with shape (... other, coils, z, y, x)
 
         Returns
         -------
             signal
-            with shape ... (other inv_times), coils, z, y, x)
+            with shape (time ... other, coils, z, y, x)
         """
-        ti = self.ti[..., None, :, None, None, None, None]  # *other t, c, z, y, x
-        m0 = m0.unsqueeze(-5)  # *other t, c, z, y, x
-        t1 = t1.unsqueeze(-5)  # *other t, c, z, y, x
+        delta_ndim = m0.ndim - (self.ti.ndim - 1)  # -1 for time
+        ti = self.ti[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.ti
         signal = m0 * (1 - torch.exp(-(ti / t1)))
-        signal = rearrange(signal, '... other t c z y x -> ... ( other t ) c z y x')
         return (signal,)

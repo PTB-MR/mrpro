@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import torch
-from einops import rearrange
 
 from mrpro.operators import SignalModel
 
@@ -26,7 +25,8 @@ class MOLLI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         Parameters
         ----------
         ti
-            inversion times [s]
+            inversion times
+            with shape (time, ...)
         """
         super().__init__()
         self.ti = torch.nn.Parameter(ti, requires_grad=ti.requires_grad)
@@ -37,22 +37,23 @@ class MOLLI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         Parameters
         ----------
         a
-            Parameter a in MOLLI signal model
+            parameter a in MOLLI signal model
+            with shape (... other, coils, z, y, x)
         b
-            Parameter b in MOLLI signal model
+            parameter b in MOLLI signal model
+            with shape (... other, coils, z, y, x)
         t1
-            longitudinal relaxation time T1 [s]
+            longitudinal relaxation time T1
+            with shape (... other, coils, z, y, x)
 
         Returns
         -------
-            signal with dimensions ((... inv_times), coils, z, y, x)
+            signal
+            with shape (time ... other, coils, z, y, x)
         """
-        ti = self.ti[..., None, :, None, None, None, None]  # *other t=1, c, z, y, x
-        a = a.unsqueeze(-5)  # *other t=1, c, z, y, x
-        b = b.unsqueeze(-5)
-        t1 = t1.unsqueeze(-5)
+        delta_ndim = a.ndim - (self.ti.ndim - 1)  # -1 for time
+        ti = self.ti[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.ti
         c = b / torch.where(a == 0, 1e-10, a)
         t1 = torch.where(t1 == 0, t1 + 1e-10, t1)
-        signal = a * (1 - c * torch.exp(ti / t1 * (1 - c)))  # *other t=len(ti), c, z, y, x
-        signal = rearrange(signal, '... other t c z y x -> ... (other t) c z y x')
+        signal = a * (1 - c * torch.exp(ti / t1 * (1 - c)))
         return (signal,)
