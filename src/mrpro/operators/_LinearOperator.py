@@ -43,12 +43,16 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor,]]):
         """Adjoint operator."""
         return AdjointLinearOperator(self)
 
-    def __matmul__(self, other: Operator[*Tin2, tuple[torch.Tensor,]] | LinearOperator):
+    def __matmul__(self, other: Operator[*Tin2, tuple[torch.Tensor,]] | LinearOperator | tuple[torch.Tensor,]):
         """Operator composition."""
-        if not isinstance(other, LinearOperator):
-            # general case
+        if isinstance(other, LinearOperator):
+            return LinearOperatorComposition(self, other)
+
+        elif isinstance(other, Operator):
             return OperatorComposition(self, other)
-        return LinearOperatorComposition(self, other)
+
+        else:
+            return self(*other)
 
     def __add__(self, other: Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator):
         """Operator addition."""
