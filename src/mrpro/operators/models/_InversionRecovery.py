@@ -29,6 +29,7 @@ class InversionRecovery(SignalModel[torch.Tensor, torch.Tensor]):
             with shape (time, ...)
         """
         super().__init__()
+        ti = torch.as_tensor(ti)
         self.ti = torch.nn.Parameter(ti, requires_grad=ti.requires_grad)
 
     def forward(self, m0: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
