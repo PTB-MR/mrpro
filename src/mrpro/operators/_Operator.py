@@ -21,6 +21,7 @@ from typing import Generic
 from typing import TypeVar
 from typing import TypeVarTuple
 from typing import cast
+from typing import overload
 
 import torch
 
@@ -37,8 +38,16 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
         """Apply forward operator."""
         ...
 
-    def __matmul__(self, other: Operator[*Tin2, tuple[*Tin]]) -> Operator[*Tin2, Tout]:
+    @overload
+    def __matmul__(self, other: Operator[*Tin2, tuple[*Tin]]) -> Operator[*Tin2, Tout]: ...
+
+    @overload
+    def __matmul__(self, other: tuple[*Tin]) -> Tout: ...
+
+    def __matmul__(self, other: Operator[*Tin2, tuple[*Tin]] | tuple[*Tin]) -> Operator[*Tin2, Tout] | Tout:
         """Operator composition."""
+        if isinstance(other, tuple):
+            return self(*other)
         return OperatorComposition(self, other)
 
     def __add__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]:
