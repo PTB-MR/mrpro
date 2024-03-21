@@ -17,10 +17,10 @@ from mrpro.operators import SignalModel
 
 
 class InversionRecovery(SignalModel[torch.Tensor, torch.Tensor]):
-    """Inversion Recovery signal model."""
+    """Inversion recovery signal model."""
 
-    def __init__(self, ti: torch.Tensor):
-        """Initialize Inversion Recovery signal model for T1 mapping.
+    def __init__(self, ti: float | torch.Tensor):
+        """Initialize inversion recovery signal model for T1 mapping.
 
         Parameters
         ----------
@@ -33,7 +33,7 @@ class InversionRecovery(SignalModel[torch.Tensor, torch.Tensor]):
         self.ti = torch.nn.Parameter(ti, requires_grad=ti.requires_grad)
 
     def forward(self, m0: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply Inversion Recovery signal model.
+        """Apply inversion recovery signal model.
 
         Parameters
         ----------

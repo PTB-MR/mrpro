@@ -19,7 +19,7 @@ from mrpro.operators import SignalModel
 class MOLLI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
     """Signal model for Modified Look-Locker inversion recovery (MOLLI)."""
 
-    def __init__(self, ti: torch.Tensor):
+    def __init__(self, ti: float | torch.Tensor):
         """Initialize MOLLI signal model for T1 mapping.
 
         Parameters
