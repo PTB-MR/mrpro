@@ -35,16 +35,23 @@ class KTrajectoryRawShape:
     raw data file.
     """
 
-    kz: torch.Tensor  # ((other,k2,k1),k0) #phase encoding direction, k2 if Cartesian
-    ky: torch.Tensor  # ((other,k2,k1),k0) #phase encoding direction, k1 if Cartesian
-    kx: torch.Tensor  # ((other,k2,k1),k0) #frequency encoding direction, k0 if Cartesian
+    kz: torch.Tensor
+    """(other,k2,k1,k0), phase encoding direction k2 if Cartesian."""
+
+    ky: torch.Tensor
+    """(other,k2,k1,k0), phase encoding direction k1 if Cartesian."""
+
+    kx: torch.Tensor
+    """(other,k2,k1,k0), frequency encoding direction k0 if Cartesian."""
+
+    repeat_detection_tolerance: float = 1e-3
+    """tolerance for repeat detection which is used in reshape()."""
 
     def reshape(
         self,
         sort_idx: np.ndarray,
         n_k2: int,
         n_k1: int,
-        repeat_detection_tolerance: float | None = 1e-8,
     ) -> KTrajectory:
         """Resort and reshape the raw trajectory to KTrajectory.
 
@@ -58,8 +65,6 @@ class KTrajectoryRawShape:
             number of k2 points.
         n_k1
             number of k1 points.
-        repeat_detection_tolerance:
-            tolerance for repeat detection which is passed on to create KTrajectory. Set to None to disable.
 
         Returns
         -------
@@ -70,4 +75,4 @@ class KTrajectoryRawShape:
         ky = rearrange(self.ky[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=n_k1, k2=n_k2)
         kx = rearrange(self.kx[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=n_k1, k2=n_k2)
 
-        return KTrajectory(kz, ky, kx, repeat_detection_tolerance)
+        return KTrajectory(kz, ky, kx, self.repeat_detection_tolerance)
