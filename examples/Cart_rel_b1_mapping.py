@@ -18,8 +18,19 @@
 # https://figshare.com/articles/dataset/High-Resolution_3D_Radial_Phase_Encoded_GRE_of_8_Transmit_Channels_with_a_Siemens_7T_pTx_System_Phantom_VB17_RAW_Data_/24316519
 
 # %% import functionality
+import urllib.request
+
 import matplotlib.pyplot as plt
 import numpy as np
+
+# Download the file from `url` and save it locally under `file_name`:
+with (
+    urllib.request.urlopen('https://figshare.com/ndownloader/files/43259835') as response,
+    open('meas_MID296_ssm_CVB1R_1sl_sag_trig400_FID39837_ismrmrd.h5', 'wb') as out_file,  # noqa PTH123
+):
+    data = response.read()  # a `bytes` object
+    out_file.write(data)
+
 from mrpro.data import IData
 from mrpro.data import KData
 from mrpro.data.traj_calculators._KTrajectoryCartesian import KTrajectoryCartesian
@@ -29,7 +40,9 @@ from B1reco import b1reco
 
 # %% Cartesian B1+ mapping - 1 2D Slice
 # Load the channelwise GRE data for relative B1+ mapping
+
 h5_filename = R'meas_MID296_ssm_CVB1R_1sl_sag_trig400_FID39837_ismrmrd.h5'
+
 data = KData.from_file(
     ktrajectory=KTrajectoryCartesian(),
     filename=h5_filename,

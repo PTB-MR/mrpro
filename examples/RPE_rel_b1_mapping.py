@@ -18,6 +18,8 @@
 # https://figshare.com/articles/dataset/High-Resolution_3D_Radial_Phase_Encoded_GRE_of_8_Transmit_Channels_with_a_Siemens_7T_pTx_System_Phantom_VB17_RAW_Data_/24316519
 
 # %% import functionality
+import urllib.request
+
 import matplotlib.pyplot as plt
 import numpy as np
 from mrpro.data import DcfData
@@ -25,6 +27,15 @@ from mrpro.data import IData
 from mrpro.data import KData
 from mrpro.data.traj_calculators._KTrajectorySunflowerGoldenRpe import KTrajectorySunflowerGoldenRpe
 from mrpro.operators import FourierOp
+
+# Download the file from `url` and save it locally under `file_name`:
+with (
+    urllib.request.urlopen('https://figshare.com/ndownloader/files/43259838') as response,
+    open('meas_MID335_B1R_FA_20_cv_pTX_sun_B1R_v1p1_FID39870_ismrmrd.h5', 'wb') as out_file,  # noqa PTH123
+):
+    data = response.read()  # a `bytes` object
+    out_file.write(data)
+
 
 from B1reco import b1reco
 
