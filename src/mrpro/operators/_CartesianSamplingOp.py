@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
+
 import torch
 from einops import rearrange
 
@@ -75,12 +77,29 @@ class CartesianSamplingOp(LinearOperator):
             sorted_grid_shape.z = ktraj_tensor.shape[-3]
             kz_idx = rearrange(torch.arange(ktraj_tensor.shape[-3]), 'kz->1 kz 1 1')
 
+        # exclude points outside of the encoding matrix
+        exclude_idx = (
+            (kx_idx < 0)
+            | (kx_idx >= sorted_grid_shape.x)
+            | (ky_idx < 0)
+            | (ky_idx >= sorted_grid_shape.y)
+            | (kz_idx < 0)
+            | (kz_idx >= sorted_grid_shape.z)
+        )
+        if any(exclude_idx.flatten()):
+            warnings.warn(
+                f'{sum(exclude_idx.flatten())} k-space points lie outside of the encoding_matrix and will be ignored.'
+                'Increase the encoding_matrix to include these points.',
+                stacklevel=2,
+            )
+        self._exclude_idx = rearrange(exclude_idx, '... kz ky kx -> ... 1 (kz ky kx)')
+
         # 1D indices into a flattened tensor.
         kidx = kz_idx * sorted_grid_shape.y * sorted_grid_shape.x + ky_idx * sorted_grid_shape.x + kx_idx
         kidx = rearrange(kidx, '... kz ky kx -> ... 1 (kz ky kx)')
         self.register_buffer('_fft_idx', kidx)
         # we can skip the indexing if the data is already sorted
-        self._needs_indexing = not torch.all(torch.diff(kidx) == 1)
+        self._needs_indexing = not torch.all(torch.diff(kidx) == 1) or any(exclude_idx.flatten())
 
         self._trajectory_shape = traj.broadcasted_shape
         self._sorted_grid_shape = sorted_grid_shape
