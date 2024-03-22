@@ -58,24 +58,31 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
 
         # calculate k-space trajectory using PyPulseq
         k_traj_adc_numpy, _, _, _, _ = seq.calculate_kspace()
-        k_traj_adc = torch.from_numpy(k_traj_adc_numpy)
+        k_traj_adc = torch.tensor(k_traj_adc_numpy, dtype=torch.float32)
 
         unique_idxs = {label: torch.unique(getattr(kheader.acq_info.idx, label)) for label in ['k1', 'k2']}
 
-        k1 = len(unique_idxs['k1'])
-        k2 = len(unique_idxs['k2'])
+        n_k1 = len(unique_idxs['k1'])
+        n_k2 = len(unique_idxs['k2'])
 
         n_samples = kheader.acq_info.number_of_samples
         n_samples = torch.unique(n_samples)
         if len(n_samples) > 1:
             raise ValueError('We currently only support constant number of samples')
-        k0 = int(n_samples.item())
+        n_k0 = int(n_samples.item())
 
         sample_size = n_samples.shape[0]
 
         def reshape_pulseq_traj(k_traj: torch.Tensor, encoding_size: int):
             k_traj *= encoding_size / (2 * torch.max(torch.abs(k_traj)))
-            return rearrange(k_traj, '(other k2 k1 k0) -> (other k2 k1) k0', k0=k0, k2=k2, k1=k1, other=sample_size)
+            return rearrange(
+                k_traj,
+                '(other k2 k1 k0) -> (other k2 k1) k0',
+                k0=n_k0,
+                k2=n_k2,
+                k1=n_k1,
+                other=sample_size,
+            )
 
         # rearrange k-space trajectory to match MRpro convention
         kx = reshape_pulseq_traj(k_traj_adc[0], kheader.encoding_matrix.x)
