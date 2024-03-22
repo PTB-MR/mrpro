@@ -36,9 +36,10 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         absolute path to .seq file
     """
 
-    def __init__(self, seq_path: str | Path) -> None:
+    def __init__(self, seq_path: str | Path, repeat_detection_tolerance: float = 1e-3) -> None:
         super().__init__()
         self.seq_path = seq_path
+        self.repeat_detection_tolerance = repeat_detection_tolerance
 
     def __call__(self, kheader: KHeader) -> KTrajectoryRawShape:
         """Calculate trajectory from given .seq file and header information.
@@ -89,4 +90,4 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         ky = reshape_pulseq_traj(k_traj_adc[1], kheader.encoding_matrix.y)
         kz = reshape_pulseq_traj(k_traj_adc[2], kheader.encoding_matrix.z)
 
-        return KTrajectoryRawShape(kz, ky, kx)
+        return KTrajectoryRawShape(kz, ky, kx, self.repeat_detection_tolerance)
