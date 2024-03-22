@@ -24,35 +24,30 @@
 
 # %%
 # Imports
-import shutil
-import tempfile
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import torch
-import zenodo_get
+from mrpro.algorithms._cg import cg
 from mrpro.data import CsmData
 from mrpro.data import DcfData
 from mrpro.data import IData
 from mrpro.data import KData
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
-from mrpro.data.traj_calculators._KTrajectoryPulseq import KTrajectoryPulseq
+from mrpro.operators import EinsumOp
 from mrpro.operators import FourierOp
 from mrpro.operators import SensitivityOp
-from mrpro.operators import EinsumOp
-import torch.nn as nn
-from mrpro.algorithms._cg import cg
-from einops import rearrange
 
 # %%
 # Download raw data in ISMRMRD format from zenodo into a temporary directory
-data_folder = Path("/echo/_allgemein/projects/8_13/MRPro/2024_03_19/20240319_spiral_2D_256mm_252k0_256interleaves_golden_angle")#Path(tempfile.mkdtemp())
+data_folder = Path(
+    '/echo/_allgemein/projects/8_13/MRPro/2024_03_19/20240319_spiral_2D_256mm_252k0_256interleaves_golden_angle'
+)
 dataset_traj = 'spiral_2D_256mm_252k0_256interleaves_golden_angle_with_traj.h5'
-seq_folder = Path("/echo/_allgemein/projects/8_13/MRPro/2024_03_19/20240319_spiral_2D_256mm_252k0_256interleaves_golden_angle/")
-seqfile = "spiral_2D_256mm_252k0_256interleaves_golden_angle.seq"
-# seqheader = "20240319_spiral_2D_256mm_252k0_256interleaves_golden_angle_header.h5"
-# dataset = 'spiral_2D_256mm_252k0_256interleaves_golden_angle.h5'
-#zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
+seq_folder = Path(
+    '/echo/_allgemein/projects/8_13/MRPro/2024_03_19/20240319_spiral_2D_256mm_252k0_256interleaves_golden_angle/'
+)
+seqfile = 'spiral_2D_256mm_252k0_256interleaves_golden_angle.seq'
 
 # %% [markdown]
 # ## Image reconstruction
@@ -63,14 +58,15 @@ seqfile = "spiral_2D_256mm_252k0_256interleaves_golden_angle.seq"
 
 # %%
 # Read raw data and trajectory
-kdata = KData.from_file(filename=data_folder/dataset_traj, ktrajectory=KTrajectoryIsmrmrd())
-#kdata = KData.from_file(filename="/echo/martin13/data/Measurements/meas_MID00080_FID02053_20230926_spiral_256px_fov256_8mm_75shots/meas_MID00080_FID02053_20230926_spiral_256px_fov256_8mm_75shots.mrd", ktrajectory=KTrajectoryPulseq("/echo/martin13/data/Measurements/meas_MID00080_FID02053_20230926_spiral_256px_fov256_8mm_75shots/20230926_spiral_256px_fov256_8mm_75shots.seq"))
+kdata = KData.from_file(filename=data_folder / dataset_traj, ktrajectory=KTrajectoryIsmrmrd())
 # Calculate dcf
 dcf = DcfData.from_traj_voronoi(kdata.traj)
 
 # Reconstruct average image for coil map estimation
 fourier_op = FourierOp(
-    recon_matrix=kdata.header.recon_matrix, encoding_matrix=kdata.header.encoding_matrix, traj=kdata.traj
+    recon_matrix=kdata.header.recon_matrix,
+    encoding_matrix=kdata.header.encoding_matrix,
+    traj=kdata.traj,
 )
 (img,) = fourier_op.adjoint(kdata.data * dcf.data[:, None, ...])
 
@@ -89,57 +85,30 @@ csm_op = SensitivityOp(csm)
 plt.figure()
 plt.imshow(torch.abs(img[0, 0, 0, :, :]))
 
-#%%
+# %%
 # Construct operators
 A = fourier_op @ csm_op
 AH = A.H
-W = EinsumOp((dcf.data/dcf.data.shape[2]).to(torch.complex64),"...ij,...j->...j")
-AHW = (AH @ W)
-H = (AH@W)@A
+W = EinsumOp((dcf.data / dcf.data.shape[2]).to(torch.complex64), '...ij,...j->...j')
+AHW = AH @ W
+H = (AH @ W) @ A
 
-#%%
-#Visualize results
+# %%
+# Visualize results
 x0 = AHW(kdata.data)[0]
 plt.imshow(torch.abs(x0[0, 0, 0, :, :]))
 plt.colorbar()
 plt.title('x0')
 plt.show()
 
-#%%
+# %%
 # Apply Conjugate Gradient with N steps and visualize results
 N = 2
 b = x0
 with torch.no_grad():
-	xCG = cg(H,b,x0,N)
+    x_cg = cg(H, b, x0, N)
 
-plt.imshow(torch.abs(xCG[0, 0, 0, :, :]))
+plt.imshow(torch.abs(x_cg[0, 0, 0, :, :]))
 plt.colorbar()
 plt.title('xCG')
 plt.show()
-
-#%%
-# CG with x0 - old version without oprator W
-x0 = (fourier_op @ csm_op).adjoint(dcf.data * kdata.data)[0]
-
-plt.imshow(torch.abs(x0[0, 0, 0, :, :]))
-plt.colorbar()
-plt.title('x0')
-plt.show()
-
-H = lambda x0: (fourier_op @ csm_op).adjoint(dcf.data * (fourier_op @ csm_op)(x0)[0]) 
-b = x0
-
-with torch.no_grad():
-	xCG = cg(H, b, x0, 2)
-
-plt.imshow(torch.abs(xCG[0, 0, 0, :, :]))
-plt.colorbar()
-plt.title('CG x0')
-plt.show() 
-
-# # %%
-# # Clean-up by removing temporary directory
-# #shutil.rmtree(data_folder)
-
-
-# %%
