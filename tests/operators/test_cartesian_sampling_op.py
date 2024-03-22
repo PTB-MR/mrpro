@@ -14,6 +14,7 @@
 
 import pytest
 import torch
+from einops import rearrange
 from mrpro.data import KTrajectory
 from mrpro.data import SpatialDimension
 from mrpro.operators import CartesianSamplingOp
@@ -118,3 +119,14 @@ def test_cart_sampling_op_fwd_adj(sampling):
     u = random_generator.complex64_tensor(size=k_shape)
     v = random_generator.complex64_tensor(size=k_shape[:2] + trajectory.as_tensor().shape[2:])
     dotproduct_adjointness_test(sampling_op, u, v)
+
+
+def test_cart_sampling_op_oversampling():
+    """Test trajectory points outside of encoding_matrix."""
+    kx = rearrange(torch.linspace(13, -6, 20), 'kx->1 1 1 kx')
+    trajectory = KTrajectory(kz=torch.ones(1, 1, 1, 1), ky=torch.ones(1, 1, 1, 1), kx=kx)
+    encoding_matrix = SpatialDimension(1, 1, 20)
+    sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
+    random_generator = RandomGenerator(seed=0)
+    kdata = random_generator.complex64_tensor(size=(1, 5, 1, 1, kx.shape[-1]))
+    assert sampling_op(kdata)[0].shape[-3:] == encoding_matrix
