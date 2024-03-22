@@ -1,5 +1,7 @@
 """Cartesian Sampling Operator."""
 
+import warnings
+
 import torch
 from einops import rearrange, repeat
 
@@ -60,6 +62,23 @@ class CartesianSamplingOp(LinearOperator):
         else:
             sorted_grid_shape.z = ktraj_tensor.shape[-3]
             kz_idx = repeat(torch.arange(ktraj_tensor.shape[-3]), 'k2->other k2 k1 k0', other=1, k1=1, k0=1)
+
+        # exclude points outside of the encoding matrix
+        exclude_idx = (
+            (kx_idx < 0)
+            | (kx_idx >= sorted_grid_shape.x)
+            | (ky_idx < 0)
+            | (ky_idx >= sorted_grid_shape.y)
+            | (kz_idx < 0)
+            | (kz_idx >= sorted_grid_shape.z)
+        )
+        if any(exclude_idx.flatten()):
+            warnings.warn(
+                f'{sum(exclude_idx.flatten())} k-space points lie outside of the encoding_matrix and will be ignored.'
+                'Increase the encoding_matrix to include these points.',
+                stacklevel=2,
+            )
+        self._exclude_idx = rearrange(exclude_idx, '... kz ky kx -> ... 1 (kz ky kx)')
 
         # 1D indices into a flattened tensor.
         kidx = kz_idx * sorted_grid_shape.y * sorted_grid_shape.x + ky_idx * sorted_grid_shape.x + kx_idx

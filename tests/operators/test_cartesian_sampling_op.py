@@ -118,3 +118,21 @@ def test_cart_sampling_op_fwd_adj(sampling):
     u = random_generator.complex64_tensor(size=k_shape)
     v = random_generator.complex64_tensor(size=k_shape[:2] + trajectory.as_tensor().shape[2:])
     dotproduct_adjointness_test(sampling_op, u, v)
+
+
+@pytest.mark.parametrize(('k0_min', 'k0_max'), [(-6, 13), (-13, 6)])
+def test_cart_sampling_op_oversampling(k0_min, k0_max):
+    """Test trajectory points outside of encoding_matrix."""
+    encoding_matrix = SpatialDimension(1, 1, 20)
+    # Create kx sampling which is asymmetric and larger than the encoding matrix on one side
+    # The indices are inverted to ensure CartesianSamplingOp acts on them
+    kx = rearrange(torch.linspace(k0_max, k0_min, 20), 'kx->1 1 1 kx')
+    trajectory = KTrajectory(kz=torch.ones(1, 1, 1, 1), ky=torch.ones(1, 1, 1, 1), kx=kx)
+    with pytest.warns(UserWarning, match='k-space points lie outside of the encoding_matrix'):
+        sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
+
+    random_generator = RandomGenerator(seed=0)
+    u = random_generator.complex64_tensor(size=(1, 5, 1, 1, kx.shape[-1]))
+    v = random_generator.complex64_tensor(size=(1, 5, 1, 1, encoding_matrix.x))
+    assert sampling_op.adjoint(u)[0].shape[-1] == encoding_matrix.x
+    assert sampling_op(v)[0].shape[-1] == kx.shape[-1]
