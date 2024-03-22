@@ -1,4 +1,4 @@
-""""Script for B1+ mapping from H5 file."""
+"""Script for B1+ mapping from H5 file."""
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,15 +20,13 @@
 # %% import functionality
 import matplotlib.pyplot as plt
 import numpy as np
-
+from mrpro.data import DcfData
 from mrpro.data import IData
 from mrpro.data import KData
 from mrpro.data.traj_calculators._KTrajectorySunflowerGoldenRpe import KTrajectorySunflowerGoldenRpe
 from mrpro.operators import FourierOp
-from mrpro.data import DcfData
 
-from B1reco import B1reco
-
+from B1reco import b1reco
 
 # %% B1+ mapping - RPE 3D
 #
@@ -51,29 +49,27 @@ data.header.encoding_matrix.y = 16
 data.header.encoding_matrix.z = 16
 
 # perform FT, shift the k-space center and create IData object
-op = FourierOp(
-    recon_matrix=data.header.recon_matrix,  encoding_matrix=data.header.encoding_matrix, traj=data.traj
-)
+op = FourierOp(recon_matrix=data.header.recon_matrix, encoding_matrix=data.header.encoding_matrix, traj=data.traj)
 
 # set up the density compensation
 dc = DcfData.from_traj_voronoi(data.traj)
 
 # reconstruct the density compensated data
-images, = op.H(data.data*dc.data)
+(images,) = op.H(data.data * dc.data)
 
 # create IData object from image tensor and kheader
 idata = IData.from_tensor_and_kheader(images, data.header)
 
 # run B1reco
-b1m_mag, b1m_pha, b1p_mag, b1p_pha, noise_mean = B1reco(idata.data, relphasechannel=0)
+b1m_mag, b1m_pha, b1p_mag, b1p_pha, noise_mean = b1reco(idata.data, relphasechannel=0)
 
 # plot results
-fig, axs = plt.subplots(2, 4, figsize=(16, 8))
-for i, axs in enumerate(axs.flatten()):
+fig, axis = plt.subplots(2, 4, figsize=(16, 8))
+for i, axs in enumerate(axis.flatten()):
     axs.imshow(b1p_mag[0, i, :, :, 64])
 
-fig, axs = plt.subplots(2, 4, figsize=(16, 8))
-for i, axs in enumerate(axs.flatten()):
-    axs.imshow(np.angle(b1p_pha[0, i, :, :, 64]), vmin = -3.15, vmax =3.15)
+fig, axis = plt.subplots(2, 4, figsize=(16, 8))
+for i, axs in enumerate(axis.flatten()):
+    axs.imshow(np.angle(b1p_pha[0, i, :, :, 64]), vmin=-3.15, vmax=3.15)
 
 # %%

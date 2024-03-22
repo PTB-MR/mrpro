@@ -1,4 +1,4 @@
-""""Script for B1+ mapping from MRD file."""
+"""Script for B1+ mapping from MRD file."""
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,18 +17,15 @@
 # example data can be downloaded from:
 # https://figshare.com/articles/dataset/High-Resolution_3D_Radial_Phase_Encoded_GRE_of_8_Transmit_Channels_with_a_Siemens_7T_pTx_System_Phantom_VB17_RAW_Data_/24316519
 
-
 # %% import functionality
 import matplotlib.pyplot as plt
 import numpy as np
-
 from mrpro.data import IData
 from mrpro.data import KData
-from mrpro.operators import FourierOp
 from mrpro.data.traj_calculators._KTrajectoryCartesian import KTrajectoryCartesian
+from mrpro.operators import FourierOp
 
-from B1reco import B1reco
-
+from B1reco import b1reco
 
 # %% Cartesian B1+ mapping - 1 2D Slice
 # Load the channelwise GRE data for relative B1+ mapping
@@ -39,23 +36,23 @@ data = KData.from_file(
 )
 
 # perform FT and shift the k-space center
-op = FourierOp(recon_matrix=data.header.recon_matrix,  encoding_matrix=data.header.encoding_matrix, traj=data.traj)
+op = FourierOp(recon_matrix=data.header.recon_matrix, encoding_matrix=data.header.encoding_matrix, traj=data.traj)
 
 # reconstruct the density compensated data
-images, = op.H(data.data)
+(images,) = op.H(data.data)
 
 # create IData object from image tensor and kheader
 idata = IData.from_tensor_and_kheader(images, data.header)
 
-b1m_mag, b1m_pha, b1p_mag, b1p_pha, noise_mean = B1reco(idata.data, relphasechannel=0)
+b1m_mag, b1m_pha, b1p_mag, b1p_pha, noise_mean = b1reco(idata.data, relphasechannel=0)
 
 # plot results
-fig, axs = plt.subplots(2, 4, figsize=(16, 8))
-for i, axs in enumerate(axs.flatten()):
+fig, axis = plt.subplots(2, 4, figsize=(16, 8))
+for i, axs in enumerate(axis.flatten()):
     axs.imshow(b1p_mag[0, i, 0, :, :])
 
-fig, axs = plt.subplots(2, 4, figsize=(16, 8))
-for i, axs in enumerate(axs.flatten()):
+fig, axis = plt.subplots(2, 4, figsize=(16, 8))
+for i, axs in enumerate(axis.flatten()):
     axs.imshow(np.angle(b1p_pha[0, i, 0, :, :]))
 
 # %%

@@ -1,4 +1,4 @@
-""" Fast B1 Mapping using NTx GRE """
+"""Fast B1 Mapping using NTx GRE."""
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,21 +13,24 @@
 #
 #   Christoph Aigner, 2023.03.22
 
+import torch
 
-def B1reco(IData, relphasechannel):
+
+def b1reco(
+    idata: torch.Tensor, relphasechannel: int
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Compute a relative B1 map."""
     # relphasechannel ... use channel XXX as reference
-    # IData ... TX+2 GRE data
-
-    import torch
+    # idata ... TX+2 GRE data
 
     # shift the input data to have [X, Y, Z, RX, MEAS]
-    ima = torch.moveaxis(IData, [0, 1, 2, 3, 4], [4, 3, 2, 1, 0])
+    ima = torch.moveaxis(idata, [0, 1, 2, 3, 4], [4, 3, 2, 1, 0])
     sz = ima.shape
 
     # calculate the noise level
     noise_scan = ima[:, :, :, :, 1]
     noise_mean = torch.mean(torch.abs(torch.flatten(noise_scan))) / 1.253  # factor due to rician distribution
-    RX_sens = (
+    rx_sens = (
         torch.mean(torch.mean(torch.mean(torch.abs(noise_scan), 0), 0), 0)
     ) / 1.253  # factor due to rician distribution
 
@@ -35,15 +38,15 @@ def B1reco(IData, relphasechannel):
     nn = torch.reshape(noise_scan, (sz[0] * sz[1] * sz[2], sz[3]))
     noise_corr = torch.complex(torch.zeros(sz[3], sz[3]), torch.zeros(sz[3], sz[3]))
 
-    for lL in range(0, sz[3]):
-        for lM in range(0, sz[3]):
-            nnsubset = torch.cat((nn[:, lL, None], nn[:, lM, None]), dim=1)
+    for il in range(sz[3]):
+        for im in range(sz[3]):
+            nnsubset = torch.cat((nn[:, il, None], nn[:, im, None]), dim=1)
             nnsubset = torch.moveaxis(nnsubset, [0, 1], [1, 0])
             cc = torch.corrcoef(nnsubset)
-            noise_corr[lL, lM] = cc[1, 0]
+            noise_corr[il, im] = cc[1, 0]
 
     # correct for different RX sensitivities
-    ima_cor = ima[:, :, :, :, 2:] / RX_sens
+    ima_cor = ima[:, :, :, :, 2:] / rx_sens
 
     # calculate the relative TX phase
     phasetemp = ima_cor / ima_cor[:, :, :, :, relphasechannel, None]
@@ -59,10 +62,7 @@ def B1reco(IData, relphasechannel):
         (torch.sum(torch.sum(imamag, dim=3, keepdim=True), dim=4, keepdim=True)) ** 0.5
     )
     b1p_mag = torch.moveaxis(b1_magtmp, [0, 1, 2, 3, 4], [0, 1, 2, 4, 3])
-    sum_cp = torch.sqrt(
-        torch.sum(torch.abs(torch.sum(ima_cor, dim=4, keepdim=True)) ** 2, dim=3, keepdim=True)
-    )
-    # sum_cp = torch.squeeze(sum_cp)
+    sum_cp = torch.sqrt(torch.sum(torch.abs(torch.sum(ima_cor, dim=4, keepdim=True)) ** 2, dim=3, keepdim=True))
 
     rk = torch.sum(imamag, dim=3, keepdim=True) / sum_cp
     rk = torch.squeeze(torch.moveaxis(rk, [0, 1, 2, 3, 4], [0, 1, 2, 4, 3]))
