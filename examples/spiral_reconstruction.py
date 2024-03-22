@@ -39,9 +39,10 @@ from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.data.traj_calculators._KTrajectoryPulseq import KTrajectoryPulseq
 from mrpro.operators import FourierOp
 from mrpro.operators import SensitivityOp
+from mrpro.operators import EinsumOp
 import torch.nn as nn
 from mrpro.algorithms._cg import cg
-from mr_ops import EncObj_Reco
+from einops import rearrange
 
 # %%
 # Download raw data in ISMRMRD format from zenodo into a temporary directory
@@ -89,52 +90,56 @@ plt.figure()
 plt.imshow(torch.abs(img[0, 0, 0, :, :]))
 
 #%%
-class EncObj_Reco(nn.Module):
-
-    def __init__(self, kdata, csm):
-        super(EncObj_Reco, self).__init__()
-    
-        self.F = FourierOp(
-            recon_matrix=kdata.header.recon_matrix, encoding_matrix=kdata.header.encoding_matrix, traj=kdata.traj
-        )
-        self.C = SensitivityOp(csm)
-
-    def apply_A(self, x):
-        k = (self.F @ self.C)(x) 
-        return k[0]
-
-    def apply_AH(self, k):
-        x = (self.F @ self.C).adjoint(k)
-        return x[0]
-
-    def apply_AHA(self, x):
-        k = self.apply_A(x)
-        x = self.apply_AH(k)
-        return x
-
-    def apply_dcomp(self, k, dcomp):
-        return dcomp * k
-
-    def apply_Adag(self, k, dcomp):
-        dcomp_k = self.apply_dcomp(k, dcomp)
-        x = self.apply_AH(dcomp_k)
-        return x
-
-    def apply_AdagA(self, x, dcomp):
-        k = self.apply_A(x)
-        x = self.apply_Adag(k, dcomp)
-        return x
+# Construct operators
+A = fourier_op @ csm_op
+AH = A.H
+W = EinsumOp((dcf.data/dcf.data.shape[2]).to(torch.complex64),"...ij,...j->...j")
+AHW = (AH @ W)
+H = (AH@W)@A
 
 #%%
-EncObj = EncObj_Reco(kdata=kdata,csm=csm)
+#Visualize results
+x0 = AHW(kdata.data)[0]
+plt.imshow(torch.abs(x0[0, 0, 0, :, :]))
+plt.colorbar()
+plt.title('x0')
+plt.show()
 
-xu = EncObj.apply_Adag(kdata.data,dcf.data)
-H = lambda xu: EncObj.apply_AdagA(x=xu,dcomp=dcf.data)
-b = xu
+#%%
+# Apply Conjugate Gradient with N steps and visualize results
+N = 2
+b = x0
+with torch.no_grad():
+	xCG = cg(H,b,x0,N)
+
+plt.imshow(torch.abs(xCG[0, 0, 0, :, :]))
+plt.colorbar()
+plt.title('xCG')
+plt.show()
+
+#%%
+# CG with x0 - old version without oprator W
+x0 = (fourier_op @ csm_op).adjoint(dcf.data * kdata.data)[0]
+
+plt.imshow(torch.abs(x0[0, 0, 0, :, :]))
+plt.colorbar()
+plt.title('x0')
+plt.show()
+
+H = lambda x0: (fourier_op @ csm_op).adjoint(dcf.data * (fourier_op @ csm_op)(x0)[0]) 
+b = x0
 
 with torch.no_grad():
-	xCG = cg(H,b,xu,40)
+	xCG = cg(H, b, x0, 2)
+
+plt.imshow(torch.abs(xCG[0, 0, 0, :, :]))
+plt.colorbar()
+plt.title('CG x0')
+plt.show() 
+
+# # %%
+# # Clean-up by removing temporary directory
+# #shutil.rmtree(data_folder)
+
 
 # %%
-# Clean-up by removing temporary directory
-#shutil.rmtree(data_folder)
