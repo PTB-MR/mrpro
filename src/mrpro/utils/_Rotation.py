@@ -1,4 +1,11 @@
-"""A pytorch implementation of scipy.spatial.transform.Rotation."""
+"""A pytorch implementation of scipy.spatial.transform.Rotation.
+
+A container for Rotations, that can be created from quaternions, euler angles, rotation vectors, rotation matrices,
+etc, can be applied to torch.Tensors and SpatialDimensions, multiplied, and can be converted to quaternions,
+euler angles, etc.
+
+see also https://github.com/scipy/scipy/blob/main/scipy/spatial/transform/_rotation.pyx
+"""
 
 # based on Scipy implementation, which has the following copyright:
 # Copyright (c) 2001-2002 Enthought, Inc. 2003-2024, SciPy Developers
@@ -38,6 +45,7 @@ from __future__ import annotations
 import re
 import warnings
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import numpy as np
 import torch
@@ -45,6 +53,19 @@ from scipy._lib._util import check_random_state
 from scipy.spatial.transform import Rotation as Rotation_scipy
 
 from mrpro.data import SpatialDimension
+
+if TYPE_CHECKING:
+    from types import EllipsisType
+    from typing import TYPE_CHECKING
+    from typing import SupportsIndex
+    from typing import TypeAlias
+
+    from torch._C import _NestedSequence
+
+    # This matches the torch.Tensor indexer typehint
+    _IndexerTypeInner: TypeAlias = None | bool | int | slice | EllipsisType | torch.Tensor
+    _SingleIndexerType: TypeAlias = SupportsIndex | _IndexerTypeInner | _NestedSequence[_IndexerTypeInner]
+    IndexerType: TypeAlias = tuple[_SingleIndexerType, ...] | _SingleIndexerType
 
 AXIS_ORDER = 'zyx'  # This can be modified
 QUAT_AXIS_ORDER = AXIS_ORDER + 'w'  # Do not modify
@@ -123,20 +144,20 @@ def _matrix_to_quaternion(matrix: torch.Tensor) -> torch.Tensor:
     return quaternion
 
 
-def _make_elementary_quat(axis: str, angles: torch.Tensor):
+def _make_elementary_quat(axis: str, angle: torch.Tensor):
     """Make a quaternion for the rotation around one of the axes."""
-    quat = torch.zeros(*angles.shape, 4, device=angles.device, dtype=angles.dtype)
+    quat = torch.zeros(*angle.shape, 4, device=angle.device, dtype=angle.dtype)
     axis_index = QUAT_AXIS_ORDER.index(axis)
     w_index = QUAT_AXIS_ORDER.index('w')
-    quat[..., w_index] = torch.cos(angles / 2)
-    quat[..., axis_index] = torch.sin(angles / 2)
+    quat[..., w_index] = torch.cos(angle / 2)
+    quat[..., axis_index] = torch.sin(angle / 2)
     return quat
 
 
 def _quaternion_to_matrix(quaternion: torch.Tensor) -> torch.Tensor:
     """Convert quaternion to rotation matrix."""
     # use same order for quaternions as for matrix. this saves two index lookups.
-    # we use q, r, s for same permutation of "xyz"
+    # we use q, r, s for a permutation of x, y, z
     # as this function will be used for the application of the rotatoin matrix, it should be fast.
     q, r, s, w = quaternion.unbind(-1)
     qq = q.square()
@@ -400,7 +421,7 @@ class Rotation(torch.nn.Module):
             {'x', 'y', 'z'} for extrinsic rotations. Extrinsic and intrinsic
             rotations cannot be mixed in one function call.
         angles
-            (..., [1 or 2 or 3])
+            (..., [1 or 2 or 3]), matching the number of axes in seq.
             Euler angles specified in radians (`degrees` is False) or degrees
             (`degrees` is True).
         degrees
@@ -558,6 +579,54 @@ class Rotation(torch.nn.Module):
         return rotvec
 
     def as_euler(self, seq: str, degrees: bool = False) -> torch.Tensor:
+        """Represent as Euler angles.
+
+        Any orientation can be expressed as a composition of 3 elementary
+        rotations. Once the axis sequence has been chosen, Euler angles define
+        the angle of rotation around each respective axis [1]_.
+
+        The algorithm from [2]_ has been used to calculate Euler angles for the
+        rotation about a given sequence of axes.
+
+        Euler angles suffer from the problem of gimbal lock [3]_, where the
+        representation loses a degree of freedom and it is not possible to
+        determine the first and third angles uniquely. In this case,
+        a warning is raised, and the third angle is set to zero. Note however
+        that the returned angles still represent the correct rotation.
+
+        Parameters
+        ----------
+        seq
+            3 characters belonging to the set {'X', 'Y', 'Z'} for intrinsic
+            rotations, or {'x', 'y', 'z'} for extrinsic rotations [1]_.
+            Adjacent axes cannot be the same.
+            Extrinsic and intrinsic rotations cannot be mixed in one function
+            call.
+        degrees
+            Returned angles are in degrees if this flag is True, else they are
+            in radians. Default is False.
+
+        Returns
+        -------
+        angles
+            shape (3,) or (..., 3), depending on shape of inputs used to initialize object.
+            The returned angles are in the range:
+            - First angle belongs to [-180, 180] degrees (both inclusive)
+            - Third angle belongs to [-180, 180] degrees (both inclusive)
+            - Second angle belongs to:
+                - [-90, 90] degrees if all axes are different (like xyz)
+                - [0, 180] degrees if first and third axes are the same
+                  (like zxz)
+
+        References
+        ----------
+        .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
+        .. [2] Bernardes E, Viollet S (2022) Quaternion to Euler angles
+               conversion: A direct, general and computationally efficient
+               method. PLoS ONE 17(11): e0276302.
+               https://doi.org/10.1371/journal.pone.0276302
+        .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
+        """
         if len(seq) != 3:
             raise ValueError(f'Expected 3 axes, got {seq}.')
 
@@ -889,7 +958,7 @@ class Rotation(torch.nn.Module):
         angles = (other @ self.inv()).magnitude()
         return angles < atol
 
-    def __getitem__(self, indexer: int | slice | torch.Tensor) -> Rotation:
+    def __getitem__(self, indexer: IndexerType) -> Rotation:
         """Extract rotation(s) at given index(es) from object.
 
         Create a new `Rotation` instance containing a subset of rotations
@@ -910,8 +979,11 @@ class Rotation(torch.nn.Module):
         """
         if self._single:
             raise TypeError('Single rotation is not subscriptable.')
-
-        return self.__class__(self._quaternions[indexer, :], normalize=False)
+        if isinstance(indexer, tuple):
+            _indexer = (*indexer, slice(None))
+        else:
+            _indexer = (indexer, slice(None))
+        return self.__class__(self._quaternions[_indexer], normalize=False)
 
     @property
     def quaternion_x(self) -> torch.Tensor:
@@ -969,7 +1041,7 @@ class Rotation(torch.nn.Module):
         axis = QUAT_AXIS_ORDER.index('w')
         self._quaternions[..., axis] = quat_w
 
-    def __setitem__(self, indexer: int | slice | torch.Tensor, value: Rotation):
+    def __setitem__(self, indexer: IndexerType, value: Rotation):
         """Set rotation(s) at given index(es) from object.
 
         Parameters
@@ -988,7 +1060,13 @@ class Rotation(torch.nn.Module):
 
         if not isinstance(value, Rotation):
             raise TypeError('value must be a Rotation object')
-        self._quaternions[indexer, :] = value.as_quat()
+
+        if isinstance(indexer, tuple):
+            _indexer = (*indexer, slice(None))
+        else:
+            _indexer = (indexer, slice(None))
+
+        self._quaternions[_indexer] = value.as_quat()
 
     @classmethod
     def identity(cls, shape: int | None | tuple[int, ...] = None) -> Rotation:
@@ -1027,9 +1105,8 @@ class Rotation(torch.nn.Module):
     ) -> tuple[Rotation, float] | tuple[Rotation, float, torch.Tensor]:
         """Estimate a rotation to optimally align two sets of vectors.
 
-        For more information, see scipy.spatial.transform
-        Rotation.align_vectors. This will move to cpu, invoke scipy,
-        convert to tensor, move back to device of a.
+        For more information, see `scipy.spatial.transform.Rotation.align_vectors`.
+        This will move to cpu, invoke scipy, convert to tensor, move back to device of a.
         """
         a_tensor = torch.stack([torch.as_tensor(el) for el in a]) if isinstance(a, Sequence) else torch.as_tensor(a)
         a_np = a_tensor.numpy(force=True)
@@ -1106,6 +1183,9 @@ class Rotation(torch.nn.Module):
 
         where :math:`w_i`'s are the `weights` corresponding to each matrix.
 
+        Optionally, if A is a set of Rotation matrices with multiple batch dimensions,
+        the dimensions to reduce over can be specified.
+
         Parameters
         ----------
         weights
@@ -1113,7 +1193,7 @@ class Rotation(torch.nn.Module):
             None (default), then all values in `weights` are assumed to be
             equal.
         dim
-            Dimensions to reduce over. None will always return a single Rotation.
+            Batch Dimensions to reduce over. None will always return a single Rotation.
         keepdim
             Keep reduction dimensions as length-1 dimensions.
 
