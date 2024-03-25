@@ -9,8 +9,9 @@ from mrpro.operators.models import InversionRecovery
 from mrpro.operators.models import SaturationRecovery
 from tests import RandomGenerator
 
-# Signal model, number of input tensors and number of contrast parameters (e.g. inversion time or CEST offsets)
-MODELS_AND_NUM_INPUT_PARAMETERS = [
+# Signal model, number of tensor arguments in forward (i.e. quantitative parameters) , number of tensor arguments
+# in init (e.g. inversion time or CEST offsets)
+MODELS_AND_N_INPUT_PARAMETERS = [
     (MOLLI, 3, 1),
     (InversionRecovery, 2, 1),
     (SaturationRecovery, 2, 1),
@@ -39,10 +40,10 @@ SHAPE_VARIATIONS_SIGNAL_MODELS = [
 
 # Combine models and shapes
 SHAPE_TESTS = pytest.mark.parametrize(
-    ('model', 'num_input_tensors', 'num_init_parameters', 'parameter_shape', 'contrast_dim_shape', 'signal_shape'),
+    ('model', 'n_input_tensors', 'n_init_parameters', 'parameter_shape', 'contrast_dim_shape', 'signal_shape'),
     [
         (*model_shape[0], *model_shape[1])
-        for model_shape in product(MODELS_AND_NUM_INPUT_PARAMETERS, SHAPE_VARIATIONS_SIGNAL_MODELS)
+        for model_shape in product(MODELS_AND_N_INPUT_PARAMETERS, SHAPE_VARIATIONS_SIGNAL_MODELS)
     ],
 )
 
@@ -55,10 +56,10 @@ def create_parameter_tensors(parameter_shape=(10, 5, 100, 100, 100), number_of_t
 
 
 @SHAPE_TESTS
-def test_model_shape(model, num_input_tensors, num_init_parameters, parameter_shape, contrast_dim_shape, signal_shape):
+def test_model_shape(model, n_input_tensors, n_init_parameters, parameter_shape, contrast_dim_shape, signal_shape):
     """Test correct signal shapes."""
-    input_parameters = create_parameter_tensors(contrast_dim_shape, number_of_tensors=num_init_parameters)
+    input_parameters = create_parameter_tensors(contrast_dim_shape, number_of_tensors=n_init_parameters)
     model_op = model(*input_parameters)
-    parameter_tensors = create_parameter_tensors(parameter_shape, number_of_tensors=num_input_tensors)
+    parameter_tensors = create_parameter_tensors(parameter_shape, number_of_tensors=n_input_tensors)
     (signal,) = model_op.forward(*parameter_tensors)
     assert signal.shape == signal_shape

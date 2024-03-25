@@ -95,7 +95,7 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
 
         b1 = self.b1_nom * rb1
         da = offsets - b0_shift
-        mz_initial = 1.0 - torch.exp(torch.multiply(-1.0 / t1, trec))
+        mz_initial = 1.0 - torch.exp(-trec / t1)
 
         signal = mz_initial * (
             1
