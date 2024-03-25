@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import torch
-from einops import rearrange
 from torch import nn
 
 from mrpro.operators import SignalModel
@@ -30,14 +29,15 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         gamma: float | torch.Tensor = 42.5764,
         freq: float | torch.Tensor = 127.7292,
     ) -> None:
-        """Initialize WASABI signal model for mapping of B0 and B1.
+        """Initialize WASABI signal model.
 
         For more details see: https://doi.org/10.1002/mrm.26133
 
         Parameters
         ----------
         offsets
-            frequency offsets [Hz], must be 1D tensor
+            frequency offsets [Hz]
+            with shape (offsets, ...)
         tp
             RF pulse duration [s], by default 0.005
         b1_nom
@@ -74,25 +74,24 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         ----------
         b0_shift
             B0 shift [Hz]
+            with shape (... other, coils, z, y, x)
         relative_b1
             relative B1 amplitude
-            with shape ... other, coils, z, y, x)
+            with shape (... other, coils, z, y, x)
         c
             additional fit parameter for the signal model
-            with shape ... other, coils, z, y, x)
+            with shape (... other, coils, z, y, x)
         d
             additional fit parameter for the signal model
-            with shape ... other, coils, z, y, x)
+            with shape (... other, coils, z, y, x)
 
         Returns
         -------
-            signal with dimensions ... (other offsets), coils, z, y, x)
+            signal
+            with shape (offsets ... other, coils, z, y, x)
         """
-        b0_shift = b0_shift.unsqueeze(-5)
-        relative_b1 = relative_b1.unsqueeze(-5)
-        c = c.unsqueeze(-5)
-        d = d.unsqueeze(-5)
-        offsets = self.offsets[..., None, :, None, None, None, None]
+        delta_ndim = b0_shift.ndim - (self.offsets.ndim - 1)  # -1 for offset
+        offsets = self.offsets[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.offsets
         delta_x = offsets - b0_shift
         b1 = self.b1_nom * relative_b1
 
@@ -102,5 +101,4 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
             * (torch.pi * b1 * self.gamma * self.tp) ** 2
             * torch.sinc(self.tp * torch.sqrt((b1 * self.gamma) ** 2 + delta_x**2)) ** 2
         )
-        signal = rearrange(signal, '... other offsets c z y x ->.... (other offsets) c z y x')
         return (signal,)

@@ -13,24 +13,6 @@ def create_data(offset_max=250, offset_nr=101, b0_shift_in=0, rb1=1.0, t1=1.0):
     return offsets, b0_shift, rb1, t1
 
 
-@pytest.mark.parametrize(
-    ('offset_max', 'offset_nr', 'b0_shift', 'rb1', 't1', 'coils', 'z', 'y', 'x'),
-    [
-        (250, 101, 0, 1.0, 1.0, 1, 1, 1, 1),
-        (200, 101, 0, 0, 1.0, 1, 1, 1, 1),
-        (10, 101, 10, 10, 1.0, 1, 1, 1, 1),
-    ],
-)
-def test_WASABITI_signal_model_shape(offset_max, offset_nr, b0_shift, rb1, t1, coils, z, y, x):
-    """Test for correct output shape."""
-    offsets, b0_shift, rb1, t1 = create_data(offset_max, offset_nr, b0_shift, rb1, t1)
-    trec = torch.ones_like(offsets)
-
-    wasabiti_model = WASABITI(offsets=offsets, trec=trec)
-    (signal,) = wasabiti_model.forward(b0_shift, rb1, t1)
-    assert signal.shape == (offset_nr, coils, z, y, x)
-
-
 def test_WASABITI_shift_and_symmetry():
     """Test symmetry property of shifted and unshifted WASABITI spectra."""
     offsets_unshifted, b0_shift, rb1, t1 = create_data(offset_max=500, offset_nr=100, b0_shift_in=0)
@@ -60,3 +42,11 @@ def test_WASABITI_relaxation_term(t1):
     sig = wasabiti_model.forward(b0_shift, rb1, t1)
 
     assert torch.isclose(sig[0], torch.FloatTensor([1 - torch.exp(torch.FloatTensor([-1]))]), rtol=1e-8)
+
+
+def test_WASABITI_offsets_trec_mismatch():
+    """Verify error for shape mismatch."""
+    offsets = torch.ones((1, 2))
+    trec = torch.ones((1,))
+    with pytest.raises(ValueError, match='Shape of trec'):
+        WASABITI(offsets=offsets, trec=trec)

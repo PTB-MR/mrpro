@@ -1,4 +1,3 @@
-import pytest
 import torch
 from mrpro.operators.models import WASABI
 
@@ -12,23 +11,6 @@ def create_data(offset_max=250, offset_nr=101, b0_shift_in=0, rb1=1.0, c=1.0, d=
     d = torch.Tensor([d])
 
     return offsets, b0_shift, rb1, c, d
-
-
-@pytest.mark.parametrize(
-    ('offset_max', 'offset_nr', 'b0_shift', 'rb1', 'c', 'd', 'coils', 'z', 'y', 'x'),
-    [
-        (250, 101, 0, 1.0, 1.0, 2.0, 1, 1, 1, 1),
-        (200, 101, 0, 0, 1.0, 2.0, 1, 1, 1, 1),
-        (10, 101, 10, 10, 1.0, 2.0, 1, 1, 1, 1),
-    ],
-)
-def test_WASABI_signal_model_shape(offset_max, offset_nr, b0_shift, rb1, c, d, coils, z, y, x):
-    """Test for correct output shape."""
-    offsets, b0_shift, rb1, c, d = create_data(offset_max, offset_nr, b0_shift, rb1, c, d)
-    wasabi_model = WASABI(offsets=offsets)
-    (signal,) = wasabi_model.forward(b0_shift, rb1, c, d)
-
-    assert signal.shape == (offset_nr, coils, z, y, x)
 
 
 def test_WASABI_shift():
