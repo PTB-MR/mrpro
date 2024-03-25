@@ -9,7 +9,7 @@ from mrpro.operators.models import InversionRecovery
 from mrpro.operators.models import SaturationRecovery
 from tests import RandomGenerator
 
-# Signal model, number of tensor arguments in forward (i.e. quantitative parameters) , number of tensor arguments
+# Signal model, number of tensor arguments in forward (i.e. quantitative parameters) and number of tensor arguments
 # in init (e.g. inversion time or CEST offsets)
 MODELS_AND_N_INPUT_PARAMETERS = [
     (MOLLI, 3, 1),
