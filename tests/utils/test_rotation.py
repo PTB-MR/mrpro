@@ -1357,7 +1357,7 @@ def test_repr():
     assert repr(Rotation.identity(1)) == '(1,)-Batched Rotation()'
 
 
-def test_quaternion_properties():
+def test_quaternion_properties_single():
     """Test quaternion_x, quaternion_y, quaternion_z, quaternion_w"""
     quat = torch.tensor([1.0, 2.0, 3.0, 4.0])
     quat /= quat.norm()
@@ -1374,6 +1374,25 @@ def test_quaternion_properties():
     torch.testing.assert_close(r.quaternion_y, torch.tensor(2.0))
     torch.testing.assert_close(r.quaternion_z, torch.tensor(3.0))
     torch.testing.assert_close(r.quaternion_w, torch.tensor(4.0))
+
+
+def test_quaternion_properties_batch():
+    """Test quaternion_x, quaternion_y, quaternion_z, quaternion_w"""
+    quat = torch.arange(10 * 2 * 4).reshape(10, 2, 4).float()
+    quat /= quat.norm(dim=-1, keepdim=True)
+    r = Rotation(quat, normalize=False)
+    assert torch.equal(r.quaternion_x, quat[..., AXIS_ORDER.index('x')])
+    assert torch.equal(r.quaternion_y, quat[..., AXIS_ORDER.index('y')])
+    assert torch.equal(r.quaternion_z, quat[..., AXIS_ORDER.index('z')])
+    assert torch.equal(r.quaternion_w, quat[..., -1])
+    r.quaternion_x = 1.0 * torch.ones(10, 2)
+    r.quaternion_y = 2.0 * torch.ones(10, 2)
+    r.quaternion_z = 3.0 * torch.ones(10, 2)
+    r.quaternion_w = 4.0 * torch.ones(10, 2)
+    torch.testing.assert_close(r.quaternion_x, 1 * torch.ones(10, 2))
+    torch.testing.assert_close(r.quaternion_y, 2 * torch.ones(10, 2))
+    torch.testing.assert_close(r.quaternion_z, 3 * torch.ones(10, 2))
+    torch.testing.assert_close(r.quaternion_w, 4 * torch.ones(10, 2))
 
 
 def test_axis_order_zyx():
