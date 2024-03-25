@@ -32,6 +32,7 @@ repos:
         additional_dependencies:
           - numpy
           - torch>=2.2.0
+          - types-requests
           - "--index-url=https://download.pytorch.org/whl/cpu"
           - "--extra-index-url=https://pypi.python.org/simple"
         exclude: docs/.*|tests/.*

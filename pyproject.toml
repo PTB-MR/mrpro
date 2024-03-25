@@ -46,7 +46,6 @@ test = [
     "pytest",
     "pytest-cov",
     "pytest-xdist",
-    "types-requests",
 ]
 lint = ["mypy", "flake8", "isort", "pre-commit", "autopep8", "pydocstyle"]
 docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject"]
