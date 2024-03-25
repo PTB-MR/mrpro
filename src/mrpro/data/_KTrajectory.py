@@ -47,8 +47,8 @@ class KTrajectory:
     kx: torch.Tensor
     """(other,k2,k1,k0), frequency encoding direction k0 if Cartesian."""
 
-    # Tolerance of how close trajectory positions have to be to integer grid points
-    grid_detection_tolerance: float
+    grid_detection_tolerance: float = 1e-3
+    """tolerance of how close trajectory positions have to be to integer grid points."""
 
     @property
     def broadcasted_shape(self) -> tuple[int, ...]:
