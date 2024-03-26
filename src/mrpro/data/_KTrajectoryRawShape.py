@@ -44,8 +44,8 @@ class KTrajectoryRawShape:
     kx: torch.Tensor
     """(other,k2,k1,k0), frequency encoding direction k0 if Cartesian."""
 
-    repeat_detection_tolerance: float = 1e-3
-    """tolerance for repeat detection which is used in reshape()."""
+    repeat_detection_tolerance: None | float = 1e-3
+    """tolerance for repeat detection, by default 1e-3, None to disable."""
 
     def reshape(
         self,
@@ -75,4 +75,4 @@ class KTrajectoryRawShape:
         ky = rearrange(self.ky[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=n_k1, k2=n_k2)
         kx = rearrange(self.kx[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=n_k1, k2=n_k2)
 
-        return KTrajectory(kz, ky, kx, self.repeat_detection_tolerance)
+        return KTrajectory(kz, ky, kx, repeat_detection_tolerance=self.repeat_detection_tolerance)

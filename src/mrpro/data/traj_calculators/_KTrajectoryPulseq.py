@@ -34,9 +34,11 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
     ----------
     seq_path
         absolute path to .seq file
+    repeat_detection_tolerance
+        tolerance for repeat detection when creating KTrajectory, by default 1e-3
     """
 
-    def __init__(self, seq_path: str | Path, repeat_detection_tolerance: float = 1e-3) -> None:
+    def __init__(self, seq_path: str | Path, repeat_detection_tolerance: None | float = 1e-3) -> None:
         super().__init__()
         self.seq_path = seq_path
         self.repeat_detection_tolerance = repeat_detection_tolerance
