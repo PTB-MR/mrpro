@@ -8,3 +8,4 @@ from mrpro.operators._FastFourierOp import FastFourierOp
 from mrpro.operators._FourierOp import FourierOp
 from mrpro.operators._EinsumOp import EinsumOp
 from mrpro.operators._CartesianSamplingOp import CartesianSamplingOp
+from mrpro.operators._SliceProjectionOp import SliceProjectionOp
