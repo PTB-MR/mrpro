@@ -76,7 +76,7 @@ class SpatialDimension(Generic[T]):
         """
         if not isinstance(data, np.ndarray | torch.Tensor):
             data = np.asarray(data)
-        data = np.asarray(data)
+
         if np.size(data, -1) != 3:
             raise ValueError(f'Expected last dimension to be 3, got {np.size(data, -1)}')
 
@@ -89,3 +89,25 @@ class SpatialDimension(Generic[T]):
             y = conversion(y)
             z = conversion(z)
         return SpatialDimension(z, y, x)
+
+    @staticmethod
+    def from_array_zyx(
+        data: ArrayLike,
+        conversion: Callable[[torch.Tensor], torch.Tensor] | None = None,
+    ) -> SpatialDimension[torch.Tensor]:
+        """Create a SpatialDimension from an arraylike interface.
+
+        Parameters
+        ----------
+        data
+            shape (..., 3) in the order (z,y,x)
+        conversion
+            will be called for each value to convert it, by default None
+        """
+        data = torch.flip(torch.as_tensor(data), (-1,))
+        return SpatialDimension.from_array_xyz(data, conversion)
+
+    @property
+    def zyx(self) -> tuple[T, T, T]:
+        """Return a z,y,x tuple."""
+        return (self.z, self.y, self.x)
