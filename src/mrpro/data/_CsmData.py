@@ -18,9 +18,10 @@ from __future__ import annotations
 
 import torch
 
-from mrpro.data import IData
-from mrpro.data import QData
-from mrpro.data import SpatialDimension
+from mrpro.algorithms.csm._iterative_walsh import iterative_walsh
+from mrpro.data._IData import IData
+from mrpro.data._QData import QData
+from mrpro.data._SpatialDimension import SpatialDimension
 from mrpro.utils.filters import uniform_filter_3d
 
 
@@ -95,7 +96,7 @@ class CsmData(QData):
             smoothing_width = SpatialDimension(smoothing_width, smoothing_width, smoothing_width)
 
         csm_fun = torch.vmap(
-            lambda img: CsmData._iterative_walsh_csm(img, smoothing_width, power_iterations),
+            lambda img: iterative_walsh(img, smoothing_width, power_iterations),
             chunk_size=chunk_size_otherdim,
         )
         csm_data = csm_fun(idata.data)

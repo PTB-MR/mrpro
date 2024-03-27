@@ -16,7 +16,7 @@ from collections.abc import Callable
 
 import torch
 
-from mrpro.operators import LinearOperator
+from mrpro.operators._LinearOperator import LinearOperator
 
 
 def cg(

@@ -19,7 +19,7 @@ from collections.abc import Sequence
 import torch
 from torch.optim import Adam
 
-from mrpro.operators import Operator
+from mrpro.operators._Operator import Operator
 
 
 def adam(

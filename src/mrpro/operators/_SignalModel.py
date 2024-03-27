@@ -19,7 +19,7 @@ from typing import TypeVarTuple
 
 import torch
 
-from mrpro.operators import Operator
+from mrpro.operators._Operator import Operator
 
 Tin = TypeVarTuple('Tin')
 

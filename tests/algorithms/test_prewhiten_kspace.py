@@ -14,7 +14,7 @@
 
 import torch
 from einops import rearrange
-from mrpro.algorithms import prewhiten_kspace
+from mrpro.algorithms._prewhiten_kspace import prewhiten_kspace
 from mrpro.data import KData
 from mrpro.data import KNoise
 from mrpro.data import KTrajectory

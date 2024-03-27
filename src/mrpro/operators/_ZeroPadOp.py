@@ -18,7 +18,7 @@ from collections.abc import Sequence
 
 import torch
 
-from mrpro.operators import LinearOperator
+from mrpro.operators._LinearOperator import LinearOperator
 from mrpro.utils import zero_pad_or_crop
 
 

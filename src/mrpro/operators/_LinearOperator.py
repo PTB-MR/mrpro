@@ -20,7 +20,7 @@ from abc import abstractmethod
 
 import torch
 
-from mrpro.operators import Operator
+from mrpro.operators._Operator import Operator
 from mrpro.operators._Operator import OperatorComposition
 from mrpro.operators._Operator import OperatorElementwiseProduct
 from mrpro.operators._Operator import OperatorSum
