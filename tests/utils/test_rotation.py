@@ -1341,7 +1341,7 @@ def test_weighted_mean_dims(shape, keepdim, dim, expected_shape):
     mean2 = rotations_full.mean(weights=None, keepdim=keepdim, dim=dim)
 
     assert mean1.shape == expected_shape, 'Shape does not match'
-    torch.testing.assert_close(mean1.as_quat(), mean2.as_quat(), atol=1e-6, rtol=0)
+    assert mean1.approx_equal(mean2).all(), 'Weighting a Rotation 2x is not the same as including it twice'
 
 
 def test_mean_invalid_weights():

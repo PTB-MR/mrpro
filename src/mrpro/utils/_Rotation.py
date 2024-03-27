@@ -929,7 +929,7 @@ class Rotation(torch.nn.Module):
             angles = angles[0]
         return angles
 
-    def approx_equal(self, other: Rotation, atol: float = 1e-8, degrees: bool = False) -> torch.Tensor | bool:
+    def approx_equal(self, other: Rotation, atol: float = 1e-6, degrees: bool = False) -> torch.Tensor | bool:
         """Determine if another rotation is approximately equal to this one.
 
         Equality is measured by calculating the smallest angle between the
