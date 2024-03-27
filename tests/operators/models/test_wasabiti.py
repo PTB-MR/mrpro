@@ -8,14 +8,18 @@ def create_data(offset_max=500, n_offsets=101, b0_shift=0, rb1=1.0, t1=1.0):
     return offsets, torch.Tensor([b0_shift]), torch.Tensor([rb1]), torch.Tensor([t1])
 
 
-def test_WASABITI_shift_and_symmetry():
-    """Test symmetry property of shifted and unshifted WASABITI spectra."""
-    offsets_unshifted, b0_shift, rb1, t1 = create_data()
-    # note that the symmetry is only guaranteed for identical trec values
-    trec = torch.ones_like(offsets_unshifted)
-    wasabiti_model = WASABITI(offsets=offsets_unshifted, trec=trec)
+def test_WASABITI_symmetry():
+    """Test symmetry property of complete WASABITI spectra."""
+    offsets, b0_shift, rb1, t1 = create_data()
+    wasabiti_model = WASABITI(offsets=offsets, trec=torch.ones_like(offsets))
     (signal,) = wasabiti_model.forward(b0_shift, rb1, t1)
 
+    # check that all values are symmetric around the center
+    assert torch.allclose(signal, signal.flipud(), rtol=1e-15), 'Result should be symmetric around center'
+
+
+def test_WASABITI_symmetry_after_shift():
+    """Test symmetry property of shifted WASABITI spectra."""
     offsets_shifted, b0_shift, rb1, t1 = create_data(b0_shift=100)
     trec = torch.ones_like(offsets_shifted)
     wasabiti_model = WASABITI(offsets=offsets_shifted, trec=trec)
@@ -24,8 +28,20 @@ def test_WASABITI_shift_and_symmetry():
     lower_index = (offsets_shifted == -300).nonzero()[0][0].item()
     upper_index = (offsets_shifted == 500).nonzero()[0][0].item()
 
-    assert signal[0] == signal[-1], 'Result should be symmetric around center'
     assert signal_shifted[lower_index] == signal_shifted[upper_index], 'Result should be symmetric around shift'
+
+
+def test_WASABITI_asymmetry_for_non_unique_trec():
+    """Test symmetry property of WASABITI spectra for non-unique trec values."""
+    offsets_unshifted, b0_shift, rb1, t1 = create_data(n_offsets=11)
+    trec = torch.ones_like(offsets_unshifted)
+    # set first half of trec values to 2.0
+    trec[: len(offsets_unshifted) // 2] = 2.0
+
+    wasabiti_model = WASABITI(offsets=offsets_unshifted, trec=trec)
+    (signal,) = wasabiti_model.forward(b0_shift, rb1, t1)
+
+    assert not torch.allclose(signal, signal.flipud(), rtol=1e-8), 'Result should not be symmetric around center'
 
 
 @pytest.mark.parametrize('t1', [(1), (2), (3)])
