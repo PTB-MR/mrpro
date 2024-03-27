@@ -39,8 +39,8 @@ def test_cart_sampling_op_data_match():
     kdata = random_generator.complex64_tensor(size=k_shape)
 
     # Create sampling operator
-    encoding_shape = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
-    sampling_op = CartesianSamplingOp(encoding_shape=encoding_shape, traj=trajectory)
+    encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
 
     # Subsample data and trajectory
     kdata_sub = kdata[:, :, ::2, ::4, ::3]
@@ -49,7 +49,7 @@ def test_cart_sampling_op_data_match():
         ky=trajectory.ky[:, :, ::4, :],
         kx=trajectory.kx[:, :, :, ::3],
     )
-    sampling_op_sub = CartesianSamplingOp(encoding_shape=encoding_shape, traj=trajectory_sub)
+    sampling_op_sub = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory_sub)
 
     # Verify that the fully-sampled sampling operator does not do anything because the data is already sorted
     assert not sampling_op._needs_indexing
@@ -65,42 +65,56 @@ def test_cart_sampling_op_data_match():
 
 @pytest.mark.parametrize(
     'sampling',
-    ['random', 'partial_echo', 'partial_fourier', 'regular_undersampling', 'random_undersampling'],
+    [
+        'random',
+        'partial_echo',
+        'partial_fourier',
+        'regular_undersampling',
+        'random_undersampling',
+        'different_random_undersampling',
+    ],
 )
 def test_cart_sampling_op_fwd_adj(sampling):
     """Test adjoint property of Cartesian sampling operator."""
 
     # Create 3D uniform trajectory
-    k_shape = (1, 5, 20, 40, 60)
-    nkx = (1, 1, 1, 60)
-    nky = (1, 1, 40, 1)
-    nkz = (1, 20, 1, 1)
+    k_shape = (2, 5, 20, 40, 60)
+    nkx = (2, 1, 1, 60)
+    nky = (2, 1, 40, 1)
+    nkz = (2, 20, 1, 1)
     sx = 'uf'
     sy = 'uf'
     sz = 'uf'
-    trajectory = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
+    trajectory_tensor = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz).as_tensor()
 
     # Subsample data and trajectory
-    if sampling == 'random':
-        random_idx = torch.randperm(k_shape[-2])
-        trajectory_sub = KTrajectory.from_tensor(trajectory.as_tensor()[..., random_idx, :])
-    elif sampling == 'partial_echo':
-        trajectory_sub = KTrajectory.from_tensor(trajectory.as_tensor()[..., : k_shape[-1] // 2])
-    elif sampling == 'partial_fourier':
-        trajectory_sub = KTrajectory.from_tensor(trajectory.as_tensor()[..., : k_shape[-3] // 2, : k_shape[-2] // 2, :])
-    elif sampling == 'regular_undersampling':
-        trajectory_sub = KTrajectory.from_tensor(trajectory.as_tensor()[..., ::3, ::5, :])
-    elif sampling == 'random_undersampling':
-        random_idx = torch.randperm(k_shape[-2])
-        trajectory_sub = KTrajectory.from_tensor(trajectory.as_tensor()[..., random_idx[: k_shape[-2] // 2], :])
-    else:
-        raise ValueError(f'Test {sampling} not implemented.')
+    match sampling:
+        case 'random':
+            random_idx = torch.randperm(k_shape[-2])
+            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., random_idx, :])
+        case 'partial_echo':
+            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., : k_shape[-1] // 2])
+        case 'partial_fourier':
+            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., : k_shape[-3] // 2, : k_shape[-2] // 2, :])
+        case 'regular_undersampling':
+            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., ::3, ::5, :])
+        case 'random_undersampling':
+            random_idx = torch.randperm(k_shape[-2])
+            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., random_idx[: k_shape[-2] // 2], :])
+        case 'different_random_undersampling':
+            traj_list = [
+                traj_one_other[..., torch.randperm(k_shape[-2])[: k_shape[-2] // 2], :]
+                for traj_one_other in trajectory_tensor.unbind(1)
+            ]
+            trajectory = KTrajectory.from_tensor(torch.stack(traj_list, dim=1))
+        case _:
+            raise NotImplementedError(f'Test {sampling} not implemented.')
 
-    encoding_shape = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
-    sampling_op = CartesianSamplingOp(encoding_shape=encoding_shape, traj=trajectory_sub)
+    encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
 
     # Test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v
     random_generator = RandomGenerator(seed=0)
     u = random_generator.complex64_tensor(size=k_shape)
-    v = random_generator.complex64_tensor(size=k_shape[:2] + trajectory_sub.as_tensor().shape[2:])
+    v = random_generator.complex64_tensor(size=k_shape[:2] + trajectory.as_tensor().shape[2:])
     dotproduct_adjointness_test(sampling_op, u, v)

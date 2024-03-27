@@ -61,7 +61,7 @@ dcf = DcfData.from_traj_voronoi(kdata.traj)
 
 # Reconstruct average image for coil map estimation
 fourier_op = FourierOp(
-    recon_shape=kdata.header.recon_matrix, encoding_shape=kdata.header.encoding_matrix, traj=kdata.traj
+    recon_matrix=kdata.header.recon_matrix, encoding_matrix=kdata.header.encoding_matrix, traj=kdata.traj
 )
 (img,) = fourier_op.adjoint(kdata.data * dcf.data[:, None, ...])
 

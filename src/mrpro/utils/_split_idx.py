@@ -3,14 +3,16 @@
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at:
+#
 #       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import torch
 
@@ -24,9 +26,9 @@ def split_idx(idx: torch.Tensor, np_per_block: int, np_overlap: int = 0, cyclic:
         1D indices to be split into different blocks.
     np_per_block
         Number of points per block.
-    np_overlap, optional
+    np_overlap
         Number of points overlapping between blocks, by default 0, i.e. no overlap between blocks
-    cyclic, optional
+    cyclic
         Last block is filled up with points from the first block, e.g. due to cyclic cardiac motion, by default False
 
 

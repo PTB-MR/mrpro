@@ -1,14 +1,16 @@
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at:
+#
 #       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import torch
 from einops import rearrange
@@ -39,13 +41,13 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
             frequency offsets [Hz]
         trec
             recovery time between offsets [s]
-        tp, optional
+        tp
             RF pulse duration [s], by default 0.005
-        b1_nom, optional
+        b1_nom
             nominal B1 amplitude [µT], by default 3.75
-        gamma, optional
+        gamma
             gyromagnetic ratio [MHz/T], by default 42.5764
-        freq, optional
+        freq
             larmor frequency [MHz], by default 127.7292
         """
         super().__init__()

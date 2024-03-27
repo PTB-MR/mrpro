@@ -298,9 +298,9 @@ class IsmrmrdRawTestData:
             number of phase encoding points before undersampling
         n_freq_encoding
             number of frequency encoding points
-        acceleration, optional
+        acceleration
             undersampling factor, by default 1
-        sampling_order, optional
+        sampling_order
             order how phase encoding points are sampled, by default "linear"
         """
         # Fully sampled frequency encoding
@@ -348,7 +348,7 @@ class IsmrmrdRawTestData:
             number of phase encoding points before undersampling, defines the number of angles
         n_freq_encoding
             number of frequency encoding points, defines the sampling along each radial line
-        acceleration, optional
+        acceleration
             undersampling factor, by default 1
         """
         # Fully sampled frequency encoding

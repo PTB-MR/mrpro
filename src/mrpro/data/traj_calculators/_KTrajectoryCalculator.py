@@ -3,14 +3,16 @@
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at:
+#
 #       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 from __future__ import annotations
 
@@ -22,6 +24,7 @@ import torch
 from mrpro.data._KHeader import KHeader
 from mrpro.data._KTrajectory import KTrajectory
 from mrpro.data._KTrajectoryRawShape import KTrajectoryRawShape
+from mrpro.data.enums import AcqFlags
 
 
 class KTrajectoryCalculator(ABC):
@@ -52,21 +55,18 @@ class KTrajectoryCalculator(ABC):
         ------
         ValueError
             Number of samples have to be the same for each readout
-        ValueError
-            Center sample has to be the same for each readout
         """
-        n_samples = kheader.acq_info.number_of_samples
+        n_samples = torch.unique(kheader.acq_info.number_of_samples)
         center_sample = kheader.acq_info.center_sample
-
-        # Verify that each readout has the same number of samples and same center sample
-        if len(torch.unique(n_samples)) > 1:
+        if len(n_samples) > 1:
             raise ValueError('Trajectory can only be calculated if each acquisition has the same number of samples')
-        if len(torch.unique(center_sample)) > 1:
-            raise ValueError('Trajectory can only be calculated if each acquisition has the same center sample')
+        n_k0 = int(n_samples.item())
 
-        # Calculate points along readout
-        n_k0 = int(n_samples[0, 0, 0])
-        k0 = torch.linspace(0, n_k0 - 1, n_k0, dtype=torch.float32) - center_sample[0, 0, 0]
+        # Data can be obtained with standard or reversed readout (e.g. bipolar readout).
+        k0 = torch.linspace(0, n_k0 - 1, n_k0, dtype=torch.float32) - center_sample
+        # Data can be obtained with standard or reversed readout (e.g. bipolar readout).
+        reversed_readout_mask = (kheader.acq_info.flags[..., 0] & AcqFlags.ACQ_IS_REVERSE.value).bool()
+        k0[reversed_readout_mask, :] = torch.flip(k0[reversed_readout_mask, :], (-1,))
         return k0
 
 
@@ -76,8 +76,8 @@ class DummyTrajectory(KTrajectoryCalculator):
     Shape will fit to all data. Only used as dummy for testing.
     """
 
-    def __call__(self, header: KHeader) -> KTrajectory:
-        """Calculate dummy trajectory for given KHeader."""
-        kx = torch.zeros(1, 1, 1, header.encoding_limits.k0.length)
+    def __call__(self, header: KHeader) -> KTrajectory:  # noqa: ARG002
+        """Calculate dummy trajectory."""
+        kx = torch.zeros(1, 1, 1, 1)
         ky = kz = torch.zeros(1, 1, 1, 1)
         return KTrajectory(kz, ky, kx)

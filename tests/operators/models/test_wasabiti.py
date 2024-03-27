@@ -1,6 +1,6 @@
 import pytest
 import torch
-from mrpro.operators.models._WASABITI import WASABITI
+from mrpro.operators.models import WASABITI
 
 
 def create_data(offset_max=250, offset_nr=101, b0_shift_in=0, rb1=1.0, t1=1.0):
