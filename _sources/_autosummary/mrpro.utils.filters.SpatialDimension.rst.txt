@@ -18,6 +18,7 @@ mrpro.utils.filters.SpatialDimension
    
       ~SpatialDimension.__init__
       ~SpatialDimension.from_array_xyz
+      ~SpatialDimension.from_array_zyx
       ~SpatialDimension.from_xyz
    
    
@@ -31,5 +32,6 @@ mrpro.utils.filters.SpatialDimension
       ~SpatialDimension.z
       ~SpatialDimension.y
       ~SpatialDimension.x
+      ~SpatialDimension.zyx
    
    

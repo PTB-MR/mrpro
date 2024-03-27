@@ -504,7 +504,10 @@ document.write(`
 <tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.SpatialDimension.from_array_xyz" title="mrpro.data.SpatialDimension.from_array_xyz"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_array_xyz</span></code></a>(data[, conversion])</p></td>
 <td><p>Create a SpatialDimension from an arraylike interface.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.SpatialDimension.from_xyz" title="mrpro.data.SpatialDimension.from_xyz"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_xyz</span></code></a>(data[, conversion])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.SpatialDimension.from_array_zyx" title="mrpro.data.SpatialDimension.from_array_zyx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_array_zyx</span></code></a>(data[, conversion])</p></td>
+<td><p>Create a SpatialDimension from an arraylike interface.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.SpatialDimension.from_xyz" title="mrpro.data.SpatialDimension.from_xyz"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_xyz</span></code></a>(data[, conversion])</p></td>
 <td><p>Create a SpatialDimension from something with (.x .y .z) parameters.</p></td>
 </tr>
 </tbody>
@@ -521,6 +524,9 @@ document.write(`
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">x</span></code></p></td>
 <td><p></p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.SpatialDimension.zyx" title="mrpro.data.SpatialDimension.zyx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">zyx</span></code></a></p></td>
+<td><p>Return a z,y,x tuple.</p></td>
+</tr>
 </tbody>
 </table>
 <dl class="py method">
@@ -531,6 +537,20 @@ document.write(`
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data</strong> – shape (…, 3) in the order (x,y,z)</p></li>
+<li><p><strong>conversion</strong> – will be called for each value to convert it, by default None</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.SpatialDimension.from_array_zyx">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_array_zyx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conversion</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="mrpro.utils.filters.SpatialDimension.html#mrpro.utils.filters.SpatialDimension" title="mrpro.data._SpatialDimension.SpatialDimension"><span class="pre">SpatialDimension</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/mrpro/data/_SpatialDimension.html#SpatialDimension.from_array_zyx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.SpatialDimension.from_array_zyx" title="Link to this definition">#</a></dt>
+<dd><p>Create a SpatialDimension from an arraylike interface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – shape (…, 3) in the order (z,y,x)</p></li>
 <li><p><strong>conversion</strong> – will be called for each value to convert it, by default None</p></li>
 </ul>
 </dd>
@@ -550,6 +570,12 @@ document.write(`
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mrpro.data.SpatialDimension.zyx">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">zyx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">T</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">T</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mrpro.data.SpatialDimension.zyx" title="Link to this definition">#</a></dt>
+<dd><p>Return a z,y,x tuple.</p>
 </dd></dl>
 
 </dd></dl>
@@ -605,7 +631,9 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.SpatialDimension"><code class="docutils literal notranslate"><span class="pre">SpatialDimension</span></code></a><ul class="visible nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.SpatialDimension.__init__"><code class="docutils literal notranslate"><span class="pre">SpatialDimension.__init__()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.SpatialDimension.from_array_xyz"><code class="docutils literal notranslate"><span class="pre">SpatialDimension.from_array_xyz()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.SpatialDimension.from_array_zyx"><code class="docutils literal notranslate"><span class="pre">SpatialDimension.from_array_zyx()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.SpatialDimension.from_xyz"><code class="docutils literal notranslate"><span class="pre">SpatialDimension.from_xyz()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.SpatialDimension.zyx"><code class="docutils literal notranslate"><span class="pre">SpatialDimension.zyx</span></code></a></li>
 </ul>
 </li>
 </ul>
