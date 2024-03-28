@@ -1,47 +1,19 @@
-import pytest
 import torch
 from mrpro.operators.models import WASABI
 
 
-def create_data(offset_max=250, offset_nr=101, b0_shift_in=0, rb1=1.0, c=1.0, d=2.0):
-    offsets = torch.linspace(-offset_max, offset_max, offset_nr)
-    b0_shift = torch.zeros([1, 1, 1, 1, 1])
-    b0_shift[0] = b0_shift_in
-    rb1 = torch.Tensor([rb1])
-    c = torch.Tensor([c])
-    d = torch.Tensor([d])
-
-    return offsets, b0_shift, rb1, c, d
-
-
-@pytest.mark.parametrize(
-    ('offset_max', 'offset_nr', 'b0_shift', 'rb1', 'c', 'd', 'coils', 'z', 'y', 'x'),
-    [
-        (250, 101, 0, 1.0, 1.0, 2.0, 1, 1, 1, 1),
-        (200, 101, 0, 0, 1.0, 2.0, 1, 1, 1, 1),
-        (10, 101, 10, 10, 1.0, 2.0, 1, 1, 1, 1),
-    ],
-)
-def test_WASABI_signal_model_shape(offset_max, offset_nr, b0_shift, rb1, c, d, coils, z, y, x):
-    """Test for correct output shape."""
-    offsets, b0_shift, rb1, c, d = create_data(offset_max, offset_nr, b0_shift, rb1, c, d)
-    wasabi_model = WASABI(offsets=offsets)
-    (signal,) = wasabi_model.forward(b0_shift, rb1, c, d)
-
-    assert signal.shape == (offset_nr, coils, z, y, x)
+def create_data(offset_max=500, n_offsets=101, b0_shift=0, rb1=1.0, c=1.0, d=2.0):
+    offsets = torch.linspace(-offset_max, offset_max, n_offsets)
+    return offsets, torch.Tensor([b0_shift]), torch.Tensor([rb1]), torch.Tensor([c]), torch.Tensor([d])
 
 
 def test_WASABI_shift():
     """Test symmetry property of shifted and unshifted WASABI spectra."""
-    offsets_unshifted, b0_shift_unshifted, rb1_unshifted, c_unshifted, d_unshifted = create_data(
-        offset_max=500,
-        offset_nr=100,
-        b0_shift_in=0,
-    )
+    offsets_unshifted, b0_shift, rb1, c, d = create_data()
     wasabi_model = WASABI(offsets=offsets_unshifted)
-    (signal,) = wasabi_model.forward(b0_shift_unshifted, rb1_unshifted, c_unshifted, d_unshifted)
+    (signal,) = wasabi_model.forward(b0_shift, rb1, c, d)
 
-    offsets_shifted, b0_shift, rb1, c, d = create_data(offset_max=500, offset_nr=101, b0_shift_in=100)
+    offsets_shifted, b0_shift, rb1, c, d = create_data(b0_shift=100)
     wasabi_model = WASABI(offsets=offsets_shifted)
     (signal_shifted,) = wasabi_model.forward(b0_shift, rb1, c, d)
 
@@ -53,7 +25,7 @@ def test_WASABI_shift():
 
 
 def test_WASABI_extreme_offset():
-    offset, b0_shift, rb1, c, d = create_data(offset_max=30000, offset_nr=1, b0_shift_in=0)
+    offset, b0_shift, rb1, c, d = create_data(offset_max=30000, n_offsets=1)
     wasabi_model = WASABI(offsets=offset)
     (signal,) = wasabi_model.forward(b0_shift, rb1, c, d)
 

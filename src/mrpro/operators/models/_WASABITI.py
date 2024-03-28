@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import torch
-from einops import rearrange
 from torch import nn
 
 from mrpro.operators import SignalModel
@@ -39,8 +38,10 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         ----------
         offsets
             frequency offsets [Hz]
+            with shape (offsets, ...)
         trec
             recovery time between offsets [s]
+            with shape (offsets, ...)
         tp
             RF pulse duration [s], by default 0.005
         b1_nom
@@ -57,6 +58,9 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         gamma = torch.as_tensor(gamma)
         freq = torch.as_tensor(freq)
 
+        if trec.shape != offsets.shape:
+            raise ValueError(f'Shape of trec ({trec.shape}) and offsets ({offsets.shape}) needs to be the same.')
+
         # nn.Parameters allow for grad calculation
         self.offsets = nn.Parameter(offsets, requires_grad=offsets.requires_grad)
         self.trec = nn.Parameter(trec, requires_grad=trec.requires_grad)
@@ -72,23 +76,26 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         ----------
         b0_shift
             B0 shift [Hz]
+            with shape (... other, coils, z, y, x)
         rb1
             relative B1 amplitude
+            with shape (... other, coils, z, y, x)
         t1
             longitudinal relaxation time T1 [s]
+            with shape (... other, coils, z, y, x)
 
         Returns
         -------
-            signal with dimensions ((... offsets), coils, z, y, x)
+            signal
+            with shape (offsets ... other, coils, z, y, x)
         """
+        delta_ndim = b0_shift.ndim - (self.offsets.ndim - 1)  # -1 for offset
+        offsets = self.offsets[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.offsets
+        trec = self.trec[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.trec
+
         b1 = self.b1_nom * rb1
-
-        # ensure correct dimensionality
-        offsets = self.offsets[(...,) + (None,) * b0_shift.ndim]
-        trec = self.trec[(...,) + (None,) * b0_shift.ndim]
-
         da = offsets - b0_shift
-        mz_initial = 1.0 - torch.exp(torch.multiply(-1.0 / t1, trec))
+        mz_initial = 1.0 - torch.exp(-trec / t1)
 
         signal = mz_initial * (
             1
@@ -96,6 +103,4 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
             * (torch.pi * b1 * self.gamma * self.tp) ** 2
             * torch.sinc(self.tp * torch.sqrt((b1 * self.gamma) ** 2 + da**2)) ** 2
         )
-
-        signal = rearrange(signal, 'offset ... c z y x -> (... offset) c z y x')
         return (signal,)
