@@ -42,8 +42,8 @@ import numpy as np
 import pytest
 import torch
 from mrpro.data import SpatialDimension
+from mrpro.utils import Rotation
 from mrpro.utils._Rotation import AXIS_ORDER
-from mrpro.utils._Rotation import Rotation
 from scipy.stats import special_ortho_group
 
 from tests import RandomGenerator
