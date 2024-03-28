@@ -85,6 +85,7 @@ def _filter_separable(x: torch.Tensor, kernels: Sequence[torch.Tensor], axis: Se
             kernel = kernel + 0.0j
         elif kernel.is_complex() and not x.is_complex():
             x = x + 0.0j
+        kernel = kernel.to(x.device)
         # moveaxis is not implemented for batched tensors, so vmap would fail.
         # thus we use permute.
         idx = list(range(x.ndim))
@@ -135,7 +136,7 @@ def gaussian_filter(
             for sigma in sigmas
         ]
     )
-    kernels = tuple([k / k.sum() for k in kernels])
+    kernels = tuple([(k / k.sum()).to(device=x.device) for k in kernels])
     x_filtered = _filter_separable(x, kernels, axis)
     return x_filtered
 
@@ -169,6 +170,6 @@ def uniform_filter(
         raise ValueError('Must provide matching length width and axis arguments. ')
     width = torch.minimum(width, torch.tensor(x.shape)[(axis), ...])
 
-    kernels = tuple([torch.ones(width) / width for width in width])
+    kernels = tuple([torch.ones(width, device=x.device) / width for width in width])
     x_filtered = _filter_separable(x, kernels, axis)
     return x_filtered
