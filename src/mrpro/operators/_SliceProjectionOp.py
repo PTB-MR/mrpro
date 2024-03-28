@@ -134,6 +134,11 @@ class SliceProjectionOp(LinearOperator):
 
         The projection will be done by sparse matrix multiplication.
 
+        Rotation, shift, and profile can have (multiple) batch dimensions. These dimensions will
+        be broadcasted to a common shape and added to the front of the volume.
+        Different settings for different volume batches are NOT supported, consider creating multiple
+        operators if required,
+
 
         Parameters
         ----------
@@ -213,11 +218,13 @@ class SliceProjectionOp(LinearOperator):
             else:
                 raise ValueError("optimize_for must be one of 'forward', 'adjoint', 'both'")
 
-        self._range_shape: tuple[int] = (*batch_shapes, m, m)
-        self._domain_shape = input_shape
+        self._range_shape: tuple[int] = (*batch_shapes, 1, m, m)
+        self._domain_shape = input_shape.zyx
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Transform from a 3D Volume to a 2D Slice."""
         match (self.matrix, self.matrix_adjoint):
+            # selection based on the optimize_for setting
             case (None, None):
                 raise RuntimeError('Either matrix or matrix adjoint must be set')
             case (matrix, None) if matrix is not None:
@@ -226,11 +233,19 @@ class SliceProjectionOp(LinearOperator):
                 matrix = matrix_adjoint.H
             case (matrix, matrix_adjoint):
                 ...
-        x = _MatrixMultiplication.apply(x.ravel(), matrix, matrix_adjoint)
-        return (x.reshape(self._range_shape),)
+
+        # For the (unusual case) of batched volumes, we will apply for each element in series
+        xflat = torch.atleast_2d(einops.rearrange(x, '... x y z -> (...) (x y z)'))
+        y = torch.stack(
+            [_MatrixMultiplication.apply(x, matrix, matrix_adjoint).reshape(self._range_shape) for x in xflat], -4
+        )
+        y = y.reshape(*y.shape[:-4], *x.shape[:-3], *y.shape[-3:])
+        return (y,)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Transform from a 2D slice to a 3D Volume."""
         match (self.matrix, self.matrix_adjoint):
+            # selection based on the optimize_for setting
             case (None, None):
                 raise RuntimeError('Either matrix or matrix adjoint must be set')
             case (matrix, None) if matrix is not None:
@@ -239,8 +254,24 @@ class SliceProjectionOp(LinearOperator):
                 matrix = matrix_adjoint.H
             case (matrix, matrix_adjoint):
                 ...
-        x = _MatrixMultiplication.apply(x.ravel(), matrix_adjoint, matrix)
-        return (x.reshape(self._domain_shape.z, self._domain_shape.y, self._domain_shape.x),)
+
+        # For the (unusual case) of batched volumes, we will apply for each element in series
+        n_batchdim = len(self._range_shape) - 3
+        # x_domainbatch_range has all volume batch dimensions moved to the front
+        x_domainbatch_range = x.moveaxis(tuple(range(n_batchdim, x.ndim - 3)), tuple(range(x.ndim - 3 - n_batchdim)))
+        # x_flatdomainbatch_flatrange is 2D with shape
+        # (all batch dimensions of the volume flattened, all range dimensions flattened)
+        x_domainbatch_flatrange = torch.atleast_2d(x_domainbatch_range.flatten(start_dim=-len(self._range_shape)))
+        x_flatdomainbatch_flatrange = x_domainbatch_flatrange.flatten(end_dim=-2)
+        # y_flatdomainbatch has shape (all batch dimensions of the volume flattened, *range dimensions)
+        y_flatdomainbatch = torch.stack(
+            [
+                _MatrixMultiplication.apply(x, matrix_adjoint, matrix).reshape(self._domain_shape)
+                for x in x_flatdomainbatch_flatrange
+            ]
+        )
+        y = y_flatdomainbatch.reshape(*x.shape[n_batchdim:-3], *y_flatdomainbatch.shape[1:])
+        return (y,)
 
     @staticmethod
     def join_matrices(matrices: Sequence[torch.Tensor]) -> torch.Tensor:
