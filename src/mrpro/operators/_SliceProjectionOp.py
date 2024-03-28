@@ -115,8 +115,8 @@ DefaultGaussianSliceProfile = SliceGaussian(2.0)
 
 
 class SliceProjectionOp(LinearOperator):
-    matrix: torch.Tensor
-    matrix_adjoint: torch.Tensor
+    matrix: torch.Tensor | None
+    matrix_adjoint: torch.Tensor | None
 
     def __init__(
         self,
@@ -202,10 +202,10 @@ class SliceProjectionOp(LinearOperator):
             warnings.filterwarnings('ignore', category=UserWarning, message='Sparse')
             if optimize_for == 'forward':
                 self.register_buffer('matrix', matrix.to_sparse_csr())
-                self.matrix_adjoint = self.matrix.H
+                self.matrix_adjoint = None
             elif optimize_for == 'adjoint':
                 self.register_buffer('matrix_adjoint', matrix.H.to_sparse_csr())
-                self.matrix = self.matrix_adjoint.H
+                self.matrix = None
             elif optimize_for == 'both':
                 self.register_buffer('matrix_adjoint', matrix.H.to_sparse_csr())
                 self.register_buffer('matrix', matrix.to_sparse_csr())
@@ -217,11 +217,29 @@ class SliceProjectionOp(LinearOperator):
         self._domain_shape = input_shape
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        x = _MatrixMultiplication.apply(x.ravel(), self.matrix, self.matrix_adjoint)
+        match (self.matrix, self.matrix_adjoint):
+            case (None, None):
+                raise RuntimeError('Either matrix or matrix adjoint must be set')
+            case (matrix, None) if matrix is not None:
+                matrix_adjoint = matrix.H
+            case (None, matrix_adjoint) if matrix_adjoint is not None:
+                matrix = matrix_adjoint.H
+            case (matrix, matrix_adjoint):
+                ...
+        x = _MatrixMultiplication.apply(x.ravel(), matrix, matrix_adjoint)
         return (x.reshape(self._range_shape),)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        x = _MatrixMultiplication.apply(x.ravel(), self.matrix_adjoint, self.matrix)
+        match (self.matrix, self.matrix_adjoint):
+            case (None, None):
+                raise RuntimeError('Either matrix or matrix adjoint must be set')
+            case (matrix, None) if matrix is not None:
+                matrix_adjoint = matrix.H
+            case (None, matrix_adjoint) if matrix_adjoint is not None:
+                matrix = matrix_adjoint.H
+            case (matrix, matrix_adjoint):
+                ...
+        x = _MatrixMultiplication.apply(x.ravel(), matrix_adjoint, matrix)
         return (x.reshape(self._domain_shape.z, self._domain_shape.y, self._domain_shape.x),)
 
     @staticmethod
@@ -290,7 +308,7 @@ class SliceProjectionOp(LinearOperator):
         """
         x, y = output_shape.x, output_shape.y
 
-        sx, sy = (
+        start_x, start_y = (
             (input_shape.x - x) // 2,
             (input_shape.y - y) // 2,
         )
@@ -298,8 +316,8 @@ class SliceProjectionOp(LinearOperator):
             [
                 input_shape.z / 2 * torch.ones(y, x),  # z coordinates
                 *torch.meshgrid(
-                    torch.arange(sy, sy + y),  # y coordinates
-                    torch.arange(sx, sx + x),  # x coordinates
+                    torch.arange(start_y, start_y + y),  # y coordinates
+                    torch.arange(start_x, start_x + x),  # x coordinates
                     indexing='ij',
                 ),
             ],
