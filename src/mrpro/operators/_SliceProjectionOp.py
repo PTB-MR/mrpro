@@ -46,14 +46,31 @@ class _MatrixMultiplication(torch.autograd.Function):
         ctx: torch.autograd.function.FunctionCtx, x: torch.Tensor, matrix: torch.Tensor, matrix_adjoint: torch.Tensor
     ) -> torch.Tensor:
         ctx.save_for_backward(matrix_adjoint)
-        return matrix @ x
+        ctx.x_is_complex = x.is_complex()  # type: ignore[attr-defined]
+        if x.is_complex() == matrix.is_complex():
+            return matrix @ x
+        elif x.is_complex():
+            return torch.complex(matrix @ x.real, matrix @ x.imag)
+        else:
+            return torch.complex(matrix.real @ x, matrix.imag @ x)
 
     @staticmethod
     def backward(
         ctx: torch.autograd.function.FunctionCtx, *grad_output: torch.Tensor
     ) -> tuple[torch.Tensor, None, None]:
         (matrix_adjoint,) = ctx.saved_tensors  # type: ignore[attr-defined]
-        return matrix_adjoint @ grad_output, None, None
+        if ctx.x_is_complex:  # type: ignore[attr-defined]
+            if matrix_adjoint.is_complex() == grad_output[0].is_complex():
+                grad_x = matrix_adjoint @ grad_output[0]
+            elif matrix_adjoint.is_complex():
+                grad_x = torch.complex(matrix_adjoint.real @ grad_output[0], matrix_adjoint.imag @ grad_output[0])
+            else:
+                grad_x = torch.complex(matrix_adjoint @ grad_output[0].real, matrix_adjoint @ grad_output[0].imag)
+        else:  # real grad
+            grad_x = matrix_adjoint.real @ grad_output[0].real
+            if matrix_adjoint.is_complex() and grad_output[0].is_complex():
+                grad_x -= matrix_adjoint.imag @ grad_output[0].imag
+        return grad_x, None, None
 
 
 class SliceGaussian:
@@ -98,6 +115,9 @@ DefaultGaussianSliceProfile = SliceGaussian(2.0)
 
 
 class SliceProjectionOp(LinearOperator):
+    matrix: torch.Tensor
+    matrix_adjoint: torch.Tensor
+
     def __init__(
         self,
         input_shape: SpatialDimension[int],
@@ -181,14 +201,15 @@ class SliceProjectionOp(LinearOperator):
             # beta status in pytorch causes a warning to be printed
             warnings.filterwarnings('ignore', category=UserWarning, message='Sparse')
             if optimize_for == 'forward':
-                self.matrix = matrix.to_sparse_csr()
-                self.matrixT = self.matrix.H
+                self.register_buffer('matrix', matrix.to_sparse_csr())
+                self.matrix_adjoint = self.matrix.H
             elif optimize_for == 'adjoint':
-                self.matrixT = self.matrix.H.to_sparse_csr()
-                self.matrix = self.matrixT.H
+                self.register_buffer('matrix_adjoint', matrix.H.to_sparse_csr())
+                self.matrix = self.matrix_adjoint.H
             elif optimize_for == 'both':
-                self.matrix = matrix.to_sparse_csr()
-                self.matrixT = self.matrix.H.to_sparse_csr()
+                self.register_buffer('matrix_adjoint', matrix.H.to_sparse_csr())
+                self.register_buffer('matrix', matrix.to_sparse_csr())
+
             else:
                 raise ValueError("optimize_for must be one of 'forward', 'adjoint', 'both'")
 
@@ -196,11 +217,11 @@ class SliceProjectionOp(LinearOperator):
         self._domain_shape = input_shape
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        x = _MatrixMultiplication.apply(x.ravel(), self.matrix, self.matrixT)
+        x = _MatrixMultiplication.apply(x.ravel(), self.matrix, self.matrix_adjoint)
         return (x.reshape(self._range_shape),)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        x = _MatrixMultiplication.apply(x.ravel(), self.matrixT, self.matrix)
+        x = _MatrixMultiplication.apply(x.ravel(), self.matrix_adjoint, self.matrix)
         return (x.reshape(self._domain_shape.z, self._domain_shape.y, self._domain_shape.x),)
 
     @staticmethod
