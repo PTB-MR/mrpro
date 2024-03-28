@@ -49,17 +49,11 @@ from scipy.stats import special_ortho_group
 from tests import RandomGenerator
 
 
-def basis_vec(axis):
-    # TODO: flip to our order
-    return {'x': [1, 0, 0], 'y': [0, 1, 0], 'z': [0, 0, 1]}[axis]
-
-
 def _norm(x):
     return torch.linalg.norm(x.float(), dim=-1, keepdim=True)
 
 
 def test_from_quats():
-    # for scipy compatibility, only adjusted to used tensors
     x = torch.tensor([[3, 4, 0, 0], [5, 12, 0, 0]])
     r = Rotation.from_quat(x)
     expected_quat = x / _norm(x)
@@ -67,7 +61,6 @@ def test_from_quats():
 
 
 def test_from_single_1d_quaternion():
-    # for scipy compatibility, only adjusted to used tensors
     x = torch.tensor([3, 4, 0, 0])
     r = Rotation.from_quat(x)
     expected_quat = x / _norm(x)
@@ -75,15 +68,13 @@ def test_from_single_1d_quaternion():
 
 
 def test_from_single_2d_quaternion():
-    # for scipy compatibility, only adjusted to used tensors
-    x = torch.Tensor([[3, 4, 0, 0]])
+    x = torch.tensor([[3, 4, 0, 0]])
     r = Rotation.from_quat(x)
     expected_quat = x / _norm(x)
     torch.testing.assert_close(r.as_quat(), expected_quat)
 
 
 def test_from_square_quat_matrix():
-    # for scipy compatibility, only adjusted to used tensors
     # Ensure proper norm array broadcasting
     x = torch.tensor(
         [
@@ -101,7 +92,6 @@ def test_from_square_quat_matrix():
 
 
 def test_quat_double_to_canonical_single_cover():
-    # for scipy compatibility, only adjusted to used tensors
     x = torch.tensor([[-1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, -1], [-1, -1, -1, -1]])
     r = Rotation.from_quat(x)
     expected_quat = torch.abs(x) / _norm(x)
@@ -110,7 +100,6 @@ def test_quat_double_to_canonical_single_cover():
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_quat_double_cover():
-    # for scipy compatibility, only adjusted to use tensors
     # See the scipy Rotation.from_quat() docstring for scope of the quaternion
     # double cover property.
     # Check from_quat and as_quat(canonical=False)
