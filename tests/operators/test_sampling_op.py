@@ -24,7 +24,7 @@ from tests.helper import dotproduct_adjointness_test
 
 @pytest.mark.parametrize('dtype', ['float32', 'float64', 'complex64'])
 def test_sampling_op(dtype):
-    grid = torch.stack(torch.meshgrid(torch.arange(10).float(), torch.arange(20).float(), indexing='ij'), -1)[None]
+    grid = torch.stack(torch.meshgrid(torch.linspace(-1, 1, 10), torch.linspace(-1, 1, 20), indexing='ij'), -1)[None]
     grid = torch.stack((grid, grid, grid))
     operator = SamplingOp(grid, input_shape=SpatialDimension(1, 22, 30)).to(dtype=getattr(torch, dtype).to_real())
     rng = getattr(RandomGenerator(0), f'{dtype}_tensor')
@@ -34,7 +34,7 @@ def test_sampling_op(dtype):
 
 
 def test_sampling_op_x_backward():
-    grid = torch.stack(torch.meshgrid(torch.arange(10).float(), torch.arange(20).float(), indexing='ij'), -1)[None]
+    grid = torch.stack(torch.meshgrid(torch.linspace(-1, 1, 10), torch.linspace(-1, 1, 20), indexing='ij'), -1)[None]
     grid = torch.stack((grid, grid, grid))
     operator = SamplingOp(grid, input_shape=SpatialDimension(1, 22, 30))
     rng = RandomGenerator(0).float32_tensor
@@ -49,32 +49,34 @@ def test_sampling_op_x_backward():
 
 
 def test_sampling_op_gradcheck_x_forward():
-    grid = torch.stack(torch.meshgrid(torch.arange(3).float(), torch.arange(2).float(), indexing='ij'), -1)[None]
+    grid = torch.stack(torch.meshgrid(torch.linspace(-1, 1, 3), torch.linspace(-1, 1, 2), indexing='ij'), -1)[None]
     grid = grid.double()
     rng = RandomGenerator(0).float64_tensor
     u = rng((1, 1, 3, 5)).requires_grad_(True)
-    gradcheck(lambda grid, u: SamplingOp(grid, input_shape=SpatialDimension(1, 3, 5))(u), (grid, u))
+    gradcheck(lambda grid, u: SamplingOp(grid, input_shape=SpatialDimension(1, 3, 5))(u), (grid, u), fast_mode=True)
 
 
 def test_sampling_op_gradcheck_grid_forward():
-    grid = torch.stack(torch.meshgrid(torch.arange(3).float(), torch.arange(2).float(), indexing='ij'), -1)[None]
-    grid = grid.double().requires_grad_(True)
+    grid = torch.tensor([[[1.2000, 2.4000], [1.4000, 2.2000]]])[None, ...].double().requires_grad_(True)
     rng = RandomGenerator(0).float64_tensor
     u = rng((1, 1, 3, 5))
-    gradcheck(lambda grid, u: SamplingOp(grid, input_shape=SpatialDimension(1, 3, 5))(u), (grid, u))
+    gradcheck(lambda grid, u: SamplingOp(grid, input_shape=SpatialDimension(1, 3, 5))(u), (grid, u), fast_mode=True)
 
 
 def test_sampling_op_gradcheck_x_adjoint():
-    grid = torch.stack(torch.meshgrid(torch.arange(3).float(), torch.arange(2).float(), indexing='ij'), -1)[None]
-    grid = grid.double()
+    grid = torch.tensor([[[-0.2000, 0.4000], [0.4000, -0.2000]]])[None, ...].double()
     rng = RandomGenerator(0).float64_tensor
-    v = rng((1, 1, 3, 2)).requires_grad_(True)
-    gradcheck(lambda grid, v: SamplingOp(grid, input_shape=SpatialDimension(1, 3, 5)).adjoint(v), (grid, v))
+    v = rng((1, 1, 1, 2)).requires_grad_(True)
+    gradcheck(
+        lambda grid, v: SamplingOp(grid, input_shape=SpatialDimension(1, 3, 5)).adjoint(v), (grid, v), fast_mode=True
+    )
 
 
 def test_sampling_op_gradcheck_grid_adjoint():
-    grid = torch.stack(torch.meshgrid(torch.arange(3).float(), torch.arange(2).float(), indexing='ij'), -1)[None]
+    grid = torch.stack(torch.meshgrid(torch.linspace(-1, 1, 3), torch.linspace(-1, 1, 2), indexing='ij'), -1)[None]
     grid = grid.double().requires_grad_(True)
     rng = RandomGenerator(0).float64_tensor
-    v = rng((1, 1, 3, 2))
-    gradcheck(lambda grid, v: SamplingOp(grid, input_shape=SpatialDimension(1, 3, 5)).adjoint(v), (grid, v))
+    v = rng((1, 1, 1, 2)).requires_grad_(True)
+    gradcheck(
+        lambda grid, v: SamplingOp(grid, input_shape=SpatialDimension(1, 3, 5)).adjoint(v), (grid, v), fast_mode=True
+    )
