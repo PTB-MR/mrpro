@@ -55,16 +55,6 @@ class AdjointGridSample(torch.autograd.Function):
              and thus preserving the values at those pixels
 
         """
-        ctx.interpolation_mode = interpolation_mode  # type: ignore[attr-defined]
-        ctx.padding_mode = padding_mode  # type: ignore[attr-defined]
-        ctx.align_corners = align_corners  # type: ignore[attr-defined]
-        if y.requires_grad and grid.requires_grad:
-            ctx.save_for_backward(grid, y)
-        elif y.requires_grad:
-            ctx.save_for_backward(grid)
-        elif grid.requires_grad:
-            ctx.save_for_backward(y)
-
         match interpolation_mode:
             case 'bilinear':
                 mode_enum = 0
@@ -74,6 +64,7 @@ class AdjointGridSample(torch.autograd.Function):
                 mode_enum = 2
             case _:
                 raise ValueError(f'Interpolation mode {interpolation_mode} not supported')
+
         match padding_mode:
             case 'zeros':
                 padding_mode_enum = 0
@@ -86,9 +77,9 @@ class AdjointGridSample(torch.autograd.Function):
 
         match dim := grid.shape[-1]:
             case 3:
-                f = torch.ops.aten.grid_sampler_3d_backward
+                backward_2d_or_3d = torch.ops.aten.grid_sampler_3d_backward
             case 2:
-                f = torch.ops.aten.grid_sampler_2d_backward
+                backward_2d_or_3d = torch.ops.aten.grid_sampler_2d_backward
             case _:
                 raise ValueError(f'only 2d and 3d supported, not {dim}')
 
@@ -99,8 +90,20 @@ class AdjointGridSample(torch.autograd.Function):
         if len(xshape) - 2 != dim:
             raise ValueError(f'len(xshape) and dim must either both bei 2 or 3, got {len(xshape)} and {dim}')
 
+        # These are required in the backward
+        ctx.xshape = xshape  # type: ignore[attr-defined]
+        ctx.interpolation_mode = mode_enum  # type: ignore[attr-defined]
+        ctx.padding_mode = padding_mode_enum  # type: ignore[attr-defined]
+        ctx.align_corners = align_corners  # type: ignore[attr-defined]
+        ctx.backward_2d_or_3d = backward_2d_or_3d  # type: ignore[attr-defined]
+        if grid.requires_grad:
+            # only if we need to calculate the gradient for grid we need y
+            ctx.save_for_backward(grid, y)
+        else:
+            ctx.save_for_backward(grid)
+
         shape_dummy = torch.empty(1, dtype=y.dtype, device=y.device).broadcast_to(xshape)
-        x = f(
+        x = backward_2d_or_3d(
             y,
             shape_dummy,
             grid,
@@ -117,16 +120,10 @@ class AdjointGridSample(torch.autograd.Function):
     ) -> tuple[torch.Tensor | None, torch.Tensor | None, None, None, None, None]:
         """Backward of the Adjoint Gridsample Operator."""
         need_y_grad, need_grid_grad, *_ = ctx.needs_input_grad  # type: ignore[attr-defined]
-        saved_tensors = ctx.saved_tensors  # type: ignore[attr-defined]
-        if need_y_grad and need_grid_grad:
-            y, grid, *_ = saved_tensors
-        elif need_y_grad:
-            grid, *_ = saved_tensors
-        elif need_grid_grad:
-            y, *_ = saved_tensors
-            grid = None
+        grid = ctx.saved_tensors[0]  # type: ignore[attr-defined]
+
         if need_y_grad:
-            grad_y = torch.nn.functional.grid_sample(
+            grad_y = torch.grid_sampler(
                 grad_output[0],
                 grid,
                 ctx.interpolation_mode,  # type: ignore[attr-defined]
@@ -135,10 +132,21 @@ class AdjointGridSample(torch.autograd.Function):
             )
         else:
             grad_y = None
+
         if need_grid_grad:
-            raise NotImplementedError('Gradients of the adjoint gridsample wrt the grid are not yet implemented.')
+            y = ctx.saved_tensors[1]  # type: ignore[attr-defined]
+            grad_grid = ctx.backward_2d_or_3d(  # type: ignore[attr-defined]
+                y,
+                grad_output[0],
+                grid,
+                interpolation_mode=ctx.interpolation_mode,  # type: ignore[attr-defined]
+                padding_mode=ctx.padding_mode,  # type: ignore[attr-defined]
+                align_corners=ctx.align_corners,  # type: ignore[attr-defined]
+                output_mask=[False, True],
+            )[1]
         else:
             grad_grid = None
+
         return grad_y, grad_grid, None, None, None, None
 
 
