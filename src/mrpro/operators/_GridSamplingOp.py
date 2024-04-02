@@ -1,4 +1,4 @@
-"""Class for Sampling Operator."""
+"""Class for Grid Sampling Operator."""
 
 # Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections.abc import Callable
 from collections.abc import Sequence
 from typing import Literal
 
@@ -24,6 +25,12 @@ from mrpro.operators import LinearOperator
 
 
 class AdjointGridSample(torch.autograd.Function):
+    """Autograd Function for Adjoint Grid Sample.
+
+    Ensures that the Adjoint Operation is differentiable.
+
+    """
+
     @staticmethod
     def forward(
         ctx: torch.autograd.function.FunctionCtx,
@@ -150,16 +157,16 @@ class AdjointGridSample(torch.autograd.Function):
         return grad_y, grad_grid, None, None, None, None
 
 
-class SamplingOp(LinearOperator):
+class GridSamplingOp(LinearOperator):
     grid: torch.Tensor
 
     def __init__(
         self,
         grid: torch.Tensor,
+        input_shape: SpatialDimension,
         interpolation_mode: Literal['bilinear', 'nearest', 'bicubic'] = 'bilinear',
         padding_mode: Literal['zeros', 'border', 'reflection'] = 'zeros',
         align_corners: bool = False,
-        input_shape: None | SpatialDimension = None,
     ):
         """Initialize Sampling Operator.
 
@@ -168,7 +175,7 @@ class SamplingOp(LinearOperator):
         grid
             sampling grid. Shape *batchdim, z,y,x,3 / *batchdim, y,x,2.
         interpolation_mode
-            mode used for interpolation. bilinear and bicubic are trilinear and cubic in 3D.
+            mode used for interpolation. bilinear is trilinear in 3D, bicubic is only supported in 2D.
         padding_mode
             how the input of the forward is padded.
         align_corners
@@ -186,19 +193,39 @@ class SamplingOp(LinearOperator):
         self.input_shape = input_shape
         self.align_corners = align_corners
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+    def __reshape_wrapper(
+        self, x: torch.Tensor, inner: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
+    ) -> tuple[torch.Tensor]:
+        """Do all the reshaping pre- and post- sampling."""
+        # First, we need to do a lot of reshaping ..
         dim = self.grid.shape[-1]
+        #   The gridsample operator only works for real data, thus we handle complex inputs as an additional channel
         x_real = torch.view_as_real(x).moveaxis(-1, -dim - 1) if x.is_complex() else x
-        shape_grid_batch = self.grid.shape[: -dim - 1]
+        shape_grid_batch = self.grid.shape[: -dim - 1]  # the batch dimensions of grid
         n_batchdim = len(shape_grid_batch)
-        shape_x_batch = x_real.shape[:n_batchdim]
+        shape_x_batch = x_real.shape[:n_batchdim]  # the batch dimensions of the input
         shape_batch = torch.broadcast_shapes(shape_x_batch, shape_grid_batch)
         shape_channels = x_real.shape[n_batchdim:-dim]
+        #   reshape to 3D: (*batch_dim) z y x 3 or 2D: (*batch_dim) y x 2
         grid_flatbatch = self.grid.broadcast_to(*shape_batch, *self.grid.shape[n_batchdim:]).flatten(
             end_dim=n_batchdim - 1
         )
         x_flatbatch = x_real.broadcast_to(*shape_batch, *x_real.shape[n_batchdim:]).flatten(end_dim=n_batchdim - 1)
+        #   reshape to 3D: (*batch_dim) (*channel_dim) z y x or 2D: (*batch_dim) (*channel_dim) y x
         x_flatbatch_flatchannel = x_flatbatch.flatten(start_dim=1, end_dim=-dim - 1)
+
+        # .. now we can perform the actual sampling implementation..
+        sampled = inner(x_flatbatch_flatchannel, grid_flatbatch)
+
+        # .. and reshape back.
+        result = sampled.reshape(*shape_batch, *shape_channels, *sampled.shape[-dim:])
+        if x.is_complex():
+            result = torch.view_as_complex(result.moveaxis(-dim - 1, -1).contiguous())
+        return (result,)
+
+    def _forward_implementation(
+        self, x_flatbatch_flatchannel: torch.Tensor, grid_flatbatch: torch.Tensor
+    ) -> torch.Tensor:
         sampled = torch.nn.functional.grid_sample(
             x_flatbatch_flatchannel,
             grid_flatbatch,
@@ -206,29 +233,17 @@ class SamplingOp(LinearOperator):
             padding_mode=self.padding_mode,
             align_corners=self.align_corners,
         )
-        result = sampled.reshape(*shape_batch, *shape_channels, *sampled.shape[-dim:])
-        if x.is_complex():
-            result = torch.view_as_complex(result.moveaxis(-dim - 1, -1).contiguous())
-        return (result,)
+        return sampled
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply the Operator."""
+        return self.__reshape_wrapper(x, self._forward_implementation)
+
+    def _adjoint_implementation(
+        self, x_flatbatch_flatchannel: torch.Tensor, grid_flatbatch: torch.Tensor
+    ) -> torch.Tensor:
         dim = self.grid.shape[-1]
-        x_real = torch.view_as_real(x).moveaxis(-1, -dim - 1) if x.is_complex() else x
-        shape_grid_batch = self.grid.shape[: -dim - 1]
-        n_batchdim = len(shape_grid_batch)
-        shape_x_batch = x_real.shape[:n_batchdim]
-        shape_batch = torch.broadcast_shapes(shape_x_batch, shape_grid_batch)
-        shape_channels = x_real.shape[n_batchdim:-dim]
-        grid_flatbatch = self.grid.broadcast_to(*shape_batch, *self.grid.shape[n_batchdim:]).flatten(
-            end_dim=n_batchdim - 1
-        )
-        x_flatbatch = x_real.broadcast_to(*shape_batch, *x_real.shape[n_batchdim:]).flatten(end_dim=n_batchdim - 1)
-        x_flatbatch_flatchannel = x_flatbatch.flatten(start_dim=1, end_dim=-dim - 1)
-        if self.input_shape is None:
-            domain = [int((i.max() - i.min() + 1).item()) for i in self.grid.unbind(-1)]
-        else:
-            domain = list(self.input_shape.zyx[-dim:])
-        shape = (*x_flatbatch_flatchannel.shape[:-dim], *domain)
+        shape = (*x_flatbatch_flatchannel.shape[:-dim], *self.input_shape.zyx[-dim:])
         sampled = AdjointGridSample.apply(
             x_flatbatch_flatchannel,
             grid_flatbatch,
@@ -237,7 +252,8 @@ class SamplingOp(LinearOperator):
             self.padding_mode,
             self.align_corners,
         )
-        result = sampled.reshape(*shape_batch, *shape_channels, *sampled.shape[-dim:])
-        if x.is_complex():
-            result = torch.view_as_complex(result.moveaxis(-dim - 1, -1).contiguous())
-        return (result,)
+        return sampled
+
+    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply to adjoint of the Operator."""
+        return self.__reshape_wrapper(x, self._adjoint_implementation)
