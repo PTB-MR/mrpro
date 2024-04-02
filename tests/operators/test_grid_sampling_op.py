@@ -67,8 +67,8 @@ def _test_grid_sampling_op_adjoint(
     batch = (2, 3) if batched == 'batched' else (1,)
     channel = (5, 6) if channel == 'multi_channel' else (1,)
     align_corners_bool = align_corners == 'align'
-    zyx_v = (7, 8, 9)[:dim]
-    zyx_u = (11, 12, 13)[:dim]
+    zyx_v = (7, 8, 9)[-dim:]
+    zyx_u = (11, 12, 13)[-dim:]
     grid = RandomGenerator(42).float64_tensor((*batch, *zyx_v, dim), -1, 1)
     input_shape = SpatialDimension(z=(99 if dim == 2 else zyx_u[-3]), y=zyx_u[-2], x=zyx_u[-1])
     operator = GridSamplingOp(
@@ -108,9 +108,9 @@ def _test_grid_sampling_op_x_backward(dim=3, interpolation_mode='bilinear', padd
     rng = RandomGenerator(0).float32_tensor
     batch = (2, 3)
     channel = (5, 7)
-    zyx_v = (7, 10, 20)[:dim]
-    zyx_u = (9, 22, 30)[:dim]
-    grid = rng((*batch, *zyx_v, 2), -1, 1.0)
+    zyx_v = (7, 10, 20)[-dim:]
+    zyx_u = (9, 22, 30)[-dim:]
+    grid = rng((*batch, *zyx_v, dim), -1, 1.0)
     input_shape = SpatialDimension(z=99 if dim == 2 else zyx_u[-3], y=zyx_u[-2], x=zyx_u[-1])
     operator = GridSamplingOp(
         grid,
@@ -163,3 +163,106 @@ def test_grid_sampling_op_gradcheck_grid_adjoint():
         (grid, v),
         fast_mode=True,
     )
+
+
+def test_grid_sampling_op_errormsg_gridlastdim():
+    "Test if error message on wrong last dim is raised."
+    grid = torch.ones(1, 2, 3, 4)
+    with pytest.raises(ValueError, match='last dimension'):
+        _ = GridSamplingOp(grid, SpatialDimension(1, 1, 1))
+
+
+def test_grid_sampling_op_errormsg_gridndims():
+    "Test if error message on missing batch dim is raised."
+    grid = torch.ones(1, 1, 1, 3)  # 3d
+    with pytest.raises(ValueError, match='batch z y x 3'):
+        _ = GridSamplingOp(grid, SpatialDimension(1, 1, 1))
+
+    grid = torch.ones(1, 1, 2)  # 2d
+    with pytest.raises(ValueError, match='batch y x 2'):
+        _ = GridSamplingOp(grid, SpatialDimension(1, 1, 1))
+
+
+def test_grid_sampling_op_errormsg_cubic3d():
+    "Test if error for 3D cubic is raised."
+    grid = torch.ones(1, 1, 1, 1, 3)  # 3d
+    with pytest.raises(NotImplementedError, match='cubic'):
+        _ = GridSamplingOp(grid, SpatialDimension(1, 1, 1), interpolation_mode='bicubic')
+
+
+def test_grid_sampling_op_errormsg_complexgrid():
+    "Test if error for complex grid is raised."
+    grid = torch.ones(1, 1, 1, 1, 3) + 0j
+    with pytest.raises(ValueError, match='real'):
+        _ = GridSamplingOp(grid, SpatialDimension(1, 1, 1))
+
+
+def test_grid_sampling_op_errormsg_gridrange():
+    "Test if warnding for grid values outside [-1,1] is raised"
+    grid = torch.ones(1, 1, 1, 1, 3)
+
+    grid.ravel()[0] = 1.01
+    with pytest.warns(UserWarning, match='range'):
+        _ = GridSamplingOp(grid, SpatialDimension(1, 1, 1))
+
+    grid.ravel()[0] = -1.01
+    with pytest.warns(UserWarning, match='range'):
+        _ = GridSamplingOp(grid, SpatialDimension(1, 1, 1))
+
+    grid.ravel()[0] = -1.0
+    _ = GridSamplingOp(grid, SpatialDimension(1, 1, 1))
+
+    grid.ravel()[0] = 1.0
+    _ = GridSamplingOp(grid, SpatialDimension(1, 1, 1))
+
+
+def test_grid_sampling_op_errormsg_inputdim():
+    "Test if error for wrong input dimensions is raised."
+    grid = torch.ones(1, 1, 1, 1, 3)  # 3d
+    operator = GridSamplingOp(grid, SpatialDimension(2, 3, 4))
+
+    u = torch.zeros(1, 2, 3, 4)
+    with pytest.raises(ValueError, match='5 dimensions: batch channel z y x'):
+        _ = operator(u)
+
+    u = torch.zeros(1, 1, 3, 3, 4)
+    with pytest.warns(UserWarning, match='Mismatch'):
+        _ = operator(u)
+
+    grid = torch.ones(1, 1, 1, 2)  # 2d
+    operator = GridSamplingOp(grid, SpatialDimension(2, 3, 4))
+
+    u = torch.zeros(1, 3, 4)
+    with pytest.raises(ValueError, match='4 dimensions: batch channel y x'):
+        _ = operator(u)
+
+    u = torch.zeros(1, 2, 3, 5)
+    with pytest.warns(UserWarning, match='Mismatch'):
+        _ = operator(u)
+
+    u = torch.zeros(1, 17, 3, 4)
+    _ = operator(u)  # works, as z is ignored.
+
+
+@pytest.mark.parametrize(
+    ('grid_batch', 'u_batch', 'channel', 'expected_output'),
+    [
+        ((1,), (1,), (1,), (1, 1)),
+        ((7, 1, 2), (1, 8, 2), (2, 3), (7, 8, 2, 2, 3)),
+        ((3,), (4,), (1,), 'not broadcastable'),
+        ((7, 1, 2), (1, 1, 2), (4,), (7, 1, 2, 4)),
+        ((7, 1, 2), (2,), (4,), 'not broadcastable'),
+    ],
+)
+def test_grid_sampling_op_batchdims(grid_batch, u_batch, channel, expected_output):
+    "Test if error for wrong input dimensions is raised."
+    grid = torch.ones(*grid_batch, 7, 8, 9, 3)  # 3d
+    input_shape = SpatialDimension(2, 3, 4)
+    u = torch.zeros(*u_batch, *channel, *input_shape.zyx)
+    operator = GridSamplingOp(grid, input_shape)
+    if isinstance(expected_output, str):
+        with pytest.raises(ValueError, match=expected_output):
+            _ = operator(u)
+    else:
+        (result,) = operator(u)
+        assert result.shape == (*expected_output, 7, 8, 9)
