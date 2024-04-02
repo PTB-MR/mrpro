@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
 from collections.abc import Callable
 from collections.abc import Sequence
 from typing import Literal
@@ -174,6 +175,7 @@ class GridSamplingOp(LinearOperator):
         ----------
         grid
             sampling grid. Shape *batchdim, z,y,x,3 / *batchdim, y,x,2.
+            Values should be in [-1, 1.]
         interpolation_mode
             mode used for interpolation. bilinear is trilinear in 3D, bicubic is only supported in 2D.
         padding_mode
@@ -184,9 +186,31 @@ class GridSamplingOp(LinearOperator):
         input_shape
             Used in the adjoint. The z,y,x shape of the domain of the operator.
             If grid has 2 as the last dimension, only y and x will be used.
-            If None, the maximum values of grid are used.
         """
         super().__init__()
+
+        match grid.shape[-1]:
+            case 2:  # 2D
+                if grid.ndim < 4:
+                    raise ValueError(
+                        'For a 2D gridding (determined by last dimension of grid), grid should have at least'
+                        f' 4 dimensions: batch y x 2. Got shape {grid.shape}.'
+                    )
+            case 3:  # 3D
+                if grid.ndim < 5:
+                    raise ValueError(
+                        'For a 3D gridding (determined by last dimension of grid), grid should have at least'
+                        f' 5 dimensions: batch z y x 3. Got shape {grid.shape}.'
+                    )
+                if interpolation_mode == 'bicubic':
+                    raise NotImplementedError('Bicubic only implemented for 2D')
+            case _:
+                raise ValueError('Grid should have 2 or 3 as last dimension for 2D or 3D sampling')
+        if not grid.is_floating_point():
+            raise ValueError(f'Grid should be a real floating dtype, got {grid.dtype}')
+        if grid.max() > 1.0 or grid.min() < -1.0:
+            warnings.warn('Grid has values outside range [-1,1].', stacklevel=1)
+
         self.interpolation_mode = interpolation_mode
         self.padding_mode = padding_mode
         self.register_buffer('grid', grid)
@@ -199,12 +223,26 @@ class GridSamplingOp(LinearOperator):
         """Do all the reshaping pre- and post- sampling."""
         # First, we need to do a lot of reshaping ..
         dim = self.grid.shape[-1]
+        if x.ndim < dim + 2:
+            raise ValueError(
+                f'For a {dim}D sampling operation, x should have at least have {dim+2} dimensions:'
+                f' batch channel {"z y x" if dim==3 else "y x"}.'
+            )
+
         #   The gridsample operator only works for real data, thus we handle complex inputs as an additional channel
         x_real = torch.view_as_real(x).moveaxis(-1, -dim - 1) if x.is_complex() else x
         shape_grid_batch = self.grid.shape[: -dim - 1]  # the batch dimensions of grid
         n_batchdim = len(shape_grid_batch)
         shape_x_batch = x_real.shape[:n_batchdim]  # the batch dimensions of the input
-        shape_batch = torch.broadcast_shapes(shape_x_batch, shape_grid_batch)
+        try:
+            shape_batch = torch.broadcast_shapes(shape_x_batch, shape_grid_batch)
+        except RuntimeError:
+            raise ValueError(
+                'Batch dimensions in x and grid are not broadcastable.'
+                f' Got batch dimensions x: {shape_x_batch} and grid: {shape_grid_batch},'
+                f' (shapes are x: {x.shape}, grid: {self.grid.shape}).'
+            ) from None
+
         shape_channels = x_real.shape[n_batchdim:-dim]
         #   reshape to 3D: (*batch_dim) z y x 3 or 2D: (*batch_dim) y x 2
         grid_flatbatch = self.grid.broadcast_to(*shape_batch, *self.grid.shape[n_batchdim:]).flatten(
@@ -233,10 +271,20 @@ class GridSamplingOp(LinearOperator):
             padding_mode=self.padding_mode,
             align_corners=self.align_corners,
         )
+
         return sampled
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Apply the Operator."""
+        if (
+            (x.shape[-1] != self.input_shape.x)
+            or (x.shape[-2] != self.input_shape.y)
+            or (x.shape[-3] != self.input_shape.z and self.grid.shape[-1] == 3)
+        ):
+            warnings.warn(
+                'Mismatch between x.shape and input shape. Adjoint on the result will return the wrong shape.',
+                stacklevel=1,
+            )
         return self.__reshape_wrapper(x, self._forward_implementation)
 
     def _adjoint_implementation(
