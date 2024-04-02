@@ -49,34 +49,32 @@ def test_sampling_op_x_backward():
 
 
 def test_sampling_op_gradcheck_x_forward():
-    grid = torch.stack(torch.meshgrid(torch.linspace(-1, 1, 3), torch.linspace(-1, 1, 2), indexing='ij'), -1)[None]
-    grid = grid.double()
     rng = RandomGenerator(0).float64_tensor
+    grid = rng((2, 1, 2, 2), -0.8, 0.8).requires_grad_(True)
     u = rng((1, 1, 3, 5)).requires_grad_(True)
     gradcheck(lambda grid, u: SamplingOp(grid, input_shape=SpatialDimension(1, 3, 5))(u), (grid, u), fast_mode=True)
 
 
 def test_sampling_op_gradcheck_grid_forward():
-    grid = torch.tensor([[[1.2000, 2.4000], [1.4000, 2.2000]]])[None, ...].double().requires_grad_(True)
     rng = RandomGenerator(0).float64_tensor
+    grid = rng((2, 1, 2, 2), -0.8, 0.8).requires_grad_(True)
     u = rng((1, 1, 3, 5))
     gradcheck(lambda grid, u: SamplingOp(grid, input_shape=SpatialDimension(1, 3, 5))(u), (grid, u), fast_mode=True)
 
 
 def test_sampling_op_gradcheck_x_adjoint():
-    grid = torch.tensor([[[-0.2000, 0.4000], [0.4000, -0.2000]]])[None, ...].double()
     rng = RandomGenerator(0).float64_tensor
-    v = rng((1, 1, 1, 2)).requires_grad_(True)
+    grid = rng((2, 1, 2, 2), -0.8, 0.8).requires_grad_(True)
+    v = rng((2, 1, 1, 2))
     gradcheck(
-        lambda grid, v: SamplingOp(grid, input_shape=SpatialDimension(1, 3, 5)).adjoint(v), (grid, v), fast_mode=True
+        lambda grid, v: SamplingOp(grid, input_shape=SpatialDimension(1, 2, 3)).adjoint(v), (grid, v), fast_mode=True
     )
 
 
 def test_sampling_op_gradcheck_grid_adjoint():
-    grid = torch.stack(torch.meshgrid(torch.linspace(-1, 1, 3), torch.linspace(-1, 1, 2), indexing='ij'), -1)[None]
-    grid = grid.double().requires_grad_(True)
     rng = RandomGenerator(0).float64_tensor
-    v = rng((1, 1, 1, 2)).requires_grad_(True)
+    grid = rng((2, 1, 2, 2), -0.8, 0.8).requires_grad_(True)
+    v = rng((2, 1, 1, 2))
     gradcheck(
-        lambda grid, v: SamplingOp(grid, input_shape=SpatialDimension(1, 3, 5)).adjoint(v), (grid, v), fast_mode=True
+        lambda grid, v: SamplingOp(grid, input_shape=SpatialDimension(1, 2, 3)).adjoint(v), (grid, v), fast_mode=True
     )
