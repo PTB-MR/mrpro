@@ -250,3 +250,21 @@ class KTrajectory:
             ky=self.ky.cpu(memory_format=memory_format),  # type: ignore [call-arg]
             kx=self.kx.cpu(memory_format=memory_format),  # type: ignore [call-arg]
         )
+
+    def clone(self) -> KTrajectory:
+        """Clone the trajectory."""
+        return KTrajectory(
+            kz=self.kz.clone(),
+            ky=self.ky.clone(),
+            kx=self.kx.clone(),
+            grid_detection_tolerance=self.grid_detection_tolerance,
+        )
+
+    def __getitem__(self, item: torch.Tensor) -> KTrajectoryView:
+        raise NotImplementedError
+
+    def rearrange(self, pattern: str, **axes_lengths) -> KTrajectory:
+        raise NotImplementedError
+
+
+class KTrajectoryView(KTrajectory): ...

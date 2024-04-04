@@ -18,12 +18,33 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Literal
 
 import ismrmrd
 import numpy as np
 import torch
 
 from mrpro.data import SpatialDimension
+
+AcqIdxLiteral = Literal[
+    'k1',
+    'k2',
+    'average',
+    'slice',
+    'contrast',
+    'phase',
+    'repetition',
+    'set',
+    'segment',
+    'user0',
+    'user1',
+    'user2',
+    'user3',
+    'user4',
+    'user5',
+    'user6',
+    'user7',
+]
 
 
 @dataclass(slots=True)
