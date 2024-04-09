@@ -34,11 +34,14 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
     ----------
     seq_path
         absolute path to .seq file
+    repeat_detection_tolerance
+        tolerance for repeat detection when creating KTrajectory, by default 1e-3
     """
 
-    def __init__(self, seq_path: str | Path) -> None:
+    def __init__(self, seq_path: str | Path, repeat_detection_tolerance: None | float = 1e-3) -> None:
         super().__init__()
         self.seq_path = seq_path
+        self.repeat_detection_tolerance = repeat_detection_tolerance
 
     def __call__(self, kheader: KHeader) -> KTrajectoryRawShape:
         """Calculate trajectory from given .seq file and header information.
@@ -58,28 +61,21 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
 
         # calculate k-space trajectory using PyPulseq
         k_traj_adc_numpy, _, _, _, _ = seq.calculate_kspace()
-        k_traj_adc = torch.from_numpy(k_traj_adc_numpy)
-
-        unique_idxs = {label: torch.unique(getattr(kheader.acq_info.idx, label)) for label in ['k1', 'k2']}
-
-        k1 = len(unique_idxs['k1'])
-        k2 = len(unique_idxs['k2'])
+        k_traj_adc = torch.tensor(k_traj_adc_numpy, dtype=torch.float32)
 
         n_samples = kheader.acq_info.number_of_samples
         n_samples = torch.unique(n_samples)
         if len(n_samples) > 1:
             raise ValueError('We currently only support constant number of samples')
-        k0 = int(n_samples.item())
-
-        sample_size = n_samples.shape[0]
+        n_k0 = int(n_samples.item())
 
         def reshape_pulseq_traj(k_traj: torch.Tensor, encoding_size: int):
             k_traj *= encoding_size / (2 * torch.max(torch.abs(k_traj)))
-            return rearrange(k_traj, '(other k2 k1 k0) -> (other k2 k1) k0', k0=k0, k2=k2, k1=k1, other=sample_size)
+            return rearrange(k_traj, '(other k0) -> other k0', k0=n_k0)
 
         # rearrange k-space trajectory to match MRpro convention
         kx = reshape_pulseq_traj(k_traj_adc[0], kheader.encoding_matrix.x)
         ky = reshape_pulseq_traj(k_traj_adc[1], kheader.encoding_matrix.y)
         kz = reshape_pulseq_traj(k_traj_adc[2], kheader.encoding_matrix.z)
 
-        return KTrajectoryRawShape(kz, ky, kx)
+        return KTrajectoryRawShape(kz, ky, kx, self.repeat_detection_tolerance)
