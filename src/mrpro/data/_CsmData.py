@@ -15,11 +15,14 @@
 # limitations under the License.
 
 from __future__ import annotations
+from einops import rearrange
 
 import torch
 
 from mrpro.data import IData
 from mrpro.data import QData
+from mrpro.data import KData
+
 from mrpro.data import SpatialDimension
 from mrpro.utils.filters import uniform_filter_3d
 
@@ -69,7 +72,7 @@ class CsmData(QData):
         return csm_data
 
     @classmethod
-    def from_idata_walsh(
+    def estimate_walsh(
         cls,
         idata: IData,
         smoothing_width: int | SpatialDimension[int] = 5,
@@ -101,3 +104,86 @@ class CsmData(QData):
         csm_data = csm_fun(idata.data)
 
         return cls(header=idata.header, data=csm_data)
+
+    def estimate_espirit(
+        cls,
+        kdata: KData,
+        thresh: float = 0.02,
+        kernel_width: int = 6,
+        max_iter: int = 10,
+        crop: float = 0.95,
+        chunk_size_otherdim=None,
+    ) -> CsmData:
+        """Espirit sensitivity Estimation (DRAFT)
+
+        Works only for Cartesian K Data
+
+        Parameters
+        ----------
+        kdata
+            _description_
+        chunk_size_otherdim, optional
+            _description_, by default None
+
+        """
+        # check for certesian
+        # get calib
+        calib = kdata.data
+        img_shape = kdata.data.shape[-3:]
+
+        csm_fun = torch.vmap(
+            lambda c: CsmData._espirit_csm(
+                c, img_shape=img_shape, thresh=thresh, kernel_width=kernel_width, max_iter=max_iter, crop=crop
+            ),
+            chunk_size=chunk_size_otherdim,
+        )
+        csm_data = csm_fun(calib)
+        return cls(header=kdata.header, data=csm_data)
+
+    def _espirit_csm(
+        calib: torch.Tensor,
+        img_shape,
+        thresh=0.02,
+        kernel_width=6,
+        crop=0.95,
+        max_iter=10,
+    ):
+        # inspired by https://sigpy.readthedocs.io/en/latest/_modules/sigpy/mri/app.html#EspiritCalib
+
+        # Get calibration matrix.
+        # Shape [num_coils] + num_blks + [kernel_width] * img_ndim
+        mat = calib
+        for ax in (1, 2, 3):
+            mat = mat.unfold(dimension=ax, size=min(calib.shape[ax], kernel_width), step=1)
+        mat = rearrange(mat, 'coils z y x c b a -> (z y x) (coils c b a)')
+
+        # Perform SVD on calibration matrix
+        _, S, VH = torch.linalg.svd(mat, full_matrices=False)
+
+        # Get kernels
+        kernels = rearrange(VH[S > thresh * S.max()], 'n (coils cba) -> n coils cba')
+
+        # Get covariance matrix in image domain
+        num_coils = calib.shape[1]
+        AHA = torch.zeros(num_coils, num_coils, img_shape, dtype=calib.dtype, device=calib.device)
+
+        for kernel in kernels:
+            img_kernel = torch.fft.ifftn(kernel, s=img_shape, dim=(-1, -2, -3))
+            AHA += torch.einsum('c z y x, d z y x->c d z y x ', img_kernel, img_kernel.conj())
+
+        AHA *= AHA[0, 0].numel() / kernels.shape[-1]
+
+        v = AHA.sum(dim=0)
+        for _ in range(max_iter):
+            v /= v.norm(dim=0)
+            v = torch.einsum('abzyx,bzyx->azyx', AHA, v)
+        max_eig = v.norm(dim=0)
+        csm = v / max_eig
+
+        # Normalize phase with respect to first channel
+        csm *= csm[0].conj() / csm[0].abs()
+
+        # Crop maps by thresholding eigenvalue
+        csm *= max_eig > crop
+
+        return csm
