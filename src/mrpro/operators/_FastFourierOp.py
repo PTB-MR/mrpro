@@ -19,9 +19,9 @@ from dataclasses import astuple
 
 import torch
 
-from mrpro.data import SpatialDimension
-from mrpro.operators import LinearOperator
-from mrpro.operators import ZeroPadOp
+from mrpro.data._SpatialDimension import SpatialDimension
+from mrpro.operators._LinearOperator import LinearOperator
+from mrpro.operators._ZeroPadOp import ZeroPadOp
 
 
 class FastFourierOp(LinearOperator):

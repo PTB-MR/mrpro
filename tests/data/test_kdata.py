@@ -18,6 +18,7 @@ from einops import rearrange
 from einops import repeat
 from mrpro.data import KData
 from mrpro.data import KTrajectory
+from mrpro.data import SpatialDimension
 from mrpro.data.traj_calculators._KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
 from mrpro.utils import modify_acq_info
@@ -27,6 +28,7 @@ from tests.conftest import RandomGenerator
 from tests.conftest import generate_random_data
 from tests.data import IsmrmrdRawTestData
 from tests.helper import relative_image_difference
+from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData
 
 
 @pytest.fixture(scope='session')
@@ -300,3 +302,60 @@ def test_KData_select_other_subset(consistently_shaped_kdata, monkeypatch, subse
     assert kdata_subset.data.shape == (subset_idx.shape[0], n_coils, n_k2, n_k1, n_k0)
     # Verify other label describes subset data
     assert all(torch.unique(getattr(kdata_subset.header.acq_info.idx, subset_label)) == torch.unique(subset_idx))
+
+
+def test_KData_remove_readout_os(monkeypatch, random_kheader):
+    # Dimensions
+    n_coils = 4
+    n_k0 = 240
+    n_k1 = 240
+    n_k0_oversampled = 320
+    discard_pre = 10
+    discard_post = 20
+
+    random_generator = RandomGenerator(seed=0)
+
+    # List of k1 indices in the shape
+    idx_k1 = torch.arange(n_k1, dtype=torch.int32)[None, None, ...]
+
+    # Set parameters need in remove_os
+    monkeypatch.setattr(random_kheader.encoding_matrix, 'x', n_k0_oversampled)
+    monkeypatch.setattr(random_kheader.recon_matrix, 'x', n_k0)
+    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + n_k0_oversampled // 2)
+    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + n_k0_oversampled)
+    monkeypatch.setattr(random_kheader.acq_info, 'discard_pre', torch.tensor(discard_pre, dtype=torch.int32))
+    monkeypatch.setattr(random_kheader.acq_info, 'discard_post', torch.tensor(discard_post, dtype=torch.int32))
+
+    # Create kspace and image with oversampling
+    phantom_os = EllipsePhantomTestData(n_y=n_k1, n_x=n_k0_oversampled)
+    kdata_os = phantom_os.phantom.kspace(phantom_os.ky, phantom_os.kx)
+    img_dim = SpatialDimension(z=1, y=n_k1, x=n_k0_oversampled)
+    img_tensor = phantom_os.phantom.image_space(img_dim)
+
+    # Crop image data
+    start = (n_k0_oversampled - n_k0) // 2
+    img_tensor = img_tensor[..., start : start + n_k0]
+
+    # Create k-space data with correct dimensions
+    k_tensor = repeat(kdata_os, 'k1 k0 -> other coils k2 k1 k0', other=1, coils=n_coils, k2=1)
+
+    # Create random 2D Cartesian trajectory
+    kx = random_generator.float32_tensor(size=(1, 1, 1, n_k0_oversampled))
+    ky = random_generator.float32_tensor(size=(1, 1, n_k1, 1))
+    kz = random_generator.float32_tensor(size=(1, 1, 1, 1))
+    trajectory = KTrajectory(kz, ky, kx)
+
+    # Create KData
+    kdata = KData(header=random_kheader, data=k_tensor, traj=trajectory)
+
+    # Remove oversampling
+    kdata_without_os = kdata.remove_readout_os()
+
+    # Reconstruct image from k-space data of one coil and compare to phantom image
+    fourier_op = FastFourierOp(dim=(-1, -2))
+    (img_recon,) = fourier_op.adjoint(kdata_without_os.data[:, 0, ...])
+
+    # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
+    # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
+    # differences along the edges of the elliptic objects.
+    assert relative_image_difference(torch.abs(img_recon), img_tensor[:, 0, ...]) <= 0.05

@@ -27,7 +27,7 @@ from einops import repeat
 if TYPE_CHECKING:
     from mrpro.data._kdata._KData import _KDataProtocol
 
-from mrpro.data import Limits
+from mrpro.data._EncodingLimits import Limits
 from mrpro.utils import modify_acq_info
 
 

@@ -15,7 +15,7 @@
 import pytest
 import scipy
 import torch
-from mrpro.algorithms import cg
+from mrpro.algorithms.optimizers import cg
 from mrpro.operators import EinsumOp
 from scipy.sparse.linalg import cg as cg_scp
 from tests import RandomGenerator
