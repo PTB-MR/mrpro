@@ -35,6 +35,7 @@ mrpro.data.KTrajectory
       ~KTrajectory.ky
       ~KTrajectory.kx
       ~KTrajectory.grid_detection_tolerance
+      ~KTrajectory.repeat_detection_tolerance
       ~KTrajectory.broadcasted_shape
       ~KTrajectory.type_along_k210
       ~KTrajectory.type_along_kzyx

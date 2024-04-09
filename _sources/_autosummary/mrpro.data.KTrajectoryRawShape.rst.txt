@@ -30,5 +30,6 @@ mrpro.data.KTrajectoryRawShape
       ~KTrajectoryRawShape.kz
       ~KTrajectoryRawShape.ky
       ~KTrajectoryRawShape.kx
+      ~KTrajectoryRawShape.repeat_detection_tolerance
    
    

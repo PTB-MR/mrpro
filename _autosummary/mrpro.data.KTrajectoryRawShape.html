@@ -488,7 +488,7 @@ document.write(`
 <h1>mrpro.data.KTrajectoryRawShape<a class="headerlink" href="#mrpro-data-ktrajectoryrawshape" title="Link to this heading">#</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="mrpro.data.KTrajectoryRawShape">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.</span></span><span class="sig-name descname"><span class="pre">KTrajectoryRawShape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ky</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/_KTrajectoryRawShape.html#KTrajectoryRawShape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KTrajectoryRawShape" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.</span></span><span class="sig-name descname"><span class="pre">KTrajectoryRawShape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ky</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repeat_detection_tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/_KTrajectoryRawShape.html#KTrajectoryRawShape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KTrajectoryRawShape" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>K-space trajectory shaped ((other*k2*k1),k0).</p>
 <p>Order of directions is always kz, ky, kx
@@ -497,16 +497,16 @@ separated from the phase and slice encoding dimensions. The trajectory is in the
 raw data file.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.KTrajectoryRawShape.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ky</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.data.KTrajectoryRawShape.__init__" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ky</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repeat_detection_tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.data.KTrajectoryRawShape.__init__" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <p class="rubric">Methods</p>
 <table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KTrajectoryRawShape.__init__" title="mrpro.data.KTrajectoryRawShape.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(kz, ky, kx)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KTrajectoryRawShape.__init__" title="mrpro.data.KTrajectoryRawShape.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(kz, ky, kx[, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KTrajectoryRawShape.reshape" title="mrpro.data.KTrajectoryRawShape.reshape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reshape</span></code></a>(sort_idx, n_k2, n_k1[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KTrajectoryRawShape.reshape" title="mrpro.data.KTrajectoryRawShape.reshape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reshape</span></code></a>(sort_idx, n_k2, n_k1)</p></td>
 <td><p>Resort and reshape the raw trajectory to KTrajectory.</p></td>
 </tr>
 </tbody>
@@ -514,20 +514,47 @@ raw data file.</p>
 <p class="rubric">Attributes</p>
 <table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">kz</span></code></p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KTrajectoryRawShape.kz" title="mrpro.data.KTrajectoryRawShape.kz"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kz</span></code></a></p></td>
+<td><p>(other,k2,k1,k0), phase encoding direction k2 if Cartesian.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ky</span></code></p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KTrajectoryRawShape.ky" title="mrpro.data.KTrajectoryRawShape.ky"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ky</span></code></a></p></td>
+<td><p>(other,k2,k1,k0), phase encoding direction k1 if Cartesian.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">kx</span></code></p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KTrajectoryRawShape.kx" title="mrpro.data.KTrajectoryRawShape.kx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kx</span></code></a></p></td>
+<td><p>(other,k2,k1,k0), frequency encoding direction k0 if Cartesian.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KTrajectoryRawShape.repeat_detection_tolerance" title="mrpro.data.KTrajectoryRawShape.repeat_detection_tolerance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">repeat_detection_tolerance</span></code></a></p></td>
+<td><p>tolerance for repeat detection, by default 1e-3, None to disable.</p></td>
 </tr>
 </tbody>
 </table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KTrajectoryRawShape.kx">
+<span class="sig-name descname"><span class="pre">kx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#mrpro.data.KTrajectoryRawShape.kx" title="Link to this definition">#</a></dt>
+<dd><p>(other,k2,k1,k0), frequency encoding direction k0 if Cartesian.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KTrajectoryRawShape.ky">
+<span class="sig-name descname"><span class="pre">ky</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#mrpro.data.KTrajectoryRawShape.ky" title="Link to this definition">#</a></dt>
+<dd><p>(other,k2,k1,k0), phase encoding direction k1 if Cartesian.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KTrajectoryRawShape.kz">
+<span class="sig-name descname"><span class="pre">kz</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#mrpro.data.KTrajectoryRawShape.kz" title="Link to this definition">#</a></dt>
+<dd><p>(other,k2,k1,k0), phase encoding direction k2 if Cartesian.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KTrajectoryRawShape.repeat_detection_tolerance">
+<span class="sig-name descname"><span class="pre">repeat_detection_tolerance</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#mrpro.data.KTrajectoryRawShape.repeat_detection_tolerance" title="Link to this definition">#</a></dt>
+<dd><p>tolerance for repeat detection, by default 1e-3, None to disable.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.KTrajectoryRawShape.reshape">
-<span class="sig-name descname"><span class="pre">reshape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sort_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_k2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_k1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repeat_detection_tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1e-08</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="mrpro.data.KTrajectory.html#mrpro.data.KTrajectory" title="mrpro.data._KTrajectory.KTrajectory"><span class="pre">KTrajectory</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_KTrajectoryRawShape.html#KTrajectoryRawShape.reshape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KTrajectoryRawShape.reshape" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">reshape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sort_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_k2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_k1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="mrpro.data.KTrajectory.html#mrpro.data.KTrajectory" title="mrpro.data._KTrajectory.KTrajectory"><span class="pre">KTrajectory</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_KTrajectoryRawShape.html#KTrajectoryRawShape.reshape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KTrajectoryRawShape.reshape" title="Link to this definition">#</a></dt>
 <dd><p>Resort and reshape the raw trajectory to KTrajectory.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -537,7 +564,6 @@ into three separate dimensions using simple reshape operation. This information 
 kheader.acq_info.</p></li>
 <li><p><strong>n_k2</strong> – number of k2 points.</p></li>
 <li><p><strong>n_k1</strong> – number of k1 points.</p></li>
-<li><p><strong>repeat_detection_tolerance</strong> – tolerance for repeat detection which is passed on to create KTrajectory. Set to None to disable.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -598,6 +624,10 @@ kheader.acq_info.</p></li>
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectoryRawShape"><code class="docutils literal notranslate"><span class="pre">KTrajectoryRawShape</span></code></a><ul class="visible nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectoryRawShape.__init__"><code class="docutils literal notranslate"><span class="pre">KTrajectoryRawShape.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectoryRawShape.kx"><code class="docutils literal notranslate"><span class="pre">KTrajectoryRawShape.kx</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectoryRawShape.ky"><code class="docutils literal notranslate"><span class="pre">KTrajectoryRawShape.ky</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectoryRawShape.kz"><code class="docutils literal notranslate"><span class="pre">KTrajectoryRawShape.kz</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectoryRawShape.repeat_detection_tolerance"><code class="docutils literal notranslate"><span class="pre">KTrajectoryRawShape.repeat_detection_tolerance</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectoryRawShape.reshape"><code class="docutils literal notranslate"><span class="pre">KTrajectoryRawShape.reshape()</span></code></a></li>
 </ul>
 </li>

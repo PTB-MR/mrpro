@@ -443,13 +443,16 @@ document.write(`
 <span class="sd">    ----------</span>
 <span class="sd">    seq_path</span>
 <span class="sd">        absolute path to .seq file</span>
+<span class="sd">    repeat_detection_tolerance</span>
+<span class="sd">        tolerance for repeat detection when creating KTrajectory, by default 1e-3</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="KTrajectoryPulseq.__init__">
 <a class="viewcode-back" href="../../../../_autosummary/mrpro.data.traj_calculators.KTrajectoryPulseq.html#mrpro.data.traj_calculators.KTrajectoryPulseq.__init__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">repeat_detection_tolerance</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seq_path</span> <span class="o">=</span> <span class="n">seq_path</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seq_path</span> <span class="o">=</span> <span class="n">seq_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repeat_detection_tolerance</span> <span class="o">=</span> <span class="n">repeat_detection_tolerance</span></div>
 
 
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KTrajectoryRawShape</span><span class="p">:</span>
@@ -470,31 +473,24 @@ document.write(`
 
         <span class="c1"># calculate k-space trajectory using PyPulseq</span>
         <span class="n">k_traj_adc_numpy</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">seq</span><span class="o">.</span><span class="n">calculate_kspace</span><span class="p">()</span>
-        <span class="n">k_traj_adc</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">k_traj_adc_numpy</span><span class="p">)</span>
-
-        <span class="n">unique_idxs</span> <span class="o">=</span> <span class="p">{</span><span class="n">label</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="p">,</span> <span class="n">label</span><span class="p">))</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;k1&#39;</span><span class="p">,</span> <span class="s1">&#39;k2&#39;</span><span class="p">]}</span>
-
-        <span class="n">k1</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_idxs</span><span class="p">[</span><span class="s1">&#39;k1&#39;</span><span class="p">])</span>
-        <span class="n">k2</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_idxs</span><span class="p">[</span><span class="s1">&#39;k2&#39;</span><span class="p">])</span>
+        <span class="n">k_traj_adc</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">k_traj_adc_numpy</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 
         <span class="n">n_samples</span> <span class="o">=</span> <span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">number_of_samples</span>
         <span class="n">n_samples</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;We currently only support constant number of samples&#39;</span><span class="p">)</span>
-        <span class="n">k0</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_samples</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
-
-        <span class="n">sample_size</span> <span class="o">=</span> <span class="n">n_samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">n_k0</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_samples</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
 
         <span class="k">def</span> <span class="nf">reshape_pulseq_traj</span><span class="p">(</span><span class="n">k_traj</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">encoding_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">k_traj</span> <span class="o">*=</span> <span class="n">encoding_size</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">k_traj</span><span class="p">)))</span>
-            <span class="k">return</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">k_traj</span><span class="p">,</span> <span class="s1">&#39;(other k2 k1 k0) -&gt; (other k2 k1) k0&#39;</span><span class="p">,</span> <span class="n">k0</span><span class="o">=</span><span class="n">k0</span><span class="p">,</span> <span class="n">k2</span><span class="o">=</span><span class="n">k2</span><span class="p">,</span> <span class="n">k1</span><span class="o">=</span><span class="n">k1</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="n">sample_size</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">k_traj</span><span class="p">,</span> <span class="s1">&#39;(other k0) -&gt; other k0&#39;</span><span class="p">,</span> <span class="n">k0</span><span class="o">=</span><span class="n">n_k0</span><span class="p">)</span>
 
         <span class="c1"># rearrange k-space trajectory to match MRpro convention</span>
         <span class="n">kx</span> <span class="o">=</span> <span class="n">reshape_pulseq_traj</span><span class="p">(</span><span class="n">k_traj_adc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">kheader</span><span class="o">.</span><span class="n">encoding_matrix</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
         <span class="n">ky</span> <span class="o">=</span> <span class="n">reshape_pulseq_traj</span><span class="p">(</span><span class="n">k_traj_adc</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">kheader</span><span class="o">.</span><span class="n">encoding_matrix</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
         <span class="n">kz</span> <span class="o">=</span> <span class="n">reshape_pulseq_traj</span><span class="p">(</span><span class="n">k_traj_adc</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">kheader</span><span class="o">.</span><span class="n">encoding_matrix</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">KTrajectoryRawShape</span><span class="p">(</span><span class="n">kz</span><span class="p">,</span> <span class="n">ky</span><span class="p">,</span> <span class="n">kx</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">KTrajectoryRawShape</span><span class="p">(</span><span class="n">kz</span><span class="p">,</span> <span class="n">ky</span><span class="p">,</span> <span class="n">kx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeat_detection_tolerance</span><span class="p">)</span></div>
 
 </pre></div>
 

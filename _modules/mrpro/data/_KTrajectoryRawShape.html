@@ -444,9 +444,17 @@ document.write(`
 <span class="sd">    raw data file.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">kz</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>  <span class="c1"># ((other,k2,k1),k0) #phase encoding direction, k2 if Cartesian</span>
-    <span class="n">ky</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>  <span class="c1"># ((other,k2,k1),k0) #phase encoding direction, k1 if Cartesian</span>
-    <span class="n">kx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>  <span class="c1"># ((other,k2,k1),k0) #frequency encoding direction, k0 if Cartesian</span>
+    <span class="n">kz</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;(other,k2,k1,k0), phase encoding direction k2 if Cartesian.&quot;&quot;&quot;</span>
+
+    <span class="n">ky</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;(other,k2,k1,k0), phase encoding direction k1 if Cartesian.&quot;&quot;&quot;</span>
+
+    <span class="n">kx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;(other,k2,k1,k0), frequency encoding direction k0 if Cartesian.&quot;&quot;&quot;</span>
+
+    <span class="n">repeat_detection_tolerance</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;tolerance for repeat detection, by default 1e-3, None to disable.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="KTrajectoryRawShape.reshape">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.KTrajectoryRawShape.html#mrpro.data.KTrajectoryRawShape.reshape">[docs]</a>
@@ -455,7 +463,6 @@ document.write(`
         <span class="n">sort_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">n_k2</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">n_k1</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">repeat_detection_tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KTrajectory</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Resort and reshape the raw trajectory to KTrajectory.</span>
 
@@ -469,8 +476,6 @@ document.write(`
 <span class="sd">            number of k2 points.</span>
 <span class="sd">        n_k1</span>
 <span class="sd">            number of k1 points.</span>
-<span class="sd">        repeat_detection_tolerance:</span>
-<span class="sd">            tolerance for repeat detection which is passed on to create KTrajectory. Set to None to disable.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -481,7 +486,7 @@ document.write(`
         <span class="n">ky</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ky</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s1">&#39;(other k2 k1) k0 -&gt; other k2 k1 k0&#39;</span><span class="p">,</span> <span class="n">k1</span><span class="o">=</span><span class="n">n_k1</span><span class="p">,</span> <span class="n">k2</span><span class="o">=</span><span class="n">n_k2</span><span class="p">)</span>
         <span class="n">kx</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kx</span><span class="p">[</span><span class="n">sort_idx</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s1">&#39;(other k2 k1) k0 -&gt; other k2 k1 k0&#39;</span><span class="p">,</span> <span class="n">k1</span><span class="o">=</span><span class="n">n_k1</span><span class="p">,</span> <span class="n">k2</span><span class="o">=</span><span class="n">n_k2</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">KTrajectory</span><span class="p">(</span><span class="n">kz</span><span class="p">,</span> <span class="n">ky</span><span class="p">,</span> <span class="n">kx</span><span class="p">,</span> <span class="n">repeat_detection_tolerance</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">KTrajectory</span><span class="p">(</span><span class="n">kz</span><span class="p">,</span> <span class="n">ky</span><span class="p">,</span> <span class="n">kx</span><span class="p">,</span> <span class="n">repeat_detection_tolerance</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat_detection_tolerance</span><span class="p">)</span></div>
 </div>
 
 </pre></div>
