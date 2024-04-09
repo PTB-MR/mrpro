@@ -52,10 +52,10 @@ def test_trajectory_raw_reshape(cartesian_grid):
     kx_raw = make_trajectory_raw_shape(kx_full, sort_idx)
 
     # Create raw trajectory
-    trajectory_raw = KTrajectoryRawShape(kz_raw, ky_raw, kx_raw)
+    trajectory_raw = KTrajectoryRawShape(kz_raw, ky_raw, kx_raw, repeat_detection_tolerance=None)
 
     # Reshape to original trajectory
-    trajectory = trajectory_raw.reshape(sort_idx, n_k2, n_k1, repeat_detection_tolerance=None)
+    trajectory = trajectory_raw.reshape(sort_idx, n_k2, n_k1)
 
     # Compare trajectories
     torch.testing.assert_close(trajectory.kz, kz_full)
