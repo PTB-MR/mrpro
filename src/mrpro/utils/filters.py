@@ -23,7 +23,7 @@ from math import ceil
 import numpy as np
 import torch
 
-from mrpro.data import SpatialDimension
+from mrpro.data._SpatialDimension import SpatialDimension
 
 
 def uniform_filter_3d(

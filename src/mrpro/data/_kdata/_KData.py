@@ -26,14 +26,15 @@ import ismrmrd
 import numpy as np
 import torch
 from einops import rearrange
-from mrpro.data import AcqInfo
-from mrpro.data import KHeader
-from mrpro.data import KTrajectory
-from mrpro.data import KTrajectoryRawShape
-from mrpro.data import Limits
+from mrpro.data._AcqInfo import AcqInfo
+from mrpro.data._EncodingLimits import Limits
 from mrpro.data._kdata._KDataRearrangeMixin import KDataRearrangeMixin
+from mrpro.data._kdata._KDataRemoveOsMixin import KDataRemoveOsMixin
 from mrpro.data._kdata._KDataSelectMixin import KDataSelectMixin
 from mrpro.data._kdata._KDataSplitMixin import KDataSplitMixin
+from mrpro.data._KHeader import KHeader
+from mrpro.data._KTrajectory import KTrajectory
+from mrpro.data._KTrajectoryRawShape import KTrajectoryRawShape
 from mrpro.data.enums import AcqFlags
 from mrpro.data.traj_calculators import KTrajectoryCalculator
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
@@ -55,7 +56,7 @@ DEFAULT_IGNORE_FLAGS = (
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
-class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin):
+class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveOsMixin):
     """MR raw data / k-space data class."""
 
     header: KHeader

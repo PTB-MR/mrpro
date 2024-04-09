@@ -15,7 +15,7 @@
 import torch
 from torch import nn
 
-from mrpro.operators import SignalModel
+from mrpro.operators._SignalModel import SignalModel
 
 
 class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
