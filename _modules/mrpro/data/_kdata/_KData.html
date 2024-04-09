@@ -433,14 +433,15 @@ document.write(`
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">rearrange</span>
-<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">AcqInfo</span>
-<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KHeader</span>
-<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KTrajectory</span>
-<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KTrajectoryRawShape</span>
-<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">Limits</span>
+<span class="kn">from</span> <span class="nn">mrpro.data._AcqInfo</span> <span class="kn">import</span> <span class="n">AcqInfo</span>
+<span class="kn">from</span> <span class="nn">mrpro.data._EncodingLimits</span> <span class="kn">import</span> <span class="n">Limits</span>
 <span class="kn">from</span> <span class="nn">mrpro.data._kdata._KDataRearrangeMixin</span> <span class="kn">import</span> <span class="n">KDataRearrangeMixin</span>
+<span class="kn">from</span> <span class="nn">mrpro.data._kdata._KDataRemoveOsMixin</span> <span class="kn">import</span> <span class="n">KDataRemoveOsMixin</span>
 <span class="kn">from</span> <span class="nn">mrpro.data._kdata._KDataSelectMixin</span> <span class="kn">import</span> <span class="n">KDataSelectMixin</span>
 <span class="kn">from</span> <span class="nn">mrpro.data._kdata._KDataSplitMixin</span> <span class="kn">import</span> <span class="n">KDataSplitMixin</span>
+<span class="kn">from</span> <span class="nn">mrpro.data._KHeader</span> <span class="kn">import</span> <span class="n">KHeader</span>
+<span class="kn">from</span> <span class="nn">mrpro.data._KTrajectory</span> <span class="kn">import</span> <span class="n">KTrajectory</span>
+<span class="kn">from</span> <span class="nn">mrpro.data._KTrajectoryRawShape</span> <span class="kn">import</span> <span class="n">KTrajectoryRawShape</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.enums</span> <span class="kn">import</span> <span class="n">AcqFlags</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.traj_calculators</span> <span class="kn">import</span> <span class="n">KTrajectoryCalculator</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.traj_calculators</span> <span class="kn">import</span> <span class="n">KTrajectoryIsmrmrd</span>
@@ -464,7 +465,7 @@ document.write(`
 <div class="viewcode-block" id="KData">
 <a class="viewcode-back" href="../../../../_autosummary/mrpro.data.KData.html#mrpro.data.KData">[docs]</a>
 <span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">KData</span><span class="p">(</span><span class="n">KDataSplitMixin</span><span class="p">,</span> <span class="n">KDataRearrangeMixin</span><span class="p">,</span> <span class="n">KDataSelectMixin</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">KData</span><span class="p">(</span><span class="n">KDataSplitMixin</span><span class="p">,</span> <span class="n">KDataRearrangeMixin</span><span class="p">,</span> <span class="n">KDataSelectMixin</span><span class="p">,</span> <span class="n">KDataRemoveOsMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;MR raw data / k-space data class.&quot;&quot;&quot;</span>
 
     <span class="n">header</span><span class="p">:</span> <span class="n">KHeader</span>

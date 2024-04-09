@@ -21,6 +21,7 @@ mrpro.data.KData
       ~KData.cuda
       ~KData.from_file
       ~KData.rearrange_k2_k1_into_k1
+      ~KData.remove_readout_os
       ~KData.select_other_subset
       ~KData.split_k1_into_other
       ~KData.split_k2_into_other

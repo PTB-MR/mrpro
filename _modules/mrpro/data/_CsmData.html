@@ -425,57 +425,15 @@ document.write(`
 
 <span class="kn">import</span> <span class="nn">torch</span>
 
-<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">IData</span>
-<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">QData</span>
-<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">SpatialDimension</span>
-<span class="kn">from</span> <span class="nn">mrpro.utils.filters</span> <span class="kn">import</span> <span class="n">uniform_filter_3d</span>
+<span class="kn">from</span> <span class="nn">mrpro.data._IData</span> <span class="kn">import</span> <span class="n">IData</span>
+<span class="kn">from</span> <span class="nn">mrpro.data._QData</span> <span class="kn">import</span> <span class="n">QData</span>
+<span class="kn">from</span> <span class="nn">mrpro.data._SpatialDimension</span> <span class="kn">import</span> <span class="n">SpatialDimension</span>
 
 
 <div class="viewcode-block" id="CsmData">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.CsmData.html#mrpro.data.CsmData">[docs]</a>
 <span class="k">class</span> <span class="nc">CsmData</span><span class="p">(</span><span class="n">QData</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Coil sensitivity map class.&quot;&quot;&quot;</span>
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_iterative_walsh_csm</span><span class="p">(</span>
-        <span class="n">coil_images</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-        <span class="n">smoothing_width</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
-        <span class="n">power_iterations</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate csm using an iterative version of the Walsh method.</span>
-
-<span class="sd">        This function is inspired by https://github.com/ismrmrd/ismrmrd-python-tools.</span>
-
-<span class="sd">        More information on the method can be found in</span>
-<span class="sd">        https://doi.org/10.1002/(SICI)1522-2594(200005)43:5&lt;682::AID-MRM10&gt;3.0.CO;2-G</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        coil_images</span>
-<span class="sd">            images for each coil element.</span>
-<span class="sd">        smoothing_width</span>
-<span class="sd">            width smoothing filter.</span>
-<span class="sd">        power_iterations</span>
-<span class="sd">            number of iterations used to determine dominant eigenvector</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Compute the pointwise covariance between coils</span>
-        <span class="n">coil_cov</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;azyx,bzyx-&gt;abzyx&#39;</span><span class="p">,</span> <span class="n">coil_images</span><span class="p">,</span> <span class="n">coil_images</span><span class="o">.</span><span class="n">conj</span><span class="p">())</span>
-
-        <span class="c1"># Smooth the covariance along y-x for 2D and z-y-x for 3D data</span>
-        <span class="n">coil_cov</span> <span class="o">=</span> <span class="n">uniform_filter_3d</span><span class="p">(</span><span class="n">coil_cov</span><span class="p">,</span> <span class="n">filter_width</span><span class="o">=</span><span class="n">smoothing_width</span><span class="p">)</span>
-
-        <span class="c1"># At each point in the image, find the dominant eigenvector</span>
-        <span class="c1"># of the signal covariance matrix using the power method</span>
-        <span class="n">v</span> <span class="o">=</span> <span class="n">coil_cov</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">power_iterations</span><span class="p">):</span>
-            <span class="n">v</span> <span class="o">/=</span> <span class="n">v</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-            <span class="n">v</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;abzyx,bzyx-&gt;azyx&#39;</span><span class="p">,</span> <span class="n">coil_cov</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
-        <span class="n">csm_data</span> <span class="o">=</span> <span class="n">v</span> <span class="o">/</span> <span class="n">v</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-
-        <span class="c1"># Make sure there are no inf or nan-values due to very small values in the covariance matrix</span>
-        <span class="c1"># nan_to_num does not work for complexfloat, boolean indexing not with vmap.</span>
-        <span class="n">csm_data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">csm_data</span><span class="p">),</span> <span class="n">csm_data</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">csm_data</span>
 
 <div class="viewcode-block" id="CsmData.from_idata_walsh">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.CsmData.html#mrpro.data.CsmData.from_idata_walsh">[docs]</a>
@@ -501,12 +459,14 @@ document.write(`
 <span class="sd">            How many elements of the other dimensions should be processed at once.</span>
 <span class="sd">            Default is None, which means that all elements are processed at once.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">mrpro.algorithms.csm._iterative_walsh</span> <span class="kn">import</span> <span class="n">iterative_walsh</span>
+
         <span class="c1"># convert smoothing_width to SpatialDimension if int</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">smoothing_width</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">smoothing_width</span> <span class="o">=</span> <span class="n">SpatialDimension</span><span class="p">(</span><span class="n">smoothing_width</span><span class="p">,</span> <span class="n">smoothing_width</span><span class="p">,</span> <span class="n">smoothing_width</span><span class="p">)</span>
 
         <span class="n">csm_fun</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span>
-            <span class="k">lambda</span> <span class="n">img</span><span class="p">:</span> <span class="n">CsmData</span><span class="o">.</span><span class="n">_iterative_walsh_csm</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">smoothing_width</span><span class="p">,</span> <span class="n">power_iterations</span><span class="p">),</span>
+            <span class="k">lambda</span> <span class="n">img</span><span class="p">:</span> <span class="n">iterative_walsh</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">smoothing_width</span><span class="p">,</span> <span class="n">power_iterations</span><span class="p">),</span>
             <span class="n">chunk_size</span><span class="o">=</span><span class="n">chunk_size_otherdim</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">csm_data</span> <span class="o">=</span> <span class="n">csm_fun</span><span class="p">(</span><span class="n">idata</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>

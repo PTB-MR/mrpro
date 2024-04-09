@@ -489,7 +489,7 @@ document.write(`
 <dl class="py class">
 <dt class="sig sig-object py" id="mrpro.data.KData">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.</span></span><span class="sig-name descname"><span class="pre">KData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">header</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.KHeader.html#mrpro.data.KHeader" title="mrpro.data._KHeader.KHeader"><span class="pre">KHeader</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">traj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.KTrajectory.html#mrpro.data.KTrajectory" title="mrpro.data._KTrajectory.KTrajectory"><span class="pre">KTrajectory</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/_kdata/_KData.html#KData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KData" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">KDataSplitMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">KDataRearrangeMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">KDataSelectMixin</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">KDataSplitMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">KDataRearrangeMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">KDataSelectMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">KDataRemoveOsMixin</span></code></p>
 <p>MR raw data / k-space data class.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.KData.__init__">
@@ -514,16 +514,19 @@ document.write(`
 <tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.rearrange_k2_k1_into_k1" title="mrpro.data.KData.rearrange_k2_k1_into_k1"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rearrange_k2_k1_into_k1</span></code></a>()</p></td>
 <td><p>Rearrange kdata from (.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KData.select_other_subset" title="mrpro.data.KData.select_other_subset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">select_other_subset</span></code></a>(subset_idx, subset_label)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KData.remove_readout_os" title="mrpro.data.KData.remove_readout_os"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_readout_os</span></code></a>()</p></td>
+<td><p>Remove any oversampling along the readout (k0) direction.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.select_other_subset" title="mrpro.data.KData.select_other_subset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">select_other_subset</span></code></a>(subset_idx, subset_label)</p></td>
 <td><p>Select a subset from the other dimension of KData.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.split_k1_into_other" title="mrpro.data.KData.split_k1_into_other"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_k1_into_other</span></code></a>(split_idx, other_label)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KData.split_k1_into_other" title="mrpro.data.KData.split_k1_into_other"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_k1_into_other</span></code></a>(split_idx, other_label)</p></td>
 <td><p>Based on an index tensor, split the data in e.g. phases.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KData.split_k2_into_other" title="mrpro.data.KData.split_k2_into_other"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_k2_into_other</span></code></a>(split_idx, other_label)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.split_k2_into_other" title="mrpro.data.KData.split_k2_into_other"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_k2_into_other</span></code></a>(split_idx, other_label)</p></td>
 <td><p>Based on an index tensor, split the data in e.g. phases.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.to" title="mrpro.data.KData.to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code></a>([device, dtype, non_blocking, copy, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KData.to" title="mrpro.data.KData.to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code></a>([device, dtype, non_blocking, copy, ...])</p></td>
 <td><p>Perform dtype and/or device conversion of trajectory and data.</p></td>
 </tr>
 </tbody>
@@ -602,6 +605,25 @@ Note: If ACQ_IS_PARALLEL_CALIBRATION is set without also setting ACQ_IS_PARALLEL
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>K-space data (other coils 1 (k2 k1) k0)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KData.remove_readout_os">
+<span class="sig-name descname"><span class="pre">remove_readout_os</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">_KDataProtocol</span></span></span><a class="headerlink" href="#mrpro.data.KData.remove_readout_os" title="Link to this definition">#</a></dt>
+<dd><p>Remove any oversampling along the readout (k0) direction.</p>
+<p>This function is inspired by <a class="github reference external" href="https://github.com/gadgetron/gadgetron-python">gadgetron/gadgetron-python</a>.
+Returns a copy of the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kdata</strong> – K-space data</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Copy of K-space data with oversampling removed.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the recon matrix along x is larger than the encoding matrix along x.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -738,6 +760,7 @@ Otherwise, the argument has no effect.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KData.cuda"><code class="docutils literal notranslate"><span class="pre">KData.cuda()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KData.from_file"><code class="docutils literal notranslate"><span class="pre">KData.from_file()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KData.rearrange_k2_k1_into_k1"><code class="docutils literal notranslate"><span class="pre">KData.rearrange_k2_k1_into_k1()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KData.remove_readout_os"><code class="docutils literal notranslate"><span class="pre">KData.remove_readout_os()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KData.select_other_subset"><code class="docutils literal notranslate"><span class="pre">KData.select_other_subset()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KData.split_k1_into_other"><code class="docutils literal notranslate"><span class="pre">KData.split_k1_into_other()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KData.split_k2_into_other"><code class="docutils literal notranslate"><span class="pre">KData.split_k2_into_other()</span></code></a></li>
