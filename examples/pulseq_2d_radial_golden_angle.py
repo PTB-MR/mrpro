@@ -78,14 +78,11 @@ fourier_op = FourierOp(
 idata = IData.from_tensor_and_kheader(img, kdata.header)
 csm = CsmData.from_idata_walsh(idata)
 csm_op = SensitivityOp(csm)
-(img_from_ismrmrd_traj,) = csm_op.adjoint(img)
+(img_using_ismrmrd_traj,) = csm_op.adjoint(img)
 
 # %% [markdown]
 # ### Image reconstruction using KTrajectoryRadial2D
 # This will calculate the trajectory using the radial 2D trajectory calculator.
-# Please note that there is currently a mismatch between the actual trajectory
-# that was used to acquire the data and the calculated trajectory. This leads
-# to a deviation in the reconstructed image.
 
 # %%
 # Read raw data and calculate trajectory using KTrajectoryRadial2D
@@ -106,12 +103,14 @@ fourier_op = FourierOp(
 idata = IData.from_tensor_and_kheader(img, kdata.header)
 csm = CsmData.from_idata_walsh(idata)
 csm_op = SensitivityOp(csm)
-(img_from_rad2d_traj_calc,) = csm_op.adjoint(img)
+(img_using_rad2d_traj,) = csm_op.adjoint(img)
 
 # %% [markdown]
 # ### Image reconstruction using KTrajectoryPulseq
 # This will calculate the trajectory from the pulseq sequence file
-# using the PyPulseq trajectory calculator.
+# using the PyPulseq trajectory calculator. Please note that this method
+# requires the pulseq sequence file that was used to acquire the data.
+# The path to the sequence file is provided as an argument to KTrajectoryPulseq.
 
 # %%
 # download the sequence file from zenodo
@@ -123,7 +122,7 @@ seq_file.write(response.content)
 
 
 # %%
-# Read raw data and calculate trajectory using KTrajectoryRadial2D
+# Read raw data and calculate trajectory using KTrajectoryPulseq
 kdata = KData.from_file(data_file.name, KTrajectoryPulseq(seq_path=seq_file.name))
 
 # Calculate dcf using the calculated trajectory
@@ -141,13 +140,20 @@ fourier_op = FourierOp(
 idata = IData.from_tensor_and_kheader(img, kdata.header)
 csm = CsmData.from_idata_walsh(idata)
 csm_op = SensitivityOp(csm)
-(img_from_pulseq_traj_calc,) = csm_op.adjoint(img)
+(img_using_pulseq_traj,) = csm_op.adjoint(img)
 
 
+# %% [markdown]
+# ### Plot the different reconstructed images
+# Please note: there is currently a mismatch between the actual trajectory
+# that was used to acquire the data and the trajectory calculated with KTrajectoryRadial2D.
+# This leads to a deviation between the image reconstructed with KTrajectoryRadial2D
+# and the other two methods. In the future, we will upload new measurement data with
+#
 # %%
 titles = ['KTrajectoryIsmrmrd', 'KTrajectoryRadial2D', 'KTrajectoryPulseq']
 plt.subplots(1, len(titles))
-for i, img in enumerate([img_from_ismrmrd_traj, img_from_rad2d_traj_calc, img_from_pulseq_traj_calc]):
+for i, img in enumerate([img_using_ismrmrd_traj, img_using_rad2d_traj, img_using_pulseq_traj]):
     plt.subplot(1, len(titles), i + 1)
     plt.imshow(torch.abs(img[0, 0, 0, :, :]))
     plt.title(titles[i])
