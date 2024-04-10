@@ -24,10 +24,10 @@ import torch
 from einops import rearrange
 from pydicom import dcmread
 
-from mrpro.data import Data
-from mrpro.data import IHeader
-from mrpro.data import KHeader
-from mrpro.data import QHeader
+from mrpro.data._Data import Data
+from mrpro.data._IHeader import IHeader
+from mrpro.data._KHeader import KHeader
+from mrpro.data._QHeader import QHeader
 
 
 @dataclasses.dataclass(init=False, slots=True, frozen=True)

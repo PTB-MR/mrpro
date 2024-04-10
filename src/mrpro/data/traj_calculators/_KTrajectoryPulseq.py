@@ -22,8 +22,8 @@ import pypulseq as pp
 import torch
 from einops import rearrange
 
-from mrpro.data import KHeader
-from mrpro.data import KTrajectoryRawShape
+from mrpro.data._KHeader import KHeader
+from mrpro.data._KTrajectoryRawShape import KTrajectoryRawShape
 from mrpro.data.traj_calculators import KTrajectoryCalculator
 
 
@@ -34,9 +34,11 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
     ----------
     seq_path
         absolute path to .seq file
+    repeat_detection_tolerance
+        tolerance for repeat detection when creating KTrajectory, by default 1e-3
     """
 
-    def __init__(self, seq_path: str | Path, repeat_detection_tolerance: float = 1e-3) -> None:
+    def __init__(self, seq_path: str | Path, repeat_detection_tolerance: None | float = 1e-3) -> None:
         super().__init__()
         self.seq_path = seq_path
         self.repeat_detection_tolerance = repeat_detection_tolerance
@@ -61,29 +63,15 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         k_traj_adc_numpy, _, _, _, _ = seq.calculate_kspace()
         k_traj_adc = torch.tensor(k_traj_adc_numpy, dtype=torch.float32)
 
-        unique_idxs = {label: torch.unique(getattr(kheader.acq_info.idx, label)) for label in ['k1', 'k2']}
-
-        n_k1 = len(unique_idxs['k1'])
-        n_k2 = len(unique_idxs['k2'])
-
         n_samples = kheader.acq_info.number_of_samples
         n_samples = torch.unique(n_samples)
         if len(n_samples) > 1:
             raise ValueError('We currently only support constant number of samples')
         n_k0 = int(n_samples.item())
 
-        sample_size = n_samples.shape[0]
-
         def reshape_pulseq_traj(k_traj: torch.Tensor, encoding_size: int):
             k_traj *= encoding_size / (2 * torch.max(torch.abs(k_traj)))
-            return rearrange(
-                k_traj,
-                '(other k2 k1 k0) -> (other k2 k1) k0',
-                k0=n_k0,
-                k2=n_k2,
-                k1=n_k1,
-                other=sample_size,
-            )
+            return rearrange(k_traj, '(other k0) -> other k0', k0=n_k0)
 
         # rearrange k-space trajectory to match MRpro convention
         kx = reshape_pulseq_traj(k_traj_adc[0], kheader.encoding_matrix.x)

@@ -17,10 +17,10 @@
 import torch
 from einops import rearrange
 
-from mrpro.data import KTrajectory
-from mrpro.data import SpatialDimension
+from mrpro.data._KTrajectory import KTrajectory
+from mrpro.data._SpatialDimension import SpatialDimension
 from mrpro.data.enums import TrajType
-from mrpro.operators import LinearOperator
+from mrpro.operators._LinearOperator import LinearOperator
 
 
 class CartesianSamplingOp(LinearOperator):
