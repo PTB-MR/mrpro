@@ -63,6 +63,7 @@ class AdjointGridSample(torch.autograd.Function):
              and thus preserving the values at those pixels
 
         """
+        # grid_sampler_and_backward uses integer values instead of strings for the modes
         match interpolation_mode:
             case 'bilinear':
                 mode_enum = 0
@@ -98,7 +99,7 @@ class AdjointGridSample(torch.autograd.Function):
         if len(xshape) - 2 != dim:
             raise ValueError(f'len(xshape) and dim must either both bei 2 or 3, got {len(xshape)} and {dim}')
 
-        # These are required in the backward
+        # These are required in the backward.
         ctx.xshape = xshape  # type: ignore[attr-defined]
         ctx.interpolation_mode = mode_enum  # type: ignore[attr-defined]
         ctx.padding_mode = padding_mode_enum  # type: ignore[attr-defined]
@@ -109,11 +110,10 @@ class AdjointGridSample(torch.autograd.Function):
             ctx.save_for_backward(grid, y)
         else:
             ctx.save_for_backward(grid)
-
-        shape_dummy = torch.empty(1, dtype=y.dtype, device=y.device).broadcast_to(xshape)
+        dummy = torch.empty(1, dtype=y.dtype, device=y.device).broadcast_to(xshape)
         x = backward_2d_or_3d(
             y,
-            shape_dummy,
+            dummy,  # only the shape, device and dtype are relevant
             grid,
             interpolation_mode=mode_enum,
             padding_mode=padding_mode_enum,
@@ -131,6 +131,8 @@ class AdjointGridSample(torch.autograd.Function):
         grid = ctx.saved_tensors[0]  # type: ignore[attr-defined]
 
         if need_y_grad:
+            # torch.grid_sampler has the same signature as the backward
+            # (and is used inside F.grid_sample)
             grad_y = torch.grid_sampler(
                 grad_output[0],
                 grid,
@@ -176,6 +178,9 @@ class GridSamplingOp(LinearOperator):
         grid
             sampling grid. Shape *batchdim, z,y,x,3 / *batchdim, y,x,2.
             Values should be in [-1, 1.]
+        input_shape
+            Used in the adjoint. The z,y,x shape of the domain of the operator.
+            If grid has 2 as the last dimension, only y and x will be used.
         interpolation_mode
             mode used for interpolation. bilinear is trilinear in 3D, bicubic is only supported in 2D.
         padding_mode
@@ -183,9 +188,6 @@ class GridSamplingOp(LinearOperator):
         align_corners
             if True, the corner pixels of the input and output tensors are aligned,
             and thus preserving the values at those pixels
-        input_shape
-            Used in the adjoint. The z,y,x shape of the domain of the operator.
-            If grid has 2 as the last dimension, only y and x will be used.
         """
         super().__init__()
 
