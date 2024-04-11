@@ -12,8 +12,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import contextlib
+
 import pytest
 import torch
+
 from mrpro.data import SpatialDimension
 from mrpro.operators import GridSamplingOp
 from torch.autograd.gradcheck import gradcheck
@@ -215,7 +218,7 @@ def test_grid_sampling_op_warning_gridrange(value, error_message):
     """Test if warning for grid values outside [-1,1] is raised"""
     grid = torch.zeros(1, 1, 1, 1, 3)
     grid[..., 1] = value
-    with pytest.warns(UserWarning, match=error_message) if error_message else pytest.warns(None):
+    with pytest.warns(UserWarning, match=error_message) if error_message else contextlib.nullcontext():
         _ = GridSamplingOp(grid, SpatialDimension(1, 1, 1))
 
 
