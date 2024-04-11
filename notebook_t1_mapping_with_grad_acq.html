@@ -42,7 +42,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'notebook_t1_mapping_with_grad_acq';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Frequently asked questions" href="faq.html" />
+    <link rel="next" title="Reconstruction of 2D golden angle radial data from pulseq sequence" href="notebook_pulseq_2d_radial_golden_angle.html" />
     <link rel="prev" title="Examples" href="examples.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -361,6 +361,7 @@ document.write(`
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">T1 mapping from a continuous golden radial acquisition</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebook_pulseq_2d_radial_golden_angle.html">Reconstruction of 2D golden angle radial data from pulseq sequence</a></li>
 </ul>
 </div>
 </nav></div>
@@ -7931,7 +7932,7 @@ a.anchor-link {
 </style>
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
-<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=6a4ad51b">
+<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=a833029e">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7953,32 +7954,7 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="T1-mapping-from-a-continuous-golden-radial-acquisition">T1 mapping from a continuous golden radial acquisition<a class="anchor-link" href="#T1-mapping-from-a-continuous-golden-radial-acquisition">¶</a></h1><p>Copyright 2023 Physikalisch-Technische Bundesanstalt</p>
-<p>Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-<a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a>
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=e440397a">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>If you want to run this notebook in binder you need to still install the MRpro package.
-This only needs to be done once in a binder session. Open a terminal (File -&gt; New -&gt; Terminal) and run:</p>
-<pre><code>pip install -e ".[notebook]"
-</code></pre>
-<p>This will install the MRpro package. Any other required python packages should already be present in this
-docker image.</p>
+<h1 id="T1-mapping-from-a-continuous-golden-radial-acquisition">T1 mapping from a continuous golden radial acquisition<a class="anchor-link" href="#T1-mapping-from-a-continuous-golden-radial-acquisition">¶</a></h1>
 </div>
 </div>
 </div>
@@ -8150,7 +8126,7 @@ All files have been downloaded.
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>&lt;matplotlib.image.AxesImage at 0x7fb94e8b9450&gt;</pre>
+<pre>&lt;matplotlib.image.AxesImage at 0x7fe4b1d28490&gt;</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -8173,6 +8149,18 @@ All files have been downloaded.
 <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">data_folder</span><span class="p">)</span>
 </pre></div>
 </div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=1ab5a9dd">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p>Copyright 2024 Physikalisch-Technische Bundesanstalt
+Apache License 2.0. See LICENSE file for details.</p>
 </div>
 </div>
 </div>
@@ -8202,11 +8190,11 @@ All files have been downloaded.
       </div>
     </a>
     <a class="right-next"
-       href="faq.html"
+       href="notebook_pulseq_2d_radial_golden_angle.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Frequently asked questions</p>
+        <p class="prev-next-title">Reconstruction of 2D golden angle radial data from pulseq sequence</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
