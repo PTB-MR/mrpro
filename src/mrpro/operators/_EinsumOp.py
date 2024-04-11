@@ -16,7 +16,7 @@ import re
 
 import torch
 
-from mrpro.operators import LinearOperator
+from mrpro.operators._LinearOperator import LinearOperator
 
 
 class EinsumOp(LinearOperator):
