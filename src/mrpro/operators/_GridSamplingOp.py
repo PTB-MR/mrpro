@@ -21,8 +21,8 @@ from typing import Literal
 
 import torch
 
-from mrpro.data import SpatialDimension
-from mrpro.operators import LinearOperator
+from mrpro.data._SpatialDimension import SpatialDimension
+from mrpro.operators._LinearOperator import LinearOperator
 
 
 class AdjointGridSample(torch.autograd.Function):
