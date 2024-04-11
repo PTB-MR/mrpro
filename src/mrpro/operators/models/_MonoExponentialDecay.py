@@ -1,4 +1,4 @@
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
+# Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ class MonoExponentialDecay(SignalModel[torch.Tensor, torch.Tensor]):
             equilibrium signal / proton density
             with shape (... other, coils, z, y, x)
         decay_constant
-            exponential decay constant (e.g. T2 or T2*)
+            exponential decay constant (e.g. T2, T2* or T1rho)
             with shape (... other, coils, z, y, x)
 
         Returns
