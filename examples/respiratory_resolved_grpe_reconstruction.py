@@ -15,6 +15,8 @@ from mrpro.operators import FourierOp
 from mrpro.operators import FastFourierOp
 from mrpro.operators import SensitivityOp
 from mrpro.operators import CartesianSamplingOp
+from mrpro.operators import EinsumOp
+from mrpro.algorithms.optimizers import cg
 from mrpro.utils import split_idx
 
 # %%
@@ -81,7 +83,8 @@ plt.plot(resp_nav, ':k')
 
 # %% [markdown]
 # ### Motion-resolved image reconstruction
-# Now we can reconstruct the respirator motion-resolved images.
+# Now we can reconstruct the respirator motion-resolved images. 
+# Here we have to deal with undersampled data and so we use an iterative reconstruction (iterative SENSE).
 
 resp_idx = split_idx(torch.argsort(resp_nav), 56, 16)
 kdata_resp_resolved = kdata.split_k2_into_other(resp_idx, other_label='repetition')
@@ -89,10 +92,32 @@ kdcf = DcfData.from_traj_voronoi(kdata_resp_resolved.traj)
 
 cart_sampling_op = CartesianSamplingOp(kdata_resp_resolved.header.encoding_matrix, kdata_resp_resolved.traj)
 fourier_op = FourierOp(kdata_resp_resolved.header.recon_matrix, kdata_resp_resolved.header.encoding_matrix, kdata_resp_resolved.traj)
-(img_resp_resolved,) = fourier_op.adjoint(cart_sampling_op.adjoint(kdata_resp_resolved.data * kdcf.data[:,None,...])[0])
-(img_resp_resolved,) = csm_op.adjoint(img_resp_resolved)
+A = cart_sampling_op @ fourier_op @ csm_op
+AH = A.H
+#W = EinsumOp((kdcf.data[:,None,...] / kdcf.data.shape[1]).to(torch.complex64), '...ij,...j->...j')
+#AHW = AH @ W
+#H = (AH @ W) @ A
+#x0 = AHW(kdata_resp_resolved.data)[0]
+#b = x0
+H = AH @ A
 
-plot_resp_idx = [0, img_resp_resolved.data.shape[0]-1]
+# Direkt reconstruction for comparison
+x0 = AH(kdata_resp_resolved.data * kdcf.data[:,None,...])[0]
+
+plot_resp_idx = [0, x0.shape[0]-1]
+fig, ax = plt.subplots(len(plot_resp_idx),3)
+for nnd in range(len(plot_resp_idx)):
+    ax[nnd,0].imshow(torch.abs(x0[plot_resp_idx[nnd],0,img.shape[-3]//2,:,:]))
+    ax[nnd,1].imshow(torch.abs(x0[plot_resp_idx[nnd],0,:,img.shape[-2]//2,:]))
+    ax[nnd,2].imshow(torch.abs(x0[plot_resp_idx[nnd],0,:,:,img.shape[-1]//2]))
+
+
+# Iterative reconstruction
+N = 10
+b = AH(kdata_resp_resolved.data)[0]
+with torch.no_grad():
+    img_resp_resolved = cg(H, b, x0, N)
+
 fig, ax = plt.subplots(len(plot_resp_idx),3)
 for nnd in range(len(plot_resp_idx)):
     ax[nnd,0].imshow(torch.abs(img_resp_resolved[plot_resp_idx[nnd],0,img.shape[-3]//2,:,:]))
