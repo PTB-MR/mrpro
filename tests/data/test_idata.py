@@ -36,6 +36,16 @@ def test_IData_from_dcm_folder(dcm_multi_echo_times):
     assert idata.data.shape[0] == len(original_echo_times)
 
 
+def test_IData_from_dcm_folders(dcm_multi_echo_times_multi_folders):
+    """IData from multiple dcm files in different folders."""
+    idata = IData.from_dicom_folder(dcm_multi_echo_times_multi_folders[0].filename.parent)
+    # Verify correct echo times
+    original_echo_times = [ds.te for ds in dcm_multi_echo_times_multi_folders]
+    assert np.all(np.sort(original_echo_times) == np.sort(idata.header.te))
+    # Verify all images were read in
+    assert idata.data.shape[0] == len(original_echo_times)
+
+
 def test_IData_from_kheader_and_tensor(random_kheader, random_test_data):
     """IData from KHeader and data tensor."""
     idata = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
