@@ -15,15 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# %% [markdown]
-# If you want to run this notebook in binder you need to still install the MRpro package.
-# This only needs to be done once in a binder session. Open a terminal (File -> New -> Terminal) and run:
-# ```
-# pip install -e ".[notebook]"
-# ```
-# This will install the MRpro package. Any other required python packages should already be present in this
-# docker image.
-
 # %%
 # Imports
 import shutil
