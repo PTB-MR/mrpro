@@ -57,7 +57,7 @@ kdata = KData.from_file(data_file.name, KTrajectoryIsmrmrd())
 # Calculate dcf using the trajectory
 dcf = DcfData.from_traj_voronoi(kdata.traj)
 
-# Reconstruct average image for coil map estimation
+# Define Fourier operator and reconstruct coil images
 fourier_op = FourierOp(
     recon_matrix=kdata.header.recon_matrix,
     encoding_matrix=kdata.header.encoding_matrix,
@@ -82,7 +82,7 @@ kdata = KData.from_file(data_file.name, KTrajectoryRadial2D())
 # Calculate dcf using the calculated trajectory
 dcf = DcfData.from_traj_voronoi(kdata.traj)
 
-# Reconstruct average image for coil map estimation
+# Define Fourier operator and reconstruct coil images
 fourier_op = FourierOp(
     recon_matrix=kdata.header.recon_matrix,
     encoding_matrix=kdata.header.encoding_matrix,
@@ -119,7 +119,7 @@ kdata = KData.from_file(data_file.name, KTrajectoryPulseq(seq_path=seq_file.name
 # Calculate dcf using the calculated trajectory
 dcf = DcfData.from_traj_voronoi(kdata.traj)
 
-# Reconstruct average image for coil map estimation
+# Define Fourier operator and reconstruct coil images
 fourier_op = FourierOp(
     recon_matrix=kdata.header.recon_matrix,
     encoding_matrix=kdata.header.encoding_matrix,
@@ -140,7 +140,7 @@ csm_op = SensitivityOp(csm)
 # that was used to acquire the data and the trajectory calculated with KTrajectoryRadial2D.
 # This leads to a deviation between the image reconstructed with KTrajectoryRadial2D
 # and the other two methods. In the future, we will upload new measurement data with
-#
+# an updated trajectory and adjust this example accordingly.
 # %%
 titles = ['KTrajectoryIsmrmrd', 'KTrajectoryRadial2D', 'KTrajectoryPulseq']
 plt.subplots(1, len(titles))
