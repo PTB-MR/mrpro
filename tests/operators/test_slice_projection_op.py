@@ -11,22 +11,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import math
 
 import numpy as np
 import pytest
 import torch
 from mrpro.data import SpatialDimension
 from mrpro.operators import SliceProjectionOp
-from mrpro.operators._SliceProjectionOp import SliceGaussian
-from mrpro.operators._SliceProjectionOp import SliceInterpolate
-from mrpro.operators._SliceProjectionOp import SliceSmoothedRect
 from mrpro.utils import Rotation
+from mrpro.utils.slice_profiles import SliceGaussian
+from mrpro.utils.slice_profiles import SliceInterpolate
+from mrpro.utils.slice_profiles import SliceSmoothedRectangular
 
 from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test
 
 
-def test_slice_projection_op_basic():
+def test_slice_projection_op_cube_basic():
     input_shape = SpatialDimension(10, 20, 30)
     slice_rotation = None
     slice_shift = 0.0
@@ -40,6 +41,73 @@ def test_slice_projection_op_basic():
     expected = torch.zeros(1, 1, 30, 30)
     expected[:, :, 5:-5, :] = 1
     torch.testing.assert_close(slice2d, expected)
+
+
+@pytest.mark.parametrize('axis', ['x', 'y', 'z'])
+def test_slice_projection_op_cube_rotation(axis):
+    input_shape = SpatialDimension(201, 201, 201)
+    slice_rotation = Rotation.from_euler(axis, 45, degrees=True)
+    slice_shift = 0.0
+    slice_profile = 1.0
+    operator = SliceProjectionOp(
+        input_shape=input_shape, slice_rotation=slice_rotation, slice_shift=slice_shift, slice_profile=slice_profile
+    )
+    volume = torch.zeros(input_shape.zyx)
+    volume[50:151, 50:151, 50:151] = 1  # 101 x 101 x 101 cube
+    (slice2d,) = operator(volume)
+
+    if axis == 'z':
+        # for a 45 degree rotation in z, we should see a 45 rotated square in the slice
+        # the diagonal should be in the center and 101*sqrt(2) pixels long
+        assert (slice2d > 0.01).sum(-1).max() == math.ceil(101 * 2**0.5)
+        assert torch.argmax((slice2d > 0.01).sum(-1)) == 100
+        assert (slice2d > 0.01).sum(-2).max() == math.ceil(101 * 2**0.5)
+        assert torch.argmax((slice2d > 0.01).sum(-2)) == 100
+        # and the area should be 101**2
+        torch.testing.assert_close(slice2d.sum(), torch.tensor(101.0) ** 2, atol=0, rtol=1e-3)
+    else:
+        # for a 45 degree rotation in x or y, we should see one diagonal of the cube in the slice
+        # rotation around x should show the diagonal in the y direction and vice versa
+        diagonal_dir = -1 if axis == 'y' else -2
+        assert (slice2d > 0).sum(diagonal_dir).max() == math.ceil(101 * 2**0.5)
+        assert (slice2d > 0).sum() == round((2**0.5) * 101) * 101
+
+
+@pytest.mark.parametrize('axis', ['x', 'y', 'z'])
+@pytest.mark.parametrize('match_shift', [True, False])
+def test_slice_projection_op_cube_shift(axis, match_shift):
+    input_shape = SpatialDimension(21, 21, 21)
+    slice_profile = 1.0
+    slice_rotation = Rotation.from_euler(axis, 90, degrees=True)
+    shift = SpatialDimension(1, 2, 3)
+    volume = torch.zeros(input_shape.zyx)
+    # single pixel is marked in the volume
+    volume[10 + shift.z, 10 + shift.y, 10 + shift.x] = 1
+
+    # shift the slice by the same amount as the pixel in the volume
+    if axis == 'x':  # rotation around x
+        # 90 degree rotation around x and shift moves along y
+        slice_shift = +shift.y if match_shift else 0.0
+    if axis == 'y':  # rotation around y
+        # 90 degree rotation around y and shift moves along -x
+        slice_shift = -shift.x if match_shift else 0.0
+    if axis == 'z':  # rotation around z
+        slice_shift = shift.z if match_shift else 0.0
+
+    operator = SliceProjectionOp(
+        input_shape=input_shape, slice_rotation=slice_rotation, slice_shift=slice_shift, slice_profile=slice_profile
+    )
+    (slice2d,) = operator(volume)
+
+    # did we find the pixel in the slice?
+    assert (slice2d > 0.01).sum() == match_shift
+
+
+def test_slice_projection_width_error():
+    input_shape = SpatialDimension(1, 1, 1)
+    slice_profile = 0.99
+    with pytest.raises(ValueError, match='width'):
+        _ = SliceProjectionOp(input_shape=input_shape, slice_profile=slice_profile)
 
 
 @pytest.mark.parametrize('dtype', ['complex64', 'float64', 'float32'])
@@ -72,7 +140,7 @@ def test_slice_projection_op_slice_batching():
     xp = torch.linspace(-2, 2, 100)
     yp = (xp.abs() < 1).float()
     interpolated_profile = SliceInterpolate(xp, yp)
-    slice_profile = np.array([SliceGaussian(1.0), SliceSmoothedRect(1.0, 1.0), interpolated_profile])[None, :]
+    slice_profile = np.array([SliceGaussian(1.0), SliceSmoothedRectangular(1.0, 1.0), interpolated_profile])[None, :]
     operator = SliceProjectionOp(
         input_shape=input_shape,
         slice_rotation=slice_rotation,

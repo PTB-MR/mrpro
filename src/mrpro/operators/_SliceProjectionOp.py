@@ -30,6 +30,7 @@ from torch import Tensor
 from mrpro.data import SpatialDimension
 from mrpro.operators import LinearOperator
 from mrpro.utils._Rotation import Rotation
+from mrpro.utils.slice_profiles import SliceSmoothedRectangular
 
 
 class _MatrixMultiplication(torch.autograd.Function):
@@ -42,22 +43,19 @@ class _MatrixMultiplication(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(
-        ctx: torch.autograd.function.FunctionCtx, x: torch.Tensor, matrix: torch.Tensor, matrix_adjoint: torch.Tensor
-    ) -> torch.Tensor:
+    def forward(ctx: torch.autograd.function.FunctionCtx, x: Tensor, matrix: Tensor, matrix_adjoint: Tensor) -> Tensor:
         ctx.save_for_backward(matrix_adjoint)
         ctx.x_is_complex = x.is_complex()  # type: ignore[attr-defined]
         if x.is_complex() == matrix.is_complex():
             return matrix @ x
+        # required for sparse matrices to support mixed complex/real multiplication
         elif x.is_complex():
             return torch.complex(matrix @ x.real, matrix @ x.imag)
         else:
             return torch.complex(matrix.real @ x, matrix.imag @ x)
 
     @staticmethod
-    def backward(
-        ctx: torch.autograd.function.FunctionCtx, *grad_output: torch.Tensor
-    ) -> tuple[torch.Tensor, None, None]:
+    def backward(ctx: torch.autograd.function.FunctionCtx, *grad_output: Tensor) -> tuple[Tensor, None, None]:
         (matrix_adjoint,) = ctx.saved_tensors  # type: ignore[attr-defined]
         if ctx.x_is_complex:  # type: ignore[attr-defined]
             if matrix_adjoint.is_complex() == grad_output[0].is_complex():
@@ -73,113 +71,88 @@ class _MatrixMultiplication(torch.autograd.Function):
         return grad_x, None, None
 
 
-class SliceGaussian:
-    """Gaussian Slice Profile."""
-
-    def __init__(self, fwhm: float | Tensor):
-        self.fwhm = torch.as_tensor(fwhm)
-
-    def __call__(self, x: torch.Tensor) -> torch.Tensor:
-        return torch.exp(-(x**2) / (0.36 * self.fwhm**2))
-
-
-class SliceSmoothedRect:
-    """Rectangular Slice Profile with smooth flanks.
-
-    The smaller n, the smoother it is. For n<1, the FWHM might be wrong
-
-    """
-
-    def __init__(self, fwhm: float | Tensor, n: float | Tensor):
-        self.n = n
-        self.fwhm = fwhm
-
-    def __call__(self, x: torch.Tensor) -> torch.Tensor:
-        y = x * 2 / self.fwhm
-        return torch.erf(self.n * (1 - y)) + torch.erf(self.n * (1 + y))
-
-
-class SliceInterpolate:
-    """Slice Profile based on Interpolation of Measured Profile."""
-
-    def __init__(self, xs: Tensor, weights: Tensor):
-        self._xs = xs
-        self._weights = weights
-
-    def __call__(self, x: torch.Tensor) -> torch.Tensor:
-        return torch.as_tensor(np.interp(x, self._xs.numpy(), self._weights.numpy(), 0, 0))
-
-
 TensorFunction: TypeAlias = Callable[[Tensor], Tensor]
-DefaultGaussianSliceProfile = SliceGaussian(2.0)
 
 
 class SliceProjectionOp(LinearOperator):
-    matrix: torch.Tensor | None
-    matrix_adjoint: torch.Tensor | None
+    matrix: Tensor | None
+    matrix_adjoint: Tensor | None
 
     def __init__(
         self,
         input_shape: SpatialDimension[int],
         slice_rotation: Rotation | None = None,
         slice_shift: float | Tensor = 0.0,
-        slice_profile: TensorFunction | np.ndarray | NestedSequence[TensorFunction] | float = 1.0,
+        slice_profile: TensorFunction | np.ndarray | NestedSequence[TensorFunction] | float = 2.0,
         optimize_for: Literal['forward', 'adjoint', 'both'] = 'both',
     ):
         """Create a module that represents the 'projection' of a volume onto a plane.
 
-        This operation samples from a 3D Volume a slice with a given rotation and shift,
-        according to the slice_profile. It can, for example, be used to describe the slice
-        selection of a 2D MRI sequence from the 3D Volume.-
+        This operation samples from a 3D Volume a slice with a given rotation and shift
+        (relative to the center of the volume) according to the slice_profile.
+        It can, for example, be used to describe the slice selection of a 2D MRI sequence
+        from the 3D Volume.
 
         The projection will be done by sparse matrix multiplication.
 
         Rotation, shift, and profile can have (multiple) batch dimensions. These dimensions will
         be broadcasted to a common shape and added to the front of the volume.
         Different settings for different volume batches are NOT supported, consider creating multiple
-        operators if required,
+        operators if required.
 
 
         Parameters
         ----------
-        input_shape:
-            Shape of the 3D volume to sample from
+        input_shape
+            Shape of the 3D volume to sample from (z, y, x)
         slice_rotation
             Rotation that describes the orientation of the plane. If None,
             an identity rotation is used.
         slice_shift
             Offset of the plane in the volume perpendicular plane from the center of the volume.
-        slice_profile:
-            A function that called with a distance x from the slice center should return the
-            intensity along the slice thickness at x. This can also be a nested Sequence or an
+            (The center of a 4 pixel volume is between 1 and 2.)
+        slice_profile
+            A function returning the relative intensity of the slice profile at a position x
+            (relative to the nominal profile center). This can also be a nested Sequence or an
             numpy array of functions.
-            If it is a single float, it will be interpreted as a Gaussian FWHM.
-        optimize_for: Literal["forward", "adjoint", "both"]
+            If it is a single float, it will be interpreted as the FWHM of a rectangular profile.
+        optimize_for
             Whether to optimize for forward or adjoint operation or both.
             Optimizing for both takes more memory but is faster for both operations.
 
         """
         super().__init__()
-        if isinstance(slice_profile, float):
-            slice_profile = SliceGaussian(slice_profile)
+        if isinstance(slice_profile, float | int):
+            slice_profile = SliceSmoothedRectangular(slice_profile, 0.0)
         slice_profile_array = np.array(slice_profile)
 
         if slice_rotation is None:
             slice_rotation = Rotation.identity()
 
-        m = max(input_shape.z, input_shape.y, input_shape.x)
+        max_shape = max(input_shape.z, input_shape.y, input_shape.x)
 
         def _find_width(slice_profile: TensorFunction) -> int:
             # figure out how far along the profile we have to consider values
             # clip up to 0.01 of intensity on both sides
-            r = torch.arange(-m, m)
-            profile = slice_profile(r)
+            test_values = torch.arange(-max_shape, max_shape, max_shape)
+            profile = slice_profile(test_values)
             cdf = torch.cumsum(profile, -1) / profile.sum()
-            left = r[np.argmax(cdf > 0.01)]
-            right = r[np.argmax(cdf > 0.99)]
-            return int(max(left.abs().item(), right.abs().item()) + 1)
+            left = test_values[np.argmax(cdf > 0.01)]
+            right = test_values[np.argmax(cdf > 0.99)]
+            return int(max(left.abs().item(), right.abs().item())) + 1
 
         widths = np.vectorize(_find_width)(slice_profile_array)
+
+        def _at_least_width_1(slice_profile: TensorFunction):
+            test_values = torch.linspace(-0.5, 0.5, 100)
+            return (slice_profile(test_values) > 1e-6).all()
+
+        if not np.vectorize(_at_least_width_1)(slice_profile_array).all():
+            raise ValueError(
+                'The slice profile must have a width of at least 1 voxel,'
+                ' i.e. the profile should be greater then 1e-6 in (-0.5,0.5)'
+            )
+
         slice_shift_tensor = torch.atleast_1d(torch.as_tensor(slice_shift))
         batch_shapes = torch.broadcast_shapes(slice_rotation.shape, slice_shift_tensor.shape, slice_profile_array.shape)
         rotation_quats = torch.broadcast_to(slice_rotation.as_quat(), (*batch_shapes, 4)).reshape(-1, 4)
@@ -191,8 +164,8 @@ class SliceProjectionOp(LinearOperator):
         matrices = [
             SliceProjectionOp.projection_matrix(
                 input_shape,
-                SpatialDimension(1, m, m),
-                offset=torch.tensor([0.0, 0.0, shift]),
+                SpatialDimension(1, max_shape, max_shape),
+                offset=torch.tensor([shift, 0.0, 0.0]),
                 slice_function=f,
                 rotation=rot,
                 w=int(w),
@@ -218,11 +191,22 @@ class SliceProjectionOp(LinearOperator):
             else:
                 raise ValueError("optimize_for must be one of 'forward', 'adjoint', 'both'")
 
-        self._range_shape: tuple[int] = (*batch_shapes, 1, m, m)
+        self._range_shape: tuple[int] = (*batch_shapes, 1, max_shape, max_shape)
         self._domain_shape = input_shape.zyx
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Transform from a 3D Volume to a 2D Slice."""
+    def forward(self, x: Tensor) -> tuple[Tensor]:
+        """Transform from a 3D Volume to a 2D Slice.
+
+        Parameters
+        ----------
+        x
+            3D Volume with shape (..., z, y, x)
+            with z, y, x matching the input_shape
+
+        Returns
+        -------
+        A 2D slice with shape (..., 1, max(z, y, x), (max(z, y, x)))
+        """
         match (self.matrix, self.matrix_adjoint):
             # selection based on the optimize_for setting
             case (None, None):
@@ -242,8 +226,20 @@ class SliceProjectionOp(LinearOperator):
         y = y.reshape(*y.shape[:-4], *x.shape[:-3], *y.shape[-3:])
         return (y,)
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Transform from a 2D slice to a 3D Volume."""
+    def adjoint(self, x: Tensor) -> tuple[Tensor,]:
+        """Transform from a 2D slice to a 3D Volume.
+
+        Parameters
+        ----------
+        x
+            2D Slice with shape (..., 1, max(z, y, x), (max(z, y, x)))
+            with z, y, x matching the input_shape
+
+        Returns
+        -------
+        A 3D Volume with shape (..., z, y, x)
+           with z, y, x matching the input_shape
+        """
         match (self.matrix, self.matrix_adjoint):
             # selection based on the optimize_for setting
             case (None, None):
@@ -274,14 +270,21 @@ class SliceProjectionOp(LinearOperator):
         return (y,)
 
     @staticmethod
-    def join_matrices(matrices: Sequence[torch.Tensor]) -> torch.Tensor:
+    def join_matrices(matrices: Sequence[Tensor]) -> Tensor:
+        """Join multiple sparse matrices into a block diagonal matrix.
+
+        Parameters
+        ----------
+        matrices
+            List of sparse matrices to join by stacking them as a block diagonal matrix
+        """
         values = []
         target = []
         source = []
         for i, m in enumerate(matrices):
             if not m.shape == matrices[0].shape:
                 raise ValueError('all matrices should have the same shape')
-            c = m.coalesce()
+            c = m.coalesce()  # we want unique indices
             (ctarget, csource) = c.indices()
             values.append(c.values())
             source.append(csource)
@@ -307,28 +310,29 @@ class SliceProjectionOp(LinearOperator):
         offset: Tensor,
         w: int,
         slice_function: TensorFunction,
-        rotation_center: torch.Tensor | None = None,
-    ) -> torch.Tensor:
+        rotation_center: Tensor | None = None,
+    ) -> Tensor:
         """Create a sparse matrix that represents the projection of a volume onto a plane.
 
         Outside the volume values are approximately zero padded
 
         Parameters
         ----------
-        input_shape:
+        input_shape
             Shape of the volume to sample from
-        output_shape:
-            Shape of the resulting plane, 2D.
+        output_shape
+            Shape of the resulting plane, 2D. Only the x and y values are used.
         rotation
             Rotation that describes the orientation of the plane
         offset: Tensor
-            Offset of the plane in the volume in plane coordinates from the center of the volume
+            Shift of the plane from the center of the volume in the rotated coordinate system
+            in units of the 3D volume, order z, y, x
         w: int
             Factor that determines the number of pixels that are considered in the projection along
             the slice profile direction.
-        slice_function: Callable
-            Function that describes the slice profile
-        rotation_center: Tensor
+        slice_function
+            Function that describes the slice profile.
+        rotation_center
             Center of rotation, if None the center of the volume is used,
             i.e. for 4 pixels 0 1 2 3 it is between 1 and 2
 
@@ -345,7 +349,7 @@ class SliceProjectionOp(LinearOperator):
         )
         pixel_coord_y_x_zyx = torch.stack(
             [
-                input_shape.z / 2 * torch.ones(y, x),  # z coordinates
+                (input_shape.z / 2 - 0.5) * torch.ones(y, x),  # z coordinates
                 *torch.meshgrid(
                     torch.arange(start_y, start_y + y),  # y coordinates
                     torch.arange(start_x, start_x + x),  # x coordinates
@@ -359,7 +363,7 @@ class SliceProjectionOp(LinearOperator):
         if rotation_center is None:
             # default rotation center is the center of the volume, i.e. for 4 pixels
             # 0 1 2 3 it is between 0 and 1
-            rotation_center = torch.tensor([input_shape.x / 2 - 0.5, input_shape.y / 2 - 0.5, input_shape.z / 2 - 0.5])
+            rotation_center = torch.tensor([input_shape.z / 2 - 0.5, input_shape.y / 2 - 0.5, input_shape.x / 2 - 0.5])
         pixel_rotated_y_x_zyx = rotation(pixel_coord_y_x_zyx - rotation_center) + rotation_center
 
         # We cast a ray from the pixel normal to the plane in both directions
@@ -374,9 +378,8 @@ class SliceProjectionOp(LinearOperator):
                 dim=-1,
             )
         )
-        # In all possible directions for each point aloing the line we consider the eight neighboring points
+        # In all possible directions for each point along the line we consider the eight neighboring points
         # by adding all possible combinations of 0 and 1 to the point and flooring
-        # (this is the same as adding -.5, .5 to the point and rounding)
         offsets = torch.tensor(list(itertools.product([0, 1], repeat=3)))
         # all points that influence a pixel
         # x,y,8-neighbours,(2*w+1)-raylength,3-dimensions input_shape.xinput_shape.yinput_shape.z)
@@ -423,16 +426,6 @@ class SliceProjectionOp(LinearOperator):
             # beta status in pytorch causes a warning to be printed
             warnings.filterwarnings('ignore', category=UserWarning, message='Sparse')
 
-            # Count duplicates. Coalesce will sum the values of duplicate indices
-            ones = torch.ones_like(source_index).float()
-            ones = torch.sparse_coo_tensor(
-                indices=torch.stack((target_index, source_index)),
-                values=ones,
-                size=(y * x, input_shape.z * input_shape.y * input_shape.x),
-                dtype=torch.float32,
-            )
-            ones = ones.coalesce()
-
             matrix = torch.sparse_coo_tensor(
                 indices=torch.stack((target_index, source_index)),
                 values=weight.reshape(y * x, -1)[mask],
@@ -440,10 +433,29 @@ class SliceProjectionOp(LinearOperator):
                 dtype=torch.float32,
             ).coalesce()
 
-        # To avoid giving to much weight to points that are duplicated in our logic and summed up by coalesce
+            # To avoid giving more weight to points that are duplicated in our ray
+            # logic and got summed in the coalesce operation, we normalize by the number
+            # of duplicates. This is equivalent to the sum of the weights of the duplicates.
+            # Count duplicates...
+
+            ones = torch.ones_like(source_index).float()
+            ones = torch.sparse_coo_tensor(
+                indices=torch.stack((target_index, source_index)),
+                values=ones,
+                size=(y * x, input_shape.z * input_shape.y * input_shape.x),
+                dtype=torch.float32,
+            )
+            # Coalesce sums the values of duplicate indices
+            ones = ones.coalesce()
+
+        # .. and normalize by the number of duplicates
         matrix.values()[:] /= ones.values()
 
-        # Normalize
+        # Normalize for slice profile, so that the sum of the weights is 1
+        # independent of the number of points that are considered.
+        # Within the volume, the column sum should be 1,
+        # at the edge of the volume, the column sum should be the fraction of the slice
+        # that is in view to approximate zero padding
         norm = fraction_in_view / (matrix.sum(1).to_dense() + 1e-6)
         matrix *= norm[:, None]
         return matrix
