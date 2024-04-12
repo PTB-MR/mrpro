@@ -103,6 +103,9 @@ class IData(Data):
         filenames
             List of DICOM filenames.
         """
+        if len(filenames) == 0:
+            raise ValueError('No dicom files specified')
+
         # Read in all files
         dataset_list = [dcmread(filename) for filename in filenames]
 

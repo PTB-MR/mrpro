@@ -36,6 +36,18 @@ def test_IData_from_dcm_folder(dcm_multi_echo_times):
     assert idata.data.shape[0] == len(original_echo_times)
 
 
+def test_IData_from_wrong_path():
+    """Error for non-existing/empty folder/wrong suffix."""
+    with pytest.raises(ValueError, match='No dicom files with suffix'):
+        _ = IData.from_dicom_folder('non/existing/path')
+
+
+def test_IData_from_empty_dcm_file_list():
+    """Error for empty file list."""
+    with pytest.raises(ValueError, match='No dicom files specified'):
+        _ = IData.from_dicom_files([])
+
+
 def test_IData_from_dcm_files(dcm_multi_echo_times_multi_folders):
     """IData from multiple dcm files in different folders."""
     idata = IData.from_dicom_files([dcm_file.filename for dcm_file in dcm_multi_echo_times_multi_folders])
