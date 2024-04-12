@@ -104,11 +104,12 @@ class IData(Data):
         filenames
             List of DICOM filenames.
         """
-        if len(list(filenames)) == 0:
-            raise ValueError('No dicom files specified')
-
         # Read in all files
         dataset_list = [dcmread(filename) for filename in filenames]
+
+        # We do the check here to allow for filenames to be a Generator
+        if not dataset_list:
+            raise ValueError('No dicom files specified')
 
         # Ensure they all have the same orientation (same (0019, 1015) SlicePosition_PCS tag)
         def get_unique_slice_positions(slice_pos_tag: TagType = 0x00191015):
