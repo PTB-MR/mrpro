@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import dataclasses
+from collections.abc import Generator
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -95,7 +96,7 @@ class IData(Data):
         return cls(data=idata, header=header)
 
     @classmethod
-    def from_dicom_files(cls, filenames: Sequence[str] | Sequence[Path]) -> IData:
+    def from_dicom_files(cls, filenames: Sequence[str] | Sequence[Path] | Generator[Path, None, None]) -> IData:
         """Read multiple DICOM files and return IData object.
 
         Parameters
@@ -103,7 +104,7 @@ class IData(Data):
         filenames
             List of DICOM filenames.
         """
-        if len(filenames) == 0:
+        if len(list(filenames)) == 0:
             raise ValueError('No dicom files specified')
 
         # Read in all files
