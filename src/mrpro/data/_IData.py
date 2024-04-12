@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import dataclasses
+from collections.abc import Sequence
 from pathlib import Path
 
 import numpy as np
@@ -94,25 +95,16 @@ class IData(Data):
         return cls(data=idata, header=header)
 
     @classmethod
-    def from_dicom_folder(cls, foldername: str | Path, suffix: str | None = 'dcm') -> IData:
-        """Read all DICOM files from a folder and return IData object.
+    def from_dicom_files(cls, filenames: Sequence[str] | Sequence[Path]) -> IData:
+        """Read multiple DICOM files and return IData object.
 
         Parameters
         ----------
-        foldername
-            path to folder with DICOM files.
-        suffix
-            file extension (without period/full stop) to identify the DICOM files.
-            If None, then all files in the folder are read in.
+        filenames
+            List of DICOM filenames.
         """
-        # Get files
-        file_paths = list(Path(foldername).glob('*')) if suffix is None else list(Path(foldername).glob('*.' + suffix))
-
-        if len(file_paths) == 0:
-            raise ValueError(f'No dicom files with suffix {suffix} found in {foldername}')
-
         # Read in all files
-        dataset_list = [dcmread(filename) for filename in file_paths]
+        dataset_list = [dcmread(filename) for filename in filenames]
 
         # Ensure they all have the same orientation (same (0019, 1015) SlicePosition_PCS tag)
         def get_unique_slice_positions(slice_pos_tag: TagType = 0x00191015):
@@ -140,3 +132,23 @@ class IData(Data):
 
         header = IHeader.from_dicom_list(dataset_list)
         return cls(data=idata, header=header)
+
+    @classmethod
+    def from_dicom_folder(cls, foldername: str | Path, suffix: str | None = 'dcm') -> IData:
+        """Read all DICOM files from a folder and return IData object.
+
+        Parameters
+        ----------
+        foldername
+            path to folder with DICOM files.
+        suffix
+            file extension (without period/full stop) to identify the DICOM files.
+            If None, then all files in the folder are read in.
+        """
+        # Get files
+        file_paths = list(Path(foldername).glob('*')) if suffix is None else list(Path(foldername).glob('*.' + suffix))
+
+        if len(file_paths) == 0:
+            raise ValueError(f'No dicom files with suffix {suffix} found in {foldername}')
+
+        return IData.from_dicom_files(filenames=file_paths)

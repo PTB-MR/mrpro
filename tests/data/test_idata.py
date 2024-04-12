@@ -36,9 +36,9 @@ def test_IData_from_dcm_folder(dcm_multi_echo_times):
     assert idata.data.shape[0] == len(original_echo_times)
 
 
-def test_IData_from_dcm_folders(dcm_multi_echo_times_multi_folders):
+def test_IData_from_dcm_files(dcm_multi_echo_times_multi_folders):
     """IData from multiple dcm files in different folders."""
-    idata = IData.from_dicom_folder(dcm_multi_echo_times_multi_folders[0].filename.parent)
+    idata = IData.from_dicom_files([dcm_file.filename for dcm_file in dcm_multi_echo_times_multi_folders])
     # Verify correct echo times
     original_echo_times = [ds.te for ds in dcm_multi_echo_times_multi_folders]
     assert np.all(np.sort(original_echo_times) == np.sort(idata.header.te))
