@@ -295,6 +295,20 @@ def dcm_multi_echo_times(request, ellipse_phantom, tmp_path_factory):
     return dcm_image_data
 
 
+@pytest.fixture(scope='session', params=({'n_images': 7},))
+def dcm_multi_echo_times_multi_folders(request, ellipse_phantom, tmp_path_factory):
+    """Multiple 2D dicom images with different echo times each saved in a different folder."""
+    n_images = request.param['n_images']
+    te = 2.0
+    dcm_image_data = []
+    for _ in range(n_images):
+        path = tmp_path_factory.mktemp(f'mrpro_multi_dcm_te_{int(te)}')
+        dcm_filename = path / f'dicom_te_{int(te)}.dcm'
+        dcm_image_data.append(Dicom2DTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom, te=te))
+        te += 1.0
+    return dcm_image_data
+
+
 COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
     'im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2',
     [
