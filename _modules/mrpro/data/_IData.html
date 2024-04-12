@@ -424,6 +424,8 @@ document.write(`
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span> <span class="nn">dataclasses</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Generator</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -508,28 +510,23 @@ document.write(`
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">idata</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="IData.from_dicom_folder">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.data.IData.html#mrpro.data.IData.from_dicom_folder">[docs]</a>
+<div class="viewcode-block" id="IData.from_dicom_files">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.IData.html#mrpro.data.IData.from_dicom_files">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_dicom_folder</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">foldername</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">suffix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s1">&#39;dcm&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IData</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read all DICOM files from a folder and return IData object.</span>
+    <span class="k">def</span> <span class="nf">from_dicom_files</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filenames</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">|</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">IData</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read multiple DICOM files and return IData object.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        foldername</span>
-<span class="sd">            path to folder with DICOM files.</span>
-<span class="sd">        suffix</span>
-<span class="sd">            file extension (without period/full stop) to identify the DICOM files.</span>
-<span class="sd">            If None, then all files in the folder are read in.</span>
+<span class="sd">        filenames</span>
+<span class="sd">            List of DICOM filenames.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Get files</span>
-        <span class="n">file_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">foldername</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">))</span> <span class="k">if</span> <span class="n">suffix</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">foldername</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*.&#39;</span> <span class="o">+</span> <span class="n">suffix</span><span class="p">))</span>
-
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">file_paths</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;No dicom files with suffix </span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s1"> found in </span><span class="si">{</span><span class="n">foldername</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-
         <span class="c1"># Read in all files</span>
-        <span class="n">dataset_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">dcmread</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">file_paths</span><span class="p">]</span>
+        <span class="n">dataset_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">dcmread</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">]</span>
+
+        <span class="c1"># We do the check here to allow for filenames to be a Generator</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dataset_list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No dicom files specified&#39;</span><span class="p">)</span>
 
         <span class="c1"># Ensure they all have the same orientation (same (0019, 1015) SlicePosition_PCS tag)</span>
         <span class="k">def</span> <span class="nf">get_unique_slice_positions</span><span class="p">(</span><span class="n">slice_pos_tag</span><span class="p">:</span> <span class="n">TagType</span> <span class="o">=</span> <span class="mh">0x00191015</span><span class="p">):</span>
@@ -557,6 +554,29 @@ document.write(`
 
         <span class="n">header</span> <span class="o">=</span> <span class="n">IHeader</span><span class="o">.</span><span class="n">from_dicom_list</span><span class="p">(</span><span class="n">dataset_list</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">idata</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="IData.from_dicom_folder">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.IData.html#mrpro.data.IData.from_dicom_folder">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_dicom_folder</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">foldername</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">suffix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s1">&#39;dcm&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IData</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read all DICOM files from a folder and return IData object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        foldername</span>
+<span class="sd">            path to folder with DICOM files.</span>
+<span class="sd">        suffix</span>
+<span class="sd">            file extension (without period/full stop) to identify the DICOM files.</span>
+<span class="sd">            If None, then all files in the folder are read in.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get files</span>
+        <span class="n">file_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">foldername</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">))</span> <span class="k">if</span> <span class="n">suffix</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">foldername</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*.&#39;</span> <span class="o">+</span> <span class="n">suffix</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">file_paths</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;No dicom files with suffix </span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s1"> found in </span><span class="si">{</span><span class="n">foldername</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">IData</span><span class="o">.</span><span class="n">from_dicom_files</span><span class="p">(</span><span class="n">filenames</span><span class="o">=</span><span class="n">file_paths</span><span class="p">)</span></div>
 </div>
 
 </pre></div>
