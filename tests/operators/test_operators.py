@@ -143,8 +143,8 @@ def test_elementwise_product_operator(value):
     (y2,) = a(b * x)
 
     torch.testing.assert_close(y1, y2)
-    assert isinstance(c, Operator), 'Operator * scalar should be an Operator'
-    assert not isinstance(c, LinearOperator), 'Operator * scalar should not be a LinearOperator'
+    assert isinstance(c, Operator), 'Operator * tensor should be an Operator'
+    assert not isinstance(c, LinearOperator), 'Operator * tensor should not be a LinearOperator'
 
 
 @pytest.mark.parametrize('value', [2, 3j])
@@ -157,8 +157,8 @@ def test_elementwise_rproduct_operator(value):
     y2 = b * a(x)[0]
 
     torch.testing.assert_close(y1, y2)
-    assert isinstance(c, Operator), 'Operator * scalar should be an Operator'
-    assert not isinstance(c, LinearOperator), 'Operator * scalar should not be a LinearOperator'
+    assert isinstance(c, Operator), 'tensor * Operator should be an Operator'
+    assert not isinstance(c, LinearOperator), 'tensor * Operator should not be a LinearOperator'
 
 
 @pytest.mark.parametrize('value', [2, 3j])
@@ -167,8 +167,8 @@ def test_elementwise_product_linearoperator(value):
     a = DummyLinearOperator(rng.complex64_tensor((3, 10)))
     b = torch.ones(10) * value
     c = a * b
-    assert isinstance(c, Operator), 'LinearOperator * scalar should be an Operator'
-    assert isinstance(c, LinearOperator), 'LinearOperator * scalar should be a LinearOperator'
+    assert isinstance(c, Operator), 'LinearOperator * tensor should be an Operator'
+    assert isinstance(c, LinearOperator), 'LinearOperator * tensor should be a LinearOperator'
 
     x = rng.complex64_tensor(10)
     (y1,) = c(x)
@@ -187,8 +187,8 @@ def test_elementwise_rproduct_linearoperator(value):
     a = DummyLinearOperator(rng.complex64_tensor((3, 10)))
     b = torch.ones(3) * value
     c = b * a
-    assert isinstance(c, Operator), 'LinearOperator * scalar should be an Operator'
-    assert isinstance(c, LinearOperator), 'LinearOperator * scalar should be a LinearOperator'
+    assert isinstance(c, Operator), 'tensor * LinearOperator should be an Operator'
+    assert isinstance(c, LinearOperator), 'tensor * LinearOperator should be a LinearOperator'
 
     x = RandomGenerator(0).complex64_tensor(10)
     (y1,) = c(x)

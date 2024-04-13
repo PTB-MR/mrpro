@@ -81,7 +81,7 @@ class OperatorSum(Operator[*Tin, Tout]):
 
 
 class OperatorElementwiseProductRight(Operator[*Tin, Tout]):
-    """Operator elementwise right multiplication with scalar/tensor."""
+    """Operator elementwise right multiplication with a tensor."""
 
     def __init__(self, operator: Operator[*Tin, Tout], tensor: torch.Tensor):
         super().__init__()
@@ -89,13 +89,13 @@ class OperatorElementwiseProductRight(Operator[*Tin, Tout]):
         self._tensor = tensor
 
     def forward(self, *args: *Tin) -> Tout:
-        """Operator elementwise multiplication."""
+        """Operator elementwise right multiplication."""
         out = self._operator(*args)
         return cast(Tout, tuple(a * self._tensor for a in out))
 
 
 class OperatorElementwiseProductLeft(Operator[*Tin, Tout]):
-    """Operator elementwise left multiplication  with scalar/tensor."""
+    """Operator elementwise left multiplication  with a tensor."""
 
     def __init__(self, operator: Operator[*Tin, Tout], tensor: torch.Tensor):
         super().__init__()
@@ -103,6 +103,6 @@ class OperatorElementwiseProductLeft(Operator[*Tin, Tout]):
         self._tensor = tensor
 
     def forward(self, *args: *Tin) -> Tout:
-        """Operator elementwise multiplication."""
+        """Operator left elementwise multiplication."""
         out = self._operator(*(a * self._tensor for a in args))
         return cast(Tout, out)
