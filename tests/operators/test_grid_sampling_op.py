@@ -16,7 +16,6 @@ import contextlib
 
 import pytest
 import torch
-
 from mrpro.data import SpatialDimension
 from mrpro.operators import GridSamplingOp
 from torch.autograd.gradcheck import gradcheck
