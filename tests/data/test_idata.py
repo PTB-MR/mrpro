@@ -14,7 +14,6 @@
 
 from pathlib import Path
 
-import numpy as np
 import pytest
 import torch
 from mrpro.data import IData
@@ -32,18 +31,18 @@ def test_IData_from_dcm_folder(dcm_multi_echo_times):
     """IData from multiple dcm files in folder."""
     idata = IData.from_dicom_folder(dcm_multi_echo_times[0].filename.parent)
     # Verify correct echo times
-    original_echo_times = [ds.te for ds in dcm_multi_echo_times]
-    assert np.all(np.sort(original_echo_times) == np.sort(idata.header.te))
+    original_echo_times = torch.as_tensor([ds.te for ds in dcm_multi_echo_times])
+    assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(idata.header.te)[0])
     # Verify all images were read in
-    assert idata.data.shape[0] == len(original_echo_times)
+    assert idata.data.shape[0] == original_echo_times.shape[0]
 
 
 def test_IData_from_dcm_folder_via_path(dcm_multi_echo_times):
     """IData from multiple dcm files in folder."""
     idata = IData.from_dicom_files(Path(dcm_multi_echo_times[0].filename.parent).glob('*.dcm'))
     # Verify correct echo times
-    original_echo_times = [ds.te for ds in dcm_multi_echo_times]
-    assert np.all(np.sort(original_echo_times) == np.sort(idata.header.te))
+    original_echo_times = torch.as_tensor([ds.te for ds in dcm_multi_echo_times])
+    assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(idata.header.te)[0])
     # Verify all images were read in
     assert idata.data.shape[0] == len(original_echo_times)
 
@@ -64,8 +63,8 @@ def test_IData_from_dcm_files(dcm_multi_echo_times_multi_folders):
     """IData from multiple dcm files in different folders."""
     idata = IData.from_dicom_files([dcm_file.filename for dcm_file in dcm_multi_echo_times_multi_folders])
     # Verify correct echo times
-    original_echo_times = [ds.te for ds in dcm_multi_echo_times_multi_folders]
-    assert np.all(np.sort(original_echo_times) == np.sort(idata.header.te))
+    original_echo_times = torch.as_tensor([ds.te for ds in dcm_multi_echo_times_multi_folders])
+    assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(idata.header.te)[0])
     # Verify all images were read in
     assert idata.data.shape[0] == len(original_echo_times)
 

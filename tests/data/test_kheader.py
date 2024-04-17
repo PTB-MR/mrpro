@@ -15,6 +15,7 @@
 import datetime
 
 import pytest
+import torch
 from ismrmrd import xsd
 from mrpro.data import KHeader
 
@@ -29,11 +30,11 @@ def test_kheader_overwrite_missing_parameter(random_mandatory_ismrmrd_header, ra
         'trajectory': xsd.trajectoryType('other'),
         'n_coils': 1,
         'datetime': datetime.datetime.now(),
-        'te': [0.01],
-        'ti': [1.0],
-        'fa': [10.0],
-        'tr': [0.1],
-        'echo_spacing': [0.001],
+        'te': torch.tensor([0.01]),
+        'ti': torch.tensor([1.0]),
+        'fa': torch.tensor([10.0]),
+        'tr': torch.tensor([0.1]),
+        'echo_spacing': torch.tensor([0.001]),
     }
     kheader = KHeader.from_ismrmrd(random_mandatory_ismrmrd_header, random_acq_info, overwrite=overwrite)
     assert kheader is not None
@@ -44,11 +45,11 @@ def test_kheader_set_missing_defaults(random_mandatory_ismrmrd_header, random_ac
         'trajectory': xsd.trajectoryType('other'),
         'n_coils': 1,
         'datetime': datetime.datetime.now(),
-        'te': [1],
-        'ti': [1],
-        'fa': [1],
-        'tr': [1],
-        'echo_spacing': [1],
+        'te': torch.tensor([1]),
+        'ti': torch.tensor([1]),
+        'fa': torch.tensor([1]),
+        'tr': torch.tensor([1]),
+        'echo_spacing': torch.tensor([1]),
     }
     kheader = KHeader.from_ismrmrd(random_mandatory_ismrmrd_header, random_acq_info, defaults=defaults)
     assert kheader is not None

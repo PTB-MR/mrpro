@@ -21,6 +21,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 import numpy as np
+import torch
 from pydicom.dataset import Dataset
 from pydicom.tag import Tag
 from pydicom.tag import TagType
@@ -38,10 +39,10 @@ class IHeader(MoveDataMixin):
 
     # ToDo: decide which attributes to store in the header
     fov: SpatialDimension[float]
-    te: list[float]
-    ti: list[float]
-    fa: list[float]
-    tr: list[float]
+    te: torch.Tensor
+    ti: torch.Tensor
+    fa: torch.Tensor
+    tr: torch.Tensor
     misc: dict = dataclasses.field(default_factory=dict)
 
     @classmethod
@@ -97,15 +98,15 @@ class IHeader(MoveDataMixin):
             else:
                 return values
 
-        fa = make_unique(get_float_items_from_all_dicoms('FlipAngle'))
-        ti = make_unique(get_float_items_from_all_dicoms('InversionTime'))
-        tr = make_unique(get_float_items_from_all_dicoms('RepetitionTime'))
+        fa = torch.as_tensor(make_unique(get_float_items_from_all_dicoms('FlipAngle')))
+        ti = torch.as_tensor(make_unique(get_float_items_from_all_dicoms('InversionTime')))
+        tr = torch.as_tensor(make_unique(get_float_items_from_all_dicoms('RepetitionTime')))
 
         # get echo time(s). Some scanners use 'EchoTime', some use 'EffectiveEchoTime'
         te_list = get_float_items_from_all_dicoms('EchoTime')
         if all(val is None for val in te_list):  # check if all entries are None
             te_list = get_float_items_from_all_dicoms('EffectiveEchoTime')
-        te = make_unique(te_list)
+        te = torch.as_tensor(make_unique(te_list))
 
         fov_x_mm = get_float_items_from_all_dicoms('Rows')[0] * float(get_items_from_all_dicoms('PixelSpacing')[0][0])
         fov_y_mm = get_float_items_from_all_dicoms('Columns')[0] * float(
