@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Literal
 from typing import Self
 
-from mrpro.algorithms import prewhiten_kspace
+from mrpro.algorithms._prewhiten_kspace import prewhiten_kspace
 from mrpro.algorithms.reconstruction import Reconstruction
 from mrpro.data._CsmData import CsmData
 from mrpro.data._DcfData import DcfData
