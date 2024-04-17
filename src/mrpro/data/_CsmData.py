@@ -15,6 +15,7 @@
 # limitations under the License.
 
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import torch
@@ -22,6 +23,7 @@ import torch
 from mrpro.data._IData import IData
 from mrpro.data._QData import QData
 from mrpro.data._SpatialDimension import SpatialDimension
+
 if TYPE_CHECKING:
     from mrpro.operators._SensitivityOp import SensitivityOp
 
@@ -61,11 +63,12 @@ class CsmData(QData):
             lambda img: iterative_walsh(img, smoothing_width, power_iterations),
             chunk_size=chunk_size_otherdim,
         )
-        csm_data = csm_fun(idata.data)
-
-        return cls(header=idata.header, data=csm_data)
+        csm_tensor = csm_fun(idata.data)
+        csm = cls(header=idata.header, data=csm_tensor)
+        return csm
 
     def as_operator(self) -> SensitivityOp:
         """Create SensitivityOp using a copy of the CSMs."""
         from mrpro.operators._SensitivityOp import SensitivityOp
+
         return SensitivityOp(self)

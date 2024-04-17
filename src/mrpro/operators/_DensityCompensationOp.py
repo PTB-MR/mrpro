@@ -33,7 +33,6 @@ class DensityCompensationOp(EinsumOp):
         dcf
            Density Compensation Data
         """
-        if isinstance(dcf, DcfData):
-            # only tensors can be used as buffers
-            dcf = dcf.data
-        super().__init__(dcf, '... k2 k1 k0 ,... coil k2 k1 k0 ->... coil k2 k1 k0')
+        # only tensors can be used as buffers
+        dcf_tensor = dcf.data if isinstance(dcf, DcfData) else dcf
+        super().__init__(dcf_tensor, '... k2 k1 k0 ,... coil k2 k1 k0 ->... coil k2 k1 k0')
