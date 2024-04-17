@@ -14,8 +14,6 @@
 
 import torch
 from mrpro.data import DcfData
-from mrpro.data import QHeader
-from mrpro.data import SpatialDimension
 from mrpro.operators import DensityCompensationOp
 
 from tests import RandomGenerator
@@ -32,8 +30,7 @@ def test_dcf_op_adjointness():
 
     # Generate sensitivity operator
     random_tensor = random_generator.complex64_tensor(size=(*ns_other, *ns_zyx))
-    header = QHeader(fov=SpatialDimension(1.0, 1.0, 1.0))
-    random_dcf = DcfData(data=random_tensor, header=header)
+    random_dcf = DcfData(data=random_tensor)
     dcf_op = DensityCompensationOp(random_dcf)
 
     # Check adjoint property
@@ -52,8 +49,7 @@ def test_sensitivity_op_dcfdata_tensor():
 
     # Generate sensitivity operators
     random_tensor = random_generator.complex64_tensor(size=(*ns_other, *ns_zyx))
-    header = QHeader(fov=SpatialDimension(1.0, 1.0, 1.0))
-    random_dcf = DcfData(data=random_tensor, header=header)
+    random_dcf = DcfData(data=random_tensor)
 
     dcf_op_tensor = DensityCompensationOp(random_tensor)
     dcf_op_dcfdata = DensityCompensationOp(random_dcf)
