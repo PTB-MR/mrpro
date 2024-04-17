@@ -198,7 +198,8 @@ class DcfData:
 
         return cls(data=dcf)
 
-    def as_operator(self)->DensityCompensationOp:
+    def as_operator(self) -> DensityCompensationOp:
         """Create a density compensation operator using a copy of the DCF."""
         from mrpro.operators._DensityCompensationOp import DensityCompensationOp
+
         return DensityCompensationOp(self.data)
