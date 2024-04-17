@@ -12,6 +12,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import pytest
 import torch
 from einops import rearrange
 from mrpro.algorithms._prewhiten_kspace import prewhiten_kspace
@@ -26,7 +27,7 @@ def _calc_coil_cov(data):
     return cov
 
 
-def test_prewhiten_kspace(random_kheader):
+def _test_prewhiten_kspace(random_kheader, device):
     """Prewhitening of k-space data."""
 
     # Dimensions
@@ -35,11 +36,24 @@ def test_prewhiten_kspace(random_kheader):
 
     # Create random noise samples
     knoise_data = torch.randn(1, n_coils, 1, 1, n_kx, dtype=torch.complex64)
-    knoise = KNoise(data=knoise_data)
+    knoise = KNoise(data=knoise_data).to(device=device)
 
     # Create KData from same data with random trajectory
     trajectory = KTrajectory(torch.zeros(1, 1, 1, 1), torch.zeros(1, 1, 1, 1), torch.zeros(1, 1, 1, 1))
-    kdata = KData(header=random_kheader, data=knoise_data, traj=trajectory)
+    kdata = KData(header=random_kheader, data=knoise_data, traj=trajectory).to(device=device)
 
     kdata = prewhiten_kspace(kdata, knoise)
-    torch.testing.assert_close(_calc_coil_cov(kdata.data), torch.eye(n_coils, dtype=torch.complex64))
+    expected_covariance = torch.eye(n_coils, dtype=torch.complex64, device=device)
+    covariance = _calc_coil_cov(kdata.data)
+    torch.testing.assert_close(covariance, expected_covariance)
+
+
+def test_prewhiten_kspace_cpu(random_kheader):
+    """Prewhitening of k-space data on CPU."""
+    _test_prewhiten_kspace(random_kheader, 'cpu')
+
+
+@pytest.mark.cuda()
+def test_prewhiten_kspace_cuda(random_kheader):
+    """Prewhitening of k-space data on GPU."""
+    _test_prewhiten_kspace(random_kheader, 'cuda')
