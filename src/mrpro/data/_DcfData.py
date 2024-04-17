@@ -46,6 +46,7 @@ class DcfData:
     """Density compensation data (DcfData) class."""
 
     data: torch.Tensor
+    """Density compensation values. Shape (... other, k2, k1, k0)"""
 
     @staticmethod
     def _dcf_1d(traj: torch.Tensor) -> torch.Tensor:

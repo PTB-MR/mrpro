@@ -63,9 +63,9 @@ class CsmData(QData):
             lambda img: iterative_walsh(img, smoothing_width, power_iterations),
             chunk_size=chunk_size_otherdim,
         )
-        csm_data = csm_fun(idata.data)
-
-        return cls(header=idata.header, data=csm_data)
+        csm_tensor = csm_fun(idata.data)
+        csm = cls(header=idata.header, data=csm_tensor)
+        return csm
 
     def as_operator(self) -> SensitivityOp:
         """Create SensitivityOp using a copy of the CSMs."""
