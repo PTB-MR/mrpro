@@ -16,11 +16,16 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import torch
 
 from mrpro.data._IData import IData
 from mrpro.data._QData import QData
 from mrpro.data._SpatialDimension import SpatialDimension
+
+if TYPE_CHECKING:
+    from mrpro.operators._SensitivityOp import SensitivityOp
 
 
 class CsmData(QData):
@@ -61,3 +66,9 @@ class CsmData(QData):
         csm_data = csm_fun(idata.data)
 
         return cls(header=idata.header, data=csm_data)
+
+    def as_operator(self) -> SensitivityOp:
+        """Create SensitivityOp using a copy of the CSMs."""
+        from mrpro.operators._SensitivityOp import SensitivityOp
+
+        return SensitivityOp(self)
