@@ -75,4 +75,5 @@ def test_sensitivity_forward():
     u = random_generator.complex64_tensor(size=(*ns_other, n_coils, *ns_zyx))
     # forward should be a multiplication with the dcf
     excepted = random_tensor.unsqueeze(-4) * u
-    torch.testing.assert_close(dcf_op(u), excepted)
+    (actual,) = dcf_op(u)
+    torch.testing.assert_close(actual, excepted)
