@@ -474,6 +474,28 @@ document.write(`
 
     <span class="n">header</span><span class="p">:</span> <span class="n">IHeader</span>
 
+<div class="viewcode-block" id="IData.rss">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.IData.html#mrpro.data.IData.rss">[docs]</a>
+    <span class="k">def</span> <span class="nf">rss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keepdim</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Root-sum-of-squares over coils image data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        keepdim</span>
+<span class="sd">            if True, the output tensor has the same number of dimensions as the data tensor,</span>
+<span class="sd">               and the coil dimension is kept as a singleton dimension.</span>
+<span class="sd">            If False, the coil dimension is removed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            image data tensor with shape either</span>
+<span class="sd">            (..., 1, z, y, x) if keepdim is True.</span>
+<span class="sd">            or (..., z, y, x), if  keepdim if False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">coildim</span> <span class="o">=</span> <span class="o">-</span><span class="mi">4</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">square</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">coildim</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="n">keepdim</span><span class="p">)</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span></div>
+
+
 <div class="viewcode-block" id="IData.from_tensor_and_kheader">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.IData.html#mrpro.data.IData.from_tensor_and_kheader">[docs]</a>
     <span class="nd">@classmethod</span>

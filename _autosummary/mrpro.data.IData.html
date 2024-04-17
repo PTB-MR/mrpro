@@ -520,7 +520,10 @@ document.write(`
 <tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.IData.from_tensor_and_kheader" title="mrpro.data.IData.from_tensor_and_kheader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_tensor_and_kheader</span></code></a>(data, kheader)</p></td>
 <td><p>Create IData object from a tensor and a KHeader object.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.IData.to" title="mrpro.data.IData.to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code></a>(*args, **kwargs)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.IData.rss" title="mrpro.data.IData.rss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rss</span></code></a>([keepdim])</p></td>
+<td><p>Root-sum-of-squares over coils image data.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.IData.to" title="mrpro.data.IData.to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code></a>(*args, **kwargs)</p></td>
 <td><p>Perform dtype and/or device conversion of data.</p></td>
 </tr>
 </tbody>
@@ -615,6 +618,30 @@ If None, then all files in the folder are read in.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.IData.rss">
+<span class="sig-name descname"><span class="pre">rss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keepdim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/mrpro/data/_IData.html#IData.rss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.IData.rss" title="Link to this definition">#</a></dt>
+<dd><p>Root-sum-of-squares over coils image data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>keepdim</strong> – <dl class="simple">
+<dt>if True, the output tensor has the same number of dimensions as the data tensor,</dt><dd><p>and the coil dimension is kept as a singleton dimension.</p>
+</dd>
+</dl>
+<p>If False, the coil dimension is removed.</p>
+</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>image data tensor with shape either</em></p></li>
+<li><p><em>(…, 1, z, y, x) if keepdim is True.</em></p></li>
+<li><p><em>or (…, z, y, x), if  keepdim if False.</em></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.IData.to">
 <span class="sig-name descname"><span class="pre">to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="mrpro.data.Data.html#mrpro.data.Data" title="mrpro.data._Data.Data"><span class="pre">Data</span></a></span></span><a class="headerlink" href="#mrpro.data.IData.to" title="Link to this definition">#</a></dt>
 <dd><p>Perform dtype and/or device conversion of data.</p>
@@ -681,6 +708,7 @@ documentation of torch.Tensor.to() for more details.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.IData.from_dicom_folder"><code class="docutils literal notranslate"><span class="pre">IData.from_dicom_folder()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.IData.from_single_dicom"><code class="docutils literal notranslate"><span class="pre">IData.from_single_dicom()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.IData.from_tensor_and_kheader"><code class="docutils literal notranslate"><span class="pre">IData.from_tensor_and_kheader()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.IData.rss"><code class="docutils literal notranslate"><span class="pre">IData.rss()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.IData.to"><code class="docutils literal notranslate"><span class="pre">IData.to()</span></code></a></li>
 </ul>
 </li>

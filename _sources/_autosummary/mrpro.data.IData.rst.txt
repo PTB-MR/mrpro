@@ -23,6 +23,7 @@ mrpro.data.IData
       ~IData.from_dicom_folder
       ~IData.from_single_dicom
       ~IData.from_tensor_and_kheader
+      ~IData.rss
       ~IData.to
    
    
