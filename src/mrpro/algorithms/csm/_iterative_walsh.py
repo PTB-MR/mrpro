@@ -11,6 +11,11 @@ def iterative_walsh(
 ) -> torch.Tensor:
     """Calculate a coil sensitivity map (csm) using an iterative version of the Walsh method.
 
+    This is for a single set of coil images. The input should be a tensor with dimensions
+    (coils, z, y, x). The output will have the same dimensions.
+    Either vmap to apply this function to multiple sets of coil images,
+    or see CsmData.from_idata_walsh which performs this operation on a whole dataset.
+
     This function is inspired by https://github.com/ismrmrd/ismrmrd-python-tools.
 
     More information on the method can be found in
@@ -28,20 +33,20 @@ def iterative_walsh(
     if isinstance(smoothing_width, int):
         smoothing_width = SpatialDimension(smoothing_width, smoothing_width, smoothing_width)
     # Compute the pointwise covariance between coils
-    coil_cov = torch.einsum('azyx,bzyx->abzyx', coil_images, coil_images.conj())
+    coil_covariance = torch.einsum('azyx,bzyx->abzyx', coil_images, coil_images.conj())
 
     # Smooth the covariance along y-x for 2D and z-y-x for 3D data
-    coil_cov = uniform_filter_3d(coil_cov, filter_width=smoothing_width)
+    coil_covariance = uniform_filter_3d(coil_covariance, filter_width=smoothing_width)
 
     # At each point in the image, find the dominant eigenvector
     # of the signal covariance matrix using the power method
-    v = coil_cov.sum(dim=0)
+    v = coil_covariance.sum(dim=0)
     for _ in range(power_iterations):
         v /= v.norm(dim=0)
-        v = torch.einsum('abzyx,bzyx->azyx', coil_cov, v)
-    csm_data = v / v.norm(dim=0)
+        v = torch.einsum('abzyx,bzyx->azyx', coil_covariance, v)
+    csm = v / v.norm(dim=0)
 
     # Make sure there are no inf or nan-values due to very small values in the covariance matrix
     # nan_to_num does not work for complexfloat, boolean indexing not with vmap.
-    csm_data = torch.where(torch.isfinite(csm_data), csm_data, 0.0)
-    return csm_data
+    csm = torch.where(torch.isfinite(csm), csm, 0.0)
+    return csm
