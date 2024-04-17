@@ -19,10 +19,11 @@ from mrpro.algorithms._prewhiten_kspace import prewhiten_kspace
 from mrpro.data import KData
 from mrpro.data import KNoise
 from mrpro.data import KTrajectory
+from tests import RandomGenerator
 
 
 def _calc_coil_cov(data):
-    data = rearrange(data, 'other coils k2 k1 k0->coils (other k2 k1 k0)')
+    data = rearrange(data, '... coils k2 k1 k0->coils (... k2 k1 k0)')
     cov = (1.0 / (data.shape[1])) * torch.einsum('ax,bx->ab', data, data.conj())
     return cov
 
@@ -32,19 +33,23 @@ def _test_prewhiten_kspace(random_kheader, device):
 
     # Dimensions
     n_coils = 4
-    n_kx = 128
+    ns_k2k1k0 = (4, 5, 32)
+    ns_other = (1,)
 
     # Create random noise samples
-    knoise_data = torch.randn(1, n_coils, 1, 1, n_kx, dtype=torch.complex64)
-    knoise = KNoise(data=knoise_data).to(device=device)
+    random_data = RandomGenerator(0).complex64_tensor((*ns_other, n_coils, *ns_k2k1k0))
+    knoise = KNoise(data=random_data).to(device=device)
 
-    # Create KData from same data with random trajectory
-    trajectory = KTrajectory(torch.zeros(1, 1, 1, 1), torch.zeros(1, 1, 1, 1), torch.zeros(1, 1, 1, 1))
-    kdata = KData(header=random_kheader, data=knoise_data, traj=trajectory).to(device=device)
+    # Whiten KData created with **same** data and dummy trajectory
+    trajectory = KTrajectory(
+        torch.zeros(*ns_other, *ns_k2k1k0), torch.zeros(*ns_other, *ns_k2k1k0), torch.zeros(*ns_other, *ns_k2k1k0)
+    )
+    kdata = KData(header=random_kheader, data=random_data, traj=trajectory).to(device=device)
+    kdata_white = prewhiten_kspace(kdata, knoise)
 
-    kdata = prewhiten_kspace(kdata, knoise)
+    # This should result in a covariance matrix that is the identity matrix
     expected_covariance = torch.eye(n_coils, dtype=torch.complex64, device=device)
-    covariance = _calc_coil_cov(kdata.data)
+    covariance = _calc_coil_cov(kdata_white.data)
     torch.testing.assert_close(covariance, expected_covariance)
 
 
