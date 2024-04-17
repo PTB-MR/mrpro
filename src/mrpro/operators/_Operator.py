@@ -21,7 +21,6 @@ from typing import Generic
 from typing import TypeVar
 from typing import TypeVarTuple
 from typing import cast
-from typing import overload
 
 import torch
 
