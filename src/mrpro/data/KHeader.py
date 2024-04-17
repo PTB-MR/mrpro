@@ -112,9 +112,6 @@ class KHeader(MoveDataMixin):
         def ms_to_s(ms: torch.Tensor) -> torch.Tensor:
             return ms / 1000
 
-        def deg_to_rad(deg: torch.Tensor) -> torch.Tensor:
-            return deg * pi / 180
-
         def mm_to_m(m: float) -> float:
             return m / 1000
 
@@ -139,7 +136,7 @@ class KHeader(MoveDataMixin):
             parameters['tr'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TR))
             parameters['te'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TE))
             parameters['ti'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TI))
-            parameters['fa'] = deg_to_rad(torch.as_tensor(header.sequenceParameters.flipAngle_deg))
+            parameters['fa'] = torch.deg2rad(torch.as_tensor(header.sequenceParameters.flipAngle_deg))
             parameters['echo_spacing'] = ms_to_s(torch.as_tensor(header.sequenceParameters.echo_spacing))
 
             if header.sequenceParameters.sequence_type is not None:
