@@ -37,4 +37,5 @@ def test_knoise_cpu(random_test_data):
     noise_cpu = noise_cuda.cpu()
     assert noise_cpu.data.is_cpu
     assert noise_cuda.data.is_cuda
-    torch.testing.assert_close(noise_cpu.data, noise_cuda.data)
+    torch.testing.assert_close(noise_cpu.data, noise_cuda.data.cpu())
+
