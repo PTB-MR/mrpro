@@ -46,6 +46,7 @@ class DcfData:
     """Density compensation data (DcfData) class."""
 
     data: torch.Tensor
+    """Density compensation values. Shape (... other, k2, k1, k0)"""
 
     @staticmethod
     def _dcf_1d(traj: torch.Tensor) -> torch.Tensor:
@@ -198,7 +199,8 @@ class DcfData:
 
         return cls(data=dcf)
 
-    def as_operator(self)->DensityCompensationOp:
+    def as_operator(self) -> DensityCompensationOp:
         """Create a density compensation operator using a copy of the DCF."""
         from mrpro.operators._DensityCompensationOp import DensityCompensationOp
+
         return DensityCompensationOp(self.data)
