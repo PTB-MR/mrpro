@@ -1,21 +1,6 @@
-"""Script for B1+ mapping from H5 file."""
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
-#   Christoph Aigner, 2024.03.22
-#
-# RPE example with 3D volume works
-# example data can be downloaded from:
-# https://figshare.com/articles/dataset/High-Resolution_3D_Radial_Phase_Encoded_GRE_of_8_Transmit_Channels_with_a_Siemens_7T_pTx_System_Phantom_VB17_RAW_Data_/24316519
+# %% [markdown]
+# # Script for B1+ mapping from H5 file.
+# This example script reconstructs a radial dataset.
 
 # %% import functionality
 import urllib.request
