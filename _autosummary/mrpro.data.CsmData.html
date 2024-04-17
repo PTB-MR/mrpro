@@ -511,19 +511,22 @@ document.write(`
 <tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.CsmData.__init__" title="mrpro.data.CsmData.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(data, header)</p></td>
 <td><p>Create QData object from a tensor and an arbitrary MRpro header.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.CsmData.cpu" title="mrpro.data.CsmData.cpu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cpu</span></code></a>([memory_format])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.CsmData.as_operator" title="mrpro.data.CsmData.as_operator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">as_operator</span></code></a>()</p></td>
+<td><p>Create SensitivityOp using a copy of the CSMs.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.CsmData.cpu" title="mrpro.data.CsmData.cpu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cpu</span></code></a>([memory_format])</p></td>
 <td><p>Create copy of object in CPU memory.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.CsmData.cuda" title="mrpro.data.CsmData.cuda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cuda</span></code></a>([device, non_blocking, memory_format])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.CsmData.cuda" title="mrpro.data.CsmData.cuda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cuda</span></code></a>([device, non_blocking, memory_format])</p></td>
 <td><p>Create copy of object with data in CUDA memory.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.CsmData.from_idata_walsh" title="mrpro.data.CsmData.from_idata_walsh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_idata_walsh</span></code></a>(idata[, smoothing_width, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.CsmData.from_idata_walsh" title="mrpro.data.CsmData.from_idata_walsh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_idata_walsh</span></code></a>(idata[, smoothing_width, ...])</p></td>
 <td><p>Create csm object from image data using iterative Walsh method.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.CsmData.from_single_dicom" title="mrpro.data.CsmData.from_single_dicom"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_single_dicom</span></code></a>(filename)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.CsmData.from_single_dicom" title="mrpro.data.CsmData.from_single_dicom"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_single_dicom</span></code></a>(filename)</p></td>
 <td><p>Read single DICOM file and return QData object.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.CsmData.to" title="mrpro.data.CsmData.to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code></a>(*args, **kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.CsmData.to" title="mrpro.data.CsmData.to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code></a>(*args, **kwargs)</p></td>
 <td><p>Perform dtype and/or device conversion of data.</p></td>
 </tr>
 </tbody>
@@ -539,6 +542,12 @@ document.write(`
 </tr>
 </tbody>
 </table>
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.CsmData.as_operator">
+<span class="sig-name descname"><span class="pre">as_operator</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">SensitivityOp</span></span></span><a class="reference internal" href="../_modules/mrpro/data/_CsmData.html#CsmData.as_operator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.CsmData.as_operator" title="Link to this definition">#</a></dt>
+<dd><p>Create SensitivityOp using a copy of the CSMs.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.CsmData.cpu">
 <span class="sig-name descname"><span class="pre">cpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="mrpro.data.Data.html#mrpro.data.Data" title="mrpro.data._Data.Data"><span class="pre">Data</span></a></span></span><a class="headerlink" href="#mrpro.data.CsmData.cpu" title="Link to this definition">#</a></dt>
@@ -655,6 +664,7 @@ documentation of torch.Tensor.to() for more details.</p>
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.CsmData"><code class="docutils literal notranslate"><span class="pre">CsmData</span></code></a><ul class="visible nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.CsmData.__init__"><code class="docutils literal notranslate"><span class="pre">CsmData.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.CsmData.as_operator"><code class="docutils literal notranslate"><span class="pre">CsmData.as_operator()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.CsmData.cpu"><code class="docutils literal notranslate"><span class="pre">CsmData.cpu()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.CsmData.cuda"><code class="docutils literal notranslate"><span class="pre">CsmData.cuda()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.CsmData.from_idata_walsh"><code class="docutils literal notranslate"><span class="pre">CsmData.from_idata_walsh()</span></code></a></li>

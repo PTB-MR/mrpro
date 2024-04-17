@@ -427,6 +427,7 @@ document.write(`
 <span class="kn">from</span> <span class="nn">concurrent.futures</span> <span class="kn">import</span> <span class="n">ProcessPoolExecutor</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">torch</span>
@@ -436,6 +437,9 @@ document.write(`
 
 <span class="kn">from</span> <span class="nn">mrpro.data._KTrajectory</span> <span class="kn">import</span> <span class="n">KTrajectory</span>
 <span class="kn">from</span> <span class="nn">mrpro.utils</span> <span class="kn">import</span> <span class="n">smap</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">mrpro.operators._DensityCompensationOp</span> <span class="kn">import</span> <span class="n">DensityCompensationOp</span>
 
 <span class="n">UNIQUE_ROUNDING_DECIMALS</span> <span class="o">=</span> <span class="mi">15</span>
 
@@ -604,6 +608,15 @@ document.write(`
             <span class="n">dcf</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="o">*</span><span class="n">traj</span><span class="o">.</span><span class="n">broadcasted_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:],</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">traj</span><span class="o">.</span><span class="n">kx</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">dcf</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DcfData.as_operator">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.DcfData.html#mrpro.data.DcfData.as_operator">[docs]</a>
+    <span class="k">def</span> <span class="nf">as_operator</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DensityCompensationOp</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a density compensation operator using a copy of the DCF.&quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">mrpro.operators._DensityCompensationOp</span> <span class="kn">import</span> <span class="n">DensityCompensationOp</span>
+
+        <span class="k">return</span> <span class="n">DensityCompensationOp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">clone</span><span class="p">())</span></div>
 </div>
 
 </pre></div>

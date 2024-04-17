@@ -502,7 +502,10 @@ document.write(`
 <tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.DcfData.__init__" title="mrpro.data.DcfData.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(data)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.DcfData.from_traj_voronoi" title="mrpro.data.DcfData.from_traj_voronoi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_traj_voronoi</span></code></a>(traj)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.DcfData.as_operator" title="mrpro.data.DcfData.as_operator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">as_operator</span></code></a>()</p></td>
+<td><p>Create a density compensation operator using a copy of the DCF.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.DcfData.from_traj_voronoi" title="mrpro.data.DcfData.from_traj_voronoi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_traj_voronoi</span></code></a>(traj)</p></td>
 <td><p>Calculate dcf using voronoi approach for 2D or 3D trajectories.</p></td>
 </tr>
 </tbody>
@@ -515,6 +518,12 @@ document.write(`
 </tr>
 </tbody>
 </table>
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.DcfData.as_operator">
+<span class="sig-name descname"><span class="pre">as_operator</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DensityCompensationOp</span></span></span><a class="reference internal" href="../_modules/mrpro/data/_DcfData.html#DcfData.as_operator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.DcfData.as_operator" title="Link to this definition">#</a></dt>
+<dd><p>Create a density compensation operator using a copy of the DCF.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.DcfData.from_traj_voronoi">
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_traj_voronoi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">traj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.KTrajectory.html#mrpro.data.KTrajectory" title="mrpro.data._KTrajectory.KTrajectory"><span class="pre">KTrajectory</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#mrpro.data.DcfData" title="mrpro.data._DcfData.DcfData"><span class="pre">DcfData</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_DcfData.html#DcfData.from_traj_voronoi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.DcfData.from_traj_voronoi" title="Link to this definition">#</a></dt>
@@ -578,6 +587,7 @@ document.write(`
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.DcfData"><code class="docutils literal notranslate"><span class="pre">DcfData</span></code></a><ul class="visible nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.DcfData.__init__"><code class="docutils literal notranslate"><span class="pre">DcfData.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.DcfData.as_operator"><code class="docutils literal notranslate"><span class="pre">DcfData.as_operator()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.DcfData.from_traj_voronoi"><code class="docutils literal notranslate"><span class="pre">DcfData.from_traj_voronoi()</span></code></a></li>
 </ul>
 </li>

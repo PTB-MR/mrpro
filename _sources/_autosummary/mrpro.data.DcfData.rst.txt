@@ -17,6 +17,7 @@ mrpro.data.DcfData
    .. autosummary::
    
       ~DcfData.__init__
+      ~DcfData.as_operator
       ~DcfData.from_traj_voronoi
    
    
