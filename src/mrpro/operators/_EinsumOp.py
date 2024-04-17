@@ -15,6 +15,7 @@
 import re
 
 import torch
+from einops import einsum
 
 from mrpro.operators._LinearOperator import LinearOperator
 
@@ -23,7 +24,8 @@ class EinsumOp(LinearOperator):
     """A Linear Operator that implements sum products in einstein notation.
 
     Implements A_{indices_A}*x^{indices_x} = y{indices_y}
-    with Einstein summation rules over the indices, see torch.einsum for more information.
+    with Einstein summation rules over the indices, see torch.einsum or einops.einsum
+    for more information. Note, that the indices must be space separated (einops convention).
 
 
     It can be used to implement tensor contractions, such as for example, different versions of
@@ -35,24 +37,24 @@ class EinsumOp(LinearOperator):
       of N vectors x1, x2, ..., xN. Then, the operation defined by
         A @ x := diag(A, A, ..., A) * [x1, x2, ..., xN]^T = [A*x1, A*x2, ..., A*xN]^T
       can be implemented by the einsum rule
-        "ij,...j->...i"
+        "i j, ... j -> ... i"
 
     - matrix-vector multiplication of a matrix A consisting of N different matrices
       A1, A2, ... AN with one vector x. Then, the operation defined by
         A @ x: = diag(A1, A2,..., AN) * [x, x, ..., x]^T
       can be implemented by the einsum rule
-        "...ij,j->...i"
+        "... i j, j -> ... i"
 
     - matrix-vector multiplication of a matrix A consisting of N different matrices
       A1, A2, ... AN with a vector x = [x1,...,xN] consisting
       of N vectors x1, x2, ..., xN. Then, the operation defined by
         A @ x: = diag(A1, A2,..., AN) * [x1, x2, ..., xN]^T
       can be implemented by the einsum rule
-        "...ij,...j->...i"
+        "... i j, ... j -> ... i"
       This is the default behaviour of the operator.
     """
 
-    def __init__(self, matrix: torch.Tensor, einsum_rule: str = '...ij,...j->...i') -> None:
+    def __init__(self, matrix: torch.Tensor, einsum_rule: str = '... i j, ... j -> ... i') -> None:
         """Initialize Einsum Operator.
 
         Parameters
@@ -87,7 +89,7 @@ class EinsumOp(LinearOperator):
         -------
             result of matrix-vector multiplication
         """
-        y = torch.einsum(self._forward_rule, self.matrix, x)
+        y = einsum(self.matrix, x, self._forward_rule)
         return (y,)
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor]:
@@ -102,5 +104,5 @@ class EinsumOp(LinearOperator):
         -------
             result of adjoint sum product
         """
-        x = torch.einsum(self._adjoint_rule, self.matrix.conj(), y)
+        x = einsum(self.matrix.conj(), y, self._adjoint_rule)
         return (x,)
