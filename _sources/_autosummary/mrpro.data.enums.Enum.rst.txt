@@ -16,11 +16,4 @@ mrpro.data.enums.Enum
 
    
    
-   .. rubric:: Attributes
-
-   .. autosummary::
-   
-      ~Enum.name
-      ~Enum.value
-   
    
