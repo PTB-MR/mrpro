@@ -13,7 +13,7 @@
 # limitations under the License.
 import torch
 
-from mrpro.operators import SignalModel
+from mrpro.operators._SignalModel import SignalModel
 
 
 class MonoExponentialDecay(SignalModel[torch.Tensor, torch.Tensor]):

@@ -1,6 +1,6 @@
-import mrpro.algorithms
-import mrpro.data
-import mrpro.operators
-import mrpro.phantoms
-import mrpro.utils
+from mrpro import algorithms
+from mrpro import operators
+from mrpro import data
+from mrpro import phantoms
+from mrpro import utils
 
