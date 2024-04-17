@@ -100,6 +100,7 @@ def test_IData_cpu(random_kheader, random_test_data):
 
 
 def test_IData_rss(random_kheader, random_test_data):
+    """Test RSS coil combination."""
     expected = random_test_data.abs().square().sum(dim=-4, keepdim=True).sqrt()
     idata = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
     torch.testing.assert_close(idata.rss(keepdim=True), expected)
