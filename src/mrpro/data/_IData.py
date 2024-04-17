@@ -71,13 +71,15 @@ class IData(Data):
         Parameters
         ----------
         keepdim
-            If True, the output tensor still has a coil dimension of 1.
-            Otherwise, the coil dimension is removed.
+            if True, the output tensor has the same number of dimensions as the data tensor,
+               and the coil dimension is kept as a singleton dimension.
+            If False, the coil dimension is removed.
 
         Returns
         -------
-            coil-combined image tensor with dimensions (..., other, z, y, x)
-            or (..., other, 1, z, y, x) if keepdim is True.
+            image data tensor with shape either
+            (..., 1, z, y, x) if keepdim is True.
+            or (..., z, y, x), if  keepdim if False.
         """
         coildim = -4
         return self.data.abs().square().sum(dim=coildim, keepdim=keepdim).sqrt()
