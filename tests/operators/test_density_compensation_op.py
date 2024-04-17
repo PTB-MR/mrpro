@@ -20,7 +20,7 @@ from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test
 
 
-def test_dcf_op_adjointness():
+def test_density_compensation_op_adjointness():
     """Test density operator adjoint property."""
     random_generator = RandomGenerator(seed=0)
 
@@ -28,7 +28,7 @@ def test_dcf_op_adjointness():
     ns_other = (5, 6, 7)
     n_coils = 8
 
-    # Generate sensitivity operator
+    # Generate random dcf and operator
     random_tensor = random_generator.complex64_tensor(size=(*ns_other, *ns_zyx))
     random_dcf = DcfData(data=random_tensor)
     dcf_op = DensityCompensationOp(random_dcf)
@@ -39,7 +39,7 @@ def test_dcf_op_adjointness():
     dotproduct_adjointness_test(dcf_op, u, v)
 
 
-def test_sensitivity_op_dcfdata_tensor():
+def test_density_compensation_op_dcfdata_tensor():
     """Test matching result after creation via tensor and DcfData."""
     random_generator = RandomGenerator(seed=0)
 
@@ -47,10 +47,11 @@ def test_sensitivity_op_dcfdata_tensor():
     ns_other = (5, 6, 7)
     n_coils = 8
 
-    # Generate sensitivity operators
+    # Generate random dcf
     random_tensor = random_generator.complex64_tensor(size=(*ns_other, *ns_zyx))
     random_dcf = DcfData(data=random_tensor)
 
+    # and operators
     dcf_op_tensor = DensityCompensationOp(random_tensor)
     dcf_op_dcfdata = DensityCompensationOp(random_dcf)
     dcf_op_dcfdata_asop = random_dcf.as_operator()
@@ -64,7 +65,7 @@ def test_sensitivity_op_dcfdata_tensor():
     assert torch.equal(*dcf_op_tensor.H(v), *dcf_op_dcfdata_asop.H(v))
 
 
-def test_sensitivity_forward():
+def test_density_compensation_op_forward():
     """Test result of forward."""
     random_generator = RandomGenerator(seed=0)
     ns_zyx = (2, 3, 4)
@@ -74,6 +75,6 @@ def test_sensitivity_forward():
     dcf_op = DensityCompensationOp(random_tensor)
     u = random_generator.complex64_tensor(size=(*ns_other, n_coils, *ns_zyx))
     # forward should be a multiplication with the dcf
-    excepted = random_tensor.unsqueeze(-4) * u
+    expected = random_tensor.unsqueeze(-4) * u
     (actual,) = dcf_op(u)
-    torch.testing.assert_close(actual, excepted)
+    torch.testing.assert_close(actual, expected)
