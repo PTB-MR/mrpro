@@ -18,7 +18,6 @@ from typing import TYPE_CHECKING
 
 import torch
 from mrpro.data._KTrajectory import KTrajectory
-from mrpro.operators._FastFourierOp import FastFourierOp
 
 if TYPE_CHECKING:
     from mrpro.data._kdata._KData import _KDataProtocol
@@ -47,6 +46,8 @@ class KDataRemoveOsMixin:
         ValueError
             If the recon matrix along x is larger than the encoding matrix along x.
         """
+        from mrpro.operators._FastFourierOp import FastFourierOp
+
         # Ratio of k0/x between encoded and recon space
         x_ratio = self.header.recon_matrix.x / self.header.encoding_matrix.x
         if x_ratio == 1:

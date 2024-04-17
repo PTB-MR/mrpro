@@ -65,6 +65,23 @@ class IData(Data):
 
     header: IHeader
 
+    def rss(self, keepdim: bool = False) -> torch.Tensor:
+        """Root-sum-of-squares over coils image data.
+
+        Parameters
+        ----------
+        keepdim
+            If True, the output tensor still has a coil dimension of 1.
+            Otherwise, the coil dimension is removed.
+
+        Returns
+        -------
+            coil-combined image tensor with dimensions (..., other, z, y, x)
+            or (..., other, 1, z, y, x) if keepdim is True.
+        """
+        coildim = -4
+        return self.data.abs().square().sum(dim=coildim, keepdim=keepdim).sqrt()
+
     @classmethod
     def from_tensor_and_kheader(cls, data: torch.Tensor, kheader: KHeader) -> IData:
         """Create IData object from a tensor and a KHeader object.
