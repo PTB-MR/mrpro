@@ -33,16 +33,16 @@ def _test_prewhiten_kspace(random_kheader, device):
 
     # Dimensions
     n_coils = 4
-    ns_k2k1k0 = (4, 5, 32)
-    ns_other = (1,)
+    n_k2k1k0 = (4, 5, 32)
+    n_other = (2, 3)
 
     # Create random noise samples
-    random_data = RandomGenerator(0).complex64_tensor((*ns_other, n_coils, *ns_k2k1k0))
+    random_data = RandomGenerator(0).complex64_tensor((*n_other, n_coils, *n_k2k1k0))
     knoise = KNoise(data=random_data).to(device=device)
 
     # Whiten KData created with **same** data and dummy trajectory
     trajectory = KTrajectory(
-        torch.zeros(*ns_other, *ns_k2k1k0), torch.zeros(*ns_other, *ns_k2k1k0), torch.zeros(*ns_other, *ns_k2k1k0)
+        torch.zeros(*n_other, *n_k2k1k0), torch.zeros(*n_other, *n_k2k1k0), torch.zeros(*n_other, *n_k2k1k0)
     )
     kdata = KData(header=random_kheader, data=random_data, traj=trajectory).to(device=device)
     kdata_white = prewhiten_kspace(kdata, knoise)
