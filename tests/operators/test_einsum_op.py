@@ -24,11 +24,11 @@ from tests.helper import dotproduct_adjointness_test
 @pytest.mark.parametrize(
     ('tensor_shape', 'input_shape', 'rule', 'output_shape'),
     [
-        ((3, 3), (3), 'ij,j->i', (3)),  # matrix vector product
-        ((2, 4), (2, 4), '...i,...i->...i', (2, 4)),  # hadamard product
-        ((2, 4, 3), (2, 3), '...ij, ...j->...i', (2, 4)),  # batched matrix product
+        ((3, 3), (3), 'i j,j->i', (3)),  # matrix vector product
+        ((2, 4), (2, 4), '... i, ... i->... i', (2, 4)),  # hadamard product
+        ((2, 4, 3), (2, 3), '... i j, ... j->... i', (2, 4)),  # batched matrix product
         ((4, 3), (3, 2), '... i j , j k -> i k', (4, 2)),  # additional spaces in rule
-        ((3, 5, 4, 2), (3, 2, 5), 'l...ij, ljk -> kil', (5, 4, 3)),  # general tensor contraction
+        ((3, 5, 4, 2), (3, 2, 5), 'l ... i j, l j k -> k i l', (5, 4, 3)),  # general tensor contraction
     ],
 )
 def test_einsum_op(tensor_shape, input_shape, rule, output_shape, dtype):
