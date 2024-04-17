@@ -26,7 +26,7 @@ import torch
 
 Tin = TypeVarTuple('Tin')  # TODO: bind to torch.Tensors
 Tin2 = TypeVarTuple('Tin2')  # TODO: bind to torch.Tensors
-Tout = TypeVar('Tout')  # TODO: bind to torch.Tensor
+Tout = TypeVar('Tout', bound=tuple)  # TODO: bind to torch.Tensor
 
 
 class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
@@ -37,6 +37,9 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
         """Apply forward operator."""
         ...
 
+    def __call__(self, *args: *Tin) -> Tout:
+        return super().__call__(*args)
+
     def __matmul__(self, other: Operator[*Tin2, tuple[*Tin]]) -> Operator[*Tin2, Tout]:
         """Operator composition."""
         return OperatorComposition(self, other)
@@ -45,11 +48,11 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
         """Operator addition."""
         return OperatorSum(self, other)
 
-    def __mul__(self, other: torch.Tensor):
+    def __mul__(self, other: torch.Tensor) -> Operator[*Tin, Tout]:
         """Operator multiplication with tensor."""
         return OperatorElementwiseProductLeft(self, other)
 
-    def __rmul__(self, other: torch.Tensor):
+    def __rmul__(self, other: torch.Tensor) -> Operator[*Tin, Tout]:  # type: ignore[misc]
         """Operator multiplication with tensor."""
         return OperatorElementwiseProductRight(self, other)
 
@@ -103,6 +106,7 @@ class OperatorElementwiseProductLeft(Operator[*Tin, Tout]):
         self._tensor = tensor
 
     def forward(self, *args: *Tin) -> Tout:
-        """Operator left elementwise multiplication."""
-        out = self._operator(*(a * self._tensor for a in args))
+        """Operator elementwise left multiplication."""
+        multiplied = cast(tuple[*Tin], tuple(a * self._tensor for a in args))
+        out = self._operator(*multiplied)
         return cast(Tout, out)

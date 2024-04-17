@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from typing import overload
 
 import torch
 
@@ -31,7 +32,7 @@ from mrpro.operators._Operator import Tin2
 # LinearOperators have exactly one input and one output,
 # and fulfill f(a*x + b*y) = a*f(x) + b*f(y)
 # with a,b scalars and x,y tensors.
-class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor,]]):
+class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """General Linear Operator."""
 
     @abstractmethod
@@ -40,30 +41,48 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor,]]):
         ...
 
     @property
-    def H(self):  # noqa: N802
+    def H(self) -> LinearOperator:  # noqa: N802
         """Adjoint operator."""
         return AdjointLinearOperator(self)
 
-    def __matmul__(self, other: Operator[*Tin2, tuple[torch.Tensor,]] | LinearOperator):
-        """Operator composition."""
-        if not isinstance(other, LinearOperator):
-            # general case
-            return OperatorComposition(self, other)
-        return LinearOperatorComposition(self, other)
+    @overload  # type: ignore[override]
+    def __matmul__(self, other: LinearOperator) -> LinearOperator: ...
 
-    def __add__(self, other: Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator):
+    @overload
+    def __matmul__(self, other: Operator[*Tin2, tuple[torch.Tensor,]]) -> Operator[*Tin2, tuple[torch.Tensor,]]: ...
+
+    def __matmul__(
+        self, other: Operator[*Tin2, tuple[torch.Tensor,]] | LinearOperator
+    ) -> Operator[*Tin2, tuple[torch.Tensor,]] | LinearOperator:
+        """Operator composition."""
+        if isinstance(other, LinearOperator):
+            return LinearOperatorComposition(self, other)
+        else:
+            return OperatorComposition(self, other)
+
+    @overload
+    def __add__(self, other: LinearOperator) -> LinearOperator: ...
+
+    @overload
+    def __add__(
+        self, other: Operator[torch.Tensor, tuple[torch.Tensor,]]
+    ) -> Operator[torch.Tensor, tuple[torch.Tensor,]]: ...
+
+    def __add__(
+        self, other: Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator
+    ) -> Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator:
         """Operator addition."""
         if not isinstance(other, LinearOperator):
             # general case
             return OperatorSum(self, other)  # other + cast(Operator[torch.Tensor, tuple[torch.Tensor,]], self)
         return LinearOperatorSum(self, other)
 
-    def __mul__(self, other: torch.Tensor):
-        """Operator multiplication with tensor."""
+    def __mul__(self, other: torch.Tensor) -> LinearOperator:
+        """Operator elementwise left multiplication with tensor."""
         return LinearOperatorElementwiseProductLeft(self, other)
 
-    def __rmul__(self, other: torch.Tensor):
-        """Operator multiplication with tensor."""
+    def __rmul__(self, other: torch.Tensor) -> LinearOperator:  # type: ignore[misc]
+        """Operator elementwise right multiplication with tensor."""
         return LinearOperatorElementwiseProductRight(self, other)
 
 
@@ -123,6 +142,6 @@ class AdjointLinearOperator(LinearOperator):
         return self._operator.forward(x)
 
     @property
-    def H(self):  # noqa: N802
+    def H(self) -> LinearOperator:  # noqa: N802
         """Adjoint of adjoint operator."""
         return self.operator
