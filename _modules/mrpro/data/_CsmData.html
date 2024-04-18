@@ -474,9 +474,9 @@ document.write(`
             <span class="k">lambda</span> <span class="n">img</span><span class="p">:</span> <span class="n">iterative_walsh</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">smoothing_width</span><span class="p">,</span> <span class="n">power_iterations</span><span class="p">),</span>
             <span class="n">chunk_size</span><span class="o">=</span><span class="n">chunk_size_otherdim</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">csm_data</span> <span class="o">=</span> <span class="n">csm_fun</span><span class="p">(</span><span class="n">idata</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="n">idata</span><span class="o">.</span><span class="n">header</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">csm_data</span><span class="p">)</span></div>
+        <span class="n">csm_tensor</span> <span class="o">=</span> <span class="n">csm_fun</span><span class="p">(</span><span class="n">idata</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">csm</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="n">idata</span><span class="o">.</span><span class="n">header</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">csm_tensor</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">csm</span></div>
 
 
 <div class="viewcode-block" id="CsmData.as_operator">

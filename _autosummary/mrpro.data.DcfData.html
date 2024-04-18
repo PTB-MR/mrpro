@@ -537,8 +537,8 @@ document.write(`
 <p class="rubric">Attributes</p>
 <table class="autosummary longtable table autosummary">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code></p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.DcfData.data" title="mrpro.data.DcfData.data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code></a></p></td>
+<td><p>Density compensation values.</p></td>
 </tr>
 </tbody>
 </table>
@@ -546,6 +546,12 @@ document.write(`
 <dt class="sig sig-object py" id="mrpro.data.DcfData.as_operator">
 <span class="sig-name descname"><span class="pre">as_operator</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DensityCompensationOp</span></span></span><a class="reference internal" href="../_modules/mrpro/data/_DcfData.html#DcfData.as_operator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.DcfData.as_operator" title="Link to this definition">#</a></dt>
 <dd><p>Create a density compensation operator using a copy of the DCF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.DcfData.data">
+<span class="sig-name descname"><span class="pre">data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#mrpro.data.DcfData.data" title="Link to this definition">#</a></dt>
+<dd><p>Density compensation values. Shape (… other, k2, k1, k0)</p>
 </dd></dl>
 
 <dl class="py method">
@@ -612,6 +618,7 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.DcfData"><code class="docutils literal notranslate"><span class="pre">DcfData</span></code></a><ul class="visible nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.DcfData.__init__"><code class="docutils literal notranslate"><span class="pre">DcfData.__init__()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.DcfData.as_operator"><code class="docutils literal notranslate"><span class="pre">DcfData.as_operator()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.DcfData.data"><code class="docutils literal notranslate"><span class="pre">DcfData.data</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.DcfData.from_traj_voronoi"><code class="docutils literal notranslate"><span class="pre">DcfData.from_traj_voronoi()</span></code></a></li>
 </ul>
 </li>
