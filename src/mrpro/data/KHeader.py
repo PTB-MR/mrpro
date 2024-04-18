@@ -18,8 +18,8 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
+import warnings
 from dataclasses import dataclass
-from math import pi
 from typing import TYPE_CHECKING
 
 import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
@@ -60,11 +60,11 @@ class KHeader(MoveDataMixin):
     acq_info: AcqInfo
     datetime: datetime.datetime
     h1_freq: float
-    te: torch.Tensor
-    ti: torch.Tensor
-    fa: torch.Tensor
-    tr: torch.Tensor
-    echo_spacing: torch.Tensor
+    te: torch.Tensor | None = None
+    ti: torch.Tensor | None = None
+    fa: torch.Tensor | None = None
+    tr: torch.Tensor | None = None
+    echo_spacing: torch.Tensor | None = None
     echo_train_length: int = 1
     seq_type: str = UNKNOWN
     model: str = UNKNOWN
@@ -79,9 +79,11 @@ class KHeader(MoveDataMixin):
     trajectory_description: TrajectoryDescription = dataclasses.field(default_factory=TrajectoryDescription)
 
     @property
-    def fa_degree(self) -> list[float]:
+    def fa_degree(self) -> torch.Tensor | None:
         """Flip angle in degree."""
-        return [el / pi * 180 for el in self.fa]
+        if not self.fa:
+            warnings.warn('Flip angle is not defined.', stacklevel=1)
+        return torch.rad2deg(self.fa) if self.fa else None
 
     @classmethod
     def from_ismrmrd(
@@ -133,11 +135,16 @@ class KHeader(MoveDataMixin):
             parameters['n_coils'] = header.acquisitionSystemInformation.receiverChannels
 
         if header.sequenceParameters is not None:
-            parameters['tr'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TR))
-            parameters['te'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TE))
-            parameters['ti'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TI))
-            parameters['fa'] = torch.deg2rad(torch.as_tensor(header.sequenceParameters.flipAngle_deg))
-            parameters['echo_spacing'] = ms_to_s(torch.as_tensor(header.sequenceParameters.echo_spacing))
+            if header.sequenceParameters.TR:
+                parameters['tr'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TR))
+            if header.sequenceParameters.TE:
+                parameters['te'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TE))
+            if header.sequenceParameters.TI:
+                parameters['ti'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TI))
+            if header.sequenceParameters.flipAngle_deg:
+                parameters['fa'] = torch.deg2rad(torch.as_tensor(header.sequenceParameters.flipAngle_deg))
+            if header.sequenceParameters.echo_spacing:
+                parameters['echo_spacing'] = ms_to_s(torch.as_tensor(header.sequenceParameters.echo_spacing))
 
             if header.sequenceParameters.sequence_type is not None:
                 parameters['seq_type'] = header.sequenceParameters.sequence_type
