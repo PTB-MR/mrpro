@@ -20,6 +20,10 @@ from ismrmrd import xsd
 from mrpro.data import KHeader
 
 
+def test_kheader_from_mandatory_ismrmrd_header(random_mandatory_ismrmrd_header, random_acq_info):
+    KHeader.from_ismrmrd(random_mandatory_ismrmrd_header, random_acq_info)
+
+
 def test_kheader_fail_from_mandatory_ismrmrd_header(random_mandatory_ismrmrd_header, random_acq_info):
     with pytest.raises(ValueError, match='Could not create Header'):
         _ = KHeader.from_ismrmrd(random_mandatory_ismrmrd_header, random_acq_info)

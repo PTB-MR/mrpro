@@ -44,8 +44,8 @@ class KHeader(MoveDataMixin):
     """MR raw data header.
 
     All information that is not covered by the dataclass is stored in
-    the misc dict Our code shall not rely on this information, and it is
-    not guaranteed to be present Also, the information in the misc dict
+    the misc dict. Our code shall not rely on this information, and it is
+    not guaranteed to be present. Also, the information in the misc dict
     is not guaranteed to be correct or tested.
     """
 
@@ -56,10 +56,10 @@ class KHeader(MoveDataMixin):
     recon_fov: SpatialDimension[float]
     encoding_matrix: SpatialDimension[int]
     encoding_fov: SpatialDimension[float]
-    n_coils: int
     acq_info: AcqInfo
-    datetime: datetime.datetime
     h1_freq: float
+    n_coils: int | None = None
+    datetime: datetime.datetime | None = None
     te: torch.Tensor | None = None
     ti: torch.Tensor | None = None
     fa: torch.Tensor | None = None
