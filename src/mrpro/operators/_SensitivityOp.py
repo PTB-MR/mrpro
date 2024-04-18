@@ -37,32 +37,32 @@ class SensitivityOp(LinearOperator):
         if isinstance(csm, CsmData):
             # only tensors can be used as buffers
             csm = csm.data
-        self.register_buffer('csm', csm)
+        self.register_buffer('csm_tensor', csm)
 
-    def forward(self, img_data: torch.Tensor) -> tuple[torch.Tensor,]:
+    def forward(self, img: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the forward operator, thus expand the coils dimension.
 
         Parameters
         ----------
-        img_data
+        img
             image data tensor with dimensions (other 1 z y x).
 
         Returns
         -------
             image data tensor with dimensions (other coils z y x).
         """
-        return (self.csm * img_data,)
+        return (self.csm_tensor * img,)
 
-    def adjoint(self, img_data: torch.Tensor) -> tuple[torch.Tensor,]:
+    def adjoint(self, img: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the adjoint operator, thus reduce the coils dimension.
 
         Parameters
         ----------
-        img_data
+        img
             image data tensor with dimensions (other coils z y x).
 
         Returns
         -------
             image data tensor with dimensions (other 1 z y x).
         """
-        return ((self.csm.conj() * img_data).sum(-4, keepdim=True),)
+        return ((self.csm_tensor.conj() * img).sum(-4, keepdim=True),)
