@@ -13,7 +13,7 @@ def iterative_walsh(
 
     This is for a single set of coil images. The input should be a tensor with dimensions
     (coils, z, y, x). The output will have the same dimensions.
-    Either apply this function individually to each sets of coil images,
+    Either apply this function individually to each set of coil images,
     or see CsmData.from_idata_walsh which performs this operation on a whole dataset.
 
     This function is inspired by https://github.com/ismrmrd/ismrmrd-python-tools.
