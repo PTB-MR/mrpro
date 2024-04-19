@@ -151,5 +151,8 @@ locale = "en-us"
 [tool.typos.default.extend-words]
 Reson = "Reson" # required for Proc. Intl. Soc. Mag. Reson. Med.
 
+[tool.typos.files]
+extend-exclude = ["examples/*.ipynb"] # don't check notebooks because py files have already been checked
+
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
