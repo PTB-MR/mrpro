@@ -14,4 +14,3 @@ from mrpro.operators._PhaseOp import PhaseOp
 from mrpro.operators._SensitivityOp import SensitivityOp
 from mrpro.operators._SignalModel import SignalModel
 from mrpro.operators._ZeroPadOp import ZeroPadOp
-
