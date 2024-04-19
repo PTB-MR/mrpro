@@ -362,6 +362,7 @@ document.write(`
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Reconstruction of 2D golden angle radial data from pulseq sequence</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notebook_t1_mapping_with_grad_acq.html">T1 mapping from a continuous golden radial acquisition</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebook_direct_reconstruction.html">Direct Reconstruction of 2D golden angle radial data</a></li>
 </ul>
 </div>
 </nav></div>
@@ -7932,7 +7933,7 @@ a.anchor-link {
 </style>
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
-<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=b2f597ef">
+<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=ad7c25a7">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7954,7 +7955,10 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="Reconstruction-of-2D-golden-angle-radial-data-from-pulseq-sequence">Reconstruction of 2D golden angle radial data from pulseq sequence<a class="anchor-link" href="#Reconstruction-of-2D-golden-angle-radial-data-from-pulseq-sequence">¶</a></h1>
+<h1 id="Reconstruction-of-2D-golden-angle-radial-data-from-pulseq-sequence">Reconstruction of 2D golden angle radial data from pulseq sequence<a class="anchor-link" href="#Reconstruction-of-2D-golden-angle-radial-data-from-pulseq-sequence">¶</a></h1><p>Here we manually do all steps of a direction reconstruction, i.e.
+CSM estimation, density compensation, adjoint fourier transform, and coil combination.
+See also the example <code>pulseq_2d_radial_golden_angle_direct_reconstruction.py</code>
+for a more high-level example using the <code>DirectReconstruction</code> class.</p>
 </div>
 </div>
 </div>
