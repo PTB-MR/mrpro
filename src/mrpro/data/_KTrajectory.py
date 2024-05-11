@@ -17,16 +17,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Self
+from typing import overload
 
 import numpy as np
 import torch
 
+from mrpro.data._MoveDataMixin import MoveDataMixin
 from mrpro.data.enums import TrajType
 from mrpro.utils import remove_repeat
 
 
 @dataclass(slots=True, frozen=True)
-class KTrajectory:
+class KTrajectory(MoveDataMixin):
     """K-space trajectory.
 
     Order of directions is always kz, ky, kx
@@ -182,53 +185,48 @@ class KTrajectory:
         shape = self.broadcasted_shape
         return torch.stack([traj.expand(*shape) for traj in (self.kz, self.ky, self.kx)], dim=stack_dim)
 
-    def to(self, *args, **kwargs) -> KTrajectory:
+    @overload
+    def to(
+        self, dtype: torch.dtype, non_blocking: bool = False, *, memory_format: torch.memory_format | None = None
+    ) -> Self: ...
+
+    @overload
+    def to(
+        self,
+        device: str | torch.device | int | None = None,
+        dtype: torch.dtype | None = None,
+        non_blocking: bool = False,
+        *,
+        memory_format: torch.memory_format | None = None,
+    ) -> Self: ...
+
+    @overload
+    def to(
+        self, other: torch.Tensor, non_blocking: bool = False, *, memory_format: torch.memory_format | None = None
+    ) -> Self: ...
+
+    def to(self, *args, **kwargs) -> Self:
         """Perform dtype and/or device conversion of trajectory.
+
+        This will always return a new KTrajectory object.
 
         A torch.dtype and torch.device are inferred from the arguments
         of self.to(*args, **kwargs). Please have a look at the
         documentation of torch.Tensor.to() for more details.
         """
-        return KTrajectory(
+        kwargs['copy'] = True
+        return type(self)(
             kz=self.kz.to(*args, **kwargs),
             ky=self.ky.to(*args, **kwargs),
             kx=self.kx.to(*args, **kwargs),
         )
 
-    def cuda(
-        self,
-        device: torch.device | None = None,
-        non_blocking: bool = False,
-        memory_format: torch.memory_format = torch.preserve_format,
-    ) -> KTrajectory:
-        """Create copy of trajectory in CUDA memory.
-
-        Parameters
-        ----------
-        device
-            The destination GPU device. Defaults to the current CUDA device.
-        non_blocking
-            If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
-            Otherwise, the argument has no effect.
-        memory_format
-            The desired memory format of returned Tensor.
-        """
-        return KTrajectory(
-            kz=self.kz.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),  # type: ignore [call-arg]
-            ky=self.ky.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),  # type: ignore [call-arg]
-            kx=self.kx.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),  # type: ignore [call-arg]
-        )
-
-    def cpu(self, memory_format: torch.memory_format = torch.preserve_format) -> KTrajectory:
-        """Create copy of trajectory in CPU memory.
-
-        Parameters
-        ----------
-        memory_format
-            The desired memory format of returned Tensor.
-        """
-        return KTrajectory(
-            kz=self.kz.cpu(memory_format=memory_format),  # type: ignore [call-arg]
-            ky=self.ky.cpu(memory_format=memory_format),  # type: ignore [call-arg]
-            kx=self.kx.cpu(memory_format=memory_format),  # type: ignore [call-arg]
-        )
+    @property
+    def device(self) -> torch.device:
+        """Return the device of the trajectory."""
+        device_x = self.kx.device
+        device_y = self.ky.device
+        device_z = self.kz.device
+        if device_x != device_y or device_x != device_z:
+            raise ValueError('Trajectory is on different devices.')
+        return device_x

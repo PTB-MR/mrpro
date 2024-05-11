@@ -18,8 +18,13 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
+from collections.abc import Sequence
+from copy import deepcopy
 from pathlib import Path
+from typing import Any
 from typing import Protocol
+from typing import Self
+from typing import overload
 
 import h5py
 import ismrmrd
@@ -35,6 +40,7 @@ from mrpro.data._kdata._KDataSplitMixin import KDataSplitMixin
 from mrpro.data._KHeader import KHeader
 from mrpro.data._KTrajectory import KTrajectory
 from mrpro.data._KTrajectoryRawShape import KTrajectoryRawShape
+from mrpro.data._MoveDataMixin import MoveDataMixin
 from mrpro.data.enums import AcqFlags
 from mrpro.data.traj_calculators import KTrajectoryCalculator
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
@@ -56,7 +62,7 @@ DEFAULT_IGNORE_FLAGS = (
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
-class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveOsMixin):
+class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveOsMixin, MoveDataMixin):
     """MR raw data / k-space data class."""
 
     header: KHeader
@@ -258,97 +264,80 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
 
         return cls(kheader, kdata, ktraj)
 
+    @overload
+    def to(
+        self, dtype: torch.dtype, non_blocking: bool = False, *, memory_format: torch.memory_format | None = None
+    ) -> Self: ...
+
+    @overload
     def to(
         self,
-        device: torch.device | str | None = None,
-        dtype: None | torch.dtype = None,
+        device: str | torch.device | int | None = None,
+        dtype: torch.dtype | None = None,
         non_blocking: bool = False,
-        copy: bool = False,
-        memory_format: torch.memory_format = torch.preserve_format,
-    ) -> KData:
+        *,
+        memory_format: torch.memory_format | None = None,
+    ) -> Self: ...
+
+    @overload
+    def to(
+        self, other: torch.Tensor, non_blocking: bool = False, *, memory_format: torch.memory_format | None = None
+    ) -> Self: ...
+
+    def to(self, *args, **kwargs) -> Self:  # noqa: D417
         """Perform dtype and/or device conversion of trajectory and data.
+
+        This will always return a copy.
 
         Parameters
         ----------
         device
             The destination device. Defaults to the current device.
         dtype
-            Dtype of the k-space data, can only be torch.complex64 or torch.complex128.
-            The dtype of the trajectory (torch.float32 or torch.float64) is then inferred from this.
-        non_blocking
-            If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
-            Otherwise, the argument has no effect.
-        copy
-            If True a new Tensor is created even when the Tensor already matches the desired conversion.
-        memory_format
-            The desired memory format of returned Tensor.
-        """
-        # Only complex64 and complex128 supported for kdata.
-        # This will then lead to a trajectory of float32 and float64, respectively.
-        if dtype is None:
-            dtype_traj = None
-        elif dtype == torch.complex64:
-            dtype_traj = torch.float32
-        elif dtype == torch.complex128:
-            dtype_traj = torch.float64
-        else:
-            raise ValueError(f'dtype {dtype} not supported. Only torch.complex64 and torch.complex128 is supported.')
-
-        return KData(
-            header=self.header,
-            data=self.data.to(
-                device=device,
-                dtype=dtype,
-                non_blocking=non_blocking,
-                copy=copy,
-                memory_format=memory_format,
-            ),
-            traj=self.traj.to(
-                device=device,
-                dtype=dtype_traj,
-                non_blocking=non_blocking,
-                copy=copy,
-                memory_format=memory_format,
-            ),
-        )
-
-    def cuda(
-        self,
-        device: torch.device | None = None,
-        non_blocking: bool = False,
-        memory_format: torch.memory_format = torch.preserve_format,
-    ) -> KData:
-        """Create copy of object with trajectory and data in CUDA memory.
-
-        Parameters
-        ----------
-        device
-            The destination GPU device. Defaults to the current CUDA device.
+            Data type.
+            The trajectory dtype will always be converted to real,
+            the data dtype will always be converted to complex
         non_blocking
             If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
             Otherwise, the argument has no effect.
         memory_format
             The desired memory format of returned Tensor.
         """
-        return KData(
-            header=self.header,
-            data=self.data.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),  # type: ignore [call-arg]
-            traj=self.traj.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),
-        )
+        _args: Sequence[Any] = ()
+        _kwargs: dict[str, Any] = {}
+        dtype = self.data.dtype
+        device = self.device
+        match args, kwargs:
+            case ((dtype, *_args), {**_kwargs}) if isinstance(dtype, torch.dtype):
+                # overload 1
+                ...
+            case (_args, {'dtype': dtype, **_kwargs}) if isinstance(dtype, torch.dtype):
+                # dtype as kwarg
+                ...
+            case ((other, *_args), {**_kwargs}) | (_args, {'other': other, **_kwargs}) if isinstance(
+                other, torch.Tensor
+            ):
+                # overload 3: use dtype and device from other
+                dtype = other.dtype
+                device = other.device
+        match args, kwargs:
+            case ((device, dtype, *_args), {**_kwargs}) if isinstance(device, torch.device | str) and isinstance(
+                dtype, torch.dtype
+            ):
+                # overload 2 with device and dtype
+                ...
+            case ((device, *_args), {**_kwargs}) if isinstance(device, torch.device | str):
+                # overload 2, only device
+                ...
+            case (_args, {'device': device, **_kwargs}) if isinstance(device, torch.device | str):
+                # device as kwarg
+                ...
 
-    def cpu(self, memory_format: torch.memory_format = torch.preserve_format) -> KData:
-        """Create copy of object in CPU memory.
-
-        Parameters
-        ----------
-        memory_format
-            The desired memory format of returned Tensor.
-        """
-        return KData(
-            header=self.header,
-            data=self.data.cpu(memory_format=memory_format),  # type: ignore [call-arg]
-            traj=self.traj.cpu(memory_format=memory_format),
-        )
+        # The trajectory dtype will always be real, the data always be complex.
+        data = self.data.to(*_args, **{**_kwargs, 'dtype': dtype.to_complex(), 'device': device, 'copy': True})
+        traj = self.traj.to(*_args, **{**_kwargs, 'dtype': dtype.to_real(), 'device': device})
+        header = deepcopy(self.header)  # TODO: use header.to
+        return type(self)(header=header, data=data, traj=traj)
 
 
 class _KDataProtocol(Protocol):
