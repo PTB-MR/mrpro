@@ -66,7 +66,6 @@ def lbfgs(
     -------
         list of optimized parameters
     """
-
     parameters = [p.detach().clone().requires_grad_(True) for p in initial_parameters]
     optim = LBFGS(
         params=parameters,
