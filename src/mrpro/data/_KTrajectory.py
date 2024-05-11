@@ -214,9 +214,9 @@ class KTrajectory:
             The desired memory format of returned Tensor.
         """
         return KTrajectory(
-            kz=self.kz.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),  # type: ignore [call-arg]
-            ky=self.ky.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),  # type: ignore [call-arg]
-            kx=self.kx.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),  # type: ignore [call-arg]
+            kz=self.kz.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),
+            ky=self.ky.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),
+            kx=self.kx.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),
         )
 
     def cpu(self, memory_format: torch.memory_format = torch.preserve_format) -> KTrajectory:
@@ -228,7 +228,7 @@ class KTrajectory:
             The desired memory format of returned Tensor.
         """
         return KTrajectory(
-            kz=self.kz.cpu(memory_format=memory_format),  # type: ignore [call-arg]
-            ky=self.ky.cpu(memory_format=memory_format),  # type: ignore [call-arg]
-            kx=self.kx.cpu(memory_format=memory_format),  # type: ignore [call-arg]
+            kz=self.kz.cpu(memory_format=memory_format),
+            ky=self.ky.cpu(memory_format=memory_format),
+            kx=self.kx.cpu(memory_format=memory_format),
         )
