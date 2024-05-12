@@ -47,7 +47,7 @@ class KTrajectoryRawShape:
     repeat_detection_tolerance: None | float = 1e-3
     """tolerance for repeat detection, by default 1e-3, None to disable."""
 
-    def reshape(
+    def sort_and_reshape(
         self,
         sort_idx: np.ndarray,
         n_k2: int,
