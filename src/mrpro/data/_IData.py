@@ -17,6 +17,8 @@
 from __future__ import annotations
 
 import dataclasses
+from collections.abc import Generator
+from collections.abc import Sequence
 from pathlib import Path
 
 import numpy as np
@@ -63,6 +65,25 @@ class IData(Data):
 
     header: IHeader
 
+    def rss(self, keepdim: bool = False) -> torch.Tensor:
+        """Root-sum-of-squares over coils image data.
+
+        Parameters
+        ----------
+        keepdim
+            if True, the output tensor has the same number of dimensions as the data tensor,
+               and the coil dimension is kept as a singleton dimension.
+            If False, the coil dimension is removed.
+
+        Returns
+        -------
+            image data tensor with shape either
+            (..., 1, z, y, x) if keepdim is True.
+            or (..., z, y, x), if  keepdim if False.
+        """
+        coildim = -4
+        return self.data.abs().square().sum(dim=coildim, keepdim=keepdim).sqrt()
+
     @classmethod
     def from_tensor_and_kheader(cls, data: torch.Tensor, kheader: KHeader) -> IData:
         """Create IData object from a tensor and a KHeader object.
@@ -94,25 +115,20 @@ class IData(Data):
         return cls(data=idata, header=header)
 
     @classmethod
-    def from_dicom_folder(cls, foldername: str | Path, suffix: str | None = 'dcm') -> IData:
-        """Read all DICOM files from a folder and return IData object.
+    def from_dicom_files(cls, filenames: Sequence[str] | Sequence[Path] | Generator[Path, None, None]) -> IData:
+        """Read multiple DICOM files and return IData object.
 
         Parameters
         ----------
-        foldername
-            path to folder with DICOM files.
-        suffix
-            file extension (without period/full stop) to identify the DICOM files.
-            If None, then all files in the folder are read in.
+        filenames
+            List of DICOM filenames.
         """
-        # Get files
-        file_paths = list(Path(foldername).glob('*')) if suffix is None else list(Path(foldername).glob('*.' + suffix))
-
-        if len(file_paths) == 0:
-            raise ValueError(f'No dicom files with suffix {suffix} found in {foldername}')
-
         # Read in all files
-        dataset_list = [dcmread(filename) for filename in file_paths]
+        dataset_list = [dcmread(filename) for filename in filenames]
+
+        # We do the check here to allow for filenames to be a Generator
+        if not dataset_list:
+            raise ValueError('No dicom files specified')
 
         # Ensure they all have the same orientation (same (0019, 1015) SlicePosition_PCS tag)
         def get_unique_slice_positions(slice_pos_tag: TagType = 0x00191015):
@@ -140,3 +156,23 @@ class IData(Data):
 
         header = IHeader.from_dicom_list(dataset_list)
         return cls(data=idata, header=header)
+
+    @classmethod
+    def from_dicom_folder(cls, foldername: str | Path, suffix: str | None = 'dcm') -> IData:
+        """Read all DICOM files from a folder and return IData object.
+
+        Parameters
+        ----------
+        foldername
+            path to folder with DICOM files.
+        suffix
+            file extension (without period/full stop) to identify the DICOM files.
+            If None, then all files in the folder are read in.
+        """
+        # Get files
+        file_paths = list(Path(foldername).glob('*')) if suffix is None else list(Path(foldername).glob('*.' + suffix))
+
+        if len(file_paths) == 0:
+            raise ValueError(f'No dicom files with suffix {suffix} found in {foldername}')
+
+        return IData.from_dicom_files(filenames=file_paths)

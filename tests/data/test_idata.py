@@ -12,6 +12,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 import torch
@@ -31,6 +33,38 @@ def test_IData_from_dcm_folder(dcm_multi_echo_times):
     idata = IData.from_dicom_folder(dcm_multi_echo_times[0].filename.parent)
     # Verify correct echo times
     original_echo_times = [ds.te for ds in dcm_multi_echo_times]
+    assert np.all(np.sort(original_echo_times) == np.sort(idata.header.te))
+    # Verify all images were read in
+    assert idata.data.shape[0] == len(original_echo_times)
+
+
+def test_IData_from_dcm_folder_via_path(dcm_multi_echo_times):
+    """IData from multiple dcm files in folder."""
+    idata = IData.from_dicom_files(Path(dcm_multi_echo_times[0].filename.parent).glob('*.dcm'))
+    # Verify correct echo times
+    original_echo_times = [ds.te for ds in dcm_multi_echo_times]
+    assert np.all(np.sort(original_echo_times) == np.sort(idata.header.te))
+    # Verify all images were read in
+    assert idata.data.shape[0] == len(original_echo_times)
+
+
+def test_IData_from_wrong_path():
+    """Error for non-existing/empty folder/wrong suffix."""
+    with pytest.raises(ValueError, match='No dicom files with suffix'):
+        _ = IData.from_dicom_folder('non/existing/path')
+
+
+def test_IData_from_empty_dcm_file_list():
+    """Error for empty file list."""
+    with pytest.raises(ValueError, match='No dicom files specified'):
+        _ = IData.from_dicom_files([])
+
+
+def test_IData_from_dcm_files(dcm_multi_echo_times_multi_folders):
+    """IData from multiple dcm files in different folders."""
+    idata = IData.from_dicom_files([dcm_file.filename for dcm_file in dcm_multi_echo_times_multi_folders])
+    # Verify correct echo times
+    original_echo_times = [ds.te for ds in dcm_multi_echo_times_multi_folders]
     assert np.all(np.sort(original_echo_times) == np.sort(idata.header.te))
     # Verify all images were read in
     assert idata.data.shape[0] == len(original_echo_times)
@@ -63,3 +97,11 @@ def test_IData_cpu(random_kheader, random_test_data):
     idata = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
     idata_cpu = idata.cuda().cpu()
     assert idata_cpu.data.is_cpu
+
+
+def test_IData_rss(random_kheader, random_test_data):
+    """Test RSS coil combination."""
+    expected = random_test_data.abs().square().sum(dim=-4, keepdim=True).sqrt()
+    idata = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
+    torch.testing.assert_close(idata.rss(keepdim=True), expected)
+    torch.testing.assert_close(idata.rss(keepdim=False), expected.squeeze(-4))

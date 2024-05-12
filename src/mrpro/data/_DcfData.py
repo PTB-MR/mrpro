@@ -20,6 +20,7 @@ import dataclasses
 from concurrent.futures import ProcessPoolExecutor
 from functools import reduce
 from itertools import product
+from typing import TYPE_CHECKING
 
 import numpy as np
 import torch
@@ -29,6 +30,9 @@ from scipy.spatial import Voronoi
 
 from mrpro.data._KTrajectory import KTrajectory
 from mrpro.utils import smap
+
+if TYPE_CHECKING:
+    from mrpro.operators._DensityCompensationOp import DensityCompensationOp
 
 UNIQUE_ROUNDING_DECIMALS = 15
 
@@ -42,6 +46,7 @@ class DcfData:
     """Density compensation data (DcfData) class."""
 
     data: torch.Tensor
+    """Density compensation values. Shape (... other, k2, k1, k0)"""
 
     @staticmethod
     def _dcf_1d(traj: torch.Tensor) -> torch.Tensor:
@@ -193,3 +198,9 @@ class DcfData:
             dcf = torch.ones(*traj.broadcasted_shape[-3:], 1, 1, 1, device=traj.kx.device)
 
         return cls(data=dcf)
+
+    def as_operator(self) -> DensityCompensationOp:
+        """Create a density compensation operator using a copy of the DCF."""
+        from mrpro.operators._DensityCompensationOp import DensityCompensationOp
+
+        return DensityCompensationOp(self.data.clone())
