@@ -126,10 +126,11 @@ def test_KData_raise_wrong_trajectory_shape(ismrmrd_cart):
 
 
 def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
-    """Multiple repetitions with different number of phase encoding lines is
-    not supported."""
-    with pytest.raises(ValueError, match=r'Number of \((k2 k1\)) points in '):
-        KData.from_file(ismrmrd_cart_invalid_reps.filename, DummyTrajectory())
+    """Multiple repetitions with different number of phase encoding lines."""
+    with pytest.warns(UserWarning, match=r'different number'):
+        kdata = KData.from_file(ismrmrd_cart_invalid_reps.filename, DummyTrajectory())
+    assert kdata.data.shape[-2] == 1, 'k1 should be 1'
+    assert kdata.data.shape[-3] == 1, 'k2 should be 1'
 
 
 def test_KData_kspace(ismrmrd_cart):
