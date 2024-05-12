@@ -17,7 +17,7 @@ mrpro.data.KTrajectoryRawShape
    .. autosummary::
    
       ~KTrajectoryRawShape.__init__
-      ~KTrajectoryRawShape.reshape
+      ~KTrajectoryRawShape.sort_and_reshape
    
    
 
