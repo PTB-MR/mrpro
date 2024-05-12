@@ -221,3 +221,7 @@ class EndomorphOperator(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, 
     def __matmul__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]:
         """Operator composition."""
         return cast(Operator[*Tin, Tout], super().__matmul__(other))
+
+    def __rmatmul__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]:
+        """Operator composition."""
+        return other.__matmul__(cast(Operator[*Tin, tuple[*Tin]], self))
