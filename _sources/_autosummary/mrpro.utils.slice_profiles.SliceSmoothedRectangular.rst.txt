@@ -1,0 +1,81 @@
+mrpro.utils.slice\_profiles.SliceSmoothedRectangular
+====================================================
+
+.. currentmodule:: mrpro.utils.slice_profiles
+
+.. autoclass:: SliceSmoothedRectangular
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SliceSmoothedRectangular.__init__
+      ~SliceSmoothedRectangular.add_module
+      ~SliceSmoothedRectangular.apply
+      ~SliceSmoothedRectangular.bfloat16
+      ~SliceSmoothedRectangular.buffers
+      ~SliceSmoothedRectangular.children
+      ~SliceSmoothedRectangular.compile
+      ~SliceSmoothedRectangular.cpu
+      ~SliceSmoothedRectangular.cuda
+      ~SliceSmoothedRectangular.double
+      ~SliceSmoothedRectangular.eval
+      ~SliceSmoothedRectangular.extra_repr
+      ~SliceSmoothedRectangular.float
+      ~SliceSmoothedRectangular.forward
+      ~SliceSmoothedRectangular.get_buffer
+      ~SliceSmoothedRectangular.get_extra_state
+      ~SliceSmoothedRectangular.get_parameter
+      ~SliceSmoothedRectangular.get_submodule
+      ~SliceSmoothedRectangular.half
+      ~SliceSmoothedRectangular.ipu
+      ~SliceSmoothedRectangular.load_state_dict
+      ~SliceSmoothedRectangular.modules
+      ~SliceSmoothedRectangular.named_buffers
+      ~SliceSmoothedRectangular.named_children
+      ~SliceSmoothedRectangular.named_modules
+      ~SliceSmoothedRectangular.named_parameters
+      ~SliceSmoothedRectangular.parameters
+      ~SliceSmoothedRectangular.random_sample
+      ~SliceSmoothedRectangular.register_backward_hook
+      ~SliceSmoothedRectangular.register_buffer
+      ~SliceSmoothedRectangular.register_forward_hook
+      ~SliceSmoothedRectangular.register_forward_pre_hook
+      ~SliceSmoothedRectangular.register_full_backward_hook
+      ~SliceSmoothedRectangular.register_full_backward_pre_hook
+      ~SliceSmoothedRectangular.register_load_state_dict_post_hook
+      ~SliceSmoothedRectangular.register_module
+      ~SliceSmoothedRectangular.register_parameter
+      ~SliceSmoothedRectangular.register_state_dict_pre_hook
+      ~SliceSmoothedRectangular.requires_grad_
+      ~SliceSmoothedRectangular.set_extra_state
+      ~SliceSmoothedRectangular.share_memory
+      ~SliceSmoothedRectangular.state_dict
+      ~SliceSmoothedRectangular.to
+      ~SliceSmoothedRectangular.to_empty
+      ~SliceSmoothedRectangular.train
+      ~SliceSmoothedRectangular.type
+      ~SliceSmoothedRectangular.xpu
+      ~SliceSmoothedRectangular.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SliceSmoothedRectangular.T_destination
+      ~SliceSmoothedRectangular.call_super_init
+      ~SliceSmoothedRectangular.dump_patches
+      ~SliceSmoothedRectangular.training
+   
+   

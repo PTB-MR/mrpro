@@ -1,0 +1,81 @@
+mrpro.utils.slice\_profiles.SliceInterpolate
+============================================
+
+.. currentmodule:: mrpro.utils.slice_profiles
+
+.. autoclass:: SliceInterpolate
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SliceInterpolate.__init__
+      ~SliceInterpolate.add_module
+      ~SliceInterpolate.apply
+      ~SliceInterpolate.bfloat16
+      ~SliceInterpolate.buffers
+      ~SliceInterpolate.children
+      ~SliceInterpolate.compile
+      ~SliceInterpolate.cpu
+      ~SliceInterpolate.cuda
+      ~SliceInterpolate.double
+      ~SliceInterpolate.eval
+      ~SliceInterpolate.extra_repr
+      ~SliceInterpolate.float
+      ~SliceInterpolate.forward
+      ~SliceInterpolate.get_buffer
+      ~SliceInterpolate.get_extra_state
+      ~SliceInterpolate.get_parameter
+      ~SliceInterpolate.get_submodule
+      ~SliceInterpolate.half
+      ~SliceInterpolate.ipu
+      ~SliceInterpolate.load_state_dict
+      ~SliceInterpolate.modules
+      ~SliceInterpolate.named_buffers
+      ~SliceInterpolate.named_children
+      ~SliceInterpolate.named_modules
+      ~SliceInterpolate.named_parameters
+      ~SliceInterpolate.parameters
+      ~SliceInterpolate.random_sample
+      ~SliceInterpolate.register_backward_hook
+      ~SliceInterpolate.register_buffer
+      ~SliceInterpolate.register_forward_hook
+      ~SliceInterpolate.register_forward_pre_hook
+      ~SliceInterpolate.register_full_backward_hook
+      ~SliceInterpolate.register_full_backward_pre_hook
+      ~SliceInterpolate.register_load_state_dict_post_hook
+      ~SliceInterpolate.register_module
+      ~SliceInterpolate.register_parameter
+      ~SliceInterpolate.register_state_dict_pre_hook
+      ~SliceInterpolate.requires_grad_
+      ~SliceInterpolate.set_extra_state
+      ~SliceInterpolate.share_memory
+      ~SliceInterpolate.state_dict
+      ~SliceInterpolate.to
+      ~SliceInterpolate.to_empty
+      ~SliceInterpolate.train
+      ~SliceInterpolate.type
+      ~SliceInterpolate.xpu
+      ~SliceInterpolate.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SliceInterpolate.T_destination
+      ~SliceInterpolate.call_super_init
+      ~SliceInterpolate.dump_patches
+      ~SliceInterpolate.training
+   
+   

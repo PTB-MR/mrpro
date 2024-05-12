@@ -48,5 +48,6 @@
    :recursive:
 
    mrpro.utils.filters
+   mrpro.utils.slice_profiles
    mrpro.utils.sliding_window
 

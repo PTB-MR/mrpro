@@ -1,0 +1,6 @@
+mrpro.utils.slice\_profiles.log
+===============================
+
+.. currentmodule:: mrpro.utils.slice_profiles
+
+.. autofunction:: log
