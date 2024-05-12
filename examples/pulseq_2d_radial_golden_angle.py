@@ -1,5 +1,9 @@
 # %% [markdown]
 # # Reconstruction of 2D golden angle radial data from pulseq sequence
+# Here we manually do all steps of a direction reconstruction, i.e.
+# CSM estimation, density compensation, adjoint fourier transform, and coil combination.
+# See also the example `pulseq_2d_radial_golden_angle_direct_reconstruction.py`
+# for a more high-level example using the `DirectReconstruction` class.
 
 # %%
 # Imports

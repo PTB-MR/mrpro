@@ -29,9 +29,8 @@ classifiers = [
 ]
 dependencies = [
     "numpy>=1.23,<2.0",
-    "torch>=2.2,<3.0",
-    "ismrmrd",
-    "xsdata>=22.2,<23",
+    "torch>=2.3,<3.0",
+    "ismrmrd>=1.14.1,<2.0",
     "einops",
     "pydicom",
     "pypulseq@git+https://github.com/imr-framework/pypulseq",
@@ -150,6 +149,9 @@ locale = "en-us"
 
 [tool.typos.default.extend-words]
 Reson = "Reson" # required for Proc. Intl. Soc. Mag. Reson. Med.
+
+[tool.typos.files]
+extend-exclude = ["examples/*.ipynb"] # don't check notebooks because py files have already been checked
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
