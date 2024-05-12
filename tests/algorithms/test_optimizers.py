@@ -39,7 +39,7 @@ def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1, optimizer_kwargs
 
     # save to compare with later as optimization should not change the initial points
     params_init_before = [i.detach().clone() for i in params_init]
-    params_init_grad_before = [i.grad.detach().clone() for i in params_init]
+    params_init_grad_before = [i.grad.detach().clone() if i.grad is not None else None for i in params_init]
 
     if enforce_bounds_on_x1:
         # the analytical solution for x_1 will be a, thus we can limit it into [0,2a]

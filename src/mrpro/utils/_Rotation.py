@@ -46,6 +46,8 @@ import re
 import warnings
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
+from typing import Literal
+from typing import overload
 
 import numpy as np
 import torch
@@ -263,7 +265,7 @@ class Rotation(torch.nn.Module):
     - arbitrary number of batching dimensions
     """
 
-    def __init__(self, quaternions: torch.Tensor, normalize: bool = True, copy: bool = True):
+    def __init__(self, quaternions: torch.Tensor | _NestedSequence[float], normalize: bool = True, copy: bool = True):
         """Initialize a new Rotation.
 
         Instead of calling this method, also consider the different
@@ -280,33 +282,32 @@ class Rotation(torch.nn.Module):
             the quaternions Parameter of this instance will be a view if the quaternions passed in.
         """
         super().__init__()
-        if not isinstance(quaternions, torch.Tensor):
-            quaternions = torch.as_tensor(quaternions)  # type: ignore[unreachable]
-        if torch.is_complex(quaternions):
+        quaternions_ = torch.as_tensor(quaternions)
+        if torch.is_complex(quaternions_):
             raise ValueError('quaternions should be real numbers')
-        if not torch.is_floating_point(quaternions):
+        if not torch.is_floating_point(quaternions_):
             # integer or boolean dtypes
-            quaternions = quaternions.float()
-        if quaternions.shape[-1] != 4:
-            raise ValueError('Expected `quaternions` to have shape (..., 4), ' f'got {quaternions.shape}.')
+            quaternions_ = quaternions_.float()
+        if quaternions_.shape[-1] != 4:
+            raise ValueError('Expected `quaternions` to have shape (..., 4), ' f'got {quaternions_.shape}.')
 
         # If a single quaternion is given, convert it to a 2D 1 x 4 matrix but
         # set self._single to True so that we can return appropriate objects
         # in the `to_...` methods
-        if quaternions.shape == (4,):
-            quaternions = quaternions[None, :]
+        if quaternions_.shape == (4,):
+            quaternions_ = quaternions_[None, :]
             self._single = True
         else:
             self._single = False
 
         if normalize:
-            norms = torch.linalg.vector_norm(quaternions, dim=-1, keepdim=True)
+            norms = torch.linalg.vector_norm(quaternions_, dim=-1, keepdim=True)
             if torch.any(torch.isclose(norms.float(), torch.tensor(0.0))):
                 raise ValueError('Found zero norm quaternion in `quaternions`.')
-            quaternions = quaternions / norms
+            quaternions_ = quaternions_ / norms
         elif copy:
-            quaternions = quaternions.clone()
-        self._quaternions = torch.nn.Parameter(quaternions, quaternions.requires_grad)
+            quaternions_ = quaternions_.clone()
+        self._quaternions = torch.nn.Parameter(quaternions_, quaternions_.requires_grad)
 
     @property
     def single(self) -> bool:
@@ -314,7 +315,7 @@ class Rotation(torch.nn.Module):
         return self._single
 
     @classmethod
-    def from_quat(cls, quaternions: torch.Tensor | Sequence[float]) -> Rotation:
+    def from_quat(cls, quaternions: torch.Tensor | _NestedSequence[float]) -> Rotation:
         """Initialize from quaternions.
 
         3D rotations can be represented using unit-norm quaternions [1]_.
@@ -341,7 +342,7 @@ class Rotation(torch.nn.Module):
         return cls(quaternions, normalize=True)
 
     @classmethod
-    def from_matrix(cls, matrix: torch.Tensor) -> Rotation:
+    def from_matrix(cls, matrix: torch.Tensor | _NestedSequence[float]) -> Rotation:
         """Initialize from rotation matrix.
 
         Rotations in 3 dimensions can be represented with 3 x 3 proper
@@ -367,8 +368,7 @@ class Rotation(torch.nn.Module):
                440-442, 2008.
         """
         if not isinstance(matrix, torch.Tensor):
-            # this should not happen if following type hints, but we are defensive
-            matrix = torch.as_tensor(matrix)  # type: ignore[unreachable]
+            matrix = torch.as_tensor(matrix)
         if matrix.shape[-2:] != (3, 3):
             raise ValueError(f'Expected `matrix` to have shape (..., 3, 3), got {matrix.shape}')
         if torch.is_complex(matrix):
@@ -381,7 +381,7 @@ class Rotation(torch.nn.Module):
         return cls(quaternions, normalize=True, copy=False)
 
     @classmethod
-    def from_rotvec(cls, rotvec: torch.Tensor | Sequence[float], degrees: bool = False) -> Rotation:
+    def from_rotvec(cls, rotvec: torch.Tensor | _NestedSequence[float], degrees: bool = False) -> Rotation:
         if not isinstance(rotvec, torch.Tensor):
             rotvec = torch.as_tensor(rotvec)
         if torch.is_complex(rotvec):
@@ -401,7 +401,9 @@ class Rotation(torch.nn.Module):
         return cls(quaternions, normalize=False, copy=False)
 
     @classmethod
-    def from_euler(cls, seq: str, angles: torch.Tensor | Sequence[float], degrees: bool = False) -> Rotation:
+    def from_euler(
+        cls, seq: str, angles: torch.Tensor | _NestedSequence[float] | float, degrees: bool = False
+    ) -> Rotation:
         """Initialize from Euler angles.
 
         Rotations in 3-D can be represented by a sequence of 3
@@ -678,7 +680,7 @@ class Rotation(torch.nn.Module):
 
     def forward(
         self,
-        vectors: Sequence[float] | torch.Tensor | SpatialDimension[torch.Tensor] | SpatialDimension[float],
+        vectors: _NestedSequence[float] | torch.Tensor | SpatialDimension[torch.Tensor] | SpatialDimension[float],
         inverse: bool = False,
     ) -> torch.Tensor | SpatialDimension[torch.Tensor]:
         """Apply this rotation to a set of vectors.
@@ -994,7 +996,7 @@ class Rotation(torch.nn.Module):
         return self._quaternions[..., axis]
 
     @quaternion_x.setter
-    def quaternion_x(self, quat_x: torch.Tensor):
+    def quaternion_x(self, quat_x: torch.Tensor | float):
         """Set x component of the quaternion."""
         axis = QUAT_AXIS_ORDER.index('x')
         self._quaternions[..., axis] = quat_x
@@ -1008,7 +1010,7 @@ class Rotation(torch.nn.Module):
         return self._quaternions[..., axis]
 
     @quaternion_y.setter
-    def quaternion_y(self, quat_y: torch.Tensor):
+    def quaternion_y(self, quat_y: torch.Tensor | float):
         """Set y component of the quaternion."""
         axis = QUAT_AXIS_ORDER.index('y')
         self._quaternions[..., axis] = quat_y
@@ -1022,7 +1024,7 @@ class Rotation(torch.nn.Module):
         return self._quaternions[..., axis]
 
     @quaternion_z.setter
-    def quaternion_z(self, quat_z: torch.Tensor):
+    def quaternion_z(self, quat_z: torch.Tensor | float):
         """Set z component of the quaternion."""
         axis = QUAT_AXIS_ORDER.index('z')
         self._quaternions[..., axis] = quat_z
@@ -1036,7 +1038,7 @@ class Rotation(torch.nn.Module):
         return self._quaternions[..., axis]
 
     @quaternion_w.setter
-    def quaternion_w(self, quat_w: torch.Tensor):
+    def quaternion_w(self, quat_w: torch.Tensor | float):
         """Set w component of the quaternion."""
         axis = QUAT_AXIS_ORDER.index('w')
         self._quaternions[..., axis] = quat_w
@@ -1095,12 +1097,35 @@ class Rotation(torch.nn.Module):
         q[..., -1] = 1
         return cls(q, normalize=False)
 
+    @overload
     @classmethod
     def align_vectors(
         cls,
-        a: torch.Tensor | Sequence[torch.Tensor],
-        b: torch.Tensor | Sequence[torch.Tensor],
-        weights: torch.Tensor | None = None,
+        a: torch.Tensor | Sequence[torch.Tensor] | Sequence[float] | Sequence[Sequence[float]],
+        b: torch.Tensor | Sequence[torch.Tensor] | Sequence[float] | Sequence[Sequence[float]],
+        weights: torch.Tensor | Sequence[float] | Sequence[Sequence[float]] | None = None,
+        *,
+        return_sensitivity: Literal[False] = False,
+    ) -> tuple[Rotation, float]: ...
+
+    @overload
+    @classmethod
+    def align_vectors(
+        cls,
+        a: torch.Tensor | Sequence[torch.Tensor] | Sequence[float] | Sequence[Sequence[float]],
+        b: torch.Tensor | Sequence[torch.Tensor] | Sequence[float] | Sequence[Sequence[float]],
+        weights: torch.Tensor | Sequence[float] | Sequence[Sequence[float]] | None = None,
+        *,
+        return_sensitivity: Literal[True],
+    ) -> tuple[Rotation, float, torch.Tensor]: ...
+
+    @classmethod
+    def align_vectors(
+        cls,
+        a: torch.Tensor | Sequence[torch.Tensor] | Sequence[float] | Sequence[Sequence[float]],
+        b: torch.Tensor | Sequence[torch.Tensor] | Sequence[float] | Sequence[Sequence[float]],
+        weights: torch.Tensor | Sequence[float] | Sequence[Sequence[float]] | None = None,
+        *,
         return_sensitivity: bool = False,
     ) -> tuple[Rotation, float] | tuple[Rotation, float, torch.Tensor]:
         """Estimate a rotation to optimally align two sets of vectors.
@@ -1124,7 +1149,7 @@ class Rotation(torch.nn.Module):
         elif isinstance(weights, torch.Tensor):
             weights_np = weights.numpy(force=True)
         else:
-            weights_np = np.asarray(weights)  # type: ignore[unreachable]
+            weights_np = np.asarray(weights)
 
         if return_sensitivity:
             rotation_sp, rssd, sensitivity_np = Rotation_scipy.align_vectors(a_np, b_np, weights_np, True)
@@ -1168,7 +1193,12 @@ class Rotation(torch.nn.Module):
         else:
             return f'{tuple(self.shape)}-Batched Rotation()'
 
-    def mean(self, weights: torch.Tensor | None = None, dim: None | int | Sequence[int] = None, keepdim: bool = False):
+    def mean(
+        self,
+        weights: torch.Tensor | _NestedSequence[float] | None = None,
+        dim: None | int | Sequence[int] = None,
+        keepdim: bool = False,
+    ):
         r"""Get the mean of the rotations.
 
         The mean used is the chordal L2 mean (also called the projected or
