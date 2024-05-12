@@ -332,7 +332,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         """
         return KData(
             header=self.header,
-            data=self.data.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),  # type: ignore [call-arg]
+            data=self.data.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),
             traj=self.traj.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),
         )
 
@@ -346,7 +346,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         """
         return KData(
             header=self.header,
-            data=self.data.cpu(memory_format=memory_format),  # type: ignore [call-arg]
+            data=self.data.cpu(memory_format=memory_format),
             traj=self.traj.cpu(memory_format=memory_format),
         )
 
