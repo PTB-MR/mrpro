@@ -29,9 +29,8 @@ classifiers = [
 ]
 dependencies = [
     "numpy>=1.23,<2.0",
-    "torch>=2.2,<3.0",
-    "ismrmrd",
-    "xsdata>=22.2,<23",
+    "torch>=2.3,<3.0",
+    "ismrmrd>=1.14.1,<2.0",
     "einops",
     "pydicom",
     "pypulseq@git+https://github.com/imr-framework/pypulseq",
