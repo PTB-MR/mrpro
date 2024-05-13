@@ -69,19 +69,23 @@ class MoveDataMixin(ABC, DataclassInstance):
         If other conversions are desired, please use the torch.Tensor.to() method of
         the fields directly.
         """
-        _args: Sequence[Any] = ()
-        _kwargs: dict[str, Any] = {}
-        dtype = None
-        device = None
+        other_args: Sequence[Any] = ()
+        other_kwargs: dict[str, Any] = {}
+        dtype: torch.dtype | None = None
+        device: torch.device | str | None = None
 
         # match dtype and device from args and kwargs
         match args, kwargs:
-            case ((dtype, *_args), {**_kwargs}) if isinstance(dtype, torch.dtype):
+            case ((_dtype, *_args), {**_kwargs}) if isinstance(_dtype, torch.dtype):
                 # overload 1
-                ...
-            case (_args, {'dtype': dtype, **_kwargs}) if isinstance(dtype, torch.dtype):
+                dtype = _dtype
+                other_args = _args
+                other_kwargs = _kwargs
+            case (_args, {'dtype': _dtype, **_kwargs}) if isinstance(_dtype, torch.dtype):
                 # dtype as kwarg
-                ...
+                dtype = _dtype
+                other_args = _args
+                other_kwargs = _kwargs
             case ((other, *_args), {**_kwargs}) | (_args, {'other': other, **_kwargs}) if isinstance(
                 other, torch.Tensor
             ):
@@ -89,19 +93,26 @@ class MoveDataMixin(ABC, DataclassInstance):
                 dtype = other.dtype
                 device = other.device
         match args, kwargs:
-            case ((device, dtype, *_args), {**_kwargs}) if isinstance(device, torch.device | str) and isinstance(
-                dtype, torch.dtype
+            case ((_device, _dtype, *_args), {**_kwargs}) if isinstance(_device, torch.device | str) and isinstance(
+                _dtype, torch.dtype
             ):
                 # overload 2 with device and dtype
-                ...
-            case ((device, *_args), {**_kwargs}) if isinstance(device, torch.device | str):
+                dtype = _dtype
+                device = _device
+                other_args = _args
+                other_kwargs = _kwargs
+            case ((_device, *_args), {**_kwargs}) if isinstance(_device, torch.device | str):
                 # overload 2, only device
-                ...
-            case (_args, {'device': device, **_kwargs}) if isinstance(device, torch.device | str):
+                device = _device
+                other_args = _args
+                other_kwargs = _kwargs
+            case (_args, {'device': _device, **_kwargs}) if isinstance(_device, torch.device | str):
                 # device as kwarg
-                ...
+                device = _device
+                other_args = _args
+                other_kwargs = _kwargs
 
-        _kwargs['copy'] = True
+        other_kwargs['copy'] = True
         new_data: dict[str, Any] = {}
         for field in dataclasses.fields(self):
             name = field.name
@@ -115,8 +126,9 @@ class MoveDataMixin(ABC, DataclassInstance):
                 elif data.dtype.is_complex:
                     new_dtype = dtype.to_complex()
                 else:
-                    new_dtype = dtype
-                new_data[name] = data.to(new_device, new_dtype, *_args, **_kwargs)
+                    # bool or int: keep as is
+                    new_dtype = data.dtype
+                new_data[name] = data.to(new_device, new_dtype, *other_args, **other_kwargs)
             elif isinstance(data, MoveDataMixin):
                 new_data[name] = data.to(*args, **kwargs)
             else:
@@ -182,7 +194,7 @@ class MoveDataMixin(ABC, DataclassInstance):
             data = getattr(self, field.name)
             if not hasattr(data, 'device'):
                 continue
-            current_device = data.getattr('device', None)
+            current_device = getattr(data, 'device', None)
             if current_device is None:
                 continue
             if device is None:
