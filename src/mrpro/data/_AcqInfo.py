@@ -23,11 +23,12 @@ import ismrmrd
 import numpy as np
 import torch
 
+from mrpro.data._MoveDataMixin import MoveDataMixin
 from mrpro.data._SpatialDimension import SpatialDimension
 
 
 @dataclass(slots=True)
-class AcqIdx:
+class AcqIdx(MoveDataMixin):
     """Acquisition index for each readout."""
 
     k1: torch.Tensor

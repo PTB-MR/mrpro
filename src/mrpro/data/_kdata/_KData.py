@@ -19,12 +19,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import warnings
-from collections.abc import Sequence
-from copy import deepcopy
 from pathlib import Path
-from typing import Any
-from typing import Self
-from typing import overload
 
 import h5py
 import ismrmrd
@@ -241,78 +236,3 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             ) from None
 
         return cls(kheader, kdata, ktrajectory_final)
-
-    @overload
-    def to(
-        self, dtype: torch.dtype, non_blocking: bool = False, *, memory_format: torch.memory_format | None = None
-    ) -> Self: ...
-
-    @overload
-    def to(
-        self,
-        device: str | torch.device | int | None = None,
-        dtype: torch.dtype | None = None,
-        non_blocking: bool = False,
-        *,
-        memory_format: torch.memory_format | None = None,
-    ) -> Self: ...
-
-    @overload
-    def to(
-        self, other: torch.Tensor, non_blocking: bool = False, *, memory_format: torch.memory_format | None = None
-    ) -> Self: ...
-
-    def to(self, *args, **kwargs) -> Self:  # noqa: D417
-        """Perform dtype and/or device conversion of trajectory and data.
-
-        This will always return a copy.
-
-        Parameters
-        ----------
-        device
-            The destination device. Defaults to the current device.
-        dtype
-            Data type.
-            The trajectory dtype will always be converted to real,
-            the data dtype will always be converted to complex
-        non_blocking
-            If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
-            Otherwise, the argument has no effect.
-        memory_format
-            The desired memory format of returned Tensor.
-        """
-        _args: Sequence[Any] = ()
-        _kwargs: dict[str, Any] = {}
-        dtype = self.data.dtype
-        device = self.device
-        match args, kwargs:
-            case ((dtype, *_args), {**_kwargs}) if isinstance(dtype, torch.dtype):
-                # overload 1
-                ...
-            case (_args, {'dtype': dtype, **_kwargs}) if isinstance(dtype, torch.dtype):
-                # dtype as kwarg
-                ...
-            case ((other, *_args), {**_kwargs}) | (_args, {'other': other, **_kwargs}) if isinstance(
-                other, torch.Tensor
-            ):
-                # overload 3: use dtype and device from other
-                dtype = other.dtype
-                device = other.device
-        match args, kwargs:
-            case ((device, dtype, *_args), {**_kwargs}) if isinstance(device, torch.device | str) and isinstance(
-                dtype, torch.dtype
-            ):
-                # overload 2 with device and dtype
-                ...
-            case ((device, *_args), {**_kwargs}) if isinstance(device, torch.device | str):
-                # overload 2, only device
-                ...
-            case (_args, {'device': device, **_kwargs}) if isinstance(device, torch.device | str):
-                # device as kwarg
-                ...
-
-        # The trajectory dtype will always be real, the data always be complex.
-        data = self.data.to(*_args, **{**_kwargs, 'dtype': dtype.to_complex(), 'device': device, 'copy': True})
-        traj = self.traj.to(*_args, **{**_kwargs, 'dtype': dtype.to_real(), 'device': device})
-        header = deepcopy(self.header)  # TODO: use header.to
-        return type(self)(header=header, data=data, traj=traj)
