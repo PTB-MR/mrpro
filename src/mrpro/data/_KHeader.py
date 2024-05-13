@@ -28,6 +28,7 @@ import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
 from mrpro.data import enums
 from mrpro.data._AcqInfo import AcqInfo
 from mrpro.data._EncodingLimits import EncodingLimits
+from mrpro.data._MoveDataMixin import MoveDataMixin
 from mrpro.data._SpatialDimension import SpatialDimension
 from mrpro.data._TrajectoryDescription import TrajectoryDescription
 
@@ -39,7 +40,7 @@ UNKNOWN = 'unknown'
 
 
 @dataclass(slots=True)
-class KHeader:
+class KHeader(MoveDataMixin):
     """MR raw data header.
 
     All information that is not covered by the dataclass is stored in
