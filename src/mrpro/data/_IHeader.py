@@ -26,13 +26,14 @@ from pydicom.tag import Tag
 from pydicom.tag import TagType
 
 from mrpro.data._KHeader import KHeader
+from mrpro.data._MoveDataMixin import MoveDataMixin
 from mrpro.data._SpatialDimension import SpatialDimension
 
 MISC_TAGS = {'TimeAfterStart': 0x00191016}
 
 
 @dataclass(slots=True)
-class IHeader:
+class IHeader(MoveDataMixin):
     """MR image data header."""
 
     # ToDo: decide which attributes to store in the header

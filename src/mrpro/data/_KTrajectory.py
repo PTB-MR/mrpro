@@ -17,8 +17,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Self
-from typing import overload
 
 import numpy as np
 import torch
@@ -184,49 +182,3 @@ class KTrajectory(MoveDataMixin):
         """
         shape = self.broadcasted_shape
         return torch.stack([traj.expand(*shape) for traj in (self.kz, self.ky, self.kx)], dim=stack_dim)
-
-    @overload
-    def to(
-        self, dtype: torch.dtype, non_blocking: bool = False, *, memory_format: torch.memory_format | None = None
-    ) -> Self: ...
-
-    @overload
-    def to(
-        self,
-        device: str | torch.device | int | None = None,
-        dtype: torch.dtype | None = None,
-        non_blocking: bool = False,
-        *,
-        memory_format: torch.memory_format | None = None,
-    ) -> Self: ...
-
-    @overload
-    def to(
-        self, other: torch.Tensor, non_blocking: bool = False, *, memory_format: torch.memory_format | None = None
-    ) -> Self: ...
-
-    def to(self, *args, **kwargs) -> Self:
-        """Perform dtype and/or device conversion of trajectory.
-
-        This will always return a new KTrajectory object.
-
-        A torch.dtype and torch.device are inferred from the arguments
-        of self.to(*args, **kwargs). Please have a look at the
-        documentation of torch.Tensor.to() for more details.
-        """
-        kwargs['copy'] = True
-        return type(self)(
-            kz=self.kz.to(*args, **kwargs),
-            ky=self.ky.to(*args, **kwargs),
-            kx=self.kx.to(*args, **kwargs),
-        )
-
-    @property
-    def device(self) -> torch.device:
-        """Return the device of the trajectory."""
-        device_x = self.kx.device
-        device_y = self.ky.device
-        device_z = self.kz.device
-        if device_x != device_y or device_x != device_z:
-            raise ValueError('Trajectory is on different devices.')
-        return device_x
