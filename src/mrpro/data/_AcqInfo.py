@@ -51,7 +51,7 @@ class AcqIdx(MoveDataMixin):
 
 
 @dataclass(slots=True)
-class AcqInfo:
+class AcqInfo(MoveDataMixin):
     """Acquisition information for each readout."""
 
     idx: AcqIdx
