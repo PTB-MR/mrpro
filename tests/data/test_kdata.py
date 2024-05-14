@@ -230,8 +230,8 @@ def test_KData_cuda(ismrmrd_cart):
     assert kdata_cuda.traj.ky.is_cuda
     assert kdata_cuda.traj.kx.is_cuda
     assert kdata_cuda.header.acq_info.user_int.is_cuda
-    assert kdata_cuda.device == torch.cuda.current_device()
-    assert kdata_cuda.header.acq_info.device == torch.cuda.current_device()
+    assert kdata_cuda.device == torch.device(torch.cuda.current_device())
+    assert kdata_cuda.header.acq_info.device == torch.device(torch.cuda.current_device())
 
 
 @pytest.mark.cuda()
