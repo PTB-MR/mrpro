@@ -16,21 +16,18 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING
+from typing import Self
 
 from einops import rearrange
-
-if TYPE_CHECKING:
-    from mrpro.data._kdata._KData import _KDataProtocol
-
 from mrpro.data._AcqInfo import AcqInfo
+from mrpro.data._kdata._KDataProtocol import _KDataProtocol
 from mrpro.utils import modify_acq_info
 
 
-class KDataRearrangeMixin:
+class KDataRearrangeMixin(_KDataProtocol):
     """Rearrange KData."""
 
-    def rearrange_k2_k1_into_k1(self: _KDataProtocol) -> _KDataProtocol:
+    def rearrange_k2_k1_into_k1(self: Self) -> Self:
         """Rearrange kdata from (... k2 k1 ...) to (... 1 (k2 k1) ...).
 
         Parameters
