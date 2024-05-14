@@ -1,3 +1,19 @@
+"""MoveDataMixin."""
+
+# Copyright 2024 Physikalisch-Technische Bundesanstalt
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at:
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from __future__ import annotations
 
 import dataclasses
@@ -15,7 +31,7 @@ import torch
 
 class InconsistentDeviceError(ValueError):
     def __init__(self, *devices):
-        super().__init__(f'Inconsistent devices found, found at least {", ".join(devices)}')
+        super().__init__(f'Inconsistent devices found, found at least {", ".join(str(d) for d in devices)}')
 
 
 class DataclassInstance(Protocol):
@@ -60,19 +76,23 @@ class MoveDataMixin(ABC, DataclassInstance):
         The conversion will be applied to all Tensor fields of the dataclass,
         and to all fields that implement the MoveDataMixin.
 
-        The dtype-type, i.e. float/complex/int will always be preserved.
+        The dtype-type, i.e. float/complex will always be preserved,
+        but the precision of floating point dtypes might be changed.
+
         Example:
             If called with dtype=torch.float32 OR dtype=torch.complex64:
                 - A complex128 tensor will be converted to complex64
                 - A float64 tensor will be converted to float32
                 - A bool tensor will remain bool
+                - An int64 tensor will remain int64
+
         If other conversions are desired, please use the torch.Tensor.to() method of
         the fields directly.
         """
         other_args: Sequence[Any] = ()
         other_kwargs: dict[str, Any] = {}
         dtype: torch.dtype | None = None
-        device: torch.device | str | None = None
+        device: torch.device | str | int | None = None
 
         # match dtype and device from args and kwargs
         match args, kwargs:
@@ -93,20 +113,20 @@ class MoveDataMixin(ABC, DataclassInstance):
                 dtype = other.dtype
                 device = other.device
         match args, kwargs:
-            case ((_device, _dtype, *_args), {**_kwargs}) if isinstance(_device, torch.device | str) and isinstance(
-                _dtype, torch.dtype
-            ):
+            case ((_device, _dtype, *_args), {**_kwargs}) if isinstance(
+                _device, torch.device | str | int | None
+            ) and isinstance(_dtype, torch.dtype):
                 # overload 2 with device and dtype
                 dtype = _dtype
                 device = _device
                 other_args = _args
                 other_kwargs = _kwargs
-            case ((_device, *_args), {**_kwargs}) if isinstance(_device, torch.device | str):
+            case ((_device, *_args), {**_kwargs}) if isinstance(_device, torch.device | str | int | None):
                 # overload 2, only device
                 device = _device
                 other_args = _args
                 other_kwargs = _kwargs
-            case (_args, {'device': _device, **_kwargs}) if isinstance(_device, torch.device | str):
+            case (_args, {'device': _device, **_kwargs}) if isinstance(_device, torch.device | str | int | None):
                 # device as kwarg
                 device = _device
                 other_args = _args
@@ -157,7 +177,7 @@ class MoveDataMixin(ABC, DataclassInstance):
             The desired memory format of returned tensor.
         """
         if device is None:
-            device = torch.cuda.current_device()
+            device = torch.device(torch.cuda.current_device())
         return self.to(device=device, memory_format=memory_format, non_blocking=non_blocking)
 
     def cpu(self, memory_format: torch.memory_format = torch.preserve_format) -> Self:
@@ -177,8 +197,11 @@ class MoveDataMixin(ABC, DataclassInstance):
     def device(self) -> torch.device | None:
         """Return the device of the tensors.
 
-        Looks at each field of a dataclass and returns fields implementing a device attribute,
-        such as torch.Tensors or MoveDataMixin instances.
+        Looks at each field of a dataclass implementing a device attribute,
+        such as torch.Tensors or MoveDataMixin instances. If the devices
+        of the fields differ, an InconsistentDeviceError is raised, otherwise
+        the device is returned. If no field implements a device attribute,
+        None is returned.
 
         Raises
         ------
