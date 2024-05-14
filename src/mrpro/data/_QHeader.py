@@ -23,11 +23,12 @@ from pydicom.tag import Tag
 
 from mrpro.data._IHeader import IHeader
 from mrpro.data._KHeader import KHeader
+from mrpro.data._MoveDataMixin import MoveDataMixin
 from mrpro.data._SpatialDimension import SpatialDimension
 
 
 @dataclass(slots=True)
-class QHeader:
+class QHeader(MoveDataMixin):
     """MR quantitative data header."""
 
     # ToDo: decide which attributes to store in the header
