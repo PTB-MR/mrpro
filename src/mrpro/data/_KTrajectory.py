@@ -56,11 +56,15 @@ class KTrajectory(MoveDataMixin):
 
     def __post_init__(self) -> None:
         """Reduce repeated dimensions to singletons."""
+
+        def as_any_float(tensor: torch.Tensor) -> torch.Tensor:
+            return tensor.float() if not tensor.is_floating_point() else tensor
+
         if self.repeat_detection_tolerance is not None:
             kz, ky, kx = (
-                remove_repeat(tensor, self.repeat_detection_tolerance) for tensor in (self.kz, self.ky, self.kx)
+                as_any_float(remove_repeat(tensor, self.repeat_detection_tolerance))
+                for tensor in (self.kz, self.ky, self.kx)
             )
-
             # use of setattr due to frozen dataclass
             object.__setattr__(self, 'kz', kz)
             object.__setattr__(self, 'ky', ky)
@@ -157,7 +161,7 @@ class KTrajectory(MoveDataMixin):
         # We use the value of the enum-type to make it easier to do array operations.
         traj_type_matrix = torch.zeros(3, 3, dtype=torch.int)
         for ind, ks in enumerate((self.kz, self.ky, self.kx)):
-            values_on_grid = not ks.is_floating_point() or torch.all(ks.frac() <= tolerance)
+            values_on_grid = not ks.is_floating_point() or torch.all((ks - ks.round()).abs() <= tolerance)
             for dim in (-3, -2, -1):
                 if ks.shape[dim] == 1:
                     traj_type_matrix[ind, dim] |= TrajType.SINGLEVALUE.value | TrajType.ONGRID.value
