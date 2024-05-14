@@ -229,3 +229,40 @@ class MoveDataMixin(ABC, DataclassInstance):
     def clone(self: Self) -> Self:
         """Return a deep copy of the object."""
         return deepcopy(self)
+
+    @property
+    def is_cuda(self) -> bool:
+        """Return True if all tensors are on a single CUDA device.
+
+        Checks all tensor attributes of the dataclass for their device,
+        (recursively if an attribute is a MoveDataMixin)
+
+
+        Returns False if not all tensors are on the same CUDA devices, or if the device is inconsistent,
+        returns True if the data class has no tensors as attributes.
+        """
+        try:
+            device = self.device
+        except InconsistentDeviceError:
+            return False
+        if device is None:
+            return True
+        return device.type == 'cuda'
+
+    @property
+    def is_cpu(self) -> bool:
+        """Return True if all tensors are on the CPU.
+
+        Checks all tensor attributes of the dataclass for their device,
+        (recursively if an attribute is a MoveDataMixin)
+
+        Returns False if not all tensors are on cpu or if the device is inconsistent,
+        returns True if the data class has no tensors as attributes.
+        """
+        try:
+            device = self.device
+        except InconsistentDeviceError:
+            return False
+        if device is None:
+            return True
+        return device.type == 'cpu'
