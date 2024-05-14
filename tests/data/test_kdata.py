@@ -232,6 +232,8 @@ def test_KData_cuda(ismrmrd_cart):
     assert kdata_cuda.header.acq_info.user_int.is_cuda
     assert kdata_cuda.device == torch.device(torch.cuda.current_device())
     assert kdata_cuda.header.acq_info.device == torch.device(torch.cuda.current_device())
+    assert kdata_cuda.is_cuda
+    assert not kdata_cuda.is_cpu
 
 
 @pytest.mark.cuda()
@@ -252,6 +254,8 @@ def test_Kdata_device_cpu(ismrmrd_cart):
     """Default device is CPU."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     assert kdata.device == torch.device('cpu')
+    assert not kdata.is_cuda
+    assert kdata.is_cpu
 
 
 @pytest.mark.cuda()
@@ -260,6 +264,8 @@ def test_KData_inconsistentdevice(ismrmrd_cart):
     kdata_cpu = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     kdata_cuda = kdata_cpu.to(device='cuda')
     kdata_mix = KData(data=kdata_cuda.data, header=kdata_cpu.header, traj=kdata_cpu.traj)
+    assert not kdata_mix.is_cuda
+    assert not kdata_mix.is_cpu
     with pytest.raises(ValueError):
         _ = kdata_mix.device
 
