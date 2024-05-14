@@ -88,7 +88,7 @@ def test_trajectory_tensor_conversion(cartesian_grid):
     n_k2 = 30
     kz_full, ky_full, kx_full = cartesian_grid(n_k2, n_k1, n_k0, jitter=0.0)
     trajectory = KTrajectory(kz_full, ky_full, kx_full)
-    tensor = torch.stack((kz_full, ky_full, kx_full), dim=0)
+    tensor = torch.stack((kz_full, ky_full, kx_full), dim=0).to(torch.float32)
 
     tensor_from_traj = trajectory.as_tensor()  # stack_dim=0
     tensor_from_traj_dim2 = trajectory.as_tensor(stack_dim=2).moveaxis(2, 0)
@@ -123,11 +123,30 @@ def test_trajectory_to_float64(cartesian_grid):
     n_k2 = 30
     kz_full, ky_full, kx_full = cartesian_grid(n_k2, n_k1, n_k0, jitter=0.0)
     trajectory = KTrajectory(kz_full, ky_full, kx_full)
-
     trajectory_float64 = trajectory.to(dtype=torch.float64)
     assert trajectory_float64.kz.dtype == torch.float64
     assert trajectory_float64.ky.dtype == torch.float64
     assert trajectory_float64.kx.dtype == torch.float64
+    assert trajectory.kz.dtype == torch.float32
+    assert trajectory.ky.dtype == torch.float32
+    assert trajectory.kx.dtype == torch.float32
+
+
+@pytest.mark.parametrize('dtype', [torch.float32, torch.float64, torch.int32, torch.int64])
+def test_trajectory_floating_dtype(dtype):
+    """Test if the trajectory will always be converted to float"""
+    ks = torch.ones(3, 1, 1, 1, 1, dtype=dtype)
+    traj = KTrajectory(*ks)
+    if dtype.is_floating_point:
+        # keep as as
+        assert traj.kz.dtype == dtype
+        assert traj.ky.dtype == dtype
+        assert traj.kx.dtype == dtype
+    else:
+        # convert to float32
+        assert traj.kz.dtype == torch.float32
+        assert traj.ky.dtype == torch.float32
+        assert traj.kx.dtype == torch.float32
 
 
 @pytest.mark.cuda()
