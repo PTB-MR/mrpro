@@ -103,8 +103,9 @@ cg_operator = acquisition_operator.H @ dcf_operator @ acquisition_operator
 # %%
 import torch
 
-initial_value = torch.zeros_like(right_hand_side)
-img_manual = mrpro.algorithms.optimizers.cg(cg_operator, right_hand_side, initial_value=initial_value, max_iterations=4)
+img_manual = mrpro.algorithms.optimizers.cg(
+    cg_operator, right_hand_side, initial_value=right_hand_side, max_iterations=4
+)
 
 
 # %%
