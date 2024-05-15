@@ -1,6 +1,6 @@
 # %% [markdown]
-# # Direct Reconstruction of 2D golden angle radial data
-# Here we use the DirectReconstruction class to reconstruct images from ISMRMRD 2D radial data
+# # Iterative SENSE Reconstruction of 2D golden angle radial data
+# Here we use the IterativeSenseReconstruction class to reconstruct images from ISMRMRD 2D radial data
 # %%
 # define zenodo URL of the example ismrmd data
 zenodo_url = 'https://zenodo.org/records/10854057/files/'
@@ -14,9 +14,27 @@ data_folder = Path('/Users/kolbit01/Documents/PTB/Data/mrpro/raw/')
 
 # %% [markdown]
 # ### Image reconstruction
-# We use the DirectReconstruction class to reconstruct images from 2D radial data.
-# DirectReconstruction estimates CSMs, DCFs and performs an adjoint Fourier transform.
-# This is a high-level interface to the reconstruction pipeline.
+# We use the IterativeSenseReconstruction class to reconstruct images from 2D radial data.
+# IterativeSenseReconstruction solves the following reconstruction problem:
+#
+# Let's assume we have obtained the k-space data $y$ from an image $x$ with an acquisition model (Fourier transforms,
+# coil sensitivity maps...) $A$ then we can formulate the forward problem as:
+#
+# $ y = Ax + n $
+#
+# where $n$ describes complex Gaussian noise. Now we want to solve the inverse problem by minimizing
+#
+# $ \min_x \frac{1}{2}||W^{\frac{1}{2}}(Ax - y)||_2^2 $
+#
+# where $W^\frac{1}{2}$ is the square root of the density compensation function. We can rewrite this problem as:
+#
+# $ W^\frac{1}{2}Ax = W^\frac{1}{2}y$
+#
+# $ A^H W A x = A^H W y$
+#
+# $ H x = b $ $\quad$ Eq (1)
+#
+# with $H = A^H W A$ and $b = A^H W y$ which can be solved with a conjugate gradient approach.
 # %%
 import mrpro
 
@@ -24,22 +42,91 @@ import mrpro
 trajectory = mrpro.data.traj_calculators.KTrajectoryIsmrmrd()
 # Load in the Data from the ISMRMRD file
 kdata = mrpro.data.KData.from_file(data_folder / '2D_GRad_map_t1_traj_2s.h5', trajectory)
-
-# Perform direct reconstruction
-reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction.from_kdata(kdata)
-# Use this to run on gpu: kdata = kdata.cuda()
-img = reconstruction(kdata)
+kdata.header.recon_matrix.x = 100
+kdata.header.recon_matrix.y = 100
 
 # %%
+iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSenseReconstruction.from_kdata(
+    kdata, n_max_iter=4
+)
+img = iterative_sense_reconstruction(kdata)
+
+
+# %% [markdown]
+# ### Behind the scenes
+
+# %% [markdown]
+# ##### $W$
+
+# %%
+# Calculate dcf using the trajectory
+dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata.traj).as_operator()
+
+
+# %% [markdown]
+# ##### $A$
+
+# %%
+# Define Fourier operator using the trajectory and header information in kdata
+fourier_operator = mrpro.operators.FourierOp.from_kdata(kdata)
+
+# Calculate coil maps
+# Note that operators return a tuple of tensors, so we need to unpack it,
+# even though there is only one tensor returned from adjoint operator.
+img_coilwise = mrpro.data.IData.from_tensor_and_kheader(*fourier_operator.H(*dcf_operator(kdata.data)), kdata.header)
+csm_operator = mrpro.data.CsmData.from_idata_walsh(img_coilwise).as_operator()
+
+# Create the acquisition operator A
+acquisition_operator = fourier_operator @ csm_operator
+
+# %% [markdown]
+# ##### $b = A^H W y$
+
+# %%
+(right_hand_side,) = acquisition_operator.H(dcf_operator(kdata.data)[0])
+
+
+# %% [markdown]
+# ##### $H = A^H W A$
+
+# %%
+cg_operator = acquisition_operator.H @ dcf_operator @ acquisition_operator
+
+# %% [markdown]
+# ##### Conjugate gradient minimisation
+
+# %%
+import torch
+
+initial_value = torch.zeros_like(right_hand_side)
+img_manual = mrpro.algorithms.optimizers.cg(cg_operator, right_hand_side, initial_value=initial_value, max_iterations=4)
+
+
+# %%
+# For comparison we can also carry out a direct reconstruction
+direct_reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction.from_kdata(kdata)
+img_direct = direct_reconstruction(kdata).rss().cpu()
+img_direct = img_direct
+
+# %%
+# Display the reconstructed image
 import matplotlib.pyplot as plt
 
-# Display the reconstructed image
-# If there are multiple slices, ..., only the first one is selected
-first_img = img.rss().cpu()[0, 0, :, :]  #  images, z, y, x
-plt.matshow(first_img, cmap='gray')
+fig, ax = plt.subplots(1, 3)
+ax[0].imshow(img_direct.data[0, 0, :, :])
+ax[0].set_title('Direct Reconstruction', fontsize=10)
+ax[1].imshow(torch.abs(img.data[0, 0, 0, :, :]))
+ax[1].set_title('Iterative SENSE', fontsize=10)
+ax[2].imshow(torch.abs(img_manual[0, 0, 0, :, :]))
+ax[2].set_title('"Manual" Iterative SENSE', fontsize=10)
+
+# %% [markdown]
+# ### Check for equal results
+# The two versions result should in the same image data.
 
 # %%
-
+# If the assert statement did not raise an exception, the results are equal.
+assert torch.allclose(img.data, img_manual)
 
 # %% [markdown]
 # Copyright 2024 Physikalisch-Technische Bundesanstalt
