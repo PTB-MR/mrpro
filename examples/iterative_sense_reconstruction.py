@@ -7,10 +7,15 @@ zenodo_url = 'https://zenodo.org/records/10854057/files/'
 fname = 'pulseq_radial_2D_402spokes_golden_angle_with_traj.h5'
 # %%
 # Download raw data
+import tempfile
 from pathlib import Path
 
-# TODO: replace with automatic download
-data_folder = Path('/Users/kolbit01/Documents/PTB/Data/mrpro/raw/')
+import requests
+
+data_folder = Path(tempfile.mkdtemp())
+data_file = tempfile.NamedTemporaryFile(dir=data_folder, mode='wb', delete=False, suffix='.h5')
+response = requests.get(zenodo_url + fname, timeout=30)
+data_file.write(response.content)
 
 # %% [markdown]
 # ### Image reconstruction
@@ -41,7 +46,7 @@ import mrpro
 # Use the trajectory that is stored in the ISMRMRD file
 trajectory = mrpro.data.traj_calculators.KTrajectoryIsmrmrd()
 # Load in the Data from the ISMRMRD file
-kdata = mrpro.data.KData.from_file(data_folder / '2D_GRad_map_t1_traj_2s.h5', trajectory)
+kdata = mrpro.data.KData.from_file(data_file.name, trajectory)
 kdata.header.recon_matrix.x = 100
 kdata.header.recon_matrix.y = 100
 
