@@ -261,12 +261,9 @@ class EpgMrfFisp(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
 
         # RF-pulse -> relaxation during TE -> get signal -> gradient dephasing -> relaxation during TR-TE
         for i in range(flip_angles.shape[0]):
-            if i == 0 or flip_angles.shape[0] > 1:
-                rf_pulse = EpgRfPulse(flip_angles[i,...], rf_phases[i,...])
-            if i == 0 or te.shape[0] > 1:
-                te_relaxation = EpgRelaxation(te[i,...], t1, t2)
-            if i == 0 or te.shape[0] > 1 or tr.shape[0] > 1:
-                tr_relaxation = EpgRelaxation((tr - te)[i,...], t1, t2)
+            rf_pulse = EpgRfPulse(flip_angles[i,...], rf_phases[i,...])
+            te_relaxation = EpgRelaxation(te[i,...], t1, t2)
+            tr_relaxation = EpgRelaxation((tr - te)[i,...], t1, t2)
             if i == 0 or epg_configuration_states.shape[0] >= self.max_n_configuration_states:
                 gradient_dephasing = EpgGradient(epg_configuration_states.shape[-1] >= self.max_n_configuration_states)
 
@@ -373,17 +370,15 @@ class EpgTse(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         epg_configuration_states[..., :, 0] = torch.tensor((0.0, 0, 1.0))
         # Go through echo trains separated by TR
         for j in range(len(self.tr)):
-            tr_relaxation = EpgRelaxation((self.tr[j] - torch.sum(te)), t1, t2)
+            if j == 0 or self.tr[j] != self.tr[j-1]:
+                tr_relaxation = EpgRelaxation((self.tr[j] - torch.sum(te)), t1, t2)
             epg_configuration_states = rf_excitation_pulse.forward(epg_configuration_states)
             # Go through refocusing pulses (i.e one echo train)
             for i in range(flip_angles.shape[0]):
-                if i == 0 or flip_angles.shape[0] > 1:
-                    rf_refocusing_pulse = EpgRfPulse(flip_angles[i,...], rf_phases[i,...])
-                if i == 0 or te.shape[0] > 1:
-                    te_half_relaxation = EpgRelaxation(te[i,...] / 2, t1, t2)
+                rf_refocusing_pulse = EpgRfPulse(flip_angles[i,...], rf_phases[i,...])
+                te_half_relaxation = EpgRelaxation(te[i,...] / 2, t1, t2)
                 if i == 0 or epg_configuration_states.shape[0] >= self.max_n_configuration_states:
                     gradient_dephasing = EpgGradient(epg_configuration_states.shape[-1] >= self.max_n_configuration_states)
-
 
                 epg_configuration_states = te_half_relaxation.forward(epg_configuration_states)
                 epg_configuration_states = gradient_dephasing.forward(epg_configuration_states)
