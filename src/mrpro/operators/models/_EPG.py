@@ -275,7 +275,7 @@ class EpgMrfFisp(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         return (signal,)
 
 
-class EpgTse(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
+class EpgTse(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
     """Signal model for turbo spin echo (TSE) with multiple echo trains.
 
     This signal model describes a turbo spin sequence. The sequence starts with a 90° excitation pulse with a phase of
@@ -334,7 +334,7 @@ class EpgTse(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
 
         self.max_n_configuration_states: int = max_n_configuration_states
         
-    def forward(self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor) -> tuple[torch.Tensor,]:
+    def forward(self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor, b1_scaling_factor: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply TSE signal model.
 
         Parameters
@@ -347,6 +347,9 @@ class EpgTse(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
             with shape (... other, coils, z, y, x)
         t2
             t2 times
+            with shape (... other, coils, z, y, x)
+        b1_scaling_factor
+            scaling factor of flip angles of refocusing pulses
             with shape (... other, coils, z, y, x)
 
         Returns
@@ -375,7 +378,7 @@ class EpgTse(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
             epg_configuration_states = rf_excitation_pulse.forward(epg_configuration_states)
             # Go through refocusing pulses (i.e one echo train)
             for i in range(flip_angles.shape[0]):
-                rf_refocusing_pulse = EpgRfPulse(flip_angles[i,...], rf_phases[i,...])
+                rf_refocusing_pulse = EpgRfPulse(flip_angles[i,...], rf_phases[i,...], b1_scaling_factor)
                 te_half_relaxation = EpgRelaxation(te[i,...] / 2, t1, t2)
                 if i == 0 or epg_configuration_states.shape[0] >= self.max_n_configuration_states:
                     gradient_dephasing = EpgGradient(epg_configuration_states.shape[-1] >= self.max_n_configuration_states)
