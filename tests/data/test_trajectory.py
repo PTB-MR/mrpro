@@ -157,11 +157,22 @@ def test_trajectory_cuda(cartesian_grid):
     n_k2 = 30
     kz_full, ky_full, kx_full = cartesian_grid(n_k2, n_k1, n_k0, jitter=0.0)
     trajectory = KTrajectory(kz_full, ky_full, kx_full)
-
     trajectory_cuda = trajectory.cuda()
+
     assert trajectory_cuda.kz.is_cuda
     assert trajectory_cuda.ky.is_cuda
     assert trajectory_cuda.kx.is_cuda
+
+    assert trajectory.kz.is_cpu
+    assert trajectory.ky.is_cpu
+    assert trajectory.kx.is_cpu
+
+    assert trajectory_cuda.is_cuda
+    assert trajectory.is_cpu
+
+    assert not trajectory_cuda.is_cpu
+    assert not trajectory.is_cuda
+
 
 
 @pytest.mark.cuda()
@@ -177,6 +188,7 @@ def test_trajectory_cpu(cartesian_grid):
     assert trajectory_cpu.kz.is_cpu
     assert trajectory_cpu.ky.is_cpu
     assert trajectory_cpu.kx.is_cpu
+    assert trajectory_cpu.is_cpu
 
 
 @COMMON_MR_TRAJECTORIES

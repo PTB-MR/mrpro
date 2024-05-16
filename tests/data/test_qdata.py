@@ -52,7 +52,11 @@ def test_QData_cuda(random_kheader, random_test_data):
     qdata = QData(data=random_test_data, header=random_kheader)
     qdata_cuda = qdata.cuda()
     assert qdata_cuda.data.is_cuda
-
+    assert qdata.data.is_cpu
+    assert qdata_cuda.is_cuda
+    assert qdata.is_cpu
+    assert not qdata_cuda.is_cpu
+    assert not qdata.is_cuda
 
 @pytest.mark.cuda()
 def test_QData_cpu(random_kheader, random_test_data):
@@ -60,3 +64,4 @@ def test_QData_cpu(random_kheader, random_test_data):
     qdata = QData(data=random_test_data, header=random_kheader)
     qdata_cpu = qdata.cuda().cpu()
     assert qdata_cpu.data.is_cpu
+    assert qdata_cpu.is_cpu

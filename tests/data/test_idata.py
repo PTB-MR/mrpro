@@ -88,7 +88,15 @@ def test_IData_cuda(random_kheader, random_test_data):
     """Move IData object to CUDA memory."""
     idata = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
     idata_cuda = idata.cuda()
+
     assert idata_cuda.data.is_cuda
+    assert idata.data.is_cpu
+
+    assert idata_cuda.is_cuda
+    assert idata.is_cpu
+
+    assert not idata_cuda.is_cpu
+    assert not idata.is_cuda
 
 
 @pytest.mark.cuda()
@@ -97,6 +105,7 @@ def test_IData_cpu(random_kheader, random_test_data):
     idata = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
     idata_cpu = idata.cuda().cpu()
     assert idata_cpu.data.is_cpu
+    assert idata_cpu.is_cpu
 
 
 def test_IData_rss(random_kheader, random_test_data):

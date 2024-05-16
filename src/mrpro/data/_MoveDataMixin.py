@@ -89,66 +89,46 @@ class MoveDataMixin(ABC, DataclassInstance):
         If other conversions are desired, please use the torch.Tensor.to() method of
         the fields directly.
         """
-        other_args: Sequence[Any] = ()
-        other_kwargs: dict[str, Any] = {}
-        dtype: torch.dtype | None = None
-        device: torch.device | str | int | None = None
+        def parse3(other, non_blocking=False, copy=False):
+            return other.device, other.dtype, non_blocking, copy, torch.preserve_format
+        def parse1(dtype, non_blocking=False, copy=False, memory_format=torch.preserve_format):
+            return None, dtype, non_blocking, copy, memory_format
+        def parse2(device=None, dtype=None, non_blocking=False, copy=False, memory_format=torch.preserve_format):
+            return device, dtype, non_blocking, copy, memory_format
+        if args and isinstance(args[0],torch.Tensor) or 'other' in kwargs:
+            parser = parse3
+        elif args and isinstance(args[0], torch.dtype):
+            parser= parse1
+        else:
+            parser = parse2
+        device, dtype, non_blocking, copy, memory_format = parser(*args,**kwargs)
+        return self._to(device=device, dtype=dtype, non_blocking=non_blocking, memory_format=memory_format, copy=copy, memo={})
 
-        # match dtype and device from args and kwargs
-        match args, kwargs:
-            case ((_dtype, *_args), {**_kwargs}) if isinstance(_dtype, torch.dtype):
-                # overload 1
-                dtype = _dtype
-                other_args = _args
-                other_kwargs = _kwargs
-            case (_args, {'dtype': _dtype, **_kwargs}) if isinstance(_dtype, torch.dtype):
-                # dtype as kwarg
-                dtype = _dtype
-                other_args = _args
-                other_kwargs = _kwargs
-            case ((other, *_args), {**_kwargs}) | (_args, {'other': other, **_kwargs}) if isinstance(
-                other, torch.Tensor
-            ):
-                # overload 3: use dtype and device from other
-                dtype = other.dtype
-                device = other.device
-        match args, kwargs:
-            case ((_device, _dtype, *_args), {**_kwargs}) if isinstance(
-                _device, torch.device | str | int | None
-            ) and isinstance(_dtype, torch.dtype):
-                # overload 2 with device and dtype
-                dtype = _dtype
-                device = _device
-                other_args = _args
-                other_kwargs = _kwargs
-            case ((_device, *_args), {**_kwargs}) if isinstance(_device, torch.device | str | int | None):
-                # overload 2, only device
-                device = _device
-                other_args = _args
-                other_kwargs = _kwargs
-            case (_args, {'device': _device, **_kwargs}) if isinstance(_device, torch.device | str | int | None):
-                # device as kwarg
-                device = _device
-                other_args = _args
-                other_kwargs = _kwargs
 
-        other_kwargs['copy'] = True
+    def _to(device: torch.device | str | int | None, dtype: torch.dtype | None, non_blocking: bool, memory_format: torch.memory_format | None, copy:bool, memo:dict) -> Self:
         new_data: dict[str, Any] = {}
+
+        def _tensor_to(data: torch.Tensor) -> torch.Tensor:
+            """Move tensor to device and convert dtype if necessary."""
+            if dtype is not None and data.dtype.is_floating_point:
+                    new_dtype = dtype.to_real()
+            if dtype is not None and data.dtype.is_complex:
+                    new_dtype = dtype.to_complex()
+            else:
+                    # bool or int: keep as is
+                    new_dtype = None
+            return data.to(device, new_dtype, *other_args, **{**other_kwargs, 'copy':True})
+
         for field in dataclasses.fields(self):
             name = field.name
             data = getattr(self, name)
             if isinstance(data, torch.Tensor):
-                new_device = data.device if device is None else device
-                if dtype is None:
-                    new_dtype = data.dtype
-                elif data.dtype.is_floating_point:
-                    new_dtype = dtype.to_real()
-                elif data.dtype.is_complex:
-                    new_dtype = dtype.to_complex()
-                else:
-                    # bool or int: keep as is
-                    new_dtype = data.dtype
-                new_data[name] = data.to(new_device, new_dtype, *other_args, **other_kwargs)
+                new_data[name] = _tensor_to(data)
+            elif isinstance(data, torch.nn.Module):
+                data.apply(_tensor_to)
+
+
+
             elif isinstance(data, MoveDataMixin):
                 new_data[name] = data.to(*args, **kwargs)
             else:
@@ -160,10 +140,9 @@ class MoveDataMixin(ABC, DataclassInstance):
         device: torch.device | str | int | None = None,
         non_blocking: bool = False,
         memory_format: torch.memory_format = torch.preserve_format,
+        copy: bool = True,
     ) -> Self:
-        """Create copy of object with data in CUDA memory.
-
-        This will always return a copy.
+        """Put object in CUDA memory.
 
 
         Parameters
@@ -175,23 +154,25 @@ class MoveDataMixin(ABC, DataclassInstance):
             Otherwise, the argument has no effect.
         memory_format
             The desired memory format of returned tensor.
+        copy
+            If True, the returned tensor will always be a copy, even if the input was already on the correct device.
         """
         if device is None:
             device = torch.device(torch.cuda.current_device())
-        return self.to(device=device, memory_format=memory_format, non_blocking=non_blocking)
+        return self.to(device=device, memory_format=memory_format, non_blocking=non_blocking, copy=copy)
 
-    def cpu(self, memory_format: torch.memory_format = torch.preserve_format) -> Self:
-        """Create copy of object in CPU memory.
-
-        This will always return a copy.
+    def cpu(self, memory_format: torch.memory_format = torch.preserve_format, copy:bool=True) -> Self:
+        """Put in CPU memory.
 
 
         Parameters
         ----------
         memory_format
             The desired memory format of returned tensor.
+        copy
+            If True, the returned tensor will always be a copy, even if the input was already on the correct device.
         """
-        return self.to(device='cpu', memory_format=memory_format)
+        return self.to(device='cpu', memory_format=memory_format,copy=copy)
 
     @property
     def device(self) -> torch.device | None:
@@ -228,7 +209,7 @@ class MoveDataMixin(ABC, DataclassInstance):
 
     def clone(self: Self) -> Self:
         """Return a deep copy of the object."""
-        return deepcopy(self)
+        return self._to(device=None, dtype=None, non_blocking=False, memory_format=torch.preserve_format, copy=True, memo={})
 
     @property
     def is_cuda(self) -> bool:
