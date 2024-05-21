@@ -391,7 +391,7 @@ class EpgTse(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
                 epg_configuration_states = rf_refocusing_pulse.apply(epg_configuration_states)
                 epg_configuration_states = gradient_dephasing.apply(epg_configuration_states)
                 epg_configuration_states = te_half_relaxation.apply(epg_configuration_states)
-                signal[i + j * flip_angles.shape[0], ...] = epg_configuration_states[..., 0, 0]
+                signal[i + j * flip_angles.shape[0], ...] = m0 * epg_configuration_states[..., 0, 0]
 
             epg_configuration_states = tr_relaxation.apply(epg_configuration_states)
 
