@@ -91,7 +91,7 @@ class EllipsePhantom:
         """
         # Calculate image representation of phantom
         ny, nx = image_dimensions.y, image_dimensions.x
-        ix, it = torch.meshgrid(
+        ix, iy = torch.meshgrid(
             torch.linspace(-nx // 2, nx // 2 - 1, nx),
             torch.linspace(-ny // 2, ny // 2 - 1, ny),
             indexing='xy',
@@ -101,7 +101,7 @@ class EllipsePhantom:
         for ellipse in self.ellipses:
             in_ellipse = (
                 (ix / nx - ellipse.center_x) ** 2 / ellipse.radius_x**2
-                + (it / ny - ellipse.center_y) ** 2 / ellipse.radius_y**2
+                + (iy / ny - ellipse.center_y) ** 2 / ellipse.radius_y**2
             ) <= 1
             idata += ellipse.intensity * in_ellipse
 
