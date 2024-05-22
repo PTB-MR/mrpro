@@ -20,7 +20,7 @@ import torch.nn.functional as F  # noqa: N812
 from mrpro.operators._Operator import Operator
 
 
-class MSEDataDiscrepancy(Operator[*tuple[torch.Tensor], tuple[torch.Tensor]]):
+class MSEDataDiscrepancy(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """Mean Squared Error (MSE) loss function.
 
         This class implements the function
