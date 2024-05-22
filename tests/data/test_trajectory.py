@@ -163,6 +163,16 @@ def test_trajectory_cuda(cartesian_grid):
     assert trajectory_cuda.ky.is_cuda
     assert trajectory_cuda.kx.is_cuda
 
+    assert trajectory.kz.is_cpu
+    assert trajectory.ky.is_cpu
+    assert trajectory.kx.is_cpu
+
+    assert trajectory_cuda.is_cuda
+    assert trajectory.is_cpu
+
+    assert not trajectory_cuda.is_cpu
+    assert not trajectory.is_cuda
+
 
 @pytest.mark.cuda()
 def test_trajectory_cpu(cartesian_grid):
