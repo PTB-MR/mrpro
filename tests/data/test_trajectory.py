@@ -174,7 +174,6 @@ def test_trajectory_cuda(cartesian_grid):
     assert not trajectory.is_cuda
 
 
-
 @pytest.mark.cuda()
 def test_trajectory_cpu(cartesian_grid):
     """Move KTrajectory object to CUDA memory and back to CPU memory."""

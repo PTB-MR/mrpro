@@ -58,6 +58,7 @@ def test_QData_cuda(random_kheader, random_test_data):
     assert not qdata_cuda.is_cpu
     assert not qdata.is_cuda
 
+
 @pytest.mark.cuda()
 def test_QData_cpu(random_kheader, random_test_data):
     """Move IData object to CUDA memory and back to CPU memory."""

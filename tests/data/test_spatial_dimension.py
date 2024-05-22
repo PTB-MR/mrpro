@@ -98,6 +98,7 @@ def test_spatial_dimension_zyx():
     assert isinstance(spatial_dimension.zyx, tuple)
     assert spatial_dimension.zyx == (z, y, x)
 
+
 @pytest.mark.cuda()
 def test_spatial_dimension_cuda_tensor():
     """Test moving to CUDA"""
@@ -114,9 +115,10 @@ def test_spatial_dimension_cuda_tensor():
     assert not spatial_dimension_cuda.is_cpu
     assert not spatial_dimension.is_cuda
 
+
 def test_spatial_dimension_cuda_float():
     """Test moving to CUDA without tensors -> copy only"""
-    spatial_dimension = SpatialDimension(z=1., y=2., x=3.)
+    spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
     # the device number should not matter, has there is no
     # data to move to the device
     spatial_dimension_cuda = spatial_dimension.cuda(42)
