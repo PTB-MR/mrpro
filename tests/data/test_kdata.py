@@ -172,14 +172,22 @@ def test_KData_to_cudatensor(ismrmrd_cart):
     assert kdata_cuda.data.is_cuda
 
 
-def test_Kdata_to_same(ismrmrd_cart):
+def test_Kdata_to_same_copy(ismrmrd_cart):
     """Call .to with no change in dtype or device."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
-    kdata2 = kdata.to()
+    kdata2 = kdata.to(copy=True)
     assert kdata is not kdata2
     assert torch.equal(kdata.data, kdata2.data)
     assert kdata2.data.dtype == kdata.data.dtype
     assert kdata2.data.device == kdata.data.device
+
+
+def test_Kdata_to_same_nocopy(ismrmrd_cart):
+    """Call .to with no change in dtype or device."""
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kdata2 = kdata.to(copy=False)
+    assert kdata is not kdata2
+    assert kdata.data is kdata2.data
 
 
 def test_KData_to_complex128_data(ismrmrd_cart):
