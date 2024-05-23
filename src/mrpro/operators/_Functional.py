@@ -1,20 +1,24 @@
 import torch
 import torch.nn.functional as F  # noqa: N812
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from mrpro.operators._Operator import Operator
 
-class Functional(Operator[tuple[torch.Tensor], tuple[torch.Tensor]]):
+class Functional(Operator[torch.Tensor,tuple[torch.Tensor]]):
     
-    def __init__(self, lam=1):
+    def __init__(self, lam:float=1.):
         super().__init__()
         self.lam = lam
         
-    @abstractmethod
-    def prox(self, *args:torch.Tensor) -> torch.Tensor:
+class ProximableFunctional(Functional):
+    def prox(self, x:torch.Tensor, sigma:torch.Tensor) -> tuple[torch.Tensor]:
         """Apply forward operator."""
-        ...
+        return x-self.prox_convex_conj(x, sigma)
         
-    @abstractmethod
-    def prox_convex_conj(self, *args:torch.Tensor) -> torch.Tensor:
+    def prox_convex_conj(self, x:torch.Tensor, sigma:torch.Tensor) -> tuple[torch.Tensor]:
         """Apply forward operator."""
+        return x-self.prox(x, sigma)
         ...
+
+        
+    
+        

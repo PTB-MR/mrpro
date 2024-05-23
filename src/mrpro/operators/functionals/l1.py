@@ -1,40 +1,38 @@
-
-
 import torch
 import torch.nn.functional as F  # noqa: N812
 
-from mrpro.operators._Functional import Functional
+from mrpro.operators._Functional import ProximableFunctional
 
-class L1Norm(Functional):
+class L1Norm(ProximableFunctional):
     
-    def __init__(self, g:torch.Tensor=None):
-        super().__init__(lam=1)
+    def __init__(self, lam=1, g:torch.Tensor=torch.tensor([0])):
+        super().__init__(lam=lam)
         self.g = g
 
     def forward(self, x):
-        return x.abs().inner(torch.ones(x))
+        return (x.abs().sum(),)
     
     def prox(self, x:torch.Tensor, sigma):
-        # diff = x - g
-        if self.g is not None:
-            diff = x - self.g
+        is_complex = x.is_complex()
+        if is_complex:
+            x = torch.view_as_real(x)
+            threshold = torch.tensor([self.lam*sigma]).unsqueeze(-1)
         else:
-            diff = x
-        # x - (x - g) / max(|x -g|/sigma*lam, 1)
-        denom = diff.abs()
-        denom /= sigma*self.lam
-        denom = torch.max(torch.ones(denom), denom)
-        # out = (x - g)/denom
-        out = torch.div(diff,denom)
-        return x-out
+            threshold = torch.tensor([self.lam*sigma])
+        x = torch.clamp(x, -threshold, threshold)
+        if is_complex:
+            x = torch.view_as_complex(x)
+        return x
         
     def prox_convex_conj(self, x, sigma):
-        # diff = x - sigma * g
-        if self.g is not None:
-            diff = x-sigma*self.g
-        else:
-            diff = x
-        # out = max( |x - sigma * g|, lam) / lam
-        out = max(diff.abs(),self.lam)/self.lam
-        return diff/out
+        is_complex = x.is_complex()
+        if is_complex:
+            x = torch.view_as_real(x)
+            self.lam = torch.tensor([self.lam]).unsqueeze(-1)
+            sigma = torch.tensor([sigma]).unsqueeze(-1)
+            self.g = torch.tensor([self.g]).unsqueeze(-1)
+        x = torch.clamp((x-self.g*sigma), -self.lam, self.lam)
+        if is_complex:
+            x = torch.view_as_complex(x)
+        return x
         

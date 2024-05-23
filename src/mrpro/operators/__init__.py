@@ -16,3 +16,4 @@ from mrpro.operators._SensitivityOp import SensitivityOp
 from mrpro.operators._SignalModel import SignalModel
 from mrpro.operators._SliceProjectionOp import SliceProjectionOp
 from mrpro.operators._ZeroPadOp import ZeroPadOp
+from mrpro.operators._Functional import Functional

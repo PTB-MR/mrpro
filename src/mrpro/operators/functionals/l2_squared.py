@@ -3,16 +3,16 @@
 import torch
 import torch.nn.functional as F  # noqa: N812
 
-from mrpro.operators._Functional import Functional
+from mrpro.operators._Functional import ProximableFunctional
 
-class L2NormSquared(Functional):
+class L2NormSquared(ProximableFunctional):
     
-    def __init__(self, g:torch.Tensor=None):
+    def __init__(self, lam=1, g:torch.Tensor=None):
         super().__init__(lam=1)
         self.g = g
 
     def forward(self, x:torch.Tensor) -> torch.Tensor:
-        return x.inner(x)
+        return x.inner(x) # does this work for complex? or should it be vdot
     
     def convex_conj(self):
         return 1/4 * L2NormSquared()
