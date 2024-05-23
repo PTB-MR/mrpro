@@ -5,14 +5,14 @@ from mrpro.operators._Functional import ProximableFunctional
 
 class L1Norm(ProximableFunctional):
     
-    def __init__(self, lam=1, g:torch.Tensor=torch.tensor([0])):
+    def __init__(self, lam:float=1.0, g:torch.Tensor=torch.tensor([0])):
         super().__init__(lam=lam)
         self.g = g
 
-    def forward(self, x):
+    def forward(self, x:torch.Tensor) -> tuple[torch.Tensor]:
         return (x.abs().sum(),)
     
-    def prox(self, x:torch.Tensor, sigma):
+    def prox(self, x:torch.Tensor, sigma:torch.Tensor) -> tuple[torch.Tensor]:
         is_complex = x.is_complex()
         if is_complex:
             x = torch.view_as_real(x)
@@ -22,9 +22,9 @@ class L1Norm(ProximableFunctional):
         x = torch.clamp(x, -threshold, threshold)
         if is_complex:
             x = torch.view_as_complex(x)
-        return x
+        return (x,)
         
-    def prox_convex_conj(self, x, sigma):
+    def prox_convex_conj(self, x:torch.Tensor, sigma:torch.Tensor) -> tuple[torch.Tensor]:
         is_complex = x.is_complex()
         if is_complex:
             x = torch.view_as_real(x)
@@ -34,5 +34,5 @@ class L1Norm(ProximableFunctional):
         x = torch.clamp((x-self.g*sigma), -self.lam, self.lam)
         if is_complex:
             x = torch.view_as_complex(x)
-        return x
+        return (x,)
         
