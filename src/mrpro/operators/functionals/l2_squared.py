@@ -7,10 +7,9 @@ from mrpro.operators._Functional import Functional
 
 class L2NormSquared(Functional):
     
-    def __init__(self, lam=1, g:torch.Tensor=None):
+    def __init__(self, g:torch.Tensor=None):
         super().__init__(lam=1)
         self.g = g
-        self.lam = lam
 
     def forward(self, x:torch.Tensor) -> torch.Tensor:
         return x.inner(x)
