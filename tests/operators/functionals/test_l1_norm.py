@@ -1,4 +1,4 @@
-"""Tests for L2-Squared-functional."""
+"""Tests for L1-functional."""
 
 # Copyright 20234 Physikalisch-Technische Bundesanstalt
 #
@@ -14,7 +14,7 @@
 
 import pytest
 import torch
-from mrpro.operators.functionals.l2_squared import L2NormSquared
+from mrpro.operators.functionals.l1 import L1Norm
 
 
 @pytest.mark.parametrize(
@@ -30,42 +30,42 @@ from mrpro.operators.functionals.l2_squared import L2NormSquared
         (
             torch.tensor([1, 1], dtype=torch.complex64),
             torch.tensor([2.0]),
-            torch.tensor([1 / 3, 1 / 3], dtype=torch.complex64),
-            torch.tensor([2 / 3, 2 / 3], dtype=torch.complex64),
-            torch.tensor([1 / 3**2 + 1 / 3**2], dtype=torch.float32),
-            torch.tensor([(2 / 3) ** 2 + (2 / 3) ** 2]),
+            torch.tensor([1 + 0j, 1 + 0j], dtype=torch.complex64),
+            torch.tensor([1 + 0j, 1 + 0j], dtype=torch.complex64),
+            torch.tensor([2.0], dtype=torch.float32),
+            torch.tensor([2.0]),
         ),
         (
             torch.tensor([1 + 1j, 1 + 1j], dtype=torch.complex64),
-            torch.tensor([4.0]),
-            torch.tensor([(1 + 1j) / 3, (1 + 1j) / 3], dtype=torch.complex64),
-            torch.tensor([2 * (1 + 1j) / 3, 2 * (1 + 1j) / 3], dtype=torch.complex64),
-            torch.tensor([4 / 9], dtype=torch.float32),
-            torch.tensor([16 / 9]),
+            torch.tensor([2.8284]),
+            torch.tensor([1.0 + 1.0j, 1.0 + 1.0j], dtype=torch.complex64),
+            torch.tensor([1.0 + 1.0j, 1.0 + 1.0j], dtype=torch.complex64),
+            torch.tensor([2.8284], dtype=torch.float32),
+            torch.tensor([2.8284]),
         ),
         (
             torch.tensor([1 + 0j, 1 + 1j], dtype=torch.complex64),
-            torch.tensor([3.0], dtype=torch.float32),
-            torch.tensor([1 / 3, (1 + 1j) / 3], dtype=torch.complex64),
-            torch.tensor([2 / 3, 2 * (1 + 1j) / 3], dtype=torch.complex64),
-            torch.tensor([1 / 3], dtype=torch.float32),
-            torch.tensor([4 / 3]),
+            torch.tensor([2.4142], dtype=torch.float32),
+            torch.tensor([1.0 + 0.0j, 1.0 + 1.0j], dtype=torch.complex64),
+            torch.tensor([1.0 + 0.0j, 1.0 + 1.0j], dtype=torch.complex64),
+            torch.tensor([2.4142], dtype=torch.float32),
+            torch.tensor([2.4142]),
         ),
     ],
 )
-def test_l2_squared_functional(
+def test_l1_functional(
     x, expected_result_x, expected_result_p, expected_result_pcc, expected_result_p_forward, expected_result_pcc_forward
 ):
-    """Test if l2_squared matches expected values."""
-    l2_squared = L2NormSquared(lam=1)
+    """Test if L1 norm matches expected values."""
+    l1_norm = L1Norm(lam=1)
     # prox + forward
-    (p,) = l2_squared.prox(x, sigma=1)
-    (p_forward,) = l2_squared.forward(p)
+    (p,) = l1_norm.prox(x, sigma=1)
+    (p_forward,) = l1_norm.forward(p)
     # forward
-    (x_forward,) = l2_squared.forward(x)
+    (x_forward,) = l1_norm.forward(x)
     # prox convex conjugate
-    (pcc,) = l2_squared.prox_convex_conj(x, sigma=1)
-    (pcc_forward,) = l2_squared.forward(pcc)
+    (pcc,) = l1_norm.prox_convex_conj(x, sigma=1)
+    (pcc_forward,) = l1_norm.forward(pcc)
 
     torch.testing.assert_close(x_forward, expected_result_x, rtol=1e-3, atol=1e-3)
     torch.testing.assert_close(p, expected_result_p, rtol=1e-3, atol=1e-3)
