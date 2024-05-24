@@ -23,6 +23,8 @@ from mrpro.operators.functionals.l2_squared import L2NormSquared
         torch.tensor([2/3,2/3],dtype=torch.complex64), torch.tensor([1/3**2+1/3**2],dtype=torch.float32), torch.tensor([(2/3)**2+(2/3)**2])),
         (torch.tensor([1+1j,1+1j],dtype=torch.complex64), torch.tensor([4.0]), torch.tensor([(1+1j)/3,(1+1j)/3],dtype=torch.complex64),
         torch.tensor([2*(1+1j)/3,2*(1+1j)/3],dtype=torch.complex64), torch.tensor([4/9],dtype=torch.float32), torch.tensor([16/9])),
+        (torch.tensor([1+0j,1+1j],dtype=torch.complex64), torch.tensor([3.0],dtype=torch.float32),torch.tensor([1/3,(1+1j)/3],dtype=torch.complex64),
+         torch.tensor([2/3,2*(1+1j)/3],dtype=torch.complex64), torch.tensor([1/3],dtype=torch.float32), torch.tensor([4/3]))
     ],
 )
 def test_l2_squared_functional(x, expected_result_x, expected_result_p, expected_result_pcc, expected_result_p_forward, expected_result_pcc_forward):
@@ -40,6 +42,9 @@ def test_l2_squared_functional(x, expected_result_x, expected_result_p, expected
     # prox convex conjugate
     (pcc,) = l2_squared.prox_convex_conj(x, sigma=1)
     (pcc_forward,) = l2_squared.forward(pcc)
+    
+    print(pcc_forward)
+    print(expected_result_pcc_forward)
 
     torch.testing.assert_close(x_forward, expected_result_x, rtol=1e-3, atol=1e-3)
     torch.testing.assert_close(p, expected_result_p, rtol=1e-3, atol=1e-3)
