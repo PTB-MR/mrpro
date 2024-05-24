@@ -13,16 +13,6 @@ class L1Norm(ProximableFunctional):
         lambda = 1
     """
 
-    def __init__(self, lam: float = 1.0, g: torch.Tensor = torch.tensor([0])):
-        """init.
-
-        Args:
-            lam (float, optional): lambda scaling factor. Defaults to 1.0.
-            g (torch.Tensor, optional): scaling factor. Defaults to torch.tensor([0]).
-        """
-        super().__init__(lam=lam)
-        self.g = g
-
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """forward.
 
@@ -33,7 +23,7 @@ class L1Norm(ProximableFunctional):
         -------
             tuple[torch.Tensor]: forward of data
         """
-        return (torch.tensor([x.abs().sum()]),)
+        return (torch.tensor([(x - self.g).abs().sum(self.dim)]),)
 
     def prox(self, x: torch.Tensor, sigma: torch.Tensor) -> tuple[torch.Tensor]:
         """Prox of L1 Norm.
