@@ -13,9 +13,49 @@
 # limitations under the License.
 
 import pytest
+import torch
 from mrpro.operators import WaveletOp
+from ptwt.conv_transform import wavedec
+from ptwt.conv_transform_2 import wavedec2
+from ptwt.conv_transform_3 import wavedec3
 
 from tests import RandomGenerator
+
+
+@pytest.mark.parametrize(
+    ('im_shape', 'domain_shape', 'dim'),
+    [
+        ((5, 16, 16, 16), (16,), (-1,)),
+        ((5, 16, 16, 16), (16, 16), (-2, -1)),
+        ((5, 16, 16, 16), (16, 16, 16), (-3, -2, -1)),
+    ],
+)
+def test_wavelet_op_coefficient_transform(im_shape, domain_shape, dim):
+    random_generator = RandomGenerator(seed=0)
+    img = random_generator.float32_tensor(size=im_shape)
+    wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim)
+    if len(dim) == 1:
+        coeff_ptwt = wavedec(img, 'haar', level=2, mode='reflect')
+        coeff_mrpro = wavelet_op._format_coeffs_1d(coeff_ptwt)
+        coeff_ptwt_transformed = wavelet_op._undo_format_coeffs_1d(coeff_mrpro)
+    elif len(dim) == 2:
+        coeff_ptwt = wavedec2(img, 'haar', level=2, mode='reflect')
+        coeff_mrpro = wavelet_op._format_coeffs_2d(coeff_ptwt)
+        coeff_ptwt_transformed = wavelet_op._undo_format_coeffs_2d(coeff_mrpro)
+    elif len(dim) == 3:
+        coeff_ptwt = wavedec3(img, 'haar', level=2, mode='reflect')
+        coeff_mrpro = wavelet_op._format_coeffs_3d(coeff_ptwt)
+        coeff_ptwt_transformed = wavelet_op._undo_format_coeffs_3d(coeff_mrpro)
+
+    for i in range(len(coeff_ptwt)):
+        if isinstance(coeff_ptwt[i], dict):
+            assert all(torch.allclose(coeff_ptwt[i][key], coeff_ptwt_transformed[i][key]) for key in coeff_ptwt[i])
+        elif isinstance(coeff_ptwt[i], torch.Tensor):
+            assert torch.allclose(coeff_ptwt[i], coeff_ptwt_transformed[i])
+        elif isinstance(coeff_ptwt[i], tuple):
+            assert all(
+                torch.allclose(coeff_ptwt[i][j], coeff_ptwt_transformed[i][j]) for j in range(len(coeff_ptwt[i]))
+            )
 
 
 def test_wavelet_op_wrong_dim():
@@ -33,8 +73,6 @@ def test_wavelet_op_mismatch_dim_domain_shape():
     [
         ((10, 20, 30), (30,), (-1,)),
         ((10, 20, 30), (20, 30), (-2, -1)),
-        ((10, 20, 30), (10, 20, 30), (-3, -2, -1)),  # error because default to level=0
-        ((10, 20, 30), (10, 20), (-3, -2)),  # error because default to level=0
     ],
 )
 def test_wavelet_op_isometry(im_shape, domain_shape, dim):
