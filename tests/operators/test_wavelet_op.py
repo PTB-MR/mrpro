@@ -20,6 +20,9 @@ from ptwt.conv_transform_2 import wavedec2
 from ptwt.conv_transform_3 import wavedec3
 
 from tests import RandomGenerator
+from tests.helper import dotproduct_adjointness_test
+from tests.helper import operator_isometry_test
+from tests.helper import operator_unitary_test
 
 
 @pytest.mark.parametrize(
@@ -68,24 +71,60 @@ def test_wavelet_op_mismatch_dim_domain_shape():
         WaveletOp(domain_shape=(10, 20), dim=(-2,))
 
 
+@pytest.mark.parametrize('wavelet_name', [('haar',), ('db4',)])
 @pytest.mark.parametrize(
     ('im_shape', 'domain_shape', 'dim'),
     [
-        ((10, 20, 30), (30,), (-1,)),
-        ((10, 20, 30), (20, 30), (-2, -1)),
+        ((1, 32, 32), (32,), (-1,)),
+        ((1, 32, 32), (32, 32), (-2, -1)),
+        ((4, 32, 32), (32, 32), (-2, -1)),
+        ((1, 32, 32, 32), (32, 32, 32), (-3, -2, -1)),
     ],
 )
-def test_wavelet_op_isometry(im_shape, domain_shape, dim):
+def test_wavelet_op_isometry(im_shape, domain_shape, dim, wavelet_name):
+    """Test that the wavelet operator is a linear isometry."""
     random_generator = RandomGenerator(seed=0)
     img = random_generator.float32_tensor(size=im_shape)
-    wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim)
-    wavelet_coefficients = wavelet_op(img)
-    assert wavelet_coefficients is not None
+    wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name=wavelet_name, level=2)
+    operator_isometry_test(wavelet_op, img)
 
 
-def test_wavelet_op_adjointness():
-    pass
+@pytest.mark.parametrize('wavelet_name', [('haar',), ('db4',)])
+@pytest.mark.parametrize(
+    ('im_shape', 'domain_shape', 'dim'),
+    [
+        ((1, 32, 32), (32,), (-1,)),
+        ((1, 32, 32), (32, 32), (-2, -1)),
+        ((4, 32, 32), (32, 32), (-2, -1)),
+        ((1, 32, 32, 32), (32, 32, 32), (-3, -2, -1)),
+    ],
+)
+def test_wavelet_op_adjointness(im_shape, domain_shape, dim, wavelet_name):
+    # test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v
+    random_generator = RandomGenerator(seed=0)
+
+    wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name=wavelet_name, level=2)
+    # calculate 1D length of wavelet coefficients
+    range_shape = [(torch.prod(shape)) for shape in wavelet_op.coefficients_shape]
+
+    u = random_generator.float32_tensor(size=im_shape)
+    v = random_generator.float32_tensor(size=im_shape[: -len(dim)] + (torch.sum(torch.as_tensor(range_shape)),))
+    dotproduct_adjointness_test(wavelet_op, u, v)
 
 
-def test_wavelet_op_unitary():
-    pass
+@pytest.mark.parametrize('wavelet_name', [('haar',), ('db4',)])
+@pytest.mark.parametrize(
+    ('im_shape', 'domain_shape', 'dim'),
+    [
+        ((1, 32, 32), (32,), (-1,)),
+        ((1, 32, 32), (32, 32), (-2, -1)),
+        ((4, 32, 32), (32, 32), (-2, -1)),
+        ((1, 32, 32, 32), (32, 32, 32), (-3, -2, -1)),
+    ],
+)
+def test_wavelet_op_unitary(im_shape, domain_shape, dim, wavelet_name):
+    """Test if wavelet operator is unitary."""
+    random_generator = RandomGenerator(seed=0)
+    img = random_generator.float32_tensor(size=im_shape)
+    wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name=wavelet_name, level=2)
+    operator_unitary_test(wavelet_op, img)
