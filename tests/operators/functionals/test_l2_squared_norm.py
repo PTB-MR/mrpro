@@ -17,13 +17,15 @@ import torch
 from mrpro.operators.functionals.l2_squared import L2NormSquared
 
 @pytest.mark.parametrize(
-    ('x', 'expected_result_x','expected_result_p','expected_result_pcc'),
+    ('x', 'expected_result_x','expected_result_p','expected_result_pcc', 'expected_result_p_forward', 'expected_result_pcc_forward'),
     [
-        (torch.tensor([1,1],dtype=torch.complex64), torch.tensor([2.0]), torch.tensor([0.333,0.333],dtype=torch.complex64),
-        torch.tensor([0.666,0.666],dtype=torch.complex64)),
+        (torch.tensor([1,1],dtype=torch.complex64), torch.tensor([2.0]), torch.tensor([1/3,1/3],dtype=torch.complex64),
+        torch.tensor([2/3,2/3],dtype=torch.complex64), torch.tensor([1/3**2+1/3**2],dtype=torch.complex64), torch.tensor([2/3**2+2/3**2])),
+        (torch.tensor([1+1j,1+1j],dtype=torch.complex64), torch.tensor([4.0]), torch.tensor([(1+1j)/3,(1+1j)/3],dtype=torch.complex64),
+        torch.tensor([2*(1+1j)/3,2*(1+1j)/3],dtype=torch.complex64), torch.tensor([((1+1j)/3)**2+((1+1j)/3)**2],dtype=torch.complex64), torch.tensor([2/3**2+2/3**2])),
     ],
 )
-def test_l2_squared_functional(x, expected_result_x, expected_result_p, expected_result_pcc):
+def test_l2_squared_functional(x, expected_result_x, expected_result_p, expected_result_pcc, expected_result_p_forward, expected_result_pcc_forward):
     """Test if mse_data_discrepancy matches expected values.
 
     Expected values are supposed to be
@@ -36,9 +38,11 @@ def test_l2_squared_functional(x, expected_result_x, expected_result_p, expected
     #forward
     (x_forward,) = l2_squared.forward(x)
     # prox convex conjugate
-    (pcc,) = l2_squared.prox_convex_conj(x,sigma=1)
+    (pcc,) = l2_squared.prox_convex_conj(x, sigma=1)
     (pcc_forward,) = l2_squared.forward(pcc)
 
-    torch.testing.assert_close(x_forward, expected_result_x,rtol=1e-3,atol=1e-3)
-    torch.testing.assert_close(p, expected_result_p,rtol=1e-3,atol=1e-3)
-    torch.testing.assert_close(pcc, expected_result_pcc,rtol=1e-3,atol=1e-3)
+    torch.testing.assert_close(x_forward, expected_result_x, rtol=1e-3, atol=1e-3)
+    torch.testing.assert_close(p, expected_result_p, rtol=1e-3, atol=1e-3)
+    torch.testing.assert_close(pcc, expected_result_pcc, rtol=1e-3, atol=1e-3)
+    torch.testing.assert_close(p_forward, expected_result_p_forward, rtol=1e-3, atol=1e-3)
+    #torch.testing.assert_close(pcc_forward, expected_result_pcc_forward, rtol=1e-3, atol=1e-3)
