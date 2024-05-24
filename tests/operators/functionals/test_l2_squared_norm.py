@@ -20,9 +20,9 @@ from mrpro.operators.functionals.l2_squared import L2NormSquared
     ('x', 'expected_result_x','expected_result_p','expected_result_pcc', 'expected_result_p_forward', 'expected_result_pcc_forward'),
     [
         (torch.tensor([1,1],dtype=torch.complex64), torch.tensor([2.0]), torch.tensor([1/3,1/3],dtype=torch.complex64),
-        torch.tensor([2/3,2/3],dtype=torch.complex64), torch.tensor([1/3**2+1/3**2],dtype=torch.complex64), torch.tensor([2/3**2+2/3**2])),
+        torch.tensor([2/3,2/3],dtype=torch.complex64), torch.tensor([1/3**2+1/3**2],dtype=torch.float32), torch.tensor([(2/3)**2+(2/3)**2])),
         (torch.tensor([1+1j,1+1j],dtype=torch.complex64), torch.tensor([4.0]), torch.tensor([(1+1j)/3,(1+1j)/3],dtype=torch.complex64),
-        torch.tensor([2*(1+1j)/3,2*(1+1j)/3],dtype=torch.complex64), torch.tensor([((1+1j)/3)**2+((1+1j)/3)**2],dtype=torch.complex64), torch.tensor([2/3**2+2/3**2])),
+        torch.tensor([2*(1+1j)/3,2*(1+1j)/3],dtype=torch.complex64), torch.tensor([4/9],dtype=torch.float32), torch.tensor([16/9])),
     ],
 )
 def test_l2_squared_functional(x, expected_result_x, expected_result_p, expected_result_pcc, expected_result_p_forward, expected_result_pcc_forward):
@@ -45,4 +45,4 @@ def test_l2_squared_functional(x, expected_result_x, expected_result_p, expected
     torch.testing.assert_close(p, expected_result_p, rtol=1e-3, atol=1e-3)
     torch.testing.assert_close(pcc, expected_result_pcc, rtol=1e-3, atol=1e-3)
     torch.testing.assert_close(p_forward, expected_result_p_forward, rtol=1e-3, atol=1e-3)
-    #torch.testing.assert_close(pcc_forward, expected_result_pcc_forward, rtol=1e-3, atol=1e-3)
+    torch.testing.assert_close(pcc_forward, expected_result_pcc_forward, rtol=1e-3, atol=1e-3)
