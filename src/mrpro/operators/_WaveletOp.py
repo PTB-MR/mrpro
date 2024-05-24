@@ -73,13 +73,13 @@ class WaveletOp(LinearOperator):
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         if len(self.dim) == 1:
-            coeffs1 = wavedec(x, self.wavelet_name, level=self.level)
+            coeffs1 = wavedec(x, self.wavelet_name, level=self.level, mode='zero')
             coefficients_list = self._format_coeffs_1d(coeffs1)
         elif len(self.dim) == 2:
-            coeffs2 = wavedec2(x, self.wavelet_name, level=self.level)
+            coeffs2 = wavedec2(x, self.wavelet_name, level=self.level, mode='zero')
             coefficients_list = self._format_coeffs_2d(coeffs2)
         elif len(self.dim) == 3:
-            coeffs3 = wavedec3(x, self.wavelet_name, level=self.level)
+            coeffs3 = wavedec3(x, self.wavelet_name, level=self.level, mode='zero')
             coefficients_list = self._format_coeffs_3d(coeffs3)
         return (self._coeff_to_1d_tensor(coefficients_list),)
 
