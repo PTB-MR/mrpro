@@ -23,7 +23,7 @@ class L2NormSquared(ProximableFunctional):
         -------
             tuple[torch.Tensor]: l2 squared of data
         """
-        return (torch.linalg.norm(x - self.g, ord=2, dim=self.dim, keepdim=True).square(),)
+        return (torch.linalg.vector_norm(x - self.g, ord=2, dim=self.dim, keepdim=True).square(),)
 
     def prox(self, x: torch.Tensor, sigma: torch.Tensor) -> tuple[torch.Tensor]:
         """Prox of L2 Norm Squared.
