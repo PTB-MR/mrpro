@@ -56,6 +56,7 @@ class WaveletOp(LinearOperator):
             current_shape = torch.as_tensor(domain_shape)
 
             self.coefficients_shape = []
+            self.coefficients_padding = []
             for _ in range(_check_level(domain_shape, wavelet_length, level)):
                 # Add padding
                 for ind in range(len(current_shape)):
@@ -63,9 +64,12 @@ class WaveletOp(LinearOperator):
                     current_shape[ind] += padl + padr
                 current_shape = torch.floor((current_shape - (wavelet_length - 1) - 1) / 2 + 1).to(dtype=torch.int64)
                 self.coefficients_shape.extend([current_shape.clone()] * self.n_wavelet_directions)
+                self.coefficients_padding.extend([(padl.clone(), padr.clone())] * self.n_wavelet_directions)
 
             self.coefficients_shape = self.coefficients_shape[::-1]
+            self.coefficients_padding = self.coefficients_padding[::-1]
             self.coefficients_shape.insert(0, self.coefficients_shape[0])  # shape of a/aa/aaa term
+            self.coefficients_padding.insert(0, self.coefficients_padding[0])  # padding of a/aa/aaa term
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         if len(self.dim) == 1:
@@ -162,7 +166,7 @@ class WaveletOp(LinearOperator):
             coeffs_ptwt_format.append(
                 dict(
                     zip(
-                        ['aad', 'ada', 'add', 'daa', 'dad', 'dda', 'ddd'],
+                        ['aad', 'ada', 'add', 'data', 'dad', 'dda', 'ddd'],
                         coefficients[i : i + self.n_wavelet_directions],
                         strict=True,
                     )
@@ -172,6 +176,9 @@ class WaveletOp(LinearOperator):
 
     def _coeff_to_1d_tensor(self, coefficients: list[torch.Tensor]) -> torch.Tensor:
         """Stack wavelet coefficients into 1D tensor.
+
+        During the calculation of the of the wavelet coefficient ptwt uses padding. To ensure the wavelet operator is
+        an isometry, cropping is needed.
 
         Parameters
         ----------
@@ -186,9 +193,9 @@ class WaveletOp(LinearOperator):
             stacked coefficients in tensor [...,coeff]
         """
         coefficients_tensor_1d = []
-        coefficients_tensor_1d.append(coefficients[0].flatten(start_dim=len(self.dim)))
+        coefficients_tensor_1d.append(coefficients[0].flatten(start_dim=-len(self.dim)))
         for coefficient in coefficients[1:]:
-            coefficients_tensor_1d.append(coefficient.flatten(start_dim=len(self.dim)))
+            coefficients_tensor_1d.append(coefficient.flatten(start_dim=-len(self.dim)))
         return torch.cat(coefficients_tensor_1d, dim=-1)
 
     def _1d_tensor_to_coeff(self, coefficients_tensor_1d: torch.Tensor) -> list[torch.Tensor]:
@@ -211,6 +218,6 @@ class WaveletOp(LinearOperator):
             coefficients_tensor_1d, [int(torch.prod(shape)) for shape in self.coefficients_shape], dim=-1
         )
         return [
-            torch.reshape(coeff, coeff.shape[:-1] + shape)
+            torch.reshape(coeff, coeff.shape[:-1] + tuple(shape))
             for coeff, shape in zip(coefficients, self.coefficients_shape, strict=False)
         ]
