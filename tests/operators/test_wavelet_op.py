@@ -85,7 +85,7 @@ def test_wavelet_op_mismatch_dim_domain_shape():
 def test_wavelet_op_isometry(im_shape, domain_shape, dim, wavelet_name):
     """Test that the wavelet operator is a linear isometry."""
     random_generator = RandomGenerator(seed=0)
-    img = random_generator.float32_tensor(size=im_shape)
+    img = random_generator.complex64_tensor(size=im_shape)
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name=wavelet_name, level=None)
     operator_isometry_test(wavelet_op, img)
 
@@ -109,8 +109,8 @@ def test_wavelet_op_adjointness(im_shape, domain_shape, dim, wavelet_name):
     # calculate 1D length of wavelet coefficients
     range_shape = [(torch.prod(shape)) for shape in wavelet_op.coefficients_shape]
 
-    u = random_generator.float32_tensor(size=im_shape)
-    v = random_generator.float32_tensor(size=im_shape[: -len(dim)] + (torch.sum(torch.as_tensor(range_shape)),))
+    u = random_generator.complex64_tensor(size=im_shape)
+    v = random_generator.complex64_tensor(size=im_shape[: -len(dim)] + (torch.sum(torch.as_tensor(range_shape)),))
     dotproduct_adjointness_test(wavelet_op, u, v)
 
 
@@ -128,6 +128,6 @@ def test_wavelet_op_adjointness(im_shape, domain_shape, dim, wavelet_name):
 def test_wavelet_op_unitary(im_shape, domain_shape, dim, wavelet_name):
     """Test if wavelet operator is unitary."""
     random_generator = RandomGenerator(seed=0)
-    img = random_generator.float32_tensor(size=im_shape)
+    img = random_generator.complex64_tensor(size=im_shape)
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name=wavelet_name)
     operator_unitary_test(wavelet_op, img)

@@ -72,19 +72,30 @@ class WaveletOp(LinearOperator):
             self.coefficients_padding.insert(0, self.coefficients_padding[0])  # padding of a/aa/aaa term
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        # the ptwt functions work only for real data, thus we handle complex inputs as an additional channel
+        x_real = torch.view_as_real(x).moveaxis(-1, -len(self.dim) - 1) if x.is_complex() else x
         if len(self.dim) == 1:
-            coeffs1 = wavedec(x, self.wavelet_name, level=self.level, mode='zero')
+            coeffs1 = wavedec(x_real, self.wavelet_name, level=self.level, mode='zero')
             coefficients_list = self._format_coeffs_1d(coeffs1)
         elif len(self.dim) == 2:
-            coeffs2 = wavedec2(x, self.wavelet_name, level=self.level, mode='zero')
+            coeffs2 = wavedec2(x_real, self.wavelet_name, level=self.level, mode='zero')
             coefficients_list = self._format_coeffs_2d(coeffs2)
         elif len(self.dim) == 3:
-            coeffs3 = wavedec3(x, self.wavelet_name, level=self.level, mode='zero')
+            coeffs3 = wavedec3(x_real, self.wavelet_name, level=self.level, mode='zero')
             coefficients_list = self._format_coeffs_3d(coeffs3)
+
+        # if input is complex, we also return complex coefficients
+        if x.is_complex():
+            for i, coeff in enumerate(coefficients_list):
+                coefficients_list[i] = torch.view_as_complex(coeff.moveaxis(-len(self.dim) - 1, -1).contiguous())
         return (self._coeff_to_1d_tensor(coefficients_list),)
 
     def adjoint(self, coeff_tensor_1d: torch.Tensor) -> tuple[torch.Tensor]:
         coefficients_list = self._1d_tensor_to_coeff(coeff_tensor_1d)
+        # the ptwt functions work only for real data, thus we handle complex inputs as an additional channel
+        if coeff_tensor_1d.is_complex():
+            for i, coeff in enumerate(coefficients_list):
+                coefficients_list[i] = torch.view_as_real(coeff).moveaxis(-1, -len(self.dim) - 1)
         if len(self.dim) == 1:
             coeffs1 = self._undo_format_coeffs_1d(coefficients_list)
             data = waverec(coeffs1, self.wavelet_name)
@@ -94,6 +105,9 @@ class WaveletOp(LinearOperator):
         elif len(self.dim) == 3:
             coeffs3 = self._undo_format_coeffs_3d(coefficients_list)
             data = waverec3(coeffs3, self.wavelet_name)
+        # if we deal with complex coefficients, we also return complex data
+        if coeff_tensor_1d.is_complex():
+            data = torch.view_as_complex(data.moveaxis(-len(self.dim) - 1, -1).contiguous())
 
         return (data,)
 
