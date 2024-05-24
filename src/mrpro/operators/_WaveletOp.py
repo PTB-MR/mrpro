@@ -162,7 +162,7 @@ class WaveletOp(LinearOperator):
             coeffs_ptwt_format.append(
                 dict(
                     zip(
-                        ['aad', 'ada', 'add', 'data', 'dad', 'dda', 'ddd'],
+                        ['aad', 'ada', 'add', 'daa', 'dad', 'dda', 'ddd'],
                         coefficients[i : i + self.n_wavelet_directions],
                         strict=True,
                     )
