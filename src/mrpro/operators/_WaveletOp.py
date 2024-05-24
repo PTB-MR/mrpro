@@ -22,7 +22,7 @@ class WaveletOp(LinearOperator):
     def __init__(
         self,
         domain_shape: Sequence[int] | None = None,
-        dim: Sequence[int] = (-2, -1),
+        dim: tuple[int] | tuple[int, int] | tuple[int, int, int] = (-2, -1),
         wavelet_name: str = 'db4',
         level: int | None = None,
     ):
@@ -73,27 +73,27 @@ class WaveletOp(LinearOperator):
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         if len(self.dim) == 1:
-            coefficients_list = wavedec(x, self.wavelet_name, level=self.level)
-            coefficients_list = self._format_coeffs_1d(coefficients_list)
+            coeffs1 = wavedec(x, self.wavelet_name, level=self.level)
+            coefficients_list = self._format_coeffs_1d(coeffs1)
         elif len(self.dim) == 2:
-            coefficients_list = wavedec2(x, self.wavelet_name, level=self.level)
-            coefficients_list = self._format_coeffs_2d(coefficients_list)
+            coeffs2 = wavedec2(x, self.wavelet_name, level=self.level)
+            coefficients_list = self._format_coeffs_2d(coeffs2)
         elif len(self.dim) == 3:
-            coefficients_list = wavedec3(x, self.wavelet_name, level=self.level)
-            coefficients_list = self._format_coeffs_3d(coefficients_list)
+            coeffs3 = wavedec3(x, self.wavelet_name, level=self.level)
+            coefficients_list = self._format_coeffs_3d(coeffs3)
         return (self._coeff_to_1d_tensor(coefficients_list),)
 
     def adjoint(self, coeff_tensor_1d: torch.Tensor) -> tuple[torch.Tensor]:
         coefficients_list = self._1d_tensor_to_coeff(coeff_tensor_1d)
         if len(self.dim) == 1:
-            coeffs = self._undo_format_coeffs_1d(coefficients_list)
-            data = waverec(coeffs, self.wavelet_name)
+            coeffs1 = self._undo_format_coeffs_1d(coefficients_list)
+            data = waverec(coeffs1, self.wavelet_name)
         elif len(self.dim) == 2:
-            coeffs = self._undo_format_coeffs_2d(coefficients_list)
-            data = waverec2(coeffs, self.wavelet_name)
+            coeffs2 = self._undo_format_coeffs_2d(coefficients_list)
+            data = waverec2(coeffs2, self.wavelet_name)
         elif len(self.dim) == 3:
-            coeffs = self._undo_format_coeffs_3d(coefficients_list)
-            data = waverec3(coeffs, self.wavelet_name)
+            coeffs3 = self._undo_format_coeffs_3d(coefficients_list)
+            data = waverec3(coeffs3, self.wavelet_name)
 
         return (data,)
 
@@ -161,8 +161,8 @@ class WaveletOp(LinearOperator):
         Converts from   [aaa, aad_n, ada_n, add_n, ..., ..., aad_1, ada_1, add_1, ...]
         to              [aaa, {aad_n, ada_n, add_n, ...}, ..., {aad_1, ada_1, add_1, ...}]
         """
-        coeffs_ptwt_format: list = [coefficients.pop(0)]
-        for i in range(0, len(coefficients), self.n_wavelet_directions):
+        coeffs_ptwt_format: list = [coefficients[0]]
+        for i in range(1, len(coefficients), self.n_wavelet_directions):
             coeffs_ptwt_format.append(
                 dict(
                     zip(
