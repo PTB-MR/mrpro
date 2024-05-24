@@ -47,6 +47,61 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         """Adjoint operator."""
         return AdjointLinearOperator(self)
 
+    def operator_norm(self,
+                        initial_value: torch.Tensor,
+                        dim: tuple | None = None,
+                        max_iterations: int = 4
+            ) -> torch.Tensor:
+            """Power iteration for computing the operator norm of the linear operator.
+
+            Parameters
+            ----------
+            initial_value
+                initial value to start the iteration; if chosen exactly as zero-tensor,
+                we randomly generate an initial value.
+            dim
+                dimensions referring to the dimensions of the tensors
+                on which the operator operates. For example, for a tensor with shape
+                (4,30,160,160) and dim = None, it is understood that
+                the the matrix representation of the considered operator
+                corresponds to a block diagonal operator and thus the algorithm returns
+                one sinle value. In contrast, if for example, dim=(-2,-1),
+                the algorithm returns computes a batched operator norm such that the
+                output can be
+            max_iterations, optional
+                maximal number of iterations, by default 256
+            tolerance, optional (TODO)
+                tolerance used to determine when to stop the iteration, by default 1e-6;
+                if set to zero, the maximal number of iterations is the only employed
+                stopping criterion
+
+            Returns
+            -------
+                an estimaton of the operator norm
+            """
+
+            # check if initial value is exactly zero; if yes, set it to a random value
+            vector = torch.randn_like(initial_value) if (initial_value == 0.0).all() else initial_value
+
+            for _ in range(max_iterations):
+
+                #apply the operator to the vector
+                (vector,) = self.adjoint(*self(vector))
+
+                #normalize vector
+                vector /= vector.norm(dim=dim, keepdim=True)
+
+            (operator_vector,) = self.adjoint(*self(vector))
+
+            product =vector.real * operator_vector.real
+            if vector.is_complex() and operator_vector.is_complex():
+                product +=  vector.imag*operator_vector.imag
+            op_norm = product.sum(dim, keepdim=True).sqrt()
+
+            return op_norm
+
+
+
     @overload  # type: ignore[override]
     def __matmul__(self, other: LinearOperator) -> LinearOperator: ...
 
