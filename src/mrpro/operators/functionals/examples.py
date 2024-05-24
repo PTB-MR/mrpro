@@ -32,3 +32,8 @@ print(l2_squared.prox_convex_conj(torch.tensor([1,2,3]),sigma=1))
 
 ex_tensor = torch.rand([3,4,126,126])
 # %%
+test2_t = torch.tensor([1,1],dtype=torch.complex64)
+l2_squared = L2NormSquared(lam=1)
+(pcc_test2,) = l2_squared.prox_convex_conj(test2_t, sigma=1)
+print(l2_squared.forward(pcc_test2))
+#%%
