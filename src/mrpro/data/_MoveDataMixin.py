@@ -121,7 +121,7 @@ class MoveDataMixin:
         ) -> parsedType:
             return other.device, other.dtype, non_blocking, copy, torch.preserve_format
 
-        def parse1(
+        def parse2(
             dtype: torch.dtype,
             non_blocking: bool = False,
             copy: bool = False,
@@ -129,7 +129,7 @@ class MoveDataMixin:
         ) -> parsedType:
             return None, dtype, non_blocking, copy, memory_format
 
-        def parse2(
+        def parse1(
             device: str | torch.device | int | None = None,
             dtype: None | torch.dtype = None,
             non_blocking: bool = False,
@@ -138,18 +138,19 @@ class MoveDataMixin:
         ) -> parsedType:
             return device, dtype, non_blocking, copy, memory_format
 
-        if args and isinstance(args[0], torch.Tensor) or 'other' in kwargs:
-            # overload 3
+        if args and isinstance(args[0], torch.Tensor) or 'tensor' in kwargs:
+            # overload 3 ("tensor" specifies the dtype and device)
             device, dtype, non_blocking, copy, memory_format = parse3(*args, **kwargs)
         elif args and isinstance(args[0], torch.dtype):
-            # overload 2
-            device, dtype, non_blocking, copy, memory_format = parse1(*args, **kwargs)
-        else:
-            # overload 1
+            # overload 2 (no device specified, only dtype)
             device, dtype, non_blocking, copy, memory_format = parse2(*args, **kwargs)
+        else:
+            # overload 1 (device and dtype specified)
+            device, dtype, non_blocking, copy, memory_format = parse1(*args, **kwargs)
         return self._to(device=device, dtype=dtype, non_blocking=non_blocking, memory_format=memory_format, copy=copy)
 
     def _items(self) -> Iterator[tuple[str, Any]]:
+        """Return an iterator over fields, parameters, buffers, and modules of the object."""
         if isinstance(self, DataclassInstance):
             for field in dataclasses.fields(self):
                 name = field.name
@@ -171,7 +172,33 @@ class MoveDataMixin:
         memo: dict | None = None,
     ) -> Self:
         new = shallowcopy(self) if copy or not isinstance(self, torch.nn.Module) else self
+        """Move data to device and convert dtype if necessary.
 
+        This method is called by .to(),  .cuda(),  .cpu(), .double(), and so on.
+        It should not be called directly.
+
+        See .to() for more details.
+
+        Parameters
+        ----------
+        device
+            The destination device.
+        dtype
+            The destination dtype.
+        non_blocking
+            If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
+            Otherwise, the argument has no effect.
+        memory_format
+            The desired memory format of returned tensor.
+        shared_memory
+            If True and the target device is CPU, the tensors will reside in shared memory.
+            Otherwise, the argument has no effect.
+        copy
+            If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+            This will also create new tensors for views
+        memo
+            A dictionary to keep track of already converted objects to avoid multiple conversions.
+        """
         if memo is None:
             memo = {}
 
@@ -289,7 +316,7 @@ class MoveDataMixin:
         return self._to(dtype=torch.float64, memory_format=memory_format, copy=copy)
 
     def half(self, *, memory_format: torch.memory_format = torch.preserve_format, copy: bool = False) -> Self:
-        """Convert all float tensors to haf precision.
+        """Convert all float tensors to half precision.
 
         converts float to float16 and complex to complex32
 

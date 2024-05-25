@@ -77,9 +77,10 @@ def _test(
     assert new_data.dtype == expected_dtype, 'dtype not set correctly'
 
 
-@pytest.mark.parametrize('dtype', [torch.float64, torch.complex128])
+@pytest.mark.parametrize('dtype', [torch.float32, torch.complex64, torch.float64, torch.complex128])
 @pytest.mark.parametrize('copy', [True, False])
-def test_movedatamixin_float64like(copy: bool, dtype: torch.dtype):
+def test_movedatamixin_to(copy: bool, dtype: torch.dtype):
+    """Test MoveDataMixin.to using a nested object."""
     original = B()
     new = original.to(dtype=dtype, copy=copy)
 
@@ -87,8 +88,8 @@ def test_movedatamixin_float64like(copy: bool, dtype: torch.dtype):
     def test(attribute, expected_dtype):
         return _test(original, new, attribute, copy, expected_dtype, torch.device('cpu'))
 
-    test('floattensor', torch.float64)
-    test('complextensor', torch.complex128)
+    test('floattensor', dtype.to_real)
+    test('complextensor', dtype.to_complex)
     test('inttensor', torch.int32)
     test('booltensor', torch.bool)
 
@@ -96,8 +97,8 @@ def test_movedatamixin_float64like(copy: bool, dtype: torch.dtype):
     def testchild(attribute, expected_dtype):
         return _test(original.child, new.child, attribute, copy, expected_dtype, torch.device('cpu'))
 
-    testchild('floattensor', torch.float64)
-    testchild('complextensor', torch.complex128)
+    testchild('floattensor', dtype.to_real)
+    testchild('complextensor', dtype.to_complex)
     testchild('inttensor', torch.int32)
     testchild('booltensor', torch.bool)
 
