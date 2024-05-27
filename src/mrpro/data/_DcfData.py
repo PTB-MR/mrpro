@@ -29,6 +29,7 @@ from scipy.spatial import ConvexHull
 from scipy.spatial import Voronoi
 
 from mrpro.data._KTrajectory import KTrajectory
+from mrpro.data._MoveDataMixin import MoveDataMixin
 from mrpro.utils import smap
 
 if TYPE_CHECKING:
@@ -42,7 +43,7 @@ def _volume(v: ArrayLike):
 
 
 @dataclasses.dataclass(slots=True, frozen=False)
-class DcfData:
+class DcfData(MoveDataMixin):
     """Density compensation data (DcfData) class."""
 
     data: torch.Tensor
