@@ -48,7 +48,7 @@ def test_spatial_uniform_filter_wrong_width(data):
     """Test spatial_uniform_filter_3d with wrong width."""
 
     with pytest.raises(ValueError, match='Invalid filter width'):
-        uniform_filter_3d(data, (3, 3))
+        uniform_filter_3d(data, (3, 3))  # type: ignore[arg-type]
 
 
 def test_gaussian_filter_int_axis(data):
@@ -134,8 +134,8 @@ def test_uniform_invalid_width(data):
     with pytest.raises(ValueError, match='positive'):
         uniform_filter(data, width=torch.tensor(-1.0))
     with pytest.raises(ValueError, match='positive'):
-        uniform_filter(data, width=torch.nan)
+        uniform_filter(data, width=torch.nan)  # type: ignore[arg-type]
     with pytest.warns(UserWarning, match='odd'):
         uniform_filter(data, width=2)
     with pytest.raises(ValueError, match='length'):
-        uniform_filter(data, width=(3.0, 3.0))
+        uniform_filter(data, width=(3.0, 3.0))  # type: ignore[arg-type]

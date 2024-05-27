@@ -1,5 +1,7 @@
 """Tests for the operators module."""
 
+from typing import cast
+
 import pytest
 import torch
 from mrpro.operators import LinearOperator
@@ -9,14 +11,14 @@ from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test
 
 
-class DummyOperator(Operator[torch.Tensor, torch.Tensor]):
+class DummyOperator(Operator[torch.Tensor, tuple[torch.Tensor,]]):
     """Dummy operator for testing, raises input to the power of value and sums."""
 
     def __init__(self, value: torch.Tensor):
         super().__init__()
         self._value = value
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Dummy operator."""
         return ((x**self._value).sum().unsqueeze(0),)
 
@@ -151,7 +153,7 @@ def test_elementwise_product_operator(value):
 def test_elementwise_rproduct_operator(value):
     a = DummyOperator(torch.tensor(2.0))
     b = torch.tensor(value)
-    c = b * a
+    c = cast(DummyOperator, b * a)
     x = RandomGenerator(0).complex64_tensor(10)
     (y1,) = c(x)
     y2 = b * a(x)[0]
