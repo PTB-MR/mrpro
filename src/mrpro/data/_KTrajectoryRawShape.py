@@ -23,10 +23,11 @@ import torch
 from einops import rearrange
 
 from mrpro.data._KTrajectory import KTrajectory
+from mrpro.data._MoveDataMixin import MoveDataMixin
 
 
 @dataclass(slots=True, frozen=True)
-class KTrajectoryRawShape:
+class KTrajectoryRawShape(MoveDataMixin):
     """K-space trajectory shaped ((other*k2*k1),k0).
 
     Order of directions is always kz, ky, kx

@@ -52,6 +52,8 @@ class QData(Data):
             qheader = QHeader.from_iheader(header)
         elif isinstance(header, QHeader):
             qheader = header
+        else:
+            raise ValueError(f'Invalid header type: {type(header)}')
 
         object.__setattr__(self, 'data', data)
         object.__setattr__(self, 'header', qheader)

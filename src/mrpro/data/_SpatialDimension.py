@@ -26,6 +26,8 @@ import numpy as np
 import torch
 from numpy.typing import ArrayLike
 
+from mrpro.data._MoveDataMixin import MoveDataMixin
+
 T = TypeVar('T', int, float, torch.Tensor)
 
 
@@ -38,7 +40,7 @@ class XYZ(Protocol[T]):
 
 
 @dataclass(slots=True)
-class SpatialDimension(Generic[T]):
+class SpatialDimension(MoveDataMixin, Generic[T]):
     """Spatial dataclass of float/int/tensors (z, y, x)."""
 
     z: T
