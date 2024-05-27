@@ -73,6 +73,9 @@ def _test(
     new_data = getattr(new, attribute)
     if copy:
         assert new_data is not original_data, 'copy requested but not performed'
+
+    assert new_data.device == expected_device, 'device not set correctly'
+    assert new_data.dtype == expected_dtype, 'dtype not set correctly'
     if torch.is_complex(original_data):
         # torch.equal not yet implemented for complex half tensors.
         assert torch.equal(
@@ -81,8 +84,6 @@ def _test(
         )
     else:
         assert torch.equal(new_data, original_data.to(device=expected_device, dtype=expected_dtype))
-    assert new_data.device == expected_device, 'device not set correctly'
-    assert new_data.dtype == expected_dtype, 'dtype not set correctly'
 
 
 @pytest.mark.parametrize('dtype', [torch.float32, torch.complex64, torch.float64, torch.complex128])
@@ -178,6 +179,7 @@ def test_movedatamixin_cuda(already_moved: bool, copy: bool):
         original = original.cuda(torch.cuda.current_device())
     new = original.cuda(copy=copy)
     expected_device = torch.device(torch.cuda.current_device())
+    assert new.device == expected_device
 
     # Tensor attributes
     def test(attribute, expected_dtype):
@@ -201,12 +203,15 @@ def test_movedatamixin_cuda(already_moved: bool, copy: bool):
     testchild('booltensor', torch.bool)
 
     # Module attribute
-    _test(original.child.module, new.child.module, 'weight', copy, torch.float32, torch.device('cpu'))
+    _test(original.child.module, new.child.module, 'weight', copy, torch.float32, expected_device)
 
     # No-copy required for these
-    if not copy:
+    if not copy and already_moved:
         assert original.inttensor is new.inttensor, 'no copy of inttensor required'
         assert original.booltensor is new.booltensor, 'no copy of booltensor required'
+        assert original.floattensor is new.floattensor, 'no copy of floattensor required'
+        assert original.doubletensor is new.doubletensor, 'no copy of doubletensor required'
+        assert original.child.complextensor is new.child.complextensor, 'no copy of complextensor required'
         assert original.child.inttensor is new.child.inttensor, 'no copy of inttensor required'
         assert original.child.booltensor is new.child.booltensor, 'no copy of booltensor required'
     assert original is not new, 'original and new should not be the same object'
