@@ -21,12 +21,13 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
+from mrpro.data._MoveDataMixin import MoveDataMixin
 from mrpro.data.enums import TrajType
 from mrpro.utils import remove_repeat
 
 
 @dataclass(slots=True, frozen=True)
-class KTrajectory:
+class KTrajectory(MoveDataMixin):
     """K-space trajectory.
 
     Order of directions is always kz, ky, kx
@@ -185,54 +186,3 @@ class KTrajectory:
         """
         shape = self.broadcasted_shape
         return torch.stack([traj.expand(*shape) for traj in (self.kz, self.ky, self.kx)], dim=stack_dim)
-
-    def to(self, *args, **kwargs) -> KTrajectory:
-        """Perform dtype and/or device conversion of trajectory.
-
-        A torch.dtype and torch.device are inferred from the arguments
-        of self.to(*args, **kwargs). Please have a look at the
-        documentation of torch.Tensor.to() for more details.
-        """
-        return KTrajectory(
-            kz=self.kz.to(*args, **kwargs),
-            ky=self.ky.to(*args, **kwargs),
-            kx=self.kx.to(*args, **kwargs),
-        )
-
-    def cuda(
-        self,
-        device: torch.device | None = None,
-        non_blocking: bool = False,
-        memory_format: torch.memory_format = torch.preserve_format,
-    ) -> KTrajectory:
-        """Create copy of trajectory in CUDA memory.
-
-        Parameters
-        ----------
-        device
-            The destination GPU device. Defaults to the current CUDA device.
-        non_blocking
-            If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
-            Otherwise, the argument has no effect.
-        memory_format
-            The desired memory format of returned Tensor.
-        """
-        return KTrajectory(
-            kz=self.kz.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),
-            ky=self.ky.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),
-            kx=self.kx.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),
-        )
-
-    def cpu(self, memory_format: torch.memory_format = torch.preserve_format) -> KTrajectory:
-        """Create copy of trajectory in CPU memory.
-
-        Parameters
-        ----------
-        memory_format
-            The desired memory format of returned Tensor.
-        """
-        return KTrajectory(
-            kz=self.kz.cpu(memory_format=memory_format),
-            ky=self.ky.cpu(memory_format=memory_format),
-            kx=self.kx.cpu(memory_format=memory_format),
-        )
