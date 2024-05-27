@@ -26,7 +26,7 @@ import torch
 
 Tin = TypeVarTuple('Tin')  # TODO: bind to torch.Tensors
 Tin2 = TypeVarTuple('Tin2')  # TODO: bind to torch.Tensors
-Tout = TypeVar('Tout', bound=tuple)  # TODO: bind to torch.Tensor
+Tout = TypeVar('Tout', bound=tuple, covariant=True)  # TODO: bind to torch.Tensors
 
 
 class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
@@ -40,7 +40,7 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
     def __call__(self, *args: *Tin) -> Tout:
         return super().__call__(*args)
 
-    def __matmul__(self, other: Operator[*Tin2, tuple[*Tin]]) -> Operator[*Tin2, Tout]:
+    def __matmul__(self: Operator[*Tin, Tout], other: Operator[*Tin2, tuple[*Tin]]) -> Operator[*Tin2, Tout]:
         """Operator composition."""
         return OperatorComposition(self, other)
 
@@ -57,15 +57,15 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
         return OperatorElementwiseProductRight(self, other)
 
 
-class OperatorComposition(Operator[*Tin, Tout]):
+class OperatorComposition(Operator[*Tin2, Tout]):
     """Operator composition."""
 
-    def __init__(self, operator1: Operator[*Tin2, Tout], operator2: Operator[*Tin, tuple[*Tin2]]):
+    def __init__(self, operator1: Operator[*Tin, Tout], operator2: Operator[*Tin2, tuple[*Tin]]):
         super().__init__()
         self._operator1 = operator1
         self._operator2 = operator2
 
-    def forward(self, *args: *Tin) -> Tout:
+    def forward(self, *args: *Tin2) -> Tout:
         """Operator composition."""
         return self._operator1(*self._operator2(*args))
 
