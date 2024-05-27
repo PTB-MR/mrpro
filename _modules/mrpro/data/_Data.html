@@ -429,66 +429,17 @@ document.write(`
 
 <span class="kn">import</span> <span class="nn">torch</span>
 
+<span class="kn">from</span> <span class="nn">mrpro.data._MoveDataMixin</span> <span class="kn">import</span> <span class="n">MoveDataMixin</span>
+
 
 <div class="viewcode-block" id="Data">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.Data.html#mrpro.data.Data">[docs]</a>
 <span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">Data</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Data</span><span class="p">(</span><span class="n">MoveDataMixin</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A general data class with field data and header.&quot;&quot;&quot;</span>
 
     <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
-    <span class="n">header</span><span class="p">:</span> <span class="n">Any</span>
-
-<div class="viewcode-block" id="Data.to">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Data.html#mrpro.data.Data.to">[docs]</a>
-    <span class="k">def</span> <span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Data</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform dtype and/or device conversion of data.</span>
-
-<span class="sd">        A torch.dtype and torch.device are inferred from the arguments</span>
-<span class="sd">        of self.to(*args, **kwargs). Please have a look at the</span>
-<span class="sd">        documentation of torch.Tensor.to() for more details.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">Data</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span></div>
-
-
-<div class="viewcode-block" id="Data.cuda">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Data.html#mrpro.data.Data.cuda">[docs]</a>
-    <span class="k">def</span> <span class="nf">cuda</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">non_blocking</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">memory_format</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">memory_format</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">preserve_format</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Data</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create copy of object with data in CUDA memory.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        device</span>
-<span class="sd">            The destination GPU device. Defaults to the current CUDA device.</span>
-<span class="sd">        non_blocking</span>
-<span class="sd">            If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.</span>
-<span class="sd">            Otherwise, the argument has no effect.</span>
-<span class="sd">        memory_format</span>
-<span class="sd">            The desired memory format of returned tensor.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">Data</span><span class="p">(</span>
-            <span class="n">header</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="p">,</span>
-            <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cuda</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="n">non_blocking</span><span class="p">,</span> <span class="n">memory_format</span><span class="o">=</span><span class="n">memory_format</span><span class="p">),</span>
-        <span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Data.cpu">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Data.html#mrpro.data.Data.cpu">[docs]</a>
-    <span class="k">def</span> <span class="nf">cpu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_format</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">memory_format</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">preserve_format</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Data</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create copy of object in CPU memory.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        memory_format</span>
-<span class="sd">            The desired memory format of returned tensor.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">Data</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">cpu</span><span class="p">(</span><span class="n">memory_format</span><span class="o">=</span><span class="n">memory_format</span><span class="p">))</span></div>
-</div>
+    <span class="n">header</span><span class="p">:</span> <span class="n">Any</span></div>
 
 </pre></div>
 

@@ -433,6 +433,8 @@ document.write(`
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">numpy.typing</span> <span class="kn">import</span> <span class="n">ArrayLike</span>
 
+<span class="kn">from</span> <span class="nn">mrpro.data._MoveDataMixin</span> <span class="kn">import</span> <span class="n">MoveDataMixin</span>
+
 <span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 
 
@@ -447,7 +449,7 @@ document.write(`
 <div class="viewcode-block" id="SpatialDimension">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.utils.filters.SpatialDimension.html#mrpro.data.SpatialDimension">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">SpatialDimension</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+<span class="k">class</span> <span class="nc">SpatialDimension</span><span class="p">(</span><span class="n">MoveDataMixin</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Spatial dataclass of float/int/tensors (z, y, x).&quot;&quot;&quot;</span>
 
     <span class="n">z</span><span class="p">:</span> <span class="n">T</span>

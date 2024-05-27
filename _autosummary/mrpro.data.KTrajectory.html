@@ -375,6 +375,7 @@ document.write(`
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">mrpro.data.KTrajectory</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.KTrajectoryRawShape.html">mrpro.data.KTrajectoryRawShape</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.Limits.html">mrpro.data.Limits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mrpro.data.MoveDataMixin.html">mrpro.data.MoveDataMixin</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.QData.html">mrpro.data.QData</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.QHeader.html">mrpro.data.QHeader</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.SpatialDimension.html">mrpro.data.SpatialDimension</a></li>
@@ -499,7 +500,7 @@ document.write(`
 <dl class="py class">
 <dt class="sig sig-object py" id="mrpro.data.KTrajectory">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.</span></span><span class="sig-name descname"><span class="pre">KTrajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ky</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">grid_detection_tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repeat_detection_tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/_KTrajectory.html#KTrajectory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KTrajectory" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="mrpro.data.MoveDataMixin.html#mrpro.data.MoveDataMixin" title="mrpro.data._MoveDataMixin.MoveDataMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">MoveDataMixin</span></code></a></p>
 <p>K-space trajectory.</p>
 <p>Order of directions is always kz, ky, kx
 Shape of each of kx,ky,kz is (other,k2,k1,k0)</p>
@@ -523,17 +524,29 @@ kz is zero(1,1,1,1)</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.as_tensor" title="mrpro.data.KTrajectory.as_tensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">as_tensor</span></code></a>([stack_dim])</p></td>
 <td><p>Tensor representation of the trajectory.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.cpu" title="mrpro.data.KTrajectory.cpu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cpu</span></code></a>([memory_format])</p></td>
-<td><p>Create copy of trajectory in CPU memory.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.clone" title="mrpro.data.KTrajectory.clone"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clone</span></code></a>()</p></td>
+<td><p>Return a deep copy of the object.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.cuda" title="mrpro.data.KTrajectory.cuda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cuda</span></code></a>([device, non_blocking, memory_format])</p></td>
-<td><p>Create copy of trajectory in CUDA memory.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.cpu" title="mrpro.data.KTrajectory.cpu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cpu</span></code></a>(*[, memory_format, copy])</p></td>
+<td><p>Put in CPU memory.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.cuda" title="mrpro.data.KTrajectory.cuda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cuda</span></code></a>([device, non_blocking, memory_format, copy])</p></td>
+<td><p>Put object in CUDA memory.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.double" title="mrpro.data.KTrajectory.double"><code class="xref py py-obj docutils literal notranslate"><span class="pre">double</span></code></a>(*[, memory_format, copy])</p></td>
+<td><p>Convert all float tensors to double precision.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.from_tensor" title="mrpro.data.KTrajectory.from_tensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_tensor</span></code></a>(tensor[, stack_dim, ...])</p></td>
 <td><p>Create a KTrajectory from a tensor representation of the trajectory.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.half" title="mrpro.data.KTrajectory.half"><code class="xref py py-obj docutils literal notranslate"><span class="pre">half</span></code></a>(*[, memory_format, copy])</p></td>
+<td><p>Convert all float tensors to half precision.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.single" title="mrpro.data.KTrajectory.single"><code class="xref py py-obj docutils literal notranslate"><span class="pre">single</span></code></a>(*[, memory_format, copy])</p></td>
+<td><p>Convert all float tensors to single precision.</p></td>
+</tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.to" title="mrpro.data.KTrajectory.to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code></a>(*args, **kwargs)</p></td>
-<td><p>Perform dtype and/or device conversion of trajectory.</p></td>
+<td><p>Perform dtype and/or device conversion of data.</p></td>
 </tr>
 </tbody>
 </table>
@@ -558,10 +571,19 @@ kz is zero(1,1,1,1)</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.broadcasted_shape" title="mrpro.data.KTrajectory.broadcasted_shape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">broadcasted_shape</span></code></a></p></td>
 <td><p>The broadcasted shape of the trajectory.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.type_along_k210" title="mrpro.data.KTrajectory.type_along_k210"><code class="xref py py-obj docutils literal notranslate"><span class="pre">type_along_k210</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.device" title="mrpro.data.KTrajectory.device"><code class="xref py py-obj docutils literal notranslate"><span class="pre">device</span></code></a></p></td>
+<td><p>Return the device of the tensors.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.is_cpu" title="mrpro.data.KTrajectory.is_cpu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_cpu</span></code></a></p></td>
+<td><p>Return True if all tensors are on the CPU.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.is_cuda" title="mrpro.data.KTrajectory.is_cuda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_cuda</span></code></a></p></td>
+<td><p>Return True if all tensors are on a single CUDA device.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.type_along_k210" title="mrpro.data.KTrajectory.type_along_k210"><code class="xref py py-obj docutils literal notranslate"><span class="pre">type_along_k210</span></code></a></p></td>
 <td><p>Type of trajectory along k2-k1-k0.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.type_along_kzyx" title="mrpro.data.KTrajectory.type_along_kzyx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">type_along_kzyx</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KTrajectory.type_along_kzyx" title="mrpro.data.KTrajectory.type_along_kzyx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">type_along_kzyx</span></code></a></p></td>
 <td><p>Type of trajectory along kz-ky-kx.</p></td>
 </tr>
 </tbody>
@@ -589,27 +611,74 @@ kz is zero(1,1,1,1)</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KTrajectory.clone">
+<span class="sig-name descname"><span class="pre">clone</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KTrajectory.clone" title="Link to this definition">#</a></dt>
+<dd><p>Return a deep copy of the object.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.KTrajectory.cpu">
-<span class="sig-name descname"><span class="pre">cpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#mrpro.data.KTrajectory" title="mrpro.data._KTrajectory.KTrajectory"><span class="pre">KTrajectory</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_KTrajectory.html#KTrajectory.cpu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KTrajectory.cpu" title="Link to this definition">#</a></dt>
-<dd><p>Create copy of trajectory in CPU memory.</p>
+<span class="sig-name descname"><span class="pre">cpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KTrajectory.cpu" title="Link to this definition">#</a></dt>
+<dd><p>Put in CPU memory.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>memory_format</strong> – The desired memory format of returned Tensor.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.KTrajectory.cuda">
-<span class="sig-name descname"><span class="pre">cuda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">non_blocking</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#mrpro.data.KTrajectory" title="mrpro.data._KTrajectory.KTrajectory"><span class="pre">KTrajectory</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_KTrajectory.html#KTrajectory.cuda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KTrajectory.cuda" title="Link to this definition">#</a></dt>
-<dd><p>Create copy of trajectory in CUDA memory.</p>
+<span class="sig-name descname"><span class="pre">cuda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">non_blocking</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KTrajectory.cuda" title="Link to this definition">#</a></dt>
+<dd><p>Put object in CUDA memory.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>device</strong> – The destination GPU device. Defaults to the current CUDA device.</p></li>
 <li><p><strong>non_blocking</strong> – If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
 Otherwise, the argument has no effect.</p></li>
-<li><p><strong>memory_format</strong> – The desired memory format of returned Tensor.</p></li>
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mrpro.data.KTrajectory.device">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">device</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#mrpro.data.KTrajectory.device" title="Link to this definition">#</a></dt>
+<dd><p>Return the device of the tensors.</p>
+<p>Looks at each field of a dataclass implementing a device attribute,
+such as torch.Tensors or MoveDataMixin instances. If the devices
+of the fields differ, an InconsistentDeviceError is raised, otherwise
+the device is returned. If no field implements a device attribute,
+None is returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>InconsistentDeviceError:</strong> – If the devices of different fields differ.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>The device of the fields or None if no field implements a device attribute.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KTrajectory.double">
+<span class="sig-name descname"><span class="pre">double</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KTrajectory.double" title="Link to this definition">#</a></dt>
+<dd><p>Convert all float tensors to double precision.</p>
+<p>converts float to float64 and complex to complex128</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
 </ul>
 </dd>
 </dl>
@@ -641,6 +710,42 @@ Set to None to disable.</p></li>
 <dd><p>tolerance of how close trajectory positions have to be to integer grid points.</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KTrajectory.half">
+<span class="sig-name descname"><span class="pre">half</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KTrajectory.half" title="Link to this definition">#</a></dt>
+<dd><p>Convert all float tensors to half precision.</p>
+<p>converts float to float16 and complex to complex32</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mrpro.data.KTrajectory.is_cpu">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_cpu</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#mrpro.data.KTrajectory.is_cpu" title="Link to this definition">#</a></dt>
+<dd><p>Return True if all tensors are on the CPU.</p>
+<p>Checks all tensor attributes of the dataclass for their device,
+(recursively if an attribute is a MoveDataMixin)</p>
+<p>Returns False if not all tensors are on cpu or if the device is inconsistent,
+returns True if the data class has no tensors as attributes.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mrpro.data.KTrajectory.is_cuda">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_cuda</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#mrpro.data.KTrajectory.is_cuda" title="Link to this definition">#</a></dt>
+<dd><p>Return True if all tensors are on a single CUDA device.</p>
+<p>Checks all tensor attributes of the dataclass for their device,
+(recursively if an attribute is a MoveDataMixin)</p>
+<p>Returns False if not all tensors are on the same CUDA devices, or if the device is inconsistent,
+returns True if the data class has no tensors as attributes.</p>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mrpro.data.KTrajectory.kx">
 <span class="sig-name descname"><span class="pre">kx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.KTrajectory.kx" title="Link to this definition">#</a></dt>
@@ -666,12 +771,51 @@ Set to None to disable.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KTrajectory.single">
+<span class="sig-name descname"><span class="pre">single</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KTrajectory.single" title="Link to this definition">#</a></dt>
+<dd><p>Convert all float tensors to single precision.</p>
+<p>converts float to float32 and complex to complex64</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.KTrajectory.to">
-<span class="sig-name descname"><span class="pre">to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#mrpro.data.KTrajectory" title="mrpro.data._KTrajectory.KTrajectory"><span class="pre">KTrajectory</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/_KTrajectory.html#KTrajectory.to"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KTrajectory.to" title="Link to this definition">#</a></dt>
-<dd><p>Perform dtype and/or device conversion of trajectory.</p>
+<span class="sig-name descname"><span class="pre">to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KTrajectory.to" title="Link to this definition">#</a></dt>
+<dd><p>Perform dtype and/or device conversion of data.</p>
 <p>A torch.dtype and torch.device are inferred from the arguments
 of self.to(<a href="#id1"><span class="problematic" id="id2">*</span></a>args, <a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs). Please have a look at the
 documentation of torch.Tensor.to() for more details.</p>
+<p>A new instance of the dataclass will be returned.</p>
+<p>The conversion will be applied to all Tensor- or Module
+fields of the dataclass, and to all fields that implement
+the MoveDataMixin.</p>
+<p>The dtype-type, i.e. float/complex will always be preserved,
+but the precision of floating point dtypes might be changed.</p>
+<p class="rubric">Example</p>
+<dl class="simple">
+<dt>If called with dtype=torch.float32 OR dtype=torch.complex64:</dt><dd><ul class="simple">
+<li><p>A complex128 tensor will be converted to complex64</p></li>
+<li><p>A float64 tensor will be converted to float32</p></li>
+<li><p>A bool tensor will remain bool</p></li>
+<li><p>An int64 tensor will remain int64</p></li>
+</ul>
+</dd>
+</dl>
+<p>If other conversions are desired, please use the torch.Tensor.to() method of
+the fields directly.</p>
+<p>If the copy argument is set to True (default), a deep copy will be returned
+even if no conversion is necessary.
+If two fields are views of the same data before, in the result they will be independent
+copies if copy is set to True or a conversion is necessary.
+If set to False, some Tensors might be shared between the original and the new object.</p>
 </dd></dl>
 
 <dl class="py property">
@@ -740,14 +884,21 @@ documentation of torch.Tensor.to() for more details.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.__init__"><code class="docutils literal notranslate"><span class="pre">KTrajectory.__init__()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.as_tensor"><code class="docutils literal notranslate"><span class="pre">KTrajectory.as_tensor()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.broadcasted_shape"><code class="docutils literal notranslate"><span class="pre">KTrajectory.broadcasted_shape</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.clone"><code class="docutils literal notranslate"><span class="pre">KTrajectory.clone()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.cpu"><code class="docutils literal notranslate"><span class="pre">KTrajectory.cpu()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.cuda"><code class="docutils literal notranslate"><span class="pre">KTrajectory.cuda()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.device"><code class="docutils literal notranslate"><span class="pre">KTrajectory.device</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.double"><code class="docutils literal notranslate"><span class="pre">KTrajectory.double()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.from_tensor"><code class="docutils literal notranslate"><span class="pre">KTrajectory.from_tensor()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.grid_detection_tolerance"><code class="docutils literal notranslate"><span class="pre">KTrajectory.grid_detection_tolerance</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.half"><code class="docutils literal notranslate"><span class="pre">KTrajectory.half()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.is_cpu"><code class="docutils literal notranslate"><span class="pre">KTrajectory.is_cpu</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.is_cuda"><code class="docutils literal notranslate"><span class="pre">KTrajectory.is_cuda</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.kx"><code class="docutils literal notranslate"><span class="pre">KTrajectory.kx</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.ky"><code class="docutils literal notranslate"><span class="pre">KTrajectory.ky</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.kz"><code class="docutils literal notranslate"><span class="pre">KTrajectory.kz</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.repeat_detection_tolerance"><code class="docutils literal notranslate"><span class="pre">KTrajectory.repeat_detection_tolerance</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.single"><code class="docutils literal notranslate"><span class="pre">KTrajectory.single()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.to"><code class="docutils literal notranslate"><span class="pre">KTrajectory.to()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.type_along_k210"><code class="docutils literal notranslate"><span class="pre">KTrajectory.type_along_k210</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KTrajectory.type_along_kzyx"><code class="docutils literal notranslate"><span class="pre">KTrajectory.type_along_kzyx</span></code></a></li>

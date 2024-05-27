@@ -375,6 +375,7 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.KTrajectory.html">mrpro.data.KTrajectory</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.KTrajectoryRawShape.html">mrpro.data.KTrajectoryRawShape</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.Limits.html">mrpro.data.Limits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mrpro.data.MoveDataMixin.html">mrpro.data.MoveDataMixin</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.QData.html">mrpro.data.QData</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.QHeader.html">mrpro.data.QHeader</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.SpatialDimension.html">mrpro.data.SpatialDimension</a></li>
@@ -499,7 +500,7 @@ document.write(`
 <dl class="py class">
 <dt class="sig sig-object py" id="mrpro.data.KHeader">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.</span></span><span class="sig-name descname"><span class="pre">KHeader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">trajectory:</span> <span class="pre">KTrajectoryCalculator,</span> <span class="pre">b0:</span> <span class="pre">float,</span> <span class="pre">encoding_limits:</span> <span class="pre">EncodingLimits,</span> <span class="pre">recon_matrix:</span> <span class="pre">SpatialDimension[int],</span> <span class="pre">recon_fov:</span> <span class="pre">SpatialDimension[float],</span> <span class="pre">encoding_matrix:</span> <span class="pre">SpatialDimension[int],</span> <span class="pre">encoding_fov:</span> <span class="pre">SpatialDimension[float],</span> <span class="pre">n_coils:</span> <span class="pre">int,</span> <span class="pre">acq_info:</span> <span class="pre">AcqInfo,</span> <span class="pre">datetime:</span> <span class="pre">datetime.datetime,</span> <span class="pre">h1_freq:</span> <span class="pre">float,</span> <span class="pre">te:</span> <span class="pre">list[float],</span> <span class="pre">ti:</span> <span class="pre">list[float],</span> <span class="pre">fa:</span> <span class="pre">list[float],</span> <span class="pre">tr:</span> <span class="pre">list[float],</span> <span class="pre">echo_spacing:</span> <span class="pre">list[float],</span> <span class="pre">echo_train_length:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">1,</span> <span class="pre">seq_type:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'unknown',</span> <span class="pre">model:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'unknown',</span> <span class="pre">vendor:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'unknown',</span> <span class="pre">protocol_name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'unknown',</span> <span class="pre">misc:</span> <span class="pre">dict</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">calibration_mode:</span> <span class="pre">enums.CalibrationMode</span> <span class="pre">=</span> <span class="pre">CalibrationMode.OTHER,</span> <span class="pre">interleave_dim:</span> <span class="pre">enums.InterleavingDimension</span> <span class="pre">=</span> <span class="pre">InterleavingDimension.OTHER,</span> <span class="pre">traj_type:</span> <span class="pre">enums.TrajectoryType</span> <span class="pre">=</span> <span class="pre">TrajectoryType.OTHER,</span> <span class="pre">measurement_id:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'unknown',</span> <span class="pre">patient_name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'unknown',</span> <span class="pre">trajectory_description:</span> <span class="pre">TrajectoryDescription</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/_KHeader.html#KHeader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KHeader" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="mrpro.data.MoveDataMixin.html#mrpro.data.MoveDataMixin" title="mrpro.data._MoveDataMixin.MoveDataMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">MoveDataMixin</span></code></a></p>
 <p>MR raw data header.</p>
 <p>All information that is not covered by the dataclass is stored in
 the misc dict Our code shall not rely on this information, and it is
@@ -516,8 +517,29 @@ is not guaranteed to be correct or tested.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KHeader.__init__" title="mrpro.data.KHeader.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(trajectory, b0, encoding_limits, ...)</p></td>
 <td><p></p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KHeader.clone" title="mrpro.data.KHeader.clone"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clone</span></code></a>()</p></td>
+<td><p>Return a deep copy of the object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KHeader.cpu" title="mrpro.data.KHeader.cpu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cpu</span></code></a>(*[, memory_format, copy])</p></td>
+<td><p>Put in CPU memory.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KHeader.cuda" title="mrpro.data.KHeader.cuda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cuda</span></code></a>([device, non_blocking, memory_format, copy])</p></td>
+<td><p>Put object in CUDA memory.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KHeader.double" title="mrpro.data.KHeader.double"><code class="xref py py-obj docutils literal notranslate"><span class="pre">double</span></code></a>(*[, memory_format, copy])</p></td>
+<td><p>Convert all float tensors to double precision.</p></td>
+</tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KHeader.from_ismrmrd" title="mrpro.data.KHeader.from_ismrmrd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_ismrmrd</span></code></a>(header, acq_info[, defaults, ...])</p></td>
 <td><p>Create an Header from ISMRMRD Data.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KHeader.half" title="mrpro.data.KHeader.half"><code class="xref py py-obj docutils literal notranslate"><span class="pre">half</span></code></a>(*[, memory_format, copy])</p></td>
+<td><p>Convert all float tensors to half precision.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KHeader.single" title="mrpro.data.KHeader.single"><code class="xref py py-obj docutils literal notranslate"><span class="pre">single</span></code></a>(*[, memory_format, copy])</p></td>
+<td><p>Convert all float tensors to single precision.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KHeader.to" title="mrpro.data.KHeader.to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Perform dtype and/or device conversion of data.</p></td>
 </tr>
 </tbody>
 </table>
@@ -608,11 +630,94 @@ is not guaranteed to be correct or tested.</p>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">trajectory_description</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KHeader.fa_degree" title="mrpro.data.KHeader.fa_degree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fa_degree</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KHeader.device" title="mrpro.data.KHeader.device"><code class="xref py py-obj docutils literal notranslate"><span class="pre">device</span></code></a></p></td>
+<td><p>Return the device of the tensors.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KHeader.fa_degree" title="mrpro.data.KHeader.fa_degree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fa_degree</span></code></a></p></td>
 <td><p>Flip angle in degree.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KHeader.is_cpu" title="mrpro.data.KHeader.is_cpu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_cpu</span></code></a></p></td>
+<td><p>Return True if all tensors are on the CPU.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KHeader.is_cuda" title="mrpro.data.KHeader.is_cuda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_cuda</span></code></a></p></td>
+<td><p>Return True if all tensors are on a single CUDA device.</p></td>
 </tr>
 </tbody>
 </table>
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.clone">
+<span class="sig-name descname"><span class="pre">clone</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KHeader.clone" title="Link to this definition">#</a></dt>
+<dd><p>Return a deep copy of the object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.cpu">
+<span class="sig-name descname"><span class="pre">cpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KHeader.cpu" title="Link to this definition">#</a></dt>
+<dd><p>Put in CPU memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.cuda">
+<span class="sig-name descname"><span class="pre">cuda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">non_blocking</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KHeader.cuda" title="Link to this definition">#</a></dt>
+<dd><p>Put object in CUDA memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>device</strong> – The destination GPU device. Defaults to the current CUDA device.</p></li>
+<li><p><strong>non_blocking</strong> – If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
+Otherwise, the argument has no effect.</p></li>
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.device">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">device</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#mrpro.data.KHeader.device" title="Link to this definition">#</a></dt>
+<dd><p>Return the device of the tensors.</p>
+<p>Looks at each field of a dataclass implementing a device attribute,
+such as torch.Tensors or MoveDataMixin instances. If the devices
+of the fields differ, an InconsistentDeviceError is raised, otherwise
+the device is returned. If no field implements a device attribute,
+None is returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>InconsistentDeviceError:</strong> – If the devices of different fields differ.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>The device of the fields or None if no field implements a device attribute.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.double">
+<span class="sig-name descname"><span class="pre">double</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KHeader.double" title="Link to this definition">#</a></dt>
+<dd><p>Convert all float tensors to double precision.</p>
+<p>converts float to float64 and complex to complex128</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="mrpro.data.KHeader.fa_degree">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fa_degree</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mrpro.data.KHeader.fa_degree" title="Link to this definition">#</a></dt>
@@ -634,6 +739,90 @@ is not guaranteed to be correct or tested.</p>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.half">
+<span class="sig-name descname"><span class="pre">half</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KHeader.half" title="Link to this definition">#</a></dt>
+<dd><p>Convert all float tensors to half precision.</p>
+<p>converts float to float16 and complex to complex32</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.is_cpu">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_cpu</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#mrpro.data.KHeader.is_cpu" title="Link to this definition">#</a></dt>
+<dd><p>Return True if all tensors are on the CPU.</p>
+<p>Checks all tensor attributes of the dataclass for their device,
+(recursively if an attribute is a MoveDataMixin)</p>
+<p>Returns False if not all tensors are on cpu or if the device is inconsistent,
+returns True if the data class has no tensors as attributes.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.is_cuda">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_cuda</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#mrpro.data.KHeader.is_cuda" title="Link to this definition">#</a></dt>
+<dd><p>Return True if all tensors are on a single CUDA device.</p>
+<p>Checks all tensor attributes of the dataclass for their device,
+(recursively if an attribute is a MoveDataMixin)</p>
+<p>Returns False if not all tensors are on the same CUDA devices, or if the device is inconsistent,
+returns True if the data class has no tensors as attributes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.single">
+<span class="sig-name descname"><span class="pre">single</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KHeader.single" title="Link to this definition">#</a></dt>
+<dd><p>Convert all float tensors to single precision.</p>
+<p>converts float to float32 and complex to complex64</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.to">
+<span class="sig-name descname"><span class="pre">to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KHeader.to" title="Link to this definition">#</a></dt>
+<dd><p>Perform dtype and/or device conversion of data.</p>
+<p>A torch.dtype and torch.device are inferred from the arguments
+of self.to(<a href="#id1"><span class="problematic" id="id2">*</span></a>args, <a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs). Please have a look at the
+documentation of torch.Tensor.to() for more details.</p>
+<p>A new instance of the dataclass will be returned.</p>
+<p>The conversion will be applied to all Tensor- or Module
+fields of the dataclass, and to all fields that implement
+the MoveDataMixin.</p>
+<p>The dtype-type, i.e. float/complex will always be preserved,
+but the precision of floating point dtypes might be changed.</p>
+<p class="rubric">Example</p>
+<dl class="simple">
+<dt>If called with dtype=torch.float32 OR dtype=torch.complex64:</dt><dd><ul class="simple">
+<li><p>A complex128 tensor will be converted to complex64</p></li>
+<li><p>A float64 tensor will be converted to float32</p></li>
+<li><p>A bool tensor will remain bool</p></li>
+<li><p>An int64 tensor will remain int64</p></li>
+</ul>
+</dd>
+</dl>
+<p>If other conversions are desired, please use the torch.Tensor.to() method of
+the fields directly.</p>
+<p>If the copy argument is set to True (default), a deep copy will be returned
+even if no conversion is necessary.
+If two fields are views of the same data before, in the result they will be independent
+copies if copy is set to True or a conversion is necessary.
+If set to False, some Tensors might be shared between the original and the new object.</p>
 </dd></dl>
 
 </dd></dl>
@@ -688,8 +877,18 @@ is not guaranteed to be correct or tested.</p>
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KHeader"><code class="docutils literal notranslate"><span class="pre">KHeader</span></code></a><ul class="visible nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KHeader.__init__"><code class="docutils literal notranslate"><span class="pre">KHeader.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KHeader.clone"><code class="docutils literal notranslate"><span class="pre">KHeader.clone()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KHeader.cpu"><code class="docutils literal notranslate"><span class="pre">KHeader.cpu()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KHeader.cuda"><code class="docutils literal notranslate"><span class="pre">KHeader.cuda()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KHeader.device"><code class="docutils literal notranslate"><span class="pre">KHeader.device</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KHeader.double"><code class="docutils literal notranslate"><span class="pre">KHeader.double()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KHeader.fa_degree"><code class="docutils literal notranslate"><span class="pre">KHeader.fa_degree</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KHeader.from_ismrmrd"><code class="docutils literal notranslate"><span class="pre">KHeader.from_ismrmrd()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KHeader.half"><code class="docutils literal notranslate"><span class="pre">KHeader.half()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KHeader.is_cpu"><code class="docutils literal notranslate"><span class="pre">KHeader.is_cpu</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KHeader.is_cuda"><code class="docutils literal notranslate"><span class="pre">KHeader.is_cuda</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KHeader.single"><code class="docutils literal notranslate"><span class="pre">KHeader.single()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.KHeader.to"><code class="docutils literal notranslate"><span class="pre">KHeader.to()</span></code></a></li>
 </ul>
 </li>
 </ul>

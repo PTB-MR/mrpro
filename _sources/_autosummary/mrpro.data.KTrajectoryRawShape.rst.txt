@@ -17,7 +17,14 @@ mrpro.data.KTrajectoryRawShape
    .. autosummary::
    
       ~KTrajectoryRawShape.__init__
+      ~KTrajectoryRawShape.clone
+      ~KTrajectoryRawShape.cpu
+      ~KTrajectoryRawShape.cuda
+      ~KTrajectoryRawShape.double
+      ~KTrajectoryRawShape.half
+      ~KTrajectoryRawShape.single
       ~KTrajectoryRawShape.sort_and_reshape
+      ~KTrajectoryRawShape.to
    
    
 
@@ -31,5 +38,8 @@ mrpro.data.KTrajectoryRawShape
       ~KTrajectoryRawShape.ky
       ~KTrajectoryRawShape.kx
       ~KTrajectoryRawShape.repeat_detection_tolerance
+      ~KTrajectoryRawShape.device
+      ~KTrajectoryRawShape.is_cpu
+      ~KTrajectoryRawShape.is_cuda
    
    

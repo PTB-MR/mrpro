@@ -18,7 +18,14 @@ mrpro.data.DcfData
    
       ~DcfData.__init__
       ~DcfData.as_operator
+      ~DcfData.clone
+      ~DcfData.cpu
+      ~DcfData.cuda
+      ~DcfData.double
       ~DcfData.from_traj_voronoi
+      ~DcfData.half
+      ~DcfData.single
+      ~DcfData.to
    
    
 
@@ -29,5 +36,8 @@ mrpro.data.DcfData
    .. autosummary::
    
       ~DcfData.data
+      ~DcfData.device
+      ~DcfData.is_cpu
+      ~DcfData.is_cuda
    
    

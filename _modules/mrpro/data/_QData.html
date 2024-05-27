@@ -463,6 +463,8 @@ document.write(`
             <span class="n">qheader</span> <span class="o">=</span> <span class="n">QHeader</span><span class="o">.</span><span class="n">from_iheader</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="n">QHeader</span><span class="p">):</span>
             <span class="n">qheader</span> <span class="o">=</span> <span class="n">header</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid header type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">header</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
         <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
         <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;header&#39;</span><span class="p">,</span> <span class="n">qheader</span><span class="p">)</span></div>

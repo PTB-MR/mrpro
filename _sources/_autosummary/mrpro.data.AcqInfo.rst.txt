@@ -17,7 +17,14 @@ mrpro.data.AcqInfo
    .. autosummary::
    
       ~AcqInfo.__init__
+      ~AcqInfo.clone
+      ~AcqInfo.cpu
+      ~AcqInfo.cuda
+      ~AcqInfo.double
       ~AcqInfo.from_ismrmrd_acquisitions
+      ~AcqInfo.half
+      ~AcqInfo.single
+      ~AcqInfo.to
    
    
 
@@ -51,5 +58,8 @@ mrpro.data.AcqInfo
       ~AcqInfo.user_float
       ~AcqInfo.user_int
       ~AcqInfo.version
+      ~AcqInfo.device
+      ~AcqInfo.is_cpu
+      ~AcqInfo.is_cuda
    
    

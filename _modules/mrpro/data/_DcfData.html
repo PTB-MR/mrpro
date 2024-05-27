@@ -436,6 +436,7 @@ document.write(`
 <span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="kn">import</span> <span class="n">Voronoi</span>
 
 <span class="kn">from</span> <span class="nn">mrpro.data._KTrajectory</span> <span class="kn">import</span> <span class="n">KTrajectory</span>
+<span class="kn">from</span> <span class="nn">mrpro.data._MoveDataMixin</span> <span class="kn">import</span> <span class="n">MoveDataMixin</span>
 <span class="kn">from</span> <span class="nn">mrpro.utils</span> <span class="kn">import</span> <span class="n">smap</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -451,7 +452,7 @@ document.write(`
 <div class="viewcode-block" id="DcfData">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.DcfData.html#mrpro.data.DcfData">[docs]</a>
 <span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">DcfData</span><span class="p">:</span>
+<span class="k">class</span> <span class="nc">DcfData</span><span class="p">(</span><span class="n">MoveDataMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Density compensation data (DcfData) class.&quot;&quot;&quot;</span>
 
     <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>

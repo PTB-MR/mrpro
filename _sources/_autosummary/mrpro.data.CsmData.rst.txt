@@ -18,10 +18,14 @@ mrpro.data.CsmData
    
       ~CsmData.__init__
       ~CsmData.as_operator
+      ~CsmData.clone
       ~CsmData.cpu
       ~CsmData.cuda
+      ~CsmData.double
       ~CsmData.from_idata_walsh
       ~CsmData.from_single_dicom
+      ~CsmData.half
+      ~CsmData.single
       ~CsmData.to
    
    
@@ -33,6 +37,9 @@ mrpro.data.CsmData
    .. autosummary::
    
       ~CsmData.data
+      ~CsmData.device
       ~CsmData.header
+      ~CsmData.is_cpu
+      ~CsmData.is_cuda
    
    

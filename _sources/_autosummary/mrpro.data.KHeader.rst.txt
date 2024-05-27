@@ -17,7 +17,14 @@ mrpro.data.KHeader
    .. autosummary::
    
       ~KHeader.__init__
+      ~KHeader.clone
+      ~KHeader.cpu
+      ~KHeader.cuda
+      ~KHeader.double
       ~KHeader.from_ismrmrd
+      ~KHeader.half
+      ~KHeader.single
+      ~KHeader.to
    
    
 
@@ -55,6 +62,9 @@ mrpro.data.KHeader
       ~KHeader.measurement_id
       ~KHeader.patient_name
       ~KHeader.trajectory_description
+      ~KHeader.device
       ~KHeader.fa_degree
+      ~KHeader.is_cpu
+      ~KHeader.is_cuda
    
    

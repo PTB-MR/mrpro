@@ -17,9 +17,16 @@ mrpro.data.QHeader
    .. autosummary::
    
       ~QHeader.__init__
+      ~QHeader.clone
+      ~QHeader.cpu
+      ~QHeader.cuda
+      ~QHeader.double
       ~QHeader.from_dicom
       ~QHeader.from_iheader
       ~QHeader.from_kheader
+      ~QHeader.half
+      ~QHeader.single
+      ~QHeader.to
    
    
 
@@ -30,5 +37,8 @@ mrpro.data.QHeader
    .. autosummary::
    
       ~QHeader.fov
+      ~QHeader.device
+      ~QHeader.is_cpu
+      ~QHeader.is_cuda
    
    

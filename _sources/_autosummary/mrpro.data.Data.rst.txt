@@ -17,8 +17,12 @@ mrpro.data.Data
    .. autosummary::
    
       ~Data.__init__
+      ~Data.clone
       ~Data.cpu
       ~Data.cuda
+      ~Data.double
+      ~Data.half
+      ~Data.single
       ~Data.to
    
    
@@ -31,5 +35,8 @@ mrpro.data.Data
    
       ~Data.data
       ~Data.header
+      ~Data.device
+      ~Data.is_cpu
+      ~Data.is_cuda
    
    

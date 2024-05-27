@@ -7,6 +7,6 @@ All of the notebooks can directly be run via binder or colab from the repo.
 .. toctree::
    :maxdepth: 1
 
-   notebook_pulseq_2d_radial_golden_angle.rst
    notebook_t1_mapping_with_grad_acq.rst
+   notebook_pulseq_2d_radial_golden_angle.rst
    notebook_direct_reconstruction.rst

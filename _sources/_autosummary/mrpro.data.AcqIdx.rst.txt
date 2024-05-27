@@ -17,6 +17,13 @@ mrpro.data.AcqIdx
    .. autosummary::
    
       ~AcqIdx.__init__
+      ~AcqIdx.clone
+      ~AcqIdx.cpu
+      ~AcqIdx.cuda
+      ~AcqIdx.double
+      ~AcqIdx.half
+      ~AcqIdx.single
+      ~AcqIdx.to
    
    
 
@@ -43,5 +50,8 @@ mrpro.data.AcqIdx
       ~AcqIdx.user5
       ~AcqIdx.user6
       ~AcqIdx.user7
+      ~AcqIdx.device
+      ~AcqIdx.is_cpu
+      ~AcqIdx.is_cuda
    
    

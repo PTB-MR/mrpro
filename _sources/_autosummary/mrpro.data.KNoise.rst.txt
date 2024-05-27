@@ -17,9 +17,13 @@ mrpro.data.KNoise
    .. autosummary::
    
       ~KNoise.__init__
+      ~KNoise.clone
       ~KNoise.cpu
       ~KNoise.cuda
+      ~KNoise.double
       ~KNoise.from_file
+      ~KNoise.half
+      ~KNoise.single
       ~KNoise.to
    
    
@@ -31,5 +35,8 @@ mrpro.data.KNoise
    .. autosummary::
    
       ~KNoise.data
+      ~KNoise.device
+      ~KNoise.is_cpu
+      ~KNoise.is_cuda
    
    

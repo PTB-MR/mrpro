@@ -1,0 +1,40 @@
+mrpro.data.MoveDataMixin
+========================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: MoveDataMixin
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MoveDataMixin.__init__
+      ~MoveDataMixin.clone
+      ~MoveDataMixin.cpu
+      ~MoveDataMixin.cuda
+      ~MoveDataMixin.double
+      ~MoveDataMixin.half
+      ~MoveDataMixin.single
+      ~MoveDataMixin.to
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MoveDataMixin.device
+      ~MoveDataMixin.is_cpu
+      ~MoveDataMixin.is_cuda
+   
+   

@@ -433,6 +433,7 @@ document.write(`
 <span class="kn">from</span> <span class="nn">pydicom.tag</span> <span class="kn">import</span> <span class="n">TagType</span>
 
 <span class="kn">from</span> <span class="nn">mrpro.data._KHeader</span> <span class="kn">import</span> <span class="n">KHeader</span>
+<span class="kn">from</span> <span class="nn">mrpro.data._MoveDataMixin</span> <span class="kn">import</span> <span class="n">MoveDataMixin</span>
 <span class="kn">from</span> <span class="nn">mrpro.data._SpatialDimension</span> <span class="kn">import</span> <span class="n">SpatialDimension</span>
 
 <span class="n">MISC_TAGS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;TimeAfterStart&#39;</span><span class="p">:</span> <span class="mh">0x00191016</span><span class="p">}</span>
@@ -441,7 +442,7 @@ document.write(`
 <div class="viewcode-block" id="IHeader">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.IHeader.html#mrpro.data.IHeader">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">IHeader</span><span class="p">:</span>
+<span class="k">class</span> <span class="nc">IHeader</span><span class="p">(</span><span class="n">MoveDataMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;MR image data header.&quot;&quot;&quot;</span>
 
     <span class="c1"># ToDo: decide which attributes to store in the header</span>

@@ -33,6 +33,7 @@
       KTrajectory
       KTrajectoryRawShape
       Limits
+      MoveDataMixin
       QData
       QHeader
       SpatialDimension
