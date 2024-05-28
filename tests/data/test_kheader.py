@@ -47,6 +47,7 @@ def test_kheader_verify_None(random_mandatory_ismrmrd_header, random_acq_info):
     # ti is not mandatory
     assert kheader.ti is None
     # fa is not mandatory but overwriting with value
-    assert kheader.fa is not None and torch.allclose(kheader.fa, fa_default)
+    assert kheader.fa is not None
+    assert torch.allclose(kheader.fa, fa_default)
     # tr is not mandatory but overwritten with None
     assert kheader.tr is tr_default

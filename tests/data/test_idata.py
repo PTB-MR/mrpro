@@ -32,9 +32,8 @@ def test_IData_from_dcm_folder(dcm_multi_echo_times):
     idata = IData.from_dicom_folder(dcm_multi_echo_times[0].filename.parent)
     # Verify correct echo times
     original_echo_times = torch.as_tensor([ds.te for ds in dcm_multi_echo_times])
-    assert idata.header.te is not None and torch.allclose(
-        torch.sort(original_echo_times)[0], torch.sort(idata.header.te)[0]
-    )
+    assert idata.header.te is not None
+    assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(idata.header.te)[0])
     # Verify all images were read in
     assert idata.data.shape[0] == original_echo_times.shape[0]
 
