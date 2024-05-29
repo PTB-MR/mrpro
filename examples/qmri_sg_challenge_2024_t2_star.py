@@ -12,7 +12,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import torch
 import zenodo_get
-from mpl_toolkits.axes_grid1 import make_axes_locatable # type: ignore [import-untyped]
+from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore [import-untyped]
 from mrpro.algorithms.optimizers import adam
 from mrpro.data import IData
 from mrpro.operators.functionals import MSEDataDiscrepancy
