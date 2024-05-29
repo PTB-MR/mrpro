@@ -158,6 +158,7 @@ locale = "en-us"
 [tool.typos.default.extend-words]
 Reson = "Reson" # required for Proc. Intl. Soc. Mag. Reson. Med.
 iy = "iy"
+daa = 'daa'     # required for wavelet operator
 
 [tool.typos.files]
 extend-exclude = [
