@@ -14,10 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import TypeVar
+from typing import TypeVarTuple
+from typing import cast
+
 import torch
 
 from mrpro.operators.EndomorphOperator import EndomorphOperator
 from mrpro.operators.EndomorphOperator import endomorph
+
+Tin = TypeVarTuple('Tin')  # TODO: bind to torch.Tensors
+Tout = TypeVar('Tout', bound=tuple, covariant=True)  # TODO: bind to torch.Tensor
 
 
 class MagnitudeOp(EndomorphOperator):
@@ -25,6 +32,7 @@ class MagnitudeOp(EndomorphOperator):
 
     @endomorph
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        # def forward(self, *x):
         """Magnitude of tensors.
 
         Parameters
