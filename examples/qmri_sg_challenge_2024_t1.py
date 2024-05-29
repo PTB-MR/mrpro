@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import torch
 import zenodo_get
 from einops import rearrange
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+from mpl_toolkits.axes_grid1 import make_axes_locatable # type: ignore [import-untyped]
 from mrpro.algorithms.optimizers import adam
 from mrpro.data import IData
 from mrpro.operators import MagnitudeOp

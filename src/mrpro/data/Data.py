@@ -18,9 +18,7 @@ from __future__ import annotations
 
 import dataclasses
 from abc import ABC
-from copy import deepcopy
 from typing import Any
-from typing import Self
 
 import torch
 
