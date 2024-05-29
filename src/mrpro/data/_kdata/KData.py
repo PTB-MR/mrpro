@@ -18,11 +18,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
-<<<<<<< HEAD
 import warnings
-=======
-from copy import deepcopy
->>>>>>> 39605f1 (some type fixes maybe)
 from pathlib import Path
 from typing import Protocol
 
