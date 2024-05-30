@@ -34,6 +34,7 @@ from tests.helper import operator_unitary_test
     ],
 )
 def test_wavelet_op_coefficient_transform(im_shape, domain_shape, dim):
+    """Test transform between ptwt and mrpro coefficient format."""
     random_generator = RandomGenerator(seed=0)
     img = random_generator.float32_tensor(size=im_shape)
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim)
@@ -70,11 +71,13 @@ def test_wavelet_op_coefficient_transform(im_shape, domain_shape, dim):
 
 
 def test_wavelet_op_wrong_dim():
+    """Wavelet only works for 1D, 2D and 3D data."""
     with pytest.raises(ValueError, match='Only 1D, 2D and 3D wavelet'):
         WaveletOp(dim=(0, 1, 2, 3))  # type: ignore[arg-type]
 
 
 def test_wavelet_op_mismatch_dim_domain_shape():
+    """Dimensions and shapes need to be of same length."""
     with pytest.raises(ValueError, match='Number of dimensions along which'):
         WaveletOp(domain_shape=(10, 20), dim=(-2,))
 
@@ -124,7 +127,7 @@ def test_wavelet_op_isometry(im_shape, domain_shape, dim, wavelet_name):
     ],
 )
 def test_wavelet_op_adjointness(im_shape, domain_shape, dim, wavelet_name):
-    # test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v
+    """Test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v."""
     random_generator = RandomGenerator(seed=0)
 
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name=wavelet_name)

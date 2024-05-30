@@ -26,6 +26,29 @@ class WaveletOp(LinearOperator):
         wavelet_name: str = 'db4',
         level: int | None = None,
     ):
+        """_summary_
+
+        Parameters
+        ----------
+        domain_shape
+            Shape of domain where wavelets are calculated. If set to None the shape is taken from the input of the
+            forward operator. The adjoint operator will raise an error.
+        dim
+            Dimensions (axes) where wavelets are calculated
+        wavelet_name
+            Name of wavelets
+        level
+            Highest wavelet level. If set to None, the highest possible level is calculated based on the domain shape.
+
+        Raises
+        ------
+        ValueError
+            If wavelets are calculated for more than three dimensions.
+        ValueError
+            If wavelet dimensions and domain shape do not match.
+        NotImplementedError
+            If the domain shape is odd. Adjoint will lead to the wrong domain shape.
+        """
         super().__init__()
         self.domain_shape = domain_shape
         self.wavelet_name = wavelet_name
@@ -81,6 +104,22 @@ class WaveletOp(LinearOperator):
                 self.coefficients_padding.insert(0, self.coefficients_padding[0])  # padding of a/aa/aaa term
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Calculate wavelet coefficients from (image) data.
+
+        Parameters
+        ----------
+        x
+            (Image) data
+
+        Returns
+        -------
+            Wavelet coefficients stacked along one dimension
+
+        Raises
+        ------
+        ValueError
+            If the dimensions along which wavelets are to be calculated are not unique.
+        """
         # normalize axes to allow negative indexing in input
         dim = tuple(d % x.ndim for d in self.dim)
         if len(dim) != len(set(dim)):
@@ -114,6 +153,24 @@ class WaveletOp(LinearOperator):
         return (torch.moveaxis(coefficients_stack, -1, min(dim)),)
 
     def adjoint(self, coefficients_stack: torch.Tensor) -> tuple[torch.Tensor]:
+        """Transform wavelet coefficients to (image) data.
+
+        Parameters
+        ----------
+        coefficients_stack
+            Wavelet coefficients stacked along one dimension
+
+        Returns
+        -------
+            (Image) data
+
+        Raises
+        ------
+        ValueError
+            If the domain_shape is not defined.
+        ValueError
+            If the dimensions along which wavelets are to be calculated are not unique.
+        """
         if self.domain_shape is None:
             raise ValueError('Adjoint requires to define the domain_shape in init()')
 
