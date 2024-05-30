@@ -79,15 +79,25 @@ def test_wavelet_op_mismatch_dim_domain_shape():
         WaveletOp(domain_shape=(10, 20), dim=(-2,))
 
 
+def test_wavelet_op_error_for_odd_domain_shape():
+    with pytest.raises(NotImplementedError, match='ptwt only supports wavelet transforms for even'):
+        WaveletOp(domain_shape=(11, 20), dim=(-2, -1))
+
+
 @pytest.mark.parametrize('wavelet_name', ['haar', 'db4'])
 @pytest.mark.parametrize(
     ('im_shape', 'domain_shape', 'dim'),
     [
-        ((1, 32, 32), (32,), (-1,)),
-        ((1, 32, 32), (32, 32), (-2, -1)),
-        ((4, 30, 30), (30, 30), (-2, -1)),
-        ((5, 1, 32, 32, 32), (32, 32, 32), (-3, -2, -1)),
-        ((5, 1, 30, 20, 40), (30,), (-3,)),
+        ((1, 5, 20, 30), (30,), (-1,)),
+        ((5, 1, 10, 20, 30), (10,), (-3,)),
+        ((1, 5, 20, 30), (20, 30), (-2, -1)),
+        ((4, 10, 20, 30), (20, 30), (-2, -1)),
+        ((4, 10, 20, 30), (10, 30), (-3, -1)),
+        ((5, 10, 20, 30), (10, 20, 30), (-3, -2, -1)),
+        ((6, 10, 20, 30), (6, 20, 30), (-4, -2, -1)),
+        ((6, 10, 20, 30), (20, 30, 6), (-2, -1, -4)),
+        ((6, 10, 20, 30), (20, 30, 6), (2, 3, 0)),
+        ((5, 10, 20, 30), None, (-3, -2, -1)),
     ],
 )
 def test_wavelet_op_isometry(im_shape, domain_shape, dim, wavelet_name):
@@ -102,11 +112,15 @@ def test_wavelet_op_isometry(im_shape, domain_shape, dim, wavelet_name):
 @pytest.mark.parametrize(
     ('im_shape', 'domain_shape', 'dim'),
     [
-        ((1, 32, 32), (32,), (-1,)),
-        ((1, 32, 32), (32, 32), (-2, -1)),
-        ((4, 30, 30), (30, 30), (-2, -1)),
-        ((5, 1, 16, 32, 32), (16, 32, 32), (-3, -2, -1)),
-        ((5, 1, 30, 20, 40), (30,), (-3,)),
+        ((1, 5, 20, 30), (30,), (-1,)),
+        ((5, 1, 10, 20, 30), (10,), (-3,)),
+        ((1, 5, 20, 30), (20, 30), (-2, -1)),
+        ((4, 10, 20, 30), (20, 30), (-2, -1)),
+        ((4, 10, 20, 30), (10, 30), (-3, -1)),
+        ((5, 10, 20, 30), (10, 20, 30), (-3, -2, -1)),
+        ((6, 10, 20, 30), (6, 20, 30), (-4, -2, -1)),
+        ((6, 10, 20, 30), (20, 30, 6), (-2, -1, -4)),
+        ((6, 10, 20, 30), (20, 30, 6), (2, 3, 0)),
     ],
 )
 def test_wavelet_op_adjointness(im_shape, domain_shape, dim, wavelet_name):
@@ -114,11 +128,18 @@ def test_wavelet_op_adjointness(im_shape, domain_shape, dim, wavelet_name):
     random_generator = RandomGenerator(seed=0)
 
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name=wavelet_name)
+
     # calculate 1D length of wavelet coefficients
-    range_shape = [(torch.prod(shape)) for shape in wavelet_op.coefficients_shape]
+    wavelet_stack_length = torch.sum(torch.as_tensor([(torch.prod(shape)) for shape in wavelet_op.coefficients_shape]))
+
+    # sorted and normed dimensions needed to correctly calculate range
+    dim_sorted = sorted([d % len(im_shape) for d in dim], reverse=True)
+    range_shape = list(im_shape)
+    range_shape[dim_sorted[-1]] = int(wavelet_stack_length)
+    [range_shape.pop(d) for d in dim_sorted[:-1]]
 
     u = random_generator.complex64_tensor(size=im_shape)
-    v = random_generator.complex64_tensor(size=im_shape[: -len(dim)] + (torch.sum(torch.as_tensor(range_shape)),))
+    v = random_generator.complex64_tensor(size=range_shape)
     dotproduct_adjointness_test(wavelet_op, u, v)
 
 
@@ -126,11 +147,15 @@ def test_wavelet_op_adjointness(im_shape, domain_shape, dim, wavelet_name):
 @pytest.mark.parametrize(
     ('im_shape', 'domain_shape', 'dim'),
     [
-        ((1, 32, 32), (32,), (-1,)),
-        ((1, 32, 32), (32, 32), (-2, -1)),
-        ((4, 30, 30), (30, 30), (-2, -1)),
-        ((5, 1, 16, 32, 32), (16, 32, 32), (-3, -2, -1)),
-        ((5, 1, 30, 20, 40), (30,), (-3,)),
+        ((1, 5, 20, 30), (30,), (-1,)),
+        ((5, 1, 10, 20, 30), (10,), (-3,)),
+        ((1, 5, 20, 30), (20, 30), (-2, -1)),
+        ((4, 10, 20, 30), (20, 30), (-2, -1)),
+        ((4, 10, 20, 30), (10, 30), (-3, -1)),
+        ((5, 10, 20, 30), (10, 20, 30), (-3, -2, -1)),
+        ((6, 10, 20, 30), (6, 20, 30), (-4, -2, -1)),
+        ((6, 10, 20, 30), (20, 30, 6), (-2, -1, -4)),
+        ((6, 10, 20, 30), (20, 30, 6), (2, 3, 0)),
     ],
 )
 def test_wavelet_op_unitary(im_shape, domain_shape, dim, wavelet_name):
