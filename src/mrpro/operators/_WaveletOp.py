@@ -49,65 +49,106 @@ class WaveletOp(LinearOperator):
                     'be the same as the domain shape',
                 )
 
+            if any(d % 2 for d in domain_shape):
+                raise NotImplementedError('ptwt only supports wavelet transforms for even number of samples.')
+
             # size of wavelets
             wavelet_length = torch.as_tensor((Wavelet(wavelet_name).dec_len,) * len(domain_shape))
 
             # calculate shape of wavelet coefficients at each level
             current_shape = torch.as_tensor(domain_shape)
 
-            self.coefficients_shape = []
-            self.coefficients_padding = []
-            for _ in range(_check_level(domain_shape, wavelet_length, level)):
-                # Add padding
-                for ind in range(len(current_shape)):
-                    padl, padr = _get_pad(current_shape[ind], wavelet_length[ind])
-                    current_shape[ind] += padl + padr
-                current_shape = torch.floor((current_shape - (wavelet_length - 1) - 1) / 2 + 1).to(dtype=torch.int64)
-                self.coefficients_shape.extend([current_shape.clone()] * self.n_wavelet_directions)
-                self.coefficients_padding.extend([(padl.clone(), padr.clone())] * self.n_wavelet_directions)
+            if _check_level(domain_shape, wavelet_length, level) == 0:
+                self.coefficients_shape = [current_shape]
+                self.coefficients_padding = [(0, 0)] * len(current_shape)
+            else:
+                self.coefficients_shape = []
+                self.coefficients_padding = []
+                for _ in range(_check_level(domain_shape, wavelet_length, level)):
+                    # Add padding
+                    for ind in range(len(current_shape)):
+                        padl, padr = _get_pad(current_shape[ind], wavelet_length[ind])
+                        current_shape[ind] += padl + padr
+                    current_shape = torch.floor((current_shape - (wavelet_length - 1) - 1) / 2 + 1).to(
+                        dtype=torch.int64
+                    )
+                    self.coefficients_shape.extend([current_shape.clone()] * self.n_wavelet_directions)
+                    self.coefficients_padding.extend([(padl.clone(), padr.clone())] * self.n_wavelet_directions)
 
-            self.coefficients_shape = self.coefficients_shape[::-1]
-            self.coefficients_padding = self.coefficients_padding[::-1]
-            self.coefficients_shape.insert(0, self.coefficients_shape[0])  # shape of a/aa/aaa term
-            self.coefficients_padding.insert(0, self.coefficients_padding[0])  # padding of a/aa/aaa term
+                self.coefficients_shape = self.coefficients_shape[::-1]
+                self.coefficients_padding = self.coefficients_padding[::-1]
+                self.coefficients_shape.insert(0, self.coefficients_shape[0])  # shape of a/aa/aaa term
+                self.coefficients_padding.insert(0, self.coefficients_padding[0])  # padding of a/aa/aaa term
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        # normalize axes to allow negative indexing in input
+        dim = tuple(d % x.ndim for d in self.dim)
+        if len(dim) != len(set(dim)):
+            raise ValueError(f'Axis must be unique. Normalized axis are {dim}')
+
+        # swapping the last axes and the axes to calculate wavelets of
+        x = torch.moveaxis(x, dim, list(range(-len(self.dim), 0)))
+
         # the ptwt functions work only for real data, thus we handle complex inputs as an additional channel
-        x_real = torch.view_as_real(x).moveaxis(-1, -len(self.dim) - 1) if x.is_complex() else x
+        x_real = torch.view_as_real(x).moveaxis(-1, 0) if x.is_complex() else x
+
         if len(self.dim) == 1:
-            coeffs1 = wavedec(x_real, self.wavelet_name, level=self.level, mode='zero')
+            coeffs1 = wavedec(x_real, self.wavelet_name, level=self.level, mode='zero', axis=-1)
             coefficients_list = self._format_coeffs_1d(coeffs1)
         elif len(self.dim) == 2:
-            coeffs2 = wavedec2(x_real, self.wavelet_name, level=self.level, mode='zero')
+            coeffs2 = wavedec2(x_real, self.wavelet_name, level=self.level, mode='zero', axes=(-2, -1))
             coefficients_list = self._format_coeffs_2d(coeffs2)
         elif len(self.dim) == 3:
-            coeffs3 = wavedec3(x_real, self.wavelet_name, level=self.level, mode='zero')
+            coeffs3 = wavedec3(x_real, self.wavelet_name, level=self.level, mode='zero', axes=(-3, -2, -1))
             coefficients_list = self._format_coeffs_3d(coeffs3)
 
-        # if input is complex, we also return complex coefficients
-        if x.is_complex():
-            for i, coeff in enumerate(coefficients_list):
-                coefficients_list[i] = torch.view_as_complex(coeff.moveaxis(-len(self.dim) - 1, -1).contiguous())
-        return (self._coeff_to_1d_tensor(coefficients_list),)
+        # stack multi-resolution wavelets along single dimension
+        coefficients_stack = self._coeff_to_stacked_tensor(coefficients_list)
+        coefficients_stack = (
+            torch.view_as_complex(coefficients_stack.moveaxis(0, -1).contiguous())
+            if x.is_complex()
+            else coefficients_stack
+        )
 
-    def adjoint(self, coeff_tensor_1d: torch.Tensor) -> tuple[torch.Tensor]:
-        coefficients_list = self._1d_tensor_to_coeff(coeff_tensor_1d)
+        # move stacked coefficients to first wavelet dimension
+        return (torch.moveaxis(coefficients_stack, -1, min(dim)),)
+
+    def adjoint(self, coefficients_stack: torch.Tensor) -> tuple[torch.Tensor]:
+        if self.domain_shape is None:
+            raise ValueError('Adjoint requires to define the domain_shape in init()')
+
+        # normalize axes to allow negative indexing in input
+        dim = tuple(d % (coefficients_stack.ndim + len(self.dim) - 1) for d in self.dim)
+        if len(dim) != len(set(dim)):
+            raise ValueError(f'Axis must be unique. Normalized axis are {dim}')
+
+        coefficients_stack = torch.moveaxis(coefficients_stack, min(dim), -1)
+
         # the ptwt functions work only for real data, thus we handle complex inputs as an additional channel
-        if coeff_tensor_1d.is_complex():
-            for i, coeff in enumerate(coefficients_list):
-                coefficients_list[i] = torch.view_as_real(coeff).moveaxis(-1, -len(self.dim) - 1)
+        coefficients_stack_real = (
+            torch.view_as_real(coefficients_stack).moveaxis(-1, 0)
+            if coefficients_stack.is_complex()
+            else coefficients_stack
+        )
+
+        coefficients_list = self._stacked_tensor_to_coeff(coefficients_stack_real)
+
         if len(self.dim) == 1:
             coeffs1 = self._undo_format_coeffs_1d(coefficients_list)
-            data = waverec(coeffs1, self.wavelet_name)
+            data = waverec(coeffs1, self.wavelet_name, axis=-1)
         elif len(self.dim) == 2:
             coeffs2 = self._undo_format_coeffs_2d(coefficients_list)
-            data = waverec2(coeffs2, self.wavelet_name)
+            data = waverec2(coeffs2, self.wavelet_name, axes=(-2, -1))
         elif len(self.dim) == 3:
             coeffs3 = self._undo_format_coeffs_3d(coefficients_list)
-            data = waverec3(coeffs3, self.wavelet_name)
+            data = waverec3(coeffs3, self.wavelet_name, axes=(-3, -2, -1))
+
         # if we deal with complex coefficients, we also return complex data
-        if coeff_tensor_1d.is_complex():
-            data = torch.view_as_complex(data.moveaxis(-len(self.dim) - 1, -1).contiguous())
+        if coefficients_stack.is_complex():
+            data = torch.view_as_complex(data.moveaxis(0, -1).contiguous())
+
+        # undo swapping of axes
+        data = torch.moveaxis(data, list(range(-len(self.dim), 0)), dim)
 
         return (data,)
 
@@ -188,7 +229,7 @@ class WaveletOp(LinearOperator):
             )
         return coeffs_ptwt_format
 
-    def _coeff_to_1d_tensor(self, coefficients: list[torch.Tensor]) -> torch.Tensor:
+    def _coeff_to_stacked_tensor(self, coefficients: list[torch.Tensor]) -> torch.Tensor:
         """Stack wavelet coefficients into 1D tensor.
 
         During the calculation of the of the wavelet coefficient ptwt uses padding. To ensure the wavelet operator is
@@ -206,18 +247,17 @@ class WaveletOp(LinearOperator):
         -------
             stacked coefficients in tensor [...,coeff]
         """
-        coefficients_tensor_1d = []
-        coefficients_tensor_1d.append(coefficients[0].flatten(start_dim=-len(self.dim)))
-        for coefficient in coefficients[1:]:
-            coefficients_tensor_1d.append(coefficient.flatten(start_dim=-len(self.dim)))
-        return torch.cat(coefficients_tensor_1d, dim=-1)
+        return torch.cat(
+            [coeff.flatten(start_dim=-len(self.dim)) for coeff in coefficients] if len(self.dim) > 1 else coefficients,
+            dim=-1,
+        )
 
-    def _1d_tensor_to_coeff(self, coefficients_tensor_1d: torch.Tensor) -> list[torch.Tensor]:
+    def _stacked_tensor_to_coeff(self, coefficients_stack: torch.Tensor) -> list[torch.Tensor]:
         """Unstack wavelet coefficients.
 
         Parameters
         ----------
-        coefficients_tensor_1d
+        coefficients_stack
             stacked coefficients in tensor [...,coeff]
 
 
@@ -229,7 +269,7 @@ class WaveletOp(LinearOperator):
             3D: [aaa, aad_n, ada_n, add_n, ..., ..., aad_1, ada_1, add_1, ...]
         """
         coefficients = torch.split(
-            coefficients_tensor_1d, [int(torch.prod(shape)) for shape in self.coefficients_shape], dim=-1
+            coefficients_stack, [int(torch.prod(shape)) for shape in self.coefficients_shape], dim=-1
         )
         return [
             torch.reshape(coeff, coeff.shape[:-1] + tuple(shape))
