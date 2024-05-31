@@ -26,7 +26,6 @@ from mrpro.utils.filters import _filter_separable
 class FiniteDifferenceOp(LinearOperator):
     """Finite Difference Operator.
 
-
     This work is inspired by:
     https://github.com/koflera/LearningRegularizationParameterMaps/blob/main/networks/grad_ops.py
 
