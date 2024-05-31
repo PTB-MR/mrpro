@@ -28,18 +28,20 @@ def data():
     return data
 
 
-def test_spatial_uniform_filter_3d(data):
+@pytest.mark.parametrize(('pad_mode'), ['constant', 'reflect', 'replicate', 'circular'])
+def test_spatial_uniform_filter_3d(data, pad_mode):
     """Test spatial_uniform_filter_3d with SpatialDimension."""
 
-    result = uniform_filter_3d(data, SpatialDimension(3, 3, 3))
+    result = uniform_filter_3d(data, SpatialDimension(3, 3, 3), pad_mode)
     assert data.shape == result.shape
     assert torch.isclose(torch.sum(result), torch.sum(data))
 
 
-def test_spatial_uniform_filter_3d_tuple(data):
+@pytest.mark.parametrize(('pad_mode'), ['constant', 'reflect', 'replicate', 'circular'])
+def test_spatial_uniform_filter_3d_tuple(data, pad_mode):
     """Test spatial_uniform_filter_3d with tuple."""
 
-    result = uniform_filter_3d(data, (3, 3, 3))
+    result = uniform_filter_3d(data, (3, 3, 3), pad_mode)
     assert data.shape == result.shape
     assert torch.isclose(torch.sum(result), torch.sum(data))
 

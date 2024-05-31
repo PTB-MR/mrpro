@@ -19,6 +19,7 @@ from __future__ import annotations
 import warnings
 from collections.abc import Sequence
 from math import ceil
+from typing import Literal
 
 import numpy as np
 import torch
@@ -29,6 +30,8 @@ from mrpro.data.SpatialDimension import SpatialDimension
 def uniform_filter_3d(
     data: torch.Tensor,
     filter_width: SpatialDimension[int] | tuple[int, int, int] | int,
+    pad_mode: Literal['constant', 'reflect', 'replicate', 'circular'] = 'constant',
+    pad_value: float = 0.0,
 ) -> torch.Tensor:
     """Spatial smoothing using convolution with box function.
 
@@ -42,6 +45,10 @@ def uniform_filter_3d(
         Width of the filter as SpatialDimension(z, y, x) or tuple(z, y, x).
         If a single integer is supplied, it is used as the width along z, y, and x.
         The filter width is clipped to the data shape.
+    pad_mode
+        Padding mode
+    pad_value
+        Padding value for pad_mode = constant
     """
     match filter_width:
         case int(width):
@@ -54,30 +61,46 @@ def uniform_filter_3d(
             x = min(data.shape[-1], x)
         case _:
             raise ValueError(f'Invalid filter width: {filter_width}')
-    return uniform_filter(data, (z, y, x), axis=(-3, -2, -1))
+    return uniform_filter(data, (z, y, x), axis=(-3, -2, -1), pad_mode=pad_mode, pad_value=pad_value)
 
 
-def _filter_separable(x: torch.Tensor, kernels: Sequence[torch.Tensor], axis: Sequence[int]) -> torch.Tensor:
+def filter_separable(
+    x: torch.Tensor,
+    kernels: Sequence[torch.Tensor],
+    axis: Sequence[int],
+    pad_mode: Literal['constant', 'reflect', 'replicate', 'circular'] = 'constant',
+    pad_value: float = 0.0,
+) -> torch.Tensor:
     """Apply the separable filter kernels to the tensor x along the axes axis.
 
-    Does zero-padding to keep the output the same size as the input.
+    Does padding to keep the output the same size as the input.
 
     Parameters
     ----------
     x
         Tensor to filter
     kernels
-        List of 1D kernels to apply to the tensor x.
+        List of 1D kernels to apply to the tensor x
     axis
-        axes to filter over. Must have the same length as kernels.
+        Axes to filter over. Must have the same length as kernels.
+    pad_mode
+        Padding mode
+    pad_value
+        Padding value for pad_mode = constant
     """
     if len(axis) != len(kernels):
-        raise ValueError('Must provide matching length kernels and axis arguments. ')
+        raise ValueError('Must provide matching length kernels and axis arguments.')
 
     # normalize axis to allow negative indexing in input
     axis = tuple([a % x.ndim for a in axis])
     if len(axis) != len(set(axis)):
         raise ValueError(f'Axis must be unique. Normalized axis are {axis}')
+
+    # for pad_mode = constant and pad_value = 0, padding is done inside convolution
+    if pad_mode == 'constant' and pad_value == 0:
+        padding_conv = 'same'
+    else:
+        padding_conv = 'valid'
 
     for kernel, ax in zip(kernels, axis, strict=False):
         # either both are complex or both are real
@@ -92,9 +115,14 @@ def _filter_separable(x: torch.Tensor, kernels: Sequence[torch.Tensor], axis: Se
         # swapping the last axis and the axis to filter over
         idx[ax], idx[-1] = idx[-1], idx[ax]
         x = x.permute(idx)
-        x = torch.nn.functional.conv1d(
-            x.flatten(end_dim=-2)[:, None, :], kernel[None, None, :], padding='same'
-        ).reshape(x.shape)
+        x_shape = x.shape
+        # flatten first to allow for circular, replicate and reflection padding for arbitrary tensor size
+        x = x.flatten(end_dim=-2)
+        if padding_conv == 'valid':
+            left_pad = (len(kernel) - 1) // 2
+            right_pad = (len(kernel) - 1) - left_pad
+            x = torch.nn.functional.pad(x, pad=(left_pad, right_pad), mode=pad_mode, value=pad_value)
+        x = torch.nn.functional.conv1d(x[:, None, :], kernel[None, None, :], padding=padding_conv).reshape(x_shape)
         # for a single permutation, this undoes the permutation
         x = x.permute(idx)
     return x
@@ -105,6 +133,8 @@ def gaussian_filter(
     sigmas: float | Sequence[float] | torch.Tensor,
     axis: int | Sequence[int] | None = None,
     truncate: int = 3,
+    pad_mode: Literal['constant', 'reflect', 'replicate', 'circular'] = 'constant',
+    pad_value: float = 0.0,
 ) -> torch.Tensor:
     """Apply a and-Gaussian filter.
 
@@ -118,6 +148,10 @@ def gaussian_filter(
         Axis or axes to filter over. If None, filters over all axes.
     truncate
         Truncate the filter at this many standard deviations.
+    pad_mode
+        Padding mode
+    pad_value
+        Padding value for pad_mode = constant
     """
     if axis is None:
         axis = tuple(range(x.ndim))
@@ -137,7 +171,7 @@ def gaussian_filter(
         ]
     )
     kernels = tuple([(k / k.sum()).to(device=x.device) for k in kernels])
-    x_filtered = _filter_separable(x, kernels, axis)
+    x_filtered = filter_separable(x, kernels, axis, pad_mode, pad_value)
     return x_filtered
 
 
@@ -145,6 +179,8 @@ def uniform_filter(
     x: torch.Tensor,
     width: int | Sequence[int] | torch.Tensor,
     axis: int | Sequence[int] | None = None,
+    pad_mode: Literal['constant', 'reflect', 'replicate', 'circular'] = 'constant',
+    pad_value: float = 0.0,
 ) -> torch.Tensor:
     """Apply a and-uniform filter.
 
@@ -156,6 +192,10 @@ def uniform_filter(
         Width of uniform kernel. If iterable, must have length equal to the number of axes.
     axis
         Axis or axes to filter over. If None, filters over all axes.
+    pad_mode
+        Padding mode
+    pad_value
+        Padding value for pad_mode = constant
     """
     if axis is None:
         axis = tuple(range(x.ndim))
@@ -171,5 +211,5 @@ def uniform_filter(
     width = torch.minimum(width, torch.tensor(x.shape)[(axis), ...])
 
     kernels = tuple([torch.ones(width, device=x.device) / width for width in width])
-    x_filtered = _filter_separable(x, kernels, axis)
+    x_filtered = filter_separable(x, kernels, axis, pad_mode, pad_value)
     return x_filtered
