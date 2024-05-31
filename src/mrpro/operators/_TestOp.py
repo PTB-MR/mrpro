@@ -11,3 +11,6 @@ class WaveletOp(LinearOperator):
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         return (x,)
+
+    def new_method_without_docstring(self):
+        return 1
