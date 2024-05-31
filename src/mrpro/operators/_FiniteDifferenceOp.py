@@ -27,7 +27,7 @@ class FiniteDifferenceOp(LinearOperator):
     """Finite Difference Operator."""
 
     @staticmethod
-    def diff_kernel(mode: str) -> torch.Tensor:
+    def finite_difference_kernel(mode: str) -> torch.Tensor:
         """Finite difference kernel.
 
         Parameters
@@ -75,8 +75,9 @@ class FiniteDifferenceOp(LinearOperator):
         """
         super().__init__()
         self.dim = dim
-        self.mode = mode
         self.padding_mode = padding_mode
+        self.kernel = self.finite_difference_kernel(mode)
+        self.adjoint_kernel = torch.flip(self.kernel, dims=(-1,))
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Forward of finite differences.
@@ -90,7 +91,7 @@ class FiniteDifferenceOp(LinearOperator):
         -------
             Finite differences of x along dim stacked along first dimension.
         """
-        return (torch.stack([_filter_separable(x, (self.diff_kernel(self.mode),), axis=(d,)) for d in self.dim]),)
+        return (torch.stack([_filter_separable(x, (self.kernel,), axis=(d,)) for d in self.dim]),)
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoing of finite differences.
@@ -112,11 +113,10 @@ class FiniteDifferenceOp(LinearOperator):
         """
         if y.shape[0] != len(self.dim):
             raise ValueError('Fist dimension of input tensor has to match the number of finite difference directions.')
-        kernel_adjoint = torch.flip(self.diff_kernel(self.mode), dims=(-1,))
         return (
             torch.sum(
                 torch.stack(
-                    [_filter_separable(y[i, ...], (kernel_adjoint,), axis=(d,)) for i, d in enumerate(self.dim)]
+                    [_filter_separable(y[i, ...], (self.adjoint_kernel,), axis=(d,)) for i, d in enumerate(self.dim)]
                 ),
                 dim=0,
             ),
