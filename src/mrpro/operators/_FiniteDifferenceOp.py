@@ -52,22 +52,20 @@ class FiniteDifferenceOp(LinearOperator):
         ValueError
             If mode is not central, forward, backward or doublecentral
         """
-        if mode == 'doublecentral':
-            kernel = torch.tensor((-1, 0, 1))
-        elif mode == 'central':
+        if mode == 'central':
             kernel = torch.tensor((-1, 0, 1)) / 2
         elif mode == 'forward':
             kernel = torch.tensor((0, -1, 1))
         elif mode == 'backward':
             kernel = torch.tensor((-1, 1, 0))
         else:
-            raise ValueError(f'mode should be one of (central, forward, backward, doublecentral), not {mode}')
+            raise ValueError(f'mode should be one of (central, forward, backward), not {mode}')
         return kernel
 
     def __init__(
         self,
         dim: Sequence[int],
-        mode: Literal['doublecentral', 'central', 'forward', 'backward'] = 'doublecentral',
+        mode: Literal['central', 'forward', 'backward'] = 'central',
         padding_mode: Literal['zeros', 'reflect', 'replicate', 'circular'] = 'zeros',
     ) -> None:
         """Finite difference operator.
@@ -84,8 +82,8 @@ class FiniteDifferenceOp(LinearOperator):
         super().__init__()
         self.dim = dim
         self.padding_mode = padding_mode
-        self.kernel = self.finite_difference_kernel(mode)
-        self.adjoint_kernel = torch.flip(self.kernel, dims=(-1,))
+        self.register_buffer('kernel', self.finite_difference_kernel(mode))
+        self.register_buffer('adjoint_kernel', torch.flip(self.kernel, dims=(-1,)))
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Forward of finite differences.
@@ -124,7 +122,10 @@ class FiniteDifferenceOp(LinearOperator):
         return (
             torch.sum(
                 torch.stack(
-                    [_filter_separable(y[i, ...], (self.adjoint_kernel,), axis=(d,)) for i, d in enumerate(self.dim)]
+                    [
+                        _filter_separable(yi, (self.adjoint_kernel,), axis=(dim,))
+                        for dim, yi in zip(self.dim, y, strict=False)
+                    ]
                 ),
                 dim=0,
             ),

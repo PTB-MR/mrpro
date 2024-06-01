@@ -20,8 +20,8 @@ from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test
 
 
-@pytest.mark.parametrize(('mode', 'scaling'), [('doublecentral', 2), ('central', 1), ('forward', 1), ('backward', 1)])
-def test_finite_difference_op_forward(mode, scaling):
+@pytest.mark.parametrize('mode', ['central', 'forward', 'backward'])
+def test_finite_difference_op_forward(mode):
     """Test correct finite difference of simple object."""
     # Test object with linear gradient in real and imaginary part
     linear_gradient_object = torch.arange(1, 21)[None, :].to(dtype=torch.float32)
@@ -32,11 +32,11 @@ def test_finite_difference_op_forward(mode, scaling):
     (finite_difference_of_object,) = finite_difference_op(linear_gradient_object)
 
     # Verify correct values excluding borders
-    torch.testing.assert_close(finite_difference_of_object[0, 0, 1:-1], scaling * (1 + 1j) * torch.ones(18))
+    torch.testing.assert_close(finite_difference_of_object[0, 0, 1:-1], (1 + 1j) * torch.ones(18))
 
 
-@pytest.mark.parametrize(('padding_mode'), ['zero', 'reflect', 'replicate', 'circular'])
-@pytest.mark.parametrize('mode', ['doublecentral', 'central', 'forward', 'backward'])
+@pytest.mark.parametrize('padding_mode', ['zero', 'reflect', 'replicate', 'circular'])
+@pytest.mark.parametrize('mode', ['central', 'forward', 'backward'])
 @pytest.mark.parametrize('dim', [(-1,), (-2, -1), (-3, -2, -1), (-4,), (1, 3)])
 def test_finite_difference_op_adjointness(dim, mode, padding_mode):
     """Test finite difference operator adjoint property."""
