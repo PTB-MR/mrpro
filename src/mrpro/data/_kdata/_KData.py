@@ -38,6 +38,7 @@ from mrpro.data._KHeader import KHeader
 from mrpro.data._KTrajectory import KTrajectory
 from mrpro.data._KTrajectoryRawShape import KTrajectoryRawShape
 from mrpro.data._MoveDataMixin import MoveDataMixin
+from mrpro.data._SpatialDimension import SpatialDimension
 from mrpro.data.enums import AcqFlags
 from mrpro.data.traj_calculators import KTrajectoryCalculator
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
@@ -195,13 +196,21 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         sort_idx = np.lexsort(acq_indices)  # torch does not have lexsort as of pytorch 2.2 (March 2024)
 
         # Finally, reshape and sort the tensors in acqinfo and acqinfo.idx, and kdata.
+        def rearrange_acq_info_tensors(input_tensor: torch.Tensor):
+            return rearrange(input_tensor[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=n_k1, k2=n_k2)
+
         def sort_and_reshape_tensor_fields(dataclass: AcqInfo | AcqIdx):
             """Sort by the sort_idx and reshape to (*, n_k2, n_k1, ...)."""
             for field in dataclasses.fields(dataclass):
                 old = getattr(dataclass, field.name)
                 if isinstance(old, torch.Tensor):
-                    new = rearrange(old[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=n_k1, k2=n_k2)
-                    setattr(dataclass, field.name, new)
+                    setattr(dataclass, field.name, rearrange_acq_info_tensors(old))
+                elif isinstance(old, SpatialDimension):
+                    setattr(
+                        dataclass,
+                        field.name,
+                        SpatialDimension(*[rearrange_acq_info_tensors(old_zyx) for old_zyx in (old.z, old.y, old.x)]),
+                    )
 
         sort_and_reshape_tensor_fields(kheader.acq_info)
         sort_and_reshape_tensor_fields(kheader.acq_info.idx)
