@@ -1,6 +1,6 @@
 """Spatial and temporal filters."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
+# Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ def filter_separable(
     x: torch.Tensor,
     kernels: Sequence[torch.Tensor],
     axis: Sequence[int],
-    pad_mode: Literal['constant', 'reflect', 'replicate', 'circular'] = 'constant',
+    pad_mode: Literal['constant', 'reflect', 'replicate', 'circular', 'none'] = 'constant',
     pad_value: float = 0.0,
 ) -> torch.Tensor:
     """Apply the separable filter kernels to the tensor x along the axes axis.
@@ -96,7 +96,7 @@ def filter_separable(
     if len(axis) != len(set(axis)):
         raise ValueError(f'Axis must be unique. Normalized axis are {axis}')
 
-    # for pad_mode = constant and pad_value = 0, padding is done inside convolution
+    # for pad_mode = constant and pad_value = 0, padding is done inside convolution, otherwise pad() is used.
     if pad_mode == 'constant' and pad_value == 0:
         padding_conv = 'same'
     else:
@@ -115,10 +115,12 @@ def filter_separable(
         # swapping the last axis and the axis to filter over
         idx[ax], idx[-1] = idx[-1], idx[ax]
         x = x.permute(idx)
-        x_shape = x.shape
+        x_shape = list(x.shape)
+        if pad_mode == 'none':
+            x_shape[-1] -= len(kernel) - 1
         # flatten first to allow for circular, replicate and reflection padding for arbitrary tensor size
         x = x.flatten(end_dim=-2)
-        if padding_conv == 'valid':
+        if padding_conv == 'valid' and pad_mode != 'none':
             left_pad = (len(kernel) - 1) // 2
             right_pad = (len(kernel) - 1) - left_pad
             x = torch.nn.functional.pad(x, pad=(left_pad, right_pad), mode=pad_mode, value=pad_value)

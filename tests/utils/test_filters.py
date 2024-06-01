@@ -15,6 +15,7 @@
 import pytest
 import torch
 from mrpro.data import SpatialDimension
+from mrpro.utils.filters import filter_separable
 from mrpro.utils.filters import gaussian_filter
 from mrpro.utils.filters import uniform_filter
 from mrpro.utils.filters import uniform_filter_3d
@@ -26,6 +27,26 @@ def data():
     data = torch.zeros(1, 1, 5, 5, 5)
     data[..., 2, 2, 2] = 1.0
     return data
+
+
+@pytest.mark.parametrize(
+    ('pad_mode', 'center_value', 'edge_value'),
+    [('constant', 44, 7), ('reflect', 44, 6), ('replicate', 44, 5), ('circular', 44, 24), ('none', 48, 8)],
+)
+def test_filter_separable(pad_mode, center_value, edge_value):
+    """Test filter_separable and different padding modes."""
+
+    data = torch.arange(1, 21)[None, :].to(dtype=torch.float32)
+    kernels = (torch.as_tensor([1.0, 2.0, 1.0]),)
+    result = filter_separable(
+        data, kernels, axis=(1,), pad_mode=pad_mode, pad_value=3.0 if pad_mode == 'constant' else 0.0
+    )
+    if pad_mode == 'none':
+        assert result.shape == (data.shape[0], data.shape[1] - len(kernels[0]) + 1)
+    else:
+        assert data.shape == result.shape
+    assert result[0, 10] == center_value
+    assert result[0, 0] == edge_value
 
 
 @pytest.mark.parametrize(('pad_mode'), ['constant', 'reflect', 'replicate', 'circular'])
@@ -54,6 +75,7 @@ def test_spatial_uniform_filter_wrong_width(data):
 
 
 def test_gaussian_filter_int_axis(data):
+    """Test Gaussian filter."""
     result = gaussian_filter(data, 0.5, -1)
     expected = torch.tensor(
         [
@@ -70,24 +92,28 @@ def test_gaussian_filter_int_axis(data):
 
 
 def test_gaussian_filter_two_axis(data):
+    """Test Gaussian filter along two axes."""
     result = gaussian_filter(data, 0.5, (-1, 3))
     assert result.shape == data.shape
     torch.testing.assert_close(result.sum(), torch.tensor(1.0), atol=1e-3, rtol=0)
 
 
 def test_gaussian_filter_two_sigmas(data):
+    """Test Gaussian filter with different sigma values."""
     result = gaussian_filter(data, (0.2, 0.5), (-1, 3))
     assert result.shape == data.shape
     torch.testing.assert_close(result.sum(), torch.tensor(1.0), atol=1e-3, rtol=0)
 
 
 def test_gaussian_filter_noaxis(data):
+    """Test Gaussian filter is applied along all axes if not specified."""
     result = gaussian_filter(data, sigmas=torch.tensor(0.2))
     assert result.shape == data.shape
     torch.testing.assert_close(result.sum(), torch.tensor(1.0), atol=1e-3, rtol=0)
 
 
 def test_gaussian_invalid_sigmas(data):
+    """Test Gaussian filter with invalid sigma values."""
     with pytest.raises(ValueError, match='positive'):
         gaussian_filter(data, axis=(-1, 2), sigmas=torch.tensor([0.2, 0.0]))
     with pytest.raises(ValueError, match='positive'):
@@ -99,6 +125,7 @@ def test_gaussian_invalid_sigmas(data):
 
 
 def test_uniform_filter_int_axis(data):
+    """Test uniform filter."""
     result = uniform_filter(data, 3, -1)
     assert result.shape == data.shape
     assert (result > 0).sum() == 3
@@ -106,6 +133,7 @@ def test_uniform_filter_int_axis(data):
 
 
 def test_uniform_filter_two_axis(data):
+    """Test uniform filter along two axes."""
     result = uniform_filter(data, 3, (-1, -2))
     assert result.shape == data.shape
     assert (result > 0).sum() == 9
@@ -113,7 +141,8 @@ def test_uniform_filter_two_axis(data):
     torch.testing.assert_close(result.sum(), torch.tensor(1.0), atol=1e-3, rtol=0)
 
 
-def test_uniform_filter_two_sigmas(data):
+def test_uniform_filter_two_widths(data):
+    """Test uniform filter with two widths."""
     result = uniform_filter(data, (3, 5), (-1, -2))
     assert result.shape == data.shape
     assert (result > 0).sum() == 15
@@ -122,6 +151,7 @@ def test_uniform_filter_two_sigmas(data):
 
 
 def test_uniform_filter_noaxis(data):
+    """Test uniform filter is applied along all axes if not specified."""
     result = uniform_filter(data, width=torch.tensor(3))
     assert result.shape == data.shape
     torch.testing.assert_close(result.sum(), torch.tensor(1.0), atol=1e-3, rtol=0)
@@ -131,6 +161,7 @@ def test_uniform_filter_noaxis(data):
 
 
 def test_uniform_invalid_width(data):
+    """Test uniform filter with invalid width."""
     with pytest.raises(ValueError, match='positive'):
         uniform_filter(data, axis=(-1, 2), width=torch.tensor([3, 0]))
     with pytest.raises(ValueError, match='positive'):
