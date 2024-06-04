@@ -1,3 +1,4 @@
+"""WASABI signal model for mapping of B0 and B1."""
 # Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +30,7 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         gamma: float | torch.Tensor = 42.5764,
         freq: float | torch.Tensor = 127.7292,
     ) -> None:
-        """Initialize WASABI signal model.
+        """Initialize WASABI signal model for mapping of B0 and B1.
 
         For more details see: https://doi.org/10.1002/mrm.26133
 

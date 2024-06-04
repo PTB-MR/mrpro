@@ -1,3 +1,5 @@
+"""Saturation recovery signal model for T1 mapping."""
+
 # Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

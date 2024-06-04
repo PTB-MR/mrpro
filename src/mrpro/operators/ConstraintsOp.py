@@ -32,6 +32,29 @@ class ConstraintsOp(EndomorphOperator):
         beta_sigmoid: float = 1.0,
         beta_softplus: float = 1.0,
     ) -> None:
+        """Initialize a constraint operator.
+
+        The operator maps real-valued tensors to certain ranges. The transformation is applied element-wise.
+        The transformation is defined by the bounds. The bounds are applied in the order of the input tensors.
+        If there are more input tensors than bounds, the remaining tensors are passed through without transformation.
+
+        If an input tensor is bounded from below AND above, a sigmoid transformation is applied.
+        If an input tensor is bounded from below OR above, a softplus transformation is applied.
+
+        Parameters
+        ----------
+        bounds
+            Sequence of (lower_bound, upper_bound) values. If a bound is None, the value is not constrained.
+            If a lower bound is -inf, the value is not constrained from below. If an upper bound is inf,
+            the value is not constrained from above.
+            If the bounds are set to (None, None) or (-inf, inf), the value is not constrained at all.
+        beta_sigmoid
+            beta parameter for the sigmoid transformation (used an input has two bounds).
+            A higher value leads to a steeper sigmoid.
+        beta_softplus
+            parameter for the softplus transformation (used if an input is either bounded from below or above).
+            A higher value leads to a steeper softplus.
+        """
         super().__init__()
 
         if beta_sigmoid <= 0:

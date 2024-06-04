@@ -36,9 +36,6 @@ class KTrajectoryIsmrmrd:
     raw data.
     """
 
-    def __init__(self):
-        pass
-
     def __call__(self, acquisitions: Sequence[ismrmrd.Acquisition]) -> KTrajectoryRawShape:
         """Read out the trajectory from the ISMRMRD data file.
 

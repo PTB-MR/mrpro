@@ -1,3 +1,5 @@
+"""Mono-exponential decay signal model."""
+
 # Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

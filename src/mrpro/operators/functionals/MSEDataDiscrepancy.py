@@ -39,6 +39,7 @@ class MSEDataDiscrepancy(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """
 
     def __init__(self, data: torch.Tensor):
+        """Initialize the MSE data-discrepancy operator."""
         super().__init__()
 
         # observed data

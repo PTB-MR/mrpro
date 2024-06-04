@@ -31,8 +31,8 @@ from typing import runtime_checkable
 import torch
 
 
-class InconsistentDeviceError(ValueError):
-    def __init__(self, *devices):
+class InconsistentDeviceError(ValueError):  # noqa: D101
+    def __init__(self, *devices):  # noqa: D107
         super().__init__(f'Inconsistent devices found, found at least {", ".join(str(d) for d in devices)}')
 
 
