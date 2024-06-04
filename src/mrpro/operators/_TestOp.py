@@ -1,16 +1,33 @@
 import torch
 
-from mrpro.operators import LinearOperator
 
+class ShowCaseClass:
+    def __init__(self, a: int):
+        self.a = a
 
-class WaveletOp(LinearOperator):
-    def __init__(
-        self,
-    ):
-        super().__init__()
-
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def correct_method(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Return tuple of input tensor."""
         return (x,)
 
-    def new_method_without_docstring(self):
-        return 1
+    def wrong_docstring(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Return tuple of input tensor
+
+        As expected, ruff complains about D400 (missing period 1st line).
+        """
+        return (x,)
+
+    def no_type_annotations(self, x):
+        """Return tuple of input tensor.
+
+        As expected, ruff complains about ANN001 (missing type ann).
+        """
+        return (x,)
+
+    # ruff does not detect missing docstring
+    # ruff does not detect missing return type annotation
+    def no_return_type_no_docstring(self, x: torch.Tensor):
+        return (x,)
+
+
+def another_function(x):  # ruff only detects missing type annotation
+    return (x,)

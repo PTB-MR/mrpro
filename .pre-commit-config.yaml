@@ -1,4 +1,4 @@
-default_language_version:
+﻿default_language_version:
   python: python3
 
 repos:
@@ -14,7 +14,7 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.4
+    rev: v0.4.7
     hooks:
       - id: ruff # linter
         args: [--fix]
@@ -31,7 +31,7 @@ repos:
       - id: mypy
         pass_filenames: false
         always_run: true
-        args: [src,tests,examples]
+        args: [src, tests, examples]
         additional_dependencies:
           - numpy
           - torch>=2.3.0
