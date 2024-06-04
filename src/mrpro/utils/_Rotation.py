@@ -54,7 +54,7 @@ import torch
 from scipy._lib._util import check_random_state
 from scipy.spatial.transform import Rotation as Rotation_scipy
 
-from mrpro.data._SpatialDimension import SpatialDimension
+from mrpro.data.SpatialDimension import SpatialDimension
 
 if TYPE_CHECKING:
     from types import EllipsisType
