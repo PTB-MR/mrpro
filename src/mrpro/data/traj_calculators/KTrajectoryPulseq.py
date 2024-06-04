@@ -24,21 +24,22 @@ from einops import rearrange
 
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
-from mrpro.data.traj_calculators import KTrajectoryCalculator
+from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 
 
 class KTrajectoryPulseq(KTrajectoryCalculator):
-    """Trajectory from .seq file.
-
-    Parameters
-    ----------
-    seq_path
-        absolute path to .seq file
-    repeat_detection_tolerance
-        tolerance for repeat detection when creating KTrajectory, by default 1e-3
-    """
+    """Trajectory from .seq file."""
 
     def __init__(self, seq_path: str | Path, repeat_detection_tolerance: None | float = 1e-3) -> None:
+        """Initialize KTrajectoryPulseq.
+
+        Parameters
+        ----------
+        seq_path
+            absolute path to .seq file
+        repeat_detection_tolerance
+            tolerance for repeat detection when creating KTrajectory, by default 1e-3
+        """
         super().__init__()
         self.seq_path = seq_path
         self.repeat_detection_tolerance = repeat_detection_tolerance

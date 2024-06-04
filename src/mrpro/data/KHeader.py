@@ -34,7 +34,7 @@ from mrpro.data.TrajectoryDescription import TrajectoryDescription
 
 if TYPE_CHECKING:
     # avoid circular imports by importing only when type checking
-    from mrpro.data.traj_calculators import KTrajectoryCalculator
+    from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 
 UNKNOWN = 'unknown'
 

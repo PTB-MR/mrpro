@@ -27,9 +27,9 @@ import torch
 from numpy._typing import _NestedSequence as NestedSequence
 from torch import Tensor
 
-from mrpro.data import SpatialDimension
-from mrpro.operators import LinearOperator
-from mrpro.utils._Rotation import Rotation
+from mrpro.data.SpatialDimension import SpatialDimension
+from mrpro.operators.LinearOperator import LinearOperator
+from mrpro.utils.Rotation import Rotation
 from mrpro.utils.slice_profiles import SliceSmoothedRectangular
 
 
@@ -75,6 +75,21 @@ TensorFunction: TypeAlias = Callable[[Tensor], Tensor]
 
 
 class SliceProjectionOp(LinearOperator):
+    """Slice Projection Operator.
+
+    This operation samples from a 3D Volume a slice with a given rotation and shift
+    (relative to the center of the volume) according to the slice_profile.
+    It can, for example, be used to describe the slice selection of a 2D MRI sequence
+    from the 3D Volume.
+
+    The projection will be done by sparse matrix multiplication.
+
+    Rotation, shift, and profile can have (multiple) batch dimensions. These dimensions will
+    be broadcasted to a common shape and added to the front of the volume.
+    Different settings for different volume batches are NOT supported, consider creating multiple
+    operators if required.
+    """
+
     matrix: Tensor | None
     matrix_adjoint: Tensor | None
 

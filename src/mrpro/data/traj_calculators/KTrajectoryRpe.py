@@ -20,7 +20,7 @@ import torch
 
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
-from mrpro.data.traj_calculators import KTrajectoryCalculator
+from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 
 
 class KTrajectoryRpe(KTrajectoryCalculator):
@@ -29,17 +29,19 @@ class KTrajectoryRpe(KTrajectoryCalculator):
     Frequency encoding along kx is carried out in a standard Cartesian way. The phase encoding points along ky and kz
     are positioned along radial lines. More details can be found in: https://doi.org/10.1002/mrm.22102 and
     https://doi.org/10.1118/1.4890095 (open access).
-
-    Parameters
-    ----------
-    angle
-        angle in rad between two radial phase encoding lines
-    shift_between_rpe_lines
-        shift between radial phase encoding lines along the radial direction.
-        See _apply_shifts_between_rpe_lines() for more details
     """
 
     def __init__(self, angle: float, shift_between_rpe_lines: tuple | torch.Tensor = (0, 0.5, 0.25, 0.75)) -> None:
+        """Initialize KTrajectoryRpe.
+
+        Parameters
+        ----------
+        angle
+            angle in rad between two radial phase encoding lines
+        shift_between_rpe_lines
+            shift between radial phase encoding lines along the radial direction.
+            See _apply_shifts_between_rpe_lines() for more details
+        """
         super().__init__()
 
         self.angle: float = angle

@@ -18,19 +18,20 @@ import torch
 
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
-from mrpro.data.traj_calculators import KTrajectoryCalculator
+from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 
 
 class KTrajectoryRadial2D(KTrajectoryCalculator):
-    """Radial 2D trajectory.
-
-    Parameters
-    ----------
-    angle
-        angle in rad between two radial lines
-    """
+    """Radial 2D trajectory."""
 
     def __init__(self, angle: float = torch.pi * 0.618034) -> None:
+        """Initialize KTrajectoryRadial2D.
+
+        Parameters
+        ----------
+        angle
+            angle in rad between two radial lines
+        """
         super().__init__()
         self.angle: float = angle
 

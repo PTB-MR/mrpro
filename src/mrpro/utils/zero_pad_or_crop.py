@@ -21,7 +21,7 @@ import torch
 import torch.nn.functional as F  # noqa: N812
 
 
-def normalize_index(ndim: int, index: int):
+def normalize_index(ndim: int, index: int) -> int:
     """Normalize possibly negative indices.
 
     Parameters

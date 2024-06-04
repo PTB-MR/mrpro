@@ -1,10 +1,12 @@
+"""Direct Reconstruction by Adjoint Fourier Transform."""
+
 from __future__ import annotations
 
 from typing import Literal
 from typing import Self
 
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
-from mrpro.algorithms.reconstruction import Reconstruction
+from mrpro.algorithms.reconstruction.Reconstruction import Reconstruction
 from mrpro.data._kdata.KData import KData
 from mrpro.data.CsmData import CsmData
 from mrpro.data.DcfData import DcfData
@@ -82,7 +84,7 @@ class DirectReconstruction(Reconstruction):
             self.recalculate_csm_walsh(kdata, noise=False)
         return self
 
-    def recalculate_fourierop(self, kdata: KData):
+    def recalculate_fourierop(self, kdata: KData) -> Self:
         """Update (in place) the Fourier Operator, e.g. for a new trajectory.
 
         Also recalculates the DCF.

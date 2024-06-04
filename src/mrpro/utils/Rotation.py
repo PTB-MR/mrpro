@@ -47,6 +47,7 @@ import warnings
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 from typing import Literal
+from typing import Self
 from typing import overload
 
 import numpy as np
@@ -315,7 +316,7 @@ class Rotation(torch.nn.Module):
         return self._single
 
     @classmethod
-    def from_quat(cls, quaternions: torch.Tensor | _NestedSequence[float]) -> Rotation:
+    def from_quat(cls, quaternions: torch.Tensor | _NestedSequence[float]) -> Self:
         """Initialize from quaternions.
 
         3D rotations can be represented using unit-norm quaternions [1]_.
@@ -342,7 +343,7 @@ class Rotation(torch.nn.Module):
         return cls(quaternions, normalize=True)
 
     @classmethod
-    def from_matrix(cls, matrix: torch.Tensor | _NestedSequence[float]) -> Rotation:
+    def from_matrix(cls, matrix: torch.Tensor | _NestedSequence[float]) -> Self:
         """Initialize from rotation matrix.
 
         Rotations in 3 dimensions can be represented with 3 x 3 proper
@@ -381,7 +382,21 @@ class Rotation(torch.nn.Module):
         return cls(quaternions, normalize=True, copy=False)
 
     @classmethod
-    def from_rotvec(cls, rotvec: torch.Tensor | _NestedSequence[float], degrees: bool = False) -> Rotation:
+    def from_rotvec(cls, rotvec: torch.Tensor | _NestedSequence[float], degrees: bool = False) -> Self:
+        """Initialize from rotation vector.
+
+        A rotation vector is a 3 dimensional vector which is co-directional to the
+        axis of rotation and whose norm gives the angle of rotation.
+
+        Parameters
+        ----------
+        rotvec
+            shape (..., 3), the rotation vectors.
+        degrees
+            If True, then the given angles are assumed to be in degrees,
+            otherwise radians.
+
+        """
         if not isinstance(rotvec, torch.Tensor):
             rotvec = torch.as_tensor(rotvec)
         if torch.is_complex(rotvec):
@@ -401,9 +416,7 @@ class Rotation(torch.nn.Module):
         return cls(quaternions, normalize=False, copy=False)
 
     @classmethod
-    def from_euler(
-        cls, seq: str, angles: torch.Tensor | _NestedSequence[float] | float, degrees: bool = False
-    ) -> Rotation:
+    def from_euler(cls, seq: str, angles: torch.Tensor | _NestedSequence[float] | float, degrees: bool = False) -> Self:
         """Initialize from Euler angles.
 
         Rotations in 3-D can be represented by a sequence of 3
@@ -481,10 +494,12 @@ class Rotation(torch.nn.Module):
 
     @classmethod
     def from_davenport(cls, axes: torch.Tensor, order: str, angles: torch.Tensor, degrees: bool = False):
+        """Not implemented."""
         raise NotImplementedError
 
     @classmethod
-    def from_mrp(cls, mrp: torch.Tensor) -> Rotation:
+    def from_mrp(cls, mrp: torch.Tensor) -> Self:
+        """Not implemented."""
         raise NotImplementedError
 
     def as_quat(self, canonical: bool = False) -> torch.Tensor:
@@ -543,7 +558,7 @@ class Rotation(torch.nn.Module):
         else:
             return matrix
 
-    def as_rotvec(self, degrees: bool = False):
+    def as_rotvec(self, degrees: bool = False) -> torch.Tensor:
         """Represent as rotation vectors.
 
         A rotation vector is a 3 dimensional vector which is co-directional to
@@ -653,13 +668,15 @@ class Rotation(torch.nn.Module):
         return angles[0] if self._single else angles
 
     def as_davenport(self, axes: torch.Tensor, order: str, degrees: bool = False) -> torch.Tensor:
+        """Not implemented."""
         raise NotImplementedError
 
     def as_mrp(self) -> torch.Tensor:
+        """Not implemented."""
         raise NotImplementedError
 
     @classmethod
-    def concatenate(cls, rotations: Sequence[Rotation]) -> Rotation:
+    def concatenate(cls, rotations: Sequence[Rotation]) -> Self:
         """Concatenate a sequence of `Rotation` objects into a single object.
 
         Parameters
@@ -798,14 +815,14 @@ class Rotation(torch.nn.Module):
 
         return cls(random_sample)
 
-    def __mul__(self, other: Rotation) -> Rotation:
+    def __mul__(self, other: Rotation) -> Self:
         """For compatibility with sp.spatial.transform.Rotation."""
         warnings.warn(
             'Using Rotation*Rotation is deprecated, consider Rotation@Rotation', DeprecationWarning, stacklevel=2
         )
         return self @ other
 
-    def __matmul__(self, other: Rotation) -> Rotation:
+    def __matmul__(self, other: Rotation) -> Self:
         """Compose this rotation with the other.
 
         If `p` and `q` are two rotations, then the composition of 'q followed
@@ -900,7 +917,7 @@ class Rotation(torch.nn.Module):
         else:  # general scaling of rotation angle
             return Rotation.from_rotvec(n * self.as_rotvec())
 
-    def inv(self) -> Rotation:
+    def inv(self) -> Self:
         """Invert this rotation.
 
         Composition of a rotation with its inverse results in an identity
@@ -931,7 +948,7 @@ class Rotation(torch.nn.Module):
             angles = angles[0]
         return angles
 
-    def approx_equal(self, other: Rotation, atol: float = 1e-6, degrees: bool = False) -> torch.Tensor | bool:
+    def approx_equal(self, other: Rotation, atol: float = 1e-6, degrees: bool = False) -> torch.Tensor:
         """Determine if another rotation is approximately equal to this one.
 
         Equality is measured by calculating the smallest angle between the
@@ -960,7 +977,7 @@ class Rotation(torch.nn.Module):
         angles = (other @ self.inv()).magnitude()
         return angles < atol
 
-    def __getitem__(self, indexer: IndexerType) -> Rotation:
+    def __getitem__(self, indexer: IndexerType) -> Self:
         """Extract rotation(s) at given index(es) from object.
 
         Create a new `Rotation` instance containing a subset of rotations
@@ -1071,7 +1088,7 @@ class Rotation(torch.nn.Module):
         self._quaternions[_indexer] = value.as_quat()
 
     @classmethod
-    def identity(cls, shape: int | None | tuple[int, ...] = None) -> Rotation:
+    def identity(cls, shape: int | None | tuple[int, ...] = None) -> Self:
         """Get identity rotation(s).
 
         Composition with the identity rotation has no effect.
@@ -1198,7 +1215,7 @@ class Rotation(torch.nn.Module):
         weights: torch.Tensor | _NestedSequence[float] | None = None,
         dim: None | int | Sequence[int] = None,
         keepdim: bool = False,
-    ):
+    ) -> Self:
         r"""Get the mean of the rotations.
 
         The mean used is the chordal L2 mean (also called the projected or

@@ -20,19 +20,20 @@ import numpy as np
 import torch
 
 from mrpro.data.KHeader import KHeader
-from mrpro.data.traj_calculators import KTrajectoryRpe
+from mrpro.data.traj_calculators.KTrajectoryRpe import KTrajectoryRpe
 
 
 class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
-    """Radial phase encoding trajectory with a sunflower pattern.
-
-    Parameters
-    ----------
-    rad_us_factor
-        undersampling factor along radial phase encoding direction.
-    """
+    """Radial phase encoding trajectory with a sunflower pattern."""
 
     def __init__(self, rad_us_factor: float = 1.0) -> None:
+        """Initialize KTrajectorySunflowerGoldenRpe.
+
+        Parameters
+        ----------
+        rad_us_factor
+            undersampling factor along radial phase encoding direction.
+        """
         super().__init__(angle=torch.pi * 0.618034)
         self.rad_us_factor: float = rad_us_factor
 

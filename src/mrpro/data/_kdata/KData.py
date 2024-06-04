@@ -39,8 +39,8 @@ from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
 from mrpro.data.MoveDataMixin import MoveDataMixin
-from mrpro.data.traj_calculators import KTrajectoryCalculator
-from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
+from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
+from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
 
 KDIM_SORT_LABELS = ('k1', 'k2', 'average', 'slice', 'contrast', 'phase', 'repetition', 'set')
 # TODO: Consider adding the users labels here, but remember issue #32 and NOT add user5 and user6.

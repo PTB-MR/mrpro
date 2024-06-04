@@ -19,7 +19,7 @@ from einops import repeat
 
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
-from mrpro.data.traj_calculators import KTrajectoryCalculator
+from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 
 
 class KTrajectoryCartesian(KTrajectoryCalculator):
