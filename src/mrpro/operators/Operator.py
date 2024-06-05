@@ -13,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from __future__ import annotations
 
 from abc import ABC
@@ -38,6 +39,7 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
         ...
 
     def __call__(self, *args: *Tin) -> Tout:
+        """Operator call."""
         return super().__call__(*args)
 
     def __matmul__(self: Operator[*Tin, Tout], other: Operator[*Tin2, tuple[*Tin]]) -> Operator[*Tin2, Tout]:
@@ -61,6 +63,7 @@ class OperatorComposition(Operator[*Tin2, Tout]):
     """Operator composition."""
 
     def __init__(self, operator1: Operator[*Tin, Tout], operator2: Operator[*Tin2, tuple[*Tin]]):
+        """Operator composition initialization."""
         super().__init__()
         self._operator1 = operator1
         self._operator2 = operator2
@@ -74,6 +77,7 @@ class OperatorSum(Operator[*Tin, Tout]):
     """Operator addition."""
 
     def __init__(self, operator1: Operator[*Tin, Tout], operator2: Operator[*Tin, Tout]):
+        """Operator addition initialization."""
         super().__init__()
         self._operator1 = operator1
         self._operator2 = operator2
@@ -87,6 +91,7 @@ class OperatorElementwiseProductRight(Operator[*Tin, Tout]):
     """Operator elementwise right multiplication with a tensor."""
 
     def __init__(self, operator: Operator[*Tin, Tout], tensor: torch.Tensor):
+        """Operator elementwise right multiplication initialization."""
         super().__init__()
         self._operator = operator
         self._tensor = tensor
@@ -101,6 +106,7 @@ class OperatorElementwiseProductLeft(Operator[*Tin, Tout]):
     """Operator elementwise left multiplication  with a tensor."""
 
     def __init__(self, operator: Operator[*Tin, Tout], tensor: torch.Tensor):
+        """Operator elementwise left multiplication initialization."""
         super().__init__()
         self._operator = operator
         self._tensor = tensor

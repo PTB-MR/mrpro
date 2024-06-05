@@ -35,6 +35,14 @@ class EllipsePhantom:
     """
 
     def __init__(self, ellipses: Sequence[EllipseParameters] | None = None):
+        """Initialize ellipse phantom.
+
+        Parameters
+        ----------
+        ellipses
+            Sequence of EllipseParameters defining the ellipses.
+            if None, defaults to three ellipses with different parameters.
+        """
         if ellipses is None:
             self.ellipses = [
                 EllipseParameters(center_x=0.2, center_y=0.2, radius_x=0.1, radius_y=0.25, intensity=1),

@@ -212,10 +212,12 @@ class EndomorphOperator(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, 
 
     @endomorph
     def __call__(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Operator call."""
         return super().__call__(*x)
 
     @endomorph
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Operator forward."""
         return x
 
     def __matmul__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]:

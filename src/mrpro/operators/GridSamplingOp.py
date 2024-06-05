@@ -161,6 +161,8 @@ class AdjointGridSample(torch.autograd.Function):
 
 
 class GridSamplingOp(LinearOperator):
+    """Grid Sampling Operator."""
+
     grid: torch.Tensor
 
     def __init__(

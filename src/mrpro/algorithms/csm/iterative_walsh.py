@@ -1,4 +1,5 @@
 """Iterative Walsh method for coil sensitivity map calculation."""
+
 # Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

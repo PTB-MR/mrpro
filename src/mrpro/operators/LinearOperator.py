@@ -130,6 +130,7 @@ class AdjointLinearOperator(LinearOperator):
     """Adjoint of a LinearOperator."""
 
     def __init__(self, operator: LinearOperator) -> None:
+        """Initialize the Adjoint of a LinearOperator."""
         super().__init__()
         self._operator = operator
 
