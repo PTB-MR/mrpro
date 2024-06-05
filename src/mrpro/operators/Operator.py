@@ -43,19 +43,31 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
         return super().__call__(*args)
 
     def __matmul__(self: Operator[*Tin, Tout], other: Operator[*Tin2, tuple[*Tin]]) -> Operator[*Tin2, Tout]:
-        """Operator composition."""
+        """Operator composition.
+        
+        Returns lambda x: self(other(x))
+        """
         return OperatorComposition(self, other)
 
     def __add__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]:
-        """Operator addition."""
+        """Operator addition.
+        
+        Returns lambda x: self(x) + other(x)
+        """
         return OperatorSum(self, other)
 
     def __mul__(self, other: torch.Tensor) -> Operator[*Tin, Tout]:
-        """Operator multiplication with tensor."""
+        """Operator multiplication with tensor.
+        
+        Returns lambda x: self(other*x)
+        """
         return OperatorElementwiseProductLeft(self, other)
 
     def __rmul__(self, other: torch.Tensor) -> Operator[*Tin, Tout]:  # type: ignore[misc]
-        """Operator multiplication with tensor."""
+        """Operator multiplication with tensor.
+        
+        Returns lambda x: other*self(x)
+        """
         return OperatorElementwiseProductRight(self, other)
 
 
@@ -63,7 +75,17 @@ class OperatorComposition(Operator[*Tin2, Tout]):
     """Operator composition."""
 
     def __init__(self, operator1: Operator[*Tin, Tout], operator2: Operator[*Tin2, tuple[*Tin]]):
-        """Operator composition initialization."""
+        """Operator composition initialization.
+        
+        Returns lambda x: operator1(operator2(x))
+
+        Parameters
+        ----------
+        operator1
+            outer operator
+        operator2
+            inner operator
+        """
         super().__init__()
         self._operator1 = operator1
         self._operator2 = operator2
@@ -77,7 +99,8 @@ class OperatorSum(Operator[*Tin, Tout]):
     """Operator addition."""
 
     def __init__(self, operator1: Operator[*Tin, Tout], operator2: Operator[*Tin, Tout]):
-        """Operator addition initialization."""
+        """Operator addition initialization.
+        """
         super().__init__()
         self._operator1 = operator1
         self._operator2 = operator2
@@ -88,7 +111,10 @@ class OperatorSum(Operator[*Tin, Tout]):
 
 
 class OperatorElementwiseProductRight(Operator[*Tin, Tout]):
-    """Operator elementwise right multiplication with a tensor."""
+    """Operator elementwise right multiplication with a tensor.
+    
+    Peforms Tensor*Operator(x)
+    """
 
     def __init__(self, operator: Operator[*Tin, Tout], tensor: torch.Tensor):
         """Operator elementwise right multiplication initialization."""
@@ -103,7 +129,10 @@ class OperatorElementwiseProductRight(Operator[*Tin, Tout]):
 
 
 class OperatorElementwiseProductLeft(Operator[*Tin, Tout]):
-    """Operator elementwise left multiplication  with a tensor."""
+    """Operator elementwise left multiplication  with a tensor.
+    
+    Performs Operator(x*Tensor)
+    """
 
     def __init__(self, operator: Operator[*Tin, Tout], tensor: torch.Tensor):
         """Operator elementwise left multiplication initialization."""

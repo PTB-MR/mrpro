@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+from abc import abstractmethod
 from collections.abc import Callable
 from typing import ParamSpec
 from typing import Protocol
@@ -200,25 +201,31 @@ class _EndomorphCallable(Protocol):
 
 
 def endomorph(f: F, /) -> _EndomorphCallable:
-    """Decorate a function to make it an endomorph callable."""
+    """Decorate a function to make it an endomorph callable.
+    
+    This adds overloads for N->N-Tensor signatures, for N<10.
+    For >10 inputs, the return type will a tuple with >10 tensors.
+    """
     return f
 
 
 class EndomorphOperator(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]]):
     """Endomorph Operator.
 
-    Endomorph Operators have N  tensor inputs and exactly N outputs.
+    Endomorph Operators have N tensor inputs and exactly N outputs.
     """
 
     @endomorph
     def __call__(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
-        """Operator call."""
+        """Apply the EndomorphOperator."""
+        # This function only overwrites the type hints of the base operator class
         return super().__call__(*x)
 
+    @abstractmethod
     @endomorph
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
-        """Operator forward."""
-        return x
+        """Apply the EndomorphOperator."""
+        pass
 
     def __matmul__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]:
         """Operator composition."""
