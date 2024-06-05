@@ -81,9 +81,11 @@ class KHeader(MoveDataMixin):
     @property
     def fa_degree(self) -> torch.Tensor | None:
         """Flip angle in degree."""
-        if not self.fa:
+        if self.fa is None:
             warnings.warn('Flip angle is not defined.', stacklevel=1)
-        return torch.rad2deg(self.fa) if self.fa else None
+            return None
+        else:
+            return torch.rad2deg(self.fa)
 
     @classmethod
     def from_ismrmrd(
