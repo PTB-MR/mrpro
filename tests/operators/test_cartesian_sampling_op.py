@@ -128,11 +128,11 @@ def test_cart_sampling_op_oversampling(k0_min, k0_max):
     # The indices are inverted to ensure CartesianSamplingOp acts on them
     kx = rearrange(torch.linspace(k0_max, k0_min, 20), 'kx->1 1 1 kx')
     trajectory = KTrajectory(kz=torch.ones(1, 1, 1, 1), ky=torch.ones(1, 1, 1, 1), kx=kx)
-    with pytest.warns(UserWarning, match='k-space points lie outside of the encoding_matrix'):
+    with pytest.warns(UserWarning, match='K-space points lie outside of the encoding_matrix'):
         sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
 
     random_generator = RandomGenerator(seed=0)
-    u = random_generator.complex64_tensor(size=(1, 5, 1, 1, kx.shape[-1]))
-    v = random_generator.complex64_tensor(size=(1, 5, 1, 1, encoding_matrix.x))
+    u = random_generator.complex64_tensor(size=(3, 5, 1, 1, kx.shape[-1]))
+    v = random_generator.complex64_tensor(size=(3, 5, 1, 1, encoding_matrix.x))
     assert sampling_op.adjoint(u)[0].shape[-1] == encoding_matrix.x
     assert sampling_op(v)[0].shape[-1] == kx.shape[-1]
