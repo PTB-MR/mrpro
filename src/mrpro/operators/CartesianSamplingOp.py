@@ -86,13 +86,11 @@ class CartesianSamplingOp(LinearOperator):
             inside_encoding_matrix = rearrange(inside_encoding_matrix, '... kz ky kx -> ... 1 (kz ky kx)')
             inside_encoding_matrix_idx = torch.broadcast_to(torch.arange(0, kidx.shape[-1]), kidx.shape)
             inside_encoding_matrix_idx = inside_encoding_matrix_idx[inside_encoding_matrix]
-            inside_encoding_matrix_idx = torch.reshape(
-                inside_encoding_matrix_idx, (*kidx.shape[:-1], inside_encoding_matrix_idx.shape[-1])
-            )
+            inside_encoding_matrix_idx = torch.reshape(inside_encoding_matrix_idx, (*kidx.shape[:-1], -1))
             self.register_buffer('_inside_encoding_matrix_idx', inside_encoding_matrix_idx)
             kidx = torch.take_along_dim(kidx, inside_encoding_matrix_idx, dim=-1)
         else:
-            self._inside_encoding_matrix_idx = None
+            self._inside_encoding_matrix_idx: torch.Tensor | None = None
 
         self.register_buffer('_fft_idx', kidx)
 
@@ -129,7 +127,7 @@ class CartesianSamplingOp(LinearOperator):
         # take_along_dim does broadcast, so no need for extending here
         x_inside_encoding_matrix = torch.take_along_dim(x_kflat, self._fft_idx, dim=-1)
 
-        if self._data_outside_of_encoding_matrix:
+        if self._inside_encoding_matrix_idx is not None:
             x_indexed = self._broadcast_and_scatter_along_last_dim(
                 x_inside_encoding_matrix,
                 self._trajectory_shape[-1] * self._trajectory_shape[-2] * self._trajectory_shape[-3],
@@ -163,7 +161,7 @@ class CartesianSamplingOp(LinearOperator):
 
         y_kflat = rearrange(y, '... coil k2 k1 k0 -> ... coil (k2 k1 k0)')
 
-        if self._data_outside_of_encoding_matrix:
+        if self._inside_encoding_matrix_idx is not None:
             y_kflat = torch.take_along_dim(y_kflat, self._inside_encoding_matrix_idx, dim=-1)
 
         y_scattered = self._broadcast_and_scatter_along_last_dim(
