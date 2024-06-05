@@ -161,7 +161,12 @@ class AdjointGridSample(torch.autograd.Function):
 
 
 class GridSamplingOp(LinearOperator):
-    """Grid Sampling Operator."""
+    """Grid Sampling Operator.
+    
+    Given an "input" tensor and a "grid", computes the output by taking the input values at the locations 
+    determined by grid with interpolation. Thus, the output size will be determined by the grid size.
+    For the adjoint to be defined, the grid and the shape of the "input" has to be known.
+    """
 
     grid: torch.Tensor
 
@@ -268,6 +273,7 @@ class GridSamplingOp(LinearOperator):
     def _forward_implementation(
         self, x_flatbatch_flatchannel: torch.Tensor, grid_flatbatch: torch.Tensor
     ) -> torch.Tensor:
+        """The actual forward after reshaping"""
         sampled = torch.nn.functional.grid_sample(
             x_flatbatch_flatchannel,
             grid_flatbatch,
@@ -279,7 +285,10 @@ class GridSamplingOp(LinearOperator):
         return sampled
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply the Operator."""
+        """Apply the GridSampleOperator.
+        
+        Samples at the location determine by the grid.
+        """
         if (
             (x.shape[-1] != self.input_shape.x)
             or (x.shape[-2] != self.input_shape.y)
@@ -294,6 +303,7 @@ class GridSamplingOp(LinearOperator):
     def _adjoint_implementation(
         self, x_flatbatch_flatchannel: torch.Tensor, grid_flatbatch: torch.Tensor
     ) -> torch.Tensor:
+        """The actual adjoint after reshaping"""
         dim = self.grid.shape[-1]
         shape = (*x_flatbatch_flatchannel.shape[:-dim], *self.input_shape.zyx[-dim:])
         sampled = AdjointGridSample.apply(
@@ -307,5 +317,5 @@ class GridSamplingOp(LinearOperator):
         return sampled
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply to adjoint of the Operator."""
+        """Apply the adjoint of the GridSampleOperator."""
         return self.__reshape_wrapper(x, self._adjoint_implementation)
