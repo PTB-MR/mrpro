@@ -29,11 +29,13 @@ from mrpro.operators.Operator import OperatorSum
 from mrpro.operators.Operator import Tin2
 
 
-# LinearOperators have exactly one input and one output,
-# and fulfill f(a*x + b*y) = a*f(x) + b*f(y)
-# with a,b scalars and x,y tensors.
 class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
-    """General Linear Operator."""
+    """General Linear Operator.
+
+    LinearOperators have exactly one input and one output,
+    and fulfill f(a*x + b*y) = a*f(x) + b*f(y)
+    with a,b scalars and x,y tensors.
+    """
 
     @abstractmethod
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
