@@ -57,7 +57,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         self, other: Operator[*Tin2, tuple[torch.Tensor,]] | LinearOperator
     ) -> Operator[*Tin2, tuple[torch.Tensor,]] | LinearOperator:
         """Operator composition.
-        
+
         Returns lambda x: self(other(x))
         """
         if isinstance(other, LinearOperator):
@@ -78,7 +78,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         self, other: Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator
     ) -> Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator:
         """Operator addition.
-        
+
         Returns lambda x: self(x) + other(x)
         """
         if not isinstance(other, LinearOperator):
@@ -89,13 +89,14 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
     def __mul__(self, other: torch.Tensor) -> LinearOperator:
         """Operator elementwise left multiplication with tensor.
-        
-        Returns lambda x: self(other*x)"""
+
+        Returns lambda x: self(other*x)
+        """
         return LinearOperatorElementwiseProductLeft(self, other)
 
     def __rmul__(self, other: torch.Tensor) -> LinearOperator:  # type: ignore[misc]
         """Operator elementwise right multiplication with tensor.
-        
+
         Returns lambda x: other*self(x)
         """
         return LinearOperatorElementwiseProductRight(self, other)
@@ -103,7 +104,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
 class LinearOperatorComposition(LinearOperator, OperatorComposition[torch.Tensor, tuple[torch.Tensor,]]):
     """LinearOperator composition.
-    
+
     Performs operator1(operator2(x))
     """
 
@@ -126,9 +127,9 @@ class LinearOperatorElementwiseProductRight(
     LinearOperator, OperatorElementwiseProductRight[torch.Tensor, tuple[torch.Tensor,]]
 ):
     """Operator elementwise right multiplication with a tensor.
-    
-     Peforms Tensor*LinearOperator(x)
-     """
+
+    Peforms Tensor*LinearOperator(x)
+    """
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint Operator elementwise multiplication with a tensor."""
@@ -139,7 +140,7 @@ class LinearOperatorElementwiseProductLeft(
     LinearOperator, OperatorElementwiseProductLeft[torch.Tensor, tuple[torch.Tensor,]]
 ):
     """Operator elementwise left multiplication with a tensor.
-    
+
     Peforms LinearOperator(Tensor*x)
     """
 
@@ -157,14 +158,14 @@ class AdjointLinearOperator(LinearOperator):
         self._operator = operator
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the adjoint of the original LinearOperator"""
+        """Apply the adjoint of the original LinearOperator."""
         return self._operator.adjoint(x)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Apply the adjoint of the adjoint, i.e. the original LinearOperator"""
+        """Apply the adjoint of the adjoint, i.e. the original LinearOperator."""
         return self._operator.forward(x)
 
     @property
     def H(self) -> LinearOperator:  # noqa: N802
-        """Adjoint of adjoint operator, i.e. original LinearOperator"""
+        """Adjoint of adjoint operator, i.e. original LinearOperator."""
         return self.operator

@@ -202,7 +202,7 @@ class _EndomorphCallable(Protocol):
 
 def endomorph(f: F, /) -> _EndomorphCallable:
     """Decorate a function to make it an endomorph callable.
-    
+
     This adds overloads for N->N-Tensor signatures, for N<10.
     For >10 inputs, the return type will a tuple with >10 tensors.
     """
@@ -225,7 +225,6 @@ class EndomorphOperator(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, 
     @endomorph
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Apply the EndomorphOperator."""
-        pass
 
     def __matmul__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]:
         """Operator composition."""

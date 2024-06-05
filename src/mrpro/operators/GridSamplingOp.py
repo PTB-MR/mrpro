@@ -162,8 +162,8 @@ class AdjointGridSample(torch.autograd.Function):
 
 class GridSamplingOp(LinearOperator):
     """Grid Sampling Operator.
-    
-    Given an "input" tensor and a "grid", computes the output by taking the input values at the locations 
+
+    Given an "input" tensor and a "grid", computes the output by taking the input values at the locations
     determined by grid with interpolation. Thus, the output size will be determined by the grid size.
     For the adjoint to be defined, the grid and the shape of the "input" has to be known.
     """
@@ -273,7 +273,7 @@ class GridSamplingOp(LinearOperator):
     def _forward_implementation(
         self, x_flatbatch_flatchannel: torch.Tensor, grid_flatbatch: torch.Tensor
     ) -> torch.Tensor:
-        """The actual forward after reshaping"""
+        """Apply the actual forward after reshaping."""
         sampled = torch.nn.functional.grid_sample(
             x_flatbatch_flatchannel,
             grid_flatbatch,
@@ -286,7 +286,7 @@ class GridSamplingOp(LinearOperator):
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Apply the GridSampleOperator.
-        
+
         Samples at the location determine by the grid.
         """
         if (
@@ -303,7 +303,7 @@ class GridSamplingOp(LinearOperator):
     def _adjoint_implementation(
         self, x_flatbatch_flatchannel: torch.Tensor, grid_flatbatch: torch.Tensor
     ) -> torch.Tensor:
-        """The actual adjoint after reshaping"""
+        """Apply the actual adjoint after reshaping."""
         dim = self.grid.shape[-1]
         shape = (*x_flatbatch_flatchannel.shape[:-dim], *self.input_shape.zyx[-dim:])
         sampled = AdjointGridSample.apply(
