@@ -18,12 +18,12 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
-from collections.abc import Sequence
+import warnings
 from dataclasses import dataclass
-from math import pi
 from typing import TYPE_CHECKING
 
 import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
+import torch
 
 from mrpro.data import enums
 from mrpro.data.AcqInfo import AcqInfo
@@ -44,8 +44,8 @@ class KHeader(MoveDataMixin):
     """MR raw data header.
 
     All information that is not covered by the dataclass is stored in
-    the misc dict Our code shall not rely on this information, and it is
-    not guaranteed to be present Also, the information in the misc dict
+    the misc dict. Our code shall not rely on this information, and it is
+    not guaranteed to be present. Also, the information in the misc dict
     is not guaranteed to be correct or tested.
     """
 
@@ -56,15 +56,15 @@ class KHeader(MoveDataMixin):
     recon_fov: SpatialDimension[float]
     encoding_matrix: SpatialDimension[int]
     encoding_fov: SpatialDimension[float]
-    n_coils: int
     acq_info: AcqInfo
-    datetime: datetime.datetime
     h1_freq: float
-    te: list[float]
-    ti: list[float]
-    fa: list[float]
-    tr: list[float]
-    echo_spacing: list[float]
+    n_coils: int | None = None
+    datetime: datetime.datetime | None = None
+    te: torch.Tensor | None = None
+    ti: torch.Tensor | None = None
+    fa: torch.Tensor | None = None
+    tr: torch.Tensor | None = None
+    echo_spacing: torch.Tensor | None = None
     echo_train_length: int = 1
     seq_type: str = UNKNOWN
     model: str = UNKNOWN
@@ -79,9 +79,13 @@ class KHeader(MoveDataMixin):
     trajectory_description: TrajectoryDescription = dataclasses.field(default_factory=TrajectoryDescription)
 
     @property
-    def fa_degree(self) -> list[float]:
+    def fa_degree(self) -> torch.Tensor | None:
         """Flip angle in degree."""
-        return [el / pi * 180 for el in self.fa]
+        if self.fa is None:
+            warnings.warn('Flip angle is not defined.', stacklevel=1)
+            return None
+        else:
+            return torch.rad2deg(self.fa)
 
     @classmethod
     def from_ismrmrd(
@@ -109,11 +113,8 @@ class KHeader(MoveDataMixin):
         """
 
         # Conversion functions for units
-        def sequence_ms_to_s(ms: Sequence[float]) -> Sequence[float]:
-            return [el / 1000 for el in ms]
-
-        def sequence_deg_to_rad(deg: Sequence[float]) -> Sequence[float]:
-            return [el * pi / 180 for el in deg]
+        def ms_to_s(ms: torch.Tensor) -> torch.Tensor:
+            return ms / 1000
 
         def mm_to_m(m: float) -> float:
             return m / 1000
@@ -136,11 +137,16 @@ class KHeader(MoveDataMixin):
             parameters['n_coils'] = header.acquisitionSystemInformation.receiverChannels
 
         if header.sequenceParameters is not None:
-            parameters['tr'] = sequence_ms_to_s(header.sequenceParameters.TR)
-            parameters['te'] = sequence_ms_to_s(header.sequenceParameters.TE)
-            parameters['ti'] = sequence_ms_to_s(header.sequenceParameters.TI)
-            parameters['fa'] = sequence_deg_to_rad(header.sequenceParameters.flipAngle_deg)
-            parameters['echo_spacing'] = sequence_ms_to_s(header.sequenceParameters.echo_spacing)
+            if header.sequenceParameters.TR:
+                parameters['tr'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TR))
+            if header.sequenceParameters.TE:
+                parameters['te'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TE))
+            if header.sequenceParameters.TI:
+                parameters['ti'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TI))
+            if header.sequenceParameters.flipAngle_deg:
+                parameters['fa'] = torch.deg2rad(torch.as_tensor(header.sequenceParameters.flipAngle_deg))
+            if header.sequenceParameters.echo_spacing:
+                parameters['echo_spacing'] = ms_to_s(torch.as_tensor(header.sequenceParameters.echo_spacing))
 
             if header.sequenceParameters.sequence_type is not None:
                 parameters['seq_type'] = header.sequenceParameters.sequence_type

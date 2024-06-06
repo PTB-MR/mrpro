@@ -21,6 +21,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 import numpy as np
+import torch
 from pydicom.dataset import Dataset
 from pydicom.tag import Tag
 from pydicom.tag import TagType
@@ -38,10 +39,10 @@ class IHeader(MoveDataMixin):
 
     # ToDo: decide which attributes to store in the header
     fov: SpatialDimension[float]
-    te: list[float]
-    ti: list[float]
-    fa: list[float]
-    tr: list[float]
+    te: torch.Tensor | None
+    ti: torch.Tensor | None
+    fa: torch.Tensor | None
+    tr: torch.Tensor | None
     misc: dict = dataclasses.field(default_factory=dict)
 
     @classmethod
@@ -88,24 +89,24 @@ class IHeader(MoveDataMixin):
             items = get_items_from_all_dicoms(name)
             return [float(val) if val is not None else None for val in items]
 
-        def make_unique(values: Sequence[float]):
+        def make_unique_tensor(values: Sequence[float]) -> torch.Tensor | None:
             """If all the values are the same only return one."""
             if any(val is None for val in values):
-                return []
+                return None
             elif len(np.unique(values)) == 1:
-                return [values[0]]
+                return torch.as_tensor([values[0]])
             else:
-                return values
+                return torch.as_tensor(values)
 
-        fa = make_unique(get_float_items_from_all_dicoms('FlipAngle'))
-        ti = make_unique(get_float_items_from_all_dicoms('InversionTime'))
-        tr = make_unique(get_float_items_from_all_dicoms('RepetitionTime'))
+        fa = make_unique_tensor(get_float_items_from_all_dicoms('FlipAngle'))
+        ti = make_unique_tensor(get_float_items_from_all_dicoms('InversionTime'))
+        tr = make_unique_tensor(get_float_items_from_all_dicoms('RepetitionTime'))
 
         # get echo time(s). Some scanners use 'EchoTime', some use 'EffectiveEchoTime'
         te_list = get_float_items_from_all_dicoms('EchoTime')
         if all(val is None for val in te_list):  # check if all entries are None
             te_list = get_float_items_from_all_dicoms('EffectiveEchoTime')
-        te = make_unique(te_list)
+        te = make_unique_tensor(te_list)
 
         fov_x_mm = get_float_items_from_all_dicoms('Rows')[0] * float(get_items_from_all_dicoms('PixelSpacing')[0][0])
         fov_y_mm = get_float_items_from_all_dicoms('Columns')[0] * float(
@@ -117,5 +118,5 @@ class IHeader(MoveDataMixin):
         # Get misc parameters
         misc = {}
         for name in MISC_TAGS:
-            misc[name] = make_unique(get_float_items_from_all_dicoms(MISC_TAGS[name]))
+            misc[name] = make_unique_tensor(get_float_items_from_all_dicoms(MISC_TAGS[name]))
         return cls(fov=fov, te=te, ti=ti, fa=fa, tr=tr, misc=misc)
