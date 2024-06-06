@@ -41,10 +41,10 @@ mrpro.data.KHeader
       ~KHeader.recon_fov
       ~KHeader.encoding_matrix
       ~KHeader.encoding_fov
-      ~KHeader.n_coils
       ~KHeader.acq_info
-      ~KHeader.datetime
       ~KHeader.h1_freq
+      ~KHeader.n_coils
+      ~KHeader.datetime
       ~KHeader.te
       ~KHeader.ti
       ~KHeader.fa
