@@ -1,2 +1,2 @@
-from mrpro.algorithms.reconstruction._reconstruction import Reconstruction
-from mrpro.algorithms.reconstruction._direct_reconstruction import DirectReconstruction
+from mrpro.algorithms.reconstruction.Reconstruction import Reconstruction
+from mrpro.algorithms.reconstruction.DirectReconstruction import DirectReconstruction
