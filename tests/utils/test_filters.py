@@ -14,11 +14,9 @@
 
 import pytest
 import torch
-from mrpro.data import SpatialDimension
 from mrpro.utils.filters import filter_separable
 from mrpro.utils.filters import gaussian_filter
 from mrpro.utils.filters import uniform_filter
-from mrpro.utils.filters import uniform_filter_3d
 
 
 @pytest.fixture()
@@ -47,31 +45,6 @@ def test_filter_separable(pad_mode, center_value, edge_value):
         assert data.shape == result.shape
     assert result[0, 10] == center_value
     assert result[0, 0] == edge_value
-
-
-@pytest.mark.parametrize(('pad_mode'), ['constant', 'reflect', 'replicate', 'circular'])
-def test_spatial_uniform_filter_3d(data, pad_mode):
-    """Test spatial_uniform_filter_3d with SpatialDimension."""
-
-    result = uniform_filter_3d(data, SpatialDimension(3, 3, 3), pad_mode)
-    assert data.shape == result.shape
-    assert torch.isclose(torch.sum(result), torch.sum(data))
-
-
-@pytest.mark.parametrize(('pad_mode'), ['constant', 'reflect', 'replicate', 'circular'])
-def test_spatial_uniform_filter_3d_tuple(data, pad_mode):
-    """Test spatial_uniform_filter_3d with tuple."""
-
-    result = uniform_filter_3d(data, (3, 3, 3), pad_mode)
-    assert data.shape == result.shape
-    assert torch.isclose(torch.sum(result), torch.sum(data))
-
-
-def test_spatial_uniform_filter_wrong_width(data):
-    """Test spatial_uniform_filter_3d with wrong width."""
-
-    with pytest.raises(ValueError, match='Invalid filter width'):
-        uniform_filter_3d(data, (3, 3))  # type: ignore[arg-type]
 
 
 def test_gaussian_filter_int_axis(data):

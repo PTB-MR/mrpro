@@ -1,6 +1,6 @@
 """Spatial and temporal filters."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
+# Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,45 +23,6 @@ from typing import Literal
 
 import numpy as np
 import torch
-
-from mrpro.data.SpatialDimension import SpatialDimension
-
-
-def uniform_filter_3d(
-    data: torch.Tensor,
-    filter_width: SpatialDimension[int] | tuple[int, int, int] | int,
-    pad_mode: Literal['constant', 'reflect', 'replicate', 'circular'] = 'constant',
-    pad_value: float = 0.0,
-) -> torch.Tensor:
-    """Spatial smoothing using convolution with box function.
-
-    Filters along the last three dimensions of the data tensor.
-
-    Parameters
-    ----------
-    data
-        Data to be smoothed in the shape (... z y x)
-    filter_width
-        Width of the filter as SpatialDimension(z, y, x) or tuple(z, y, x).
-        If a single integer is supplied, it is used as the width along z, y, and x.
-        The filter width is clipped to the data shape.
-    pad_mode
-        Padding mode
-    pad_value
-        Padding value for pad_mode = constant
-    """
-    match filter_width:
-        case int(width):
-            z = min(data.shape[-3], width)
-            y = min(data.shape[-2], width)
-            x = min(data.shape[-1], width)
-        case SpatialDimension(z, y, x) | (z, y, x):
-            z = min(data.shape[-3], z)
-            y = min(data.shape[-2], y)
-            x = min(data.shape[-1], x)
-        case _:
-            raise ValueError(f'Invalid filter width: {filter_width}')
-    return uniform_filter(data, (z, y, x), axis=(-3, -2, -1), pad_mode=pad_mode, pad_value=pad_value)
 
 
 def filter_separable(
@@ -96,10 +57,11 @@ def filter_separable(
     if len(axis) != len(set(axis)):
         raise ValueError(f'Axis must be unique. Normalized axis are {axis}')
 
-    # for pad_mode = constant and pad_value = 0, padding is done inside convolution, otherwise pad() is used.
     if pad_mode == 'constant' and pad_value == 0:
+        # padding is done inside the convolution
         padding_conv = 'same'
     else:
+        # padding is done with pad() before the convolution
         padding_conv = 'valid'
 
     for kernel, ax in zip(kernels, axis, strict=False):
@@ -115,16 +77,15 @@ def filter_separable(
         # swapping the last axis and the axis to filter over
         idx[ax], idx[-1] = idx[-1], idx[ax]
         x = x.permute(idx)
-        x_shape = list(x.shape)
-        if pad_mode == 'none':
-            x_shape[-1] -= len(kernel) - 1
         # flatten first to allow for circular, replicate and reflection padding for arbitrary tensor size
-        x = x.flatten(end_dim=-2)
+        x_flat = x.flatten(end_dim=-2)
         if padding_conv == 'valid' and pad_mode != 'none':
             left_pad = (len(kernel) - 1) // 2
             right_pad = (len(kernel) - 1) - left_pad
-            x = torch.nn.functional.pad(x, pad=(left_pad, right_pad), mode=pad_mode, value=pad_value)
-        x = torch.nn.functional.conv1d(x[:, None, :], kernel[None, None, :], padding=padding_conv).reshape(x_shape)
+            x_flat = torch.nn.functional.pad(x_flat, pad=(left_pad, right_pad), mode=pad_mode, value=pad_value)
+        x = torch.nn.functional.conv1d(x_flat[:, None, :], kernel[None, None, :], padding=padding_conv).reshape(
+            *x.shape[:-1], -1
+        )
         # for a single permutation, this undoes the permutation
         x = x.permute(idx)
     return x
