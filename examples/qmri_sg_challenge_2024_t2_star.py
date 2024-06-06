@@ -71,7 +71,7 @@ for idx, ax in enumerate(axes.flatten()):
 # with the euqilibrium magnetisation $M_0$, the echo time $TE$ and $T2^*$
 
 # %%
-model = MonoExponentialDecay(decay_time=torch.tensor(idata_multi_te.header.te))
+model = MonoExponentialDecay(decay_time=idata_multi_te.header.te)
 
 
 # %% [markdown]
@@ -93,7 +93,7 @@ functional = mse @ model
 
 # %%
 # The shortest echo time is a good approximation of the equilibrium magnetisation
-m0_start = torch.abs(idata_multi_te.data[torch.argmin(torch.tensor(idata_multi_te.header.te)), ...])
+m0_start = torch.abs(idata_multi_te.data[torch.argmin(idata_multi_te.header.te), ...])
 # 20 ms as a staring value for T2*
 t2star_start = torch.ones(m0_start.shape, dtype=torch.float32, device=m0_start.device) * 20
 

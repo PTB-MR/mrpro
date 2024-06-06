@@ -65,7 +65,7 @@ for idx, ax in enumerate(axes.flatten()):
 
 
 # %%
-model = MagnitudeOp() @ InversionRecovery(ti=torch.tensor(idata_multi_ti.header.ti))
+model = MagnitudeOp() @ InversionRecovery(ti=idata_multi_ti.header.ti)
 
 
 # %% [markdown]
@@ -116,7 +116,7 @@ t1_start = rearrange(t1_dictionary[idx_best_match], '(y x)->1 1 y x', y=n_y, x=n
 
 # %%
 # The image with the longest inversion time is a good approximation of the equilibrium magnetisation
-m0_start = torch.abs(idata_multi_ti.data[torch.argmax(torch.tensor(idata_multi_ti.header.ti)), ...])
+m0_start = torch.abs(idata_multi_ti.data[torch.argmax(idata_multi_ti.header.ti), ...])
 
 # %%
 # Visualise the starting values
