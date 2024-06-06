@@ -18,19 +18,20 @@ import torch
 from mrpro.operators._Functional import Functional
 
 
-def grad(f: Functional, x: torch.Tensor):
-    """Compute the gradient of f(x).
+def grad_and_value(function, x, create_graph=False):
+    def inner(x):
+        if create_graph and x.requires_grad:
+            # shallow clone
+            xg = x.view_as(x)
 
-    Parameters
-    ----------
-    f
-        differentiable function
-    x
-        point in the domain of f
-    """
-    x = x.clone().detach().requires_grad_(True)
-    y = f(x)
-    return torch.autograd.grad(y, x)[0]
+        xg = x.detach().requires_grad_(True)
+        (y,) = function(xg)
+
+        yg = y if isinstance(y, torch.Tensor) else y[0]
+        grad = torch.autograd.grad(yg, xg)[0]
+        return grad, y
+
+    return inner(x)
 
 
 def fista(
@@ -70,27 +71,25 @@ def fista(
         an approximate solution of the minimization problem
     """
     backtracking = not math.isclose(backtrack_factor, 1)
-    complex_input = torch.is_complex(initial_value)
     x_old = initial_value
     y = initial_value
     t_old = 1.0
 
     for _ in range(max_iterations):
         while stepsize > 1e-30:
-            f_y = f(y)
             # calculate the proximal gradient step
-            gradient = grad(f_y, y)
+            gradient, f_y = grad_and_value(f, y)
             x = g.prox(y - stepsize * gradient, reg_parameter * stepsize)
 
             if not backtracking:
                 # no need to check stepsize, continue to next iteration
                 break
             difference = x - y
-            Q = f_y + 1 / (2 * stepsize) * difference.abs().square().sum()
-            if complex_input:
-                Q += torch.vdot(gradient.flatten(), difference.flatten()).real
-            else:
-                Q += torch.vdot(gradient.flatten(), difference.flatten())
+            Q = (
+                f_y
+                + 1 / (2 * stepsize) * difference.abs().square().sum()
+                + torch.vdot(gradient.flatten(), difference.flatten()).real
+            )
 
             if f(x) <= Q:
                 # stepsize is ok, continue to next iteration
