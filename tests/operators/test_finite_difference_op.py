@@ -12,6 +12,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-def test_finite_difference_op_forward():
+import pytest
+import torch
+from mrpro.operators import FiniteDifferenceOp
+
+from tests import RandomGenerator
+from tests.helper import dotproduct_adjointness_test
+
+
+@pytest.mark.parametrize(('mode', 'scaling'), [('doublecentral', 2), ('central', 1), ('forward', 1), ('backward', 1)])
+def test_finite_difference_op_forward(mode, scaling):
     """Test correct finite difference of simple object."""
-    assert True
+    # Test object with linear gradient in real and imaginary part
+    linear_gradient_object = torch.arange(1, 21)[None, :].to(dtype=torch.float32)
+    linear_gradient_object = linear_gradient_object + 1j * linear_gradient_object
+
+    # Generate and apply finite difference operator
+    finite_difference_op = FiniteDifferenceOp(dim=(-1,), mode=mode)
+    (finite_difference_of_object,) = finite_difference_op(linear_gradient_object)
+
+    # Verify correct values excluding borders
+    torch.testing.assert_close(finite_difference_of_object[0, 0, 1:-1], scaling * (1 + 1j) * torch.ones(18))
+
+
+@pytest.mark.parametrize(('padding_mode'), ['zero', 'reflect', 'replicate', 'circular'])
+@pytest.mark.parametrize('mode', ['doublecentral', 'central', 'forward', 'backward'])
+@pytest.mark.parametrize('dim', [(-1,), (-2, -1), (-3, -2, -1), (-4,), (1, 3)])
+def test_finite_difference_op_adjointness(dim, mode, padding_mode):
+    """Test finite difference operator adjoint property."""
+
+    random_generator = RandomGenerator(seed=0)
+    im_shape = (5, 6, 4, 10, 20, 16)
+
+    # Generate finite difference operator
+    finite_difference_op = FiniteDifferenceOp(dim, mode, padding_mode)
+
+    # Check adjoint property
+    u = random_generator.complex64_tensor(size=im_shape)
+    v = random_generator.complex64_tensor(size=(len(dim), *im_shape))
+    dotproduct_adjointness_test(finite_difference_op, u, v)
