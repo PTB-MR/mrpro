@@ -15,7 +15,7 @@
 import pytest
 import torch
 from mrpro.data import KHeader
-from mrpro.data.traj_calculators._KTrajectoryCalculator import DummyTrajectory
+from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 
 
 def test_kheader_fail_from_mandatory_ismrmrd_header(random_mandatory_ismrmrd_header, random_acq_info):
