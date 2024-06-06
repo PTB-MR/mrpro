@@ -16,13 +16,8 @@
 
 import torch
 
-<<<<<<< HEAD:src/mrpro/algorithms/csm/iterative_walsh.py
 from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.utils.filters import uniform_filter_3d
-=======
-from mrpro.data._SpatialDimension import SpatialDimension
 from mrpro.utils.filters import uniform_filter
->>>>>>> ca62188 (review):src/mrpro/algorithms/csm/_iterative_walsh.py
 
 
 def iterative_walsh(
