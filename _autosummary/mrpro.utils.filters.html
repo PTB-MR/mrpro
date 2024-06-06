@@ -419,14 +419,14 @@ document.write(`
 <tr class="row-odd"><td><p><a class="reference internal" href="mrpro.utils.filters.ceil.html#mrpro.utils.filters.ceil" title="mrpro.utils.filters.ceil"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ceil</span></code></a>(x, /)</p></td>
 <td><p>Return the ceiling of x as an Integral.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="mrpro.utils.filters.gaussian_filter.html#mrpro.utils.filters.gaussian_filter" title="mrpro.utils.filters.gaussian_filter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gaussian_filter</span></code></a>(x, sigmas[, axis, truncate])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.utils.filters.filter_separable.html#mrpro.utils.filters.filter_separable" title="mrpro.utils.filters.filter_separable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter_separable</span></code></a>(x, kernels, axis[, ...])</p></td>
+<td><p>Apply the separable filter kernels to the tensor x along the axes axis.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.utils.filters.gaussian_filter.html#mrpro.utils.filters.gaussian_filter" title="mrpro.utils.filters.gaussian_filter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gaussian_filter</span></code></a>(x, sigmas[, axis, truncate, ...])</p></td>
 <td><p>Apply a and-Gaussian filter.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.utils.filters.uniform_filter.html#mrpro.utils.filters.uniform_filter" title="mrpro.utils.filters.uniform_filter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">uniform_filter</span></code></a>(x, width[, axis])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.utils.filters.uniform_filter.html#mrpro.utils.filters.uniform_filter" title="mrpro.utils.filters.uniform_filter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">uniform_filter</span></code></a>(x, width[, axis, pad_mode, ...])</p></td>
 <td><p>Apply a and-uniform filter.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="mrpro.utils.filters.uniform_filter_3d.html#mrpro.utils.filters.uniform_filter_3d" title="mrpro.utils.filters.uniform_filter_3d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">uniform_filter_3d</span></code></a>(data, filter_width)</p></td>
-<td><p>Spatial smoothing using convolution with box function.</p></td>
 </tr>
 </tbody>
 </table>
@@ -436,9 +436,6 @@ document.write(`
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="mrpro.utils.filters.Sequence.html#mrpro.utils.filters.Sequence" title="mrpro.utils.filters.Sequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sequence</span></code></a>()</p></td>
 <td><p>All the operations on a read-only sequence.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="mrpro.utils.filters.SpatialDimension.html#mrpro.utils.filters.SpatialDimension" title="mrpro.utils.filters.SpatialDimension"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpatialDimension</span></code></a>(z, y, x)</p></td>
-<td><p>Spatial dataclass of float/int/tensors (z, y, x).</p></td>
 </tr>
 </tbody>
 </table>

@@ -1,0 +1,6 @@
+mrpro.utils.filters.filter\_separable
+=====================================
+
+.. currentmodule:: mrpro.utils.filters
+
+.. autofunction:: filter_separable

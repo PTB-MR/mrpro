@@ -15,9 +15,9 @@ mrpro.utils.filters
       :toctree:
    
       ceil
+      filter_separable
       gaussian_filter
       uniform_filter
-      uniform_filter_3d
    
    
 
@@ -30,7 +30,6 @@ mrpro.utils.filters
       :template: class_template.rst
    
       Sequence
-      SpatialDimension
    
    
 
