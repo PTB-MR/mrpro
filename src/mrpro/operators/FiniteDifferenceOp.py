@@ -19,8 +19,8 @@ from typing import Literal
 
 import torch
 
-from mrpro.operators._LinearOperator import LinearOperator
-from mrpro.utils.filters import _filter_separable
+from mrpro.operators.LinearOperator import LinearOperator
+from mrpro.utils.filters import filter_separable
 
 
 class FiniteDifferenceOp(LinearOperator):
@@ -66,7 +66,7 @@ class FiniteDifferenceOp(LinearOperator):
         self,
         dim: Sequence[int],
         mode: Literal['central', 'forward', 'backward'] = 'central',
-        padding_mode: Literal['zeros', 'reflect', 'replicate', 'circular'] = 'zeros',
+        padding_mode: Literal['zeros', 'circular'] = 'zeros',
     ) -> None:
         """Finite difference operator.
 
@@ -97,7 +97,7 @@ class FiniteDifferenceOp(LinearOperator):
         -------
             Finite differences of x along dim stacked along first dimension.
         """
-        return (torch.stack([_filter_separable(x, (self.kernel,), axis=(d,)) for d in self.dim]),)
+        return (torch.stack([filter_separable(x, (self.kernel,), axis=(d,)) for d in self.dim]),)
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoing of finite differences.
@@ -123,7 +123,7 @@ class FiniteDifferenceOp(LinearOperator):
             torch.sum(
                 torch.stack(
                     [
-                        _filter_separable(yi, (self.adjoint_kernel,), axis=(dim,))
+                        filter_separable(yi, (self.adjoint_kernel,), axis=(dim,))
                         for dim, yi in zip(self.dim, y, strict=False)
                     ]
                 ),

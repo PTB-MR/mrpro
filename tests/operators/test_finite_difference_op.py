@@ -35,7 +35,7 @@ def test_finite_difference_op_forward(mode):
     torch.testing.assert_close(finite_difference_of_object[0, 0, 1:-1], (1 + 1j) * torch.ones(18))
 
 
-@pytest.mark.parametrize('padding_mode', ['zero', 'reflect', 'replicate', 'circular'])
+@pytest.mark.parametrize('padding_mode', ['zero', 'circular'])
 @pytest.mark.parametrize('mode', ['central', 'forward', 'backward'])
 @pytest.mark.parametrize('dim', [(-1,), (-2, -1), (-3, -2, -1), (-4,), (1, 3)])
 def test_finite_difference_op_adjointness(dim, mode, padding_mode):
