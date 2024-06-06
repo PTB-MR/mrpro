@@ -17,7 +17,7 @@
 import torch
 
 from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.utils.filters import uniform_filter_3d
+from mrpro.utils.filters import uniform_filter
 
 
 def iterative_walsh(
@@ -52,7 +52,7 @@ def iterative_walsh(
     coil_covariance = torch.einsum('azyx,bzyx->abzyx', coil_images, coil_images.conj())
 
     # Smooth the covariance along y-x for 2D and z-y-x for 3D data
-    coil_covariance = uniform_filter_3d(coil_covariance, filter_width=smoothing_width)
+    coil_covariance = uniform_filter(coil_covariance, width=smoothing_width.zyx, axis=(-3, -2, -1))
 
     # At each point in the image, find the dominant eigenvector
     # of the signal covariance matrix using the power method
