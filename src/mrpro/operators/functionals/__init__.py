@@ -1,1 +1,1 @@
-from mrpro.operators.functionals._mse_data_discrepancy import MSEDataDiscrepancy
+from mrpro.operators.functionals.MSEDataDiscrepancy import MSEDataDiscrepancy
