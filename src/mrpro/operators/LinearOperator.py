@@ -47,60 +47,52 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         """Adjoint operator."""
         return AdjointLinearOperator(self)
 
-    def operator_norm(self,
-                        initial_value: torch.Tensor,
-                        dim: tuple | None = None,
-                        max_iterations: int = 4
-            ) -> torch.Tensor:
-            """Power iteration for computing the operator norm of the linear operator.
+    def operator_norm(
+        self, initial_value: torch.Tensor, dim: tuple | None = None, max_iterations: int = 64
+    ) -> torch.Tensor:
+        """Power iteration for computing the operator norm of the linear operator.
 
-            Parameters
-            ----------
-            initial_value
-                initial value to start the iteration; if chosen exactly as zero-tensor,
-                we randomly generate an initial value.
-            dim
-                dimensions referring to the dimensions of the tensors
-                on which the operator operates. For example, for a tensor with shape
-                (4,30,160,160) and dim = None, it is understood that
-                the the matrix representation of the considered operator
-                corresponds to a block diagonal operator and thus the algorithm returns
-                one sinle value. In contrast, if for example, dim=(-2,-1),
-                the algorithm returns computes a batched operator norm such that the
-                output can be
-            max_iterations, optional
-                maximal number of iterations, by default 256
-            tolerance, optional (TODO)
-                tolerance used to determine when to stop the iteration, by default 1e-6;
-                if set to zero, the maximal number of iterations is the only employed
-                stopping criterion
+        Parameters
+        ----------
+        initial_value
+            initial value to start the iteration; if chosen exactly as zero-tensor,
+            we randomly generate an initial value.
+        dim
+            dimensions referring to the dimensions of the tensors on which the operator operates.
+            For example, for a matrix-vector multiplication example,
+            with a batched matrix tensor with shape (4,30,80,160), tensors of shape (4,30,160) to be multiplied,
+            and dim = None, it is understood that the the matrix representation of the considered operator
+            corresponds to a block diagonal operator (with 4*30 matrices) and thus the algorithm returns
+            one single value. In contrast, if for example, dim=(-1), the algorithm computes a batched operator
+            norm and returns a tensor of shape (4,30,1) corresponding to the operator norms of the respective
+            matrices in the diagonal of the block-diagonal operator (if considered in matrix representation).
+            In any case, the output of the algorithm has the same shape as the elements of the domain
+            of the considered operator (whose dimensionality is implicitly defined by choosing dim)
+        max_iterations, optional
+            maximal number of iterations, by default 64
 
-            Returns
-            -------
-                an estimaton of the operator norm
-            """
+        Returns
+        -------
+            an estimaton of the operator norm
+        """
+        # check if initial value is exactly zero; if yes, set it to a random value
+        vector = torch.randn_like(initial_value) if (initial_value == 0.0).all() else initial_value
 
-            # check if initial value is exactly zero; if yes, set it to a random value
-            vector = torch.randn_like(initial_value) if (initial_value == 0.0).all() else initial_value
+        for _ in range(max_iterations):
+            # apply the operator to the vector
+            (vector,) = self.adjoint(*self(vector))
 
-            for _ in range(max_iterations):
+            # normalize vector
+            vector /= torch.linalg.vector_norm(vector, dim=dim, keepdim=True)
 
-                #apply the operator to the vector
-                (vector,) = self.adjoint(*self(vector))
+        (operator_vector,) = self.adjoint(*self(vector))
 
-                #normalize vector
-                vector /= vector.norm(dim=dim, keepdim=True)
+        product = vector.real * operator_vector.real
+        if vector.is_complex() and operator_vector.is_complex():
+            product += vector.imag * operator_vector.imag
+        op_norm = product.sum(dim, keepdim=True).sqrt()
 
-            (operator_vector,) = self.adjoint(*self(vector))
-
-            product =vector.real * operator_vector.real
-            if vector.is_complex() and operator_vector.is_complex():
-                product +=  vector.imag*operator_vector.imag
-            op_norm = product.sum(dim, keepdim=True).sqrt()
-
-            return op_norm
-
-
+        return op_norm
 
     @overload  # type: ignore[override]
     def __matmul__(self, other: LinearOperator) -> LinearOperator: ...
