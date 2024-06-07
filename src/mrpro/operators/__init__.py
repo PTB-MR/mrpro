@@ -15,5 +15,5 @@ from mrpro.operators.PhaseOp import PhaseOp
 from mrpro.operators.SensitivityOp import SensitivityOp
 from mrpro.operators.SignalModel import SignalModel
 from mrpro.operators.SliceProjectionOp import SliceProjectionOp
-from mrpro.operators._WaveletOp import WaveletOp
+from mrpro.operators.WaveletOp import WaveletOp
 from mrpro.operators.ZeroPadOp import ZeroPadOp

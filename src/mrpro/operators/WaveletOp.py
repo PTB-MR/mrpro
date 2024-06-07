@@ -29,7 +29,7 @@ from ptwt.conv_transform_3 import waverec3
 from pywt import Wavelet
 from pywt._multilevel import _check_level
 
-from mrpro.operators import LinearOperator
+from mrpro.operators.LinearOperator import LinearOperator
 
 
 class WaveletOp(LinearOperator):
