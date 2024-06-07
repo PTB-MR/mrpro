@@ -87,6 +87,8 @@ module = [
     "torchkbnufft",
     "pypulseq",
     "zenodo_get",
+    "ptwt.*",
+    "pywt.*"
 ]
 ignore_missing_imports = true
 

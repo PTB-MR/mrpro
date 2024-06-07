@@ -40,30 +40,38 @@ def test_wavelet_op_coefficient_transform(im_shape, domain_shape, dim):
     if len(dim) == 1:
         coeff_ptwt = wavedec(img, 'haar', level=2, mode='reflect')
         coeff_mrpro = wavelet_op._format_coeffs_1d(coeff_ptwt)
-        coeff_ptwt_transformed = wavelet_op._undo_format_coeffs_1d(coeff_mrpro)
+        coeff_ptwt_transformed_1d = wavelet_op._undo_format_coeffs_1d(coeff_mrpro)
+
+        # all entries are single tensors
+        for i in range(len(coeff_ptwt_transformed_1d)):
+            assert torch.allclose(coeff_ptwt[i], coeff_ptwt_transformed_1d[i])
+
     elif len(dim) == 2:
         coeff_ptwt = wavedec2(img, 'haar', level=2, mode='reflect')
         coeff_mrpro = wavelet_op._format_coeffs_2d(coeff_ptwt)
-        coeff_ptwt_transformed = wavelet_op._undo_format_coeffs_2d(coeff_mrpro)
+        coeff_ptwt_transformed_2d = wavelet_op._undo_format_coeffs_2d(coeff_mrpro)
+
+        # first entry is tensor, the rest is list of tensors
+        assert torch.allclose(coeff_ptwt[0], coeff_ptwt_transformed_2d[0])  # type: ignore[arg-type]
+        for i in range(1, len(coeff_ptwt_transformed_2d)):
+            assert all(
+                torch.allclose(coeff_ptwt[i][j], coeff_ptwt_transformed_2d[i][j]) for j in range(len(coeff_ptwt[i]))
+            )
+
     elif len(dim) == 3:
         coeff_ptwt = wavedec3(img, 'haar', level=2, mode='reflect')
         coeff_mrpro = wavelet_op._format_coeffs_3d(coeff_ptwt)
-        coeff_ptwt_transformed = wavelet_op._undo_format_coeffs_3d(coeff_mrpro)
+        coeff_ptwt_transformed_3d = wavelet_op._undo_format_coeffs_3d(coeff_mrpro)
 
-    for i in range(len(coeff_ptwt)):
-        if isinstance(coeff_ptwt[i], dict):
-            assert all(torch.allclose(coeff_ptwt[i][key], coeff_ptwt_transformed[i][key]) for key in coeff_ptwt[i])
-        elif isinstance(coeff_ptwt[i], torch.Tensor):
-            assert torch.allclose(coeff_ptwt[i], coeff_ptwt_transformed[i])
-        elif isinstance(coeff_ptwt[i], tuple):
-            assert all(
-                torch.allclose(coeff_ptwt[i][j], coeff_ptwt_transformed[i][j]) for j in range(len(coeff_ptwt[i]))
-            )
+        # first entry is tensor, the rest is dict
+        assert torch.allclose(coeff_ptwt[0], coeff_ptwt_transformed_3d[0])  # type: ignore[arg-type]
+        for i in range(1, len(coeff_ptwt_transformed_3d)):
+            assert all(torch.allclose(coeff_ptwt[i][key], coeff_ptwt_transformed_3d[i][key]) for key in coeff_ptwt[i])
 
 
 def test_wavelet_op_wrong_dim():
     with pytest.raises(ValueError, match='Only 1D, 2D and 3D wavelet'):
-        WaveletOp(dim=(0, 1, 2, 3))
+        WaveletOp(dim=(0, 1, 2, 3))  # type: ignore[arg-type]
 
 
 def test_wavelet_op_mismatch_dim_domain_shape():
