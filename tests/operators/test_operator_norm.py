@@ -11,9 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from math import cos
-from math import pi
 from math import prod
+from math import sqrt
 
 import torch
 from mrpro.operators import EinsumOp
@@ -22,7 +21,7 @@ from mrpro.operators import FastFourierOp
 from tests import RandomGenerator
 
 
-def test_correct_result():
+def test_operator_norm_result():
     """Test if the implementation yields the correct result for different choices
     of operators with known operator-norm."""
     random_generator = RandomGenerator(seed=0)
@@ -32,28 +31,34 @@ def test_correct_result():
     operator1 = EinsumOp(matrix1, 'y x, x-> y')
     random_vector1 = random_generator.float32_tensor(matrix1.shape[1])
     operator1_norm_est = operator1.operator_norm(random_vector1, dim=None, max_iterations=32)
-    operator1_norm_true = 2 * (1 + cos(pi / 4))  # approximately 3.41421...
+    operator1_norm_true = 2 + sqrt(2)  # approximately 3.41421...
     torch.testing.assert_close(operator1_norm_est.item(), operator1_norm_true, atol=1e-4, rtol=1e-4)
 
-    # test with Fast Fourier Operator (has norm 1 since norm="ortho" is used)
-    dim = (-3, -2, -1)
-    fouirer_op = FastFourierOp(dim=dim)
 
-    random_image = torch.zeros(
-        4, 4, 8, 16, dtype=torch.complex64
-    )  # also tests that the initial value is set to a random value
-    fouirer_op_norm_batched = fouirer_op.operator_norm(random_image, dim=dim, max_iterations=64)
-    fourier_op_norm_non_batched = fouirer_op.operator_norm(random_image, dim=None, max_iterations=64)
+def test_fourier_operator_norm():
+    """Test with Fast Fourier Operator (has norm 1 since norm="ortho" is used);
+    # also tests that the initial value is set to a random value if chosen as zero."""
+    dim = (-3, -2, -1)
+    fourier_op = FastFourierOp(dim=dim)
+
+    random_image = torch.zeros(4, 4, 8, 16, dtype=torch.complex64)
+    fourier_op_norm_batched = fourier_op.operator_norm(random_image, dim=dim, max_iterations=64)
+    fourier_op_norm_non_batched = fourier_op.operator_norm(random_image, dim=None, max_iterations=64)
     fourier_op_norm_true = 1.0
 
-    torch.testing.assert_close(fouirer_op_norm_batched, torch.ones(4, 1, 1, 1), atol=1e-4, rtol=1e-4)
+    torch.testing.assert_close(fourier_op_norm_batched, torch.ones(4, 1, 1, 1), atol=1e-4, rtol=1e-4)
     torch.testing.assert_close(fourier_op_norm_non_batched.max().item(), fourier_op_norm_true, atol=1e-4, rtol=1e-4)
     torch.testing.assert_close(fourier_op_norm_non_batched.item(), fourier_op_norm_true, atol=1e-4, rtol=1e-4)
 
 
 def test_batched_operator_norm():
     """Test if the batched calculation of the operator-norm works on a simple
-    matrix-vector multiplication example."""
+    matrix-vector multiplication example.
+
+    Using the fact that for a block-diagonal matrix, the eigenvalues are the list of
+    eigenvalues of the respective matrices, we test whether the largest of the batched
+    operator norms coincides with the non-batched operator norm.
+    """
     random_generator = RandomGenerator(seed=0)
     input_shape = (2, 4, 8, 8)
 
@@ -73,9 +78,6 @@ def test_batched_operator_norm():
     operator1_norm_batched = operator1.operator_norm(random_vector1, dim=dim, max_iterations=32)
     operator1_norm_non_batched = operator1.operator_norm(random_vector1, dim=None, max_iterations=32)
 
-    # using the fact that for a block-diagonal matrix, the eigenvalues are the list of
-    # eigenvalues of the respective matrices, test whether the largest of the batched
-    # operator norms coincides with the non-batched operator norm
     torch.testing.assert_close(
         operator1_norm_batched.max().item(), operator1_norm_non_batched.item(), atol=1e-4, rtol=1e-4
     )
