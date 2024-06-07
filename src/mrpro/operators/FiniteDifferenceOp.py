@@ -66,7 +66,7 @@ class FiniteDifferenceOp(LinearOperator):
         self,
         dim: Sequence[int],
         mode: Literal['central', 'forward', 'backward'] = 'central',
-        padding_mode: Literal['zeros', 'circular'] = 'zeros',
+        pad_mode: Literal['zeros', 'circular'] = 'zeros',
     ) -> None:
         """Finite difference operator.
 
@@ -76,12 +76,12 @@ class FiniteDifferenceOp(LinearOperator):
             Dimension along which finite differences are calculated.
         mode
             Type of finite difference operator
-        padding_mode
+        pad_mode
             Padding to ensure output has the same size as the input
         """
         super().__init__()
         self.dim = dim
-        self.padding_mode = padding_mode
+        self.pad_mode: Literal['constant', 'circular'] = 'constant' if pad_mode == 'zeros' else pad_mode
         self.register_buffer('kernel', self.finite_difference_kernel(mode))
         self.register_buffer('adjoint_kernel', torch.flip(self.kernel, dims=(-1,)))
 
@@ -97,7 +97,14 @@ class FiniteDifferenceOp(LinearOperator):
         -------
             Finite differences of x along dim stacked along first dimension.
         """
-        return (torch.stack([filter_separable(x, (self.kernel,), axis=(d,)) for d in self.dim]),)
+        return (
+            torch.stack(
+                [
+                    filter_separable(x, (self.kernel,), axis=(d,), pad_mode=self.pad_mode, pad_value=0.0)
+                    for d in self.dim
+                ]
+            ),
+        )
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoing of finite differences.
@@ -123,7 +130,7 @@ class FiniteDifferenceOp(LinearOperator):
             torch.sum(
                 torch.stack(
                     [
-                        filter_separable(yi, (self.adjoint_kernel,), axis=(dim,))
+                        filter_separable(yi, (self.adjoint_kernel,), axis=(dim,), pad_mode=self.pad_mode, pad_value=0.0)
                         for dim, yi in zip(self.dim, y, strict=False)
                     ]
                 ),

@@ -35,17 +35,17 @@ def test_finite_difference_op_forward(mode):
     torch.testing.assert_close(finite_difference_of_object[0, 0, 1:-1], (1 + 1j) * torch.ones(18))
 
 
-@pytest.mark.parametrize('padding_mode', ['zero', 'circular'])
+@pytest.mark.parametrize('pad_mode', ['zeros', 'circular'])
 @pytest.mark.parametrize('mode', ['central', 'forward', 'backward'])
 @pytest.mark.parametrize('dim', [(-1,), (-2, -1), (-3, -2, -1), (-4,), (1, 3)])
-def test_finite_difference_op_adjointness(dim, mode, padding_mode):
+def test_finite_difference_op_adjointness(dim, mode, pad_mode):
     """Test finite difference operator adjoint property."""
 
     random_generator = RandomGenerator(seed=0)
     im_shape = (5, 6, 4, 10, 20, 16)
 
     # Generate finite difference operator
-    finite_difference_op = FiniteDifferenceOp(dim, mode, padding_mode)
+    finite_difference_op = FiniteDifferenceOp(dim, mode, pad_mode)
 
     # Check adjoint property
     u = random_generator.complex64_tensor(size=im_shape)
