@@ -33,20 +33,44 @@ class WaveletOp(LinearOperator):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         if len(self.dim) == 1:
             coeff_list = wavedec(x, self.wave_name, level=self.level)
+            coeff_list = self._format_coeffs_1d(coeff_list)
         elif len(self.dim) == 2:
             coeff_list = wavedec2(x, self.wave_name, level=self.level)
+            coeff_list = self._format_coeffs_2d(coeff_list)
         elif len(self.dim) == 3:
             coeff_list = wavedec3(x, self.wave_name, level=self.level)
-
-        # convert coeff_list from ptwt to pywt dict format
-        # convert coeff_dict to tenor using pywt similar function
-        # return coeff tensor and nothing else
+            coeff_list = self._format_coeffs_3d(coeff_list)
 
     def adjoint(self, x: tuple[torch.Tensor,]) -> tuple[torch.Tensor,]:
         return x
 
-    def _coeff_to_array(self, coeff_list: list[torch.Tensor]) -> torch.Tensor:
-        pass
+    def _format_coeffs_1d(self, coeffs: list[torch.Tensor]) -> list[torch.Tensor | tuple[torch.Tensor,]]:
+        """Format 1D wavelet coefficients to MRpro format.
 
-    def _array_to_coeff(self, x: torch.Tensor) -> list[torch.Tensor]:
-        pass
+        Converts from   [a, d_n, ..., d_1]
+        to              [a, (d_n,), ..., (d_1,)]
+        """
+        return [coeffs[0]] + [(c,) for c in coeffs[1:]]
+
+    def _format_coeffs_2d(
+        self,
+        coeffs: list[torch.Tensor | tuple[torch.Tensor, torch.Tensor, torch.Tensor]],
+    ) -> list[torch.Tensor | tuple[torch.Tensor,]]:
+        """Format 2D wavelet coefficients to MRpro format.
+
+        At the moment, this function just returns the input coeffs as is.
+        """
+        return coeffs
+
+    def _format_coeffs_3d(
+        self, coeffs: list[torch.Tensor | dict[str, torch.Tensor]]
+    ) -> list[torch.Tensor | tuple[torch.Tensor]]:
+        """Format 3D wavelet coefficients to MRpro format.
+
+        Converts from   [aaa, {aad_n, ada_n, add_n, ...}, ..., {aad_1, ada_1, add_1, ...}]
+        to              [aaa, (aad_n, ada_n, add_n, ...), ..., (aad_1, ada_1, add_1, ...)]
+        """
+        res = [coeffs.pop(0)]
+        for c_dict in coeffs:
+            res.append(tuple(c_dict.values()))
+        return res
