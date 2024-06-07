@@ -91,11 +91,11 @@ class FiniteDifferenceOp(LinearOperator):
         Parameters
         ----------
         x
-            Input tensor.
+            Input tensor
 
         Returns
         -------
-            Finite differences of x along dim stacked along first dimension.
+            Finite differences of x along dim stacked along first dimension
         """
         return (
             torch.stack(
