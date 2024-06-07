@@ -83,7 +83,6 @@ class FiniteDifferenceOp(LinearOperator):
         self.dim = dim
         self.pad_mode: Literal['constant', 'circular'] = 'constant' if pad_mode == 'zeros' else pad_mode
         self.register_buffer('kernel', self.finite_difference_kernel(mode))
-        self.register_buffer('adjoint_kernel', torch.flip(self.kernel, dims=(-1,)))
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Forward of finite differences.
@@ -130,7 +129,13 @@ class FiniteDifferenceOp(LinearOperator):
             torch.sum(
                 torch.stack(
                     [
-                        filter_separable(yi, (self.adjoint_kernel,), axis=(dim,), pad_mode=self.pad_mode, pad_value=0.0)
+                        filter_separable(
+                            yi,
+                            (torch.flip(self.kernel, dims=(-1,)),),
+                            axis=(dim,),
+                            pad_mode=self.pad_mode,
+                            pad_value=0.0,
+                        )
                         for dim, yi in zip(self.dim, y, strict=False)
                     ]
                 ),
