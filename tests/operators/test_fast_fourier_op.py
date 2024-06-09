@@ -74,6 +74,9 @@ def test_fast_fourier_op_adjoint(encoding_matrix, recon_matrix):
     ('encoding_matrix', 'recon_matrix'),
     [
         ((101, 201, 50), (13, 221, 64)),
+        ((100, 200, 50), (14, 220, 64)),
+        ((101, 201, 50), (14, 220, 64)),
+        ((100, 200, 50), (13, 221, 64)),
     ],
 )
 def test_fast_fourier_op_grad(encoding_matrix, recon_matrix):
@@ -86,7 +89,6 @@ def test_fast_fourier_op_grad(encoding_matrix, recon_matrix):
 
     # Create operator and apply
     ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix)
-
     gradient_test(ff_op, u, v)
 
 
