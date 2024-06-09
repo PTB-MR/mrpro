@@ -69,6 +69,33 @@ def test_fast_fourier_op_adjoint(encoding_matrix, recon_matrix):
     dotproduct_adjointness_test(ff_op, u, v)
 
 
+@pytest.mark.parametrize(
+    ('encoding_matrix', 'recon_matrix'),
+    [
+        ((101, 201, 50), (13, 221, 64)),
+    ],
+)
+def test_fast_fourier_op_grad(encoding_matrix, recon_matrix):
+    """Test the gradient of the Fast Fourier Op."""
+
+    # Create test data
+    generator = RandomGenerator(seed=0)
+    u = generator.complex64_tensor(recon_matrix)
+    v = generator.complex64_tensor(encoding_matrix)
+
+    # Create operator and apply
+    ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix)
+
+    # Gradient of the forward via vjp
+    with pytest.warns(ImportWarning, match='allow_ops_in_compiled_graph failed'):
+        (_, vjpfunc) = torch.func.vjp(ff_op.forward, u)
+    assert torch.allclose(vjpfunc((v,))[0], ff_op.adjoint(v)[0])
+
+    # Gradient of the adjoint via vjp
+    (_, vjpfunc) = torch.func.vjp(ff_op.adjoint, v)
+    assert torch.allclose(vjpfunc((u,))[0], ff_op.forward(u)[0])
+
+
 def test_fast_fourier_op_spatial_dim():
     """Test for equal results if matrices are spatial dimension or lists"""
     # Create test data
