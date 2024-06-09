@@ -20,6 +20,7 @@ from mrpro.operators import FastFourierOp
 
 from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test
+from tests.helper import gradient_test
 
 
 @pytest.mark.parametrize(('npoints', 'a'), [(100, 20), (300, 20)])
@@ -86,14 +87,7 @@ def test_fast_fourier_op_grad(encoding_matrix, recon_matrix):
     # Create operator and apply
     ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix)
 
-    # Gradient of the forward via vjp
-    with pytest.warns(ImportWarning, match='allow_ops_in_compiled_graph failed'):
-        (_, vjpfunc) = torch.func.vjp(ff_op.forward, u)
-    assert torch.allclose(vjpfunc((v,))[0], ff_op.adjoint(v)[0])
-
-    # Gradient of the adjoint via vjp
-    (_, vjpfunc) = torch.func.vjp(ff_op.adjoint, v)
-    assert torch.allclose(vjpfunc((u,))[0], ff_op.forward(u)[0])
+    gradient_test(ff_op, u, v)
 
 
 def test_fast_fourier_op_spatial_dim():

@@ -13,9 +13,10 @@
 #   limitations under the License.
 
 import torch
+from mrpro.operators.LinearOperator import LinearOperator
 
 
-def relative_image_difference(img1, img2):
+def relative_image_difference(img1: torch.Tensor, img2: torch.Tensor):
     """Calculate mean absolute relative difference between two images.
 
     Parameters
@@ -37,7 +38,11 @@ def relative_image_difference(img1, img2):
 
 
 def dotproduct_adjointness_test(
-    operator, u: torch.Tensor, v: torch.Tensor, relative_tolerance: float = 1e-3, absolute_tolerance=1e-5
+    linear_operator: LinearOperator,
+    u: torch.Tensor,
+    v: torch.Tensor,
+    relative_tolerance: float = 1e-3,
+    absolute_tolerance=1e-5,
 ):
     """Test the adjointness of operator and operator.H
 
@@ -52,8 +57,8 @@ def dotproduct_adjointness_test(
 
     Parameters
     ----------
-    operator
-        operator
+    linear_operator
+        linear operator
     u
         element of the domain of the operator
     v
@@ -68,12 +73,12 @@ def dotproduct_adjointness_test(
     AssertionError
         if the adjointness property does not hold
     AssertionError
-        if the shape of operator(u) and v does not match
-        if the shape of u and operator.H(v) does not match
+        if the shape of linear_operator(u) and v does not match
+        if the shape of u and linear_operator.H(v) does not match
 
     """
-    (forward_u,) = operator(u)
-    (adjoint_v,) = operator.adjoint(v)
+    (forward_u,) = linear_operator(u)
+    (adjoint_v,) = linear_operator.adjoint(v)
 
     # explicitly check the shapes, as flatten makes the dot product insensitive to wrong shapes
     assert forward_u.shape == v.shape
@@ -82,3 +87,47 @@ def dotproduct_adjointness_test(
     dotproduct_range = torch.vdot(forward_u.flatten(), v.flatten())
     dotproduct_domain = torch.vdot(u.flatten().flatten(), adjoint_v.flatten())
     torch.testing.assert_close(dotproduct_range, dotproduct_domain, rtol=relative_tolerance, atol=absolute_tolerance)
+
+
+def gradient_test(
+    linear_operator: LinearOperator,
+    u: torch.Tensor,
+    v: torch.Tensor,
+    relative_tolerance: float = 1e-3,
+    absolute_tolerance=1e-5,
+):
+    """Test the gradient of a linear operator is the adjoint.
+
+    Note: This property should hold for all u and v.
+    Commonly, this function is called with two random vectors u and v.
+
+
+    Parameters
+    ----------
+    linear_operator
+        linear operator
+    u
+        element of the domain of the operator
+    v
+        element of the range of the operator
+    relative_tolerance
+        default is pytorch's default for float16
+    absolute_tolerance
+        default is pytorch's default for float16
+
+    Raises
+    ------
+    AssertionError
+        if the gradient is not the adjoint
+
+
+    """
+    # Gradient of the forward via vjp
+    (_, vjpfunc) = torch.func.vjp(linear_operator.forward, u)
+    assert torch.allclose(vjpfunc((v,))[0], linear_operator.adjoint(v)[0])
+
+    # Gradient of the adjoint via vjp
+    (_, vjpfunc) = torch.func.vjp(linear_operator.adjoint, v)
+    assert torch.allclose(
+        vjpfunc((u,))[0], linear_operator.forward(u)[0], rtol=relative_tolerance, atol=absolute_tolerance
+    )
