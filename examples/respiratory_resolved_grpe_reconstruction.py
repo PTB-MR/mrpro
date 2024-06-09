@@ -7,10 +7,12 @@ import matplotlib.pyplot as plt
 import torch
 from einops import rearrange
 from mrpro.data import CsmData
+from mrpro.data import KTrajectory
 from mrpro.data import DcfData
 from mrpro.data import IData
 from mrpro.data import KData
 from mrpro.data.traj_calculators import KTrajectoryRpe
+from mrpro.data.traj_calculators import KTrajectoryPulseq
 from mrpro.operators import FourierOp
 from mrpro.operators import FastFourierOp
 from mrpro.operators import SensitivityOp
@@ -20,15 +22,48 @@ from mrpro.algorithms.optimizers import cg
 from mrpro.utils import split_idx
 
 # %%
-fname = '/echo/_allgemein/projects/Christoph/TSE_T2/2024_04_10_Charite/meas_MID00022_FID84486_pulseq.mrd'
-
+fseq = '/echo/kolbit01/data/GRPE_Charite/2024_05_30/20240520_fov288_288_200mm_192_192_640_3d_Charite_grpe_centric_itl_pf0.6.seq'
+fname = '/echo/kolbit01/data/GRPE_Charite/2024_05_30/meas_MID00291_FID96729_20240520_fov288_288_200mm_192_192_640_3D_saggital.mrd'
 # %% [markdown]
 # ### Motion-averaged image reconstruction
 # We are going to reconstruct an image using all the acquired data.
 
+#%%
+if False:
+    import ismrmrd
+    
+    # Get info and acquisitons from original data
+    with ismrmrd.File(fname, 'r') as file:
+        ds = file[list(file.keys())[-1]]
+        ismrmrd_header = ds.header
+        acquisitions = ds.acquisitions[:]
+
+    # Create new file
+    fname_out = fname.replace('.mrd', '_pf.h5')
+    ds = ismrmrd.Dataset(fname_out)
+    ismrmrd_header.encoding[0].encodingLimits.kspace_encoding_step_1.maximum=111
+    ismrmrd_header.encoding[0].encodingLimits.kspace_encoding_step_1.center=96
+    ds.write_xml_header(ismrmrd_header.toXML())
+    
+    k1 = []
+    k2 = []
+    for acq in acquisitions:
+        k1.append(acq.idx.kspace_encode_step_1)
+        k2.append(acq.idx.kspace_encode_step_2)
+        ds.append_acquisition(acq)
+    ds.close()
+    
+    plt.figure()
+    plt.plot(k1)
+    plt.plot(k2)
+
 # %%
 # Read the raw data, calculate the trajectory and dcf
-kdata = KData.from_file(fname, KTrajectoryRpe(angle=torch.pi * 0.618034))
+kdata = KData.from_file(fname.replace('.mrd', '_pf.h5'), KTrajectoryRpe(angle=torch.pi * 0.618034))
+
+plt.figure()
+plt.plot(kdata.traj.ky[0,:10,:,0], kdata.traj.kz[0,:10,:,0], 'ob')
+
 kdcf = DcfData.from_traj_voronoi(kdata.traj)
  
 # Set the matrix sizes which are not encoded correctly in the pulseq sequence
@@ -38,9 +73,8 @@ kdata.header.recon_matrix.y = 192
 kdata.header.recon_matrix.z = 192
 
 # Direct image reconstruction of individual coil images
-cart_sampling_op = CartesianSamplingOp(kdata.header.encoding_matrix, kdata.traj)
 fourier_op = FourierOp(kdata.header.recon_matrix, kdata.header.encoding_matrix, kdata.traj)
-(img,) = fourier_op.adjoint(cart_sampling_op.adjoint(kdata.data * kdcf.data[:,None,...])[0])
+(img,) = fourier_op.adjoint(kdata.data * kdcf.data[:,None,...])
 
 # Calculate coilmaps
 idata = IData.from_tensor_and_kheader(img, kdata.header)
@@ -69,15 +103,16 @@ nav_signal_time_stamp = kdata.header.acq_info.acquisition_time_stamp[ky0_kz0_idx
 
 fig, ax = plt.subplots(5,1)
 for ind in range(5):
-    ax[ind].imshow(torch.abs(nav_data[:,ind,:]))
+    ax[ind].imshow(rearrange(torch.abs(nav_data[:,ind,:]), 'angle x->x angle'))
     
 # Carry out SVD along coil and readout dimension
 nav_data = rearrange(nav_data, 'k1k2 coil k0 -> k1k2 (coil k0)')
 u, _, _ = torch.linalg.svd(nav_data - nav_data.mean())
 
 resp_nav = u[:,0]
-resp_nav[0] = resp_nav[1]
-
+resp_nav[0] = resp_nav[3]
+resp_nav[1] = resp_nav[3]
+resp_nav[2] = resp_nav[3]
 plt.figure() 
 plt.plot(resp_nav, ':k')   
 
@@ -86,7 +121,7 @@ plt.plot(resp_nav, ':k')
 # Now we can reconstruct the respirator motion-resolved images. 
 # Here we have to deal with undersampled data and so we use an iterative reconstruction (iterative SENSE).
 
-resp_idx = split_idx(torch.argsort(resp_nav), 56, 16)
+resp_idx = split_idx(torch.argsort(resp_nav), 120, 20)
 kdata_resp_resolved = kdata.split_k2_into_other(resp_idx, other_label='repetition')
 kdcf = DcfData.from_traj_voronoi(kdata_resp_resolved.traj)
 
