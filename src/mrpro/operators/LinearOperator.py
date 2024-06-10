@@ -39,14 +39,16 @@ class _AutogradWrapper(torch.autograd.Function):
     generate_vmap_rule = True
 
     @staticmethod
-    def forward(
-        fw: Callable[[torch.Tensor], torch.Tensor], bw: Callable[[torch.Tensor], torch.Tensor], x: torch.Tensor
-    ) -> Any:
+    def forward(  # type: ignore [override]
+        fw: Callable[[torch.Tensor], torch.Tensor],
+        bw: Callable[[torch.Tensor], torch.Tensor],  # noqa: ARG004
+        x: torch.Tensor,
+    ) -> Any:  # noqa: ANN401
         return fw(x)
 
     @staticmethod
     def setup_context(
-        ctx: Any,
+        ctx: Any,  # noqa: ANN401
         inputs: tuple[Callable[[torch.Tensor], torch.Tensor], Callable[[torch.Tensor], torch.Tensor], torch.Tensor],
         output: torch.Tensor,
     ) -> torch.Tensor:
@@ -54,7 +56,7 @@ class _AutogradWrapper(torch.autograd.Function):
         return output
 
     @staticmethod
-    def backward(ctx, *grad_output: torch.Tensor):
+    def backward(ctx: Any, *grad_output: torch.Tensor) -> tuple[None, None, Any | None]:  # noqa: ANN401
         return None, None, _AutogradWrapper.apply(ctx.bw, ctx.fw, grad_output[0])
 
 
