@@ -12,23 +12,18 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import pytest
 import torch
-from mrpro.data import KTrajectory
-from mrpro.data import SpatialDimension
 from mrpro.operators import FastFourierOp
 
 from tests import RandomGenerator
-from tests.data.test_trajectory import create_traj
-from tests.helper import dotproduct_adjointness_test
 
 
 def test_autograd_wrapper():
     """Test the autograd wrapper using the fast fourier op as an example."""
 
     # Create test data, gradcheck requires double precision
-    encoding_matrix = [5,10,15]
-    recon_matrix = [3,6,9]
+    encoding_matrix = [5, 10, 15]
+    recon_matrix = [3, 6, 9]
     generator = RandomGenerator(seed=0)
     u = generator.complex128_tensor(recon_matrix)
     v = generator.complex128_tensor(encoding_matrix)
