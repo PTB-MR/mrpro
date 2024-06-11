@@ -54,6 +54,9 @@ idata_multi_te = IData.from_dicom_files(te_dicom_files)
 if flag_use_cuda:
     idata_multi_te = idata_multi_te.cuda()
 
+if idata_multi_te.header.te is None:
+    raise ValueError('Echo times need to be defined in the dicom files.')
+
 # %%
 # Let's have a look at some of the images
 fig, axes = plt.subplots(1, 3)

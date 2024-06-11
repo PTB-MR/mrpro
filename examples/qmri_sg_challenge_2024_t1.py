@@ -45,6 +45,9 @@ with zipfile.ZipFile(data_folder / Path('T1 IR.zip'), 'r') as zip_ref:
 ti_dicom_files = data_folder.glob('**/*.dcm')
 idata_multi_ti = IData.from_dicom_files(ti_dicom_files)
 
+if idata_multi_ti.header.ti is None:
+    raise ValueError('Inversion times need to be defined in the dicom files.')
+
 # %%
 # Let's have a look at some of the images
 # %%
