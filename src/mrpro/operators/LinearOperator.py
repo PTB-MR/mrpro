@@ -59,6 +59,10 @@ class _AutogradWrapper(torch.autograd.Function):
     def backward(ctx: Any, *grad_output: torch.Tensor) -> tuple[None, None, Any | None]:  # noqa: ANN401
         return None, None, _AutogradWrapper.apply(ctx.bw, ctx.fw, grad_output[0])
 
+    @staticmethod
+    def jvp(ctx: Any, *grad_inputs: Any) -> Any:  # noqa: ANN401
+        return _AutogradWrapper.apply(ctx.fw, ctx.bw, grad_inputs[-1])
+
 
 class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """General Linear Operator.
