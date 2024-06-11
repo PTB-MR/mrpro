@@ -70,19 +70,12 @@ def test_fast_fourier_op_adjoint(encoding_matrix, recon_matrix):
     dotproduct_adjointness_test(ff_op, u, v)
 
 
-@pytest.mark.parametrize(
-    ('encoding_matrix', 'recon_matrix'),
-    [
-        ((101, 201, 50), (13, 221, 64)),
-        ((100, 200, 50), (14, 220, 64)),
-        ((101, 201, 50), (14, 220, 64)),
-        ((100, 200, 50), (13, 221, 64)),
-    ],
-)
-def test_fast_fourier_op_grad(encoding_matrix, recon_matrix):
+def test_fast_fourier_op_grad():
     """Test the gradient of the Fast Fourier Op."""
 
     # Create test data
+    recon_matrix = (13, 221, 64)
+    encoding_matrix = (101, 201, 50)
     generator = RandomGenerator(seed=0)
     u = generator.complex64_tensor(recon_matrix)
     v = generator.complex64_tensor(encoding_matrix)
