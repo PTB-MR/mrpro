@@ -8,6 +8,7 @@ from mrpro.operators.ConstraintsOp import ConstraintsOp
 from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 from mrpro.operators.EinsumOp import EinsumOp
 from mrpro.operators.FastFourierOp import FastFourierOp
+from mrpro.operators.FiniteDifferenceOp import FiniteDifferenceOp
 from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.GridSamplingOp import GridSamplingOp
 from mrpro.operators.MagnitudeOp import MagnitudeOp
