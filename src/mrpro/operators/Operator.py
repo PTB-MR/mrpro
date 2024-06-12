@@ -26,7 +26,6 @@ from typing import cast
 import torch
 
 Tin = TypeVarTuple('Tin')  # TODO: bind to torch.Tensors
-
 Tin2 = TypeVarTuple('Tin2')  # TODO: bind to torch.Tensors
 Tout = TypeVar('Tout', bound=tuple, covariant=True)  # TODO: bind to torch.Tensors
 
