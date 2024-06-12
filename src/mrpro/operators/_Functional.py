@@ -1,5 +1,19 @@
 """Base Class Functional."""
 
+# Copyright 2024 Physikalisch-Technische Bundesanstalt
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at:
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from abc import ABC
 from abc import abstractmethod
 from collections.abc import Sequence
@@ -10,39 +24,35 @@ from mrpro.operators._Operator import Operator
 
 
 class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
-    """Functional Base Class.
-
-    Args:
-        Operator (_type_): _description_
-    """
+    """Functional Base Class."""
 
     def __init__(
-        self, lam: torch.Tensor | float = 1.0, g: torch.Tensor | None = None, dim: Sequence[int] | None = None
+        self, weight: torch.Tensor | float = 1.0, target: torch.Tensor | None = None, dim: Sequence[int] | None = None
     ):
-        """init.
+        """Initialize a Functional.
 
-        Args:
-            lam (float, optional): _description_. Defaults to 1.0.
+        Parameters
+        ----------
+            weight (float, optional) 
+                weighting of the l1 norm
+            target (optional) 
+                element to which l1 distance is taken - often data tensor
         """
         super().__init__()
-        self.register_buffer('lam', torch.as_tensor(lam))
-        if g is None:
-            g = torch.tensor(0.0)
-        self.register_buffer('g', g)
+        self.register_buffer('weight', torch.as_tensor(weight))
+        if target is None:
+            target = torch.tensor(0.0)
+        self.register_buffer('target', target)
         self.dim = dim
 
 
 class ProximableFunctional(Functional, ABC):
-    """ProximableFunction Base Class.
-
-    Args:
-        Functional (_type_): _description_
-    """
+    """ProximableFunction Base Class."""
 
     @abstractmethod
     def prox(self, x: torch.Tensor, sigma: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply forward operator."""
+        """Apply proximal operator."""
 
     def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply forward operator."""
+        """Apply proximal of convex conjugate of functional."""
         return (x - sigma * self.prox(x * 1 / sigma, 1 / sigma),)
