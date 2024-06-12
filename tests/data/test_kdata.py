@@ -125,6 +125,12 @@ def test_KData_raise_wrong_trajectory_shape(ismrmrd_cart):
         _ = KData.from_file(ismrmrd_cart.filename, trajectory)
 
 
+def test_KData_raise_wrong_coil_number(ismrmrd_cart):
+    """Wrong number of coils leads to empty acquisitions."""
+    with pytest.raises(ValueError, match='No acquisitions for'):
+        _ = KData.from_file(ismrmrd_cart.filename, DummyTrajectory(), header_overwrites={'n_coils': 3})
+
+
 def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
     """Multiple repetitions with different number of phase encoding lines."""
     with pytest.warns(UserWarning, match=r'different number'):

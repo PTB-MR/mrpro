@@ -121,6 +121,22 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             )
 
         acquisitions = list(filter(lambda acq: not (ignore_flags.value & acq.flags), acquisitions))
+
+        # Select only acquisitions with the desired number of receiver channels/coils.
+        # If the number of coils is not defined use all acquisitions
+        n_coils = None
+        if header_overwrites is not None and 'n_coils' in header_overwrites:
+            n_coils = header_overwrites['n_coils']
+        elif (
+            ismrmrd_header.acquisitionSystemInformation is not None
+            and ismrmrd_header.acquisitionSystemInformation.receiverChannels is not None
+        ):
+            n_coils = ismrmrd_header.acquisitionSystemInformation.receiverChannels
+        if n_coils is not None:
+            acquisitions = [acq for acq in acquisitions if acq.data.shape[0] == n_coils]
+            if len(acquisitions) == 0:
+                raise ValueError(f'No acquisitions for {n_coils} coil elements found.')
+
         kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
