@@ -60,8 +60,8 @@ class TransientInversionRecovery(SignalModel[torch.Tensor, torch.Tensor, torch.T
         self,
         signal_time_points: torch.Tensor,
         tr: float | torch.Tensor,
-        inversion_time_points: torch.Tensor,
-        delay_inversion_adc: float | torch.Tensor,
+        inversion_time_points: float | torch.Tensor,
+        delay_inversion_adc: float | torch.Tensor = 0.0,
         first_adc_time_point: float | torch.Tensor | None = None,
     ):
         """Initialize continuous acquisition with inversion pulses.
@@ -70,6 +70,7 @@ class TransientInversionRecovery(SignalModel[torch.Tensor, torch.Tensor, torch.T
         ----------
         signal_time_points
             time stamp of each acquisition
+            with shape (time, ...)
         tr
             repetition time
         inversion_time_points
@@ -138,15 +139,23 @@ class TransientInversionRecovery(SignalModel[torch.Tensor, torch.Tensor, torch.T
         ----------
         m0
             equilibrium signal / proton density
+            with shape (... other, coils, z, y, x)
         t1
             longitudinal relaxation time T1
+            with shape (... other, coils, z, y, x)
         alpha
             flip angle
+            with shape (... other, coils, z, y, x)
 
         Returns
         -------
-            signal with dimensions ((... times), coils, z, y, x)
+            signal with dimensions
+            with shape (time ... other, coils, z, y, x)
         """
+        # Broadcast parameters
+        delta_ndim = m0.ndim - (self.offsets.ndim - 1)  # -1 for offset
+        offsets = self.offsets[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.offsets
+
         t1 = torch.where(t1 == 0, 1e-10, t1)
         t1_star = 1 / (1 / t1 - torch.log(torch.cos(alpha)) / self.tr)
         m0_star = m0 * t1_star / t1
