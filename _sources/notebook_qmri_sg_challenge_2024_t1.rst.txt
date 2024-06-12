@@ -1,0 +1,4 @@
+QMRI Challenge ISMRM 2024 - T1 mapping
+========
+.. raw:: html
+   :file: ./_notebooks/qmri_sg_challenge_2024_t1.html
