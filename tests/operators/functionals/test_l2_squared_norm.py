@@ -14,7 +14,7 @@
 
 import pytest
 import torch
-from mrpro.operators.functionals.l2_squared_norm import L2NormSquared
+from mrpro.operators.functionals.l2_squared import L2NormSquared
 
 
 @pytest.mark.parametrize(
