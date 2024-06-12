@@ -1,6 +1,6 @@
 """Tests for L2-Squared-functional."""
 
-# Copyright 20234 Physikalisch-Technische Bundesanstalt
+# Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -14,15 +14,15 @@
 
 import pytest
 import torch
-from mrpro.operators.functionals.l2_squared import L2NormSquared
+from mrpro.operators.functionals.l2_squared_norm import L2NormSquared
 
 
 @pytest.mark.parametrize(
     (
         'x',
-        'expected_result_x',
-        'expected_result_p',
-        'expected_result_pcc',
+        'forward_x',
+        'prox',
+        'prox_complex_conjugate',
         'expected_result_p_forward',
         'expected_result_pcc_forward',
     ),
@@ -54,21 +54,21 @@ from mrpro.operators.functionals.l2_squared import L2NormSquared
     ],
 )
 def test_l2_squared_functional(
-    x, expected_result_x, expected_result_p, expected_result_pcc, expected_result_p_forward, expected_result_pcc_forward
+    x, forward_x, prox, prox_complex_conjugate, expected_result_p_forward, expected_result_pcc_forward
 ):
-    """Test if l2_squared matches expected values."""
-    l2_squared = L2NormSquared(lam=1)
+    """Test if l2_squared_norm matches expected values."""
+    l2_squared_norm = L2NormSquared(weight=1)
     # prox + forward
-    (p,) = l2_squared.prox(x, sigma=1)
-    (p_forward,) = l2_squared.forward(p)
+    (p,) = l2_squared_norm.prox(x, sigma=1)
+    (p_forward,) = l2_squared_norm.forward(p)
     # forward
-    (x_forward,) = l2_squared.forward(x)
+    (x_forward,) = l2_squared_norm.forward(x)
     # prox convex conjugate
-    (pcc,) = l2_squared.prox_convex_conj(x, sigma=1)
-    (pcc_forward,) = l2_squared.forward(pcc)
+    (pcc,) = l2_squared_norm.prox_convex_conj(x, sigma=1)
+    (pcc_forward,) = l2_squared_norm.forward(pcc)
 
-    torch.testing.assert_close(x_forward, expected_result_x, rtol=1e-3, atol=1e-3)
-    torch.testing.assert_close(p, expected_result_p, rtol=1e-3, atol=1e-3)
-    torch.testing.assert_close(pcc, expected_result_pcc, rtol=1e-3, atol=1e-3)
+    torch.testing.assert_close(l2_squared_norm.forward(x)[0], forward_x, rtol=1e-3, atol=1e-3)
+    torch.testing.assert_close(l2_squared_norm.prox(x, sigma=1)[0], prox, rtol=1e-3, atol=1e-3)
+    torch.testing.assert_close(l2_squared_norm.prox_convex_conj(x, sigma=1)[0], prox_complex_conjugate, rtol=1e-3, atol=1e-3)
     torch.testing.assert_close(p_forward, expected_result_p_forward, rtol=1e-3, atol=1e-3)
     torch.testing.assert_close(pcc_forward, expected_result_pcc_forward, rtol=1e-3, atol=1e-3)

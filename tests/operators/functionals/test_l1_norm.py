@@ -1,6 +1,6 @@
 """Tests for L1-functional."""
 
-# Copyright 20234 Physikalisch-Technische Bundesanstalt
+# Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ from mrpro.operators.functionals.l1 import L1Norm
 @pytest.mark.parametrize(
     (
         'x',
-        'expected_result_x',
-        'expected_result_p',
-        'expected_result_pcc',
+        'forward_x',#'forward_x'
+        'prox', #'prox'
+        'prox_complex_conjugate', #'prox_complex_conjugate'
         'expected_result_p_forward',
         'expected_result_pcc_forward',
     ),
@@ -54,10 +54,10 @@ from mrpro.operators.functionals.l1 import L1Norm
     ],
 )
 def test_l1_functional(
-    x, expected_result_x, expected_result_p, expected_result_pcc, expected_result_p_forward, expected_result_pcc_forward
+    x, forward_x, prox, prox_complex_conjugate, expected_result_p_forward, expected_result_pcc_forward
 ):
     """Test if L1 norm matches expected values."""
-    l1_norm = L1Norm(lam=1)
+    l1_norm = L1Norm(weight=1)
     # prox + forward
     (p,) = l1_norm.prox(x, sigma=1)
     (p_forward,) = l1_norm.forward(p)
@@ -67,8 +67,8 @@ def test_l1_functional(
     (pcc,) = l1_norm.prox_convex_conj(x, sigma=1)
     (pcc_forward,) = l1_norm.forward(pcc)
 
-    torch.testing.assert_close(x_forward, expected_result_x, rtol=1e-3, atol=1e-3)
-    torch.testing.assert_close(p, expected_result_p, rtol=1e-3, atol=1e-3)
-    torch.testing.assert_close(pcc, expected_result_pcc, rtol=1e-3, atol=1e-3)
+    torch.testing.assert_close(l1_norm.forward(x)[0], forward_x, rtol=1e-3, atol=1e-3)
+    torch.testing.assert_close(l1_norm.prox(x, sigma=1)[0], prox, rtol=1e-3, atol=1e-3)
+    torch.testing.assert_close(l1_norm.prox_convex_conj(x, sigma=1)[0], prox_complex_conjugate, rtol=1e-3, atol=1e-3)
     torch.testing.assert_close(p_forward, expected_result_p_forward, rtol=1e-3, atol=1e-3)
     torch.testing.assert_close(pcc_forward, expected_result_pcc_forward, rtol=1e-3, atol=1e-3)
