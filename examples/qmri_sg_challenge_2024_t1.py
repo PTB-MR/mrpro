@@ -40,7 +40,7 @@ with zipfile.ZipFile(data_folder / Path('T1 IR.zip'), 'r') as zip_ref:
     zip_ref.extractall(data_folder)
 
 # %% [markdown]
-# ### Create image data (IData) object with different echo times
+# ### Create image data (IData) object with different inversion times
 # %%
 ti_dicom_files = data_folder.glob('**/*.dcm')
 idata_multi_ti = IData.from_dicom_files(ti_dicom_files)
