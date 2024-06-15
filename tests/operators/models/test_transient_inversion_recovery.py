@@ -55,11 +55,30 @@ def test_signal_boundaries_single_inversion(t, result):
     (signal,) = model.forward(m0, t1, alpha)
 
     if result == '-m0':
-        torch.testing.assert_close(signal, -m0)
+        torch.testing.assert_close(signal[0, ...], -m0)
     elif result == 'm0_star':
-        t1_star = torch.div(1, torch.div(1, t1) - torch.div(torch.log(torch.cos(torch.deg2rad(alpha))), tr))
+        t1_star = torch.div(1, torch.div(1, t1) - torch.div(torch.log(torch.cos(alpha)), tr))
         m0_star = torch.div(m0 * t1_star, t1)
-        torch.testing.assert_close(signal, m0_star)
+        torch.testing.assert_close(signal[0, ...], m0_star)
+
+
+@pytest.mark.parametrize(
+    ('parameter_name'),
+    ['tr', 'inversion_time_points', 'delay_inversion_adc', 'first_adc_time_point'],
+)
+def test_invalid_shapes_of_input_parameter(parameter_name):
+    """Ensure error message for invalid shapes."""
+    random_generator = RandomGenerator(seed=0)
+    parameter_dict = {
+        'signal_time_points': random_generator.float32_tensor((5, 4)),
+        'tr': 5,
+        'inversion_time_points': 0,
+        'delay_inversion_adc': 0.02,
+        'first_adc_time_point': 0,
+    }
+    parameter_dict[parameter_name] = random_generator.float32_tensor(6)
+    with pytest.raises(ValueError, match=f'Broadcasted shape of {parameter_name} does not match'):
+        TransientInversionRecovery(**parameter_dict)
 
 
 def test_invalid_signal_during_tau():
