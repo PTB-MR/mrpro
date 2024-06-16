@@ -19,11 +19,12 @@ automatically created from *pyproject.toml* using GitHub actions.
     Files to create this documentation.
 
 **binder**
-    *requirements.txt* to install all dependencies when starting a binder session.
+    *environment.yml* to install MRpro when starting a binder session.
 
 **examples**
-    Python scripts showcasing how MRpro can be used. Any data needed has to be automatically downloaded from
-    an online repository (e.g. zenodo). The scripts are automatically translated to jupyter notebooks using GitHub
+    Python scripts showcasing how MRpro can be used. Any data needed has to be available from
+    an online repository (e.g. zenodo) such that it can be automatically downloaded. The scripts 
+    are automatically translated to jupyter notebooks using GitHub
     actions. Individual cells should be indicated with ``# %%``. For markdown cells use ``# %% [markdown]``.
     The translation from python script to jupyter notebook is done using
     `jupytext <https://jupytext.readthedocs.io/en/latest/>`_ . See their documentation for more details.
