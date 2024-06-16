@@ -74,6 +74,7 @@ class TransientInversionRecovery(SignalModel[torch.Tensor, torch.Tensor, torch.T
             repetition time
         inversion_time_points
             time stamp of each inversion
+            with shape (n_inversions, ...)
         delay_inversion_adc
             time between inversion pulse and start of data acquisition
         first_adc_time_point
@@ -81,24 +82,25 @@ class TransientInversionRecovery(SignalModel[torch.Tensor, torch.Tensor, torch.T
         """
         super().__init__()
         tr = torch.as_tensor(tr)
-        inversion_time_points = torch.as_tensor(inversion_time_points)
+        inversion_time_points = torch.atleast_1d(torch.as_tensor(inversion_time_points))
         delay_inversion_adc = torch.as_tensor(delay_inversion_adc)
         first_adc_time_point = torch.as_tensor(first_adc_time_point) if first_adc_time_point is not None else None
 
-        # signal_time_points, tr, inversion_time_points and delay_inversion_adc have to be broadcastable
+        # signal_time_points, inversion_time_points, tr and delay_inversion_adc have to be broadcastable
         # first_adc_time_point too, if not None
-        input_parameters = [tr, inversion_time_points, delay_inversion_adc]
+        # multiple inversion times are possible for one signal
+        input_parameter_shape = [tr.shape, inversion_time_points[0, ...].shape, delay_inversion_adc.shape]
         input_parameter_names = ['tr', 'inversion_time_points', 'delay_inversion_adc']
         if first_adc_time_point is not None:
-            input_parameters.append(first_adc_time_point)
+            input_parameter_shape.append(first_adc_time_point.shape)
             input_parameter_names.append('first_adc_time_point')
-        for par, par_name in zip(input_parameters, input_parameter_names, strict=False):
+        for par_shape, par_name in zip(input_parameter_shape, input_parameter_names, strict=False):
             try:
-                torch.broadcast_shapes(par.shape, signal_time_points[0, ...].shape)
+                torch.broadcast_shapes(par_shape, signal_time_points[0, ...].shape)
             except RuntimeError:
                 # Not broadcastable
                 raise ValueError(
-                    f'Broadcasted shape of {par_name} does not match: {par.shape} vs {signal_time_points[0,...].shape}.'
+                    f'Broadcasted shape of {par_name} does not match: {par_shape} vs {signal_time_points[0,...].shape}.'
                 ) from None
 
         self.signal_time_points = torch.nn.Parameter(signal_time_points, requires_grad=signal_time_points.requires_grad)
