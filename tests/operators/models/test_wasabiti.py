@@ -15,6 +15,8 @@
 import pytest
 import torch
 from mrpro.operators.models import WASABITI
+from tests.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
+from tests.conftest import create_parameter_tensor_tuples
 
 
 def create_data(offset_max=500, n_offsets=101, b0_shift=0, rb1=1.0, t1=1.0):
@@ -75,3 +77,13 @@ def test_WASABITI_offsets_trec_mismatch():
     trec = torch.ones((1,))
     with pytest.raises(ValueError, match='Shape of trec'):
         WASABITI(offsets=offsets, trec=trec)
+
+
+@SHAPE_VARIATIONS_SIGNAL_MODELS
+def test_WASABITI_shape(parameter_shape, contrast_dim_shape, signal_shape):
+    """Test correct signal shapes."""
+    ti, trec = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=2)
+    model_op = WASABITI(ti, trec)
+    b0_shift, rb1, t1 = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=3)
+    (signal,) = model_op.forward(b0_shift, rb1, t1)
+    assert signal.shape == signal_shape
