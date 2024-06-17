@@ -33,9 +33,9 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
         Parameters
         ----------
-            weight (float, optional) 
+            weight
                 weighting of the l1 norm
-            target (optional) 
+            target
                 element to which l1 distance is taken - often data tensor
         """
         super().__init__()

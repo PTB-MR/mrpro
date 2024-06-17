@@ -2,7 +2,7 @@
 
 import torch
 
-from mrpro.operators._Functional import ProximableFunctional
+from mrpro.operators.Functional import ProximableFunctional
 
 
 class L2NormSquared(ProximableFunctional):
