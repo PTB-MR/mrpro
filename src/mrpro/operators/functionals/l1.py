@@ -2,7 +2,7 @@
 
 import torch
 
-from mrpro.operators._Functional import ProximableFunctional
+from mrpro.operators.Functional import ProximableFunctional
 
 
 class L1Norm(ProximableFunctional):
@@ -111,10 +111,10 @@ class L1NormComponentwise(ProximableFunctional):
         diff_real = x.real - self.target.real
         diff_imag = x.imag - self.target.imag
         threshold = torch.tensor([self.weight * sigma])
-
         prox_real = torch.sign(diff_real) * torch.nn.ReLU()(diff_real.abs() - threshold)
+        #prox_real = torch.nn.ReLU()(diff_real - threshold) - torch.nn.ReLU()(- diff_real - threshold)
         prox_imag = torch.sign(diff_imag) * torch.nn.ReLU()(diff_imag.abs() - threshold)
-
+        #prox_imag = torch.nn.ReLU()(diff_imag - threshold) - torch.nn.ReLU()(- diff_imag - threshold)
         return (torch.complex(prox_real, prox_imag),)
 
     def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor) -> tuple[torch.Tensor]:
@@ -144,11 +144,8 @@ class L1NormComponentwise(ProximableFunctional):
         # return (out,)
         diff_real = x.real - sigma * self.target.real
         diff_imag = x.imag - sigma * self.target.imag
-
         clamp_real = torch.clamp(diff_real, -self.weight, self.weight)
         clamp_imag = torch.clamp(diff_imag, -self.weight, self.weight)
-        
         #num_real = (self.weight * diff_real)
         #num_imag = (self.weight * diff_imag)
-
         return (torch.complex(clamp_real, clamp_imag),)
