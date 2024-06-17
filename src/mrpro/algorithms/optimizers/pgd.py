@@ -1,4 +1,4 @@
-"""FISTA algorithm."""
+"""Proximal Gradient Descent algorithm."""
 # Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,7 +34,7 @@ def grad_and_value(function, x, create_graph=False):
     return inner(x)
 
 
-def fista(
+def pgd(
     f: Functional,
     g: Functional,
     initial_value: torch.Tensor,
@@ -43,7 +43,7 @@ def fista(
     max_iterations: int = 128,
     backtrack_factor: float = 1.0,
 ) -> torch.Tensor:
-    """FISTA algorithm for solving problem min_x f(x) + g(x).
+    """Proximal gradient descent algorithm for solving problem min_x f(x) + g(x).
 
     It relies on the implementation of the proximal map of g.
 
@@ -79,7 +79,7 @@ def fista(
         while stepsize > 1e-30:
             # calculate the proximal gradient step
             gradient, f_y = grad_and_value(f, y)
-            x = g.prox(y - stepsize * gradient, reg_parameter * stepsize)
+            (x,) = g.prox(y - stepsize * gradient, reg_parameter * stepsize)
 
             if not backtracking:
                 # no need to check stepsize, continue to next iteration
@@ -91,7 +91,8 @@ def fista(
                 + torch.vdot(gradient.flatten(), difference.flatten()).real
             )
 
-            if f(x) <= Q:
+            (f_x,) = f(x)
+            if f_x <= Q:
                 # stepsize is ok, continue to next iteration
                 break
             stepsize *= backtrack_factor
@@ -102,7 +103,7 @@ def fista(
             else:
                 raise RuntimeError('Stepsize to small.')
 
-        # update fista timestep t
+        # update timestep t
         t = (1 + math.sqrt(1 + 4 * t_old**2)) / 2
 
         # update the solution
@@ -113,91 +114,3 @@ def fista(
         t_old = t
 
     return y
-
-
-##  ideas for examples
-# example deblurring ?
-
-# from mrpro.operators._LinearOperator import LinearOperator
-# import torch.nn as nn
-# import torch.nn.functional as F
-# class BlurOperator(LinearOperator):
-#     """Blur Operator."""
-#     def __init__(
-#         self,
-#         kernel: torch.Tensor
-#     ) -> None:
-#         super().__init__()
-#         self.kernel = kernel
-
-#     def forward(self,x: torch.Tensor, padding=4) -> torch.Tensor:
-#         return F.conv2d(x, self.kernel, padding)
-
-#     def adjoint(self, y, padding=4):
-#         return F.conv_transpose2d(y,self.kernel,padding=4)
-
-
-# def gaussian_kernel(size: int, sigma: float) -> torch.Tensor:
-#     """Generates a Gaussian kernel."""
-#     x = torch.arange(-size // 2 + 1, size // 2 + 1, dtype=torch.float32)
-#     y = torch.arange(-size // 2 + 1, size // 2 + 1, dtype=torch.float32)
-#     x, y = torch.meshgrid(x, y)
-#     kernel = torch.exp(-(x**2 + y**2) / (2 * sigma**2))
-#     kernel /= kernel.sum()
-#     return kernel.view(1, 1, size, size)
-
-# kernel = gaussian_kernel(9, 2)
-# B = BlurOperator(kernel=kernel)
-
-# x = torch.randn(1,1,160,160)
-# blurred_x = B(x)
-
-# l2_dc = L2DataDiscrepancy(blurred_x, factor=0.5)
-# f = l2_dc @ B
-# g = L1Norm(...)
-
-# s_initial = torch.zeros(1,1,160,160)
-# stepsize = 0.5 * OperatorNorm(B.adjoint @ B)
-
-# s_solution = fista(f=f,
-#                  g=g,
-#                 initial_value=s_initial,
-#                 stepsize=stepsize,
-#                 reg_parameter=0.01)
-
-# s_solution = fista_with_backtracking(f=f,
-#                  g=g,
-#                 initial_value=s_initial,
-#                 stepsize_initial=0.5,
-#                 reg_parameter=0.01)
-
-# x_solution = W.inverse(s_solution)
-
-
-# example wavelet
-
-# W = WaveletOperator(...)
-# F = FourierOperator(...)
-# A = F @ W.inverse
-
-# y = ... # k-space data
-# l2_dc = L2DataDiscrepancy(y, factor=0.5)
-# f = l2_dc @ A
-# g = L1Norm(...)
-
-# s_initial = torch.zeros(...)
-# stepsize = 0.5 * OperatorNorm(A @ A.adjoint)
-
-# s_solution = fista(f=f,
-#                  g=g,
-#                 initial_value=s_initial,
-#                 stepsize=stepsize,
-#                 reg_parameter=0.01)
-
-# s_solution = fista_with_backtracking(f=f,
-#                  g=g,
-#                 initial_value=s_initial,
-#                 stepsize_initial=0.5,
-#                 reg_parameter=0.01)
-
-# x_solution = W.inverse(s_solution)
