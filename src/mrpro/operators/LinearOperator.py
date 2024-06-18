@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from collections.abc import Sequence
 from typing import overload
 
 import torch
@@ -48,7 +49,10 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         return AdjointLinearOperator(self)
 
     def operator_norm(
-        self, initial_value: torch.Tensor, dim: tuple | None = None, max_iterations: int = 64
+        self,
+        initial_value: torch.Tensor,
+        dim: Sequence[int] | None,
+        max_iterations: int = 64,
     ) -> torch.Tensor:
         """Power iteration for computing the operator norm of the linear operator.
 
@@ -58,18 +62,20 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
             initial value to start the iteration; if chosen exactly as zero-tensor,
             we randomly generate an initial value.
         dim
-            dimensions referring to the dimensions of the tensors on which the operator operates.
-            For example, for a matrix-vector multiplication example,
-            with a batched matrix tensor with shape (4,30,80,160), tensors of shape (4,30,160) to be multiplied,
-            and dim = None, it is understood that the the matrix representation of the considered operator
-            corresponds to a block diagonal operator (with 4*30 matrices) and thus the algorithm returns
-            one single value. In contrast, if for example, dim=(-1), the algorithm computes a batched operator
+            the dimensions of the tensors on which the operator operates.
+            For example, for a matrix-vector multiplication example, a batched matrix tensor with shape (4,30,80,160),
+            input tensors of shape (4,30,160) to be multiplied, and dim = None, it is understood that the the
+            matrix representation of the operator corresponds to a block diagonal operator (with 4*30 matrices)
+            and thus the algorithm returns a tensor of shape (1,1,1) containing one single value.
+            In contrast, if for example, dim=(-1,), the algorithm computes a batched operator
             norm and returns a tensor of shape (4,30,1) corresponding to the operator norms of the respective
             matrices in the diagonal of the block-diagonal operator (if considered in matrix representation).
-            In any case, the output of the algorithm has the same shape as the elements of the domain
-            of the considered operator (whose dimensionality is implicitly defined by choosing dim)
+            In any case, the output of the algorithm has the same number of dimensions as the elements of the
+            domain of the considered operator (whose dimensionality is implicitly defined by choosing dim), such that
+            the pointwise multiplication of the operator norm and elements of the domain (to be for example used
+            in a Landweber iteration) is well-defined.
         max_iterations, optional
-            maximal number of iterations, by default 64
+            maximal number of iterations
 
         Returns
         -------
@@ -90,6 +96,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         product = vector.real * operator_vector.real
         if vector.is_complex() and operator_vector.is_complex():
             product += vector.imag * operator_vector.imag
+        dim = tuple(dim) if dim is not None else dim
         op_norm = product.sum(dim, keepdim=True).sqrt()
 
         return op_norm

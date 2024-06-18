@@ -1,4 +1,4 @@
-"""Tests for computing the operator norm for linear operators."""
+"""Tests for computing the operator norm of linear operators."""
 
 # Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
@@ -27,12 +27,12 @@ def test_operator_norm_result():
     random_generator = RandomGenerator(seed=0)
 
     # test with a 3x3 matrix with known largest eigenvalue
-    matrix1 = torch.tensor([[2.0, 1, 0], [1.0, 2.0, 1.0], [0.0, 1.0, 2.0]])
-    operator1 = EinsumOp(matrix1, 'y x, x-> y')
-    random_vector1 = random_generator.float32_tensor(matrix1.shape[1])
-    operator1_norm_est = operator1.operator_norm(random_vector1, dim=None, max_iterations=32)
-    operator1_norm_true = 2 + sqrt(2)  # approximately 3.41421...
-    torch.testing.assert_close(operator1_norm_est.item(), operator1_norm_true, atol=1e-4, rtol=1e-4)
+    matrix = torch.tensor([[2.0, 1, 0], [1.0, 2.0, 1.0], [0.0, 1.0, 2.0]])
+    operator = EinsumOp(matrix, 'y x, x-> y')
+    random_vector = random_generator.float32_tensor(matrix.shape[1])
+    operator_norm_est = operator.operator_norm(random_vector, dim=None, max_iterations=32)
+    operator_norm_true = 2 + sqrt(2)  # approximately 3.41421...
+    torch.testing.assert_close(operator_norm_est.item(), operator_norm_true, atol=1e-4, rtol=1e-4)
 
 
 def test_fourier_operator_norm():
