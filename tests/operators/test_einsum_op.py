@@ -14,7 +14,7 @@
 
 import pytest
 import torch
-from mrpro.operators._EinsumOp import EinsumOp
+from mrpro.operators.EinsumOp import EinsumOp
 
 from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test

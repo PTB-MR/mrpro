@@ -19,7 +19,7 @@ from einops import repeat
 from mrpro.data import KData
 from mrpro.data import KTrajectory
 from mrpro.data import SpatialDimension
-from mrpro.data.traj_calculators._KTrajectoryCalculator import DummyTrajectory
+from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
 from mrpro.utils import modify_acq_info
 from mrpro.utils import split_idx
@@ -145,7 +145,7 @@ def test_KData_kspace(ismrmrd_cart):
     assert relative_image_difference(reconstructed_img[0, 0, 0, ...], ismrmrd_cart.img_ref) <= 0.05
 
 
-@pytest.mark.parametrize(('field', 'value'), [('b0', 11.3), ('tr', [24.3])])
+@pytest.mark.parametrize(('field', 'value'), [('b0', 11.3), ('tr', torch.tensor([24.3]))])
 def test_KData_modify_header(ismrmrd_cart, field, value):
     """Overwrite some parameters in the header."""
     parameter_dict = {field: value}

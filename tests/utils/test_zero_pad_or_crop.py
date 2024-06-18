@@ -13,7 +13,7 @@
 #   limitations under the License.
 
 import torch
-from mrpro.utils._zero_pad_or_crop import zero_pad_or_crop
+from mrpro.utils.zero_pad_or_crop import zero_pad_or_crop
 
 from tests import RandomGenerator
 

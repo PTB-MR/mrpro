@@ -35,7 +35,7 @@ dependencies = [
     "pydicom",
     "pypulseq@git+https://github.com/imr-framework/pypulseq",
     "torchkbnufft>=1.4.0",
-    "scipy>=1.12"
+    "scipy>=1.12",
 ]
 
 [project.optional-dependencies]
@@ -80,7 +80,14 @@ warn_unused_ignores = true
 
 
 [[tool.mypy.overrides]]
-module = ["ismrmrd.*", "h5py", "scipy.*", "torchkbnufft", "pypulseq", "zenodo_get"]
+module = [
+    "ismrmrd.*",
+    "h5py",
+    "scipy.*",
+    "torchkbnufft",
+    "pypulseq",
+    "zenodo_get",
+]
 ignore_missing_imports = true
 
 [tool.ruff]
@@ -122,7 +129,6 @@ extend-select = [
     "ANN401", #  any type annotation
     "BLE001", #  blind exception
     "D107",   #  missing docstring in __init__
-    "D415",   #  first line should end with punctuation
     "D417",   #  undocumented-parameter
 ]
 ignore = [
@@ -153,7 +159,9 @@ Reson = "Reson" # required for Proc. Intl. Soc. Mag. Reson. Med.
 iy = "iy"
 
 [tool.typos.files]
-extend-exclude = ["examples/*.ipynb"] # don't check notebooks because py files have already been checked
+extend-exclude = [
+    "examples/*.ipynb",
+] # don't check notebooks because py files have already been checked
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
