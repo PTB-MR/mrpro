@@ -107,7 +107,7 @@ def pgd(
         t = (1 + math.sqrt(1 + 4 * t_old**2)) / 2
 
         # update the solution
-        y = x + (t - 1.0) / t * (x - x_old)
+        y = x + (t_old - 1.0) / t * (x - x_old)
 
         # update x and  t
         x_old = x
