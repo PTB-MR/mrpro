@@ -46,12 +46,16 @@ from mrpro.operators.functionals.l2_squared import L2NormSquared
     ],
 )
 def test_l2_squared_functional(
-    x, forward_x, prox, prox_complex_conjugate,
+    x,
+    forward_x,
+    prox,
+    prox_complex_conjugate,
 ):
     """Test if l2_squared_norm matches expected values."""
     l2_squared_norm = L2NormSquared(weight=1)
 
     torch.testing.assert_close(l2_squared_norm.forward(x)[0], forward_x, rtol=1e-3, atol=1e-3)
     torch.testing.assert_close(l2_squared_norm.prox(x, sigma=1)[0], prox, rtol=1e-3, atol=1e-3)
-    torch.testing.assert_close(l2_squared_norm.prox_convex_conj(x, sigma=1)[0], prox_complex_conjugate, rtol=1e-3, atol=1e-3)
-
+    torch.testing.assert_close(
+        l2_squared_norm.prox_convex_conj(x, sigma=1)[0], prox_complex_conjugate, rtol=1e-3, atol=1e-3
+    )

@@ -28,20 +28,22 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
     def __init__(
         self, weight: torch.Tensor | float = 1.0, target: torch.Tensor | None = None, dim: Sequence[int] | None = None
-    ):
+    ) -> None:
         """Initialize a Functional.
 
         Parameters
         ----------
             weight
-                weighting of the l1 norm
+                weighting of the norm
             target
-                element to which l1 distance is taken - often data tensor
+                element to which distance is taken - often data tensor
+            dim
+                dimension over which norm is calculated
         """
         super().__init__()
         self.register_buffer('weight', torch.as_tensor(weight))
         if target is None:
-            target = torch.tensor(0.0)
+            target = torch.tensor([0.0], dtype=torch.float32)
         self.register_buffer('target', target)
         self.dim = dim
 
