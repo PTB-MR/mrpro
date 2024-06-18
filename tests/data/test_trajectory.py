@@ -50,7 +50,7 @@ def create_traj(k_shape, nkx, nky, nkz, sx, sy, sz):
         elif spacing == 'z':
             k = torch.zeros(nk)
         k_list.append(k)
-    trajectory = KTrajectory(*k_list, repeat_detection_tolerance=None)
+    trajectory = KTrajectory(k_list[0], k_list[1], k_list[2], repeat_detection_tolerance=None)
     return trajectory
 
 
@@ -162,6 +162,16 @@ def test_trajectory_cuda(cartesian_grid):
     assert trajectory_cuda.kz.is_cuda
     assert trajectory_cuda.ky.is_cuda
     assert trajectory_cuda.kx.is_cuda
+
+    assert trajectory.kz.is_cpu
+    assert trajectory.ky.is_cpu
+    assert trajectory.kx.is_cpu
+
+    assert trajectory_cuda.is_cuda
+    assert trajectory.is_cpu
+
+    assert not trajectory_cuda.is_cpu
+    assert not trajectory.is_cuda
 
 
 @pytest.mark.cuda()

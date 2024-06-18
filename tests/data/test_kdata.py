@@ -19,7 +19,7 @@ from einops import repeat
 from mrpro.data import KData
 from mrpro.data import KTrajectory
 from mrpro.data import SpatialDimension
-from mrpro.data.traj_calculators._KTrajectoryCalculator import DummyTrajectory
+from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
 from mrpro.utils import modify_acq_info
 from mrpro.utils import split_idx
@@ -145,7 +145,7 @@ def test_KData_kspace(ismrmrd_cart):
     assert relative_image_difference(reconstructed_img[0, 0, 0, ...], ismrmrd_cart.img_ref) <= 0.05
 
 
-@pytest.mark.parametrize(('field', 'value'), [('b0', 11.3), ('tr', [24.3])])
+@pytest.mark.parametrize(('field', 'value'), [('b0', 11.3), ('tr', torch.tensor([24.3]))])
 def test_KData_modify_header(ismrmrd_cart, field, value):
     """Overwrite some parameters in the header."""
     parameter_dict = {field: value}
@@ -153,14 +153,67 @@ def test_KData_modify_header(ismrmrd_cart, field, value):
     assert getattr(kdata.header, field) == value
 
 
-def test_KData_to_complex128(ismrmrd_cart):
-    """Change KData dtype complex128."""
+def test_KData_to_float64tensor(ismrmrd_cart):
+    """Change KData dtype to double using other-tensor overload."""
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kdata_float64 = kdata.to(torch.ones(1, dtype=torch.float64))
+    assert kdata is not kdata_float64
+    assert kdata_float64.data.dtype == torch.complex128
+    torch.testing.assert_close(kdata_float64.data.to(dtype=torch.complex64), kdata.data)
+
+
+@pytest.mark.cuda()
+def test_KData_to_cudatensor(ismrmrd_cart):
+    """Move KData to cuda  using other-tensor overload."""
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kdata_cuda = kdata.to(torch.ones(1, device=torch.device('cuda')))
+    assert kdata is not kdata_cuda
+    assert kdata_cuda.data.dtype == torch.complex64
+    assert kdata_cuda.data.is_cuda
+
+
+def test_Kdata_to_same_copy(ismrmrd_cart):
+    """Call .to with no change in dtype or device."""
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kdata2 = kdata.to(copy=True)
+    assert kdata is not kdata2
+    assert torch.equal(kdata.data, kdata2.data)
+    assert kdata2.data.dtype == kdata.data.dtype
+    assert kdata2.data.device == kdata.data.device
+
+
+def test_Kdata_to_same_nocopy(ismrmrd_cart):
+    """Call .to with no change in dtype or device."""
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kdata2 = kdata.to(copy=False)
+    assert kdata is not kdata2
+    assert kdata.data is kdata2.data
+
+
+def test_KData_to_complex128_data(ismrmrd_cart):
+    """Change KData dtype complex128: test data."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     kdata_complex128 = kdata.to(dtype=torch.complex128)
+    assert kdata is not kdata_complex128
     assert kdata_complex128.data.dtype == torch.complex128
+    torch.testing.assert_close(kdata_complex128.data.to(dtype=torch.complex64), kdata.data)
+
+
+def test_KData_to_complex128_traj(ismrmrd_cart):
+    """Change KData dtype complex128: test trajectory."""
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kdata_complex128 = kdata.to(dtype=torch.complex128)
     assert kdata_complex128.traj.kx.dtype == torch.float64
     assert kdata_complex128.traj.ky.dtype == torch.float64
     assert kdata_complex128.traj.kz.dtype == torch.float64
+
+
+def test_KData_to_complex128_header(ismrmrd_cart):
+    """Change KData dtype complex128: test header"""
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kdata_complex128 = kdata.to(dtype=torch.complex128)
+    assert kdata_complex128.header.acq_info.user_float.dtype == torch.float64
+    assert kdata_complex128.header.acq_info.user_int.dtype == torch.int32
 
 
 @pytest.mark.cuda()
@@ -184,6 +237,11 @@ def test_KData_cuda(ismrmrd_cart):
     assert kdata_cuda.traj.kz.is_cuda
     assert kdata_cuda.traj.ky.is_cuda
     assert kdata_cuda.traj.kx.is_cuda
+    assert kdata_cuda.header.acq_info.user_int.is_cuda
+    assert kdata_cuda.device == torch.device(torch.cuda.current_device())
+    assert kdata_cuda.header.acq_info.device == torch.device(torch.cuda.current_device())
+    assert kdata_cuda.is_cuda
+    assert not kdata_cuda.is_cpu
 
 
 @pytest.mark.cuda()
@@ -195,6 +253,40 @@ def test_KData_cpu(ismrmrd_cart):
     assert kdata_cpu.traj.kz.is_cpu
     assert kdata_cpu.traj.ky.is_cpu
     assert kdata_cpu.traj.kx.is_cpu
+    assert kdata_cpu.header.acq_info.user_int.is_cpu
+    assert kdata_cpu.device == torch.device('cpu')
+    assert kdata_cpu.header.acq_info.device == torch.device('cpu')
+
+
+def test_Kdata_device_cpu(ismrmrd_cart):
+    """Default device is CPU."""
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    assert kdata.device == torch.device('cpu')
+    assert not kdata.is_cuda
+    assert kdata.is_cpu
+
+
+@pytest.mark.cuda()
+def test_KData_inconsistentdevice(ismrmrd_cart):
+    """Inconsistent device raises exception."""
+    kdata_cpu = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kdata_cuda = kdata_cpu.to(device='cuda')
+    kdata_mix = KData(data=kdata_cuda.data, header=kdata_cpu.header, traj=kdata_cpu.traj)
+    assert not kdata_mix.is_cuda
+    assert not kdata_mix.is_cpu
+    with pytest.raises(ValueError):
+        _ = kdata_mix.device
+
+
+def test_KData_clone(ismrmrd_cart):
+    """Test .clone method."""
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kdata2 = kdata.clone()
+    assert kdata is not kdata2
+    assert kdata.data is not kdata2.data
+    assert torch.equal(kdata.data, kdata2.data)
+    assert kdata.traj.kx is not kdata2.traj.kx
+    assert torch.equal(kdata.traj.kx, kdata2.traj.kx)
 
 
 def test_KData_rearrange_k2_k1_into_k1(consistently_shaped_kdata):
