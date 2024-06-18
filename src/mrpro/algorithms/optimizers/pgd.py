@@ -15,7 +15,7 @@ import math
 
 import torch
 
-from mrpro.operators._Functional import Functional
+from mrpro.operators.Functional import Functional
 
 
 def grad_and_value(function, x, create_graph=False):
