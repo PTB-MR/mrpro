@@ -20,6 +20,7 @@ from mrpro.operators import FastFourierOp
 
 from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test
+from tests.helper import forward_mode_autodiff_of_linear_operator_test
 from tests.helper import gradient_of_linear_operator_test
 
 
@@ -83,6 +84,21 @@ def test_fast_fourier_op_grad():
     # Create operator and apply
     ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix)
     gradient_of_linear_operator_test(ff_op, u, v)
+
+
+def test_fast_fourier_op_forward_mode_autodiff():
+    """Test forward-mode autodiff of the Fast Fourier Op."""
+
+    # Create test data
+    recon_matrix = (13, 221, 64)
+    encoding_matrix = (101, 201, 50)
+    generator = RandomGenerator(seed=0)
+    u = generator.complex64_tensor(recon_matrix)
+    v = generator.complex64_tensor(encoding_matrix)
+
+    # Create operator and apply
+    ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix)
+    forward_mode_autodiff_of_linear_operator_test(ff_op, u, v)
 
 
 def test_fast_fourier_op_spatial_dim():
