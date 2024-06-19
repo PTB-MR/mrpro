@@ -44,6 +44,11 @@ class WaveletOp(LinearOperator):
     ):
         """Wavelet operator.
 
+        For complex images the wavelet coefficients are calculated for real and imaginary part separately.
+
+        For a 2D image, the coefficients are labelled [aa, (ad_n, da_n, dd_n), ..., (ad_1, da_1, dd_1)] where a refers
+        to the approximation coefficients and d to the detail coefficients. The index indicates the level.
+
         Parameters
         ----------
         domain_shape
@@ -63,7 +68,7 @@ class WaveletOp(LinearOperator):
         ValueError
             If wavelet dimensions and domain shape do not match.
         NotImplementedError
-            If the domain shape is odd. Adjoint will lead to the wrong domain shape.
+            If any dimension of the domain shape is odd. Adjoint will lead to the wrong domain shape.
         """
         super().__init__()
         self.domain_shape = domain_shape
@@ -89,7 +94,10 @@ class WaveletOp(LinearOperator):
                 )
 
             if any(d % 2 for d in domain_shape):
-                raise NotImplementedError('ptwt only supports wavelet transforms for even number of samples.')
+                raise NotImplementedError(
+                    'ptwt only supports wavelet transforms for tensors with even number of '
+                    'entries for all considered dimensions.'
+                )
 
             # size of wavelets
             wavelet_length = torch.as_tensor((Wavelet(wavelet_name).dec_len,) * len(domain_shape))
@@ -97,20 +105,22 @@ class WaveletOp(LinearOperator):
             # calculate shape of wavelet coefficients at each level
             current_shape = torch.as_tensor(domain_shape)
 
-            if _check_level(domain_shape, wavelet_length, level) == 0:
+            # if level is None, select the highest possible level.
+            # raise error/warnings if level is not possible or lead to boundary effects
+            verified_level = _check_level(domain_shape, wavelet_length, level)
+
+            if verified_level == 0:
                 self.coefficients_shape = [current_shape]
                 self.coefficients_padding = [(0, 0)] * len(current_shape)
             else:
                 self.coefficients_shape = []
                 self.coefficients_padding = []
-                for _ in range(_check_level(domain_shape, wavelet_length, level)):
+                for _ in range(verified_level):
                     # Add padding
                     for ind in range(len(current_shape)):
-                        padl, padr = _get_pad(current_shape[ind], wavelet_length[ind])
+                        padr, padl = _get_pad(current_shape[ind], wavelet_length[ind])
                         current_shape[ind] += padl + padr
-                    current_shape = torch.floor((current_shape - (wavelet_length - 1) - 1) / 2 + 1).to(
-                        dtype=torch.int64
-                    )
+                    current_shape = torch.floor((current_shape - wavelet_length) / 2 + 1).to(dtype=torch.int64)
                     self.coefficients_shape.extend([current_shape.clone()] * self.n_wavelet_directions)
                     self.coefficients_padding.extend([(padl.clone(), padr.clone())] * self.n_wavelet_directions)
 
@@ -159,14 +169,16 @@ class WaveletOp(LinearOperator):
 
         # stack multi-resolution wavelets along single dimension
         coefficients_stack = self._coeff_to_stacked_tensor(coefficients_list)
-        coefficients_stack = (
-            torch.view_as_complex(coefficients_stack.moveaxis(0, -1).contiguous())
-            if x.is_complex()
-            else coefficients_stack
-        )
+        if x.is_complex():
+            coefficients_stack = torch.moveaxis(
+                coefficients_stack, -1, min(dim) + 1
+            )  # +1 because first dim is real/imag
+            coefficients_stack = torch.view_as_complex(coefficients_stack.moveaxis(0, -1).contiguous())
+        else:
+            coefficients_stack = torch.moveaxis(coefficients_stack, -1, min(dim))
 
         # move stacked coefficients to first wavelet dimension
-        return (torch.moveaxis(coefficients_stack, -1, min(dim)),)
+        return (coefficients_stack,)
 
     def adjoint(self, coefficients_stack: torch.Tensor) -> tuple[torch.Tensor]:
         """Transform wavelet coefficients to (image) data.
@@ -346,5 +358,5 @@ class WaveletOp(LinearOperator):
         )
         return [
             torch.reshape(coeff, coeff.shape[:-1] + tuple(shape))
-            for coeff, shape in zip(coefficients, self.coefficients_shape, strict=False)
+            for coeff, shape in zip(coefficients, self.coefficients_shape, strict=True)
         ]

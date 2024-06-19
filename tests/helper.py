@@ -42,7 +42,7 @@ def relative_image_difference(img1: torch.Tensor, img2: torch.Tensor) -> torch.T
 def dotproduct_adjointness_test(
     operator: Operator, u: torch.Tensor, v: torch.Tensor, relative_tolerance: float = 1e-3, absolute_tolerance=1e-5
 ):
-    """Test the adjointness of operator and operator.H
+    """Test the adjointness of operator and operator.H.
 
     Test if
          <Operator(u),v> == <u, Operator^H(v)>
@@ -90,7 +90,7 @@ def dotproduct_adjointness_test(
 def operator_isometry_test(
     operator: Operator, u: torch.Tensor, relative_tolerance: float = 1e-3, absolute_tolerance=1e-5
 ):
-    """Test the isometry of an operator
+    """Test the isometry of an operator.
 
     Test if
          ||Operator(u)|| == ||u||
@@ -120,7 +120,7 @@ def operator_isometry_test(
 def operator_unitary_test(
     operator: Operator, u: torch.Tensor, relative_tolerance: float = 1e-3, absolute_tolerance=1e-5
 ):
-    """Test if an operator is unitary
+    """Test if an operator is unitary.
 
     Test if
          Operator.adjoint(Operator(u)) == u
