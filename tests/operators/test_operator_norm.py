@@ -14,11 +14,53 @@
 from math import prod
 from math import sqrt
 
+import pytest
 import torch
 from mrpro.operators import EinsumOp
 from mrpro.operators import FastFourierOp
 
 from tests import RandomGenerator
+
+
+def test_operator_norm_illegal_max_iterations():
+    random_generator = RandomGenerator(seed=0)
+
+    # test with a 3x3 matrix with known largest eigenvalue
+    matrix = torch.tensor([[2.0, 1, 0], [1.0, 2.0, 1.0], [0.0, 1.0, 2.0]])
+    operator = EinsumOp(matrix, 'y x, x-> y')
+    random_vector = random_generator.float32_tensor(matrix.shape[1])
+
+    with pytest.raises(Exception, match='zero'):
+        operator.operator_norm(random_vector, dim=None, max_iterations=0)
+
+
+def test_operator_norm_illegal_initial_value():
+    random_generator = RandomGenerator(seed=0)
+    input_shape = (2, 4, 8, 8)
+    vector_shape = (input_shape[0], input_shape[1], input_shape[3])
+
+    # create a tensor to be identified as 2 * 4 (=8) 8x8 square matrices
+    matrix = random_generator.float32_tensor(size=input_shape)
+
+    # construct a linear operator from the first matrix; the linear operator implements
+    # the batched matrix-vector multiplication
+    operator = EinsumOp(matrix, 'other1 other2 y x, other1 other2 x-> other1 other2 y')
+
+    # dimensions which define the dimensionality of the considered vector space
+    dim1 = (-1,)
+    dim2 = None
+
+    # random vector with only one of the sub-vector being a zero-vector;
+    illegal_initial_value1 = random_generator.float32_tensor(size=vector_shape)
+    illegal_initial_value1[0] = 0.0
+
+    # zero-vector
+    illegal_initial_value2 = torch.zeros(vector_shape)
+
+    with pytest.raises(Exception, match='least'):
+        operator.operator_norm(illegal_initial_value1, dim=dim1, max_iterations=8)
+    with pytest.raises(Exception, match='zero'):
+        operator.operator_norm(illegal_initial_value2, dim=dim2, max_iterations=8)
 
 
 def test_operator_norm_result():
@@ -36,12 +78,12 @@ def test_operator_norm_result():
 
 
 def test_fourier_operator_norm():
-    """Test with Fast Fourier Operator (has norm 1 since norm="ortho" is used);
-    # also tests that the initial value is set to a random value if chosen as zero."""
+    """Test with Fast Fourier Operator (has norm 1 since norm="ortho" is used)."""
+    random_generator = RandomGenerator(seed=0)
+
     dim = (-3, -2, -1)
     fourier_op = FastFourierOp(dim=dim)
-
-    random_image = torch.zeros(4, 4, 8, 16, dtype=torch.complex64)
+    random_image = random_generator.complex64_tensor(size=(4, 4, 8, 16))
     fourier_op_norm_batched = fourier_op.operator_norm(random_image, dim=dim, max_iterations=64)
     fourier_op_norm_non_batched = fourier_op.operator_norm(random_image, dim=None, max_iterations=64)
     fourier_op_norm_true = 1.0
@@ -57,7 +99,7 @@ def test_batched_operator_norm():
 
     Using the fact that for a block-diagonal matrix, the eigenvalues are the list of
     eigenvalues of the respective matrices, we test whether the largest of the batched
-    operator norms coincides with the non-batched operator norm.
+    operator norms is equal to the non-batched operator norm.
     """
     random_generator = RandomGenerator(seed=0)
     input_shape = (2, 4, 8, 8)
@@ -83,16 +125,18 @@ def test_batched_operator_norm():
     )
 
     # create a block diagonal matrix containing the 2*4=8 matrices in the diagonal
-    matrix2 = torch.block_diag(*[matrix1[kb, kt, ...] for kb in range(input_shape[0]) for kt in range(input_shape[1])])
+    matrix2 = torch.block_diag(
+        *[matrix1[other0, other1, ...] for other0 in range(input_shape[0]) for other1 in range(input_shape[1])]
+    )
 
     # construct a linear operator from the second matrix; the linear operator implements
     # the multiplication of the block-diagonal matrix with a 2*4*8*8 = 512-dimensional vector
-    operator2 = EinsumOp(matrix2, 'y x, x-> y')
+    operator2 = EinsumOp(matrix2, '... y x, x-> ... y')
     random_vector2 = random_generator.float32_tensor(matrix2.shape[1])
     operator2_norm_non_batched = operator2.operator_norm(random_vector2, dim=None, max_iterations=32)
 
     # test whether the operator-norm calculated from the first operator and from the second
-    # one coincide
+    # are equal
     torch.testing.assert_close(
         operator2_norm_non_batched.item(), operator1_norm_non_batched.item(), atol=1e-4, rtol=1e-4
     )

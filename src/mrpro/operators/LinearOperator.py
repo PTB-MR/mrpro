@@ -81,9 +81,21 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         -------
             an estimaton of the operator norm
         """
-        # check if initial value is exactly zero; if yes, set it to a random value
-        vector = torch.randn_like(initial_value) if (initial_value == 0.0).all() else initial_value
+        norm_initial_value = torch.linalg.vector_norm(initial_value, dim=dim, keepdim=True)
+        if dim is None:
+            if norm_initial_value == 0:
+                raise Exception('The initial value for the iteration should be different from the zero-vector.')
+        else:
+            if not (norm_initial_value > 0).all():
+                raise Exception(
+                    'Found at least one zero-vector as starting point. \
+                    For each of the considered operators, the initial value for the iteration \
+                    should be different from the zero-vector.'
+                )
+        if max_iterations < 1:
+            raise Exception('The number of iterations should be larger than zero.')
 
+        vector = initial_value
         for _ in range(max_iterations):
             # apply the operator to the vector
             (vector,) = self.adjoint(*self(vector))
