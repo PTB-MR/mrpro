@@ -83,7 +83,7 @@ def test_wavelet_op_mismatch_dim_domain_shape():
 
 
 def test_wavelet_op_error_for_odd_domain_shape():
-    with pytest.raises(NotImplementedError, match='ptwt only supports wavelet transforms for even'):
+    with pytest.raises(NotImplementedError, match='ptwt only supports wavelet transforms for tensors with even'):
         WaveletOp(domain_shape=(11, 20), dim=(-2, -1))
 
 
