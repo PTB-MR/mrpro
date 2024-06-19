@@ -20,14 +20,14 @@ from collections.abc import Sequence
 
 import torch
 
-from mrpro.operators._Operator import Operator
+from mrpro.operators.Operator import Operator
 
 
 class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """Functional Base Class."""
 
     def __init__(
-        self, weight: torch.Tensor | float = 1.0, target: torch.Tensor | None = None, dim: Sequence[int] | None = None
+        self, weight: torch.Tensor | float = 1.0, target: torch.Tensor | None = None, dim: Sequence[int] | None = None, divide_by_n : bool = False
     ) -> None:
         """Initialize a Functional.
 
@@ -39,6 +39,9 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
                 element to which distance is taken - often data tensor
             dim
                 dimension over which norm is calculated
+            divide_by_n
+                True: norm calculated with mean
+                False: norm calculated with sum
         """
         super().__init__()
         self.register_buffer('weight', torch.as_tensor(weight))
@@ -46,6 +49,7 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
             target = torch.tensor([0.0], dtype=torch.float32)
         self.register_buffer('target', target)
         self.dim = dim
+        self.divide_by_n = divide_by_n
 
 
 class ProximableFunctional(Functional, ABC):

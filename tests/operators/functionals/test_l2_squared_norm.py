@@ -27,19 +27,19 @@ from mrpro.operators.functionals.l2_squared import L2NormSquared
     [
         (
             torch.tensor([1, 1], dtype=torch.complex64),
-            torch.tensor([2.0]),
+            torch.tensor((2.0), dtype=torch.float32),
             torch.tensor([1 / 3, 1 / 3], dtype=torch.complex64),
             torch.tensor([2 / 3, 2 / 3], dtype=torch.complex64),
         ),
         (
             torch.tensor([1 + 1j, 1 + 1j], dtype=torch.complex64),
-            torch.tensor([4.0]),
+            torch.tensor((4.0), dtype=torch.float32),
             torch.tensor([(1 + 1j) / 3, (1 + 1j) / 3], dtype=torch.complex64),
             torch.tensor([2 * (1 + 1j) / 3, 2 * (1 + 1j) / 3], dtype=torch.complex64),
         ),
         (
             torch.tensor([1 + 0j, 1 + 1j], dtype=torch.complex64),
-            torch.tensor([3.0], dtype=torch.float32),
+            torch.tensor((3.0), dtype=torch.float32),
             torch.tensor([1 / 3, (1 + 1j) / 3], dtype=torch.complex64),
             torch.tensor([2 / 3, 2 * (1 + 1j) / 3], dtype=torch.complex64),
         ),

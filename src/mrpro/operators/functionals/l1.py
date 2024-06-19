@@ -25,7 +25,10 @@ class L1Norm(ProximableFunctional):
         -------
             L1 norm of data
         """
-        return (torch.tensor([(self.weight * (x - self.target)).abs().sum(dim=self.dim)]),)
+        if self.divide_by_n:
+            return ((self.weight * (x - self.target)).abs().mean(dim=self.dim, keepdim=False),)
+        else:
+            return ((self.weight * (x - self.target)).abs().sum(dim=self.dim, keepdim=False),)
 
     def prox(self, x: torch.Tensor, sigma: torch.Tensor) -> tuple[torch.Tensor]:
         """Prox of L1 Norm.
@@ -45,12 +48,12 @@ class L1Norm(ProximableFunctional):
         is_complex = diff.is_complex()
         threshold = torch.tensor([self.weight * sigma])
         if is_complex:
-            out = self.target + torch.polar(torch.nn.functional.relu(diff.abs() - threshold), torch.angle(diff))
+            x_out = self.target + torch.polar(torch.nn.functional.relu(diff.abs() - threshold), torch.angle(diff))
         else:
-            out = self.target + (
+            x_out = self.target + (
                 torch.nn.functional.relu(diff - threshold) - torch.nn.functional.relu(-diff - threshold)
             )
-        return (out,)
+        return (x_out,)
 
     def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor) -> tuple[torch.Tensor]:
         """Prox convex conjugate of data.
@@ -69,12 +72,12 @@ class L1Norm(ProximableFunctional):
         diff = x - sigma * self.target
         is_complex = diff.is_complex()
         if is_complex:
-            out = torch.polar(self.weight.clamp(max=diff.abs()), torch.angle(diff))
+            x_out = torch.polar(self.weight.clamp(max=diff.abs()), torch.angle(diff))
         else:
             num = self.weight * diff
             denom = torch.max(diff.abs(), self.weight)
-            out = num / denom
-        return (out,)
+            x_out = num / denom
+        return (x_out,)
 
 
 class L1NormViewAsReal(ProximableFunctional):
@@ -100,9 +103,9 @@ class L1NormViewAsReal(ProximableFunctional):
         diff = x - self.target
         is_complex = diff.is_complex()
         if is_complex:
-            return (torch.tensor([(L1Norm().forward(diff.real)[0]) + (L1Norm().forward(diff.imag)[0])]),)
+            return ((L1Norm().forward(diff.real)[0]) + (L1Norm().forward(diff.imag)[0]),)
         else:
-            return (torch.tensor([(L1Norm().forward(diff)[0])]),)
+            return ((L1Norm().forward(diff)[0]),)
 
     def prox(self, x: torch.Tensor, sigma: torch.Tensor) -> tuple[torch.Tensor]:
         """Prox of L1 Norm.

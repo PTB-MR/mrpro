@@ -28,7 +28,7 @@ from mrpro.operators.functionals.l1 import L1NormViewAsReal
     [
         (
             torch.tensor([1.0, -1.0], dtype=torch.float32),
-            torch.tensor([1], dtype=torch.float32),
+            torch.tensor((1), dtype=torch.float32),
             torch.tensor([0.9, -0.9], dtype=torch.float32),
             torch.tensor([0.95, -0.95], dtype=torch.float32),
         ),
@@ -57,7 +57,7 @@ def test_l1_functional_real(
     [
         (
             torch.tensor([1.0 + 0.5j, 2.0 + 0.5j, -1.0 - 0.5j], dtype=torch.complex64),
-            torch.tensor([2.1213], dtype=torch.float32),
+            torch.tensor((2.1213), dtype=torch.float32),
             torch.tensor([0.929 + 0.429j, 1.929 + 0.429j, -0.929 - 0.429j], dtype=torch.complex64),
             torch.tensor([0.884 + 0.465j, 0.965 + 0.261j, -0.884 - 0.465j], dtype=torch.complex64),
         ),
@@ -86,7 +86,7 @@ def test_l1_functional(
     [
         (
             torch.tensor([1.0 + 0.5j, 2.0 + 0.5j, -1.0 - 0.5j], dtype=torch.complex64),
-            torch.tensor([3], dtype=torch.float32),
+            torch.tensor((3), dtype=torch.float32),
             torch.tensor([0.4 + 0.4j, 0.4 + 0.4j, -0.4 - 0.4j], dtype=torch.complex64),
             torch.tensor([0.95 + 0.5j, 1.0 + 0.5j, -0.95 - 0.5j], dtype=torch.complex64),
         ),
