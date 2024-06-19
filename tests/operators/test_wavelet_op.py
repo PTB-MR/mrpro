@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 import pytest
 import torch
 from mrpro.operators import WaveletOp
@@ -133,7 +134,7 @@ def test_wavelet_op_adjointness(im_shape, domain_shape, dim, wavelet_name):
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name=wavelet_name)
 
     # calculate 1D length of wavelet coefficients
-    wavelet_stack_length = torch.sum(torch.as_tensor([(torch.prod(shape)) for shape in wavelet_op.coefficients_shape]))
+    wavelet_stack_length = torch.sum(torch.as_tensor([(np.prod(shape)) for shape in wavelet_op.coefficients_shape]))
 
     # sorted and normed dimensions needed to correctly calculate range
     dim_sorted = sorted([d % len(im_shape) for d in dim], reverse=True)
