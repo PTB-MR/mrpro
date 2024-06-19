@@ -18,8 +18,8 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+import numpy as np
 import torch
-from ptwt.conv_transform import _get_pad
 from ptwt.conv_transform import wavedec
 from ptwt.conv_transform import waverec
 from ptwt.conv_transform_2 import wavedec2
@@ -110,24 +110,18 @@ class WaveletOp(LinearOperator):
             verified_level = _check_level(domain_shape, wavelet_length, level)
 
             if verified_level == 0:
-                self.coefficients_shape = [current_shape]
-                self.coefficients_padding = [(0, 0)] * len(current_shape)
+                self.coefficients_shape = [domain_shape]
             else:
                 self.coefficients_shape = []
-                self.coefficients_padding = []
                 for _ in range(verified_level):
                     # Add padding
-                    for ind in range(len(current_shape)):
-                        padr, padl = _get_pad(current_shape[ind], wavelet_length[ind])
-                        current_shape[ind] += padl + padr
-                    current_shape = torch.floor((current_shape - wavelet_length) / 2 + 1).to(dtype=torch.int64)
-                    self.coefficients_shape.extend([current_shape.clone()] * self.n_wavelet_directions)
-                    self.coefficients_padding.extend([(padl.clone(), padr.clone())] * self.n_wavelet_directions)
+                    current_shape = (current_shape / 2).ceil() + wavelet_length // 2 - 1
+                    self.coefficients_shape.extend(
+                        [tuple(current_shape.to(dtype=torch.int64))] * self.n_wavelet_directions
+                    )
 
                 self.coefficients_shape = self.coefficients_shape[::-1]
-                self.coefficients_padding = self.coefficients_padding[::-1]
                 self.coefficients_shape.insert(0, self.coefficients_shape[0])  # shape of a/aa/aaa term
-                self.coefficients_padding.insert(0, self.coefficients_padding[0])  # padding of a/aa/aaa term
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Calculate wavelet coefficients from (image) data.
@@ -354,9 +348,9 @@ class WaveletOp(LinearOperator):
             3D: [aaa, aad_n, ada_n, add_n, ..., ..., aad_1, ada_1, add_1, ...]
         """
         coefficients = torch.split(
-            coefficients_stack, [int(torch.prod(shape)) for shape in self.coefficients_shape], dim=-1
+            coefficients_stack, [int(np.prod(shape)) for shape in self.coefficients_shape], dim=-1
         )
         return [
-            torch.reshape(coeff, coeff.shape[:-1] + tuple(shape))
+            torch.reshape(coeff, (*coeff.shape[:-1], *shape))
             for coeff, shape in zip(coefficients, self.coefficients_shape, strict=True)
         ]
