@@ -25,7 +25,10 @@ class L2NormSquared(ProximableFunctional):
         -------
             l2 norm squared of data
         """
-        return (torch.linalg.vector_norm(self.weight * (x - self.target), ord=2, dim=self.dim, keepdim=True).square(),)
+        if self.divide_by_n:
+            return ((torch.linalg.vector_norm(self.weight * (x - self.target), ord=2, dim=self.dim, keepdim=False).square())/x.numel(),)
+        else:
+            return (torch.linalg.vector_norm(self.weight * (x - self.target), ord=2, dim=self.dim, keepdim=False).square(),)
 
     def prox(self, x: torch.Tensor, sigma: torch.Tensor) -> tuple[torch.Tensor]:
         """Prox of L2 Norm Squared.
