@@ -45,6 +45,20 @@ def ismrmrd_cart(ellipse_phantom, tmp_path_factory):
 
 
 @pytest.fixture(scope='session')
+def ismrmrd_cart_bodycoil_and_surface_coil(ellipse_phantom, tmp_path_factory):
+    """Fully sampled cartesian data set with bodycoil and surface coil data."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        phantom=ellipse_phantom.phantom,
+        add_bodycoil_acquisitions=True,
+    )
+    return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
 def ismrmrd_cart_invalid_reps(tmp_path_factory):
     """Fully sampled cartesian data set."""
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
@@ -129,6 +143,12 @@ def test_KData_raise_wrong_coil_number(ismrmrd_cart):
     """Wrong number of coils leads to empty acquisitions."""
     with pytest.raises(ValueError, match='No acquisitions for'):
         _ = KData.from_file(ismrmrd_cart.filename, DummyTrajectory(), header_overwrites={'n_coils': 3})
+
+
+def test_KData_raise_warning_for_bodycoil(ismrmrd_cart_bodycoil_and_surface_coil):
+    """Mix of bodycoil and surface coil acquisitions leads to warning."""
+    with pytest.raises(UserWarning, match='Acquisitions with different number'):
+        _ = KData.from_file(ismrmrd_cart_bodycoil_and_surface_coil.filename, DummyTrajectory())
 
 
 def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
