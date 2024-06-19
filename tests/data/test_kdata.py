@@ -22,6 +22,7 @@ from mrpro.data import SpatialDimension
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
 from mrpro.utils import modify_acq_info
+from mrpro.utils import select_coil_calibration_acquisition
 from mrpro.utils import split_idx
 
 from tests.conftest import RandomGenerator
@@ -40,6 +41,21 @@ def ismrmrd_cart(ellipse_phantom, tmp_path_factory):
         noise_level=0.0,
         repetitions=3,
         phantom=ellipse_phantom.phantom,
+    )
+    return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_with_calibration_lines(ellipse_phantom, tmp_path_factory):
+    """Undersampled Cartesian data set with calibration lines."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=1,
+        acceleration=2,
+        phantom=ellipse_phantom.phantom,
+        n_separate_calibration_lines=16,
     )
     return ismrmrd_kdata
 
@@ -131,6 +147,24 @@ def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
         kdata = KData.from_file(ismrmrd_cart_invalid_reps.filename, DummyTrajectory())
     assert kdata.data.shape[-2] == 1, 'k1 should be 1'
     assert kdata.data.shape[-3] == 1, 'k2 should be 1'
+
+
+def test_KData_calibration_lines(ismrmrd_cart_with_calibration_lines):
+    """Correct handling of calibration lines."""
+    # Exclude calibration lines
+    kdata = KData.from_file(ismrmrd_cart_with_calibration_lines.filename, DummyTrajectory())
+    assert (
+        kdata.data.shape[-2]
+        == ismrmrd_cart_with_calibration_lines.matrix_size // ismrmrd_cart_with_calibration_lines.acceleration
+    )
+
+    # Get only calibration lines
+    kdata = KData.from_file(
+        ismrmrd_cart_with_calibration_lines.filename,
+        DummyTrajectory(),
+        fun_select_acquisition=select_coil_calibration_acquisition,
+    )
+    assert kdata.data.shape[-2] == ismrmrd_cart_with_calibration_lines.n_separate_calibration_lines
 
 
 def test_KData_kspace(ismrmrd_cart):
