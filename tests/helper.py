@@ -178,7 +178,7 @@ def forward_mode_autodiff_of_linear_operator_test(
     """
     # jvp of the forward
     assert torch.allclose(
-        torch.func.jvp(linear_operator.forward, (u,), (u,))[0],
+        torch.func.jvp(linear_operator.forward, (u,), (u,))[0][0],
         linear_operator.forward(u)[0],
         rtol=relative_tolerance,
         atol=absolute_tolerance,
@@ -186,7 +186,7 @@ def forward_mode_autodiff_of_linear_operator_test(
 
     # jvp of the adjoint
     assert torch.allclose(
-        torch.func.jvp(linear_operator.adjoint, (v,), (v,))[0],
+        torch.func.jvp(linear_operator.adjoint, (v,), (v,))[0][0],
         linear_operator.adjoint(v)[0],
         rtol=relative_tolerance,
         atol=absolute_tolerance,
