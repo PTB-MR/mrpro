@@ -20,7 +20,7 @@ from mrpro.operators import FastFourierOp
 
 from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test
-from tests.helper import gradient_test
+from tests.helper import gradient_of_linear_operator_test
 
 
 @pytest.mark.parametrize(('npoints', 'a'), [(100, 20), (300, 20)])
@@ -89,7 +89,7 @@ def test_fast_fourier_op_grad(encoding_matrix, recon_matrix):
 
     # Create operator and apply
     ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix)
-    gradient_test(ff_op, u, v)
+    gradient_of_linear_operator_test(ff_op, u, v)
 
 
 def test_fast_fourier_op_spatial_dim():

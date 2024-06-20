@@ -19,6 +19,7 @@ import torch
 from mrpro.operators.models import WASABITI
 from tests.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 from tests.conftest import create_parameter_tensor_tuples
+from tests.helper import autodiff_of_operator_test
 
 
 def create_data(offset_max=500, n_offsets=101, b0_shift=0, rb1=1.0, t1=1.0):
@@ -89,3 +90,11 @@ def test_WASABITI_shape(parameter_shape, contrast_dim_shape, signal_shape):
     b0_shift, rb1, t1 = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=3)
     (signal,) = model_op.forward(b0_shift, rb1, t1)
     assert signal.shape == signal_shape
+
+
+def test_autodiff_WASABITI():
+    """Test autodiff works for WASABITI model."""
+    offset, b0_shift, rb1, t1 = create_data(offset_max=300, n_offsets=2)
+    trec = torch.ones_like(offset) * t1
+    wasabiti_model = WASABITI(offsets=offset, trec=trec)
+    autodiff_of_operator_test(wasabiti_model, b0_shift, rb1, t1)
