@@ -1,3 +1,5 @@
+"""Transient steady state signal model with inversion pulse."""
+
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,10 +14,10 @@
 import torch
 from einops import rearrange
 
-from mrpro.operators import SignalModel
+from mrpro.operators.SignalModel import SignalModel
 
 
-class TransientInversionRecovery(SignalModel):
+class TransientInversionRecovery(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
     """Transient steady state signal model with inversion pulses.
 
     This signal model describes the behavior of the longitudinal magnetisation during continuous acquisition with
@@ -129,7 +131,7 @@ class TransientInversionRecovery(SignalModel):
 
             self._index_between_inversions.append(index_of_time_points)
 
-    def forward(self, m0: torch.Tensor, t1: torch.Tensor, alpha: torch.Tensor):
+    def forward(self, m0: torch.Tensor, t1: torch.Tensor, alpha: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply Transient Inversion Recovery signal model.
 
         Parameters
