@@ -19,10 +19,10 @@ from einops import repeat
 from mrpro.data import KData
 from mrpro.data import KTrajectory
 from mrpro.data import SpatialDimension
+from mrpro.data.acquisition_filters import is_coil_calibration_acquisition
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
 from mrpro.utils import modify_acq_info
-from mrpro.utils import select_coil_calibration_acquisition
 from mrpro.utils import split_idx
 
 from tests.conftest import RandomGenerator
@@ -162,7 +162,7 @@ def test_KData_calibration_lines(ismrmrd_cart_with_calibration_lines):
     kdata = KData.from_file(
         ismrmrd_cart_with_calibration_lines.filename,
         DummyTrajectory(),
-        fun_select_acquisition=select_coil_calibration_acquisition,
+        acquisition_filter_criterion=is_coil_calibration_acquisition,
     )
     assert kdata.data.shape[-2] == ismrmrd_cart_with_calibration_lines.n_separate_calibration_lines
 

@@ -33,6 +33,7 @@ from mrpro.data._kdata.KDataRemoveOsMixin import KDataRemoveOsMixin
 from mrpro.data._kdata.KDataSelectMixin import KDataSelectMixin
 from mrpro.data._kdata.KDataSplitMixin import KDataSplitMixin
 from mrpro.data.AcqInfo import AcqInfo
+from mrpro.data.acquisition_filters import is_image_acquisition
 from mrpro.data.EncodingLimits import Limits
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
@@ -41,7 +42,6 @@ from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
 from mrpro.utils import modify_acq_info
-from mrpro.utils import select_image_acquisition
 
 KDIM_SORT_LABELS = ('k1', 'k2', 'average', 'slice', 'contrast', 'phase', 'repetition', 'set')
 # TODO: Consider adding the users labels here, but remember issue #32 and NOT add user5 and user6.
@@ -63,7 +63,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         ktrajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
         header_overwrites: dict[str, object] | None = None,
         dataset_idx: int = -1,
-        fun_select_acquisition: Callable = select_image_acquisition,
+        acquisition_filter_criterion: Callable = is_image_acquisition,
     ) -> KData:
         """Load k-space data from an ISMRMRD file.
 
@@ -77,7 +77,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             dictionary of key-value pairs to overwrite the header
         dataset_idx
             index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
-        fun_select_acquisition
+        acquisition_filter_criterion
             function which returns True if an acquisition should be included in KData
         """
         # Can raise FileNotFoundError
@@ -91,7 +91,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
                 mtime = 0
             modification_time = datetime.datetime.fromtimestamp(mtime)
 
-        acquisitions = [acq for acq in acquisitions if fun_select_acquisition(acq)]
+        acquisitions = [acq for acq in acquisitions if acquisition_filter_criterion(acq)]
         kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)

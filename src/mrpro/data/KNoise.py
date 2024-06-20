@@ -24,8 +24,8 @@ import ismrmrd
 import torch
 from einops import rearrange
 
+from mrpro.data.acquisition_filters import is_noise_acquisition
 from mrpro.data.MoveDataMixin import MoveDataMixin
-from mrpro.utils import select_noise_acquisition
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
@@ -42,7 +42,7 @@ class KNoise(MoveDataMixin):
 
     @classmethod
     def from_file(
-        cls, filename: str | Path, dataset_idx: int = -1, fun_select_acquisition: Callable = select_noise_acquisition
+        cls, filename: str | Path, dataset_idx: int = -1, acquisition_filter_criterion: Callable = is_noise_acquisition
     ) -> KNoise:
         """Load noise measurements from ISMRMRD file.
 
@@ -52,7 +52,7 @@ class KNoise(MoveDataMixin):
             Path to the ISMRMRD file
         dataset_idx
             Index of the dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
-        fun_select_acquisition
+        acquisition_filter_criterion
             function which returns True if an acquisition should be included in KNoise
         """
         # Can raise FileNotFoundError
@@ -61,7 +61,7 @@ class KNoise(MoveDataMixin):
             acquisitions = ds.acquisitions[:]
 
         # Read out noise measurements
-        acquisitions = [acq for acq in acquisitions if fun_select_acquisition(acq)]
+        acquisitions = [acq for acq in acquisitions if acquisition_filter_criterion(acq)]
         if len(acquisitions) == 0:
             raise ValueError(f'No noise measurements found in {filename}')
         noise_data = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])

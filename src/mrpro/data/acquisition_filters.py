@@ -14,8 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import ismrmrd
+
 from mrpro.data.enums import AcqFlags
 
 # Same criteria as https://github.com/wtclarke/pymapvbvd/blob/master/mapvbvd/mapVBVD.py uses
@@ -30,8 +30,9 @@ DEFAULT_IGNORE_FLAGS = (
     | AcqFlags.ACQ_IS_PARALLEL_CALIBRATION
 )
 
-def select_image_acquisition(acquisition: ismrmrd.Acquisition) -> bool:
-    """Select acquisition obtained for imaging.
+
+def is_image_acquisition(acquisition: ismrmrd.Acquisition) -> bool:
+    """Test if acquisition was obtained for imaging.
 
     Parameters
     ----------
@@ -44,8 +45,9 @@ def select_image_acquisition(acquisition: ismrmrd.Acquisition) -> bool:
     """
     return not DEFAULT_IGNORE_FLAGS.value & acquisition.flags
 
-def select_noise_acquisition(acquisition: ismrmrd.Acquisition) -> bool:
-    """Select acquisition containing noise measurments.
+
+def is_noise_acquisition(acquisition: ismrmrd.Acquisition) -> bool:
+    """Test if acquisition contains noise measurements.
 
     Parameters
     ----------
@@ -58,8 +60,9 @@ def select_noise_acquisition(acquisition: ismrmrd.Acquisition) -> bool:
     """
     return AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value & acquisition.flags
 
-def select_coil_calibration_acquisition(acquisition: ismrmrd.Acquisition) -> bool:
-    """Select acquisition for coil calibration.
+
+def is_coil_calibration_acquisition(acquisition: ismrmrd.Acquisition) -> bool:
+    """Test if acquisitions was obtained for coil calibration.
 
     Parameters
     ----------
