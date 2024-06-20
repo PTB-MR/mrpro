@@ -84,10 +84,12 @@ class TransientInversionRecovery(SignalModel[torch.Tensor, torch.Tensor, torch.T
             time stamp of first acquisition
         """
         super().__init__()
-        tr = torch.as_tensor(tr)
+        tr = torch.atleast_1d(torch.as_tensor(tr))
         inversion_time_points = torch.atleast_1d(torch.as_tensor(inversion_time_points))
-        delay_inversion_adc = torch.as_tensor(delay_inversion_adc)
-        first_adc_time_point = torch.as_tensor(first_adc_time_point) if first_adc_time_point is not None else None
+        delay_inversion_adc = torch.atleast_1d(torch.as_tensor(delay_inversion_adc))
+        first_adc_time_point = (
+            torch.atleast_1d(torch.as_tensor(first_adc_time_point)) if first_adc_time_point is not None else None
+        )
 
         # signal_time_points, inversion_time_points, tr and delay_inversion_adc have to be broadcastable
         # first_adc_time_point too, if not None
@@ -275,7 +277,7 @@ class TransientInversionRecovery(SignalModel[torch.Tensor, torch.Tensor, torch.T
             else:
                 return torch.broadcast_to(
                     parameter[..., *[None] * (delta_ndim)], (*parameter.shape, *shape_of_input_tensor[-delta_ndim:])
-                ), -1
+                ).flatten(start_dim=n_additional_parameter_dims), -1
 
         m0_shape = m0.shape
         signal_time_points, signal_time_points_vmap_indim = parameter_for_vmap(self.signal_time_points, m0_shape, 1)
@@ -306,11 +308,11 @@ class TransientInversionRecovery(SignalModel[torch.Tensor, torch.Tensor, torch.T
                     m0.flatten(),
                     t1.flatten(),
                     alpha.flatten(),
-                    signal_time_points.flatten(start_dim=1),
-                    tr.flatten(),
-                    inversion_time_points.flatten(start_dim=1),
-                    delay_inversion_adc.flatten(),
-                    first_adc_time_point.flatten(),
+                    signal_time_points,
+                    tr,
+                    inversion_time_points,
+                    delay_inversion_adc,
+                    first_adc_time_point,
                 ),
                 [-1, *m0.shape],
             ),

@@ -16,6 +16,8 @@ import pytest
 import torch
 from mrpro.operators.models import TransientInversionRecovery
 from tests import RandomGenerator
+from tests.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
+from tests.conftest import create_parameter_tensor_tuples
 
 
 def create_data(other=10, coils=5, z=100, y=100, x=100):
@@ -35,7 +37,7 @@ def create_data(other=10, coils=5, z=100, y=100, x=100):
         (20, 'm0_star'),
     ],
 )
-def test_signal_boundaries_single_inversion(t, result):
+def test_transient_inversion_recovery_signal_boundaries_single_inversion(t, result):
     """Test for transient inversion recovery.
 
     Assume single inversion at t=0. Checking that idata output tensor at
@@ -66,7 +68,7 @@ def test_signal_boundaries_single_inversion(t, result):
     ('parameter_name'),
     ['tr', 'inversion_time_points', 'delay_inversion_adc', 'first_adc_time_point'],
 )
-def test_invalid_shapes_of_input_parameter(parameter_name):
+def test_transient_inversion_recovery_invalid_shapes_of_input_parameter(parameter_name):
     """Ensure error message for invalid shapes."""
     random_generator = RandomGenerator(seed=0)
     parameter_dict = {
@@ -81,7 +83,7 @@ def test_invalid_shapes_of_input_parameter(parameter_name):
         TransientInversionRecovery(**parameter_dict)
 
 
-def test_invalid_signal_during_tau():
+def test_transient_inversion_recovery_invalid_signal_during_tau():
     """Ensure error message for t before data acquisition."""
     with pytest.raises(ValueError, match='No data points should lie between inversion'):
         TransientInversionRecovery(
@@ -92,7 +94,7 @@ def test_invalid_signal_during_tau():
         )
 
 
-def test_invalid_signal_before_inv():
+def test_transient_inversion_recovery_invalid_signal_before_inv():
     """Ensure error message for t before inversion."""
     with pytest.raises(ValueError, match='If data has been acquired before the first'):
         TransientInversionRecovery(
@@ -110,3 +112,21 @@ def test_invalid_signal_before_inv():
             delay_inversion_adc=0.02,
             first_adc_time_point=-0.5,
         )
+
+
+@SHAPE_VARIATIONS_SIGNAL_MODELS
+def test_transient_inversion_recovery_shape(parameter_shape, contrast_dim_shape, signal_shape):
+    """Test correct signal shapes."""
+    (signal_time_points,) = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=1)
+    (tr,) = create_parameter_tensor_tuples(contrast_dim_shape[1:], number_of_tensors=1)
+    (inversion_time_points,) = create_parameter_tensor_tuples((3, *contrast_dim_shape[1:]), number_of_tensors=1)
+    model_op = TransientInversionRecovery(
+        signal_time_points=torch.abs(signal_time_points),
+        tr=tr,
+        inversion_time_points=torch.abs(inversion_time_points),
+        delay_inversion_adc=0,
+        first_adc_time_point=0,
+    )
+    m0, t1, alpha = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=3)
+    (signal,) = model_op.forward(m0, t1, alpha)
+    assert signal.shape == signal_shape
