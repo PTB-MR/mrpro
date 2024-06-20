@@ -92,6 +92,7 @@ def test_WASABITI_shape(parameter_shape, contrast_dim_shape, signal_shape):
     assert signal.shape == signal_shape
 
 
+@pytest.mark.filterwarnings('ignore:Anomaly Detection has been enabled')
 def test_autodiff_WASABITI():
     """Test autodiff works for WASABITI model."""
     offset, b0_shift, rb1, t1 = create_data(offset_max=300, n_offsets=2)

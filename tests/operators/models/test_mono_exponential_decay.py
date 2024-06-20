@@ -59,6 +59,7 @@ def test_mono_exponential_decay_shape(parameter_shape, contrast_dim_shape, signa
     assert signal.shape == signal_shape
 
 
+@pytest.mark.filterwarnings('ignore:Anomaly Detection has been enabled')
 def test_autodiff_exponential_decay():
     """Test autodiff works for mono-exponential decay model."""
     model = MonoExponentialDecay(decay_time=20)
