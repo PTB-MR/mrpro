@@ -48,7 +48,7 @@ def test_signal_boundaries_single_inversion(t, result):
     model = TransientInversionRecovery(
         signal_time_points=torch.tensor([t]),
         tr=tr,
-        inversion_time_points=torch.tensor([0]),
+        inversion_time_points=0,
         delay_inversion_adc=0,
     )
     m0, t1, alpha = create_data()

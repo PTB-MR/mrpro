@@ -11,6 +11,9 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+
+from collections.abc import Sequence
+
 import torch
 
 from mrpro.operators.SignalModel import SignalModel
@@ -156,6 +159,7 @@ class TransientInversionRecovery(SignalModel[torch.Tensor, torch.Tensor, torch.T
         """
         # Need to sort timings
         signal_time_points, signal_index = torch.sort(signal_time_points, stable=True)
+        inversion_time_points, _ = torch.sort(inversion_time_points)
 
         t1 = torch.where(t1 == 0, 1e-10, t1)
         t1_star = 1 / (1 / t1 - torch.log(torch.cos(alpha)) / tr)
@@ -253,18 +257,48 @@ class TransientInversionRecovery(SignalModel[torch.Tensor, torch.Tensor, torch.T
             signal
             with shape (time ... other, coils, z, y, x)
         """
-        delta_ndim = m0.ndim - (self.signal_time_points.ndim - 1)  # -1 for time
-        # signal_time_points = self.signal_time_points[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.signal_time_points
 
-        # in_dims = None if values for all points in m0, t1 and alpha are the same
-        signal_time_points = self.signal_time_points
-        tr = self.tr
-        inversion_time_points = self.inversion_time_points
-        delay_inversion_adc = self.delay_inversion_adc
-        first_adc_time_point = self.first_adc_time_point
+        def parameter_for_vmap(
+            parameter: torch.Tensor, shape_of_input_tensor: Sequence[int], n_additional_parameter_dims: int = 0
+        ):
+            # First we ensure that there are no trailing single dimensions, i.e [4,1,2,1,1] -> [4,1,2]
+            # This ensures a parameter of shape [6,1,1,1] is broadcasted in the same way as [6,]
+            if parameter.ndim > 1:
+                last_non_single_dim = [index for index, dim in enumerate(parameter.shape) if dim != 1][-1]
+                parameter = parameter.squeeze(dim=tuple(range(last_non_single_dim + 1, parameter.ndim)))
+
+            # If the parameter values are the same for all m0/t1/alpha entries then we don't have to do anything.
+            # Otherwise we need to broadcast the parameters
+            delta_ndim = len(shape_of_input_tensor) - (parameter.ndim - n_additional_parameter_dims)
+            if delta_ndim == len(shape_of_input_tensor):  # parameter can be fully broadcasted
+                return parameter, None
+            else:
+                return torch.broadcast_to(
+                    parameter[..., *[None] * (delta_ndim)], (*parameter.shape, *shape_of_input_tensor[-delta_ndim:])
+                ), -1
+
+        m0_shape = m0.shape
+        signal_time_points, signal_time_points_vmap_indim = parameter_for_vmap(self.signal_time_points, m0_shape, 1)
+        tr, tr_vmap_indim = parameter_for_vmap(self.tr, m0_shape)
+        inversion_time_points, inversion_time_points_vmap_indim = parameter_for_vmap(
+            self.inversion_time_points, m0_shape, 1
+        )
+        delay_inversion_adc, delay_inversion_adc_vmap_indim = parameter_for_vmap(self.delay_inversion_adc, m0_shape)
+        first_adc_time_point, first_adc_time_point_vmap_indim = parameter_for_vmap(self.first_adc_time_point, m0_shape)
 
         vmap_forward = torch.func.vmap(
-            self._forward_single_voxel, in_dims=(-1, -1, -1, None, None, None, None, None), out_dims=-1
+            self._forward_single_voxel,
+            in_dims=(
+                -1,
+                -1,
+                -1,
+                signal_time_points_vmap_indim,
+                tr_vmap_indim,
+                inversion_time_points_vmap_indim,
+                delay_inversion_adc_vmap_indim,
+                first_adc_time_point_vmap_indim,
+            ),
+            out_dims=-1,
         )
         return (
             torch.reshape(
