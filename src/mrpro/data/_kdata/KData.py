@@ -32,8 +32,8 @@ from mrpro.data._kdata.KDataRearrangeMixin import KDataRearrangeMixin
 from mrpro.data._kdata.KDataRemoveOsMixin import KDataRemoveOsMixin
 from mrpro.data._kdata.KDataSelectMixin import KDataSelectMixin
 from mrpro.data._kdata.KDataSplitMixin import KDataSplitMixin
+from mrpro.data.acq_filters import is_image_acquisition
 from mrpro.data.AcqInfo import AcqInfo
-from mrpro.data.acquisition_filters import is_image_acquisition
 from mrpro.data.EncodingLimits import Limits
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory

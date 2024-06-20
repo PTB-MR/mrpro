@@ -24,7 +24,7 @@ import ismrmrd
 import torch
 from einops import rearrange
 
-from mrpro.data.acquisition_filters import is_noise_acquisition
+from mrpro.data.acq_filters import is_noise_acquisition
 from mrpro.data.MoveDataMixin import MoveDataMixin
 
 

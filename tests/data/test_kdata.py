@@ -19,7 +19,7 @@ from einops import repeat
 from mrpro.data import KData
 from mrpro.data import KTrajectory
 from mrpro.data import SpatialDimension
-from mrpro.data.acquisition_filters import is_coil_calibration_acquisition
+from mrpro.data.acq_filters import is_coil_calibration_acquisition
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
 from mrpro.utils import modify_acq_info
