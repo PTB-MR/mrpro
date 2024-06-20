@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import torch
 from mrpro.operators.models import WASABI
 from tests.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
@@ -61,6 +62,7 @@ def test_WASABI_shape(parameter_shape, contrast_dim_shape, signal_shape):
     assert signal.shape == signal_shape
 
 
+@pytest.mark.filterwarnings('ignore:Anomaly Detection has been enabled')
 def test_autodiff_WASABI():
     """Test autodiff works for WASABI model."""
     offset, b0_shift, rb1, c, d = create_data(offset_max=300, n_offsets=2)

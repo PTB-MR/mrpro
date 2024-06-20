@@ -201,6 +201,12 @@ def autodiff_of_operator_test(
 
     This test does not check that the gradient is correct but simply that it can be calculated using autodiff.
 
+    torch.autograd.detect_anomaly will raise the Warning:
+    Anomaly Detection has been enabled. This mode will increase the runtime and should only be enabled for debugging.
+
+    If you want to add this function in a test, use the decorator:
+    @pytest.mark.filterwarnings("ignore:Anomaly Detection has been enabled")
+
     Parameters
     ----------
     operator
@@ -216,7 +222,10 @@ def autodiff_of_operator_test(
 
     """
     # Forward-mode autodiff using jvp
-    assert torch.func.jvp(operator.forward, u, u)
+    with torch.autograd.detect_anomaly():
+        v_range, _ = torch.func.jvp(operator.forward, u, u)
 
     # Backward-mode autodiff using vjp
-    assert torch.func.vjp(operator.forward, *u)
+    with torch.autograd.detect_anomaly():
+        (_, vjpfunc) = torch.func.vjp(operator.forward, *u)
+        vjpfunc(v_range)
