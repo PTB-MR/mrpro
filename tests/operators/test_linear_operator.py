@@ -31,5 +31,5 @@ def test_autograd_wrapper():
     # Create operator
     ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix)
 
-    torch.autograd.gradcheck.gradcheck(ff_op.forward, u.requires_grad_())
-    torch.autograd.gradcheck.gradcheck(ff_op.adjoint, v.requires_grad_())
+    torch.autograd.gradcheck(ff_op.forward, u.requires_grad_())
+    torch.autograd.gradcheck(ff_op.adjoint, v.requires_grad_())

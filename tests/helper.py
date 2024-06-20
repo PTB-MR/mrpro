@@ -12,8 +12,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from typing import Any
+from typing import TypeVarTuple
+
 import torch
 from mrpro.operators.LinearOperator import LinearOperator
+from mrpro.operators.Operator import Operator
+
+Tin = TypeVarTuple('Tin')
 
 
 def relative_image_difference(img1: torch.Tensor, img2: torch.Tensor):
@@ -89,7 +95,7 @@ def dotproduct_adjointness_test(
     torch.testing.assert_close(dotproduct_range, dotproduct_domain, rtol=relative_tolerance, atol=absolute_tolerance)
 
 
-def gradient_test(
+def gradient_of_linear_operator_test(
     linear_operator: LinearOperator,
     u: torch.Tensor,
     v: torch.Tensor,
@@ -131,3 +137,32 @@ def gradient_test(
     assert torch.allclose(
         vjpfunc((u,))[0], linear_operator.forward(u)[0], rtol=relative_tolerance, atol=absolute_tolerance
     )
+
+
+def autodiff_of_operator_test(
+    operator: Operator[*Tin, tuple[torch.Tensor,]],
+    *u: Any,
+):
+    """Test autodiff an operator is working.
+
+    This test does not check that the gradient is correct but simply that it can be calculated using autodiff.
+
+    Parameters
+    ----------
+    operator
+        operator
+    u
+        element(s) of the domain of the operator
+
+    Raises
+    ------
+    AssertionError
+        if autodiff fails
+
+
+    """
+    # Forward-mode autodiff using jvp
+    assert torch.func.jvp(operator.forward, u, u)
+
+    # Backward-mode autodiff using vjp
+    assert torch.func.vjp(operator.forward, *u)
