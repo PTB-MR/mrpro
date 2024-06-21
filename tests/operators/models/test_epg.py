@@ -17,6 +17,7 @@ import torch
 from mrpro.operators.models import EpgMrfFisp
 from mrpro.operators.models import EpgTse
 
+
 def test_EpgMrfFisp_parameter_broadcasting():
     """Verify correct broadcasting of values."""
     te = tr = rf_phases = torch.ones((1,))
@@ -26,33 +27,38 @@ def test_EpgMrfFisp_parameter_broadcasting():
     (epg_signal,) = epg_mrf_fisp.forward(m0, t1, t2)
     assert epg_signal.shape == (20, 30)
 
+
 def test_EpgMrfFisp_parameter_mismatch():
     """Verify error for shape mismatch."""
     flip_angles = rf_phases = tr = torch.ones((1, 2))
-    te = torch.ones((1,3))
-    with pytest.raises(ValueError, match='Shape of flip_angles'):
+    te = torch.ones((1, 3))
+    with pytest.raises(ValueError, match='Shapes of flip_angles'):
         EpgMrfFisp(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
-        
-def test_EpgMrfFisp_wrong_shape_for_ti():
-    """Verify error for ti with len > 1."""
-    flip_angles = rf_phases = te = tr = torch.ones((1, 2))
-    ti = torch.ones((2,))
-    with pytest.raises(ValueError, match='Only a single value for ti is allowed'):
-        EpgMrfFisp(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr, ti=ti)
-        
-        
+
+
 def test_EpgTse_parameter_broadcasting():
     """Verify correct broadcasting of values."""
     te = rf_phases = torch.ones((1,))
     flip_angles = torch.ones((20,))
     epg_mrf_fisp = EpgTse(flip_angles=flip_angles, rf_phases=rf_phases, te=te)
-    m0 = t1 = t2 = torch.randn((30,))
-    (epg_signal,) = epg_mrf_fisp.forward(m0, t1, t2)
+    m0 = t1 = t2 = b1 = torch.randn((30,))
+    (epg_signal,) = epg_mrf_fisp.forward(m0, t1, t2, b1)
     assert epg_signal.shape == (20, 30)
+
+
+def test_EpgTse_multi_echo_train():
+    """Verify correct shape for multi echo trains."""
+    flip_angles = te = rf_phases = torch.ones((20,))
+    tr = torch.ones((3,))
+    epg_mrf_fisp = EpgTse(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
+    m0 = t1 = t2 = b1 = torch.randn((30,))
+    (epg_signal,) = epg_mrf_fisp.forward(m0, t1, t2, b1)
+    assert epg_signal.shape == (20 * 3, 30)
+
 
 def test_EpgTse_parameter_mismatch():
     """Verify error for shape mismatch."""
     flip_angles = rf_phases = torch.ones((1, 2))
-    te = torch.ones((1,3))
-    with pytest.raises(ValueError, match='Shape of flip_angles'):
+    te = torch.ones((1, 3))
+    with pytest.raises(ValueError, match='Shapes of flip_angles'):
         EpgTse(flip_angles=flip_angles, rf_phases=rf_phases, te=te)
