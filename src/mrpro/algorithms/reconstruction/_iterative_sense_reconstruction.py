@@ -1,4 +1,4 @@
-"""Iterative SENSE reconstruction."""
+"""Iterative SENSE regularization reconstruction."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -29,21 +29,22 @@ from mrpro.data._IData import IData
 from mrpro.data._kdata._KData import KData
 from mrpro.data._KNoise import KNoise
 from mrpro.operators._FourierOp import FourierOp
+from mrpro.operators._LambdaOp import LambdaOp
 from mrpro.operators._LinearOperator import LinearOperator
 
 
 class IterativeSenseReconstruction(Reconstruction):
-    """Iterative SENSE reconstruction.
+    """Iterative SENSE Regularization reconstruction.
 
     This algorithm minizes the problem
 
-    min_x 0.5||W^0.5 (Ax - y)||_2^2
+    min_x 0.5||W^0.5 (Ax - y)||_2^2 + 0.5*lambda||x - x0||_2^2
 
     by using a conjugate gradient algorithm to solve
 
     H x = b
 
-    with H = A^H W A and b = A^H W y
+    with H = A^H W A + lambda    and    b = A^H W y + lambda x0
 
     where A is the acquisition model (coil sensitivity maps, Fourier operator, k-space sampling), y is the acquired
     k-space data and W describes the density compensation.
@@ -66,6 +67,12 @@ class IterativeSenseReconstruction(Reconstruction):
     fourier_op: LinearOperator
     """Fourier Operator."""
 
+    lambda_operator: LinearOperator
+    """Lambda Operator for regularization."""
+
+    x0: IData
+    """Initial low-pass filtered image for regularization."""
+
     n_max_iter: int
     """Maximum number of CG iterations."""
 
@@ -74,6 +81,8 @@ class IterativeSenseReconstruction(Reconstruction):
         fourier_operator: LinearOperator,
         csm: CsmData,
         n_max_iter: int,
+        lambda_value: float = 0,
+        x0: None | IData = None,
         noise: None | KNoise = None,
         dcf: DcfData | None = None,
     ):
@@ -87,6 +96,10 @@ class IterativeSenseReconstruction(Reconstruction):
             Sensitivity maps for coil combination
         n_max_iter
             Maximum number of CG iterations
+        lambda_value
+            Regularization strength.
+        x0
+            Initial low-pass filtered image for regularization.
         noise
             Used for prewhitening
         dcf
@@ -98,11 +111,15 @@ class IterativeSenseReconstruction(Reconstruction):
         # TODO: Make this buffers once DataBufferMixin is merged
         self.dcf = dcf
         self.csm = csm
+        self.lambda_operator = LambdaOp(lambda_value)
+        self.x0 = x0
         self.noise = noise
         self.n_max_iter = n_max_iter
 
     @classmethod
-    def from_kdata(cls, kdata: KData, n_max_iter: int, noise: KNoise | None = None) -> Self:
+    def from_kdata(
+        cls, kdata: KData, n_max_iter: int, lambda_value: float, x0: IData, noise: KNoise | None = None
+    ) -> Self:
         """Create a IterativeSenseReconstruction from kdata with default settings.
 
         Parameters
@@ -180,7 +197,9 @@ class IterativeSenseReconstruction(Reconstruction):
             operator = self.dcf.as_operator() @ operator
         operator = operator.to(device)
         (right_hand_side,) = operator.H(kdata.data)
+        right_hand_side += self.lambda_operator(self.x0.to(device))
         operator = self.csm.as_operator().H @ self.fourier_op.H @ operator
+        operator += self.lambda_operator
         img_tensor = cg(operator, right_hand_side, initial_value=right_hand_side, max_iterations=self.n_max_iter)
         img = IData.from_tensor_and_kheader(img_tensor, kdata.header)
         return img

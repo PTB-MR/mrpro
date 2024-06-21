@@ -8,15 +8,16 @@ fname = 'pulseq_radial_2D_402spokes_golden_angle_with_traj.h5'
 # %%
 # Download raw data
 import shutil
-import tempfile
-from pathlib import Path
 
-import requests
+import torch
+from mrpro.data import KData  # Import the KData class
+from mrpro.data.traj_calculators import KTrajectoryPulseq
 
-data_folder = Path(tempfile.mkdtemp())
-data_file = tempfile.NamedTemporaryFile(dir=data_folder, mode='wb', delete=False, suffix='.h5')
-response = requests.get(zenodo_url + fname, timeout=30)
-data_file.write(response.content)
+# Local path
+h5_path = '/data/bouill01/conda_envs/mrpro/examples/20240319_radial_2D_256mm_402spokes_golden_angle/meas_MID00176_FID02508_20240319_radial_2D_256mm_402spokes_golden_angle.h5'
+seq_path = '/data/bouill01/conda_envs/mrpro/examples/20240319_radial_2D_256mm_402spokes_golden_angle/20240319_radial_2D_256mm_402spokes_golden_angle.seq'
+
+
 # %% [markdown]
 # ### Image reconstruction
 # We use the DirectReconstruction class to reconstruct images from 2D radial data.
@@ -26,9 +27,9 @@ data_file.write(response.content)
 import mrpro
 
 # Use the trajectory that is stored in the ISMRMRD file
-trajectory = mrpro.data.traj_calculators.KTrajectoryIsmrmrd()
+# trajectory = mrpro.data.traj_calculators.KTrajectoryIsmrmrd(seq_file)
 # Load in the Data from the ISMRMRD file
-kdata = mrpro.data.KData.from_file(data_file.name, trajectory)
+kdata = KData.from_file(h5_path, KTrajectoryPulseq(seq_path=seq_path))
 # Perform the reconstruction
 reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction.from_kdata(kdata)
 # Use this to run on gpu: kdata = kdata.cuda()
@@ -92,7 +93,6 @@ img_more_manual = mrpro.data.IData.from_tensor_and_kheader(img_tensor_coilcombin
 # ### Check for equal results
 # The 3 versions result should in the same image data.
 # %%
-import torch
 
 # If the assert statement did not raise an exception, the results are equal.
 assert torch.allclose(img.data, img_manual.data)
