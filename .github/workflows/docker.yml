@@ -78,7 +78,7 @@ jobs:
           username: ptb-mr
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push docker image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: ./docker
