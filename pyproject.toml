@@ -36,6 +36,7 @@ dependencies = [
     "pypulseq@git+https://github.com/imr-framework/pypulseq",
     "torchkbnufft>=1.4.0",
     "scipy>=1.12",
+    "nibabel",
 ]
 
 [project.optional-dependencies]
