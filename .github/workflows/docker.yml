@@ -28,7 +28,6 @@ jobs:
           filters: |
             docker_toml:
               - 'docker/*'
-              - 'pyproject.toml'
               - '.github/workflows/docker.yml'
 
       - name: Do we need to do something?
