@@ -16,12 +16,14 @@
 
 import torch
 
-from mrpro.operators._Operator import Operator
+from mrpro.operators._EndomorphOperator import EndomorphOperator
+from mrpro.operators._EndomorphOperator import endomorph
 
 
-class PhaseOp(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]]):
+class PhaseOp(EndomorphOperator):
     """Phase of input tensors."""
 
+    @endomorph
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Phase of tensors.
 

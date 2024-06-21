@@ -21,12 +21,13 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 
+from mrpro.data._MoveDataMixin import MoveDataMixin
 from mrpro.data.enums import TrajType
 from mrpro.utils import remove_repeat
 
 
 @dataclass(slots=True, frozen=True)
-class KTrajectory:
+class KTrajectory(MoveDataMixin):
     """K-space trajectory.
 
     Order of directions is always kz, ky, kx
@@ -55,11 +56,15 @@ class KTrajectory:
 
     def __post_init__(self) -> None:
         """Reduce repeated dimensions to singletons."""
+
+        def as_any_float(tensor: torch.Tensor) -> torch.Tensor:
+            return tensor.float() if not tensor.is_floating_point() else tensor
+
         if self.repeat_detection_tolerance is not None:
             kz, ky, kx = (
-                remove_repeat(tensor, self.repeat_detection_tolerance) for tensor in (self.kz, self.ky, self.kx)
+                as_any_float(remove_repeat(tensor, self.repeat_detection_tolerance))
+                for tensor in (self.kz, self.ky, self.kx)
             )
-
             # use of setattr due to frozen dataclass
             object.__setattr__(self, 'kz', kz)
             object.__setattr__(self, 'ky', ky)
@@ -156,7 +161,7 @@ class KTrajectory:
         # We use the value of the enum-type to make it easier to do array operations.
         traj_type_matrix = torch.zeros(3, 3, dtype=torch.int)
         for ind, ks in enumerate((self.kz, self.ky, self.kx)):
-            values_on_grid = not ks.is_floating_point() or torch.all(ks.frac() <= tolerance)
+            values_on_grid = not ks.is_floating_point() or torch.all((ks - ks.round()).abs() <= tolerance)
             for dim in (-3, -2, -1):
                 if ks.shape[dim] == 1:
                     traj_type_matrix[ind, dim] |= TrajType.SINGLEVALUE.value | TrajType.ONGRID.value
@@ -181,54 +186,3 @@ class KTrajectory:
         """
         shape = self.broadcasted_shape
         return torch.stack([traj.expand(*shape) for traj in (self.kz, self.ky, self.kx)], dim=stack_dim)
-
-    def to(self, *args, **kwargs) -> KTrajectory:
-        """Perform dtype and/or device conversion of trajectory.
-
-        A torch.dtype and torch.device are inferred from the arguments
-        of self.to(*args, **kwargs). Please have a look at the
-        documentation of torch.Tensor.to() for more details.
-        """
-        return KTrajectory(
-            kz=self.kz.to(*args, **kwargs),
-            ky=self.ky.to(*args, **kwargs),
-            kx=self.kx.to(*args, **kwargs),
-        )
-
-    def cuda(
-        self,
-        device: torch.device | None = None,
-        non_blocking: bool = False,
-        memory_format: torch.memory_format = torch.preserve_format,
-    ) -> KTrajectory:
-        """Create copy of trajectory in CUDA memory.
-
-        Parameters
-        ----------
-        device
-            The destination GPU device. Defaults to the current CUDA device.
-        non_blocking
-            If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
-            Otherwise, the argument has no effect.
-        memory_format
-            The desired memory format of returned Tensor.
-        """
-        return KTrajectory(
-            kz=self.kz.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),  # type: ignore [call-arg]
-            ky=self.ky.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),  # type: ignore [call-arg]
-            kx=self.kx.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),  # type: ignore [call-arg]
-        )
-
-    def cpu(self, memory_format: torch.memory_format = torch.preserve_format) -> KTrajectory:
-        """Create copy of trajectory in CPU memory.
-
-        Parameters
-        ----------
-        memory_format
-            The desired memory format of returned Tensor.
-        """
-        return KTrajectory(
-            kz=self.kz.cpu(memory_format=memory_format),  # type: ignore [call-arg]
-            ky=self.ky.cpu(memory_format=memory_format),  # type: ignore [call-arg]
-            kx=self.kx.cpu(memory_format=memory_format),  # type: ignore [call-arg]
-        )

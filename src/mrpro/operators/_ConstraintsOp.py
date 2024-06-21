@@ -19,10 +19,11 @@ from collections.abc import Sequence
 import torch
 import torch.nn.functional as F  # noqa: N812
 
-from mrpro.operators._Operator import Operator
+from mrpro.operators._EndomorphOperator import EndomorphOperator
+from mrpro.operators._EndomorphOperator import endomorph
 
 
-class ConstraintsOp(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]]):
+class ConstraintsOp(EndomorphOperator):
     """Transformation to map real-valued tensors to certain ranges."""
 
     def __init__(
@@ -75,6 +76,7 @@ class ConstraintsOp(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]
         """Inverse of 'softplus_transformation."""
         return beta * x + torch.log(-torch.expm1(-beta * x))
 
+    @endomorph
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Transform tensors to chosen range.
 

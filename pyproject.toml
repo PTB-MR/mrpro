@@ -29,9 +29,8 @@ classifiers = [
 ]
 dependencies = [
     "numpy>=1.23,<2.0",
-    "torch>=2.2,<3.0",
-    "ismrmrd",
-    "xsdata>=22.2,<23",
+    "torch>=2.3,<3.0",
+    "ismrmrd>=1.14.1,<2.0",
     "einops",
     "pydicom",
     "pypulseq@git+https://github.com/imr-framework/pypulseq",
@@ -79,8 +78,9 @@ exclude = ["docs"]
 enable_error_code = ["ignore-without-code"]
 warn_unused_ignores = true
 
+
 [[tool.mypy.overrides]]
-module = ["ismrmrd.*", "h5py", "scipy.*"]
+module = ["ismrmrd.*", "h5py", "scipy.*", "torchkbnufft", "pypulseq", "zenodo_get"]
 ignore_missing_imports = true
 
 [tool.ruff]
@@ -150,6 +150,7 @@ locale = "en-us"
 
 [tool.typos.default.extend-words]
 Reson = "Reson" # required for Proc. Intl. Soc. Mag. Reson. Med.
+iy = "iy"
 
 [tool.typos.files]
 extend-exclude = ["examples/*.ipynb"] # don't check notebooks because py files have already been checked

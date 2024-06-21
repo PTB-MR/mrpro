@@ -66,13 +66,6 @@ def lbfgs(
     -------
         list of optimized parameters
     """
-    # TODO: remove after new pytorch release;
-    if torch.tensor([torch.is_complex(p) for p in initial_parameters]).any():
-        raise ValueError(
-            "at least one tensor in 'params' is complex-valued; \
-            \ncomplex-valued tensors will be allowed for lbfgs in future torch versions",
-        )
-
     parameters = [p.detach().clone().requires_grad_(True) for p in initial_parameters]
     optim = LBFGS(
         params=parameters,

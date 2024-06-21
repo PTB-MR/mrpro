@@ -222,7 +222,7 @@ class IsmrmrdRawTestData:
 
         dataset.write_xml_header(header.toXML('utf-8'))
 
-        # Create an acquistion and reuse it
+        # Create an acquisition and reuse it
         acq = ismrmrd.Acquisition()
         acq.resize(n_freq_encoding, self.n_coils, trajectory_dimensions=2)
         acq.version = 1

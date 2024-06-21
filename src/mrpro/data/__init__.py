@@ -14,6 +14,7 @@ from mrpro.data._KHeader import KHeader
 from mrpro.data._KNoise import KNoise
 from mrpro.data._KTrajectory import KTrajectory
 from mrpro.data._KTrajectoryRawShape import KTrajectoryRawShape
+from mrpro.data._MoveDataMixin import MoveDataMixin
 from mrpro.data._QData import QData
 from mrpro.data._QHeader import QHeader
 from mrpro.data._SpatialDimension import SpatialDimension

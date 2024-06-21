@@ -23,10 +23,11 @@ import torch
 from einops import rearrange
 
 from mrpro.data._KTrajectory import KTrajectory
+from mrpro.data._MoveDataMixin import MoveDataMixin
 
 
 @dataclass(slots=True, frozen=True)
-class KTrajectoryRawShape:
+class KTrajectoryRawShape(MoveDataMixin):
     """K-space trajectory shaped ((other*k2*k1),k0).
 
     Order of directions is always kz, ky, kx
@@ -47,7 +48,7 @@ class KTrajectoryRawShape:
     repeat_detection_tolerance: None | float = 1e-3
     """tolerance for repeat detection, by default 1e-3, None to disable."""
 
-    def reshape(
+    def sort_and_reshape(
         self,
         sort_idx: np.ndarray,
         n_k2: int,

@@ -14,19 +14,17 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import TYPE_CHECKING
+from typing import Self
 
 import torch
+from mrpro.data._kdata._KDataProtocol import _KDataProtocol
 from mrpro.data._KTrajectory import KTrajectory
 
-if TYPE_CHECKING:
-    from mrpro.data._kdata._KData import _KDataProtocol
 
-
-class KDataRemoveOsMixin:
+class KDataRemoveOsMixin(_KDataProtocol):
     """Remove oversampling along readout dimension."""
 
-    def remove_readout_os(self: _KDataProtocol) -> _KDataProtocol:
+    def remove_readout_os(self: Self) -> Self:
         """Remove any oversampling along the readout (k0) direction.
 
         This function is inspired by https://github.com/gadgetron/gadgetron-python.

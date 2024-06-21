@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
+import warnings
 from pathlib import Path
 from typing import Protocol
 
@@ -35,12 +36,15 @@ from mrpro.data._kdata._KDataSplitMixin import KDataSplitMixin
 from mrpro.data._KHeader import KHeader
 from mrpro.data._KTrajectory import KTrajectory
 from mrpro.data._KTrajectoryRawShape import KTrajectoryRawShape
+from mrpro.data._MoveDataMixin import MoveDataMixin
 from mrpro.data.enums import AcqFlags
 from mrpro.data.traj_calculators import KTrajectoryCalculator
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.utils import modify_acq_info
 
 KDIM_SORT_LABELS = ('k1', 'k2', 'average', 'slice', 'contrast', 'phase', 'repetition', 'set')
+# TODO: Consider adding the users labels here, but remember issue #32 and NOT add user5 and user6.
+OTHER_LABELS = ('average', 'slice', 'contrast', 'phase', 'repetition', 'set')
 
 # Same criteria as https://github.com/wtclarke/pymapvbvd/blob/master/mapvbvd/mapVBVD.py uses
 DEFAULT_IGNORE_FLAGS = (
@@ -56,7 +60,7 @@ DEFAULT_IGNORE_FLAGS = (
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
-class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveOsMixin):
+class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveOsMixin, MoveDataMixin):
     """MR raw data / k-space data class."""
 
     header: KHeader
@@ -117,6 +121,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             )
 
         acquisitions = list(filter(lambda acq: not (ignore_flags.value & acq.flags), acquisitions))
+        kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
 
@@ -131,9 +136,6 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             overwrite=header_overwrites,
         )
 
-        # Create single kdata tensor from acquisition data
-        kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
-
         # Fill k0 limits if they were set to zero / not set in the header
         if kheader.encoding_limits.k0.length == 1:
             # The encodig limits should describe the encoded space of all readout lines. If we have two readouts with
@@ -144,211 +146,90 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             max_pos_k0_extend = int(torch.max(kheader.acq_info.number_of_samples - kheader.acq_info.center_sample))
             kheader.encoding_limits.k0 = Limits(0, max_center_sample + max_pos_k0_extend - 1, max_center_sample)
 
-        # Sort kdata and acq_info into ("all other dim", coils, k2, k1, k0) / ("all other dim", k2, k1, acq_info_dims)
-        # Fist, ensure each the non k1/k2 dimensions covers the same number of k1 and k2 points
-        unique_idxs = {label: np.unique(getattr(kheader.acq_info.idx, label)) for label in KDIM_SORT_LABELS}
+        # Sort and reshape the kdata and the acquisistion info according to the indices.
+        # within "other", the aquisistions are sorted in the order determined by KDIM_SORT_LABELS.
+        # The final shape will be ("all other labels", k2, k1, k0) for kdata
+        # and ("all other labels", k2, k1, length of the aqusitions info field) for aquisistion info.
 
-        # For reshaping into (other coils k2 k1 k0), the number of acqs must match the product of all unique_idxs
-        num_total_unique = torch.as_tensor([len(unique_idxs[label]) for label in KDIM_SORT_LABELS]).prod()
+        # First, determine if we can split into k2 and k1 and how large these should be
+        acq_indices_other = torch.stack([getattr(kheader.acq_info.idx, label) for label in OTHER_LABELS], dim=0)
+        _, n_acqs_per_other = torch.unique(acq_indices_other, dim=1, return_counts=True)
+        # unique counts of acquisitions for each combination of the label values in "other"
+        n_acqs_per_other = torch.unique(n_acqs_per_other)
 
-        # Define function to find index label combinations. This is used to determine the dimensions of k1 and k2.
-        def idx_label_combination(
-            average_idx: list[int],
-            slice_idx: list[int],
-            contrast_idx: list[int],
-            phase_idx: list[int],
-            repetition_idx: list[int],
-            set_idx: list[int],
-        ):
-            return torch.nonzero(
-                (kheader.acq_info.idx.average == average_idx)
-                & (kheader.acq_info.idx.slice == slice_idx)
-                & (kheader.acq_info.idx.contrast == contrast_idx)
-                & (kheader.acq_info.idx.phase == phase_idx)
-                & (kheader.acq_info.idx.repetition == repetition_idx)
-                & (kheader.acq_info.idx.set == set_idx),
-            )
+        acq_indices_other_k2 = torch.cat((acq_indices_other, kheader.acq_info.idx.k2.unsqueeze(0)), dim=0)
+        _, n_acqs_per_other_and_k2 = torch.unique(acq_indices_other_k2, dim=1, return_counts=True)
+        # unique counts of acquisitions for each combination of other **and k2**
+        n_acqs_per_other_and_k2 = torch.unique(n_acqs_per_other_and_k2)
 
-        idx_matches = idx_label_combination(
-            *[unique_idxs[label][0] for label in KDIM_SORT_LABELS if label not in ('k1', 'k2')],
-        )
-
-        # Determine the number of k1 and k2 points
-        if num_total_unique == kdata.shape[0]:
-            # Data can be reshaped into (other coils k2 k1 k0))
-            num_k1 = len(torch.unique(kheader.acq_info.idx.k1[idx_matches]))
-            num_k2 = len(torch.unique(kheader.acq_info.idx.k2[idx_matches]))
+        if len(n_acqs_per_other_and_k2) == 1:
+            # This is the most common case:
+            # All other and k2 combinations have the same number of aquisistions which we can use as k1
+            # to reshape to (other, k2, k1, k0)
+            n_k1 = n_acqs_per_other_and_k2[0]
+            n_k2 = n_acqs_per_other[0] // n_k1
+        elif len(n_acqs_per_other) == 1:
+            # We cannot split the data along phase encoding steps into k2 and k1, as there are different numbers of k1.
+            # But all "other labels" combinations have the same number of aquisisitions,
+            # so we can reshape to (other, k, 1, k0)
+            n_k1 = 1
+            n_k2 = n_acqs_per_other[0]  # total number of k encoding steps
         else:
-            # Data is reshaped into (other 1 (k2 k1) k0)
-            num_k1 = len(idx_matches)
-            num_k2 = 1
-
-        # Create all combinations of averages, slices, contrasts... to make the following loop easier to read
-        idx_combinations = [
-            [average_idx, slice_idx, contrast_idx, phase_idx, repetition_idx, set_idx]
-            for average_idx in unique_idxs['average']
-            for slice_idx in unique_idxs['slice']
-            for contrast_idx in unique_idxs['contrast']
-            for phase_idx in unique_idxs['phase']
-            for repetition_idx in unique_idxs['repetition']
-            for set_idx in unique_idxs['set']
-        ]
-
-        # Verify that k2 and k1 contain the same number of k-space points for all combinations of averages, slices...
-        for average_idx, slice_idx, contrast_idx, phase_idx, repetition_idx, set_idx in idx_combinations:
-            idx_matches = idx_label_combination(
-                average_idx,
-                slice_idx,
-                contrast_idx,
-                phase_idx,
-                repetition_idx,
-                set_idx,
+            # For different other combinations we have different numbers of aquisistions,
+            # so we can only reshape to (acquisitions, 1, 1, k0)
+            # This might be an user error.
+            warnings.warn(
+                f'There are different numbers of acquisistions in'
+                'different combinations of labels {"/".join(OTHER_LABELS)}: \n'
+                f'Found {n_acqs_per_other.tolist()}. \n'
+                'The data will be reshaped to (acquisitions, 1, 1, k0). \n'
+                'This needs to be adjusted be reshaping for a successful reconstruction. \n'
+                'If unintenional, this might be caused by wrong labels in the ismrmrd file or a wrong flag filter.',
+                stacklevel=1,
             )
-            label_str = (
-                f'[average {average_idx} | slice {slice_idx} | contrast {contrast_idx} | phase {phase_idx}'
-                + f'| repetition {repetition_idx} | set {set_idx}]'
-            )
-            if num_total_unique == kdata.shape[0]:
-                current_num_k1 = len(torch.unique(kheader.acq_info.idx.k1[idx_matches]))
-                current_num_k2 = len(torch.unique(kheader.acq_info.idx.k2[idx_matches]))
-                if current_num_k1 != num_k1:
-                    raise ValueError(f'Number of k1 points in {label_str}: {current_num_k1}. Expected: {num_k1}')
-                if current_num_k2 != num_k2:
-                    raise ValueError(f'Number of k2 points in {label_str}: {current_num_k2}. Expected: {num_k2}')
-            elif len(idx_matches) != num_k1:
-                raise ValueError(f'Number of (k2 k1) points in {label_str}: {len(idx_matches)}. Expected: {num_k1}')
+            n_k1 = 1
+            n_k2 = 1
 
-        # Sort the data according to the sorted indices
-        sort_ki = np.stack([getattr(kheader.acq_info.idx, label) for label in KDIM_SORT_LABELS], axis=0)
-        sort_idx = np.lexsort(sort_ki)
-        kdata = rearrange(kdata[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=num_k1, k2=num_k2)
+        # Second, determine the sorting order
+        acq_indices = np.stack([getattr(kheader.acq_info.idx, label) for label in KDIM_SORT_LABELS], axis=0)
+        sort_idx = np.lexsort(acq_indices)  # torch does not have lexsort as of pytorch 2.2 (March 2024)
 
-        # Reshape the acquisition data and update the header acquisition infos accordingly
-        def reshape_acq_data(data: torch.Tensor):
-            return rearrange(data[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=num_k1, k2=num_k2)
+        # Finally, reshape and sort the tensors in acqinfo and acqinfo.idx, and kdata.
+        def sort_and_reshape_tensor_fields(input_tensor: torch.Tensor):
+            return rearrange(input_tensor[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=n_k1, k2=n_k2)
 
-        kheader.acq_info = modify_acq_info(reshape_acq_data, kheader.acq_info)
+        kheader.acq_info = modify_acq_info(sort_and_reshape_tensor_fields, kheader.acq_info)
+        kdata = rearrange(kdata[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=n_k1, k2=n_k2)
 
         # Calculate trajectory and check if it matches the kdata shape
         match ktrajectory:
             case KTrajectoryIsmrmrd():
-                ktraj = ktrajectory(acquisitions).reshape(sort_idx, num_k2, num_k1)
+                ktrajectory_final = ktrajectory(acquisitions).sort_and_reshape(sort_idx, n_k2, n_k1)
             case KTrajectoryCalculator():
-                ktraj_calc = ktrajectory(kheader)
-                if isinstance(ktraj_calc, KTrajectoryRawShape):
-                    ktraj = ktraj_calc.reshape(sort_idx, num_k2, num_k1)
+                ktrajectory_or_rawshape = ktrajectory(kheader)
+                if isinstance(ktrajectory_or_rawshape, KTrajectoryRawShape):
+                    ktrajectory_final = ktrajectory_or_rawshape.sort_and_reshape(sort_idx, n_k2, n_k1)
                 else:
-                    ktraj = ktraj_calc
+                    ktrajectory_final = ktrajectory_or_rawshape
             case KTrajectory():
-                ktraj = ktrajectory
+                ktrajectory_final = ktrajectory
             case _:
                 raise TypeError(
-                    'ktrajectory must be KTrajectoryIsmrmrd, KTrajectory or KTrajectoryCalculator,'
+                    'ktrajectory must be KTrajectoryIsmrmrd, KTrajectory or KTrajectoryCalculator'
                     f'not {type(ktrajectory)}',
                 )
 
         try:
-            shape = ktraj.broadcasted_shape
+            shape = ktrajectory_final.broadcasted_shape
             torch.broadcast_shapes(kdata[..., 0, :, :, :].shape, shape)
         except RuntimeError:
+            # Not broadcastable
             raise ValueError(
                 f'Broadcasted shape trajectory do not match kdata: {shape} vs. {kdata.shape}. '
                 'Please check the trajectory.',
             ) from None
 
-        return cls(kheader, kdata, ktraj)
-
-    def to(
-        self,
-        device: torch.device | str | None = None,
-        dtype: None | torch.dtype = None,
-        non_blocking: bool = False,
-        copy: bool = False,
-        memory_format: torch.memory_format = torch.preserve_format,
-    ) -> KData:
-        """Perform dtype and/or device conversion of trajectory and data.
-
-        Parameters
-        ----------
-        device
-            The destination device. Defaults to the current device.
-        dtype
-            Dtype of the k-space data, can only be torch.complex64 or torch.complex128.
-            The dtype of the trajectory (torch.float32 or torch.float64) is then inferred from this.
-        non_blocking
-            If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
-            Otherwise, the argument has no effect.
-        copy
-            If True a new Tensor is created even when the Tensor already matches the desired conversion.
-        memory_format
-            The desired memory format of returned Tensor.
-        """
-        # Only complex64 and complex128 supported for kdata.
-        # This will then lead to a trajectory of float32 and float64, respectively.
-        if dtype is None:
-            dtype_traj = None
-        elif dtype == torch.complex64:
-            dtype_traj = torch.float32
-        elif dtype == torch.complex128:
-            dtype_traj = torch.float64
-        else:
-            raise ValueError(f'dtype {dtype} not supported. Only torch.complex64 and torch.complex128 is supported.')
-
-        return KData(
-            header=self.header,
-            data=self.data.to(
-                device=device,
-                dtype=dtype,
-                non_blocking=non_blocking,
-                copy=copy,
-                memory_format=memory_format,
-            ),
-            traj=self.traj.to(
-                device=device,
-                dtype=dtype_traj,
-                non_blocking=non_blocking,
-                copy=copy,
-                memory_format=memory_format,
-            ),
-        )
-
-    def cuda(
-        self,
-        device: torch.device | None = None,
-        non_blocking: bool = False,
-        memory_format: torch.memory_format = torch.preserve_format,
-    ) -> KData:
-        """Create copy of object with trajectory and data in CUDA memory.
-
-        Parameters
-        ----------
-        device
-            The destination GPU device. Defaults to the current CUDA device.
-        non_blocking
-            If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
-            Otherwise, the argument has no effect.
-        memory_format
-            The desired memory format of returned Tensor.
-        """
-        return KData(
-            header=self.header,
-            data=self.data.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),  # type: ignore [call-arg]
-            traj=self.traj.cuda(device=device, non_blocking=non_blocking, memory_format=memory_format),
-        )
-
-    def cpu(self, memory_format: torch.memory_format = torch.preserve_format) -> KData:
-        """Create copy of object in CPU memory.
-
-        Parameters
-        ----------
-        memory_format
-            The desired memory format of returned Tensor.
-        """
-        return KData(
-            header=self.header,
-            data=self.data.cpu(memory_format=memory_format),  # type: ignore [call-arg]
-            traj=self.traj.cpu(memory_format=memory_format),
-        )
+        return cls(kheader, kdata, ktrajectory_final)
 
 
 class _KDataProtocol(Protocol):

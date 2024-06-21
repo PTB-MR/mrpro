@@ -3,7 +3,7 @@ default_language_version:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: check-docstring-first
       - id: check-merge-conflict
@@ -14,25 +14,32 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.4
+    rev: v0.4.4
     hooks:
       - id: ruff # linter
         args: [--fix]
       - id: ruff-format # formatter
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.19.0
+    rev: v1.21.0
     hooks:
       - id: typos
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.9.0
+    rev: v1.10.0
     hooks:
       - id: mypy
+        pass_filenames: false
+        always_run: true
+        args: [src,tests,examples]
         additional_dependencies:
           - numpy
-          - torch>=2.2.0
+          - torch>=2.3.0
           - types-requests
+          - einops
+          - pydicom
+          - matplotlib
+          - pytest
+          - xsdata
           - "--index-url=https://download.pytorch.org/whl/cpu"
           - "--extra-index-url=https://pypi.python.org/simple"
-        exclude: docs/.*|tests/.*

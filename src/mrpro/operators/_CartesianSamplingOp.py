@@ -58,19 +58,19 @@ class CartesianSamplingOp(LinearOperator):
         # in it and the shape of data will remain.
         # only dimensions on a cartesian grid will be reordered.
         if traj_type_kzyx[-1] == TrajType.ONGRID:  # kx
-            kx_idx = ktraj_tensor[-1, ...].to(dtype=torch.int64) + sorted_grid_shape.x // 2
+            kx_idx = ktraj_tensor[-1, ...].round().to(dtype=torch.int64) + sorted_grid_shape.x // 2
         else:
             sorted_grid_shape.x = ktraj_tensor.shape[-1]
             kx_idx = rearrange(torch.arange(ktraj_tensor.shape[-1]), 'kx->1 1 1 kx')
 
         if traj_type_kzyx[-2] == TrajType.ONGRID:  # ky
-            ky_idx = ktraj_tensor[-2, ...].to(dtype=torch.int64) + sorted_grid_shape.y // 2
+            ky_idx = ktraj_tensor[-2, ...].round().to(dtype=torch.int64) + sorted_grid_shape.y // 2
         else:
             sorted_grid_shape.y = ktraj_tensor.shape[-2]
             ky_idx = rearrange(torch.arange(ktraj_tensor.shape[-2]), 'ky->1 1 ky 1')
 
         if traj_type_kzyx[-3] == TrajType.ONGRID:  # kz
-            kz_idx = ktraj_tensor[-3, ...].to(dtype=torch.int64) + sorted_grid_shape.z // 2
+            kz_idx = ktraj_tensor[-3, ...].round().to(dtype=torch.int64) + sorted_grid_shape.z // 2
         else:
             sorted_grid_shape.z = ktraj_tensor.shape[-3]
             kz_idx = rearrange(torch.arange(ktraj_tensor.shape[-3]), 'kz->1 kz 1 1')

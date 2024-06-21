@@ -17,29 +17,26 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING
 from typing import Literal
+from typing import Self
 
 import torch
 from einops import rearrange
 from einops import repeat
-
-if TYPE_CHECKING:
-    from mrpro.data._kdata._KData import _KDataProtocol
-
 from mrpro.data._EncodingLimits import Limits
+from mrpro.data._kdata._KDataProtocol import _KDataProtocol
 from mrpro.utils import modify_acq_info
 
 
-class KDataSplitMixin:
+class KDataSplitMixin(_KDataProtocol):
     """Split KData into other subsets."""
 
     def _split_k2_or_k1_into_other(
-        self: _KDataProtocol,
+        self,
         split_idx: torch.Tensor,
         other_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
         split_dir: Literal['k2', 'k1'],
-    ) -> _KDataProtocol:
+    ) -> Self:
         """Based on an index tensor, split the data in e.g. phases.
 
         Parameters
@@ -132,10 +129,10 @@ class KDataSplitMixin:
         return type(self)(kheader, kdat, type(self.traj).from_tensor(ktraj))
 
     def split_k1_into_other(
-        self: _KDataProtocol,
+        self: Self,
         split_idx: torch.Tensor,
         other_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
-    ) -> _KDataProtocol:
+    ) -> Self:
         """Based on an index tensor, split the data in e.g. phases.
 
         Parameters
@@ -154,10 +151,10 @@ class KDataSplitMixin:
         return self._split_k2_or_k1_into_other(split_idx, other_label, split_dir='k1')
 
     def split_k2_into_other(
-        self: _KDataProtocol,
+        self: Self,
         split_idx: torch.Tensor,
         other_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
-    ) -> _KDataProtocol:
+    ) -> Self:
         """Based on an index tensor, split the data in e.g. phases.
 
         Parameters
