@@ -37,7 +37,7 @@ jobs:
           echo "Rebuild containers? ${{ steps.filter.outputs.docker_toml }}"
 
       - id: set-matrix
-        if: steps.filter.outputs.docker_toml == 'true'
+        if: steps.filter.outputs.docker_toml == 'true' || github.event_name == 'push'
         run: |
           cd ./docker/
           ls
@@ -49,7 +49,7 @@ jobs:
           echo "imagenames=$imagenames" >> $GITHUB_OUTPUT
 
       - name: Dockerfile overview
-        if: steps.filter.outputs.docker_toml == 'true'
+        if: steps.filter.outputs.docker_toml == 'true' || github.event_name == 'push'
         run: |
           echo "final list of dockerfiles: ${{ steps.set-matrix.outputs.dockerfiles }}"
           echo "final list of images: ${{ steps.set-matrix.outputs.imagenames }}"
