@@ -28,7 +28,6 @@ jobs:
               - '.github/workflows/docker.yml'
 
       - run: |
-          echo "Push to main? ${{GITHUB_EVENT_NAME}}"
           echo "Rebuild containers? ${{ steps.filter.outputs.docker_toml }}"
 
       - id: set-matrix
