@@ -31,7 +31,8 @@ jobs:
               - 'pyproject.toml'
               - '.github/workflows/docker.yml'
 
-      - run: |
+      - name: Do we need to do something?
+        run: |
           echo "Push to main?"
           echo "Rebuild containers? ${{ steps.filter.outputs.docker_toml }}"
 
