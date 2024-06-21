@@ -7,7 +7,7 @@ on:
 
 jobs:
   get_dockerfiles:
-    name: Get list of dockerfiles for different containers
+    name: Get list of Docker files for different containers
     runs-on: ubuntu-latest
     outputs:
       docker_toml: ${{ steps.filter.outputs.docker_toml }}
@@ -119,7 +119,7 @@ jobs:
           pytest -n 4 -m "not cuda"
 
   push_latest:
-    name: Create latest images and push to GCR
+    name: Pull latest images and push to GCR with new tag
     needs: [get_dockerfiles, test]
     if: ${{ needs.get_dockerfiles.outputs.docker_toml == 'true' }}
     runs-on: ubuntu-latest
