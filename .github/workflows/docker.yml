@@ -114,7 +114,7 @@ jobs:
 
       - name: Run PyTest
         run: |
-          pytest -n auto -m "not cuda"
+          pytest -n 4 -m "not cuda"
 
   push_latest:
     name: Pull latest images and push to GCR with new tag
