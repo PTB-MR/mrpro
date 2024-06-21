@@ -79,6 +79,7 @@ class IsmrmrdRawTestData:
         trajectory_type: Literal['cartesian', 'radial'] = 'cartesian',
         sampling_order: Literal['linear', 'low_high', 'high_low', 'random'] = 'linear',
         phantom: EllipsePhantom | None = None,
+        add_bodycoil_acquisitions: bool = False,
     ):
         if not phantom:
             phantom = EllipsePhantom()
@@ -245,6 +246,17 @@ class IsmrmrdRawTestData:
             acq.data[:] = noise.numpy()
             dataset.append_acquisition(acq)
             counter += 1  # increment the scan counter
+
+        # Add acquisitions obtained with a 2-element body coil (e.g. used for adjustment scans)
+        if add_bodycoil_acquisitions:
+            acq.resize(n_freq_encoding, 2, trajectory_dimensions=2)
+            for _ in range(8):
+                acq.scan_counter = counter
+                acq.clearAllFlags()
+                acq.data[:] = torch.randn(2, n_freq_encoding, dtype=torch.complex64)
+                dataset.append_acquisition(acq)
+                counter += 1  # increment the scan counter
+            acq.resize(n_freq_encoding, self.n_coils, trajectory_dimensions=2)
 
         # Loop over the repetitions, add noise and write to disk
         for rep in range(self.repetitions):
