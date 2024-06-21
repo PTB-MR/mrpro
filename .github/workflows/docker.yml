@@ -82,6 +82,8 @@ jobs:
           file: ./docker/${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.image_name.outputs.image_name }}:test
+          cache-from: type=registry,ref=${{ steps.image_name.outputs.image_name }}:buildcache
+          cache-to: type=registry,ref=${{ steps.image_name.outputs.image_name }}:buildcache,mode=max
 
   test:
     name: Test docker containers
