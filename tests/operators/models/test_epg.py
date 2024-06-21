@@ -16,6 +16,8 @@ import pytest
 import torch
 from mrpro.operators.models import EpgMrfFisp
 from mrpro.operators.models import EpgTse
+from tests.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
+from tests.conftest import create_parameter_tensor_tuples
 
 
 def test_EpgMrfFisp_parameter_broadcasting():
@@ -34,6 +36,16 @@ def test_EpgMrfFisp_parameter_mismatch():
     te = torch.ones((1, 3))
     with pytest.raises(ValueError, match='Shapes of flip_angles'):
         EpgMrfFisp(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
+
+
+@SHAPE_VARIATIONS_SIGNAL_MODELS
+def test_EpgMrfFisp_shape(parameter_shape, contrast_dim_shape, signal_shape):
+    """Test correct signal shapes."""
+    flip_angles, rf_phases, te, tr = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=4)
+    model_op = EpgMrfFisp(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
+    m0, t1, t2 = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=3)
+    (signal,) = model_op.forward(m0, t1, t2)
+    assert signal.shape == signal_shape
 
 
 def test_EpgTse_parameter_broadcasting():
@@ -62,3 +74,13 @@ def test_EpgTse_parameter_mismatch():
     te = torch.ones((1, 3))
     with pytest.raises(ValueError, match='Shapes of flip_angles'):
         EpgTse(flip_angles=flip_angles, rf_phases=rf_phases, te=te)
+
+
+@SHAPE_VARIATIONS_SIGNAL_MODELS
+def test_EpgTse_shape(parameter_shape, contrast_dim_shape, signal_shape):
+    """Test correct signal shapes."""
+    flip_angles, rf_phases, te = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=2)
+    model_op = EpgTse(flip_angles=flip_angles, rf_phases=rf_phases, te=te)
+    m0, t1, t2, b1 = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=4)
+    (signal,) = model_op.forward(m0, t1, t2, b1)
+    assert signal.shape == signal_shape

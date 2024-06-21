@@ -1,3 +1,5 @@
+"""Extended phase graph (EPG) signal models."""
+
 # Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +15,7 @@
 # limitations under the License.
 import torch
 
-from mrpro.operators._SignalModel import SignalModel
+from mrpro.operators.SignalModel import SignalModel
 
 
 class EpgRfPulse:
@@ -127,7 +129,22 @@ class EpgGradient:
 
 
 class EpgRelaxation:
+    """Relaxation (i.e. reduction of population levels) of EPG states."""
+
     def __init__(self, relaxation_time: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor, t1_recovery: bool = True):
+        """Relaxation of EPG states.
+
+        Parameters
+        ----------
+        relaxation_time
+            relaxation time
+        t1
+            longitudinal relaxation time
+        t2
+            transversal relaxation time
+        t1_recovery
+            recovery of longitudinal EPG states
+        """
         exp_t2 = torch.exp(-relaxation_time / t2)
         exp_t1 = torch.exp(-relaxation_time / t1)
         exp_t1, exp_t2 = torch.broadcast_tensors(exp_t1, exp_t2)
