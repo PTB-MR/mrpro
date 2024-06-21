@@ -4,3 +4,5 @@ from mrpro.operators.models.MOLLI import MOLLI
 from mrpro.operators.models.WASABI import WASABI
 from mrpro.operators.models.WASABITI import WASABITI
 from mrpro.operators.models.MonoExponentialDecay import MonoExponentialDecay
+from mrpro.operators.models._EPG import EpgMrfFisp
+from mrpro.operators.models._EPG import EpgTse
