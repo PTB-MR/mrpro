@@ -25,7 +25,7 @@ jobs:
             docker_toml:
               - 'docker/*'
               - 'pyproject.toml'
-              - '/.github/workflows/docker.yml'
+              - '.github/workflows/docker.yml'
 
       - run: |
           echo "Rebuild containers? ${{ steps.filter.outputs.docker_toml }}"
