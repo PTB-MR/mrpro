@@ -14,35 +14,40 @@
 
 import pytest
 import torch
-from mrpro.operators.models import EpgMrfFisp
+from mrpro.operators.models import EpgMrfFispWithPreparation
 from mrpro.operators.models import EpgTse
 from tests.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 from tests.conftest import create_parameter_tensor_tuples
 
 
-def test_EpgMrfFisp_parameter_broadcasting():
+def test_EpgMrfFispWithPreparation_parameter_broadcasting():
     """Verify correct broadcasting of values."""
     te = tr = rf_phases = torch.ones((1,))
     flip_angles = torch.ones((20,))
-    epg_mrf_fisp = EpgMrfFisp(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
+    epg_mrf_fisp = EpgMrfFispWithPreparation(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
     m0 = t1 = t2 = torch.randn((30,))
     (epg_signal,) = epg_mrf_fisp.forward(m0, t1, t2)
     assert epg_signal.shape == (20, 30)
 
 
-def test_EpgMrfFisp_parameter_mismatch():
+def test_EpgMrfFispWithPreparation_parameter_mismatch():
     """Verify error for shape mismatch."""
     flip_angles = rf_phases = tr = torch.ones((1, 2))
     te = torch.ones((1, 3))
     with pytest.raises(ValueError, match='Shapes of flip_angles'):
-        EpgMrfFisp(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
+        EpgMrfFispWithPreparation(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
 
+# Test inversion T1 recovery
+
+# Test mono exp T2 decay
+
+# Test Tse mono exp T2 decay with long TR for two echo trains
 
 @SHAPE_VARIATIONS_SIGNAL_MODELS
-def test_EpgMrfFisp_shape(parameter_shape, contrast_dim_shape, signal_shape):
+def test_EpgMrfFispWithPreparation_shape(parameter_shape, contrast_dim_shape, signal_shape):
     """Test correct signal shapes."""
     flip_angles, rf_phases, te, tr = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=4)
-    model_op = EpgMrfFisp(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
+    model_op = EpgMrfFispWithPreparation(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
     m0, t1, t2 = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=3)
     (signal,) = model_op.forward(m0, t1, t2)
     assert signal.shape == signal_shape
