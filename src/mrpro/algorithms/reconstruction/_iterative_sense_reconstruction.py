@@ -33,17 +33,17 @@ from mrpro.operators._LinearOperator import LinearOperator
 
 
 class IterativeSenseReconstruction(Reconstruction):
-    """Iterative SENSE reconstruction.
+    """Iterative SENSE Regularization reconstruction.
 
     This algorithm minizes the problem
 
-    min_x 0.5||W^0.5 (Ax - y)||_2^2
+    min_x 0.5||W^0.5 (Ax - y)||_2^2 + 0.5*lambda||x - x0||_2^2
 
     by using a conjugate gradient algorithm to solve
 
     H x = b
 
-    with H = A^H W A and b = A^H W y
+    with H = A^H W A + lambda    and    b = A^H W y + lambda x0
 
     where A is the acquisition model (coil sensitivity maps, Fourier operator, k-space sampling), y is the acquired
     k-space data and W describes the density compensation.
