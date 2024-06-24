@@ -199,7 +199,7 @@ class EpgMrfFispWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Te
     inv_prep_ti = 20 # 20 ms delay after inversion pulse before data acquisition starts
     te_prep_te = None # No T2-preparation pulse
     n_rf_pulses_per_block = None # A single block so all RF pulses defined by flip_angles/rf_phases will be carried out
-    # delay_between_blocks can be left as default because it is note used for a single block
+    # delay_after_block can be left as default because it is note used for a single block
 
     Cardiac MRF where a different preparation is done in each cardiac cycle followed by fixed number of RF pulses is
     described in Hamilton, J. I. et al. MR fingerprinting for rapid quantification of myocardial T1 , T2 , and proton
@@ -219,7 +219,7 @@ class EpgMrfFispWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Te
     n_rf_pulses_per_block = 48 # 48 RF pulses in each block
     # Cardiac trigger delay is 700 ms. The delay between blocks is smaller because the duration of the preparation
     # pulses needs to be taken into consideration
-    delay_between_blocks = [680, 700, 660, 620]*4
+    delay_after_block = [680, 700, 660, 620]*4
 
     """
 
@@ -232,7 +232,7 @@ class EpgMrfFispWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Te
         inv_prep_ti: None | float | Sequence[float | None] = None,
         t2_prep_te: None | float | Sequence[float | None] = None,
         n_rf_pulses_per_block: None | int | Sequence[int] = None,
-        delay_between_blocks: float | Sequence[float] = 0.0,
+        delay_after_block: float | Sequence[float] = 0.0,
         max_n_configuration_states: int | float = torch.inf,
     ):
         """FISP MRF with multiple preparation pulses.
@@ -257,76 +257,71 @@ class EpgMrfFispWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Te
             TE of T2-preparation pulse, use None for no T2-preparation pulse
         n_rf_pulses_per_block
             number of RF acquisition pulses in each block
-        delay_between_blocks
-            delay between different blocks
+        delay_after_block
+            delay after each block
         max_n_configuration_states
             maximum number of configuration states to be considered. Default means all configuration states are
             considered.
         """
         super().__init__()
 
-        # convert parameters to tensors
+        # convert all parameters to tensors
         flip_angles = torch.as_tensor(flip_angles)
         rf_phases = torch.as_tensor(rf_phases)
         te = torch.as_tensor(te)
         tr = torch.as_tensor(tr)
 
-        # do not use broadcast_to here directly because output type is Any which will lead to mypy errors
+        # need to broadcast here because we are looping over these parameters in forward()
         try:
-            broadcasted_shape = torch.broadcast_shapes(flip_angles.shape, rf_phases.shape, te.shape, tr.shape)
+            (flip_angles, rf_phases, te, tr) = torch.broadcast_tensors(flip_angles, rf_phases, te, tr)
         except RuntimeError:
             # Not broadcastable
             raise ValueError(
-                f'Shapes of flip_angles {flip_angles.shape}, rf_phases {rf_phases.shape}, te {te.shape} and tr '
-                f'{tr.shape} do not match and also cannot be broadcasted.',
+                f'Shapes of flip_angles ({flip_angles.shape}), rf_phases ({rf_phases.shape}), te ({te.shape}) and '  # type: ignore [union-attr]
+                f'tr ({tr.shape}) do not match and also cannot be broadcasted.',
             ) from None
 
         # nn.Parameters allow for grad calculation
-        self.flip_angles = torch.nn.Parameter(
-            flip_angles.broadcast_to(broadcasted_shape), requires_grad=flip_angles.requires_grad
-        )
-        self.rf_phases = torch.nn.Parameter(
-            rf_phases.broadcast_to(broadcasted_shape), requires_grad=rf_phases.requires_grad
-        )
-        self.te = torch.nn.Parameter(te.broadcast_to(broadcasted_shape), requires_grad=te.requires_grad)
-        self.tr = torch.nn.Parameter(tr.broadcast_to(broadcasted_shape), requires_grad=tr.requires_grad)
+        self.flip_angles = torch.nn.Parameter(flip_angles, requires_grad=flip_angles.requires_grad)  # type: ignore [arg-type, union-attr]
+        self.rf_phases = torch.nn.Parameter(rf_phases, requires_grad=rf_phases.requires_grad)  # type: ignore [arg-type, union-attr]
+        self.te = torch.nn.Parameter(te, requires_grad=te.requires_grad)  # type: ignore [arg-type, union-attr]
+        self.tr = torch.nn.Parameter(tr, requires_grad=tr.requires_grad)  # type: ignore [arg-type, union-attr]
 
-        # convert all block parameters to Sequence[float] of same length
-        self.inv_prep_ti = (
-            (inv_prep_ti,) if inv_prep_ti is None or isinstance(inv_prep_ti, int | float) else inv_prep_ti
-        )
-        self.t2_prep_te = (t2_prep_te,) if t2_prep_te is None or isinstance(t2_prep_te, int | float) else t2_prep_te
+        self.max_n_configuration_states = max_n_configuration_states
+
+        # convert all block parameters to Sequence[float | int] of same length
+        self.inv_prep_ti = [inv_prep_ti] if inv_prep_ti is None or isinstance(inv_prep_ti, int | float) else inv_prep_ti
+        self.t2_prep_te = [t2_prep_te] if t2_prep_te is None or isinstance(t2_prep_te, int | float) else t2_prep_te
         if n_rf_pulses_per_block is None:
-            self.n_rf_pulses_per_block = (flip_angles.shape[0],)
-        else:
-            self.n_rf_pulses_per_block = (
-                (n_rf_pulses_per_block,) if isinstance(n_rf_pulses_per_block, int) else n_rf_pulses_per_block
-            )
-        self.delay_between_blocks = (
-            (delay_between_blocks,) if isinstance(delay_between_blocks, int | float) else delay_between_blocks
+            n_rf_pulses_per_block = int(self.flip_angles.shape[0])
+        self.n_rf_pulses_per_block = (
+            [n_rf_pulses_per_block] if isinstance(n_rf_pulses_per_block, int) else n_rf_pulses_per_block
+        )
+        self.delay_after_block = (
+            (delay_after_block,) if isinstance(delay_after_block, int | float) else delay_after_block
         )
 
         n_of_blocks = max(
-            len(self.inv_prep_ti), len(self.t2_prep_te), len(self.n_rf_pulses_per_block), len(self.delay_between_blocks)
+            len(self.inv_prep_ti), len(self.t2_prep_te), len(self.n_rf_pulses_per_block), len(self.delay_after_block)
         )
 
-        for parameter in [self.inv_prep_ti, self.t2_prep_te, self.n_rf_pulses_per_block, self.delay_between_blocks]:
+        for parameter in [self.inv_prep_ti, self.t2_prep_te, self.n_rf_pulses_per_block, self.delay_after_block]:
             if len(parameter) > 1 and len(parameter) != n_of_blocks:
                 raise ValueError(
                     f'All parameters need to be of same length: inv_prep_ti: {len(self.inv_prep_ti)}, '
                     f't2_prep_te: {len(self.t2_prep_te)}, '
                     f'n_rf_pulses_per_block: {len(self.n_rf_pulses_per_block)}, '
-                    f'delay_between_blocks: {len(self.delay_between_blocks)}'
+                    f'delay_after_block: {len(self.delay_after_block)}'
                 )
 
         if len(self.inv_prep_ti) == 1:
-            self.inv_prep_ti = self.inv_prep_ti * n_of_blocks
+            self.inv_prep_ti = [self.inv_prep_ti[0] for _ in range(n_of_blocks)]
         if len(self.t2_prep_te) == 1:
-            self.t2_prep_te = self.t2_prep_te * n_of_blocks
+            self.t2_prep_te = [self.t2_prep_te[0] for _ in range(n_of_blocks)]
         if len(self.n_rf_pulses_per_block) == 1:
-            self.n_rf_pulses_per_block = self.n_rf_pulses_per_block * n_of_blocks
-        if len(self.delay_between_blocks) == 1:
-            self.delay_between_blocks = self.delay_between_blocks * n_of_blocks
+            self.n_rf_pulses_per_block = [self.n_rf_pulses_per_block[0] for _ in range(n_of_blocks)]
+        if len(self.delay_after_block) == 1:
+            self.delay_after_block = [self.delay_after_block[0] for _ in range(n_of_blocks)]
 
         # only one preparation pulse is possible per block
         for inv_prep_ti, t2_prep_te in zip(self.inv_prep_ti, self.t2_prep_te, strict=False):
@@ -334,12 +329,11 @@ class EpgMrfFispWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Te
                 raise ValueError('Only one preparation pulse allowed per block.')
 
         # sum of the Rf pulses in each block has to match the total number of rf pulses
-        if np.sum(self.n_rf_pulses_per_block) != flip_angles.shape[0]:
+        if np.sum(self.n_rf_pulses_per_block) != self.flip_angles.shape[0]:
             raise ValueError(
                 f'Total number of RF pulses ({np.sum(self.n_rf_pulses_per_block)}) need to be the same as the number '
-                f'of defined flip_angles ({flip_angles.shape[0]}).'
+                f'of defined flip_angles ({self.flip_angles.shape[0]}).'
             )
-        self.max_n_configuration_states = max_n_configuration_states
 
     def forward(self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply MRF signal model.
@@ -373,12 +367,12 @@ class EpgMrfFispWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Te
         # Start in equilibrium state
         epg_configuration_states[..., :, 0] = torch.tensor((0.0, 0, 1.0))
 
-        for block_idx, inv_prep_ti, t2_prep_te, n_rf_pulses_per_block, delay_between_blocks in zip(
+        for block_idx, inv_prep_ti, t2_prep_te, n_rf_pulses_per_block, delay_after_block in zip(
             range(len(self.inv_prep_ti)),
             self.inv_prep_ti,
             self.t2_prep_te,
             self.n_rf_pulses_per_block,
-            self.delay_between_blocks,
+            self.delay_after_block,
             strict=False,
         ):
             # Preparation pulse
@@ -416,8 +410,8 @@ class EpgMrfFispWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Te
                 epg_configuration_states = tr_relaxation.apply(epg_configuration_states)
 
             # Time of no acquisition between blocks
-            if delay_between_blocks > 0:
-                epg_configuration_states = EpgRelaxation(delay_between_blocks, t1, t2).apply(epg_configuration_states)
+            if delay_after_block > 0:
+                epg_configuration_states = EpgRelaxation(delay_after_block, t1, t2).apply(epg_configuration_states)
 
         return (signal,)
 
@@ -452,7 +446,7 @@ class EpgTse(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
             echo times of a spin echo train
             with shape (echoes, ...)
         tr
-            repetition time between echo trains. Default corresponds to single echo train
+            repetition time between echo trains. Default corresponds to single echo train.
             with shape (number of echo trains,)
         max_n_configuration_states
             maximum number of configuration states to be considered. Default means all configuration states are
@@ -460,25 +454,27 @@ class EpgTse(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         """
         super().__init__()
 
+        # convert all parameters to tensors
+        flip_angles = torch.as_tensor(flip_angles)
+        rf_phases = torch.as_tensor(rf_phases)
+        te = torch.as_tensor(te)
+        tr = torch.atleast_1d(torch.as_tensor(tr))
+
+        # need to broadcast here because we are looping over these parameters in forward()
         try:
             (flip_angles, rf_phases, te) = torch.broadcast_tensors(flip_angles, rf_phases, te)
         except RuntimeError:
             # Not broadcastable
             raise ValueError(
-                'Shapes of flip_angles, rf_phases and te do not match and also cannot be broadcasted.',
+                f'Shapes of flip_angles ({flip_angles.shape}), rf_phases ({rf_phases.shape}) and te ({te.shape}) do '  # type: ignore [union-attr]
+                'not match and also cannot be broadcasted.',
             ) from None
 
-        # convert all parameters to tensors
-        flip_angles = torch.as_tensor(flip_angles)
-        rf_phases = torch.as_tensor(rf_phases)
-        te = torch.as_tensor(te)
-        tr = torch.as_tensor(torch.atleast_1d(torch.as_tensor(tr)))
-
         # nn.Parameters allow for grad calculation
-        self.flip_angles = torch.nn.Parameter(flip_angles, requires_grad=flip_angles.requires_grad)
-        self.rf_phases = torch.nn.Parameter(rf_phases, requires_grad=rf_phases.requires_grad)
-        self.te = torch.nn.Parameter(te, requires_grad=te.requires_grad)
-        self.tr = torch.nn.Parameter(tr, requires_grad=tr.requires_grad)
+        self.flip_angles = torch.nn.Parameter(flip_angles, requires_grad=flip_angles.requires_grad)  # type: ignore [arg-type, union-attr]
+        self.rf_phases = torch.nn.Parameter(rf_phases, requires_grad=rf_phases.requires_grad)  # type: ignore [arg-type, union-attr]
+        self.te = torch.nn.Parameter(te, requires_grad=te.requires_grad)  # type: ignore [arg-type, union-attr]
+        self.tr = torch.nn.Parameter(tr, requires_grad=tr.requires_grad)  # type: ignore [arg-type, union-attr]
 
         self.max_n_configuration_states = max_n_configuration_states
 
@@ -544,7 +540,8 @@ class EpgTse(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
                 epg_configuration_states = te_half_relaxation.apply(epg_configuration_states)
                 signal[i + j * flip_angles.shape[0], ...] = m0 * epg_configuration_states[..., 0, 0]
 
-            epg_configuration_states = tr_relaxation.apply(epg_configuration_states)
+            if j < len(self.tr) - 1:
+                epg_configuration_states = tr_relaxation.apply(epg_configuration_states)
 
         return (signal,)
 
