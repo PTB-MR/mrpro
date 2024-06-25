@@ -24,16 +24,35 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
 
     This signal model describes the behavior of the longitudinal magnetisation during continuous acquisition after
     a preparation pulse. The effect of the preparation pulse is modelled by a scaling factor applied to the
-    equilibrium magnetisation. T2 effects are not considered here.
+    equilibrium magnetisation. A delay after the preparation pulse can be defined. During this time T1 relaxation to M0
+    occurs. Data acquisition starts after this delay. Perfect spoiling is assumed and hence T2 effects are not
+    considered in the model. In addition this model assumes TR << T1 and TR << T1* (see definition below). More
+    information can be found here:
 
-    Mz(t) = M0* + (s*M0 - M0*)e^(-t / T1*)
+    Deichmann, R. & Haase, A. Quantification of T1 values by SNAPSHOT-FLASH NMR imaging. J. Magn. Reson. 612, 608-612
+    (1992) [http://doi.org/10.1016/0022-2364(92)90347-A].
+    Look, D. C. & Locker, D. R. Time Saving in Measurement of NMR and EPR Relaxation Times. Rev. Sci. Instrum 41, 250
+    (1970) [https://doi.org/10.1063/1.1684482].
 
-    with
-    M0 equilibrium magnetisation
-    s scaling factor describing preparation pulse (e.g. s = -1 for inversion pulse)
-    Mz(t) measured magnetisation at time point t
-    M0* steady-state magnetisation
-    T1* effective longitudinal magnetisation
+    Let's assume we want to describe a continuous acquisition after an inversion pulse, then we have three parts:
+    [Part A: 180° inversion pulse][Part B: spoiler gradient][Part C: Continuous data acquisition]
+
+    Part A: The 180° pulse leads to an inversion of the equilibrium magnetisation (M0) to -M0. This can be described by
+            setting the scaling factor m0_scaling_preparation to -1
+
+    Part B: Commonly after an inversion pulse a strong spoiler gradient is played out to compensate for non-perfect
+            inversion. During this time the magnetisation follows Mz(t) the signal model:
+                    Mz(t) = M0 + (m0_scaling_preparation*M0 - M0)e^(-t / T1)
+
+    Part C: After the spoiler gradient the data acquisition starts and the magnetisation Mz(t) can be described by the
+            signal model:
+                    Mz(t) = M0* + (M0_init - M0*)e^(-t / T1*)
+            where the initial magnetisation is
+                    M0_init = M0 + (m0_scaling_preparation*M0 - M0)e^(-delay_after_preparation / T1)
+            the effective longitudinal relaxation time is
+                    T1* = 1/(1/T1 - 1/repetition_time ln(cos(flip_angle)))
+            and the steady-state magnetisation is
+                    M0* = M0 T1* / T1
 
     """
 
