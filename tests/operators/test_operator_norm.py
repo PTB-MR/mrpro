@@ -22,7 +22,8 @@ from mrpro.operators import FastFourierOp
 from tests import RandomGenerator
 
 
-def test_operator_norm_illegal_max_iterations():
+def test_operator_norm_invalid_n_max_iterations():
+    """Test if choosing a number of iterations < 1 throws an exception."""
     random_generator = RandomGenerator(seed=0)
 
     # test with a 3x3 matrix with known largest eigenvalue
@@ -31,10 +32,11 @@ def test_operator_norm_illegal_max_iterations():
     random_vector = random_generator.float32_tensor(matrix.shape[1])
 
     with pytest.raises(Exception, match='zero'):
-        operator.operator_norm(random_vector, dim=None, max_iterations=0)
+        operator.operator_norm(random_vector, dim=None, n_max_iterations=0)
 
 
-def test_operator_norm_illegal_initial_value():
+def test_operator_norm_invalid_initial_value():
+    """Test if choosing zero-tensors throws an exception."""
     random_generator = RandomGenerator(seed=0)
     input_shape = (2, 4, 8, 8)
     vector_shape = (input_shape[0], input_shape[1], input_shape[3])
@@ -58,9 +60,9 @@ def test_operator_norm_illegal_initial_value():
     illegal_initial_value2 = torch.zeros(vector_shape)
 
     with pytest.raises(Exception, match='least'):
-        operator.operator_norm(illegal_initial_value1, dim=dim1, max_iterations=8)
+        operator.operator_norm(illegal_initial_value1, dim=dim1, n_max_iterations=8)
     with pytest.raises(Exception, match='zero'):
-        operator.operator_norm(illegal_initial_value2, dim=dim2, max_iterations=8)
+        operator.operator_norm(illegal_initial_value2, dim=dim2, n_max_iterations=8)
 
 
 def test_operator_norm_result():
@@ -72,7 +74,7 @@ def test_operator_norm_result():
     matrix = torch.tensor([[2.0, 1, 0], [1.0, 2.0, 1.0], [0.0, 1.0, 2.0]])
     operator = EinsumOp(matrix, 'y x, x-> y')
     random_vector = random_generator.float32_tensor(matrix.shape[1])
-    operator_norm_est = operator.operator_norm(random_vector, dim=None, max_iterations=32)
+    operator_norm_est = operator.operator_norm(random_vector, dim=None, n_max_iterations=32)
     operator_norm_true = 2 + sqrt(2)  # approximately 3.41421...
     torch.testing.assert_close(operator_norm_est.item(), operator_norm_true, atol=1e-4, rtol=1e-4)
 
@@ -84,8 +86,8 @@ def test_fourier_operator_norm():
     dim = (-3, -2, -1)
     fourier_op = FastFourierOp(dim=dim)
     random_image = random_generator.complex64_tensor(size=(4, 4, 8, 16))
-    fourier_op_norm_batched = fourier_op.operator_norm(random_image, dim=dim, max_iterations=64)
-    fourier_op_norm_non_batched = fourier_op.operator_norm(random_image, dim=None, max_iterations=64)
+    fourier_op_norm_batched = fourier_op.operator_norm(random_image, dim=dim, n_max_iterations=64)
+    fourier_op_norm_non_batched = fourier_op.operator_norm(random_image, dim=None, n_max_iterations=64)
     fourier_op_norm_true = 1.0
 
     torch.testing.assert_close(fourier_op_norm_batched, torch.ones(4, 1, 1, 1), atol=1e-4, rtol=1e-4)
@@ -117,8 +119,8 @@ def test_batched_operator_norm():
     random_vector1 = random_generator.float32_tensor((input_shape[0], input_shape[1], input_shape[3]))
 
     # compute batched and non batched operator norms
-    operator1_norm_batched = operator1.operator_norm(random_vector1, dim=dim, max_iterations=32)
-    operator1_norm_non_batched = operator1.operator_norm(random_vector1, dim=None, max_iterations=32)
+    operator1_norm_batched = operator1.operator_norm(random_vector1, dim=dim, n_max_iterations=32)
+    operator1_norm_non_batched = operator1.operator_norm(random_vector1, dim=None, n_max_iterations=32)
 
     torch.testing.assert_close(
         operator1_norm_batched.max().item(), operator1_norm_non_batched.item(), atol=1e-4, rtol=1e-4
@@ -133,7 +135,7 @@ def test_batched_operator_norm():
     # the multiplication of the block-diagonal matrix with a 2*4*8*8 = 512-dimensional vector
     operator2 = EinsumOp(matrix2, '... y x, x-> ... y')
     random_vector2 = random_generator.float32_tensor(matrix2.shape[1])
-    operator2_norm_non_batched = operator2.operator_norm(random_vector2, dim=None, max_iterations=32)
+    operator2_norm_non_batched = operator2.operator_norm(random_vector2, dim=None, n_max_iterations=32)
 
     # test whether the operator-norm calculated from the first operator and from the second
     # are equal
