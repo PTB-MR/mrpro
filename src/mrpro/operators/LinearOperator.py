@@ -52,15 +52,15 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         self,
         initial_value: torch.Tensor,
         dim: Sequence[int] | None,
-        max_iterations: int = 64,
+        n_max_iterations: int = 64,
     ) -> torch.Tensor:
         """Power iteration for computing the operator norm of the linear operator.
 
         Parameters
         ----------
         initial_value
-            initial value to start the iteration; if chosen exactly as zero-tensor,
-            we randomly generate an initial value.
+            initial value to start the iteration; if the initial value contains a zero-vector for
+            one of the considered problems, the function throws and exception.
         dim
             the dimensions of the tensors on which the operator operates.
             For example, for a matrix-vector multiplication example, a batched matrix tensor with shape (4,30,80,160),
@@ -74,29 +74,29 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
             domain of the considered operator (whose dimensionality is implicitly defined by choosing dim), such that
             the pointwise multiplication of the operator norm and elements of the domain (to be for example used
             in a Landweber iteration) is well-defined.
-        max_iterations, optional
+        n_max_iterations , optional
             maximal number of iterations
 
         Returns
         -------
             an estimaton of the operator norm
         """
+        if n_max_iterations < 1:
+            raise Exception('The number of iterations should be larger than zero.')
+
         norm_initial_value = torch.linalg.vector_norm(initial_value, dim=dim, keepdim=True)
-        if dim is None:
-            if norm_initial_value == 0:
+        if not (norm_initial_value > 0).all():
+            if dim is None:
                 raise Exception('The initial value for the iteration should be different from the zero-vector.')
-        else:
-            if not (norm_initial_value > 0).all():
+            else:
                 raise Exception(
                     'Found at least one zero-vector as starting point. \
                     For each of the considered operators, the initial value for the iteration \
                     should be different from the zero-vector.'
                 )
-        if max_iterations < 1:
-            raise Exception('The number of iterations should be larger than zero.')
 
         vector = initial_value
-        for _ in range(max_iterations):
+        for _ in range(n_max_iterations):
             # apply the operator to the vector
             (vector,) = self.adjoint(*self(vector))
 
