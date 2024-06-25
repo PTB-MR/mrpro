@@ -65,7 +65,7 @@ notebook = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = ["error"]
-# addopts = "-n auto" # TODO: debug vscode missing tests if enabled
+addopts = "-n auto"
 markers = ["cuda : Tests only to be run when cuda device is available"]
 
 # MyPy section
