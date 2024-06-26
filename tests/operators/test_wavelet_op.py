@@ -88,6 +88,21 @@ def test_wavelet_op_error_for_odd_domain_shape():
         WaveletOp(domain_shape=(11, 20), dim=(-2, -1))
 
 
+def test_wavelet_op_complex_real_shape():
+    """Test that the shape of the output tensors is the same for complex/real data."""
+    im_shape = (6, 10, 20, 30)
+    domain_shape = (20, 30, 6)
+    dim = (-2, -1, -4)
+    random_generator = RandomGenerator(seed=0)
+    img_complex = random_generator.complex64_tensor(size=im_shape)
+    img_real = random_generator.float32_tensor(size=im_shape)
+    wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name='db4', level=None)
+    (coeff_complex,) = wavelet_op(img_complex)
+    (coeff_real,) = wavelet_op(img_real)
+    assert coeff_complex.shape == coeff_real.shape
+    assert wavelet_op.adjoint(coeff_complex)[0].shape == wavelet_op.adjoint(coeff_real)[0].shape
+
+
 @pytest.mark.parametrize('wavelet_name', ['haar', 'db4'])
 @pytest.mark.parametrize(
     ('im_shape', 'domain_shape', 'dim'),
