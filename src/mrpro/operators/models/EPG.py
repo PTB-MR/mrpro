@@ -219,7 +219,7 @@ class EpgMrfFispWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Te
     n_rf_pulses_per_block = 48 # 48 RF pulses in each block
     # Cardiac trigger delay is 700 ms. The delay between blocks is smaller because the duration of the preparation
     # pulses needs to be taken into consideration
-    delay_after_block = [680, 700, 660, 620]*4
+    delay_after_block = [700, 660, 620, 680]*4
 
     """
 
