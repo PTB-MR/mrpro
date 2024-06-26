@@ -72,7 +72,7 @@ tr =
 inv_prep_ti = [20,None,None,None,None]*3 # 20 ms delay after inversion pulse in block 0
 te_prep_te = [None,None,30,50,100]*3 # T2-preparation pulse with TE = 30, 50, 100
 n_rf_pulses_per_block = 47 # 47 RF pulses in each block
-delay_after_block = [800, 770, 750, 700, 780]*3
+delay_after_block = [1000, 970, 950, 900, 980]*3
 epg_mrf_fisp = EpgMrfFispWithPreparation(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
 (signal_dictionary,) = epg_mrf_fisp.forward(m0, t1, t2)
 
