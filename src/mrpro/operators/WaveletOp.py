@@ -222,12 +222,15 @@ class WaveletOp(LinearOperator):
             coeffs3 = self._undo_format_coeffs_3d(coefficients_list)
             data = waverec3(coeffs3, self.wavelet_name, axes=(-3, -2, -1))
 
-        # if we deal with complex coefficients, we also return complex data
-        if coefficients_stack.is_complex():
-            data = torch.view_as_complex(data.moveaxis(0, -1).contiguous())
-
         # undo swapping of axes
-        data = torch.moveaxis(data, list(range(-len(self.dim), 0)), dim)
+        if coefficients_stack.is_complex():
+            data = torch.moveaxis(
+                data, list(range(-len(self.dim), 0)), [d + 1 for d in dim]
+            )  # +1 because first dim is real/imag
+            # if we deal with complex coefficients, we also return complex data
+            data = torch.view_as_complex(data.moveaxis(0, -1).contiguous())
+        else:
+            data = torch.moveaxis(data, list(range(-len(self.dim), 0)), dim)
 
         return (data,)
 
