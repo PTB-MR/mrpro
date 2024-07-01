@@ -68,7 +68,9 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
         Parameters
         ----------
         sampling_time
-            time points when model is evaluated
+            time points when model is evaluated. A sampling_time of 0 describes the first acquired data point after the
+            inversion pulse and spoiler gradients. To take the T1 relaxation during the delay between inversion pulse
+            and start of data acquisition into account, set the delay_after_preparation > 0.
             with shape (time, ...)
         repetition_time
             repetition time
@@ -98,7 +100,7 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
             longitudinal relaxation time T1
             with shape (... other, coils, z, y, x)
         flip_angle
-            flip angle of data acquisition
+            flip angle of data acquisition in rad
             with shape (... other, coils, z, y, x)
 
         Returns
