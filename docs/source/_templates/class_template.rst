@@ -5,7 +5,7 @@
 .. autoclass:: {{ objname }}
    :members:
    :show-inheritance:
-   :inherited-members: torch.nn.Module
+   :inherited-members: Module
 
    {% block methods %}
    .. automethod:: __init__
