@@ -1,5 +1,6 @@
 from mrpro.data import enums
 from mrpro.data import traj_calculators
+from mrpro.data import acq_filters
 from mrpro.data.AcqInfo import AcqIdx
 from mrpro.data.AcqInfo import AcqInfo
 from mrpro.data.CsmData import CsmData
