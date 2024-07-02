@@ -1,0 +1,40 @@
+mrpro.data.acq\_filters
+=======================
+
+.. automodule:: mrpro.data.acq_filters
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+   
+      is_coil_calibration_acquisition
+      is_image_acquisition
+      is_noise_acquisition
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class_template.rst
+   
+      AcqFlags
+   
+   
+
+   
+   
+   
+
+
+

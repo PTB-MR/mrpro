@@ -54,6 +54,7 @@
    :template: module_template.rst
    :recursive:
 
+   mrpro.data.acq_filters
    mrpro.data.enums
    mrpro.data.traj_calculators
 

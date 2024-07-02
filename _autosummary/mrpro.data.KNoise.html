@@ -386,6 +386,13 @@ document.write(`
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.QHeader.html">mrpro.data.QHeader</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.SpatialDimension.html">mrpro.data.SpatialDimension</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mrpro.data.TrajectoryDescription.html">mrpro.data.TrajectoryDescription</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="mrpro.data.acq_filters.html">mrpro.data.acq_filters</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.data.acq_filters.is_coil_calibration_acquisition.html">mrpro.data.acq_filters.is_coil_calibration_acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.data.acq_filters.is_image_acquisition.html">mrpro.data.acq_filters.is_image_acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.data.acq_filters.is_noise_acquisition.html">mrpro.data.acq_filters.is_noise_acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mrpro.data.acq_filters.AcqFlags.html">mrpro.data.acq_filters.AcqFlags</a></li>
+</ul>
+</details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="mrpro.data.enums.html">mrpro.data.enums</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3"><a class="reference internal" href="mrpro.data.enums.AcqFlags.html">mrpro.data.enums.AcqFlags</a></li>
 <li class="toctree-l3"><a class="reference internal" href="mrpro.data.enums.CalibrationMode.html">mrpro.data.enums.CalibrationMode</a></li>
@@ -542,7 +549,7 @@ document.write(`
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">double</span></code>(*[, memory_format, copy])</p></td>
 <td><p>Convert all float tensors to double precision.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_file</span></code>(filename[, dataset_idx])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_file</span></code>(filename[, dataset_idx, ...])</p></td>
 <td><p>Load noise measurements from ISMRMRD file.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">half</span></code>(*[, memory_format, copy])</p></td>
@@ -651,13 +658,14 @@ This will also create new tensors for views</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.KNoise.from_file">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#mrpro.data.KNoise" title="mrpro.data.KNoise.KNoise"><span class="pre">KNoise</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/KNoise.html#KNoise.from_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KNoise.from_file" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">~pathlib.Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_idx:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acquisition_filter_criterion:</span> <span class="pre">~collections.abc.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">is_noise_acquisition&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#mrpro.data.KNoise" title="mrpro.data.KNoise.KNoise"><span class="pre">KNoise</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/KNoise.html#KNoise.from_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KNoise.from_file" title="Link to this definition">#</a></dt>
 <dd><p>Load noise measurements from ISMRMRD file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>filename</strong> – Path to the ISMRMRD file</p></li>
 <li><p><strong>dataset_idx</strong> – Index of the dataset to load (converter creates dataset, dataset_1, …), default is -1 (last)</p></li>
+<li><p><strong>acquisition_filter_criterion</strong> – function which returns True if an acquisition should be included in KNoise</p></li>
 </ul>
 </dd>
 </dl>
