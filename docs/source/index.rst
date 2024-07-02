@@ -1,6 +1,6 @@
-.. MRPro documentation
+.. MRpro documentation
 
-Welcome to MRPro's documentation!
+Welcome to MRpro's documentation!
 =================================
 
 .. toctree::

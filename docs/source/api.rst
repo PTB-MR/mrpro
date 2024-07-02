@@ -3,7 +3,7 @@ API
 
 This is the mrpro api documentation.
 
-MRPro Algorithms
+MRpro Algorithms
 ----------------
 
 .. autosummary::
@@ -14,7 +14,7 @@ MRPro Algorithms
    mrpro.algorithms
 
 
-MRPro Data
+MRpro Data
 ----------
 
 .. autosummary::
@@ -25,7 +25,7 @@ MRPro Data
    mrpro.data
 
 
-MRPro Operators
+MRpro Operators
 ---------------
 
 .. autosummary::
@@ -36,7 +36,7 @@ MRPro Operators
    mrpro.operators
 
 
-MRPro Phantoms
+MRpro Phantoms
 --------------
 
 .. autosummary::
@@ -47,7 +47,7 @@ MRPro Phantoms
    mrpro.phantoms
 
 
-MRPro Utilities
+MRpro Utilities
 ---------------
 
 .. autosummary::
