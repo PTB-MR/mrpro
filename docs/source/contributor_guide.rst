@@ -1,6 +1,6 @@
-======================
-Guide for Contributors
-======================
+=================
+Contributor Guide
+=================
 
 Repo structure
 ==============

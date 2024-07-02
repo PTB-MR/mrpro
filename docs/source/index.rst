@@ -6,14 +6,11 @@ Welcome to MRPro's documentation!
 .. toctree::
    :maxdepth: 1
 
+   api
+   examples
    user_guide
    contributor_guide
-   examples
    faq
-   api
-
-
-
 
 Indices and tables
 ==================
