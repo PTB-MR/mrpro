@@ -16,7 +16,8 @@
 
 from __future__ import annotations
 
-from abc import abstractmethod
+from collections.abc import Callable
+from typing import Any
 from typing import overload
 
 import torch
@@ -29,6 +30,39 @@ from mrpro.operators.Operator import OperatorSum
 from mrpro.operators.Operator import Tin2
 
 
+class _AutogradWrapper(torch.autograd.Function):
+    """Wrap forward and adjoint functions for autograd."""
+
+    # If the forward and adjoint implementation are vmap-compatible,
+    # the function can be marked as such to enable vmap support.
+    generate_vmap_rule = True
+
+    @staticmethod
+    def forward(  # type: ignore [override]
+        fw: Callable[[torch.Tensor], torch.Tensor],
+        bw: Callable[[torch.Tensor], torch.Tensor],  # noqa: ARG004
+        x: torch.Tensor,
+    ) -> Any:  # noqa: ANN401
+        return fw(x)
+
+    @staticmethod
+    def setup_context(
+        ctx: Any,  # noqa: ANN401
+        inputs: tuple[Callable[[torch.Tensor], torch.Tensor], Callable[[torch.Tensor], torch.Tensor], torch.Tensor],
+        output: torch.Tensor,
+    ) -> torch.Tensor:
+        ctx.fw, ctx.bw, x = inputs
+        return output
+
+    @staticmethod
+    def backward(ctx: Any, *grad_output: torch.Tensor) -> tuple[None, None, Any | None]:  # noqa: ANN401
+        return None, None, _AutogradWrapper.apply(ctx.bw, ctx.fw, grad_output[0])
+
+    @staticmethod
+    def jvp(ctx: Any, *grad_inputs: Any) -> Any:  # noqa: ANN401
+        return _AutogradWrapper.apply(ctx.fw, ctx.bw, grad_inputs[-1])
+
+
 class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """General Linear Operator.
 
@@ -37,10 +71,13 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     with a,b scalars and x,y tensors.
     """
 
-    @abstractmethod
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Adjoint of the operator."""
-        ...
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply the operator to x."""
+        return (_AutogradWrapper.apply(self._forward_implementation, self._adjoint_implementation, x),)
+
+    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply the adjoint of the Operator to x."""
+        return (_AutogradWrapper.apply(self._adjoint_implementation, self._forward_implementation, x),)
 
     @property
     def H(self) -> LinearOperator:  # noqa: N802
