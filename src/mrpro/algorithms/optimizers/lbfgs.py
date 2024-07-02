@@ -47,20 +47,17 @@ def lbfgs(
     lr
         learning rate
     max_iter
-        maximal number of iterations, by default 100
+        maximal number of iterations
     max_eval
-        maximal number of evaluations of f per optimization step,
-        by default 100
+        maximal number of evaluations of f per optimization step
     tolerance_grad
-        termination tolerance on first order optimality,
-        by default 1e-07
+        termination tolerance on first order optimality
     tolerance_change
-        termination tolerance on function value/parameter changes, by default 1e-09
+        termination tolerance on function value/parameter changes
     history_size
-        update history size, by default 10
+        update history size
     line_search_fn
         line search algorithm, either 'strong_wolfe' or None (meaning constant step size)
-        by default "strong_wolfe"
 
     Returns
     -------

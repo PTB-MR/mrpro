@@ -30,9 +30,9 @@ class Dicom2DTestImage:
     filename
         full path and filename
     matrix_size_y
-        size of image matrix along y, by default 128
+        size of image matrix along y
     matrix_size_x
-        size of image matrix along x, by default 256
+        size of image matrix along x
     phantom
         phantom with different ellipses
     """

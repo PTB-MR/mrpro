@@ -52,7 +52,7 @@ class KTrajectory(MoveDataMixin):
     """tolerance of how close trajectory positions have to be to integer grid points."""
 
     repeat_detection_tolerance: float | None = 1e-3
-    """tolerance for repeat detection, by default 1e-3. Set None to disable."""
+    """tolerance for repeat detection. Set None to disable."""
 
     def __post_init__(self) -> None:
         """Reduce repeated dimensions to singletons."""
