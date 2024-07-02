@@ -1,7 +1,7 @@
 API
 ===
 
-This is the mrpro api documentation.
+This is the MRpro Application Programming Interface (API) documentation.
 
 MRpro Algorithms
 ----------------
