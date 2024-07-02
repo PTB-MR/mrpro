@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from collections.abc import Sequence
 from typing import overload
 
 import torch
@@ -46,6 +47,71 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     def H(self) -> LinearOperator:  # noqa: N802
         """Adjoint operator."""
         return AdjointLinearOperator(self)
+
+    def operator_norm(
+        self,
+        initial_value: torch.Tensor,
+        dim: Sequence[int] | None,
+        n_max_iterations: int = 64,
+    ) -> torch.Tensor:
+        """Power iteration for computing the operator norm of the linear operator.
+
+        Parameters
+        ----------
+        initial_value
+            initial value to start the iteration; if the initial value contains a zero-vector for
+            one of the considered problems, the function throws and exception.
+        dim
+            the dimensions of the tensors on which the operator operates.
+            For example, for a matrix-vector multiplication example, a batched matrix tensor with shape (4,30,80,160),
+            input tensors of shape (4,30,160) to be multiplied, and dim = None, it is understood that the the
+            matrix representation of the operator corresponds to a block diagonal operator (with 4*30 matrices)
+            and thus the algorithm returns a tensor of shape (1,1,1) containing one single value.
+            In contrast, if for example, dim=(-1,), the algorithm computes a batched operator
+            norm and returns a tensor of shape (4,30,1) corresponding to the operator norms of the respective
+            matrices in the diagonal of the block-diagonal operator (if considered in matrix representation).
+            In any case, the output of the algorithm has the same number of dimensions as the elements of the
+            domain of the considered operator (whose dimensionality is implicitly defined by choosing dim), such that
+            the pointwise multiplication of the operator norm and elements of the domain (to be for example used
+            in a Landweber iteration) is well-defined.
+        n_max_iterations , optional
+            maximal number of iterations
+
+        Returns
+        -------
+            an estimaton of the operator norm
+        """
+        if n_max_iterations < 1:
+            raise Exception('The number of iterations should be larger than zero.')
+
+        norm_initial_value = torch.linalg.vector_norm(initial_value, dim=dim, keepdim=True)
+        if not (norm_initial_value > 0).all():
+            if dim is None:
+                raise Exception('The initial value for the iteration should be different from the zero-vector.')
+            else:
+                raise Exception(
+                    'Found at least one zero-vector as starting point. \
+                    For each of the considered operators, the initial value for the iteration \
+                    should be different from the zero-vector.'
+                )
+
+        vector = initial_value
+        for _ in range(n_max_iterations):
+            # apply the operator to the vector
+            (vector,) = self.adjoint(*self(vector))
+
+            # normalize vector
+            vector /= torch.linalg.vector_norm(vector, dim=dim, keepdim=True)
+
+        (operator_vector,) = self.adjoint(*self(vector))
+
+        product = vector.real * operator_vector.real
+        if vector.is_complex() and operator_vector.is_complex():
+            product += vector.imag * operator_vector.imag
+        dim = tuple(dim) if dim is not None else dim
+        op_norm = product.sum(dim, keepdim=True).sqrt()
+
+        return op_norm
 
     @overload  # type: ignore[override]
     def __matmul__(self, other: LinearOperator) -> LinearOperator: ...
