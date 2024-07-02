@@ -76,7 +76,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         header_overwrites
             dictionary of key-value pairs to overwrite the header
         dataset_idx
-            index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
+            index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...)
         acquisition_filter_criterion
             function which returns True if an acquisition should be included in KData
         """

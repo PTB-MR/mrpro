@@ -74,7 +74,7 @@ class SpatialDimension(MoveDataMixin, Generic[T]):
         data
             shape (..., 3) in the order (x,y,z)
         conversion
-            will be called for each value to convert it, by default None
+            will be called for each value to convert it
         """
         if not isinstance(data, np.ndarray | torch.Tensor):
             data = np.asarray(data)
@@ -104,7 +104,7 @@ class SpatialDimension(MoveDataMixin, Generic[T]):
         data
             shape (..., 3) in the order (z,y,x)
         conversion
-            will be called for each value to convert it, by default None
+            will be called for each value to convert it
         """
         data = torch.flip(torch.as_tensor(data), (-1,))
         return SpatialDimension.from_array_xyz(data, conversion)

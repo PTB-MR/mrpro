@@ -41,13 +41,13 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
             frequency offsets [Hz]
             with shape (offsets, ...)
         tp
-            RF pulse duration [s], by default 0.005
+            RF pulse duration [s]
         b1_nom
-            nominal B1 amplitude [µT], by default 3.70
+            nominal B1 amplitude [µT]
         gamma
-            gyromagnetic ratio [MHz/T], by default 42.5764
+            gyromagnetic ratio [MHz/T]
         freq
-            larmor frequency [MHz], by default 127.7292
+            larmor frequency [MHz]
         """
         super().__init__()
         # convert all parameters to tensors
