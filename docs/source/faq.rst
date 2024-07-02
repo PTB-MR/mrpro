@@ -1,6 +1,6 @@
-==========================
-Frequently asked questions
-==========================
+===
+FAQ
+===
 
 What is encoded-space and recon-space?
 ======================================
