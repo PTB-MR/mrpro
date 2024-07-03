@@ -115,11 +115,11 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
         m_start = m0 * self.m0_scaling_preparation
 
         # relaxation towards M0
-        t1 = torch.where(t1 == 0, 1e-10, t1)
         m_start = m0 + (m_start - m0) * torch.exp(-(self.delay_after_preparation / t1))
 
         # transient steady state
-        t1_star = 1 / (1 / t1 - torch.log(torch.cos(flip_angle)) / self.repetition_time)
-        m0_star = m0 * t1_star / t1
-        signal = m0_star + (m_start - m0_star) * torch.exp(-sampling_time / t1_star)
+        ln_cos_tr = torch.log(torch.cos(flip_angle)) / self.repetition_time
+        r1_star = 1 / t1 - ln_cos_tr
+        m0_star = m0 / (1 - t1 * ln_cos_tr)
+        signal = m0_star + (m_start - m0_star) * torch.exp(-sampling_time * r1_star)
         return (signal,)

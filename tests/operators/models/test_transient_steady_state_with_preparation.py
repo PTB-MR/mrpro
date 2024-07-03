@@ -50,7 +50,6 @@ def test_transient_steady_state(sampling_time, m0_scaling_preparation, result):
         torch.testing.assert_close(signal[0, ...], -m0)
     # Assert closensess to m0*
     elif result == 'm0*':
-        t1 = torch.where(t1 == 0, 1e-10, t1)
         t1_star = 1 / (1 / t1 - torch.log(torch.cos(flip_angle)) / repetition_time)
         m0_star = m0 * t1_star / t1
         torch.testing.assert_close(signal[0, ...], m0_star)
