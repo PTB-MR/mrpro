@@ -441,7 +441,7 @@ class Rotation(torch.nn.Module):
             (`degrees` is True).
         degrees
             If True, then the given angles are assumed to be in degrees.
-            Default is False.
+            Otherwise they are assumed to be in radians
 
         Returns
         -------
@@ -567,8 +567,7 @@ class Rotation(torch.nn.Module):
         Parameters
         ----------
         degrees
-            Returned magnitudes are in degrees if this flag is True, else they are
-            in radians. Default is False.
+            Returned magnitudes are in degrees if this flag is True, else they are in radians
 
         Returns
         -------
@@ -621,7 +620,7 @@ class Rotation(torch.nn.Module):
             call.
         degrees
             Returned angles are in degrees if this flag is True, else they are
-            in radians. Default is False.
+            in radians
 
         Returns
         -------
@@ -723,7 +722,7 @@ class Rotation(torch.nn.Module):
             pytorch broadcasting rules.
         inverse
             If True then the inverse of the rotation(s) is applied to the input
-            vectors. Default is False.
+            vectors.
 
         Returns
         -------
