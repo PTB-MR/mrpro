@@ -47,8 +47,8 @@ def test_filter_separable(pad_mode, center_value, edge_value):
     assert result[0, 0] == edge_value
 
 
-@pytest.mark.parametrize('filter_dtype', [torch.float32, torch.float64, torch.int32, torch.complex32, torch.complex64])
-@pytest.mark.parametrize('data_dtype', [torch.float32, torch.float64, torch.int32, torch.complex32, torch.complex64])
+@pytest.mark.parametrize('filter_dtype', [torch.float32, torch.float64, torch.int32, torch.complex64, torch.complex128])
+@pytest.mark.parametrize('data_dtype', [torch.float32, torch.float64, torch.int32, torch.complex64, torch.complex128])
 def test_filter_separable_dtype(filter_dtype, data_dtype):
     """Test filter_separable and different padding modes."""
 
