@@ -14,7 +14,6 @@
 
 import pytest
 import torch
-
 from mrpro.utils.filters import filter_separable
 from mrpro.utils.filters import gaussian_filter
 from mrpro.utils.filters import uniform_filter
