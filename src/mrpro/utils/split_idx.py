@@ -27,9 +27,9 @@ def split_idx(idx: torch.Tensor, np_per_block: int, np_overlap: int = 0, cyclic:
     np_per_block
         Number of points per block.
     np_overlap
-        Number of points overlapping between blocks, by default 0, i.e. no overlap between blocks
+        Number of points overlapping between blocks, default of 0 means no overlap between blocks
     cyclic
-        Last block is filled up with points from the first block, e.g. due to cyclic cardiac motion, by default False
+        Last block is filled up with points from the first block, e.g. due to cyclic cardiac motion
 
 
     Example:
