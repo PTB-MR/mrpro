@@ -19,6 +19,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import warnings
+from collections.abc import Callable
 from pathlib import Path
 from typing import Protocol
 
@@ -31,9 +32,9 @@ from mrpro.data._kdata.KDataRearrangeMixin import KDataRearrangeMixin
 from mrpro.data._kdata.KDataRemoveOsMixin import KDataRemoveOsMixin
 from mrpro.data._kdata.KDataSelectMixin import KDataSelectMixin
 from mrpro.data._kdata.KDataSplitMixin import KDataSplitMixin
+from mrpro.data.acq_filters import is_image_acquisition
 from mrpro.data.AcqInfo import AcqInfo
 from mrpro.data.EncodingLimits import Limits
-from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
@@ -45,18 +46,6 @@ from mrpro.utils import modify_acq_info
 KDIM_SORT_LABELS = ('k1', 'k2', 'average', 'slice', 'contrast', 'phase', 'repetition', 'set')
 # TODO: Consider adding the users labels here, but remember issue #32 and NOT add user5 and user6.
 OTHER_LABELS = ('average', 'slice', 'contrast', 'phase', 'repetition', 'set')
-
-# Same criteria as https://github.com/wtclarke/pymapvbvd/blob/master/mapvbvd/mapVBVD.py uses
-DEFAULT_IGNORE_FLAGS = (
-    AcqFlags.ACQ_IS_NOISE_MEASUREMENT
-    | AcqFlags.ACQ_IS_DUMMYSCAN_DATA
-    | AcqFlags.ACQ_IS_HPFEEDBACK_DATA
-    | AcqFlags.ACQ_IS_NAVIGATION_DATA
-    | AcqFlags.ACQ_IS_PHASECORR_DATA
-    | AcqFlags.ACQ_IS_PHASE_STABILIZATION
-    | AcqFlags.ACQ_IS_PHASE_STABILIZATION_REFERENCE
-    | AcqFlags.ACQ_IS_PARALLEL_CALIBRATION
-)
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
@@ -74,7 +63,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         ktrajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
         header_overwrites: dict[str, object] | None = None,
         dataset_idx: int = -1,
-        ignore_flags: AcqFlags = DEFAULT_IGNORE_FLAGS,
+        acquisition_filter_criterion: Callable = is_image_acquisition,
     ) -> KData:
         """Load k-space data from an ISMRMRD file.
 
@@ -87,12 +76,9 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         header_overwrites
             dictionary of key-value pairs to overwrite the header
         dataset_idx
-            index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
-        ignore_flags
-            Acqisition flags to filter out. Defaults to all non-images as defined by pymapvbvd.
-            Use ACQ_NO_FLAG to disable the filter.
-            Note: If ACQ_IS_PARALLEL_CALIBRATION is set without also setting ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING
-                    we interpret it as: Ignore if IS_PARALLEL_CALIBRATION and not PARALLEL_CALIBRATION_AND_IMAGING
+            index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...)
+        acquisition_filter_criterion
+            function which returns True if an acquisition should be included in KData
         """
         # Can raise FileNotFoundError
         with ismrmrd.File(filename, 'r') as file:
@@ -105,22 +91,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
                 mtime = 0
             modification_time = datetime.datetime.fromtimestamp(mtime)
 
-        if (
-            AcqFlags.ACQ_IS_PARALLEL_CALIBRATION in ignore_flags
-            and AcqFlags.ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING not in ignore_flags
-        ):
-            # if only ACQ_IS_PARALLEL_CALIBRATION is set, reinterpret it as: ignore if
-            # ACQ_IS_PARALLEL_CALIBRATION is set and ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING is not set
-            ignore_flags = ignore_flags & ~AcqFlags.ACQ_IS_PARALLEL_CALIBRATION
-            acquisitions = list(
-                filter(
-                    lambda acq: (AcqFlags.ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING.value & acq.flags)
-                    or not (AcqFlags.ACQ_IS_PARALLEL_CALIBRATION.value & acq.flags),
-                    acquisitions,
-                ),
-            )
-
-        acquisitions = list(filter(lambda acq: not (ignore_flags.value & acq.flags), acquisitions))
+        acquisitions = [acq for acq in acquisitions if acquisition_filter_criterion(acq)]
         kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
