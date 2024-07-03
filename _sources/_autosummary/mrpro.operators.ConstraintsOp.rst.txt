@@ -1,0 +1,85 @@
+mrpro.operators.ConstraintsOp
+=============================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: ConstraintsOp
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ConstraintsOp.__init__
+      ~ConstraintsOp.add_module
+      ~ConstraintsOp.apply
+      ~ConstraintsOp.bfloat16
+      ~ConstraintsOp.buffers
+      ~ConstraintsOp.children
+      ~ConstraintsOp.compile
+      ~ConstraintsOp.cpu
+      ~ConstraintsOp.cuda
+      ~ConstraintsOp.double
+      ~ConstraintsOp.eval
+      ~ConstraintsOp.extra_repr
+      ~ConstraintsOp.float
+      ~ConstraintsOp.forward
+      ~ConstraintsOp.get_buffer
+      ~ConstraintsOp.get_extra_state
+      ~ConstraintsOp.get_parameter
+      ~ConstraintsOp.get_submodule
+      ~ConstraintsOp.half
+      ~ConstraintsOp.inverse
+      ~ConstraintsOp.ipu
+      ~ConstraintsOp.load_state_dict
+      ~ConstraintsOp.modules
+      ~ConstraintsOp.named_buffers
+      ~ConstraintsOp.named_children
+      ~ConstraintsOp.named_modules
+      ~ConstraintsOp.named_parameters
+      ~ConstraintsOp.parameters
+      ~ConstraintsOp.register_backward_hook
+      ~ConstraintsOp.register_buffer
+      ~ConstraintsOp.register_forward_hook
+      ~ConstraintsOp.register_forward_pre_hook
+      ~ConstraintsOp.register_full_backward_hook
+      ~ConstraintsOp.register_full_backward_pre_hook
+      ~ConstraintsOp.register_load_state_dict_post_hook
+      ~ConstraintsOp.register_module
+      ~ConstraintsOp.register_parameter
+      ~ConstraintsOp.register_state_dict_pre_hook
+      ~ConstraintsOp.requires_grad_
+      ~ConstraintsOp.set_extra_state
+      ~ConstraintsOp.share_memory
+      ~ConstraintsOp.sigmoid
+      ~ConstraintsOp.sigmoid_inverse
+      ~ConstraintsOp.softplus
+      ~ConstraintsOp.softplus_inverse
+      ~ConstraintsOp.state_dict
+      ~ConstraintsOp.to
+      ~ConstraintsOp.to_empty
+      ~ConstraintsOp.train
+      ~ConstraintsOp.type
+      ~ConstraintsOp.xpu
+      ~ConstraintsOp.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ConstraintsOp.T_destination
+      ~ConstraintsOp.call_super_init
+      ~ConstraintsOp.dump_patches
+      ~ConstraintsOp.training
+   
+   

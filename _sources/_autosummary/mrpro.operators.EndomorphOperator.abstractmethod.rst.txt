@@ -1,0 +1,6 @@
+mrpro.operators.EndomorphOperator.abstractmethod
+================================================
+
+.. currentmodule:: mrpro.operators.EndomorphOperator
+
+.. autofunction:: abstractmethod

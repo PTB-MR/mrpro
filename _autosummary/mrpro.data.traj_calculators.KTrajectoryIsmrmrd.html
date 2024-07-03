@@ -1,523 +1,127 @@
-
 <!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-
-<html lang="en" data-content_root="../" >
-
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-
-    <title>mrpro.data.traj_calculators.KTrajectoryIsmrmrd &#8212; mrpro</title>
-  
-  
-  
-  <script data-cfasync="false">
-    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
-    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
-  </script>
-  
-  <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.data.traj_calculators.KTrajectoryIsmrmrd &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=16f952a1" />
 
   
-  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
-
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=b625871b" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
-  <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
-  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
-
-    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../_static/doctools.js?v=9a2dae69"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/mrpro.data.traj_calculators.KTrajectoryIsmrmrd';</script>
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="mrpro.data.traj_calculators.KTrajectoryPulseq" href="mrpro.data.traj_calculators.KTrajectoryPulseq.html" />
-    <link rel="prev" title="mrpro.data.traj_calculators.KTrajectoryCartesian" href="mrpro.data.traj_calculators.KTrajectoryCartesian.html" />
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="docsearch:language" content="en"/>
-  </head>
-  
-  
-  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+    <link rel="prev" title="mrpro.data.traj_calculators.KTrajectoryCartesian" href="mrpro.data.traj_calculators.KTrajectoryCartesian.html" /> 
+</head>
 
-  
-  
-  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
-  
-  <div id="pst-scroll-pixel-helper"></div>
-  
-  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
-    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
 
-  
-  <input type="checkbox"
-          class="sidebar-toggle"
-          id="pst-primary-sidebar-checkbox"/>
-  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
-  
-  <input type="checkbox"
-          class="sidebar-toggle"
-          id="pst-secondary-sidebar-checkbox"/>
-  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
-  
-  <div class="search-button__wrapper">
-    <div class="search-button__overlay"></div>
-    <div class="search-button__search-container">
-<form class="bd-search d-flex align-items-center"
-      action="../search.html"
-      method="get">
-  <i class="fa-solid fa-magnifying-glass"></i>
-  <input type="search"
-         class="form-control"
-         name="q"
-         id="search-input"
-         placeholder="Search the docs ..."
-         aria-label="Search the docs ..."
-         autocomplete="off"
-         autocorrect="off"
-         autocapitalize="off"
-         spellcheck="false"/>
-  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
-</form></div>
-  </div>
-
-  <div class="pst-async-banner-revealer d-none">
-  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
-</div>
-
-  
-    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
-<div class="bd-header__inner bd-page-width">
-  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
-    <span class="fa-solid fa-bars"></span>
-  </button>
-  
-  
-  <div class="col-lg-3 navbar-header-items__start">
-    
-      <div class="navbar-item">
-
-  
-    
-  
-
-<a class="navbar-brand logo" href="../index.html">
-  
-  
-  
-  
-  
-  
-    <p class="title logo__title">mrpro</p>
-  
-</a></div>
-    
-  </div>
-  
-  <div class="col-lg-9 navbar-header-items">
-    
-    <div class="me-auto navbar-header-items__center">
-      
-        <div class="navbar-item">
-<nav>
-  <ul class="bd-navbar-elements navbar-nav">
-    
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../user_guide.html">
-    Guide for Users
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../contributor_guide.html">
-    Guide for Contributors
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../examples.html">
-    Examples
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../faq.html">
-    Frequently asked questions
-  </a>
-</li>
-
-
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="../api.html">
-    API
-  </a>
-</li>
-
-  </ul>
-</nav></div>
-      
-    </div>
-    
-    
-    <div class="navbar-header-items__end">
-      
-        <div class="navbar-item navbar-persistent--container">
           
+          
+          <a href="../index.html" class="icon icon-home">
+            mrpro
+          </a>
+              <div class="version">
+                0.0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-algorithms">MRpro Algorithms</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../api.html#mrpro-data">MRpro Data</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="mrpro.data.html">mrpro.data</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.AcqIdx.html">mrpro.data.AcqIdx</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.AcqInfo.html">mrpro.data.AcqInfo</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.CsmData.html">mrpro.data.CsmData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.Data.html">mrpro.data.Data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.DcfData.html">mrpro.data.DcfData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.EncodingLimits.html">mrpro.data.EncodingLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.IData.html">mrpro.data.IData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.IHeader.html">mrpro.data.IHeader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KData.html">mrpro.data.KData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KHeader.html">mrpro.data.KHeader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KNoise.html">mrpro.data.KNoise</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KTrajectory.html">mrpro.data.KTrajectory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KTrajectoryRawShape.html">mrpro.data.KTrajectoryRawShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.Limits.html">mrpro.data.Limits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.MoveDataMixin.html">mrpro.data.MoveDataMixin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.QData.html">mrpro.data.QData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.QHeader.html">mrpro.data.QHeader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.SpatialDimension.html">mrpro.data.SpatialDimension</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.TrajectoryDescription.html">mrpro.data.TrajectoryDescription</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.acq_filters.html">mrpro.data.acq_filters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.enums.html">mrpro.data.enums</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="mrpro.data.traj_calculators.html">mrpro.data.traj_calculators</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-operators">MRpro Operators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-phantoms">MRpro Phantoms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-utilities">MRpro Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
 
- <script>
- document.write(`
-   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <span class="search-button__default-text">Search</span>
-    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-   </button>
- `);
- </script>
         </div>
-      
-      
-        <div class="navbar-item">
+      </div>
+    </nav>
 
-<script>
-document.write(`
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
-    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
-    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
-  </button>
-`);
-</script></div>
-      
-        <div class="navbar-item"><ul class="navbar-icon-links"
-    aria-label="Icon Links">
-        <li class="nav-item">
-          
-          
-          
-          
-          
-          
-          
-          
-          <a href="https://github.com/PTB-MR/mrpro" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
-        </li>
-</ul></div>
-      
-    </div>
-    
-  </div>
-  
-  
-    <div class="navbar-persistent--mobile">
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">mrpro</a>
+      </nav>
 
- <script>
- document.write(`
-   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <span class="search-button__default-text">Search</span>
-    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-   </button>
- `);
- </script>
-    </div>
-  
-
-  
-    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
-      <span class="fa-solid fa-outdent"></span>
-    </button>
-  
-</div>
-
-    </header>
-  
-
-  <div class="bd-container">
-    <div class="bd-container__inner bd-page-width">
-      
-      
-      
-      <div class="bd-sidebar-primary bd-sidebar">
-        
-
-  
-  <div class="sidebar-header-items sidebar-primary__section">
-    
-    
-      <div class="sidebar-header-items__center">
-        
-          
-          
-            <div class="navbar-item">
-<nav>
-  <ul class="bd-navbar-elements navbar-nav">
-    
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../user_guide.html">
-    Guide for Users
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../contributor_guide.html">
-    Guide for Contributors
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../examples.html">
-    Examples
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="../faq.html">
-    Frequently asked questions
-  </a>
-</li>
-
-
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="../api.html">
-    API
-  </a>
-</li>
-
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../api.html">API</a></li>
+          <li class="breadcrumb-item"><a href="mrpro.data.html">mrpro.data</a></li>
+          <li class="breadcrumb-item"><a href="mrpro.data.traj_calculators.html">mrpro.data.traj_calculators</a></li>
+      <li class="breadcrumb-item active">mrpro.data.traj_calculators.KTrajectoryIsmrmrd</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/_autosummary/mrpro.data.traj_calculators.KTrajectoryIsmrmrd.rst.txt" rel="nofollow"> View page source</a>
+      </li>
   </ul>
-</nav></div>
-          
-        
-      </div>
-    
-    
-    
-      <div class="sidebar-header-items__end">
-        
-          <div class="navbar-item">
-
-<script>
-document.write(`
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
-    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
-    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
-  </button>
-`);
-</script></div>
-        
-          <div class="navbar-item"><ul class="navbar-icon-links"
-    aria-label="Icon Links">
-        <li class="nav-item">
-          
-          
-          
-          
-          
-          
-          
-          
-          <a href="https://github.com/PTB-MR/mrpro" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
-            <span class="sr-only">GitHub</span></a>
-        </li>
-</ul></div>
-        
-      </div>
-    
-  </div>
-  
-    <div class="sidebar-primary-items__start sidebar-primary__section">
-        <div class="sidebar-primary-item">
-<form class="bd-search d-flex align-items-center"
-      action="../search.html"
-      method="get">
-  <i class="fa-solid fa-magnifying-glass"></i>
-  <input type="search"
-         class="form-control"
-         name="q"
-         id="search-input"
-         placeholder="Search the docs ..."
-         aria-label="Search the docs ..."
-         autocomplete="off"
-         autocorrect="off"
-         autocapitalize="off"
-         spellcheck="false"/>
-  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
-</form></div>
-        <div class="sidebar-primary-item">
-<nav class="bd-docs-nav bd-links"
-     aria-label="Section Navigation">
-  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active has-children"><a class="reference internal" href="mrpro.data.html">mrpro.data</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.AcqIdx.html">mrpro.data.AcqIdx</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.AcqInfo.html">mrpro.data.AcqInfo</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.CsmData.html">mrpro.data.CsmData</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.Data.html">mrpro.data.Data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.DcfData.html">mrpro.data.DcfData</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.EncodingLimits.html">mrpro.data.EncodingLimits</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.IData.html">mrpro.data.IData</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.IHeader.html">mrpro.data.IHeader</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.KData.html">mrpro.data.KData</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.KHeader.html">mrpro.data.KHeader</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.KNoise.html">mrpro.data.KNoise</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.KTrajectory.html">mrpro.data.KTrajectory</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.KTrajectoryRawShape.html">mrpro.data.KTrajectoryRawShape</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.Limits.html">mrpro.data.Limits</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.MoveDataMixin.html">mrpro.data.MoveDataMixin</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.QData.html">mrpro.data.QData</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.QHeader.html">mrpro.data.QHeader</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.SpatialDimension.html">mrpro.data.SpatialDimension</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.data.TrajectoryDescription.html">mrpro.data.TrajectoryDescription</a></li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="mrpro.data.acq_filters.html">mrpro.data.acq_filters</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.acq_filters.is_coil_calibration_acquisition.html">mrpro.data.acq_filters.is_coil_calibration_acquisition</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.acq_filters.is_image_acquisition.html">mrpro.data.acq_filters.is_image_acquisition</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.acq_filters.is_noise_acquisition.html">mrpro.data.acq_filters.is_noise_acquisition</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.acq_filters.AcqFlags.html">mrpro.data.acq_filters.AcqFlags</a></li>
-</ul>
-</details></li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="mrpro.data.enums.html">mrpro.data.enums</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.enums.AcqFlags.html">mrpro.data.enums.AcqFlags</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.enums.CalibrationMode.html">mrpro.data.enums.CalibrationMode</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.enums.Enum.html">mrpro.data.enums.Enum</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.enums.Flag.html">mrpro.data.enums.Flag</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.enums.InterleavingDimension.html">mrpro.data.enums.InterleavingDimension</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.enums.MultibandCalibration.html">mrpro.data.enums.MultibandCalibration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.enums.PatientPosition.html">mrpro.data.enums.PatientPosition</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.enums.TrajType.html">mrpro.data.enums.TrajType</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.enums.TrajectoryType.html">mrpro.data.enums.TrajectoryType</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.enums.WaveformInformation.html">mrpro.data.enums.WaveformInformation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.enums.auto.html">mrpro.data.enums.auto</a></li>
-</ul>
-</details></li>
-<li class="toctree-l2 current active has-children"><a class="reference internal" href="mrpro.data.traj_calculators.html">mrpro.data.traj_calculators</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.traj_calculators.KTrajectoryCalculator.html">mrpro.data.traj_calculators.KTrajectoryCalculator</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.traj_calculators.KTrajectoryCartesian.html">mrpro.data.traj_calculators.KTrajectoryCartesian</a></li>
-<li class="toctree-l3 current active"><a class="current reference internal" href="#">mrpro.data.traj_calculators.KTrajectoryIsmrmrd</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.traj_calculators.KTrajectoryPulseq.html">mrpro.data.traj_calculators.KTrajectoryPulseq</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.traj_calculators.KTrajectoryRadial2D.html">mrpro.data.traj_calculators.KTrajectoryRadial2D</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.traj_calculators.KTrajectoryRpe.html">mrpro.data.traj_calculators.KTrajectoryRpe</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.data.traj_calculators.KTrajectorySunflowerGoldenRpe.html">mrpro.data.traj_calculators.KTrajectorySunflowerGoldenRpe</a></li>
-</ul>
-</details></li>
-</ul>
-</details></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1 has-children"><a class="reference internal" href="mrpro.phantoms.html">mrpro.phantoms</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.phantoms.EllipseParameters.html">mrpro.phantoms.EllipseParameters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.phantoms.EllipsePhantom.html">mrpro.phantoms.EllipsePhantom</a></li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="mrpro.phantoms.coils.html">mrpro.phantoms.coils</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.phantoms.coils.birdcage_2d.html">mrpro.phantoms.coils.birdcage_2d</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.phantoms.coils.repeat.html">mrpro.phantoms.coils.repeat</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.phantoms.coils.SpatialDimension.html">mrpro.phantoms.coils.SpatialDimension</a></li>
-</ul>
-</details></li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="mrpro.phantoms.phantom_elements.html">mrpro.phantoms.phantom_elements</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.phantoms.phantom_elements.dataclass.html">mrpro.phantoms.phantom_elements.dataclass</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mrpro.phantoms.phantom_elements.EllipseParameters.html">mrpro.phantoms.phantom_elements.EllipseParameters</a></li>
-</ul>
-</details></li>
-</ul>
-</details></li>
-</ul>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1 has-children"><a class="reference internal" href="mrpro.utils.html">mrpro.utils</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.utils.modify_acq_info.html">mrpro.utils.modify_acq_info</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.utils.remove_repeat.html">mrpro.utils.remove_repeat</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.utils.smap.html">mrpro.utils.smap</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.utils.split_idx.html">mrpro.utils.split_idx</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.utils.zero_pad_or_crop.html">mrpro.utils.zero_pad_or_crop</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mrpro.utils.Rotation.html">mrpro.utils.Rotation</a></li>
-</ul>
-</details></li>
-</ul>
+  <hr/>
 </div>
-</nav></div>
-    </div>
-  
-  
-  <div class="sidebar-primary-items__end sidebar-primary__section">
-  </div>
-  
-  <div id="rtd-footer-container"></div>
-
-
-      </div>
-      
-      <main id="main-content" class="bd-main" role="main">
-        
-        
-          <div class="bd-content">
-            <div class="bd-article-container">
-              
-              <div class="bd-header-article d-print-none">
-<div class="header-article-items header-article__inner">
-  
-    <div class="header-article-items__start">
-      
-        <div class="header-article-item">
-
-
-
-
-
-<nav aria-label="Breadcrumb" class="d-print-none">
-  <ul class="bd-breadcrumbs">
-    
-    <li class="breadcrumb-item breadcrumb-home">
-      <a href="../index.html" class="nav-link" aria-label="Home">
-        <i class="fa-solid fa-home"></i>
-      </a>
-    </li>
-    
-    <li class="breadcrumb-item"><a href="../api.html" class="nav-link">API</a></li>
-    
-    
-    <li class="breadcrumb-item"><i class="fa-solid fa-ellipsis"></i></li>
-    
-    
-    <li class="breadcrumb-item"><a href="mrpro.data.traj_calculators.html" class="nav-link">mrpro.data.traj_calculators</a></li>
-    
-    <li class="breadcrumb-item active" aria-current="page">mrpro.data.t...</li>
-  </ul>
-</nav>
-</div>
-      
-    </div>
-  
-  
-</div>
-</div>
-              
-              
-              
-                
-<div id="searchbox"></div>
-                <article class="bd-article">
-                  
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
   <section id="mrpro-data-traj-calculators-ktrajectoryismrmrd">
-<h1>mrpro.data.traj_calculators.KTrajectoryIsmrmrd<a class="headerlink" href="#mrpro-data-traj-calculators-ktrajectoryismrmrd" title="Link to this heading">#</a></h1>
+<h1>mrpro.data.traj_calculators.KTrajectoryIsmrmrd<a class="headerlink" href="#mrpro-data-traj-calculators-ktrajectoryismrmrd" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="mrpro.data.traj_calculators.KTrajectoryIsmrmrd">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.traj_calculators.</span></span><span class="sig-name descname"><span class="pre">KTrajectoryIsmrmrd</span></span><a class="reference internal" href="../_modules/mrpro/data/traj_calculators/KTrajectoryIsmrmrd.html#KTrajectoryIsmrmrd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.traj_calculators.KTrajectoryIsmrmrd" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.traj_calculators.</span></span><span class="sig-name descname"><span class="pre">KTrajectoryIsmrmrd</span></span><a class="reference internal" href="../_modules/mrpro/data/traj_calculators/KTrajectoryIsmrmrd.html#KTrajectoryIsmrmrd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.traj_calculators.KTrajectoryIsmrmrd" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Get trajectory in ISMRMRD raw data file.</p>
 <p>The trajectory in the ISMRMRD raw data file is read out. Information
@@ -528,130 +132,47 @@ based on the highest value and ensure it is within [-pi, pi]. The trajectory is 
 raw data.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.traj_calculators.KTrajectoryIsmrmrd.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.data.traj_calculators.KTrajectoryIsmrmrd.__init__" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.data.traj_calculators.KTrajectoryIsmrmrd.__init__" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <p class="rubric">Methods</p>
-<div class="pst-scrollable-table-container"><table class="autosummary longtable table autosummary">
+<table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code>()</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
 </table>
-</div>
 </dd></dl>
 
 </section>
 
 
-                </article>
-              
-              
-              
-              
-              
-                <footer class="prev-next-footer d-print-none">
-                  
-<div class="prev-next-area">
-    <a class="left-prev"
-       href="mrpro.data.traj_calculators.KTrajectoryCartesian.html"
-       title="previous page">
-      <i class="fa-solid fa-angle-left"></i>
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">mrpro.data.traj_calculators.KTrajectoryCartesian</p>
-      </div>
-    </a>
-    <a class="right-next"
-       href="mrpro.data.traj_calculators.KTrajectoryPulseq.html"
-       title="next page">
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">mrpro.data.traj_calculators.KTrajectoryPulseq</p>
-      </div>
-      <i class="fa-solid fa-angle-right"></i>
-    </a>
-</div>
-                </footer>
-              
-            </div>
-            
-            
-              
-                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
-
-
-  <div class="sidebar-secondary-item">
-<div
-    id="pst-page-navigation-heading-2"
-    class="page-toc tocsection onthispage">
-    <i class="fa-solid fa-list"></i> On this page
-  </div>
-  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
-    <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.traj_calculators.KTrajectoryIsmrmrd"><code class="docutils literal notranslate"><span class="pre">KTrajectoryIsmrmrd</span></code></a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mrpro.data.traj_calculators.KTrajectoryIsmrmrd.__init__"><code class="docutils literal notranslate"><span class="pre">KTrajectoryIsmrmrd.__init__()</span></code></a></li>
-</ul>
-</li>
-</ul>
-  </nav></div>
-
-  <div class="sidebar-secondary-item">
-
-  <div class="tocsection sourcelink">
-    <a href="../_sources/_autosummary/mrpro.data.traj_calculators.KTrajectoryIsmrmrd.rst.txt">
-      <i class="fa-solid fa-file-lines"></i> Show Source
-    </a>
-  </div>
-</div>
-
-</div></div>
-              
-            
+           </div>
           </div>
-          <footer class="bd-footer-content">
-            
-          </footer>
-        
-      </main>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="mrpro.data.traj_calculators.KTrajectoryCartesian.html" class="btn btn-neutral float-left" title="mrpro.data.traj_calculators.KTrajectoryCartesian" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mrpro.data.traj_calculators.KTrajectoryPulseq.html" class="btn btn-neutral float-right" title="mrpro.data.traj_calculators.KTrajectoryPulseq" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
   </div>
-  
-  <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
-<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
 
-  <footer class="bd-footer">
-<div class="bd-footer__inner bd-page-width">
-  
-    <div class="footer-items__start">
-      
-        <div class="footer-item">
+   
 
-  <p class="copyright">
-    
-      © Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.
-      <br/>
-    
-  </p>
-</div>
-      
-    </div>
-  
-  
-  
-    <div class="footer-items__end">
-      
-        <div class="footer-item">
-<p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
-</p></div>
-      
-    </div>
-  
-</div>
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
 
-  </footer>
-  </body>
+</body>
 </html>

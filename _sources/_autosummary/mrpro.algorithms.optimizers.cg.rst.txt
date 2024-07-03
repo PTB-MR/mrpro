@@ -1,0 +1,6 @@
+mrpro.algorithms.optimizers.cg
+==============================
+
+.. currentmodule:: mrpro.algorithms.optimizers
+
+.. autofunction:: cg

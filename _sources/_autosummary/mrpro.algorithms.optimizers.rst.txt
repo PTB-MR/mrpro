@@ -1,0 +1,32 @@
+mrpro.algorithms.optimizers
+===========================
+
+.. automodule:: mrpro.algorithms.optimizers
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+   
+      adam
+      cg
+      lbfgs
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

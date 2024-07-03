@@ -1,0 +1,6 @@
+mrpro.algorithms.prewhiten\_kspace
+==================================
+
+.. currentmodule:: mrpro.algorithms
+
+.. autofunction:: prewhiten_kspace

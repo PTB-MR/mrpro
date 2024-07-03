@@ -1,0 +1,6 @@
+mrpro.algorithms.optimizers.lbfgs
+=================================
+
+.. currentmodule:: mrpro.algorithms.optimizers
+
+.. autofunction:: lbfgs

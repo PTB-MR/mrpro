@@ -1,0 +1,80 @@
+mrpro.operators.PhaseOp
+=======================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: PhaseOp
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~PhaseOp.__init__
+      ~PhaseOp.add_module
+      ~PhaseOp.apply
+      ~PhaseOp.bfloat16
+      ~PhaseOp.buffers
+      ~PhaseOp.children
+      ~PhaseOp.compile
+      ~PhaseOp.cpu
+      ~PhaseOp.cuda
+      ~PhaseOp.double
+      ~PhaseOp.eval
+      ~PhaseOp.extra_repr
+      ~PhaseOp.float
+      ~PhaseOp.forward
+      ~PhaseOp.get_buffer
+      ~PhaseOp.get_extra_state
+      ~PhaseOp.get_parameter
+      ~PhaseOp.get_submodule
+      ~PhaseOp.half
+      ~PhaseOp.ipu
+      ~PhaseOp.load_state_dict
+      ~PhaseOp.modules
+      ~PhaseOp.named_buffers
+      ~PhaseOp.named_children
+      ~PhaseOp.named_modules
+      ~PhaseOp.named_parameters
+      ~PhaseOp.parameters
+      ~PhaseOp.register_backward_hook
+      ~PhaseOp.register_buffer
+      ~PhaseOp.register_forward_hook
+      ~PhaseOp.register_forward_pre_hook
+      ~PhaseOp.register_full_backward_hook
+      ~PhaseOp.register_full_backward_pre_hook
+      ~PhaseOp.register_load_state_dict_post_hook
+      ~PhaseOp.register_module
+      ~PhaseOp.register_parameter
+      ~PhaseOp.register_state_dict_pre_hook
+      ~PhaseOp.requires_grad_
+      ~PhaseOp.set_extra_state
+      ~PhaseOp.share_memory
+      ~PhaseOp.state_dict
+      ~PhaseOp.to
+      ~PhaseOp.to_empty
+      ~PhaseOp.train
+      ~PhaseOp.type
+      ~PhaseOp.xpu
+      ~PhaseOp.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~PhaseOp.T_destination
+      ~PhaseOp.call_super_init
+      ~PhaseOp.dump_patches
+      ~PhaseOp.training
+   
+   

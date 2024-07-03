@@ -1,10 +1,20 @@
 API
 ===
 
-This is the mrpro api documentation.
+This is the MRpro Application Programming Interface (API) documentation.
+
+MRpro Algorithms
+----------------
+
+.. autosummary::
+   :toctree: _autosummary
+   :template: module_template.rst
+   :recursive:
+
+   mrpro.algorithms
 
 
-MRPro Data
+MRpro Data
 ----------
 
 .. autosummary::
@@ -15,7 +25,18 @@ MRPro Data
    mrpro.data
 
 
-MRPro Phantoms
+MRpro Operators
+---------------
+
+.. autosummary::
+   :toctree: _autosummary
+   :template: module_template.rst
+   :recursive:
+
+   mrpro.operators
+
+
+MRpro Phantoms
 --------------
 
 .. autosummary::
@@ -26,7 +47,7 @@ MRPro Phantoms
    mrpro.phantoms
 
 
-MRPro Utilities
+MRpro Utilities
 ---------------
 
 .. autosummary::
