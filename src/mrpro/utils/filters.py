@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Sequence
+from functools import reduce
 from math import ceil
 from typing import Literal
 
@@ -48,6 +49,11 @@ def filter_separable(
         Padding mode
     pad_value
         Padding value for pad_mode = constant
+
+    Returns
+    -------
+    The filtered tensor, with the same shape as the input unless pad_mode is 'none' and
+    and promoted dtype of the input and the kernels.
     """
     if len(axis) != len(kernels):
         raise ValueError('Must provide matching length kernels and axis arguments.')
@@ -64,13 +70,12 @@ def filter_separable(
         # padding is done with pad() before the convolution
         padding_conv = 'valid'
 
+    # output will be of the promoted type of the input and the kernels
+    target_dtype = reduce(torch.promote_types, [k.dtype for k in kernels], x.dtype)
+    x = x.to(target_dtype)
+
     for kernel, ax in zip(kernels, axis, strict=False):
-        # either both are complex or both are real
-        if x.is_complex() and not kernel.is_complex():
-            kernel = kernel + 0.0j
-        elif kernel.is_complex() and not x.is_complex():
-            x = x + 0.0j
-        kernel = kernel.to(x.device)
+        kernel = kernel.to(device=x.device, dtype=target_dtype)
         # moveaxis is not implemented for batched tensors, so vmap would fail.
         # thus we use permute.
         idx = list(range(x.ndim))

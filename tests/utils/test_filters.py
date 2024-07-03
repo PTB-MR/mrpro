@@ -14,9 +14,8 @@
 
 import pytest
 import torch
-from mrpro.utils.filters import filter_separable
-from mrpro.utils.filters import gaussian_filter
-from mrpro.utils.filters import uniform_filter
+
+from mrpro.utils.filters import filter_separable, gaussian_filter, uniform_filter
 
 
 @pytest.fixture()
@@ -45,6 +44,19 @@ def test_filter_separable(pad_mode, center_value, edge_value):
         assert data.shape == result.shape
     assert result[0, 10] == center_value
     assert result[0, 0] == edge_value
+
+
+@pytest.mark.parametrize('filter_dtype', [torch.float32, torch.float64, torch.int32, torch.complex32, torch.complex64])
+@pytest.mark.parametrize('data_dtype', [torch.float32, torch.float64, torch.int32, torch.complex32, torch.complex64])
+def test_filter_separable_dtype(filter_dtype, data_dtype):
+    """Test filter_separable and different padding modes."""
+
+    data = torch.arange(1, 21)[None, :].to(dtype=data_dtype)
+    kernels = (torch.tensor([1, 2, 1], dtype=filter_dtype),)
+    result = filter_separable(data, kernels, axis=(1,))
+    expected_dtype = torch.result_type(data, kernels[0])
+    assert result.dtype == expected_dtype
+    assert result[0, 10] == 44
 
 
 def test_gaussian_filter_int_axis(data):
