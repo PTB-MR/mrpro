@@ -333,9 +333,9 @@ class IsmrmrdRawTestData:
         n_freq_encoding
             number of frequency encoding points
         acceleration
-            undersampling factor, by default 1
+            undersampling factor
         sampling_order
-            order how phase encoding points are sampled, by default "linear"
+            order how phase encoding points are sampled
         """
         # Fully sampled frequency encoding
         kfe = torch.arange(-n_freq_encoding // 2, n_freq_encoding // 2)
@@ -383,7 +383,7 @@ class IsmrmrdRawTestData:
         n_freq_encoding
             number of frequency encoding points, defines the sampling along each radial line
         acceleration
-            undersampling factor, by default 1
+            undersampling factor
         """
         # Fully sampled frequency encoding
         kfe = torch.arange(-n_freq_encoding // 2, n_freq_encoding // 2)
