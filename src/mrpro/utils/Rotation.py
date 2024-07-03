@@ -441,6 +441,7 @@ class Rotation(torch.nn.Module):
             (`degrees` is True).
         degrees
             If True, then the given angles are assumed to be in degrees.
+            Otherwise they are assumed to be in radians
 
         Returns
         -------
