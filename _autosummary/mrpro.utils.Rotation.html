@@ -905,7 +905,7 @@ Adjacent axes cannot be the same.
 Extrinsic and intrinsic rotations cannot be mixed in one function
 call.</p></li>
 <li><p><strong>degrees</strong> – Returned angles are in degrees if this flag is True, else they are
-in radians. Default is False.</p></li>
+in radians</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1017,8 +1017,7 @@ term of the x, y, and z terms is positive.</p>
 the axis of rotation and whose norm gives the angle of rotation <a href="#id29"><span class="problematic" id="id12">[1]_</span></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>degrees</strong> – Returned magnitudes are in degrees if this flag is True, else they are
-in radians. Default is False.</p>
+<dd class="field-odd"><p><strong>degrees</strong> – Returned magnitudes are in degrees if this flag is True, else they are in radians</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Shape (…, 3), depends on shape of inputs used for initialization.</p>
@@ -1249,7 +1248,7 @@ A single vector can either be specified with shape <cite>(3, )</cite> or <cite>(
 The number of rotations and number of vectors given must follow standard
 pytorch broadcasting rules.</p></li>
 <li><p><strong>inverse</strong> – If True then the inverse of the rotation(s) is applied to the input
-vectors. Default is False.</p></li>
+vectors.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1300,7 +1299,7 @@ rotations cannot be mixed in one function call.</p></li>
 Euler angles specified in radians (<cite>degrees</cite> is False) or degrees
 (<cite>degrees</cite> is True).</p></li>
 <li><p><strong>degrees</strong> – If True, then the given angles are assumed to be in degrees.
-Default is False.</p></li>
+Otherwise they are assumed to be in radians</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

@@ -494,7 +494,7 @@ document.write(`
 <span class="sd">        data</span>
 <span class="sd">            shape (..., 3) in the order (x,y,z)</span>
 <span class="sd">        conversion</span>
-<span class="sd">            will be called for each value to convert it, by default None</span>
+<span class="sd">            will be called for each value to convert it</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
@@ -527,7 +527,7 @@ document.write(`
 <span class="sd">        data</span>
 <span class="sd">            shape (..., 3) in the order (z,y,x)</span>
 <span class="sd">        conversion</span>
-<span class="sd">            will be called for each value to convert it, by default None</span>
+<span class="sd">            will be called for each value to convert it</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
         <span class="k">return</span> <span class="n">SpatialDimension</span><span class="o">.</span><span class="n">from_array_xyz</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">conversion</span><span class="p">)</span></div>
