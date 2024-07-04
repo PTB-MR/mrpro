@@ -33,7 +33,7 @@ def filter_separable(
     pad_mode: Literal['constant', 'reflect', 'replicate', 'circular', 'none'] = 'constant',
     pad_value: float = 0.0,
 ) -> torch.Tensor:
-    """Apply the separable filter kernels to the tensor x along the axes axis.
+    """Apply the separable filter kernels to the tensor x along the axes dim.
 
     Does padding to keep the output the same size as the input.
 
@@ -55,8 +55,8 @@ def filter_separable(
     The filtered tensor, with the same shape as the input unless pad_mode is 'none' and
     and promoted dtype of the input and the kernels.
     """
-    if len(axis) != len(kernels):
-        raise ValueError('Must provide matching length kernels and axis arguments.')
+    if len(dim) != len(kernels):
+        raise ValueError('Must provide matching length kernels and dim arguments.')
 
     # normalize dim to allow negative indexing in input
     dim = tuple([a % x.ndim for a in dim])
