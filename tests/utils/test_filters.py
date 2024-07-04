@@ -37,7 +37,7 @@ def test_filter_separable(pad_mode, center_value, edge_value):
     data = torch.arange(1, 21)[None, :].to(dtype=torch.float32)
     kernels = (torch.as_tensor([1.0, 2.0, 1.0]),)
     result = filter_separable(
-        data, kernels, axis=(1,), pad_mode=pad_mode, pad_value=3.0 if pad_mode == 'constant' else 0.0
+        data, kernels, dim=(1,), pad_mode=pad_mode, pad_value=3.0 if pad_mode == 'constant' else 0.0
     )
     if pad_mode == 'none':
         assert result.shape == (data.shape[0], data.shape[1] - len(kernels[0]) + 1)
@@ -54,7 +54,7 @@ def test_filter_separable_dtype(filter_dtype, data_dtype):
 
     data = torch.arange(1, 21)[None, :].to(dtype=data_dtype)
     kernels = (torch.tensor([1, 2, 1], dtype=filter_dtype),)
-    result = filter_separable(data, kernels, axis=(1,))
+    result = filter_separable(data, kernels, dim=(1,))
     expected_dtype = torch.result_type(data, kernels[0])
     assert result.dtype == expected_dtype
     assert result[0, 10] == 44
@@ -101,7 +101,7 @@ def test_gaussian_filter_noaxis(data):
 def test_gaussian_invalid_sigmas(data):
     """Test Gaussian filter with invalid sigma values."""
     with pytest.raises(ValueError, match='positive'):
-        gaussian_filter(data, axis=(-1, 2), sigmas=torch.tensor([0.2, 0.0]))
+        gaussian_filter(data, dim=(-1, 2), sigmas=torch.tensor([0.2, 0.0]))
     with pytest.raises(ValueError, match='positive'):
         gaussian_filter(data, sigmas=torch.tensor(-1.0))
     with pytest.raises(ValueError, match='positive'):
@@ -149,7 +149,7 @@ def test_uniform_filter_noaxis(data):
 def test_uniform_invalid_width(data):
     """Test uniform filter with invalid width."""
     with pytest.raises(ValueError, match='positive'):
-        uniform_filter(data, axis=(-1, 2), width=torch.tensor([3, 0]))
+        uniform_filter(data, dim=(-1, 2), width=torch.tensor([3, 0]))
     with pytest.raises(ValueError, match='positive'):
         uniform_filter(data, width=torch.tensor(-1.0))
     with pytest.raises(ValueError, match='positive'):

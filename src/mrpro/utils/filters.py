@@ -29,7 +29,7 @@ import torch
 def filter_separable(
     x: torch.Tensor,
     kernels: Sequence[torch.Tensor],
-    axis: Sequence[int],
+    dim: Sequence[int],
     pad_mode: Literal['constant', 'reflect', 'replicate', 'circular', 'none'] = 'constant',
     pad_value: float = 0.0,
 ) -> torch.Tensor:
@@ -43,7 +43,7 @@ def filter_separable(
         Tensor to filter
     kernels
         List of 1D kernels to apply to the tensor x
-    axis
+    dim
         Axes to filter over. Must have the same length as kernels.
     pad_mode
         Padding mode
@@ -74,13 +74,13 @@ def filter_separable(
     target_dtype = reduce(torch.promote_types, [k.dtype for k in kernels], x.dtype)
     x = x.to(target_dtype)
 
-    for kernel, ax in zip(kernels, axis, strict=False):
+    for kernel, d in zip(kernels, dim, strict=False):
         kernel = kernel.to(device=x.device, dtype=target_dtype)
         # moveaxis is not implemented for batched tensors, so vmap would fail.
         # thus we use permute.
         idx = list(range(x.ndim))
         # swapping the last axis and the axis to filter over
-        idx[ax], idx[-1] = idx[-1], idx[ax]
+        idx[d], idx[-1] = idx[-1], idx[d]
         x = x.permute(idx)
         # flatten first to allow for circular, replicate and reflection padding for arbitrary tensor size
         x_flat = x.flatten(end_dim=-2)
@@ -99,7 +99,7 @@ def filter_separable(
 def gaussian_filter(
     x: torch.Tensor,
     sigmas: float | Sequence[float] | torch.Tensor,
-    axis: int | Sequence[int] | None = None,
+    dim: int | Sequence[int] | None = None,
     truncate: int = 3,
     pad_mode: Literal['constant', 'reflect', 'replicate', 'circular'] = 'constant',
     pad_value: float = 0.0,
@@ -112,7 +112,7 @@ def gaussian_filter(
         Tensor to filter
     sigmas
         Standard deviation for Gaussian kernel. If iterable, must have length equal to the number of axes.
-    axis
+    dim
         Axis or axes to filter over. If None, filters over all axes.
     truncate
         Truncate the filter at this many standard deviations.
@@ -121,15 +121,15 @@ def gaussian_filter(
     pad_value
         Padding value for pad_mode = constant
     """
-    if axis is None:
-        axis = tuple(range(x.ndim))
-    elif isinstance(axis, int):
-        axis = (axis,)
+    if dim is None:
+        dim = tuple(range(x.ndim))
+    elif isinstance(dim, int):
+        dim = (dim,)
     sigmas = torch.as_tensor(sigmas) if np.iterable(sigmas) else torch.tensor([sigmas] * len(axis))
     if not torch.all(sigmas > 0):
         raise ValueError('`sigmas` must be positive')
 
-    if len(sigmas) != len(axis):
+    if len(sigmas) != len(dim):
         raise ValueError('Must provide matching length sigmas and axis arguments. ')
 
     kernels = tuple(
@@ -139,14 +139,14 @@ def gaussian_filter(
         ]
     )
     kernels = tuple([(k / k.sum()).to(device=x.device) for k in kernels])
-    x_filtered = filter_separable(x, kernels, axis, pad_mode, pad_value)
+    x_filtered = filter_separable(x, kernels, dim, pad_mode, pad_value)
     return x_filtered
 
 
 def uniform_filter(
     x: torch.Tensor,
     width: int | Sequence[int] | torch.Tensor,
-    axis: int | Sequence[int] | None = None,
+    dim: int | Sequence[int] | None = None,
     pad_mode: Literal['constant', 'reflect', 'replicate', 'circular'] = 'constant',
     pad_value: float = 0.0,
 ) -> torch.Tensor:
@@ -158,26 +158,26 @@ def uniform_filter(
         Tensor to filter
     width
         Width of uniform kernel. If iterable, must have length equal to the number of axes.
-    axis
+    dim
         Axis or axes to filter over. If None, filters over all axes.
     pad_mode
         Padding mode
     pad_value
         Padding value for pad_mode = constant
     """
-    if axis is None:
-        axis = tuple(range(x.ndim))
-    elif isinstance(axis, int):
-        axis = (axis,)
+    if dim is None:
+        dim = tuple(range(x.ndim))
+    elif isinstance(dim, int):
+        dim = (dim,)
     width = torch.as_tensor(width) if np.iterable(width) else torch.tensor([width] * len(axis))
     if not torch.all(width > 0):
         raise ValueError('width must be positive.')
     if torch.any(width % 2 != 1):
         warnings.warn('width should be odd.', stacklevel=2)
-    if len(width) != len(axis):
+    if len(width) != len(dim):
         raise ValueError('Must provide matching length width and axis arguments. ')
     width = torch.minimum(width, torch.tensor(x.shape)[(axis), ...])
 
     kernels = tuple([torch.ones(width, device=x.device) / width for width in width])
-    x_filtered = filter_separable(x, kernels, axis, pad_mode, pad_value)
+    x_filtered = filter_separable(x, kernels, dim, pad_mode, pad_value)
     return x_filtered
