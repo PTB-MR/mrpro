@@ -34,7 +34,7 @@ repos:
         args: [src, tests, examples]
         additional_dependencies:
           - numpy
-          - torch>=2.3.0
+          - torch
           - types-requests
           - einops
           - pydicom
