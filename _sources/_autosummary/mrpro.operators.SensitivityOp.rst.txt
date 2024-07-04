@@ -43,6 +43,7 @@ mrpro.operators.SensitivityOp
       ~SensitivityOp.named_children
       ~SensitivityOp.named_modules
       ~SensitivityOp.named_parameters
+      ~SensitivityOp.operator_norm
       ~SensitivityOp.parameters
       ~SensitivityOp.register_backward_hook
       ~SensitivityOp.register_buffer

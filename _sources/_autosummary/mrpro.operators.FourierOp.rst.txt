@@ -44,6 +44,7 @@ mrpro.operators.FourierOp
       ~FourierOp.named_children
       ~FourierOp.named_modules
       ~FourierOp.named_parameters
+      ~FourierOp.operator_norm
       ~FourierOp.parameters
       ~FourierOp.register_backward_hook
       ~FourierOp.register_buffer

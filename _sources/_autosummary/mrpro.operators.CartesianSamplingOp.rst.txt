@@ -43,6 +43,7 @@ mrpro.operators.CartesianSamplingOp
       ~CartesianSamplingOp.named_children
       ~CartesianSamplingOp.named_modules
       ~CartesianSamplingOp.named_parameters
+      ~CartesianSamplingOp.operator_norm
       ~CartesianSamplingOp.parameters
       ~CartesianSamplingOp.register_backward_hook
       ~CartesianSamplingOp.register_buffer

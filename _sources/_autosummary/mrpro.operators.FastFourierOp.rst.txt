@@ -43,6 +43,7 @@ mrpro.operators.FastFourierOp
       ~FastFourierOp.named_children
       ~FastFourierOp.named_modules
       ~FastFourierOp.named_parameters
+      ~FastFourierOp.operator_norm
       ~FastFourierOp.parameters
       ~FastFourierOp.register_backward_hook
       ~FastFourierOp.register_buffer

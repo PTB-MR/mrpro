@@ -43,6 +43,7 @@ mrpro.operators.EinsumOp
       ~EinsumOp.named_children
       ~EinsumOp.named_modules
       ~EinsumOp.named_parameters
+      ~EinsumOp.operator_norm
       ~EinsumOp.parameters
       ~EinsumOp.register_backward_hook
       ~EinsumOp.register_buffer

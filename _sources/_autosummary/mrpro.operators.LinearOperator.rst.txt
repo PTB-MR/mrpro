@@ -43,6 +43,7 @@ mrpro.operators.LinearOperator
       ~LinearOperator.named_children
       ~LinearOperator.named_modules
       ~LinearOperator.named_parameters
+      ~LinearOperator.operator_norm
       ~LinearOperator.parameters
       ~LinearOperator.register_backward_hook
       ~LinearOperator.register_buffer

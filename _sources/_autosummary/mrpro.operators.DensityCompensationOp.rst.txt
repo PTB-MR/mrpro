@@ -43,6 +43,7 @@ mrpro.operators.DensityCompensationOp
       ~DensityCompensationOp.named_children
       ~DensityCompensationOp.named_modules
       ~DensityCompensationOp.named_parameters
+      ~DensityCompensationOp.operator_norm
       ~DensityCompensationOp.parameters
       ~DensityCompensationOp.register_backward_hook
       ~DensityCompensationOp.register_buffer

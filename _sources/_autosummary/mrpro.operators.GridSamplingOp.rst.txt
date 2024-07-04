@@ -43,6 +43,7 @@ mrpro.operators.GridSamplingOp
       ~GridSamplingOp.named_children
       ~GridSamplingOp.named_modules
       ~GridSamplingOp.named_parameters
+      ~GridSamplingOp.operator_norm
       ~GridSamplingOp.parameters
       ~GridSamplingOp.register_backward_hook
       ~GridSamplingOp.register_buffer

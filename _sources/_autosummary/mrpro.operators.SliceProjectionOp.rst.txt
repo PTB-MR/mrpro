@@ -44,6 +44,7 @@ mrpro.operators.SliceProjectionOp
       ~SliceProjectionOp.named_children
       ~SliceProjectionOp.named_modules
       ~SliceProjectionOp.named_parameters
+      ~SliceProjectionOp.operator_norm
       ~SliceProjectionOp.parameters
       ~SliceProjectionOp.projection_matrix
       ~SliceProjectionOp.register_backward_hook

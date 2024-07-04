@@ -43,6 +43,7 @@ mrpro.operators.ZeroPadOp
       ~ZeroPadOp.named_children
       ~ZeroPadOp.named_modules
       ~ZeroPadOp.named_parameters
+      ~ZeroPadOp.operator_norm
       ~ZeroPadOp.parameters
       ~ZeroPadOp.register_backward_hook
       ~ZeroPadOp.register_buffer

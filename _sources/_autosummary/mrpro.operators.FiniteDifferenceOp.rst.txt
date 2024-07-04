@@ -44,6 +44,7 @@ mrpro.operators.FiniteDifferenceOp
       ~FiniteDifferenceOp.named_children
       ~FiniteDifferenceOp.named_modules
       ~FiniteDifferenceOp.named_parameters
+      ~FiniteDifferenceOp.operator_norm
       ~FiniteDifferenceOp.parameters
       ~FiniteDifferenceOp.register_backward_hook
       ~FiniteDifferenceOp.register_buffer
