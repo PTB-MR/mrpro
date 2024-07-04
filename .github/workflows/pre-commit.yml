@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Install mrpro and dependencies
-        run: pip install --upgrade --upgrade-strategy "eager" .[test,notebook]
+        run: pip install --upgrade --upgrade-strategy "eager" .[test,notebook,lint]
         
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
