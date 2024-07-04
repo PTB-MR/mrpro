@@ -98,6 +98,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         if max_iterations < 1:
             raise ValueError('The number of iterations should be larger than zero.')
 
+        # check that the norm of the starting value is not zero
         norm_initial_value = torch.linalg.vector_norm(initial_value, dim=dim, keepdim=True)
         if not (norm_initial_value > 0).all():
             if dim is None:
@@ -109,6 +110,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
                     should be different from the zero-vector.'
                 )
 
+        # set initial value
         vector = initial_value
 
         # creaty dummy operator norm value that cannot be correct because by definition, the
@@ -122,11 +124,13 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
             # apply the operator to the vector
             (vector_new,) = self.adjoint(*self(vector))
 
+            # compute estimate of the operator norm
             product = vector.real * vector_new.real
             if vector.is_complex() and vector_new.is_complex():
                 product += vector.imag * vector_new.imag
             op_norm = product.sum(dim, keepdim=True).sqrt()
 
+            # check if stopping criterion is fulfillfed; if not continue the iteration
             if (absolute_tolerance > 0 or relative_tolerance > 0) and torch.isclose(
                 op_norm, op_norm_old, atol=absolute_tolerance, rtol=relative_tolerance
             ).all():
