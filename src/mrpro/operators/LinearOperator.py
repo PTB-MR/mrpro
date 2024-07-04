@@ -117,6 +117,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         # thus prevents the loop from exiting despite a non-correct estimate.
         op_norm_old = torch.zeros(*tuple([1 for _ in range(vector.ndim)]))
 
+        dim = tuple(dim) if dim is not None else dim
         for _ in range(max_iterations):
             # apply the operator to the vector
             (vector_new,) = self.adjoint(*self(vector))
@@ -124,7 +125,6 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
             product = vector.real * vector_new.real
             if vector.is_complex() and vector_new.is_complex():
                 product += vector.imag * vector_new.imag
-            dim = tuple(dim) if dim is not None else dim
             op_norm = product.sum(dim, keepdim=True).sqrt()
 
             if (absolute_tolerance > 0 or relative_tolerance > 0) and torch.isclose(
@@ -133,8 +133,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
                 break
 
             # normalize vector
-            vector_new /= torch.linalg.vector_norm(vector_new, dim=dim, keepdim=True)
-            vector = vector_new
+            vector = vector_new / torch.linalg.vector_norm(vector_new, dim=dim, keepdim=True)
             op_norm_old = op_norm
 
             if callback is not None:
