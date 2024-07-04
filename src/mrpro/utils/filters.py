@@ -58,10 +58,10 @@ def filter_separable(
     if len(axis) != len(kernels):
         raise ValueError('Must provide matching length kernels and axis arguments.')
 
-    # normalize axis to allow negative indexing in input
-    axis = tuple([a % x.ndim for a in axis])
-    if len(axis) != len(set(axis)):
-        raise ValueError(f'Axis must be unique. Normalized axis are {axis}')
+    # normalize dim to allow negative indexing in input
+    dim = tuple([a % x.ndim for a in dim])
+    if len(dim) != len(set(dim)):
+        raise ValueError(f'Dim must be unique. Normalized dims are {dim}')
 
     if pad_mode == 'constant' and pad_value == 0:
         # padding is done inside the convolution
@@ -125,12 +125,12 @@ def gaussian_filter(
         dim = tuple(range(x.ndim))
     elif isinstance(dim, int):
         dim = (dim,)
-    sigmas = torch.as_tensor(sigmas) if np.iterable(sigmas) else torch.tensor([sigmas] * len(axis))
+    sigmas = torch.as_tensor(sigmas) if np.iterable(sigmas) else torch.tensor([sigmas] * len(dim))
     if not torch.all(sigmas > 0):
         raise ValueError('`sigmas` must be positive')
 
     if len(sigmas) != len(dim):
-        raise ValueError('Must provide matching length sigmas and axis arguments. ')
+        raise ValueError('Must provide matching length sigmas and dim arguments. ')
 
     kernels = tuple(
         [
@@ -169,14 +169,14 @@ def uniform_filter(
         dim = tuple(range(x.ndim))
     elif isinstance(dim, int):
         dim = (dim,)
-    width = torch.as_tensor(width) if np.iterable(width) else torch.tensor([width] * len(axis))
+    width = torch.as_tensor(width) if np.iterable(width) else torch.tensor([width] * len(dim))
     if not torch.all(width > 0):
         raise ValueError('width must be positive.')
     if torch.any(width % 2 != 1):
         warnings.warn('width should be odd.', stacklevel=2)
     if len(width) != len(dim):
-        raise ValueError('Must provide matching length width and axis arguments. ')
-    width = torch.minimum(width, torch.tensor(x.shape)[(axis), ...])
+        raise ValueError('Must provide matching length width and dim arguments. ')
+    width = torch.minimum(width, torch.tensor(x.shape)[(dim), ...])
 
     kernels = tuple([torch.ones(width, device=x.device) / width for width in width])
     x_filtered = filter_separable(x, kernels, dim, pad_mode, pad_value)

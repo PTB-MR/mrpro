@@ -132,7 +132,7 @@ class FiniteDifferenceOp(LinearOperator):
                         filter_separable(
                             yi,
                             (torch.flip(self.kernel, dims=(-1,)),),
-                            axis=(dim,),
+                            dim=(dim,),
                             pad_mode=self.pad_mode,
                             pad_value=0.0,
                         )
