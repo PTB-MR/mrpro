@@ -47,12 +47,12 @@ import mrpro
 trajectory = mrpro.data.traj_calculators.KTrajectoryIsmrmrd()
 # Load in the Data from the ISMRMRD file
 kdata = mrpro.data.KData.from_file(data_file.name, trajectory)
-kdata.header.recon_matrix.x = 100
-kdata.header.recon_matrix.y = 100
+kdata.header.recon_matrix.x = 256
+kdata.header.recon_matrix.y = 256
 
 # %%
 iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSenseReconstruction.from_kdata(
-    kdata, n_max_iter=4
+    kdata, n_iterations=4
 )
 img = iterative_sense_reconstruction(kdata)
 
@@ -104,7 +104,7 @@ cg_operator = acquisition_operator.H @ dcf_operator @ acquisition_operator
 import torch
 
 img_manual = mrpro.algorithms.optimizers.cg(
-    cg_operator, right_hand_side, initial_value=right_hand_side, max_iterations=4
+    cg_operator, right_hand_side, initial_value=right_hand_side, max_iterations=4, tolerance=0.0
 )
 
 

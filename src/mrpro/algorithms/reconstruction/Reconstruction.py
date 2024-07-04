@@ -22,8 +22,6 @@ from typing import Self
 import torch
 
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
-from mrpro.data import IData
-from mrpro.data import KData
 from mrpro.data._kdata.KData import KData
 from mrpro.data.CsmData import CsmData
 from mrpro.data.DcfData import DcfData
@@ -95,6 +93,20 @@ class Reconstruction(torch.nn.Module, ABC):
         return self
 
     def pseudo_inverse(self, kdata: KData) -> IData:
+        """Pseudo-inverse of the MR acquisition.
+
+        Here we use S^H F^H W to calculate the image data using the coil sensitivity operator S, the Fourier operator F
+        and the density compensation operator W. S and W are optional.
+
+        Parameters
+        ----------
+        kdata
+            k-space data
+
+        Returns
+        -------
+            image data
+        """
         device = kdata.data.device
         if self.noise is not None:
             kdata = prewhiten_kspace(kdata, self.noise.to(device))

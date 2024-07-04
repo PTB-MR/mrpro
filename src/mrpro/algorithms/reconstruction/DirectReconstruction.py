@@ -41,7 +41,7 @@ class DirectReconstruction(Reconstruction):
 
         Parameters
         ----------
-        fourier_operator
+        fourier_op
             Instance of the FourierOperator which adjoint is used for reconstruction.
         csm
             Sensitivity maps for coil combination. If None, no coil combination will be performed.
