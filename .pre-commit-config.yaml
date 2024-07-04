@@ -32,4 +32,14 @@ repos:
         pass_filenames: false
         always_run: true
         args: [src, tests, examples]
-        language: system
+        additional_dependencies:
+          - numpy
+          - torch>=2.3.0
+          - types-requests
+          - einops
+          - pydicom
+          - matplotlib
+          - pytest
+          - xsdata
+          - "--index-url=https://download.pytorch.org/whl/cpu"
+          - "--extra-index-url=https://pypi.python.org/simple"
