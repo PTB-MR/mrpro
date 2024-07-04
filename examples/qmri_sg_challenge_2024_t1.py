@@ -120,7 +120,7 @@ m0_start = torch.abs(idata_multi_ti.data[torch.argmax(idata_multi_ti.header.ti),
 # %%
 # Visualize the starting values
 fig, axes = plt.subplots(1, 2, figsize=(8, 2), squeeze=False)
-colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05) for ax in axes]
+colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05) for ax in axes[0,:]]
 im = axes[0, 0].imshow(m0_start[0, 0, ...])
 axes[0, 0].set_title('M0 start values')
 fig.colorbar(im, cax=colorbar_ax[0])
@@ -156,7 +156,7 @@ relative_absolute_error = torch.sum(torch.abs(model(m0, t1)[0] - idata_multi_ti.
     img_mult_te_abs_sum + 1e-9
 )
 fig, axes = plt.subplots(1, 3, figsize=(10, 2), squeeze=False)
-colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05) for ax in axes]
+colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05) for ax in axes[0,:]]
 im = axes[0, 0].imshow(m0[0, 0, ...])
 axes[0, 0].set_title('M0')
 fig.colorbar(im, cax=colorbar_ax[0])
