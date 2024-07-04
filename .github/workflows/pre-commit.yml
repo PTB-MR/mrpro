@@ -11,8 +11,14 @@ jobs:
       image: ghcr.io/ptb-mr/mrpro_py311:latest
       options: --user runner
     steps:
-      - uses: actions/checkout@v4
-      - uses: pre-commit/action@v3.0.1
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        
+      - name: Install mrpro and dependencies
+        run: pip install --upgrade --upgrade-strategy "eager" .[test,notebook]
+        
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.1
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
