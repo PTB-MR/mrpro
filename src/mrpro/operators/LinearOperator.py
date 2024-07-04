@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from collections.abc import Callable
 from collections.abc import Sequence
 from typing import overload
 
@@ -52,7 +53,10 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         self,
         initial_value: torch.Tensor,
         dim: Sequence[int] | None,
-        n_max_iterations: int = 64,
+        max_iterations: int = 20,
+        relative_tolerance: float = 1e-4,
+        absolute_tolerance: float = 1e-5,
+        callback: Callable | None = None,
     ) -> torch.Tensor:
         """Power iteration for computing the operator norm of the linear operator.
 
@@ -60,7 +64,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         ----------
         initial_value
             initial value to start the iteration; if the initial value contains a zero-vector for
-            one of the considered problems, the function throws and exception.
+            one of the considered problems, the function throws an value error.
         dim
             the dimensions of the tensors on which the operator operates.
             For example, for a matrix-vector multiplication example, a batched matrix tensor with shape (4,30,80,160),
@@ -74,42 +78,67 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
             domain of the considered operator (whose dimensionality is implicitly defined by choosing dim), such that
             the pointwise multiplication of the operator norm and elements of the domain (to be for example used
             in a Landweber iteration) is well-defined.
-        n_max_iterations , optional
-            maximal number of iterations
+        max_iterations
+            maximum number of iterations
+        relative_tolerance
+            absolute tolerance for the change of the operator-norm at each iteration;
+            if set to zero, the maximal number of iterations is the only stopping criterion used to stop
+            the power iteration
+        absolute_tolerance
+            absolute tolerance for the change of the operator-norm at each iteration;
+            if set to zero, the maximal number of iterations is the only stopping criterion used to stop
+            the power iteration
+        callback
+            user-provided function to be called at each iteration
 
         Returns
         -------
             an estimaton of the operator norm
         """
-        if n_max_iterations < 1:
-            raise Exception('The number of iterations should be larger than zero.')
+        if max_iterations < 1:
+            raise ValueError('The number of iterations should be larger than zero.')
 
         norm_initial_value = torch.linalg.vector_norm(initial_value, dim=dim, keepdim=True)
         if not (norm_initial_value > 0).all():
             if dim is None:
-                raise Exception('The initial value for the iteration should be different from the zero-vector.')
+                raise ValueError('The initial value for the iteration should be different from the zero-vector.')
             else:
-                raise Exception(
+                raise ValueError(
                     'Found at least one zero-vector as starting point. \
                     For each of the considered operators, the initial value for the iteration \
                     should be different from the zero-vector.'
                 )
 
         vector = initial_value
-        for _ in range(n_max_iterations):
+
+        # creaty dummy operator norm value that cannot be correct because by definition, the
+        # operator norm is a strictly positive number. This ensures that the first time the
+        # change between the old and the new estimate of the operator norm is non-zero and
+        # thus prevents the loop from exiting despite a non-correct estimate.
+        op_norm_old = torch.zeros(*tuple([1 for _ in range(vector.ndim)]))
+
+        for _ in range(max_iterations):
             # apply the operator to the vector
-            (vector,) = self.adjoint(*self(vector))
+            (vector_new,) = self.adjoint(*self(vector))
+
+            product = vector.real * vector_new.real
+            if vector.is_complex() and vector_new.is_complex():
+                product += vector.imag * vector_new.imag
+            dim = tuple(dim) if dim is not None else dim
+            op_norm = product.sum(dim, keepdim=True).sqrt()
+
+            if (absolute_tolerance > 0 or relative_tolerance > 0) and torch.isclose(
+                op_norm, op_norm_old, atol=absolute_tolerance, rtol=relative_tolerance
+            ).all():
+                break
 
             # normalize vector
-            vector /= torch.linalg.vector_norm(vector, dim=dim, keepdim=True)
+            vector_new /= torch.linalg.vector_norm(vector_new, dim=dim, keepdim=True)
+            vector = vector_new
+            op_norm_old = op_norm
 
-        (operator_vector,) = self.adjoint(*self(vector))
-
-        product = vector.real * operator_vector.real
-        if vector.is_complex() and operator_vector.is_complex():
-            product += vector.imag * operator_vector.imag
-        dim = tuple(dim) if dim is not None else dim
-        op_norm = product.sum(dim, keepdim=True).sqrt()
+            if callback is not None:
+                callback(op_norm)
 
         return op_norm
 
