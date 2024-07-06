@@ -43,7 +43,7 @@ class _AutogradWrapper(torch.autograd.Function):
         fw: Callable[[torch.Tensor], torch.Tensor],
         bw: Callable[[torch.Tensor], torch.Tensor],  # noqa: ARG004
         x: torch.Tensor,
-    ) -> Any:  # noqa: ANN401
+    ) -> torch.Tensor:
         return fw(x)
 
     @staticmethod
@@ -56,11 +56,11 @@ class _AutogradWrapper(torch.autograd.Function):
         return output
 
     @staticmethod
-    def backward(ctx: Any, *grad_output: torch.Tensor) -> tuple[None, None, Any | None]:  # noqa: ANN401
+    def backward(ctx: Any, *grad_output: torch.Tensor) -> tuple[None, None, torch.Tensor]:  # noqa: ANN401
         return None, None, _AutogradWrapper.apply(ctx.bw, ctx.fw, grad_output[0])
 
     @staticmethod
-    def jvp(ctx: Any, *grad_inputs: Any) -> Any:  # noqa: ANN401
+    def jvp(ctx: Any, *grad_inputs: Any) -> torch.Tensor:  # noqa: ANN401
         return _AutogradWrapper.apply(ctx.fw, ctx.bw, grad_inputs[-1])
 
 
@@ -77,7 +77,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         return (_AutogradWrapper.apply(self._forward_implementation, self._adjoint_implementation, x),)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply the adjoint of the Operator to x."""
+        """Apply the adjoint of the operator to x."""
         return (_AutogradWrapper.apply(self._adjoint_implementation, self._forward_implementation, x),)
 
     @property
