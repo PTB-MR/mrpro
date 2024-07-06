@@ -18,6 +18,18 @@ from mrpro.operators.EinsumOp import EinsumOp
 
 from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test
+from tests.helper import forward_mode_autodiff_of_linear_operator_test
+from tests.helper import gradient_of_linear_operator_test
+
+
+def create_einsum_op_and_range_domain(tensor_shape, input_shape, rule, output_shape, dtype):
+    generator = RandomGenerator(seed=0)
+    generate_tensor = getattr(generator, f'{dtype}_tensor')
+    tensor = generate_tensor(size=tensor_shape)
+    u = generate_tensor(size=input_shape)
+    v = generate_tensor(size=output_shape)
+    einsum_op = EinsumOp(tensor, rule)
+    return einsum_op, u, v
 
 
 @pytest.mark.parametrize('dtype', ['float32', 'complex128'])
@@ -33,13 +45,23 @@ from tests.helper import dotproduct_adjointness_test
 )
 def test_einsum_op(tensor_shape, input_shape, rule, output_shape, dtype):
     """Test adjointness and shape."""
-    generator = RandomGenerator(seed=0)
-    generate_tensor = getattr(generator, f'{dtype}_tensor')
-    tensor = generate_tensor(size=tensor_shape)
-    u = generate_tensor(size=input_shape)
-    v = generate_tensor(size=output_shape)
-    operator = EinsumOp(tensor, rule)
-    dotproduct_adjointness_test(operator, u, v)
+    dotproduct_adjointness_test(
+        *create_einsum_op_and_range_domain(tensor_shape, input_shape, rule, output_shape, dtype)
+    )
+
+
+def test_einsum_op_grad():
+    """Test the gradient of einsum operator."""
+    gradient_of_linear_operator_test(
+        *create_einsum_op_and_range_domain((3, 5, 4, 2), (3, 2, 5), 'l ... i j, l j k -> k i l', (5, 4, 3), 'complex64')
+    )
+
+
+def test_einsum_op_forward_mode_autodiff():
+    """Test forward-mode autodiff of einsum operator."""
+    forward_mode_autodiff_of_linear_operator_test(
+        *create_einsum_op_and_range_domain((3, 5, 4, 2), (3, 2, 5), 'l ... i j, l j k -> k i l', (5, 4, 3), 'complex64')
+    )
 
 
 @pytest.mark.parametrize(

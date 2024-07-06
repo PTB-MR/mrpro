@@ -19,6 +19,7 @@ import torch
 from mrpro.operators.models import MOLLI
 from tests.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 from tests.conftest import create_parameter_tensor_tuples
+from tests.helper import autodiff_of_operator_test
 
 
 @pytest.mark.parametrize(
@@ -60,3 +61,11 @@ def test_molli_shape(parameter_shape, contrast_dim_shape, signal_shape):
     a, b, t1 = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=3)
     (signal,) = model_op.forward(a, b, t1)
     assert signal.shape == signal_shape
+
+
+@pytest.mark.filterwarnings('ignore:Anomaly Detection has been enabled')
+def test_autodiff_molli():
+    """Test autodiff works for molli model."""
+    model = MOLLI(ti=10)
+    a, b, t1 = create_parameter_tensor_tuples((2, 5, 10, 10, 10), number_of_tensors=3)
+    autodiff_of_operator_test(model, a, b, t1)

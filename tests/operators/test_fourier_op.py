@@ -20,6 +20,8 @@ from tests import RandomGenerator
 from tests.conftest import COMMON_MR_TRAJECTORIES
 from tests.data.test_trajectory import create_traj
 from tests.helper import dotproduct_adjointness_test
+from tests.helper import forward_mode_autodiff_of_linear_operator_test
+from tests.helper import gradient_of_linear_operator_test
 
 
 def create_data(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz):
@@ -32,10 +34,7 @@ def create_data(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz):
     return img, trajectory
 
 
-@COMMON_MR_TRAJECTORIES
-def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
-    """Test adjoint property of Fourier operator."""
-
+def create_fourier_op_and_domain_range(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz):
     # generate random images and k-space trajectories
     img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz)
 
@@ -51,7 +50,37 @@ def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, 
     random_generator = RandomGenerator(seed=0)
     u = random_generator.complex64_tensor(size=img.shape)
     v = random_generator.complex64_tensor(size=kdata.shape)
-    dotproduct_adjointness_test(fourier_op, u, v)
+    return fourier_op, u, v
+
+
+@COMMON_MR_TRAJECTORIES
+def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
+    """Test adjoint property of Fourier operator."""
+    dotproduct_adjointness_test(*create_fourier_op_and_domain_range(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz))
+
+
+def test_finite_difference_op_grad():
+    """Test gradient of fourier operator."""
+    im_shape = (2, 8, 64, 32, 48)
+    k_shape = (2, 8, 8, 64, 96)
+    nkx = (2, 1, 1, 96)
+    nky = (2, 8, 64, 1)
+    nkz = (2, 8, 64, 1)
+    gradient_of_linear_operator_test(
+        *create_fourier_op_and_domain_range(im_shape, k_shape, nkx, nky, nkz, 'uf', 'nuf', 'nuf')
+    )
+
+
+def test_finite_difference_op_forward_mode_autodiff():
+    """Test forward-mode autodiff of fourier operator."""
+    im_shape = (2, 8, 64, 32, 48)
+    k_shape = (2, 8, 8, 64, 96)
+    nkx = (2, 1, 1, 96)
+    nky = (2, 8, 64, 1)
+    nkz = (2, 8, 64, 1)
+    forward_mode_autodiff_of_linear_operator_test(
+        *create_fourier_op_and_domain_range(im_shape, k_shape, nkx, nky, nkz, 'uf', 'nuf', 'nuf')
+    )
 
 
 @pytest.mark.parametrize(

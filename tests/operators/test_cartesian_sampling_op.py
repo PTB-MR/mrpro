@@ -21,6 +21,8 @@ from mrpro.operators import CartesianSamplingOp
 from tests import RandomGenerator
 from tests.data.test_trajectory import create_traj
 from tests.helper import dotproduct_adjointness_test
+from tests.helper import forward_mode_autodiff_of_linear_operator_test
+from tests.helper import gradient_of_linear_operator_test
 
 
 def test_cart_sampling_op_data_match():
@@ -63,20 +65,7 @@ def test_cart_sampling_op_data_match():
     torch.testing.assert_close(kdata[:, :, ::2, ::4, ::3], k_sub[:, :, ::2, ::4, ::3])
 
 
-@pytest.mark.parametrize(
-    'sampling',
-    [
-        'random',
-        'partial_echo',
-        'partial_fourier',
-        'regular_undersampling',
-        'random_undersampling',
-        'different_random_undersampling',
-    ],
-)
-def test_cart_sampling_op_fwd_adj(sampling):
-    """Test adjoint property of Cartesian sampling operator."""
-
+def create_cart_sampling_op_and_range_domain(sampling):
     # Create 3D uniform trajectory
     k_shape = (2, 5, 20, 40, 60)
     nkx = (2, 1, 1, 60)
@@ -113,8 +102,33 @@ def test_cart_sampling_op_fwd_adj(sampling):
     encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
 
-    # Test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v
     random_generator = RandomGenerator(seed=0)
     u = random_generator.complex64_tensor(size=k_shape)
     v = random_generator.complex64_tensor(size=k_shape[:2] + trajectory.as_tensor().shape[2:])
-    dotproduct_adjointness_test(sampling_op, u, v)
+    return sampling_op, u, v
+
+
+@pytest.mark.parametrize(
+    'sampling',
+    [
+        'random',
+        'partial_echo',
+        'partial_fourier',
+        'regular_undersampling',
+        'random_undersampling',
+        'different_random_undersampling',
+    ],
+)
+def test_cart_sampling_op_fwd_adj(sampling):
+    """Test adjoint property of Cartesian sampling operator."""
+    dotproduct_adjointness_test(*create_cart_sampling_op_and_range_domain(sampling))
+
+
+def test_cart_sampling_op_grad():
+    """Test the gradient of the Cartesian Sampling Op."""
+    gradient_of_linear_operator_test(*create_cart_sampling_op_and_range_domain('random'))
+
+
+def test_cart_sampling_op_forward_mode_autodiff():
+    """Test forward-mode autodiff of the Cartesian Sampling Op."""
+    forward_mode_autodiff_of_linear_operator_test(*create_cart_sampling_op_and_range_domain('random'))

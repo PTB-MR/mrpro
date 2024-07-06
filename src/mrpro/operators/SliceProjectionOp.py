@@ -209,7 +209,7 @@ class SliceProjectionOp(LinearOperator):
         self._range_shape: tuple[int] = (*batch_shapes, 1, max_shape, max_shape)
         self._domain_shape = input_shape.zyx
 
-    def forward(self, x: Tensor) -> tuple[Tensor]:
+    def _forward_implementation(self, x: Tensor) -> Tensor:
         """Transform from a 3D Volume to a 2D Slice.
 
         Parameters
@@ -239,9 +239,9 @@ class SliceProjectionOp(LinearOperator):
             [_MatrixMultiplication.apply(x, matrix, matrix_adjoint).reshape(self._range_shape) for x in xflat], -4
         )
         y = y.reshape(*y.shape[:-4], *x.shape[:-3], *y.shape[-3:])
-        return (y,)
+        return y
 
-    def adjoint(self, x: Tensor) -> tuple[Tensor,]:
+    def _adjoint_implementation(self, x: Tensor) -> Tensor:
         """Transform from a 2D slice to a 3D Volume.
 
         Parameters
@@ -282,7 +282,7 @@ class SliceProjectionOp(LinearOperator):
             ]
         )
         y = y_flatdomainbatch.reshape(*x.shape[n_batchdim:-3], *y_flatdomainbatch.shape[1:])
-        return (y,)
+        return y
 
     @staticmethod
     def join_matrices(matrices: Sequence[Tensor]) -> Tensor:
