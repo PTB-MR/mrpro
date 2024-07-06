@@ -110,7 +110,7 @@ class FastFourierOp(LinearOperator):
                 f'{encoding_matrix=} and {recon_matrix=}'
             )
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def _forward_implementation(self, x: torch.Tensor) -> torch.Tensor:
         """FFT from image space to k-space.
 
         Parameters
@@ -126,9 +126,9 @@ class FastFourierOp(LinearOperator):
             torch.fft.fftn(torch.fft.ifftshift(*self._pad_op.forward(x), dim=self._dim), dim=self._dim, norm='ortho'),
             dim=self._dim,
         )
-        return (y,)
+        return y
 
-    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
+    def _adjoint_implementation(self, y: torch.Tensor) -> torch.Tensor:
         """IFFT from k-space to image space.
 
         Parameters
@@ -146,4 +146,4 @@ class FastFourierOp(LinearOperator):
                 torch.fft.ifftn(torch.fft.ifftshift(y, dim=self._dim), dim=self._dim, norm='ortho'),
                 dim=self._dim,
             ),
-        )
+        )[0]
