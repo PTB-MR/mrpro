@@ -242,19 +242,27 @@ class LinearOperatorComposition(LinearOperator, OperatorComposition[torch.Tensor
     Performs operator1(operator2(x))
     """
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def _forward_implementation(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward of the operator composition."""
+        return self._operator1(*self._operator2(x))[0]
+
+    def _adjoint_implementation(self, x: torch.Tensor) -> torch.Tensor:
         """Adjoint of the operator composition."""
         # (AB)^T = B^T A^T
-        return self._operator2.adjoint(*self._operator1.adjoint(x))
+        return self._operator2.adjoint(*self._operator1.adjoint(x))[0]
 
 
 class LinearOperatorSum(LinearOperator, OperatorSum[torch.Tensor, tuple[torch.Tensor,]]):
     """Operator addition."""
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def _forward_implementation(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward of the operator addition."""
+        return self._operator1(x)[0] + self._operator2(x)[0]
+
+    def _adjoint_implementation(self, x: torch.Tensor) -> torch.Tensor:
         """Adjoint of the operator addition."""
         # (A+B)^T = A^T + B^T
-        return (self._operator1.adjoint(x)[0] + self._operator2.adjoint(x)[0],)
+        return self._operator1.adjoint(x)[0] + self._operator2.adjoint(x)[0]
 
 
 class LinearOperatorElementwiseProductRight(
@@ -265,9 +273,13 @@ class LinearOperatorElementwiseProductRight(
     Peforms Tensor*LinearOperator(x)
     """
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Adjoint Operator elementwise multiplication with a tensor."""
-        return self._operator.adjoint(x * self._tensor.conj())
+    def _forward_implementation(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward operator elementwise multiplication with a tensor."""
+        return self._operator(x)[0] * self._tensor
+
+    def _adjoint_implementation(self, x: torch.Tensor) -> torch.Tensor:
+        """Adjoint operator elementwise multiplication with a tensor."""
+        return self._operator.adjoint(x * self._tensor.conj())[0]
 
 
 class LinearOperatorElementwiseProductLeft(
@@ -278,9 +290,13 @@ class LinearOperatorElementwiseProductLeft(
     Peforms LinearOperator(Tensor*x)
     """
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Adjoint Operator elementwise multiplication with a tensor."""
-        return (self._operator.adjoint(x)[0] * self._tensor.conj(),)
+    def _forward_implementation(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward operator elementwise left multiplication with a tensor."""
+        return self._operator(x * self._tensor)[0]
+
+    def _adjoint_implementation(self, x: torch.Tensor) -> torch.Tensor:
+        """Adjoint operator elementwise left multiplication with a tensor."""
+        return self._operator.adjoint(x)[0] * self._tensor.conj()
 
 
 class AdjointLinearOperator(LinearOperator):
@@ -291,13 +307,13 @@ class AdjointLinearOperator(LinearOperator):
         super().__init__()
         self._operator = operator
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def _forward_implementation(self, x: torch.Tensor) -> torch.Tensor:
         """Apply the adjoint of the original LinearOperator."""
-        return self._operator.adjoint(x)
+        return self._operator.adjoint(x)[0]
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def _adjoint_implementation(self, x: torch.Tensor) -> torch.Tensor:
         """Apply the adjoint of the adjoint, i.e. the original LinearOperator."""
-        return self._operator.forward(x)
+        return self._operator.forward(x)[0]
 
     @property
     def H(self) -> LinearOperator:  # noqa: N802
