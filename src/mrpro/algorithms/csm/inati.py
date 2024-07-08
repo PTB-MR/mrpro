@@ -57,9 +57,9 @@ def inati(
 
     halfKs = [ks // 2 for ks in kernel_size.zyx]
     padded = torch.nn.functional.pad(
-        coil_images, (halfKs[-3], halfKs[-3], halfKs[-2], halfKs[-2], halfKs[-1], halfKs[-1]), mode=padding_mode
+        coil_images, (halfKs[-1], halfKs[-1], halfKs[-2], halfKs[-2], halfKs[-3], halfKs[-3]), mode=padding_mode
     )
-    D = sliding_window(padded, kernel_size.zyx, axis=(-3, -2, -1)).flatten(-2)  # coil E1, E0, ks*ks
+    D = sliding_window(padded, kernel_size.zyx, axis=(-3, -2, -1)).flatten(-3)  # coil E1, E0, ks*ks
     DH_D = torch.einsum('i...j,k...j->...ik', D, D.conj())  # E1,E0,coil,coil
     singular_vector = torch.sum(D, dim=-1)  # coil, E1, E0
     singular_vector /= singular_vector.abs().square().sum(0, keepdim=True).sqrt()
