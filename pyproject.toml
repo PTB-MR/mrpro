@@ -28,12 +28,12 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
-    "numpy>=1.23,<2.0",
-    "torch>=2.3,<3.0",
-    "ismrmrd>=1.14.1,<2.0",
+    "numpy>=1.23",
+    "torch>=2.3",
+    "ismrmrd>=1.14.1",
     "einops",
     "pydicom",
-    "pypulseq@git+https://github.com/imr-framework/pypulseq",
+    "pypulseq>=1.4.2",
     "torchkbnufft>=1.4.0",
     "scipy>=1.12",
 ]
@@ -47,7 +47,6 @@ test = [
     "pytest-cov",
     "pytest-xdist",
 ]
-lint = ["mypy", "flake8", "isort", "pre-commit", "autopep8", "pydocstyle"]
 docs = ["sphinx", "sphinx_rtd_theme", "sphinx-pyproject"]
 notebook = [
     "zenodo_get",
