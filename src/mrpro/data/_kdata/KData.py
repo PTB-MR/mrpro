@@ -124,22 +124,16 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
 
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
 
-        for i in acqinfo.idx.user5:
-            if i != 0:
-                warnings.warn(
-                    'The Siemens to ismrmrd converter currently (ab)uses '
-                    'the user indices 5 for storing the kspace center line and partition number\n'
-                    'User 5 indices will be ignored',
-                    stacklevel=1,
-                )
-        for i in acqinfo.idx.user6:
-            if i != 0:
-                warnings.warn(
-                    'The Siemens to ismrmrd converter currently (ab)uses '
-                    'the user indices 6 for storing the kspace center line and partition number\n'
-                    'User 6 indices will be ignored',
-                    stacklevel=1,
-                )
+        for i in (5, 6):
+            user_indices = getattr(acqinfo.idx, f'user{i}', [])
+            for j in user_indices:
+                if j != 0:
+                    warnings.warn(
+                        'The Siemens to ismrmrd converter currently (ab)uses '
+                        f'the user {i} indices for storing the kspace center line and partition number\n'
+                        f'User {i} indices will be ignored',
+                        stacklevel=1,
+                    )
 
         # Raises ValueError if required fields are missing in the header
         kheader = KHeader.from_ismrmrd(
