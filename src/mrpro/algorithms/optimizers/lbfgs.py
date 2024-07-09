@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections.abc import Callable
 from collections.abc import Sequence
 from typing import Literal
 
@@ -33,6 +34,7 @@ def lbfgs(
     tolerance_change: float = 1e-09,
     history_size: int = 10,
     line_search_fn: None | Literal['strong_wolfe'] = 'strong_wolfe',
+    callback: Callable | None = None,
 ) -> tuple[torch.Tensor, ...]:
     """LBFGS for non-linear minimization problems.
 
@@ -58,6 +60,8 @@ def lbfgs(
         update history size
     line_search_fn
         line search algorithm, either 'strong_wolfe' or None (meaning constant step size)
+    callback
+        user-provided function to be called after each iteration
 
     Returns
     -------
@@ -79,6 +83,9 @@ def lbfgs(
         optim.zero_grad()
         (objective,) = f(*parameters)
         objective.backward()
+
+        if callback is not None:
+            callback(parameters)
         return objective
 
     # run lbfgs
