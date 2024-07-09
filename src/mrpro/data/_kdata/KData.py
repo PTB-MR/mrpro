@@ -52,12 +52,12 @@ KDIM_SORT_LABELS = (
     'phase',
     'repetition',
     'set',
-    'user0_idx',
-    'user1_idx',
-    'user2_idx',
-    'user3_idx',
-    'user4_idx',
-    'user7_idx',
+    'user0',
+    'user1',
+    'user2',
+    'user3',
+    'user4',
+    'user7',
 )
 
 OTHER_LABELS = (
@@ -67,12 +67,12 @@ OTHER_LABELS = (
     'phase',
     'repetition',
     'set',
-    'user0_idx',
-    'user1_idx',
-    'user2_idx',
-    'user3_idx',
-    'user4_idx',
-    'user7_idx',
+    'user0',
+    'user1',
+    'user2',
+    'user3',
+    'user4',
+    'user7',
 )
 
 
