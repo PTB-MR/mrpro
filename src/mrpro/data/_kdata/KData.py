@@ -43,9 +43,37 @@ from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalcula
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
 from mrpro.utils import modify_acq_info
 
-KDIM_SORT_LABELS = ('k1', 'k2', 'average', 'slice', 'contrast', 'phase', 'repetition', 'set')
-# TODO: Consider adding the users labels here, but remember issue #32 and NOT add user5 and user6.
-OTHER_LABELS = ('average', 'slice', 'contrast', 'phase', 'repetition', 'set')
+KDIM_SORT_LABELS = (
+    'k1',
+    'k2',
+    'average',
+    'slice',
+    'contrast',
+    'phase',
+    'repetition',
+    'set',
+    'user0_idx',
+    'user1_idx',
+    'user2_idx',
+    'user3_idx',
+    'user4_idx',
+    'user7_idx',
+)
+
+OTHER_LABELS = (
+    'average',
+    'slice',
+    'contrast',
+    'phase',
+    'repetition',
+    'set',
+    'user0_idx',
+    'user1_idx',
+    'user2_idx',
+    'user3_idx',
+    'user4_idx',
+    'user7_idx',
+)
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
@@ -95,6 +123,23 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
+
+        for i in acqinfo.idx.user5:
+            if i != 0:
+                warnings.warn(
+                    'The Siemens to ismrmrd converter currently (ab)uses '
+                    'the user indices 5 for storing the kspace center line and partition number\n'
+                    'User 5 indices will be ignored',
+                    stacklevel=1,
+                )
+        for i in acqinfo.idx.user6:
+            if i != 0:
+                warnings.warn(
+                    'The Siemens to ismrmrd converter currently (ab)uses '
+                    'the user indices 6 for storing the kspace center line and partition number\n'
+                    'User 6 indices will be ignored',
+                    stacklevel=1,
+                )
 
         # Raises ValueError if required fields are missing in the header
         kheader = KHeader.from_ismrmrd(
