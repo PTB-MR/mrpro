@@ -101,3 +101,17 @@ def test_fast_fourier_op_onematrix():
         FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=None)
     with pytest.raises(ValueError, match='None'):
         FastFourierOp(recon_matrix=None, encoding_matrix=encoding_matrix)
+
+
+def test_invalid_dim():
+    """Test that the FastFourierOp throws an error if not all dimensions
+    for which the FFT should be calculated are in (-3,-2,-1)."""
+
+    recon_matrix = SpatialDimension(z=101, y=201, x=61)
+    encoding_matrix = SpatialDimension(z=14, y=220, x=61)
+
+    with pytest.raises(NotImplementedError, match='recon_matrix'):
+        FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=None, dim=(-4, -2, -1))
+
+    with pytest.raises(NotImplementedError, match='encoding_matrix'):
+        FastFourierOp(recon_matrix=None, encoding_matrix=encoding_matrix, dim=(-4, -2, -1))
