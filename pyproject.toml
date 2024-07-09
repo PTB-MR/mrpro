@@ -161,6 +161,7 @@ locale = "en-us"
 Reson = "Reson" # required for Proc. Intl. Soc. Mag. Reson. Med.
 iy = "iy"
 daa = 'daa'     # required for wavelet operator
+gaus = 'gaus'   # required for wavelet operator
 
 [tool.typos.files]
 extend-exclude = [

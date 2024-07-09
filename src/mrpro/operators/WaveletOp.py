@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 from collections.abc import Sequence
 
 import numpy as np
@@ -45,6 +43,10 @@ class WaveletOp(LinearOperator):
         """Wavelet operator.
 
         For complex images the wavelet coefficients are calculated for real and imaginary part separately.
+        Wavelet names supported by pywt are: haar, db1 - db38, sym2 - sym20, coif1 - coif17, bior1.1, bior1.3, bior1.5,
+        bior2.2, bior2.4, bior2.6, bior2.8, bior3.1, bior3.3 bior3.5, bior3.7, bior3.9, bior4.4, bior5.5, bior6.8,
+        rbio1.1, rbio1.3, rbio1.5, rbio2.2, rbio2.4, rbio2.6, rbio2.8, rbio3.1, rbio3.3, rbio3.5, rbio3.7, rbio3.9,
+        rbio4.4, rbio5.5, rbio6.8,- bior6.8, dmey, gaus1- gaus8, mexh, cgau1 - cgau8, shan, fbsp, cmor
 
         For a 2D image, the coefficients are labelled [aa, (ad_n, da_n, dd_n), ..., (ad_1, da_1, dd_1)] where a refers
         to the approximation coefficients and d to the detail coefficients. The index indicates the level.
@@ -71,10 +73,10 @@ class WaveletOp(LinearOperator):
             If any dimension of the domain shape is odd. Adjoint will lead to the wrong domain shape.
         """
         super().__init__()
-        self.domain_shape = domain_shape
-        self.wavelet_name = wavelet_name
-        self.dim = dim
-        self.level = level
+        self._domain_shape = domain_shape
+        self._wavelet_name = wavelet_name
+        self._dim = dim
+        self._level = level
 
         # number of wavelet directions
         if len(dim) == 1:
@@ -109,7 +111,7 @@ class WaveletOp(LinearOperator):
             # raise error/warnings if level is not possible or lead to boundary effects
             verified_level = _check_level(domain_shape, wavelet_length, level)
 
-            if verified_level == 0:
+            if verified_level == 0:  # only a/aa/aaa component possible
                 self.coefficients_shape = [domain_shape]
             else:
                 self.coefficients_shape = []
@@ -141,25 +143,27 @@ class WaveletOp(LinearOperator):
             If the dimensions along which wavelets are to be calculated are not unique.
         """
         # normalize axes to allow negative indexing in input
-        dim = tuple(d % x.ndim for d in self.dim)
+        dim = tuple(d % x.ndim for d in self._dim)
         if len(dim) != len(set(dim)):
             raise ValueError(f'Axis must be unique. Normalized axis are {dim}')
 
         # swapping the last axes and the axes to calculate wavelets of
-        x = torch.moveaxis(x, dim, list(range(-len(self.dim), 0)))
+        x = torch.moveaxis(x, dim, list(range(-len(self._dim), 0)))
 
         # the ptwt functions work only for real data, thus we handle complex inputs as an additional channel
         x_real = torch.view_as_real(x).moveaxis(-1, 0) if x.is_complex() else x
 
-        if len(self.dim) == 1:
-            coeffs1 = wavedec(x_real, self.wavelet_name, level=self.level, mode='zero', axis=-1)
+        if len(self._dim) == 1:
+            coeffs1 = wavedec(x_real, self._wavelet_name, level=self._level, mode='zero', axis=-1)
             coefficients_list = self._format_coeffs_1d(coeffs1)
-        elif len(self.dim) == 2:
-            coeffs2 = wavedec2(x_real, self.wavelet_name, level=self.level, mode='zero', axes=(-2, -1))
+        elif len(self._dim) == 2:
+            coeffs2 = wavedec2(x_real, self._wavelet_name, level=self._level, mode='zero', axes=(-2, -1))
             coefficients_list = self._format_coeffs_2d(coeffs2)
-        elif len(self.dim) == 3:
-            coeffs3 = wavedec3(x_real, self.wavelet_name, level=self.level, mode='zero', axes=(-3, -2, -1))
+        elif len(self._dim) == 3:
+            coeffs3 = wavedec3(x_real, self._wavelet_name, level=self._level, mode='zero', axes=(-3, -2, -1))
             coefficients_list = self._format_coeffs_3d(coeffs3)
+        else:
+            raise ValueError(f'Wavelets are only available for 1D, 2D and 3D and not {self._dim}D')
 
         # stack multi-resolution wavelets along single dimension
         coefficients_stack = self._coeff_to_stacked_tensor(coefficients_list)
@@ -193,11 +197,11 @@ class WaveletOp(LinearOperator):
         ValueError
             If the dimensions along which wavelets are to be calculated are not unique.
         """
-        if self.domain_shape is None:
+        if self._domain_shape is None:
             raise ValueError('Adjoint requires to define the domain_shape in init()')
 
         # normalize axes to allow negative indexing in input
-        dim = tuple(d % (coefficients_stack.ndim + len(self.dim) - 1) for d in self.dim)
+        dim = tuple(d % (coefficients_stack.ndim + len(self._dim) - 1) for d in self._dim)
         if len(dim) != len(set(dim)):
             raise ValueError(f'Axis must be unique. Normalized axis are {dim}')
 
@@ -212,29 +216,32 @@ class WaveletOp(LinearOperator):
 
         coefficients_list = self._stacked_tensor_to_coeff(coefficients_stack_real)
 
-        if len(self.dim) == 1:
+        if len(self._dim) == 1:
             coeffs1 = self._undo_format_coeffs_1d(coefficients_list)
-            data = waverec(coeffs1, self.wavelet_name, axis=-1)
-        elif len(self.dim) == 2:
+            data = waverec(coeffs1, self._wavelet_name, axis=-1)
+        elif len(self._dim) == 2:
             coeffs2 = self._undo_format_coeffs_2d(coefficients_list)
-            data = waverec2(coeffs2, self.wavelet_name, axes=(-2, -1))
-        elif len(self.dim) == 3:
+            data = waverec2(coeffs2, self._wavelet_name, axes=(-2, -1))
+        elif len(self._dim) == 3:
             coeffs3 = self._undo_format_coeffs_3d(coefficients_list)
-            data = waverec3(coeffs3, self.wavelet_name, axes=(-3, -2, -1))
+            data = waverec3(coeffs3, self._wavelet_name, axes=(-3, -2, -1))
+        else:
+            raise ValueError(f'Wavelets are only available for 1D, 2D and 3D and not {self._dim}D')
 
         # undo swapping of axes
         if coefficients_stack.is_complex():
             data = torch.moveaxis(
-                data, list(range(-len(self.dim), 0)), [d + 1 for d in dim]
+                data, list(range(-len(self._dim), 0)), [d + 1 for d in dim]
             )  # +1 because first dim is real/imag
             # if we deal with complex coefficients, we also return complex data
             data = torch.view_as_complex(data.moveaxis(0, -1).contiguous())
         else:
-            data = torch.moveaxis(data, list(range(-len(self.dim), 0)), dim)
+            data = torch.moveaxis(data, list(range(-len(self._dim), 0)), dim)
 
         return (data,)
 
-    def _format_coeffs_1d(self, coefficients: list[torch.Tensor]) -> list[torch.Tensor]:
+    @staticmethod
+    def _format_coeffs_1d(coefficients: list[torch.Tensor]) -> list[torch.Tensor]:
         """Format 1D wavelet coefficients to MRpro format.
 
         At the moment, this function just returns the input coefficients as is:
@@ -242,7 +249,8 @@ class WaveletOp(LinearOperator):
         """
         return coefficients
 
-    def _undo_format_coeffs_1d(self, coefficients: list[torch.Tensor]) -> list[torch.Tensor]:
+    @staticmethod
+    def _undo_format_coeffs_1d(coefficients: list[torch.Tensor]) -> list[torch.Tensor]:
         """Undo format 1D wavelet coefficients to MRpro format.
 
         At the moment, this function just returns the input coefficients as is:
@@ -250,8 +258,8 @@ class WaveletOp(LinearOperator):
         """
         return coefficients
 
+    @staticmethod
     def _format_coeffs_2d(
-        self,
         coefficients: list[torch.Tensor | tuple[torch.Tensor, torch.Tensor, torch.Tensor]],
     ) -> list[torch.Tensor]:
         """Format 2D wavelet coefficients to MRpro format.
@@ -278,7 +286,8 @@ class WaveletOp(LinearOperator):
             coeffs_ptwt_format.append(tuple(coefficients[i : i + self.n_wavelet_directions]))
         return coeffs_ptwt_format
 
-    def _format_coeffs_3d(self, coefficients: list[torch.Tensor | dict[str, torch.Tensor]]) -> list[torch.Tensor]:
+    @staticmethod
+    def _format_coeffs_3d(coefficients: list[torch.Tensor | dict[str, torch.Tensor]]) -> list[torch.Tensor]:
         """Format 3D wavelet coefficients to MRpro format.
 
         Converts from   [aaa, {aad_n, ada_n, add_n, ...}, ..., {aad_1, ada_1, add_1, ...}]
@@ -330,7 +339,9 @@ class WaveletOp(LinearOperator):
             stacked coefficients in tensor [...,coeff]
         """
         return torch.cat(
-            [coeff.flatten(start_dim=-len(self.dim)) for coeff in coefficients] if len(self.dim) > 1 else coefficients,
+            [coeff.flatten(start_dim=-len(self._dim)) for coeff in coefficients]
+            if len(self._dim) > 1
+            else coefficients,
             dim=-1,
         )
 
