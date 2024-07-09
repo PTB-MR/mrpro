@@ -23,6 +23,7 @@ mrpro.operators.models
       MOLLI
       MonoExponentialDecay
       SaturationRecovery
+      TransientSteadyStateWithPreparation
       WASABI
       WASABITI
    
