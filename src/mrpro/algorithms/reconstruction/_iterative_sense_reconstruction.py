@@ -1,4 +1,4 @@
-"""Iterative SENSE reconstruction."""
+"""Iterative SENSE regularization reconstruction."""
 
 # Copyright 2023 Physikalisch-Technische Bundesanstalt
 #
@@ -16,10 +16,10 @@
 
 from __future__ import annotations
 
+from typing import Literal
 from typing import Self
 
-import torch
-
+from mrpro.algorithms._prewhiten_kspace import prewhiten_kspace
 from mrpro.algorithms.optimizers import cg
 from mrpro.algorithms.reconstruction import DirectReconstruction
 from mrpro.algorithms.reconstruction import Reconstruction
@@ -27,25 +27,25 @@ from mrpro.data._CsmData import CsmData
 from mrpro.data._DcfData import DcfData
 from mrpro.data._IData import IData
 from mrpro.data._kdata._KData import KData
+from mrpro.data._KNoise import KNoise
+from mrpro.operators._LinearOperator import LinearOperator
 from mrpro.operators._FourierOp import FourierOp
 
-
 class IterativeSenseReconstruction(Reconstruction):
-    """Iterative SENSE reconstruction.
+    """Iterative SENSE Regularization reconstruction.
 
     This algorithm minizes the problem
 
-    min_x 0.5||W^0.5 (Ax - y)||_2^2
+    min_x 0.5||W^0.5 (Ax - y)||_2^2 + 0.5*lambda||x - x0||_2^2
 
     by using a conjugate gradient algorithm to solve
 
     H x = b
 
-    with H = A^H W A and b = A^H W y
+    with H = A^H W A + lambda    and    b = A^H W y + lambda x0
 
     where A is the acquisition model (coil sensitivity maps, Fourier operator, k-space sampling), y is the acquired
     k-space data and W describes the density compensation.
-    Note: It is assumed that the input `y` is already pre-whitened
 
     More information can be found here:
     Pruessmann, K. P., Weiger, M., Boernert, P. & Boesiger, P. Advances in sensitivity encoding with arbitrary k-space
@@ -53,101 +53,110 @@ class IterativeSenseReconstruction(Reconstruction):
 
     """
 
-    acquisition_model: FourierOp
-    """Acquisition Operator (= A)"""
-
-    initial_val: torch.Tensor | None
-    """Initial value (=x )"""
-
     dcf: DcfData | None
     """Density Compensation Data."""
+
+    csm: CsmData
+    """Coil Sensitivity Data."""
+
+    noise: KNoise | None
+    """Noise Data used for prewhitening."""
+
+    fourier_op: LinearOperator
+    """Fourier Operator."""
 
     n_max_iter: int
     """Maximum number of CG iterations."""
 
     def __init__(
         self,
-        acquisition_model: FourierOp,
+        fourier_operator: LinearOperator,
+        csm: CsmData,
         n_max_iter: int,
-        initial_val: torch.Tensor | None = None,
+        noise: None | KNoise = None,
         dcf: DcfData | None = None,
     ):
-        """Initialize IterativeSenseReconstruction.
+        """Initialize DirectReconstruction.
 
         Parameters
         ----------
-        acquisition_model
-            Instance of the LinearOperator representing the acquisition model.
+        fourier_operator
+            Instance of the FourierOperator which adjoint is used for reconstruction.
+        csm
+            Sensitivity maps for coil combination
         n_max_iter
-            Maximum number of CG iterations.
-        initial_val
-            Initial value for the reconstruction (optional).
+            Maximum number of CG iterations
+        noise
+            Used for prewhitening
         dcf
-            Density compensation data. If None, no dcf will be performed.
+            Density compensation. If None, no dcf will be performed.
+            Also set to None, if the FourierOperator is already density compensated.
         """
         super().__init__()
-        self.acquisition_model = acquisition_model
-        self.initial_val = initial_val
+        self.fourier_op = fourier_operator
         # TODO: Make this buffers once DataBufferMixin is merged
         self.dcf = dcf
+        self.csm = csm
+        self.noise = noise
         self.n_max_iter = n_max_iter
 
     @classmethod
-    def from_kdata(cls, kdata: KData, n_max_iter: int) -> Self:
-        """Create an IterativeSenseReconstruction from KData with default settings.
+    def from_kdata(
+        cls, kdata: KData, n_max_iter: int, noise: KNoise | None = None
+    ) -> Self:
+        """Create a IterativeSenseReconstruction from kdata with default settings.
 
         Parameters
         ----------
         kdata
-            KData containing trajectory and header information.
+            KData to use for trajektory and header information
         n_max_iter
-            Maximum number of CG iterations.
-
-        # adjoint = DirectReconstruction(acquisition_model, dcf=dcf)
-
-        # image = adjoint(kdata)
-        # csm = CsmData.from_idata_walsh(image)
-
-        Returns
-        -------
-        IterativeSenseReconstruction
-            Instance of IterativeSenseReconstruction initialized with default settings.
+            Maximum number of CG iterations
+        noise
+            KNoise used for prewhitening. If None, no prewhitening is performed
         """
+        if noise is not None:
+            kdata = prewhiten_kspace(kdata, noise)
         dcf = DcfData.from_traj_voronoi(kdata.traj)
-        acquisition_model = FourierOp.from_kdata(kdata)
-        return cls(acquisition_model, n_max_iter, initial_val=None, dcf=dcf)
+        fourier_op = FourierOp.from_kdata(kdata)
+        adjoint = DirectReconstruction(fourier_op, dcf=dcf, noise=noise)
+        image = adjoint(kdata)
+        csm = CsmData.from_idata_walsh(image)
+        return cls(fourier_op, csm, n_max_iter, noise, dcf)
 
-    def recalculate_fourierop(self, kdata: KData) -> Self:
-        """Recalculate the Fourier Operator and DCF.
+    def recalculate_fourierop(self, kdata: KData):
+        """Update (in place) the Fourier Operator, e.g. for a new trajectory.
+
+        Also recalculates the DCF.
 
         Parameters
         ----------
         kdata
-            KData used to determine trajectory and recon/encoding matrix.
-
-        Returns
-        -------
-        IterativeSenseReconstruction
-            Updated instance with recalculated Fourier Operator and DCF.
+            KData to determine trajectory and recon/encoding matrix from.
         """
-        self.acquisition_model = FourierOp.from_kdata(kdata)
+        self.fourier_op = FourierOp.from_kdata(kdata)
         self.dcf = DcfData.from_traj_voronoi(kdata.traj)
         return self
 
-    def recalculate_csm_walsh(self, kdata: KData) -> Self:
-        """Recalculate Coil Sensitivity Maps using Walsh method.
+    def recalculate_csm_walsh(self, kdata: KData, noise: KNoise | None | Literal[False] = None) -> Self:
+        """Update (in place) the CSM from KData using Walsh.
 
         Parameters
         ----------
         kdata
-            KData used for adjoint reconstruction.
-
-        Returns
-        -------
-        IterativeSenseReconstruction
-            Updated instance with recalculated Coil Sensitivity Maps.
+            KData used for adjoint reconstruction, which is then used for
+            Walsh CSM estimation.
+        noise
+            Noise measurement for prewhitening.
+            If None, self.noise (if previously set) is used.
+            If False, no prewithening is performed even if self.noise is set.
+            Use this if the kdata is already prewhitened.
         """
-        adjoint = DirectReconstruction(self.acquisition_model, dcf=self.dcf)
+        if noise is False:
+            noise = None
+        elif noise is None:
+            noise = self.noise
+        adjoint = DirectReconstruction(self.fourier_op, dcf=self.dcf, noise=noise)
         image = adjoint(kdata)
         self.csm = CsmData.from_idata_walsh(image)
         return self
@@ -165,12 +174,14 @@ class IterativeSenseReconstruction(Reconstruction):
             the reconstruced image.
         """
         device = kdata.data.device
-        operator = self.acquisition_model @ self.csm.as_operator()
+        if self.noise is not None:
+            kdata = prewhiten_kspace(kdata, self.noise.to(device))
+        operator = self.fourier_op @ self.csm.as_operator()
         if self.dcf is not None:
             operator = self.dcf.as_operator() @ operator
         operator = operator.to(device)
         (right_hand_side,) = operator.H(kdata.data)
-        operator = self.csm.as_operator().H @ self.acquisition_model.H @ operator
+        operator = self.csm.as_operator().H @ self.fourier_op.H @ operator
         img_tensor = cg(operator, right_hand_side, initial_value=right_hand_side, max_iterations=self.n_max_iter)
         img = IData.from_tensor_and_kheader(img_tensor, kdata.header)
         return img
