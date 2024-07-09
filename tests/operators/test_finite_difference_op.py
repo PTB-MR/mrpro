@@ -18,6 +18,8 @@ from mrpro.operators import FiniteDifferenceOp
 
 from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test
+from tests.helper import forward_mode_autodiff_of_linear_operator_test
+from tests.helper import gradient_of_linear_operator_test
 
 
 @pytest.mark.parametrize('mode', ['central', 'forward', 'backward'])
@@ -36,19 +38,33 @@ def test_finite_difference_op_forward(mode):
     torch.testing.assert_close(finite_difference_of_object[1, 1:-1, 0], (2 - 2j) * torch.ones(18))
 
 
-@pytest.mark.parametrize('pad_mode', ['zeros', 'circular'])
-@pytest.mark.parametrize('mode', ['central', 'forward', 'backward'])
-@pytest.mark.parametrize('dim', [(-1,), (-2, -1), (-3, -2, -1), (-4,), (1, 3)])
-def test_finite_difference_op_adjointness(dim, mode, pad_mode):
-    """Test finite difference operator adjoint property."""
-
+def create_finite_difference_op_and_range_domain(dim, mode, pad_mode):
     random_generator = RandomGenerator(seed=0)
     im_shape = (5, 6, 4, 10, 20, 16)
 
     # Generate finite difference operator
     finite_difference_op = FiniteDifferenceOp(dim, mode, pad_mode)
 
-    # Check adjoint property
     u = random_generator.complex64_tensor(size=im_shape)
     v = random_generator.complex64_tensor(size=(len(dim), *im_shape))
-    dotproduct_adjointness_test(finite_difference_op, u, v)
+    return finite_difference_op, u, v
+
+
+@pytest.mark.parametrize('pad_mode', ['zeros', 'circular'])
+@pytest.mark.parametrize('mode', ['central', 'forward', 'backward'])
+@pytest.mark.parametrize('dim', [(-1,), (-2, -1), (-3, -2, -1), (-4,), (1, 3)])
+def test_finite_difference_op_adjointness(dim, mode, pad_mode):
+    """Test finite difference operator adjoint property."""
+    dotproduct_adjointness_test(*create_finite_difference_op_and_range_domain(dim, mode, pad_mode))
+
+
+def test_finite_difference_op_grad():
+    """Test gradient of finite difference operator."""
+    gradient_of_linear_operator_test(*create_finite_difference_op_and_range_domain((-3, -2, -1), 'central', 'circular'))
+
+
+def test_finite_difference_op_forward_mode_autodiff():
+    """Test forward-mode autodiff of finite difference operator."""
+    forward_mode_autodiff_of_linear_operator_test(
+        *create_finite_difference_op_and_range_domain((-3, -2, -1), 'central', 'circular')
+    )

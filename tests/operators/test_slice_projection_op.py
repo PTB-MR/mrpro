@@ -25,6 +25,8 @@ from mrpro.utils.slice_profiles import SliceSmoothedRectangular
 
 from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test
+from tests.helper import forward_mode_autodiff_of_linear_operator_test
+from tests.helper import gradient_of_linear_operator_test
 
 
 def test_slice_projection_op_cube_basic():
@@ -110,9 +112,7 @@ def test_slice_projection_width_error():
         _ = SliceProjectionOp(input_shape=input_shape, slice_profile=slice_profile)
 
 
-@pytest.mark.parametrize('dtype', ['complex64', 'float64', 'float32'])
-@pytest.mark.parametrize('optimize_for', ['forward', 'adjoint', 'both'])
-def test_slice_projection_op_basic_adjointness(optimize_for, dtype):
+def create_slice_projection_op_and_domain_range(optimize_for, dtype):
     rng = getattr(RandomGenerator(314), f'{dtype}_tensor')
     operator_dtype = getattr(torch, dtype).to_real()
     input_shape = SpatialDimension(10, 20, 30)
@@ -129,7 +129,23 @@ def test_slice_projection_op_basic_adjointness(optimize_for, dtype):
     operator = operator.to(operator_dtype)
     u = rng((1, *input_shape.zyx))
     v = rng((1, 1, 1, max(input_shape.zyx), max(input_shape.zyx)))
-    dotproduct_adjointness_test(operator, u, v)
+    return operator, u, v
+
+
+@pytest.mark.parametrize('dtype', ['complex64', 'float64', 'float32'])
+@pytest.mark.parametrize('optimize_for', ['forward', 'adjoint', 'both'])
+def test_slice_projection_op_basic_adjointness(optimize_for, dtype):
+    dotproduct_adjointness_test(*create_slice_projection_op_and_domain_range(optimize_for, dtype))
+
+
+def test_slice_projection_op_grad():
+    """Test gradient of slice projection operator."""
+    gradient_of_linear_operator_test(*create_slice_projection_op_and_domain_range('both', 'complex64'))
+
+
+def test_sclice_projection_op_forward_mode_autodiff():
+    """Test forward-mode autodiff of slice project operator."""
+    forward_mode_autodiff_of_linear_operator_test(*create_slice_projection_op_and_domain_range('both', 'complex64'))
 
 
 def test_slice_projection_op_slice_batching():

@@ -150,7 +150,7 @@ class FourierOp(LinearOperator):
             traj=kdata.traj,
         )
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def _forward_implementation(self, x: torch.Tensor) -> torch.Tensor:
         """Forward operator mapping the coil-images to the coil k-space data.
 
         Parameters
@@ -189,9 +189,9 @@ class FourierOp(LinearOperator):
             shape_nufft_dims = [self._kshape[i] for i in self._nufft_dims]
             x = x.reshape(*permuted_x_shape[: -len(keep_dims)], -1, *shape_nufft_dims)  # -1 is coils
             x = x.permute(*unpermute)
-        return (x,)
+        return x
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def _adjoint_implementation(self, x: torch.Tensor) -> torch.Tensor:
         """Adjoint operator mapping the coil k-space data to the coil images.
 
         Parameters
@@ -227,4 +227,4 @@ class FourierOp(LinearOperator):
             x = x.reshape(*permuted_x_shape[: -len(keep_dims)], *x.shape[-len(keep_dims) :])
             x = x.permute(*unpermute)
 
-        return (x,)
+        return x

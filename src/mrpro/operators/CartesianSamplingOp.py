@@ -85,7 +85,7 @@ class CartesianSamplingOp(LinearOperator):
         self._trajectory_shape = traj.broadcasted_shape
         self._sorted_grid_shape = sorted_grid_shape
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def _forward_implementation(self, x: torch.Tensor) -> torch.Tensor:
         """Forward operator which selects acquired k-space data from k-space.
 
         Parameters
@@ -102,7 +102,7 @@ class CartesianSamplingOp(LinearOperator):
             raise ValueError('k-space data shape mismatch')
 
         if not self._needs_indexing:
-            return (x,)
+            return x
 
         x_kflat = rearrange(x, '... coil k2_enc k1_enc k0_enc -> ... coil (k2_enc k1_enc k0_enc)')
         # take_along_dim does broadcast, so no need for extending here
@@ -110,9 +110,9 @@ class CartesianSamplingOp(LinearOperator):
         # reshape to (... other coil, k2, k1, k0)
         x_reshaped = x_indexed.reshape(x.shape[:-3] + self._trajectory_shape[-3:])
 
-        return (x_reshaped,)
+        return x_reshaped
 
-    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
+    def _adjoint_implementation(self, y: torch.Tensor) -> torch.Tensor:
         """Adjoint operator sorting data into the encoding_space matrix.
 
         Parameters
@@ -128,7 +128,7 @@ class CartesianSamplingOp(LinearOperator):
             raise ValueError('k-space data shape mismatch')
 
         if not self._needs_indexing:
-            return (y,)
+            return y
 
         y_kflat = rearrange(y, '... coil k2 k1 k0 -> ... coil (k2 k1 k0)')
 
@@ -153,4 +153,4 @@ class CartesianSamplingOp(LinearOperator):
             self._sorted_grid_shape.x,
         )
 
-        return (y_reshaped,)
+        return y_reshaped

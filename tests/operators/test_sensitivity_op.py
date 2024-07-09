@@ -21,11 +21,11 @@ from mrpro.operators import SensitivityOp
 
 from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test
+from tests.helper import forward_mode_autodiff_of_linear_operator_test
+from tests.helper import gradient_of_linear_operator_test
 
 
-def test_sensitivity_op_adjointness():
-    """Test Sensitivity operator adjoint property."""
-
+def create_sensitivity_op_and_domain_range():
     random_generator = RandomGenerator(seed=0)
 
     n_zyx = (2, 3, 4)
@@ -37,10 +37,24 @@ def test_sensitivity_op_adjointness():
     random_csmdata = CsmData(data=random_tensor, header=QHeader(fov=SpatialDimension(1.0, 1.0, 1.0)))
     sensitivity_op = SensitivityOp(random_csmdata)
 
-    # Check adjoint property
     u = random_generator.complex64_tensor(size=(*n_other, 1, *n_zyx))
     v = random_generator.complex64_tensor(size=(*n_other, n_coils, *n_zyx))
-    dotproduct_adjointness_test(sensitivity_op, u, v)
+    return sensitivity_op, u, v
+
+
+def test_sensitivity_op_adjointness():
+    """Test Sensitivity operator adjoint property."""
+    dotproduct_adjointness_test(*create_sensitivity_op_and_domain_range())
+
+
+def test_sensitivity_op_grad():
+    """Test gradient of sensitivity operator."""
+    gradient_of_linear_operator_test(*create_sensitivity_op_and_domain_range())
+
+
+def test_sensitivity_op_forward_mode_autodiff():
+    """Test forward-mode autodiff of sensitivity operator."""
+    forward_mode_autodiff_of_linear_operator_test(*create_sensitivity_op_and_domain_range())
 
 
 def test_sensitivity_op_csmdata_tensor():
