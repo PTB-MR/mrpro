@@ -381,11 +381,9 @@ class EpgMrfFispWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Te
                 epg_configuration_states = EpgRfPulse(torch.pi, 0).apply(epg_configuration_states)
                 epg_configuration_states = EpgRelaxation(inv_prep_ti, t1, t2).apply(epg_configuration_states)
             elif t2_prep_te is not None:
-                # 90° pulse -> relaxation during TE/2 -> 180° pulse -> relaxation during TE/2 -> -90° pulse
+                # 90° pulse -> relaxation during TE -> -90° pulse
                 epg_configuration_states = EpgRfPulse(torch.pi / 2, 0).apply(epg_configuration_states)
-                epg_configuration_states = EpgRelaxation(t2_prep_te / 2, t1, t2).apply(epg_configuration_states)
-                epg_configuration_states = EpgRfPulse(torch.pi, torch.pi / 2).apply(epg_configuration_states)
-                epg_configuration_states = EpgRelaxation(t2_prep_te / 2, t1, t2).apply(epg_configuration_states)
+                epg_configuration_states = EpgRelaxation(t2_prep_te, t1, t2).apply(epg_configuration_states)
                 epg_configuration_states = EpgRfPulse(torch.pi / 2, -torch.pi).apply(epg_configuration_states)
                 # Spoiler
                 gradient_dephasing = EpgGradient(epg_configuration_states.shape[-1] >= self.max_n_configuration_states)
