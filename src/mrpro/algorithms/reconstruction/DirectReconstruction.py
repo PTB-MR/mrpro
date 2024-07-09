@@ -16,8 +16,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
-from typing import Self
+from typing import Literal, Self
 
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
 from mrpro.algorithms.reconstruction.Reconstruction import Reconstruction
