@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections.abc import Callable
 from collections.abc import Sequence
 
 import torch
@@ -35,6 +36,7 @@ def adam(
     maximize: bool = False,
     differentiable: bool = False,
     fused: bool | None = None,
+    callback: Callable | None = None,
 ) -> tuple[torch.Tensor, ...]:
     """Adam for non-linear minimization problems.
 
@@ -68,6 +70,8 @@ def adam(
     fused
         whether the fused implementation (CUDA only) is used. Currently, torch.float64, torch.float32,
         torch.float16, and torch.bfloat16 are supported.
+    callback
+        user-provided function to be called after each iteration
 
     Returns
     -------
@@ -97,6 +101,10 @@ def adam(
         optim.zero_grad()
         (objective,) = f(*parameters)
         objective.backward()
+
+        if callback is not None:
+            callback(parameters)
+
         return objective
 
     # run adam
