@@ -28,9 +28,7 @@ from mrpro.data.KNoise import KNoise
 
 
 def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float | torch.Tensor = 1.0) -> KData:
-    """Calculate noise prewhitening matrix and decorrelate coils.
-
-    This function is inspired by https://github.com/ismrmrd/ismrmrd-python-tools.
+    """Calculate noise prewhitening matrix and decorrelate coils [1]_ [2]_ [3]_.
 
     Step 1: Calculate noise correlation matrix N
     Step 2: Carry out Cholesky decomposition L L^H = N
@@ -60,6 +58,14 @@ def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float | torch.T
     Returns
     -------
         Prewhitened copy of k-space data
+
+    References
+    ----------
+    .. [1] https://github.com/ismrmrd/ismrmrd-python-tools
+    .. [2] Hansen M, Kellman P (2014) Image reconstruction: An overview for clinicians. JMRI 41(3): jmri.24687.
+            https://doi.org/10.1002/jmri.24687
+    .. [3] Roemer P, Mueller O (1990) The NMR phased array. MRM 16(2): mrm.1910160203.
+            https://doi.org/10.1002/mrm.1910160203
     """
     # Reshape noise to (coil, everything else)
     noise = rearrange(knoise.data, '... coils k2 k1 k0->coils (... k2 k1 k0)')

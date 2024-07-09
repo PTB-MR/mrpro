@@ -41,8 +41,11 @@ def _dcm_pixelarray_to_tensor(dataset: Dataset) -> torch.Tensor:
     their stored on disk representation to their in memory
     representation.     U = m*SV + b where U is in output units, m is
     the rescale slope, SV is the stored value, and b is the rescale
-    intercept." (taken from
-    https://www.kitware.com/dicom-rescale-intercept-rescale-slope-and-itk/)
+    intercept." [1]_
+
+    References
+    ----------
+    .. [1] https://www.kitware.com/dicom-rescale-intercept-rescale-slope-and-itk/
     """
     slope = (
         float(element.value)
