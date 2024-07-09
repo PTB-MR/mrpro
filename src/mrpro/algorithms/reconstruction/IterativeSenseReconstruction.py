@@ -105,7 +105,7 @@ class IterativeSenseReconstruction(Reconstruction):
         dcf = DcfData.from_traj_voronoi(kdata.traj)
         fourier_op = FourierOp.from_kdata(kdata)
         recon = DirectReconstruction(fourier_op, dcf=dcf, noise=noise)
-        image = recon.pseudo_inverse(kdata)
+        image = recon.direct_reconstruction(kdata)
         csm = CsmData.from_idata_walsh(image)
         return cls(fourier_op, n_iterations, csm, noise, dcf)
 
