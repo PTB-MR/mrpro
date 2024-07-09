@@ -88,12 +88,12 @@ class Reconstruction(torch.nn.Module, ABC):
         elif noise is None:
             noise = self.noise
         recon = type(self)(self.fourier_op, dcf=self.dcf, noise=noise)
-        image = recon.pseudo_inverse(kdata)
+        image = recon.direct_reconstruction(kdata)
         self.csm = CsmData.from_idata_walsh(image)
         return self
 
-    def pseudo_inverse(self, kdata: KData) -> IData:
-        """Pseudo-inverse of the MR acquisition.
+    def direct_reconstruction(self, kdata: KData) -> IData:
+        """Direct reconstruction of the MR acquisition.
 
         Here we use S^H F^H W to calculate the image data using the coil sensitivity operator S, the Fourier operator F
         and the density compensation operator W. S and W are optional.

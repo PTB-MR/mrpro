@@ -118,13 +118,13 @@ img_direct = img_direct
 # Display the reconstructed image
 import matplotlib.pyplot as plt
 
-fig, ax = plt.subplots(1, 3)
-ax[0].imshow(img_direct.data[0, 0, :, :])
-ax[0].set_title('Direct Reconstruction', fontsize=10)
-ax[1].imshow(torch.abs(img.data[0, 0, 0, :, :]))
-ax[1].set_title('Iterative SENSE', fontsize=10)
-ax[2].imshow(torch.abs(img_manual[0, 0, 0, :, :]))
-ax[2].set_title('"Manual" Iterative SENSE', fontsize=10)
+fig, ax = plt.subplots(1, 3, squeeze=False)
+ax[0, 0].imshow(img_direct.data[0, 0, :, :])
+ax[0, 0].set_title('Direct Reconstruction', fontsize=10)
+ax[0, 1].imshow(torch.abs(img.data[0, 0, 0, :, :]))
+ax[0, 1].set_title('Iterative SENSE', fontsize=10)
+ax[0, 2].imshow(torch.abs(img_manual[0, 0, 0, :, :]))
+ax[0, 2].set_title('"Manual" Iterative SENSE', fontsize=10)
 
 # %% [markdown]
 # ### Check for equal results

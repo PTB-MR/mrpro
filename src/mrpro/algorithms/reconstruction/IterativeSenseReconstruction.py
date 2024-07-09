@@ -1,4 +1,4 @@
-"""Direct Reconstruction by Adjoint Fourier Transform."""
+"""Iterative SENSE Reconstruction by Adjoint Fourier Transform."""
 
 # Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
@@ -32,24 +32,23 @@ from mrpro.operators.LinearOperator import LinearOperator
 
 
 class IterativeSenseReconstruction(Reconstruction):
-    """Iterative SENSE reconstruction.
+    r"""Iterative SENSE reconstruction.
 
     This algorithm minizes the problem
 
-    min_x 0.5||W^0.5 (Ax - y)||_2^2
+    .. math:: min_x \\frac{1}{2}||W^\\frac{1}{2} (Ax - y)||_2^2
 
     by using a conjugate gradient algorithm to solve
 
-    H x = b
+    .. math:: H x = b
 
-    with H = A^H W A and b = A^H W y
+    with :math:`H = A^H W A` and :math:`b = A^H W y`
 
-    where A is the acquisition model (coil sensitivity maps, Fourier operator, k-space sampling), y is the acquired
-    k-space data and W describes the density compensation.
+    where :math:`A` is the acquisition model (coil sensitivity maps, Fourier operator, k-space sampling), :math:`y` is
+    the acquired k-space data and :math:`W` describes the density compensation [1]_ .
 
-    More information can be found here:
-    Pruessmann, K. P., Weiger, M., Boernert, P. & Boesiger, P. Advances in sensitivity encoding with arbitrary k-space
-    trajectories. Magn. Reson. Imaging 46, 638-651 (2001). https://doi.org/10.1002/mrm.1241
+    .. [1] K. Pruessmann, M. Weiger, P. Boernert, and P. Boesiger, Advances in sensitivity encoding with arbitrary
+       k-space trajectories. Magn. Reson. Imaging 46, 638-651 (2001). https://doi.org/10.1002/mrm.1241
 
     """
 

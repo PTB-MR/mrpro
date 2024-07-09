@@ -95,4 +95,4 @@ class DirectReconstruction(Reconstruction):
         -------
             the reconstruced image.
         """
-        return self.pseudo_inverse(kdata)
+        return self.direct_reconstruction(kdata)
