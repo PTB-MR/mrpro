@@ -30,6 +30,8 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
         self, weight: torch.Tensor | float = 1.0, target: torch.Tensor | None = None, dim: Sequence[int] | None = None, divide_by_n : bool = False
     ) -> None:
         """Initialize a Functional.
+        
+        To calculate an Lp norm in the form of || weight * (x - target) ||_p 
 
         Parameters
         ----------
