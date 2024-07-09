@@ -23,8 +23,7 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 from pydicom.dataset import Dataset
-from pydicom.tag import Tag
-from pydicom.tag import TagType
+from pydicom.tag import Tag, TagType
 
 from mrpro.data.KHeader import KHeader
 from mrpro.data.MoveDataMixin import MoveDataMixin

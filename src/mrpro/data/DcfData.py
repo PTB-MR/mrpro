@@ -25,8 +25,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import torch
 from numpy.typing import ArrayLike
-from scipy.spatial import ConvexHull
-from scipy.spatial import Voronoi
+from scipy.spatial import ConvexHull, Voronoi
 
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.MoveDataMixin import MoveDataMixin

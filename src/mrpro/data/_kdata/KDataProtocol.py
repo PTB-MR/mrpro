@@ -16,9 +16,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
-from typing import Protocol
-from typing import Self
+from typing import Literal, Protocol, Self
 
 import torch
 from mrpro.data.KHeader import KHeader

@@ -17,8 +17,7 @@
 from __future__ import annotations
 
 import dataclasses
-from collections.abc import Generator
-from collections.abc import Sequence
+from collections.abc import Generator, Sequence
 from pathlib import Path
 
 import numpy as np

@@ -19,8 +19,7 @@ from __future__ import annotations
 import dataclasses
 from dataclasses import dataclass
 
-from ismrmrd.xsd.ismrmrdschema.ismrmrd import encodingLimitsType
-from ismrmrd.xsd.ismrmrdschema.ismrmrd import limitType
+from ismrmrd.xsd.ismrmrdschema.ismrmrd import encodingLimitsType, limitType
 
 
 @dataclass(slots=True)
