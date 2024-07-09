@@ -18,13 +18,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Callable
-from typing import ParamSpec
-from typing import Protocol
-from typing import TypeAlias
-from typing import TypeVar
-from typing import TypeVarTuple
-from typing import cast
-from typing import overload
+from typing import ParamSpec, Protocol, TypeAlias, TypeVar, TypeVarTuple, cast, overload
 
 import torch
 

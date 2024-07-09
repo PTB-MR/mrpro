@@ -15,8 +15,7 @@
 # limitations under the License.
 
 import warnings
-from collections.abc import Callable
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Literal
 
 import torch

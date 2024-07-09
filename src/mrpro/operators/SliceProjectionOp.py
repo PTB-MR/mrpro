@@ -16,10 +16,8 @@
 
 import itertools
 import warnings
-from collections.abc import Callable
-from collections.abc import Sequence
-from typing import Literal
-from typing import TypeAlias
+from collections.abc import Callable, Sequence
+from typing import Literal, TypeAlias
 
 import einops
 import numpy as np

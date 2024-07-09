@@ -20,8 +20,7 @@ from collections.abc import Sequence
 
 import numpy as np
 import torch
-from torchkbnufft import KbNufft
-from torchkbnufft import KbNufftAdjoint
+from torchkbnufft import KbNufft, KbNufftAdjoint
 
 from mrpro.data._kdata.KData import KData
 from mrpro.data.enums import TrajType
