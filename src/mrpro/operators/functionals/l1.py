@@ -25,10 +25,13 @@ class L1Norm(ProximableFunctional):
         -------
             L1 norm of data
         """
+        dtype = torch.promote_types(self.target.dtype, x.dtype)
+        x = x.to(dtype)
+        target = self.target.to(dtype)
         if self.divide_by_n:
-            return ((self.weight * (x - self.target)).abs().mean(dim=self.dim, keepdim=False),)
+            return ((self.weight * (x - target)).abs().mean(dim=self.dim, keepdim=False),)
         else:
-            return ((self.weight * (x - self.target)).abs().sum(dim=self.dim, keepdim=False),)
+            return ((self.weight * (x - target)).abs().sum(dim=self.dim, keepdim=False),)
 
     def prox(self, x: torch.Tensor, sigma: torch.Tensor) -> tuple[torch.Tensor]:
         """Prox of L1 Norm.
@@ -44,13 +47,16 @@ class L1Norm(ProximableFunctional):
         -------
             Proximal of data
         """
-        diff = x - self.target
+        dtype = torch.promote_types(self.target.dtype, x.dtype)
+        x = x.to(dtype)
+        target = self.target.to(dtype)
+        diff = x - target
         is_complex = diff.is_complex()
         threshold = torch.tensor([self.weight * sigma])
         if is_complex:
-            x_out = self.target + torch.polar(torch.nn.functional.relu(diff.abs() - threshold), torch.angle(diff))
+            x_out = target + torch.polar(torch.nn.functional.relu(diff.abs() - threshold), torch.angle(diff))
         else:
-            x_out = self.target + (
+            x_out = target + (
                 torch.nn.functional.relu(diff - threshold) - torch.nn.functional.relu(-diff - threshold)
             )
         return (x_out,)
@@ -69,7 +75,10 @@ class L1Norm(ProximableFunctional):
         -------
             Proximal of convex conjugate of data
         """
-        diff = x - sigma * self.target
+        dtype = torch.promote_types(self.target.dtype, x.dtype)
+        x = x.to(dtype)
+        target = self.target.to(dtype)
+        diff = x - sigma * target
         is_complex = diff.is_complex()
         if is_complex:
             x_out = torch.polar(self.weight.clamp(max=diff.abs()), torch.angle(diff))
@@ -100,7 +109,10 @@ class L1NormViewAsReal(ProximableFunctional):
         -------
             L1 norm of data
         """
-        diff = x - self.target
+        dtype = torch.promote_types(self.target.dtype, x.dtype)
+        x = x.to(dtype)
+        target = self.target.to(dtype)
+        diff = x - target
         is_complex = diff.is_complex()
         if is_complex:
             return ((L1Norm().forward(diff.real)[0]) + (L1Norm().forward(diff.imag)[0]),)
@@ -121,7 +133,10 @@ class L1NormViewAsReal(ProximableFunctional):
         -------
             Proximal of data
         """
-        diff = x - self.target
+        dtype = torch.promote_types(self.target.dtype, x.dtype)
+        x = x.to(dtype)
+        target = self.target.to(dtype)
+        diff = x - target
         is_complex = diff.is_complex()
         if is_complex:
             return (torch.complex(L1Norm().prox(diff.real, sigma)[0], L1Norm().prox(diff.imag, sigma)[0]),)
@@ -141,8 +156,11 @@ class L1NormViewAsReal(ProximableFunctional):
         Returns
         -------
             Proximal of convex conjugate of data
-        """
-        diff = x - sigma * self.target
+        """        
+        dtype = torch.promote_types(self.target.dtype, x.dtype)
+        x = x.to(dtype)
+        target = self.target.to(dtype)
+        diff = x - sigma * target
         is_complex = diff.is_complex()
         if is_complex:
             return (
@@ -152,3 +170,4 @@ class L1NormViewAsReal(ProximableFunctional):
             )
         else:
             return (torch.tensor([L1Norm().prox_convex_conj(diff, sigma)[0]]),)
+        

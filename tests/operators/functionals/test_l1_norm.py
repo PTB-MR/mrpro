@@ -29,12 +29,40 @@ from mrpro.operators.functionals.l1 import L1NormViewAsReal
         (
             torch.tensor([1.0, -1.0], dtype=torch.float32),
             torch.tensor((1), dtype=torch.float32),
-            torch.tensor([0.9, -0.9], dtype=torch.float32),
-            torch.tensor([0.95, -0.95], dtype=torch.float32),
+            torch.tensor([0.9, -0.9], dtype=torch.complex64),
+            torch.tensor([0.95, -0.95], dtype=torch.complex64),
         ),
     ],
 )
-def test_l1_functional_real(
+def test_l1_functional_mixed_real_complex(
+    x,
+    forward_x,
+    prox,
+    prox_complex_conjugate,
+):
+    """Test if L1 norm matches expected values."""
+    l1_norm = L1Norm(weight=1, target=torch.tensor([0.5+0j, -0.5+0j], dtype=torch.complex64))
+    torch.testing.assert_close(l1_norm.forward(x)[0], forward_x, rtol=1e-3, atol=1e-3)
+    torch.testing.assert_close(l1_norm.prox(x, sigma=0.1)[0], prox, rtol=1e-3, atol=1e-3)
+    torch.testing.assert_close(l1_norm.prox_convex_conj(x, sigma=0.1)[0], prox_complex_conjugate, rtol=1e-3, atol=1e-3)
+
+@pytest.mark.parametrize(
+    (
+        'x',
+        'forward_x',
+        'prox',
+        'prox_complex_conjugate',
+    ),
+    [
+        (
+            torch.tensor([1.0+0j, -1.0+0j], dtype=torch.complex64),
+            torch.tensor((1), dtype=torch.float32),
+            torch.tensor([0.9, -0.9], dtype=torch.complex64),
+            torch.tensor([0.95, -0.95], dtype=torch.complex64),
+        ),
+    ],
+)
+def test_l1_functional_mixed_real_complex(
     x,
     forward_x,
     prox,
