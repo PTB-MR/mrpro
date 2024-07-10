@@ -94,13 +94,11 @@
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
-
 <span class="kn">import</span> <span class="nn">dataclasses</span>
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Self</span>
 
-<span class="kn">from</span> <span class="nn">ismrmrd.xsd.ismrmrdschema.ismrmrd</span> <span class="kn">import</span> <span class="n">encodingLimitsType</span>
-<span class="kn">from</span> <span class="nn">ismrmrd.xsd.ismrmrdschema.ismrmrd</span> <span class="kn">import</span> <span class="n">limitType</span>
+<span class="kn">from</span> <span class="nn">ismrmrd.xsd.ismrmrdschema.ismrmrd</span> <span class="kn">import</span> <span class="n">encodingLimitsType</span><span class="p">,</span> <span class="n">limitType</span>
 
 
 <div class="viewcode-block" id="Limits">
@@ -116,7 +114,7 @@
 <div class="viewcode-block" id="Limits.from_ismrmrd">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.Limits.html#mrpro.data.Limits.from_ismrmrd">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_ismrmrd</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">limit_type</span><span class="p">:</span> <span class="n">limitType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Limits</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_ismrmrd</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">limit_type</span><span class="p">:</span> <span class="n">limitType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create Limits from ismrmrd.limitType.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">limit_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">cls</span><span class="p">()</span>

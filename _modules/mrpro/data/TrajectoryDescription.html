@@ -94,10 +94,9 @@
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
-
 <span class="kn">import</span> <span class="nn">dataclasses</span>
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Self</span>
 
 <span class="kn">from</span> <span class="nn">ismrmrd.xsd.ismrmrdschema.ismrmrd</span> <span class="kn">import</span> <span class="n">trajectoryDescriptionType</span>
 
@@ -117,7 +116,7 @@
 <div class="viewcode-block" id="TrajectoryDescription.from_ismrmrd">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.TrajectoryDescription.html#mrpro.data.TrajectoryDescription.from_ismrmrd">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_ismrmrd</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">trajectory_description</span><span class="p">:</span> <span class="n">trajectoryDescriptionType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TrajectoryDescription</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_ismrmrd</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">trajectory_description</span><span class="p">:</span> <span class="n">trajectoryDescriptionType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create TrajectoryDescription from ismrmrd traj description.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
             <span class="n">user_parameter_long</span><span class="o">=</span><span class="p">{</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">trajectory_description</span><span class="o">.</span><span class="n">userParameterLong</span><span class="p">},</span>

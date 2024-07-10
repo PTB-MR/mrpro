@@ -94,12 +94,10 @@
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
-
 <span class="kn">import</span> <span class="nn">dataclasses</span>
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Generator</span>
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Sequence</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Self</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">torch</span>
@@ -172,7 +170,7 @@
 <div class="viewcode-block" id="IData.from_tensor_and_kheader">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.IData.html#mrpro.data.IData.from_tensor_and_kheader">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_tensor_and_kheader</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IData</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_tensor_and_kheader</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create IData object from a tensor and a KHeader object.</span>
 
 <span class="sd">        Parameters</span>
@@ -189,7 +187,7 @@
 <div class="viewcode-block" id="IData.from_single_dicom">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.IData.html#mrpro.data.IData.from_single_dicom">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_single_dicom</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IData</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_single_dicom</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read single DICOM file and return IData object.</span>
 
 <span class="sd">        Parameters</span>
@@ -208,7 +206,7 @@
 <div class="viewcode-block" id="IData.from_dicom_files">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.IData.html#mrpro.data.IData.from_dicom_files">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_dicom_files</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filenames</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">|</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">IData</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_dicom_files</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filenames</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">|</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read multiple DICOM files and return IData object.</span>
 
 <span class="sd">        Parameters</span>
@@ -254,7 +252,7 @@
 <div class="viewcode-block" id="IData.from_dicom_folder">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.IData.html#mrpro.data.IData.from_dicom_folder">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_dicom_folder</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">foldername</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">suffix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s1">&#39;dcm&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IData</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_dicom_folder</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">foldername</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">suffix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s1">&#39;dcm&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read all DICOM files from a folder and return IData object.</span>
 
 <span class="sd">        Parameters</span>
@@ -271,7 +269,7 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">file_paths</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;No dicom files with suffix </span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s1"> found in </span><span class="si">{</span><span class="n">foldername</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">IData</span><span class="o">.</span><span class="n">from_dicom_files</span><span class="p">(</span><span class="n">filenames</span><span class="o">=</span><span class="n">file_paths</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_dicom_files</span><span class="p">(</span><span class="n">filenames</span><span class="o">=</span><span class="n">file_paths</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

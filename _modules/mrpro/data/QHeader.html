@@ -94,9 +94,8 @@
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
-
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Self</span>
 
 <span class="kn">from</span> <span class="nn">pydicom.dataset</span> <span class="kn">import</span> <span class="n">Dataset</span>
 <span class="kn">from</span> <span class="nn">pydicom.tag</span> <span class="kn">import</span> <span class="n">Tag</span>
@@ -119,7 +118,7 @@
 <div class="viewcode-block" id="QHeader.from_iheader">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.QHeader.html#mrpro.data.QHeader.from_iheader">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_iheader</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">iheader</span><span class="p">:</span> <span class="n">IHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QHeader</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_iheader</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">iheader</span><span class="p">:</span> <span class="n">IHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create QHeader object from KHeader object.</span>
 
 <span class="sd">        Parameters</span>
@@ -133,7 +132,7 @@
 <div class="viewcode-block" id="QHeader.from_kheader">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.QHeader.html#mrpro.data.QHeader.from_kheader">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_kheader</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QHeader</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_kheader</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create QHeader object from KHeader object.</span>
 
 <span class="sd">        Parameters</span>
@@ -147,7 +146,7 @@
 <div class="viewcode-block" id="QHeader.from_dicom">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.QHeader.html#mrpro.data.QHeader.from_dicom">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_dicom</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dicom_dataset</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QHeader</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_dicom</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dicom_dataset</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read DICOM file containing qMRI data and return QHeader object.</span>
 
 <span class="sd">        Parameters</span>
