@@ -132,10 +132,14 @@
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.EncodingLimits.html#mrpro.data.EncodingLimits">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">EncodingLimits</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Encoding limits dataclass with limits for each attribute.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Encoding limits dataclass with limits for each attribute [1]_.</span>
 
-<span class="sd">    Reference: Magnetic Resonance in Medicine, 29 Jan 2016, 77(1):411-421,</span>
-<span class="sd">    DOI: 10.1002/mrm.26089 (Fig. 3)</span>
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] Inati S, Hanse M (2016) ISMRM Raw data format:</span>
+<span class="sd">    A proposed standard for MRI raw datasets. MRM 77(1): mrm.26089.</span>
+<span class="sd">        https://doi.org/10.1002/mrm.26089</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">k0</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>

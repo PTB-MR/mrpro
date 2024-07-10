@@ -156,7 +156,7 @@
 <td><p>Rearrange kdata from (.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.remove_readout_os" title="mrpro.data.KData.remove_readout_os"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_readout_os</span></code></a>()</p></td>
-<td><p>Remove any oversampling along the readout (k0) direction.</p></td>
+<td><p>Remove any oversampling along the readout (k0) direction <a class="footnote-reference brackets" href="#id3" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KData.select_other_subset" title="mrpro.data.KData.select_other_subset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">select_other_subset</span></code></a>(subset_idx, subset_label)</p></td>
 <td><p>Select a subset from the other dimension of KData.</p></td>
@@ -342,9 +342,8 @@ returns True if the data class has no tensors as attributes.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.KData.remove_readout_os">
 <span class="sig-name descname"><span class="pre">remove_readout_os</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KData.remove_readout_os" title="Link to this definition"></a></dt>
-<dd><p>Remove any oversampling along the readout (k0) direction.</p>
-<p>This function is inspired by <a class="reference external" href="https://github.com/gadgetron/gadgetron-python">https://github.com/gadgetron/gadgetron-python</a>.
-Returns a copy of the data.</p>
+<dd><p>Remove any oversampling along the readout (k0) direction <a class="footnote-reference brackets" href="#id3" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>.</p>
+<p>Returns a copy of the data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>kdata</strong> – K-space data</p>
@@ -356,6 +355,14 @@ Returns a copy of the data.</p>
 <dd class="field-odd"><p><strong>ValueError</strong> – If the recon matrix along x is larger than the encoding matrix along x.</p>
 </dd>
 </dl>
+<p class="rubric">References</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id3" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id1">1</a>,<a role="doc-backlink" href="#id2">2</a>)</span>
+<p><a class="reference external" href="https://github.com/gadgetron/gadgetron-python">https://github.com/gadgetron/gadgetron-python</a></p>
+</aside>
+</aside>
 </dd></dl>
 
 <dl class="py method">
@@ -436,7 +443,7 @@ This will also create new tensors for views</p></li>
 <span class="sig-name descname"><span class="pre">to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KData.to" title="Link to this definition"></a></dt>
 <dd><p>Perform dtype and/or device conversion of data.</p>
 <p>A torch.dtype and torch.device are inferred from the arguments
-of self.to(<a href="#id1"><span class="problematic" id="id2">*</span></a>args, <a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs). Please have a look at the
+of self.to(<a href="#id4"><span class="problematic" id="id5">*</span></a>args, <a href="#id6"><span class="problematic" id="id7">**</span></a>kwargs). Please have a look at the
 documentation of torch.Tensor.to() for more details.</p>
 <p>A new instance of the dataclass will be returned.</p>
 <p>The conversion will be applied to all Tensor- or Module

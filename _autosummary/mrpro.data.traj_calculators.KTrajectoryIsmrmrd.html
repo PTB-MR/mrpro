@@ -124,12 +124,17 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.traj_calculators.</span></span><span class="sig-name descname"><span class="pre">KTrajectoryIsmrmrd</span></span><a class="reference internal" href="../_modules/mrpro/data/traj_calculators/KTrajectoryIsmrmrd.html#KTrajectoryIsmrmrd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.traj_calculators.KTrajectoryIsmrmrd" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Get trajectory in ISMRMRD raw data file.</p>
-<p>The trajectory in the ISMRMRD raw data file is read out. Information
-on the ISMRMRD trajectory can be found here:
-<a class="reference external" href="https://ismrmrd.readthedocs.io/en/latest/mrd_raw_data.html#k-space-trajectory">https://ismrmrd.readthedocs.io/en/latest/mrd_raw_data.html#k-space-trajectory</a></p>
+<p>The trajectory in the ISMRMRD raw data file is read out <a class="footnote-reference brackets" href="#id2" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>.</p>
 <p>The value range of the trajectory in the ISMRMRD file is not well defined. Here we simple normalize everything
 based on the highest value and ensure it is within [-pi, pi]. The trajectory is in the shape of the unsorted
 raw data.</p>
+<p class="rubric">References</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id2" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p><a class="reference external" href="https://ismrmrd.readthedocs.io/en/latest/mrd_raw_data.html#k-space-trajectory">https://ismrmrd.readthedocs.io/en/latest/mrd_raw_data.html#k-space-trajectory</a></p>
+</aside>
+</aside>
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.traj_calculators.KTrajectoryIsmrmrd.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.data.traj_calculators.KTrajectoryIsmrmrd.__init__" title="Link to this definition"></a></dt>

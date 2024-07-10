@@ -106,9 +106,7 @@
 <div class="viewcode-block" id="prewhiten_kspace">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.algorithms.prewhiten_kspace.html#mrpro.algorithms.prewhiten_kspace">[docs]</a>
 <span class="k">def</span> <span class="nf">prewhiten_kspace</span><span class="p">(</span><span class="n">kdata</span><span class="p">:</span> <span class="n">KData</span><span class="p">,</span> <span class="n">knoise</span><span class="p">:</span> <span class="n">KNoise</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KData</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate noise prewhitening matrix and decorrelate coils.</span>
-
-<span class="sd">    This function is inspired by https://github.com/ismrmrd/ismrmrd-python-tools.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate noise prewhitening matrix and decorrelate coils [1]_ [2]_ [3]_.</span>
 
 <span class="sd">    Step 1: Calculate noise correlation matrix N</span>
 <span class="sd">    Step 2: Carry out Cholesky decomposition L L^H = N</span>
@@ -138,6 +136,14 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">        Prewhitened copy of k-space data</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] https://github.com/ismrmrd/ismrmrd-python-tools</span>
+<span class="sd">    .. [2] Hansen M, Kellman P (2014) Image reconstruction: An overview for clinicians. JMRI 41(3): jmri.24687.</span>
+<span class="sd">            https://doi.org/10.1002/jmri.24687</span>
+<span class="sd">    .. [3] Roemer P, Mueller O (1990) The NMR phased array. MRM 16(2): mrm.1910160203.</span>
+<span class="sd">            https://doi.org/10.1002/mrm.1910160203</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Reshape noise to (coil, everything else)</span>
     <span class="n">noise</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">knoise</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="s1">&#39;... coils k2 k1 k0-&gt;coils (... k2 k1 k0)&#39;</span><span class="p">)</span>

@@ -119,8 +119,11 @@
 <span class="sd">    their stored on disk representation to their in memory</span>
 <span class="sd">    representation.     U = m*SV + b where U is in output units, m is</span>
 <span class="sd">    the rescale slope, SV is the stored value, and b is the rescale</span>
-<span class="sd">    intercept.&quot; (taken from</span>
-<span class="sd">    https://www.kitware.com/dicom-rescale-intercept-rescale-slope-and-itk/)</span>
+<span class="sd">    intercept.&quot; [1]_</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] https://www.kitware.com/dicom-rescale-intercept-rescale-slope-and-itk/</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">slope</span> <span class="o">=</span> <span class="p">(</span>
         <span class="nb">float</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>

@@ -102,10 +102,12 @@
 <span class="k">class</span> <span class="nc">AcqFlags</span><span class="p">(</span><span class="n">Flag</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Acquisition flags.</span>
 
-<span class="sd">    Reference:</span>
-<span class="sd">    https://github.com/ismrmrd/ismrmrd/blob/master/include/ismrmrd/ismrmrd.h</span>
 <span class="sd">    NOTE: values in enum ISMRMRD_AcquisitionFlags start at 1 and not 0, but</span>
-<span class="sd">    1 &lt;&lt; (val-1) is used in &#39;ismrmrd_is_flag_set&#39; function to calc bitmask value.</span>
+<span class="sd">    1 &lt;&lt; (val-1) is used in &#39;ismrmrd_is_flag_set&#39; function to calc bitmask value [1]_.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] https://github.com/ismrmrd/ismrmrd/blob/master/include/ismrmrd/ismrmrd.h</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">ACQ_NO_FLAG</span> <span class="o">=</span> <span class="mi">0</span>

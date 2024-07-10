@@ -144,8 +144,7 @@
 
 <span class="sd">        For a corresponding image with 256 x 256 voxel, the k-space locations should be defined within [-128, 127]</span>
 
-<span class="sd">        The Fourier representation of ellipses can be analytically described by Bessel functions. Further information</span>
-<span class="sd">        and derivations can be found e.g. here: https://doi.org/10.1002/mrm.21292</span>
+<span class="sd">        The Fourier representation of ellipses can be analytically described by Bessel functions [1]_.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -153,6 +152,13 @@
 <span class="sd">            k-space locations in ky</span>
 <span class="sd">        kx</span>
 <span class="sd">            k-space locations in kx (frequency encoding direction). Same shape as ky.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [1] Koay C, Sarlls J, Özarslan E (2007) Three-dimensional analytical magnetic resonance imaging</span>
+<span class="sd">        phantom in the Fourier domain. MRM 58(2): mrm.21292.</span>
+<span class="sd">               https://doi.org/10.1002/mrm.21292</span>
+<span class="sd">        ..</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># kx and ky have to be of same shape</span>
         <span class="k">if</span> <span class="n">kx</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">ky</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>

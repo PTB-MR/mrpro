@@ -108,13 +108,7 @@
 <span class="sd">    a preparation pulse. The effect of the preparation pulse is modelled by a scaling factor applied to the</span>
 <span class="sd">    equilibrium magnetisation. A delay after the preparation pulse can be defined. During this time T1 relaxation to M0</span>
 <span class="sd">    occurs. Data acquisition starts after this delay. Perfect spoiling is assumed and hence T2 effects are not</span>
-<span class="sd">    considered in the model. In addition this model assumes TR &lt;&lt; T1 and TR &lt;&lt; T1* (see definition below). More</span>
-<span class="sd">    information can be found here:</span>
-
-<span class="sd">    Deichmann, R. &amp; Haase, A. Quantification of T1 values by SNAPSHOT-FLASH NMR imaging. J. Magn. Reson. 612, 608-612</span>
-<span class="sd">    (1992) [http://doi.org/10.1016/0022-2364(92)90347-A].</span>
-<span class="sd">    Look, D. C. &amp; Locker, D. R. Time Saving in Measurement of NMR and EPR Relaxation Times. Rev. Sci. Instrum 41, 250</span>
-<span class="sd">    (1970) [https://doi.org/10.1063/1.1684482].</span>
+<span class="sd">    considered in the model. In addition this model assumes TR &lt;&lt; T1 and TR &lt;&lt; T1* (see definition below) [1]_ [2]_.</span>
 
 <span class="sd">    Let&#39;s assume we want to describe a continuous acquisition after an inversion pulse, then we have three parts:</span>
 <span class="sd">    [Part A: 180° inversion pulse][Part B: spoiler gradient][Part C: Continuous data acquisition]</span>
@@ -136,6 +130,12 @@
 <span class="sd">            and the steady-state magnetisation is</span>
 <span class="sd">                    M0* = M0 T1* / T1</span>
 
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] Deichmann R, Haase A (1992) Quantification of T1 values by SNAPSHOT-FLASH NMR imaging. J. Magn. Reson. 612</span>
+<span class="sd">        http://doi.org/10.1016/0022-2364(92)90347-A</span>
+<span class="sd">    .. [2] Look D, Locker R (1970) Time Saving in Measurement of NMR and EPR Relaxation Times. Rev. Sci. Instrum 41</span>
+<span class="sd">        https://doi.org/10.1063/1.1684482</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="TransientSteadyStateWithPreparation.__init__">
