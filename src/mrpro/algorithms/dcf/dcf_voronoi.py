@@ -20,8 +20,7 @@ from itertools import product
 import numpy as np
 import torch
 from numpy.typing import ArrayLike
-from scipy.spatial import ConvexHull
-from scipy.spatial import Voronoi
+from scipy.spatial import ConvexHull, Voronoi
 
 UNIQUE_ROUNDING_DECIMALS = 15
 

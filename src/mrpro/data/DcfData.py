@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import dataclasses
 from functools import reduce
-from itertools import product
 from typing import TYPE_CHECKING, Self
 
 import torch
