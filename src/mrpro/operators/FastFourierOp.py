@@ -83,22 +83,24 @@ class FastFourierOp(LinearOperator):
         self._pad_op: ZeroPadOp
 
         if isinstance(recon_matrix, SpatialDimension):
-            original_shape: Sequence[int] | None = [int(astuple(recon_matrix)[d]) for d in dim]
             if not all(d in (-1, -2, -3) for d in dim):
                 raise NotImplementedError(
                     f'recon_matrix can only be a SpatialDimension if each value in dim is in (-3,-2,-1),'
                     f'got {dim=}\nInstead, you can also supply a list of values of same length as dim'
                 )
+            original_shape: Sequence[int] | None = [int(astuple(recon_matrix)[d]) for d in dim]
+
         else:
             original_shape = recon_matrix
 
         if isinstance(encoding_matrix, SpatialDimension):
-            padded_shape: Sequence[int] | None = [int(astuple(encoding_matrix)[d]) for d in dim]
             if not all(d in (-1, -2, -3) for d in dim):
                 raise NotImplementedError(
                     f'encoding_matrix can only be a SpatialDimension if each value in dim is in (-3,-2,-1),'
                     f'got {dim=}\nInstead, you can also supply a list of values of same length as dim'
                 )
+            padded_shape: Sequence[int] | None = [int(astuple(encoding_matrix)[d]) for d in dim]
+
         else:
             padded_shape = encoding_matrix
 

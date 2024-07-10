@@ -17,8 +17,7 @@
 import pytest
 import torch
 from mrpro.operators.models import InversionRecovery
-from tests.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
-from tests.conftest import create_parameter_tensor_tuples
+from tests.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
 
 
 @pytest.mark.parametrize(

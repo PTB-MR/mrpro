@@ -19,8 +19,7 @@ from collections.abc import Sequence
 import torch
 import torch.nn.functional as F  # noqa: N812
 
-from mrpro.operators.EndomorphOperator import EndomorphOperator
-from mrpro.operators.EndomorphOperator import endomorph
+from mrpro.operators.EndomorphOperator import EndomorphOperator, endomorph
 
 
 class ConstraintsOp(EndomorphOperator):

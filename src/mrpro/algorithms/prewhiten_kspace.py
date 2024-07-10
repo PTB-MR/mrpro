@@ -14,14 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 from copy import deepcopy
 
 import torch
-from einops import einsum
-from einops import parse_shape
-from einops import rearrange
+from einops import einsum, parse_shape, rearrange
 
 from mrpro.data._kdata.KData import KData
 from mrpro.data.KNoise import KNoise
