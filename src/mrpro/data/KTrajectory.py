@@ -14,9 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 from dataclasses import dataclass
+from typing import Self
 
 import numpy as np
 import torch
@@ -52,7 +51,7 @@ class KTrajectory(MoveDataMixin):
     """tolerance of how close trajectory positions have to be to integer grid points."""
 
     repeat_detection_tolerance: float | None = 1e-3
-    """tolerance for repeat detection, by default 1e-3. Set None to disable."""
+    """tolerance for repeat detection. Set to None to disable."""
 
     def __post_init__(self) -> None:
         """Reduce repeated dimensions to singletons."""
@@ -85,7 +84,7 @@ class KTrajectory(MoveDataMixin):
         stack_dim: int = 0,
         repeat_detection_tolerance: float | None = 1e-8,
         grid_detection_tolerance: float = 1e-3,
-    ) -> KTrajectory:
+    ) -> Self:
         """Create a KTrajectory from a tensor representation of the trajectory.
 
         Reduces repeated dimensions to singletons if repeat_detection_tolerance

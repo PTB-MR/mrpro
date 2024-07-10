@@ -14,16 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 import dataclasses
+from collections.abc import Callable
 from pathlib import Path
+from typing import Self
 
 import ismrmrd
 import torch
 from einops import rearrange
 
-from mrpro.data.enums import AcqFlags
+from mrpro.data.acq_filters import is_noise_acquisition
 from mrpro.data.MoveDataMixin import MoveDataMixin
 
 
@@ -40,7 +40,9 @@ class KNoise(MoveDataMixin):
     data: torch.Tensor
 
     @classmethod
-    def from_file(cls, filename: str | Path, dataset_idx: int = -1) -> KNoise:
+    def from_file(
+        cls, filename: str | Path, dataset_idx: int = -1, acquisition_filter_criterion: Callable = is_noise_acquisition
+    ) -> Self:
         """Load noise measurements from ISMRMRD file.
 
         Parameters
@@ -48,7 +50,9 @@ class KNoise(MoveDataMixin):
         filename
             Path to the ISMRMRD file
         dataset_idx
-            Index of the dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
+            Index of the dataset to load (converter creates dataset, dataset_1, ...)
+        acquisition_filter_criterion
+            function which returns True if an acquisition should be included in KNoise
         """
         # Can raise FileNotFoundError
         with ismrmrd.File(filename, 'r') as file:
@@ -56,7 +60,7 @@ class KNoise(MoveDataMixin):
             acquisitions = ds.acquisitions[:]
 
         # Read out noise measurements
-        acquisitions = list(filter(lambda acq: (AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value & acq.flags), acquisitions))
+        acquisitions = [acq for acq in acquisitions if acquisition_filter_criterion(acq)]
         if len(acquisitions) == 0:
             raise ValueError(f'No noise measurements found in {filename}')
         noise_data = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])

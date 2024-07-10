@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import pypulseq as pp
@@ -38,7 +36,7 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         seq_path
             absolute path to .seq file
         repeat_detection_tolerance
-            tolerance for repeat detection when creating KTrajectory, by default 1e-3
+            tolerance for repeat detection when creating KTrajectory
         """
         super().__init__()
         self.seq_path = seq_path

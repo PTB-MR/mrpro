@@ -45,10 +45,7 @@ from __future__ import annotations
 import re
 import warnings
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
-from typing import Literal
-from typing import Self
-from typing import overload
+from typing import TYPE_CHECKING, Literal, Self, overload
 
 import numpy as np
 import torch
@@ -59,9 +56,7 @@ from mrpro.data.SpatialDimension import SpatialDimension
 
 if TYPE_CHECKING:
     from types import EllipsisType
-    from typing import TYPE_CHECKING
-    from typing import SupportsIndex
-    from typing import TypeAlias
+    from typing import TYPE_CHECKING, SupportsIndex, TypeAlias
 
     from torch._C import _NestedSequence
 
@@ -441,7 +436,7 @@ class Rotation(torch.nn.Module):
             (`degrees` is True).
         degrees
             If True, then the given angles are assumed to be in degrees.
-            Default is False.
+            Otherwise they are assumed to be in radians
 
         Returns
         -------
@@ -567,8 +562,7 @@ class Rotation(torch.nn.Module):
         Parameters
         ----------
         degrees
-            Returned magnitudes are in degrees if this flag is True, else they are
-            in radians. Default is False.
+            Returned magnitudes are in degrees if this flag is True, else they are in radians
 
         Returns
         -------
@@ -621,7 +615,7 @@ class Rotation(torch.nn.Module):
             call.
         degrees
             Returned angles are in degrees if this flag is True, else they are
-            in radians. Default is False.
+            in radians
 
         Returns
         -------
@@ -723,7 +717,7 @@ class Rotation(torch.nn.Module):
             pytorch broadcasting rules.
         inverse
             If True then the inverse of the rotation(s) is applied to the input
-            vectors. Default is False.
+            vectors.
 
         Returns
         -------
@@ -1253,9 +1247,9 @@ class Rotation(torch.nn.Module):
 
         References
         ----------
-        .. [1] Hartley, Richard, et al.,
-                "Rotation Averaging", International Journal of Computer Vision
-                103, 2013, pp. 267-305.
+        .. [1] Hartley R, Li H (2013) Rotation Averaging. International Journal of Computer Vision (103)
+               https://link.springer.com/article/10.1007/s11263-012-0601-0
+
         """
         if weights is None:
             weights = torch.ones(*self.shape)

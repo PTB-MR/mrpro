@@ -12,8 +12,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from __future__ import annotations
-
 from pathlib import Path
 from typing import Literal
 
@@ -45,25 +43,27 @@ class IsmrmrdRawTestData:
     filename
         full path and filename
     matrix_size
-        size of image matrix, by default 256
+        size of image matrix
     n_coils
-        number of coils, by default 8
+        number of coils
     oversampling
-        oversampling along readout (kx) direction, by default 2
+        oversampling along readout (kx) direction
     repetitions
-        number of repetitions, by default 1
+        number of repetitions,
     flag_invalid_reps
-        flag to indicate that number of phase encoding steps are different for repetitions, by default False
+        flag to indicate that number of phase encoding steps are different for repetitions
     acceleration
-        undersampling along phase encoding (ky), by default 1
+        undersampling along phase encoding (ky)
     noise_level
-        scaling factor for noise level, by default 0.00005
+        scaling factor for noise level
     trajectory_type
-        cartesian, by default cartesian
+        cartesian
     sampling_order
-        order how phase encoding points (ky) are obtained, by default linear
+        order how phase encoding points (ky) are obtained
     phantom
         phantom with different ellipses
+    n_separate_calibration_lines
+        number of additional calibration lines, linear Cartesian sampled
     """
 
     def __init__(
@@ -79,6 +79,7 @@ class IsmrmrdRawTestData:
         trajectory_type: Literal['cartesian', 'radial'] = 'cartesian',
         sampling_order: Literal['linear', 'low_high', 'high_low', 'random'] = 'linear',
         phantom: EllipsePhantom | None = None,
+        n_separate_calibration_lines: int = 0,
     ):
         if not phantom:
             phantom = EllipsePhantom()
@@ -95,6 +96,7 @@ class IsmrmrdRawTestData:
         self.sampling_order: Literal['linear', 'low_high', 'high_low', 'random'] = sampling_order
         self.phantom: EllipsePhantom = phantom
         self.img_ref: torch.Tensor
+        self.n_separate_calibration_lines: int = n_separate_calibration_lines
 
         # The number of points in image space (x,y) and kspace (fe,pe)
         n_x = self.matrix_size
@@ -246,6 +248,36 @@ class IsmrmrdRawTestData:
             dataset.append_acquisition(acq)
             counter += 1  # increment the scan counter
 
+        # Calibration lines
+        if n_separate_calibration_lines > 0:
+            # we take calibration lines around the k-space center
+            traj_ky_calibration, traj_kx_calibration, kpe_calibration = self._cartesian_trajectory(
+                n_separate_calibration_lines,
+                n_freq_encoding,
+                1,
+                'linear',
+            )
+            kspace_calibration = self.phantom.kspace(traj_ky_calibration, traj_kx_calibration)
+            kspace_calibration = repeat(kspace_calibration, '... -> coils ... ', coils=self.n_coils)
+            kspace_calibration = kspace_calibration + self.noise_level * torch.randn(
+                self.n_coils, n_freq_encoding, len(kpe_calibration), dtype=torch.complex64
+            )
+
+            for pe_idx, pe_pos in enumerate(kpe_calibration):
+                # Set some fields in the header
+                acq.scan_counter = counter
+
+                # kpe is in the range [-npe//2, npe//2), the ismrmrd kspace_encoding_step_1 is in the range [0, npe)
+                kspace_encoding_step_1 = pe_pos + n_phase_encoding // 2
+                acq.idx.kspace_encode_step_1 = kspace_encoding_step_1
+                acq.clearAllFlags()
+                acq.setFlag(ismrmrd.ACQ_IS_PARALLEL_CALIBRATION)
+
+                # Set the data and append
+                acq.data[:] = kspace_calibration[:, :, pe_idx].numpy()
+                dataset.append_acquisition(acq)
+                counter += 1
+
         # Loop over the repetitions, add noise and write to disk
         for rep in range(self.repetitions):
             noise = self.noise_level * torch.randn(self.n_coils, n_freq_encoding, len(kpe[rep]), dtype=torch.complex64)
@@ -299,9 +331,9 @@ class IsmrmrdRawTestData:
         n_freq_encoding
             number of frequency encoding points
         acceleration
-            undersampling factor, by default 1
+            undersampling factor
         sampling_order
-            order how phase encoding points are sampled, by default "linear"
+            order how phase encoding points are sampled
         """
         # Fully sampled frequency encoding
         kfe = torch.arange(-n_freq_encoding // 2, n_freq_encoding // 2)
@@ -349,7 +381,7 @@ class IsmrmrdRawTestData:
         n_freq_encoding
             number of frequency encoding points, defines the sampling along each radial line
         acceleration
-            undersampling factor, by default 1
+            undersampling factor
         """
         # Fully sampled frequency encoding
         kfe = torch.arange(-n_freq_encoding // 2, n_freq_encoding // 2)

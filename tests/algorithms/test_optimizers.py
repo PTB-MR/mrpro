@@ -14,8 +14,7 @@
 
 import pytest
 import torch
-from mrpro.algorithms.optimizers import adam
-from mrpro.algorithms.optimizers import lbfgs
+from mrpro.algorithms.optimizers import adam, lbfgs
 from mrpro.operators import ConstraintsOp
 from tests.operators._OptimizationTestFunctions import Rosenbrock
 
@@ -24,7 +23,6 @@ from tests.operators._OptimizationTestFunctions import Rosenbrock
 @pytest.mark.parametrize(
     ('optimizer', 'optimizer_kwargs'), [(adam, {'lr': 0.02, 'max_iter': 10000}), (lbfgs, {'lr': 1.0})]
 )
-@pytest.mark.filterwarnings('ignore:allow_ops_in_compiled_graph')
 def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1, optimizer_kwargs):
     # use Rosenbrock function as test case with 2D test data
     a, b = 1.0, 100.0

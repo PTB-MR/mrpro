@@ -14,19 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 import dataclasses
 from collections.abc import Iterator
 from copy import copy as shallowcopy
 from copy import deepcopy
-from typing import Any
-from typing import ClassVar
-from typing import Protocol
-from typing import Self
-from typing import TypeAlias
-from typing import overload
-from typing import runtime_checkable
+from typing import Any, ClassVar, Protocol, Self, TypeAlias, overload, runtime_checkable
 
 import torch
 

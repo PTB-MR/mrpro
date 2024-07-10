@@ -1,19 +1,16 @@
-.. MRPro documentation
+.. MRpro documentation
 
-Welcome to MRPro's documentation!
+Welcome to MRpro's documentation!
 =================================
 
 .. toctree::
    :maxdepth: 1
 
+   api
+   examples
    user_guide
    contributor_guide
-   examples
    faq
-   api
-
-
-
 
 Indices and tables
 ==================

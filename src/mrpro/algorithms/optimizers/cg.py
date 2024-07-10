@@ -53,14 +53,14 @@ def cg(
         self-adjoint operator (named H above)
     right_hand_side
         right-hand-side of the system (named b above)
-    initial_value, optional
+    initial_value
         initial value of the algorithm; if None, it will be set to right_hand_side
-    max_iterations, optional
+    max_iterations
         maximal number of iterations
-    tolerance, optional
+    tolerance
         tolerance for the residual; if set to zero, the maximal number of iterations
         is the only stopping criterion used to stop the cg
-    callback, optional
+    callback
         user-provided function to be called at each iteration
 
     Returns

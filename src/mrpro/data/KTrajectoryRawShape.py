@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 
 import numpy as np
@@ -46,7 +44,7 @@ class KTrajectoryRawShape(MoveDataMixin):
     """(other,k2,k1,k0), frequency encoding direction k0 if Cartesian."""
 
     repeat_detection_tolerance: None | float = 1e-3
-    """tolerance for repeat detection, by default 1e-3, None to disable."""
+    """tolerance for repeat detection. Set to None to disable."""
 
     def sort_and_reshape(
         self,

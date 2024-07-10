@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 from collections.abc import Sequence
 
 import ismrmrd
@@ -27,13 +25,15 @@ from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
 class KTrajectoryIsmrmrd:
     """Get trajectory in ISMRMRD raw data file.
 
-    The trajectory in the ISMRMRD raw data file is read out. Information
-    on the ISMRMRD trajectory can be found here:
-    https://ismrmrd.readthedocs.io/en/latest/mrd_raw_data.html#k-space-trajectory
+    The trajectory in the ISMRMRD raw data file is read out [1]_.
 
     The value range of the trajectory in the ISMRMRD file is not well defined. Here we simple normalize everything
     based on the highest value and ensure it is within [-pi, pi]. The trajectory is in the shape of the unsorted
     raw data.
+
+    References
+    ----------
+    .. [1] https://ismrmrd.readthedocs.io/en/latest/mrd_raw_data.html#k-space-trajectory
     """
 
     def __call__(self, acquisitions: Sequence[ismrmrd.Acquisition]) -> KTrajectoryRawShape:

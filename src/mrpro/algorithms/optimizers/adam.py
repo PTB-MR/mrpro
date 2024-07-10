@@ -49,26 +49,25 @@ def adam(
     max_iter
         maximum number of iterations
     lr
-        learning rate, by default 1e-3
+        learning rate
     betas
-        coefficients used for computing running averages of gradient and its square,
-        by default (0.9, 0.999)
+        coefficients used for computing running averages of gradient and its square
     eps
-        term added to the denominator to improve numerical stability, by default 1e-8
+        term added to the denominator to improve numerical stability
     weight_decay
-        weight decay (L2 penalty), by default 0
+        weight decay (L2 penalty)
     amsgrad
         whether to use the AMSGrad variant of this algorithm from the paper
-        `On the Convergence of Adam and Beyond`, by default False
+        `On the Convergence of Adam and Beyond`
     foreach
-        whether `foreach` implementation of optimizer is used, by default None
+        whether `foreach` implementation of optimizer is used
     maximize
-        maximize the objective with respect to the params, instead of minimizing, by default False
+        maximize the objective with respect to the params, instead of minimizing
     differentiable
         whether autograd should occur through the optimizer step. This is currently not implemented.
     fused
         whether the fused implementation (CUDA only) is used. Currently, torch.float64, torch.float32,
-        torch.float16, and torch.bfloat16 are supported., by default None
+        torch.float16, and torch.bfloat16 are supported.
 
     Returns
     -------

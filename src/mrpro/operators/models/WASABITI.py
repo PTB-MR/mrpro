@@ -32,7 +32,7 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         gamma: float | torch.Tensor = 42.5764,
         freq: float | torch.Tensor = 127.7292,
     ) -> None:
-        """Initialize WASABITI signal model for mapping of B0, B1 and T1.
+        """Initialize WASABITI signal model for mapping of B0, B1 and T1 [1]_.
 
         For more details see: Proc. Intl. Soc. Mag. Reson. Med. 31 (2023): 0906
 
@@ -45,13 +45,19 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
             recovery time between offsets [s]
             with shape (offsets, ...)
         tp
-            RF pulse duration [s], by default 0.005
+            RF pulse duration [s]
         b1_nom
-            nominal B1 amplitude [µT], by default 3.75
+            nominal B1 amplitude [µT]
         gamma
-            gyromagnetic ratio [MHz/T], by default 42.5764
+            gyromagnetic ratio [MHz/T]
         freq
-            larmor frequency [MHz], by default 127.7292
+            larmor frequency [MHz]
+
+        References
+        ----------
+        .. [1] Papageorgakis C, Casagranda S (2023) Fast WASABI post-processing:
+        Access to rapid B0 and B1 correction in clinical routine for CEST MRI. MRM 102(203-2011).
+               https://doi.org/10.1016/j.mri.2023.06.001
         """
         super().__init__()
         # convert all parameters to tensors

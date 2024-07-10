@@ -58,7 +58,7 @@ if idata_multi_te.header.te is None:
 
 # %%
 # Let's have a look at some of the images
-fig, axes = plt.subplots(1, 3)
+fig, axes = plt.subplots(1, 3, squeeze=False)
 for idx, ax in enumerate(axes.flatten()):
     ax.imshow(torch.abs(idata_multi_te.data[idx, 0, 0, :, :]).cpu())
     ax.set_title(f'TE = {idata_multi_te.header.te[idx]:.0f}ms')
@@ -123,19 +123,19 @@ img_mult_te_abs_sum = torch.sum(torch.abs(idata_multi_te.data), dim=0)
 relative_absolute_error = torch.sum(torch.abs(model(m0, t2star)[0] - idata_multi_te.data), dim=0) / (
     img_mult_te_abs_sum + 1e-9
 )
-fig, axes = plt.subplots(1, 3, figsize=(10, 2))
-colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05) for ax in axes]
+fig, axes = plt.subplots(1, 3, figsize=(10, 2), squeeze=False)
+colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05) for ax in axes[0, :]]
 
-im = axes[0].imshow(m0[0, 0, ...].cpu())
-axes[0].set_title('M0')
+im = axes[0, 0].imshow(m0[0, 0, ...].cpu())
+axes[0, 0].set_title('M0')
 fig.colorbar(im, cax=colorbar_ax[0])
 
-im = axes[1].imshow(t2star[0, 0, ...].cpu(), vmin=0, vmax=500)
-axes[1].set_title('T2*')
+im = axes[0, 1].imshow(t2star[0, 0, ...].cpu(), vmin=0, vmax=500)
+axes[0, 1].set_title('T2*')
 fig.colorbar(im, cax=colorbar_ax[1])
 
-im = axes[2].imshow(relative_absolute_error[0, 0, ...].cpu(), vmin=0, vmax=0.1)
-axes[2].set_title('Relative error')
+im = axes[0, 2].imshow(relative_absolute_error[0, 0, ...].cpu(), vmin=0, vmax=0.1)
+axes[0, 2].set_title('Relative error')
 fig.colorbar(im, cax=colorbar_ax[2])
 
 
