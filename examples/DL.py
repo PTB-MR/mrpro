@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import mrpro
 import numpy as np
 import torch
+import torch.nn.functional as F
 from mrpro.algorithms.reconstruction import DirectReconstruction
 from mrpro.data import SpatialDimension
 from mrpro.data._kdata._KData import KData  # Import the KData class
@@ -335,8 +336,19 @@ class UNet(nn.Module):
 
 # %% NufftCascade
 
+
 class NUFFTCascade(nn.Module):
-    def __init__(self, acquisition_operator, unet, nu, npcg, w, op_norm_estimate=None):
+    def __init__(
+        self,
+        acquisition_operator,
+        unet: UNet,
+        nu: float,
+        npcg: int,
+        w: float,
+        op_norm_estimate: float,
+        max_iter: int = 100,
+        initial_value: torch.Tensor = None,
+    ) -> None:
         super(NUFFTCascade, self).__init__()
         self.acquisition_operator = acquisition_operator
         self.unet = unet
@@ -344,18 +356,44 @@ class NUFFTCascade(nn.Module):
         self.npcg = npcg
         self.w = w
         self.w_raw = nn.Parameter(torch.tensor(-5.0, requires_grad=True))
-        self.op_norm_estimate = acquisition_operator.operator_norm(initial_value, maxiterations=...)
+        self.max_iter = max_iter
+        self.initial_value = initial_value
+        self.op_norm_estimate = op_norm_estimate
+        self.b_k = initial_value / torch.norm(initial_value)
 
     @property
     def w_reg(self):
-        return (F.sigmoid(self.w_raw) + 1) / self.op_norm_estimate**2
+        return (2 * F.sigmoid(self.w_raw)) / self.op_norm_estimate**2
+
+    def estimate_operator_norm(self):
+        if self.b_k is None:
+            raise ValueError('Initial value for power iteration not set')
+
+        b_k = self.b_k
+        for _ in range(self.max_iter):
+            # Apply the operator and its Hermitian transpose
+            b_k1 = self.acquisition_operator.__call__(b_k)
+            b_k1 = self.acquisition_operator.H(b_k1)
+
+            # Compute the norm of the resulting vector
+            b_k1_norm = torch.norm(b_k1)
+
+            # Normalize the vector
+            b_k = b_k1 / b_k1_norm
+
+        # The operator norm estimate is the norm of the resulting vector after the last iteration
+        self.op_norm_estimate = torch.norm(self.acquisition_operator.__call__(b_k))
 
     def forward(self, x, k_space_data):
+        if self.op_norm_estimate is None:
+            self.estimate_operator_norm()
+
         for _ in range(self.npcg):
             operator_test = self.acquisition_operator.H(self.acquisition_operator(x) - k_space_data)
             x = x - self.w_reg * operator_test - self.unet(x)
 
         return x
+
 
 # %% Fonctiun creating Ellipses
 
