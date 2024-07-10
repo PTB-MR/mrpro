@@ -19,7 +19,7 @@ import datetime
 import warnings
 from collections.abc import Callable
 from pathlib import Path
-from typing import Protocol, Self
+from typing import Self
 
 import h5py
 import ismrmrd
