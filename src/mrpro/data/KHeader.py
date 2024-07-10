@@ -50,33 +50,88 @@ class KHeader(MoveDataMixin):
     """
 
     trajectory: KTrajectoryCalculator
+    """Function to calculate the k-space trajectory."""
+
     b0: float
+    """Magnetic field strength."""
+
     encoding_limits: EncodingLimits
+    """K-space encoding limits."""
+
     recon_matrix: SpatialDimension[int]
+    """Dimensions of the reconstruction matrix."""
+
     recon_fov: SpatialDimension[float]
+    """Field-of-view of the reconstructed image."""
+
     encoding_matrix: SpatialDimension[int]
+    """Dimensions of the encoded k-space matrix."""
+
     encoding_fov: SpatialDimension[float]
+    """Field of view of the image encoded by the k-space trajectory."""
+
     acq_info: AcqInfo
+    """Information of the acquisitions (i.e. readout lines)."""
+
     h1_freq: float
+    """Lamor frequency of hydrogen nuclei."""
+
     n_coils: int | None = None
+    """Number of receiver coils."""
+
     datetime: datetime.datetime | None = None
+    """Daten and time of acquisition."""
+
     te: torch.Tensor | None = None
+    """Echo time."""
+
     ti: torch.Tensor | None = None
+    """Inversion time."""
+
     fa: torch.Tensor | None = None
+    """Flip angle."""
+
     tr: torch.Tensor | None = None
+    """Repetition time."""
+
     echo_spacing: torch.Tensor | None = None
+    """Echo spacing."""
+
     echo_train_length: int = 1
+    """Number of echoes in a multi-echo acquisition."""
+
     seq_type: str = UNKNOWN
+    """Type of sequence."""
+
     model: str = UNKNOWN
+    """Scanner model."""
+
     vendor: str = UNKNOWN
+    """Scanner vendor."""
+
     protocol_name: str = UNKNOWN
+    """Name of the acquisition protocol."""
+
     misc: dict = dataclasses.field(default_factory=dict)  # do not use {} here!
+    """Dictionary with miscellaneous parameters."""
+
     calibration_mode: enums.CalibrationMode = enums.CalibrationMode.OTHER
+    """Mode of how calibration data is acquired. """
+
     interleave_dim: enums.InterleavingDimension = enums.InterleavingDimension.OTHER
+    """Interleaving dimension."""
+
     traj_type: enums.TrajectoryType = enums.TrajectoryType.OTHER
+    """Type of trajectory."""
+
     measurement_id: str = UNKNOWN
+    """Measurement ID."""
+
     patient_name: str = UNKNOWN
+    """Name of the patient."""
+
     trajectory_description: TrajectoryDescription = dataclasses.field(default_factory=TrajectoryDescription)
+    """Description of the trajectory."""
 
     @property
     def fa_degree(self) -> torch.Tensor | None:
