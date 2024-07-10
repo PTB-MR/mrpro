@@ -14,15 +14,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import requests
 import torch
-from mrpro.data import CsmData
-from mrpro.data import DcfData
-from mrpro.data import IData
-from mrpro.data import KData
-from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
-from mrpro.data.traj_calculators import KTrajectoryPulseq
-from mrpro.data.traj_calculators import KTrajectoryRadial2D
-from mrpro.operators import FourierOp
-from mrpro.operators import SensitivityOp
+from mrpro.data import CsmData, DcfData, IData, KData
+from mrpro.data.traj_calculators import KTrajectoryIsmrmrd, KTrajectoryPulseq, KTrajectoryRadial2D
+from mrpro.operators import FourierOp, SensitivityOp
 
 # %%
 # define zenodo records URL and create a temporary directory and h5-file

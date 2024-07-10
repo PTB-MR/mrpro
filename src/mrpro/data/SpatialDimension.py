@@ -18,9 +18,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Generic
-from typing import Protocol
-from typing import TypeVar
+from typing import Generic, Protocol, TypeVar
 
 import numpy as np
 import torch

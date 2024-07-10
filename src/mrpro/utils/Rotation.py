@@ -45,10 +45,7 @@ from __future__ import annotations
 import re
 import warnings
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
-from typing import Literal
-from typing import Self
-from typing import overload
+from typing import TYPE_CHECKING, Literal, Self, overload
 
 import numpy as np
 import torch
@@ -59,9 +56,7 @@ from mrpro.data.SpatialDimension import SpatialDimension
 
 if TYPE_CHECKING:
     from types import EllipsisType
-    from typing import TYPE_CHECKING
-    from typing import SupportsIndex
-    from typing import TypeAlias
+    from typing import TYPE_CHECKING, SupportsIndex, TypeAlias
 
     from torch._C import _NestedSequence
 

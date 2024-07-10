@@ -17,18 +17,19 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from collections.abc import Callable
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import overload
 
 import torch
 
-from mrpro.operators.Operator import Operator
-from mrpro.operators.Operator import OperatorComposition
-from mrpro.operators.Operator import OperatorElementwiseProductLeft
-from mrpro.operators.Operator import OperatorElementwiseProductRight
-from mrpro.operators.Operator import OperatorSum
-from mrpro.operators.Operator import Tin2
+from mrpro.operators.Operator import (
+    Operator,
+    OperatorComposition,
+    OperatorElementwiseProductLeft,
+    OperatorElementwiseProductRight,
+    OperatorSum,
+    Tin2,
+)
 
 
 class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):

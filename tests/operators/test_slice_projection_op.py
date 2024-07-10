@@ -19,9 +19,7 @@ import torch
 from mrpro.data import SpatialDimension
 from mrpro.operators import SliceProjectionOp
 from mrpro.utils import Rotation
-from mrpro.utils.slice_profiles import SliceGaussian
-from mrpro.utils.slice_profiles import SliceInterpolate
-from mrpro.utils.slice_profiles import SliceSmoothedRectangular
+from mrpro.utils.slice_profiles import SliceGaussian, SliceInterpolate, SliceSmoothedRectangular
 
 from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test
