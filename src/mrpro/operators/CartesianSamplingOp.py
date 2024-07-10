@@ -104,10 +104,10 @@ class CartesianSamplingOp(LinearOperator):
         if not self._needs_indexing:
             return (x,)
 
-        x_kflat = rearrange(x, '... coil k2_enc k1_enc k0_enc -> ... coil (k2_enc k1_enc k0_enc)')
+        x_kflat = rearrange(x, '... coils k2_enc k1_enc k0_enc -> ... coils (k2_enc k1_enc k0_enc)')
         # take_along_dim does broadcast, so no need for extending here
         x_indexed = torch.take_along_dim(x_kflat, self._fft_idx, dim=-1)
-        # reshape to (... other coil, k2, k1, k0)
+        # reshape to (... other coils, k2, k1, k0)
         x_reshaped = x_indexed.reshape(x.shape[:-3] + self._trajectory_shape[-3:])
 
         return (x_reshaped,)
@@ -130,7 +130,7 @@ class CartesianSamplingOp(LinearOperator):
         if not self._needs_indexing:
             return (y,)
 
-        y_kflat = rearrange(y, '... coil k2 k1 k0 -> ... coil (k2 k1 k0)')
+        y_kflat = rearrange(y, '... coils k2 k1 k0 -> ... coils (k2 k1 k0)')
 
         # scatter does not broadcast, so we need to manually broadcast the indices
         broadcast_shape = torch.broadcast_shapes(self._fft_idx.shape[:-1], y_kflat.shape[:-1])
@@ -145,7 +145,7 @@ class CartesianSamplingOp(LinearOperator):
             device=y.device,
         ).scatter_(dim=-1, index=idx_expanded, src=y_kflat)
 
-        # reshape to  ..., other, coil, k2_enc, k1_enc, k0_enc
+        # reshape to  ..., other, coils, k2_enc, k1_enc, k0_enc
         y_reshaped = y_scattered.reshape(
             *y.shape[:-3],
             self._sorted_grid_shape.z,

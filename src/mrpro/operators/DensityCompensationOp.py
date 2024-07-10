@@ -40,4 +40,4 @@ class DensityCompensationOp(EinsumOp):
             dcf_tensor = dcf.data
         else:
             dcf_tensor = dcf
-        super().__init__(dcf_tensor, '... k2 k1 k0 ,... coil k2 k1 k0 ->... coil k2 k1 k0')
+        super().__init__(dcf_tensor, '... k2 k1 k0 ,... coils k2 k1 k0 ->... coils k2 k1 k0')

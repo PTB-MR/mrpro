@@ -110,7 +110,7 @@ class IData(Data):
         dataset = dcmread(filename)
         idata = _dcm_pixelarray_to_tensor(dataset)[None, :]
         idata = rearrange(idata, '(other coils z) y x -> other coils z y x', other=1, coils=1, z=1)
-
+        
         header = IHeader.from_dicom_list([dataset])
         return cls(data=idata, header=header)
 
@@ -146,13 +146,15 @@ class IData(Data):
             raise ValueError('Only dicoms with the same orientation can be read in.')
         # stack required due to mypy: einops rearrange list[tensor]->tensor not recognized
         idata = torch.stack([_dcm_pixelarray_to_tensor(ds) for ds in dataset_list])
-        idata = rearrange(
-            idata,
-            '(other coils z) y x -> other coils z y x',
-            other=len(idata),
-            coils=1,
-            z=1,
-        )
+        # idata = rearrange(
+        #     idata,
+        #     '(other coils z) y x -> other coils z y x',
+        #     other=len(idata),
+        #     coils=1,
+        #     z=1,
+        # )
+        
+        idata = idata.reshape(*idata.shape[:-2],1,1,idata.shape[-2],idata.shape[-1])
 
         header = IHeader.from_dicom_list(dataset_list)
         return cls(data=idata, header=header)

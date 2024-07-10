@@ -56,6 +56,6 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         # K-space cartesian coordinates
         kx = krad * torch.cos(kang)[..., None]
         ky = krad * torch.sin(kang)[..., None]
-        kz = torch.zeros(1, 1, 1, 1)
+        kz = torch.zeros(kx.dim() * (1,))
 
         return KTrajectory(kz, ky, kx)

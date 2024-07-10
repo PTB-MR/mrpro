@@ -45,6 +45,6 @@ class KTrajectoryCartesian(KTrajectoryCalculator):
         kz = (kheader.acq_info.idx.k2 - kheader.encoding_limits.k2.center).to(torch.float32)
 
         # Bring to correct dimensions
-        ky = repeat(ky, 'other k2 k1-> other k2 k1 k0', k0=1)
-        kz = repeat(kz, 'other k2 k1-> other k2 k1 k0', k0=1)
+        ky = repeat(ky, '... k2 k1-> ... k2 k1 k0', k0=1)
+        kz = repeat(kz, '... k2 k1-> ... k2 k1 k0', k0=1)
         return KTrajectory(kz, ky, kx)
