@@ -14,9 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 from dataclasses import dataclass
+from typing import Self
 
 import numpy as np
 import torch
@@ -85,7 +84,7 @@ class KTrajectory(MoveDataMixin):
         stack_dim: int = 0,
         repeat_detection_tolerance: float | None = 1e-8,
         grid_detection_tolerance: float = 1e-3,
-    ) -> KTrajectory:
+    ) -> Self:
         """Create a KTrajectory from a tensor representation of the trajectory.
 
         Reduces repeated dimensions to singletons if repeat_detection_tolerance
