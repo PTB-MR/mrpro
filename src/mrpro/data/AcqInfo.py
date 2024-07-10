@@ -31,10 +31,10 @@ class AcqIdx(MoveDataMixin):
     """Acquisition index for each readout."""
 
     k1: torch.Tensor
-    """Phase encoding line along ky."""
+    """First phase encoding."""
 
     k2: torch.Tensor
-    """Phase encoding line along kz."""
+    """Second phase encoding."""
 
     average: torch.Tensor
     """Signal average."""

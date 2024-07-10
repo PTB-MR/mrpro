@@ -60,13 +60,13 @@ class EncodingLimits:
     """
 
     k0: Limits = dataclasses.field(default_factory=Limits)
-    """Frequency encoding kx."""
+    """First k-space encoding."""
 
     k1: Limits = dataclasses.field(default_factory=Limits)
-    """Phase encoding ky."""
+    """Second k-space encoding."""
 
     k2: Limits = dataclasses.field(default_factory=Limits)
-    """Phase encoding kz."""
+    """Third k-space encoding."""
 
     average: Limits = dataclasses.field(default_factory=Limits)
     """Signal average."""

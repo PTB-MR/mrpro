@@ -80,7 +80,7 @@ class KHeader(MoveDataMixin):
     """Number of receiver coils."""
 
     datetime: datetime.datetime | None = None
-    """Daten and time of acquisition."""
+    """Date and time of acquisition."""
 
     te: torch.Tensor | None = None
     """Echo time."""
