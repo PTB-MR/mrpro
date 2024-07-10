@@ -26,8 +26,13 @@ class Limits:
     """Limits dataclass with min, max, and center attributes."""
 
     min: int = 0
+    """Lower boundary."""
+
     max: int = 0
+    """Upper boundary."""
+
     center: int = 0
+    """Center."""
 
     @classmethod
     def from_ismrmrd(cls, limit_type: limitType) -> Self:
@@ -55,23 +60,58 @@ class EncodingLimits:
     """
 
     k0: Limits = dataclasses.field(default_factory=Limits)
+    """Frequency encoding kx."""
+
     k1: Limits = dataclasses.field(default_factory=Limits)
+    """Phase encoding ky."""
+
     k2: Limits = dataclasses.field(default_factory=Limits)
+    """Phase encoding kz."""
+
     average: Limits = dataclasses.field(default_factory=Limits)
+    """Signal average."""
+
     slice: Limits = dataclasses.field(default_factory=Limits)
+    """Slice number (multi-slice 2D)."""
+
     contrast: Limits = dataclasses.field(default_factory=Limits)
+    """Echo number in multi-echo."""
+
     phase: Limits = dataclasses.field(default_factory=Limits)
+    """Cardiac phase."""
+
     repetition: Limits = dataclasses.field(default_factory=Limits)
+    """Repeated/dynamic acquisitions."""
+
     set: Limits = dataclasses.field(default_factory=Limits)
+    """Sets of different preparation."""
+
     segment: Limits = dataclasses.field(default_factory=Limits)
+    """Segments of segmented acquisition."""
+
     user_0: Limits = dataclasses.field(default_factory=Limits)
+    """User index 0."""
+
     user_1: Limits = dataclasses.field(default_factory=Limits)
+    """User index 1."""
+
     user_2: Limits = dataclasses.field(default_factory=Limits)
+    """User index 2."""
+
     user_3: Limits = dataclasses.field(default_factory=Limits)
+    """User index 3."""
+
     user_4: Limits = dataclasses.field(default_factory=Limits)
+    """User index 4."""
+
     user_5: Limits = dataclasses.field(default_factory=Limits)
+    """User index 5."""
+
     user_6: Limits = dataclasses.field(default_factory=Limits)
+    """User index 6."""
+
     user_7: Limits = dataclasses.field(default_factory=Limits)
+    """User index 7."""
 
     @classmethod
     def from_ismrmrd_encoding_limits_type(cls, encoding_limits: encodingLimitsType):
