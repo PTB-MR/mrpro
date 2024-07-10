@@ -99,7 +99,7 @@
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Protocol</span><span class="p">,</span> <span class="n">Self</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Self</span>
 
 <span class="kn">import</span> <span class="nn">h5py</span>
 <span class="kn">import</span> <span class="nn">ismrmrd</span>
@@ -285,32 +285,6 @@
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">kheader</span><span class="p">,</span> <span class="n">kdata</span><span class="p">,</span> <span class="n">ktrajectory_final</span><span class="p">)</span></div>
 </div>
 
-
-
-<span class="k">class</span> <span class="nc">_KDataProtocol</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Protocol for KData used for type hinting in KData mixins.</span>
-
-<span class="sd">    Note that the actual KData class can have more properties and methods than those defined here.</span>
-
-<span class="sd">    If you want to use a property or method of KData in a new KDataMixin class,</span>
-<span class="sd">    you must add it to this Protocol to make sure that the type hinting works.</span>
-
-<span class="sd">    For more information about Protocols see:</span>
-<span class="sd">    https://typing.readthedocs.io/en/latest/spec/protocol.html#protocols</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">header</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KHeader</span><span class="p">:</span> <span class="o">...</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span> <span class="o">...</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">traj</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KTrajectory</span><span class="p">:</span> <span class="o">...</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">traj</span><span class="p">:</span> <span class="n">KTrajectory</span><span class="p">):</span> <span class="o">...</span>
-
-    <span class="k">def</span> <span class="nf">_split_k2_or_k1_into_other</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">split_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">other_label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">split_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span> <span class="o">...</span>
 </pre></div>
 
            </div>
