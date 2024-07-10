@@ -1,0 +1,28 @@
+name: Test min dependencies
+
+on:
+  schedule:
+    - cron: '5 15 * * *'
+
+jobs:
+  test_min_dependencies:
+    name: Run tests with min dependencies
+    runs-on: ubuntu-latest
+    env:
+      PYTHON_VERSION: "${{needs.build_info.outputs.PYTHON_MIN_VERSION}}"
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install mrpro with minimum dependencies
+        run: uv pip install --resolution lowest .[test]
+
+      - name: Run PyTest with minimum dependencies
+        run: |
+          pytest -n 4 -m "not cuda" --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+
+  # Cancel in-progress runs when a new workflow with the same group name is triggered
+  cancel-in-progress: true

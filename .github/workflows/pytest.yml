@@ -104,29 +104,6 @@ jobs:
           script: |
             core.setFailed('PyTest workflow failed with ${{ steps.coverageComment.outputs.errors }} errors and ${{ steps.coverageComment.outputs.failures }} failures.')
 
-  test_min_dependency:
-    name: Run tests with minimum dependencies
-    needs: test
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        imagename: ${{ fromJson(needs.get_dockerfiles.outputs.imagenames) }}
-    # runs within Docker container
-    container:
-      image: ghcr.io/ptb-mr/${{ matrix.imagename }}:latest
-      options: --user runner
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Install mrpro with minimum dependencies
-        run: uv pip install --resolution "lowest
-
-      - name: Run PyTest
-        run: |
-          pytest
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
