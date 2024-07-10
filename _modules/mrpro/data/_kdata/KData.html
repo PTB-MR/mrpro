@@ -121,9 +121,37 @@
 <span class="kn">from</span> <span class="nn">mrpro.data.traj_calculators.KTrajectoryIsmrmrd</span> <span class="kn">import</span> <span class="n">KTrajectoryIsmrmrd</span>
 <span class="kn">from</span> <span class="nn">mrpro.utils</span> <span class="kn">import</span> <span class="n">modify_acq_info</span>
 
-<span class="n">KDIM_SORT_LABELS</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;k1&#39;</span><span class="p">,</span> <span class="s1">&#39;k2&#39;</span><span class="p">,</span> <span class="s1">&#39;average&#39;</span><span class="p">,</span> <span class="s1">&#39;slice&#39;</span><span class="p">,</span> <span class="s1">&#39;contrast&#39;</span><span class="p">,</span> <span class="s1">&#39;phase&#39;</span><span class="p">,</span> <span class="s1">&#39;repetition&#39;</span><span class="p">,</span> <span class="s1">&#39;set&#39;</span><span class="p">)</span>
-<span class="c1"># TODO: Consider adding the users labels here, but remember issue #32 and NOT add user5 and user6.</span>
-<span class="n">OTHER_LABELS</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;average&#39;</span><span class="p">,</span> <span class="s1">&#39;slice&#39;</span><span class="p">,</span> <span class="s1">&#39;contrast&#39;</span><span class="p">,</span> <span class="s1">&#39;phase&#39;</span><span class="p">,</span> <span class="s1">&#39;repetition&#39;</span><span class="p">,</span> <span class="s1">&#39;set&#39;</span><span class="p">)</span>
+<span class="n">KDIM_SORT_LABELS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s1">&#39;k1&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;k2&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;average&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;slice&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;contrast&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;phase&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;repetition&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;set&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;user0&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;user1&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;user2&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;user3&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;user4&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;user7&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">OTHER_LABELS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s1">&#39;average&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;slice&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;contrast&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;phase&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;repetition&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;set&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;user0&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;user1&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;user2&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;user3&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;user4&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;user7&#39;</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <div class="viewcode-block" id="KData">
@@ -177,6 +205,22 @@
         <span class="n">kdata</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">acq</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span> <span class="k">for</span> <span class="n">acq</span> <span class="ow">in</span> <span class="n">acquisitions</span><span class="p">])</span>
 
         <span class="n">acqinfo</span> <span class="o">=</span> <span class="n">AcqInfo</span><span class="o">.</span><span class="n">from_ismrmrd_acquisitions</span><span class="p">(</span><span class="n">acquisitions</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">acqinfo</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">user5</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s1">&#39;The Siemens to ismrmrd converter currently (ab)uses &#39;</span>
+                <span class="s1">&#39;the user 5 indices for storing the kspace center line number.</span><span class="se">\n</span><span class="s1">&#39;</span>
+                <span class="s1">&#39;User 5 indices will be ignored&#39;</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">acqinfo</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">user6</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s1">&#39;The Siemens to ismrmrd converter currently (ab)uses &#39;</span>
+                <span class="s1">&#39;the user 6 indices for storing the kspace center partition number.</span><span class="se">\n</span><span class="s1">&#39;</span>
+                <span class="s1">&#39;User 6 indices will be ignored&#39;</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="c1"># Raises ValueError if required fields are missing in the header</span>
         <span class="n">kheader</span> <span class="o">=</span> <span class="n">KHeader</span><span class="o">.</span><span class="n">from_ismrmrd</span><span class="p">(</span>
