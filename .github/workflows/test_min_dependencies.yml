@@ -2,7 +2,7 @@ name: Test min dependencies
 
 on:
   schedule:
-    - cron: '5 15 * * *'
+    - cron: '0/10 * * * *'
 
 jobs:
   test_min_dependencies:
