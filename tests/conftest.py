@@ -25,7 +25,6 @@ from mrpro.data.enums import AcqFlags
 from xsdata.models.datatype import XmlDate, XmlTime
 
 from tests import RandomGenerator
-from tests.data import Dicom2DTestImage
 from tests.phantoms import EllipsePhantomTestData
 
 
@@ -81,8 +80,6 @@ def generate_random_data(generator: RandomGenerator, shape=(32, 256)):
 @pytest.fixture(scope='session')
 def ellipse_phantom():
     return EllipsePhantomTestData()
-
-
 
 
 @pytest.fixture(params=({'seed': 0, 'n_coils': 32, 'n_samples': 256},))
@@ -175,8 +172,6 @@ def random_full_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
     )
 
 
-
-
 @pytest.fixture()
 def random_ismrmrd_file(random_acquisition, random_noise_acquisition, full_header):
     with tempfile.NamedTemporaryFile(suffix='.h5') as file:
@@ -187,9 +182,6 @@ def random_ismrmrd_file(random_acquisition, random_noise_acquisition, full_heade
         dataset.close()
 
         yield file.name
-
-
-
 
 
 @pytest.fixture(params=({'seed': 0},))
@@ -229,9 +221,6 @@ def random_kheader_shape(request, random_acquisition, random_full_ismrmrd_header
     # Put it all together to a KHeader object
     kheader = KHeader.from_ismrmrd(random_full_ismrmrd_header, acq_info=random_acq_info, defaults={'trajectory': ktraj})
     return kheader, n_other, n_coils, n_k2, n_k1, n_k0
-
-
-
 
 
 def create_uniform_traj(nk, k_shape):
