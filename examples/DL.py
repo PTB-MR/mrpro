@@ -335,7 +335,6 @@ class UNet(nn.Module):
 
 # %% NufftCascade
 
-
 class NUFFTCascade(nn.Module):
     def __init__(self, acquisition_operator, unet, nu, npcg, w, op_norm_estimate=None):
         super(NUFFTCascade, self).__init__()
@@ -345,11 +344,11 @@ class NUFFTCascade(nn.Module):
         self.npcg = npcg
         self.w = w
         self.w_raw = nn.Parameter(torch.tensor(-5.0, requires_grad=True))
-        self.op_norm_stimate = acquisition_operator.operator_norm(initial_value, maxiterations=...)
+        self.op_norm_estimate = acquisition_operator.operator_norm(initial_value, maxiterations=...)
 
     @property
     def w_reg(self):
-        return (F.sigmoid(self.w_raw) + 1) / self.op_norm**2
+        return (F.sigmoid(self.w_raw) + 1) / self.op_norm_estimate**2
 
     def forward(self, x, k_space_data):
         for _ in range(self.npcg):
@@ -357,7 +356,6 @@ class NUFFTCascade(nn.Module):
             x = x - self.w_reg * operator_test - self.unet(x)
 
         return x
-
 
 # %% Fonctiun creating Ellipses
 
