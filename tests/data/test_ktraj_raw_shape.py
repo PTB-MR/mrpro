@@ -14,8 +14,7 @@
 
 import numpy as np
 import torch
-from einops import rearrange
-from einops import repeat
+from einops import rearrange, repeat
 from mrpro.data import KTrajectoryRawShape
 
 

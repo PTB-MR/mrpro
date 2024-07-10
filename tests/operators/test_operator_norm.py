@@ -11,14 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from math import prod
-from math import sqrt
+from math import prod, sqrt
 
 import pytest
 import torch
-from mrpro.operators import EinsumOp
-from mrpro.operators import FastFourierOp
-from mrpro.operators import FiniteDifferenceOp
+from mrpro.operators import EinsumOp, FastFourierOp, FiniteDifferenceOp
 
 from tests import RandomGenerator
 

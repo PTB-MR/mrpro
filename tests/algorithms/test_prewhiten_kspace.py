@@ -16,9 +16,7 @@ import pytest
 import torch
 from einops import rearrange
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
-from mrpro.data import KData
-from mrpro.data import KNoise
-from mrpro.data import KTrajectory
+from mrpro.data import KData, KNoise, KTrajectory
 from tests import RandomGenerator
 
 

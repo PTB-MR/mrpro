@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 import torch
 
@@ -38,7 +38,7 @@ class CsmData(QData):
         smoothing_width: int | SpatialDimension[int] = 5,
         power_iterations: int = 3,
         chunk_size_otherdim: int | None = None,
-    ) -> CsmData:
+    ) -> Self:
         """Create csm object from image data using iterative Walsh method.
 
         Parameters
