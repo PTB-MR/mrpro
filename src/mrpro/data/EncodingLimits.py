@@ -14,13 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 import dataclasses
 from dataclasses import dataclass
+from typing import Self
 
-from ismrmrd.xsd.ismrmrdschema.ismrmrd import encodingLimitsType
-from ismrmrd.xsd.ismrmrdschema.ismrmrd import limitType
+from ismrmrd.xsd.ismrmrdschema.ismrmrd import encodingLimitsType, limitType
 
 
 @dataclass(slots=True)
@@ -32,7 +30,7 @@ class Limits:
     center: int = 0
 
     @classmethod
-    def from_ismrmrd(cls, limit_type: limitType) -> Limits:
+    def from_ismrmrd(cls, limit_type: limitType) -> Self:
         """Create Limits from ismrmrd.limitType."""
         if limit_type is None:
             return cls()
@@ -46,10 +44,14 @@ class Limits:
 
 @dataclass(slots=True)
 class EncodingLimits:
-    """Encoding limits dataclass with limits for each attribute.
+    """Encoding limits dataclass with limits for each attribute [1]_.
 
-    Reference: Magnetic Resonance in Medicine, 29 Jan 2016, 77(1):411-421,
-    DOI: 10.1002/mrm.26089 (Fig. 3)
+    References
+    ----------
+    .. [1] Inati S, Hanse M (2016) ISMRM Raw data format:
+    A proposed standard for MRI raw datasets. MRM 77(1): mrm.26089.
+        https://doi.org/10.1002/mrm.26089
+
     """
 
     k0: Limits = dataclasses.field(default_factory=Limits)

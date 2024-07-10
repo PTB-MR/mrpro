@@ -14,15 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 import copy
-from typing import Literal
-from typing import Self
+from typing import Literal, Self
 
 import torch
-from einops import rearrange
-from einops import repeat
+from einops import rearrange, repeat
 from mrpro.data._kdata.KDataProtocol import _KDataProtocol
 from mrpro.data.EncodingLimits import Limits
 from mrpro.utils import modify_acq_info
