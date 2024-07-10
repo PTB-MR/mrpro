@@ -44,7 +44,7 @@ jobs:
           done
 
       - name: Check if any notebooks have been changed
-        uses: tj-actions/verify-changed-files@v19
+        uses: tj-actions/verify-changed-files@v20
         id: verify-changed-notebooks
         with:
           files: ./examples/*.ipynb
@@ -184,7 +184,7 @@ jobs:
         run: sphinx-build -b html ./docs/source ./docs/build/html
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           publish_branch: github-pages
           github_token: ${{ secrets.GITHUB_TOKEN }}
