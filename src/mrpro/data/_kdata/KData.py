@@ -127,7 +127,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         if len(torch.unique(acqinfo.idx.user5)) > 1:
             warnings.warn(
                 'The Siemens to ismrmrd converter currently (ab)uses '
-                'the user 5 indices for storing the kspace center line and partition number.\n'
+                'the user 5 indices for storing the kspace center line number.\n'
                 'User 5 indices will be ignored',
                 stacklevel=1,
             )
@@ -135,7 +135,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         if len(torch.unique(acqinfo.idx.user6)) > 1:
             warnings.warn(
                 'The Siemens to ismrmrd converter currently (ab)uses '
-                'the user 6 indices for storing the kspace center line and partition number.\n'
+                'the user 6 indices for storing the kspace center partition number.\n'
                 'User 6 indices will be ignored',
                 stacklevel=1,
             )
