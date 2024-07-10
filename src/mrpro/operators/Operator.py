@@ -16,12 +16,8 @@
 
 from __future__ import annotations
 
-from abc import ABC
-from abc import abstractmethod
-from typing import Generic
-from typing import TypeVar
-from typing import TypeVarTuple
-from typing import cast
+from abc import ABC, abstractmethod
+from typing import Generic, TypeVar, TypeVarTuple, cast
 
 import torch
 
