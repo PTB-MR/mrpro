@@ -14,6 +14,7 @@
 
 import pytest
 import torch
+from mrpro.algorithms.optimizers import OptimizerStatus
 from mrpro.algorithms.optimizers import adam
 from mrpro.algorithms.optimizers import lbfgs
 from mrpro.operators import ConstraintsOp
@@ -81,8 +82,10 @@ def test_callback_optimizers(optimizer):
     # maximum number of iterations
     max_iter = 10
 
-    # callback function; the test passes if the function is called
-    def callback(parameters):
+    # callback function; if the function is called during the iterations, the
+    # test is successful
+    def callback(optimizer_status: OptimizerStatus) -> None:
+        _, _ = optimizer_status['iteration_number'], optimizer_status['solution'][0]
         assert True
 
     # run optimizer

@@ -20,6 +20,7 @@ from collections.abc import Sequence
 import torch
 from torch.optim import Adam
 
+from mrpro.algorithms.optimizers.OptimizerStatus import OptimizerStatus
 from mrpro.operators.Operator import Operator
 
 
@@ -36,7 +37,7 @@ def adam(
     maximize: bool = False,
     differentiable: bool = False,
     fused: bool | None = None,
-    callback: Callable | None = None,
+    callback: Callable[[OptimizerStatus], None] | None = None,
 ) -> tuple[torch.Tensor, ...]:
     """Adam for non-linear minimization problems.
 
@@ -78,7 +79,7 @@ def adam(
         list of optimized parameters
     """
     if not differentiable:
-        parameters = [p.detach().clone().requires_grad_(True) for p in initial_parameters]
+        parameters = tuple(p.detach().clone().requires_grad_(True) for p in initial_parameters)
     else:
         # TODO: If differentiable is set, it is reasonable to expect that the result backpropagates to
         # initial parameters. This is currently not implemented (due to detach).
@@ -103,12 +104,12 @@ def adam(
         objective.backward()
 
         if callback is not None:
-            callback(parameters)
+            callback({'solution': parameters, 'iteration_number': iteration})
 
         return objective
 
     # run adam
-    for _ in range(max_iter):
+    for iteration in range(max_iter):  # noqa: B007
         optim.step(closure)
 
-    return tuple(parameters)
+    return parameters
