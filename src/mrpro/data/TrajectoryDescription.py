@@ -14,10 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 import dataclasses
 from dataclasses import dataclass
+from typing import Self
 
 from ismrmrd.xsd.ismrmrdschema.ismrmrd import trajectoryDescriptionType
 
@@ -33,7 +32,7 @@ class TrajectoryDescription:
     comment: str = ''
 
     @classmethod
-    def from_ismrmrd(cls, trajectory_description: trajectoryDescriptionType) -> TrajectoryDescription:
+    def from_ismrmrd(cls, trajectory_description: trajectoryDescriptionType) -> Self:
         """Create TrajectoryDescription from ismrmrd traj description."""
         return cls(
             user_parameter_long={p.name: int(p.value) for p in trajectory_description.userParameterLong},

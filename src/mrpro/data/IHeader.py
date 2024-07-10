@@ -14,11 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 import dataclasses
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Self
 
 import numpy as np
 import torch
@@ -45,7 +44,7 @@ class IHeader(MoveDataMixin):
     misc: dict = dataclasses.field(default_factory=dict)
 
     @classmethod
-    def from_kheader(cls, kheader: KHeader) -> IHeader:
+    def from_kheader(cls, kheader: KHeader) -> Self:
         """Create IHeader object from KHeader object.
 
         Parameters
@@ -56,7 +55,7 @@ class IHeader(MoveDataMixin):
         return cls(fov=kheader.recon_fov, te=kheader.te, ti=kheader.ti, fa=kheader.fa, tr=kheader.tr)
 
     @classmethod
-    def from_dicom_list(cls, dicom_datasets: Sequence[Dataset]) -> IHeader:
+    def from_dicom_list(cls, dicom_datasets: Sequence[Dataset]) -> Self:
         """Read DICOM files and return IHeader object.
 
         Parameters

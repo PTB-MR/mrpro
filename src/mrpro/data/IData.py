@@ -14,11 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 import dataclasses
 from collections.abc import Generator, Sequence
 from pathlib import Path
+from typing import Self
 
 import numpy as np
 import torch
@@ -84,7 +83,7 @@ class IData(Data):
         return self.data.abs().square().sum(dim=coildim, keepdim=keepdim).sqrt()
 
     @classmethod
-    def from_tensor_and_kheader(cls, data: torch.Tensor, kheader: KHeader) -> IData:
+    def from_tensor_and_kheader(cls, data: torch.Tensor, kheader: KHeader) -> Self:
         """Create IData object from a tensor and a KHeader object.
 
         Parameters
@@ -98,7 +97,7 @@ class IData(Data):
         return cls(header=header, data=data)
 
     @classmethod
-    def from_single_dicom(cls, filename: str | Path) -> IData:
+    def from_single_dicom(cls, filename: str | Path) -> Self:
         """Read single DICOM file and return IData object.
 
         Parameters
@@ -114,7 +113,7 @@ class IData(Data):
         return cls(data=idata, header=header)
 
     @classmethod
-    def from_dicom_files(cls, filenames: Sequence[str] | Sequence[Path] | Generator[Path, None, None]) -> IData:
+    def from_dicom_files(cls, filenames: Sequence[str] | Sequence[Path] | Generator[Path, None, None]) -> Self:
         """Read multiple DICOM files and return IData object.
 
         Parameters
@@ -157,7 +156,7 @@ class IData(Data):
         return cls(data=idata, header=header)
 
     @classmethod
-    def from_dicom_folder(cls, foldername: str | Path, suffix: str | None = 'dcm') -> IData:
+    def from_dicom_folder(cls, foldername: str | Path, suffix: str | None = 'dcm') -> Self:
         """Read all DICOM files from a folder and return IData object.
 
         Parameters
@@ -174,4 +173,4 @@ class IData(Data):
         if len(file_paths) == 0:
             raise ValueError(f'No dicom files with suffix {suffix} found in {foldername}')
 
-        return IData.from_dicom_files(filenames=file_paths)
+        return cls.from_dicom_files(filenames=file_paths)

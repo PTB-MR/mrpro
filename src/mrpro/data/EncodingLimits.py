@@ -14,10 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 import dataclasses
 from dataclasses import dataclass
+from typing import Self
 
 from ismrmrd.xsd.ismrmrdschema.ismrmrd import encodingLimitsType, limitType
 
@@ -31,7 +30,7 @@ class Limits:
     center: int = 0
 
     @classmethod
-    def from_ismrmrd(cls, limit_type: limitType) -> Limits:
+    def from_ismrmrd(cls, limit_type: limitType) -> Self:
         """Create Limits from ismrmrd.limitType."""
         if limit_type is None:
             return cls()

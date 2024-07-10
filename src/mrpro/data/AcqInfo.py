@@ -14,10 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Self
 
 import ismrmrd
 import numpy as np
@@ -84,7 +83,7 @@ class AcqInfo(MoveDataMixin):
     version: torch.Tensor
 
     @classmethod
-    def from_ismrmrd_acquisitions(cls, acquisitions: Sequence[ismrmrd.Acquisition]) -> AcqInfo:
+    def from_ismrmrd_acquisitions(cls, acquisitions: Sequence[ismrmrd.Acquisition]) -> Self:
         """Read the header of a list of acquisition and store information.
 
         Parameters

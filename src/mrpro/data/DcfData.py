@@ -20,7 +20,7 @@ import dataclasses
 from concurrent.futures import ProcessPoolExecutor
 from functools import reduce
 from itertools import product
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 import numpy as np
 import torch
@@ -158,7 +158,7 @@ class DcfData(MoveDataMixin):
         return torch.tensor(dcf, dtype=torch.float32, device=traj.device)
 
     @classmethod
-    def from_traj_voronoi(cls, traj: KTrajectory) -> DcfData:
+    def from_traj_voronoi(cls, traj: KTrajectory) -> Self:
         """Calculate dcf using voronoi approach for 2D or 3D trajectories.
 
         Parameters
