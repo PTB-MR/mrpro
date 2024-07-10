@@ -57,7 +57,7 @@ def adam(
         whether to use the AMSGrad variant of this algorithm from the paper
         `On the Convergence of Adam and Beyond`
     decoupled_weight_decay
-        whether to use Adam or AdamW [1]_
+        whether to use Adam (default) or AdamW (if set to true) [1]_
 
     Returns
     -------
