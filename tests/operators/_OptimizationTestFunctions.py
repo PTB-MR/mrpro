@@ -27,13 +27,3 @@ class Rosenbrock(Operator[torch.Tensor, torch.Tensor, tuple[torch.Tensor,]]):
         fval = (self.a - x1) ** 2 + self.b * (x1 - x2**2) ** 2
 
         return (fval,)
-
-
-class Booth(Operator[torch.Tensor, torch.Tensor, tuple[torch.Tensor,]]):
-    def __init__(self) -> None:
-        super().__init__()
-
-    def forward(self, x1: torch.Tensor, x2: torch.Tensor) -> tuple[torch.Tensor,]:
-        fval = (x1 + 2.0 * x2 - 7.0) ** 2 + (2.0 * x1 - +x2 - 5.0) ** 2
-
-        return (fval,)

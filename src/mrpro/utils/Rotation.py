@@ -1247,9 +1247,9 @@ class Rotation(torch.nn.Module):
 
         References
         ----------
-        .. [1] Hartley, Richard, et al.,
-                "Rotation Averaging", International Journal of Computer Vision
-                103, 2013, pp. 267-305.
+        .. [1] Hartley R, Li H (2013) Rotation Averaging. International Journal of Computer Vision (103)
+               https://link.springer.com/article/10.1007/s11263-012-0601-0
+
         """
         if weights is None:
             weights = torch.ones(*self.shape)
