@@ -14,10 +14,9 @@
 
 import pytest
 import torch
-from mrpro.algorithms.optimizers import adam
-from mrpro.algorithms.optimizers import lbfgs
+from mrpro.algorithms.optimizers import adam, lbfgs
 from mrpro.operators import ConstraintsOp
-from tests.operators._OptimizationTestFunctions import Rosenbrock
+from tests.operators import Rosenbrock
 
 
 @pytest.mark.parametrize('enforce_bounds_on_x1', [True, False])

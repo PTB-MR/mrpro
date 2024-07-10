@@ -14,22 +14,17 @@
 
 import pytest
 import torch
-from einops import rearrange
-from einops import repeat
-from mrpro.data import KData
-from mrpro.data import KTrajectory
-from mrpro.data import SpatialDimension
+from einops import rearrange, repeat
+from mrpro.data import KData, KTrajectory, SpatialDimension
 from mrpro.data.acq_filters import is_coil_calibration_acquisition
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
-from mrpro.utils import modify_acq_info
-from mrpro.utils import split_idx
+from mrpro.utils import modify_acq_info, split_idx
 
-from tests.conftest import RandomGenerator
-from tests.conftest import generate_random_data
+from tests.conftest import RandomGenerator, generate_random_data
 from tests.data import IsmrmrdRawTestData
 from tests.helper import relative_image_difference
-from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData
+from tests.phantoms import EllipsePhantomTestData
 
 
 @pytest.fixture(scope='session')

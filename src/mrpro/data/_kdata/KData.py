@@ -14,14 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 import dataclasses
 import datetime
 import warnings
 from collections.abc import Callable
 from pathlib import Path
-from typing import Protocol
+from typing import Self
 
 import h5py
 import ismrmrd
@@ -43,9 +41,37 @@ from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalcula
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
 from mrpro.utils import modify_acq_info
 
-KDIM_SORT_LABELS = ('k1', 'k2', 'average', 'slice', 'contrast', 'phase', 'repetition', 'set')
-# TODO: Consider adding the users labels here, but remember issue #32 and NOT add user5 and user6.
-OTHER_LABELS = ('average', 'slice', 'contrast', 'phase', 'repetition', 'set')
+KDIM_SORT_LABELS = (
+    'k1',
+    'k2',
+    'average',
+    'slice',
+    'contrast',
+    'phase',
+    'repetition',
+    'set',
+    'user0',
+    'user1',
+    'user2',
+    'user3',
+    'user4',
+    'user7',
+)
+
+OTHER_LABELS = (
+    'average',
+    'slice',
+    'contrast',
+    'phase',
+    'repetition',
+    'set',
+    'user0',
+    'user1',
+    'user2',
+    'user3',
+    'user4',
+    'user7',
+)
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
@@ -64,7 +90,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         header_overwrites: dict[str, object] | None = None,
         dataset_idx: int = -1,
         acquisition_filter_criterion: Callable = is_image_acquisition,
-    ) -> KData:
+    ) -> Self:
         """Load k-space data from an ISMRMRD file.
 
         Parameters
@@ -95,6 +121,22 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
+
+        if len(torch.unique(acqinfo.idx.user5)) > 1:
+            warnings.warn(
+                'The Siemens to ismrmrd converter currently (ab)uses '
+                'the user 5 indices for storing the kspace center line number.\n'
+                'User 5 indices will be ignored',
+                stacklevel=1,
+            )
+
+        if len(torch.unique(acqinfo.idx.user6)) > 1:
+            warnings.warn(
+                'The Siemens to ismrmrd converter currently (ab)uses '
+                'the user 6 indices for storing the kspace center partition number.\n'
+                'User 6 indices will be ignored',
+                stacklevel=1,
+            )
 
         # Raises ValueError if required fields are missing in the header
         kheader = KHeader.from_ismrmrd(
@@ -205,31 +247,3 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
     def __repr__(self):
         """Representation method for KData class."""
         return f'KData with shape {list(self.data.shape)!s}\n{self.header}'
-
-
-class _KDataProtocol(Protocol):
-    """Protocol for KData used for type hinting in KData mixins.
-
-    Note that the actual KData class can have more properties and methods than those defined here.
-
-    If you want to use a property or method of KData in a new KDataMixin class,
-    you must add it to this Protocol to make sure that the type hinting works.
-
-    For more information about Protocols see:
-    https://typing.readthedocs.io/en/latest/spec/protocol.html#protocols
-    """
-
-    @property
-    def header(self) -> KHeader: ...
-
-    @property
-    def data(self) -> torch.Tensor: ...
-
-    @property
-    def traj(self) -> KTrajectory: ...
-
-    def __init__(self, header: KHeader, data: torch.Tensor, traj: KTrajectory): ...
-
-    def _split_k2_or_k1_into_other(
-        self, split_idx: torch.Tensor, other_label: str, split_dir: str
-    ) -> _KDataProtocol: ...

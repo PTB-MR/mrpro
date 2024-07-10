@@ -20,7 +20,7 @@ import dataclasses
 import datetime
 import warnings
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
 import torch
@@ -95,7 +95,7 @@ class KHeader(MoveDataMixin):
         defaults: dict | None = None,
         overwrite: dict | None = None,
         encoding_number: int = 0,
-    ) -> KHeader:
+    ) -> Self:
         """Create an Header from ISMRMRD Data.
 
         Parameters

@@ -14,12 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 import dataclasses
-from collections.abc import Generator
-from collections.abc import Sequence
+from collections.abc import Generator, Sequence
 from pathlib import Path
+from typing import Self
 
 import numpy as np
 import torch
@@ -41,8 +39,11 @@ def _dcm_pixelarray_to_tensor(dataset: Dataset) -> torch.Tensor:
     their stored on disk representation to their in memory
     representation.     U = m*SV + b where U is in output units, m is
     the rescale slope, SV is the stored value, and b is the rescale
-    intercept." (taken from
-    https://www.kitware.com/dicom-rescale-intercept-rescale-slope-and-itk/)
+    intercept." [1]_
+
+    References
+    ----------
+    .. [1] https://www.kitware.com/dicom-rescale-intercept-rescale-slope-and-itk/
     """
     slope = (
         float(element.value)
@@ -85,7 +86,7 @@ class IData(Data):
         return self.data.abs().square().sum(dim=coildim, keepdim=keepdim).sqrt()
 
     @classmethod
-    def from_tensor_and_kheader(cls, data: torch.Tensor, kheader: KHeader) -> IData:
+    def from_tensor_and_kheader(cls, data: torch.Tensor, kheader: KHeader) -> Self:
         """Create IData object from a tensor and a KHeader object.
 
         Parameters
@@ -99,7 +100,7 @@ class IData(Data):
         return cls(header=header, data=data)
 
     @classmethod
-    def from_single_dicom(cls, filename: str | Path) -> IData:
+    def from_single_dicom(cls, filename: str | Path) -> Self:
         """Read single DICOM file and return IData object.
 
         Parameters
@@ -115,7 +116,7 @@ class IData(Data):
         return cls(data=idata, header=header)
 
     @classmethod
-    def from_dicom_files(cls, filenames: Sequence[str] | Sequence[Path] | Generator[Path, None, None]) -> IData:
+    def from_dicom_files(cls, filenames: Sequence[str] | Sequence[Path] | Generator[Path, None, None]) -> Self:
         """Read multiple DICOM files and return IData object.
 
         Parameters
@@ -158,7 +159,7 @@ class IData(Data):
         return cls(data=idata, header=header)
 
     @classmethod
-    def from_dicom_folder(cls, foldername: str | Path, suffix: str | None = 'dcm') -> IData:
+    def from_dicom_folder(cls, foldername: str | Path, suffix: str | None = 'dcm') -> Self:
         """Read all DICOM files from a folder and return IData object.
 
         Parameters
@@ -175,7 +176,7 @@ class IData(Data):
         if len(file_paths) == 0:
             raise ValueError(f'No dicom files with suffix {suffix} found in {foldername}')
 
-        return IData.from_dicom_files(filenames=file_paths)
+        return cls.from_dicom_files(filenames=file_paths)
 
     def __repr__(self):
         """Representation method for IData class."""
