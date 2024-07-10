@@ -176,3 +176,10 @@ class IData(Data):
             raise ValueError(f'No dicom files with suffix {suffix} found in {foldername}')
 
         return IData.from_dicom_files(filenames=file_paths)
+    
+    def __repr__(self):
+        fov = self.header.fov if self.header.fov is not None else "none"
+        te = str(np.round(self.header.te.item(), 4)) if self.header.te is not None else "none"
+        ti = str(np.round(self.header.ti.item(), 4)) if self.header.ti is not None else "none"
+        fa = str(np.round(self.header.fa.item(), 4)) if self.header.fa is not None else "none"
+        return f"IData with \nshape: {str(list(self.data.shape))}, \nFOV: x={fov.x}, y={fov.y}, z={fov.z}, \nTE: {te}, \nTI: {ti}, \nflip angle: {fa}."

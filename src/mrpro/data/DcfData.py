@@ -205,3 +205,6 @@ class DcfData(MoveDataMixin):
         from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 
         return DensityCompensationOp(self.data.clone())
+    
+    def __repr__(self):
+        return f"DcfData with shape: {str(list(self.data.shape))}."
