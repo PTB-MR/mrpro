@@ -198,6 +198,13 @@ def random_kheader(request, random_full_ismrmrd_header, random_acq_info):
     return kheader
 
 
+@pytest.fixture()
+def random_acq_info(random_acquisition):
+    """Random (not necessarily valid) AcqInfo."""
+    acq_info = AcqInfo.from_ismrmrd_acquisitions([random_acquisition])
+    return acq_info
+
+
 @pytest.fixture(params=({'seed': 0, 'n_other': 10, 'n_k2': 40, 'n_k1': 20},))
 def random_kheader_shape(request, random_acquisition, random_full_ismrmrd_header):
     """Random (not necessarily valid) KHeader with defined shape."""

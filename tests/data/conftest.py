@@ -17,7 +17,6 @@
 import pytest
 import torch
 from ismrmrd import xsd
-from mrpro.data import AcqInfo
 
 from tests import RandomGenerator
 from tests.conftest import generate_random_data
@@ -63,13 +62,6 @@ def random_mandatory_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
     )
     experimental_conditions = xsd.experimentalConditionsType(H1resonanceFrequency_Hz=generator.int32())
     return xsd.ismrmrdschema.ismrmrdHeader(encoding=[encoding], experimentalConditions=experimental_conditions)
-
-
-@pytest.fixture()
-def random_acq_info(random_acquisition):
-    """Random (not necessarily valid) AcqInfo."""
-    acq_info = AcqInfo.from_ismrmrd_acquisitions([random_acquisition])
-    return acq_info
 
 
 @pytest.fixture(params=({'seed': 0, 'n_other': 2, 'n_coils': 16, 'n_z': 32, 'n_y': 128, 'n_x': 256},))
