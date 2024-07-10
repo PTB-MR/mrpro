@@ -23,7 +23,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
-import numpy as np
 import torch
 
 from mrpro.data import enums
@@ -240,17 +239,16 @@ class KHeader(MoveDataMixin):
     def __repr__(self):
         """Representation method for KHeader class."""
         fov = self.encoding_fov if self.encoding_fov is not None else 'none'
-        te = str(np.round(self.te.item(), 4)) if self.te is not None else 'none'
-        ti = str(np.round(self.ti.item(), 4)) if self.ti is not None else 'none'
-        fa = str(np.round(self.fa.item(), 4)) if self.fa is not None else 'none'
+        te = [str(torch.round(te, decimals=4)) for te in self.te] if self.te is not None else 'none'
+        ti = [str(torch.round(ti, decimals=4)) for ti in self.ti] if self.ti is not None else 'none'
+        fa = [str(torch.round(fa, decimals=4)) for fa in self.fa] if self.fa is not None else 'none'
         out = (
-            f'KHeader with\n'
             f'FOV: '
             f'x = {fov.x}, '
             f'y = {fov.y}, '
-            f'z = {fov.z},\n'
-            f'TE: {te}, \n'
-            f'TI: {ti}, \n'
+            f'z = {fov.z}\n'
+            f'TE: {te}\n'
+            f'TI: {ti}\n'
             f'Flip angle: {fa}\n'
             f'Encoding matrix: '
             f'x = {self.encoding_matrix.x}, '

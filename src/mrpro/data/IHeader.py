@@ -120,3 +120,12 @@ class IHeader(MoveDataMixin):
         for name in MISC_TAGS:
             misc[name] = make_unique_tensor(get_float_items_from_all_dicoms(MISC_TAGS[name]))
         return cls(fov=fov, te=te, ti=ti, fa=fa, tr=tr, misc=misc)
+
+    def __repr__(self):
+        """Representation method for IHeader class."""
+        fov = self.fov if self.fov is not None else 'none'
+        te = [str(torch.round(te, decimals=4)) for te in self.te] if self.te is not None else 'none'
+        ti = [str(torch.round(ti, decimals=4)) for ti in self.ti] if self.ti is not None else 'none'
+        fa = [str(torch.round(fa, decimals=4)) for fa in self.fa] if self.fa is not None else 'none'
+        out = f'FOV: x={fov.x}, y={fov.y}, z={fov.z}\n' f'TE: {te}\nTI: {ti}\nflip angle: {fa}.'
+        return out

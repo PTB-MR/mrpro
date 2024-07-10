@@ -179,12 +179,5 @@ class IData(Data):
 
     def __repr__(self):
         """Representation method for IData class."""
-        fov = self.header.fov if self.header.fov is not None else 'none'
-        te = str(np.round(self.header.te.item(), 4)) if self.header.te is not None else 'none'
-        ti = str(np.round(self.header.ti.item(), 4)) if self.header.ti is not None else 'none'
-        fa = str(np.round(self.header.fa.item(), 4)) if self.header.fa is not None else 'none'
-        out = (
-            f'IData with \nshape: {list(self.data.shape)!s}, \nFOV: x={fov.x}, y={fov.y}, z={fov.z}, \n'
-            f'TE: {te}, \nTI: {ti}, \nflip angle: {fa}.'
-        )
+        out = f'IData with shape: {list(self.data.shape)!s}\n{self.header}'
         return out

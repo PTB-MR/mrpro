@@ -204,7 +204,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
 
     def __repr__(self):
         """Representation method for KData class."""
-        return f'KData with shape {list(self.data.shape)!s} and \n{self.header}'
+        return f'KData with shape {list(self.data.shape)!s}\n{self.header}'
 
 
 class _KDataProtocol(Protocol):
