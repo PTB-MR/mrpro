@@ -97,28 +97,18 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span> <span class="nn">dataclasses</span>
-<span class="kn">from</span> <span class="nn">concurrent.futures</span> <span class="kn">import</span> <span class="n">ProcessPoolExecutor</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span>
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Self</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">numpy.typing</span> <span class="kn">import</span> <span class="n">ArrayLike</span>
-<span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="kn">import</span> <span class="n">ConvexHull</span><span class="p">,</span> <span class="n">Voronoi</span>
 
+<span class="kn">from</span> <span class="nn">mrpro.algorithms.dcf.dcf_voronoi</span> <span class="kn">import</span> <span class="n">dcf_1d</span><span class="p">,</span> <span class="n">dcf_2d3d_voronoi</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.KTrajectory</span> <span class="kn">import</span> <span class="n">KTrajectory</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.MoveDataMixin</span> <span class="kn">import</span> <span class="n">MoveDataMixin</span>
 <span class="kn">from</span> <span class="nn">mrpro.utils</span> <span class="kn">import</span> <span class="n">smap</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span> <span class="nn">mrpro.operators.DensityCompensationOp</span> <span class="kn">import</span> <span class="n">DensityCompensationOp</span>
-
-<span class="n">UNIQUE_ROUNDING_DECIMALS</span> <span class="o">=</span> <span class="mi">15</span>
-
-
-<span class="k">def</span> <span class="nf">_volume</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">ConvexHull</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">volume</span>
 
 
 <div class="viewcode-block" id="DcfData">
@@ -129,115 +119,6 @@
 
     <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Density compensation values. Shape (... other, k2, k1, k0)&quot;&quot;&quot;</span>
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_dcf_1d</span><span class="p">(</span><span class="n">traj</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate sample density compensation function for 1D trajectory.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        traj</span>
-<span class="sd">            k-space positions, 1D tensor</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">traj_sorted</span><span class="p">,</span> <span class="n">inverse</span><span class="p">,</span> <span class="n">counts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-            <span class="n">torch</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">traj</span><span class="p">,</span> <span class="n">decimals</span><span class="o">=</span><span class="n">UNIQUE_ROUNDING_DECIMALS</span><span class="p">),</span>
-            <span class="nb">sorted</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="c1"># For a sorted trajectory: x0 x1 x2 ... xN</span>
-        <span class="c1"># we assign the point at x1 the area (x1 - x0) / 2  + (x2 - x1) / 2,</span>
-        <span class="c1"># this is done by central differences (-1,0,1).</span>
-        <span class="c1"># For the edges, we append/prepend the values afterwards, such that:</span>
-        <span class="c1"># we assign the point at x0 the area (x1 - x0) / 2 + (x1 - x0) / 2, and</span>
-        <span class="c1"># we assign the point at xN the area (xN - xN-1) / 2 + (xN - xN-1) / 2.</span>
-
-        <span class="n">kernel</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">traj</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="n">elements</span> <span class="o">:=</span> <span class="nb">len</span><span class="p">(</span><span class="n">traj_sorted</span><span class="p">))</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="n">central_diff</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">conv1d</span><span class="p">(</span><span class="n">traj_sorted</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:],</span> <span class="n">kernel</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
-            <span class="n">first</span> <span class="o">=</span> <span class="n">traj_sorted</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">traj_sorted</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">last</span> <span class="o">=</span> <span class="n">traj_sorted</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">traj_sorted</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
-            <span class="n">central_diff</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">first</span><span class="p">[</span><span class="kc">None</span><span class="p">],</span> <span class="n">central_diff</span><span class="p">,</span> <span class="n">last</span><span class="p">[</span><span class="kc">None</span><span class="p">]),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">elements</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="n">diff</span> <span class="o">=</span> <span class="n">traj_sorted</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">traj_sorted</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">central_diff</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">diff</span><span class="p">[</span><span class="kc">None</span><span class="p">],</span> <span class="n">diff</span><span class="p">[</span><span class="kc">None</span><span class="p">]),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">central_diff</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">traj_sorted</span><span class="p">)</span>
-
-        <span class="c1"># Repeated points are reduced by the number of repeats</span>
-        <span class="n">dcf</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">central_diff</span> <span class="o">/</span> <span class="n">counts</span><span class="p">)[</span><span class="n">inverse</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">dcf</span>
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_dcf_2d3d_voronoi</span><span class="p">(</span><span class="n">traj</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate sample density compensation function using voronoi method.</span>
-
-<span class="sd">        Points at the edge of k-space are detected as outliers and assigned the</span>
-<span class="sd">        area of the 1% largest dcf values.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        traj</span>
-<span class="sd">            k-space positions (2 or 3, k2, k1, k0)</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">            density compensation values (1, k2, k1, k0)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># 2D and 3D trajectories supported</span>
-        <span class="n">dim</span> <span class="o">=</span> <span class="n">traj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">dim</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Only 2D or 3D trajectories supported, not </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s1">D.&#39;</span><span class="p">)</span>
-
-        <span class="c1"># Calculate dcf only for unique k-space positions</span>
-        <span class="n">traj_dim</span> <span class="o">=</span> <span class="n">traj</span><span class="o">.</span><span class="n">shape</span>
-        <span class="n">traj_numpy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">traj</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">decimals</span><span class="o">=</span><span class="n">UNIQUE_ROUNDING_DECIMALS</span><span class="p">)</span>
-        <span class="n">traj_numpy</span> <span class="o">=</span> <span class="n">traj_numpy</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">traj_unique</span><span class="p">,</span> <span class="n">inverse</span><span class="p">,</span> <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">traj_numpy</span><span class="p">,</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="c1"># Especially in 3D, errors in the calculation of the convex hull can occur for edge points. To avoid this,</span>
-        <span class="c1"># the corner points of a cube bounding box are added here. The bounding box is chosen very large to ensure these</span>
-        <span class="c1"># edge points of the trajectory can still be accurately detected in the outlier detection further down.</span>
-        <span class="n">furthest_corner</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">traj_unique</span><span class="p">))</span>
-        <span class="n">corner_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">product</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">repeat</span><span class="o">=</span><span class="n">dim</span><span class="p">)))</span> <span class="o">*</span> <span class="n">furthest_corner</span> <span class="o">*</span> <span class="mi">10</span>
-        <span class="n">traj_extendend</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">traj_unique</span><span class="p">,</span> <span class="n">corner_points</span><span class="o">.</span><span class="n">transpose</span><span class="p">()),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="c1"># Carry out voronoi tessellation</span>
-        <span class="n">vdiagram</span> <span class="o">=</span> <span class="n">Voronoi</span><span class="p">(</span><span class="n">traj_extendend</span><span class="o">.</span><span class="n">transpose</span><span class="p">())</span>
-        <span class="n">regions</span> <span class="o">=</span> <span class="p">[</span><span class="n">vdiagram</span><span class="o">.</span><span class="n">regions</span><span class="p">[</span><span class="n">r</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">vdiagram</span><span class="o">.</span><span class="n">point_region</span><span class="p">[:</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">corner_points</span><span class="p">)]]</span>  <span class="c1"># Ignore corner points</span>
-        <span class="n">vertices</span> <span class="o">=</span> <span class="p">[</span><span class="n">vdiagram</span><span class="o">.</span><span class="n">vertices</span><span class="p">[</span><span class="n">region</span><span class="p">]</span> <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="c1"># Shoelace equation for 2d</span>
-            <span class="n">dcf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">v</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="o">/</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">vertices</span><span class="p">])</span>
-
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Calculate volume/area of voronoi cells using processes, as this is a very time-consuming operation</span>
-            <span class="c1"># and ConvexHull is singlethreaded and does not seem to drop the GIL</span>
-            <span class="c1"># TODO: this could maybe be made faster as the polyhedrons are known to be convex</span>
-            <span class="n">future</span> <span class="o">=</span> <span class="n">ProcessPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">get_num_threads</span><span class="p">())</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">_volume</span><span class="p">,</span> <span class="n">vertices</span><span class="p">,</span> <span class="n">chunksize</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-            <span class="n">dcf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">future</span><span class="p">))</span>
-
-        <span class="c1"># Get outliers (i.e. voronoi cell which are unbound) and set them to a reasonable value</span>
-        <span class="c1"># Outliers are defined as values larger than 1.5 * inter quartile range of the values</span>
-        <span class="c1"># Outliers are set to the average of the 1% largest values.</span>
-        <span class="n">dcf_sorted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">dcf</span><span class="p">)</span>
-        <span class="n">q1</span><span class="p">,</span> <span class="n">q3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">dcf_sorted</span><span class="p">,</span> <span class="p">[</span><span class="mi">25</span><span class="p">,</span> <span class="mi">75</span><span class="p">])</span>
-        <span class="n">iqr</span> <span class="o">=</span> <span class="n">q3</span> <span class="o">-</span> <span class="n">q1</span>
-        <span class="n">upper_bound</span> <span class="o">=</span> <span class="n">q3</span> <span class="o">+</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">iqr</span>
-        <span class="n">idx_outliers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">dcf</span> <span class="o">&gt;</span> <span class="n">upper_bound</span><span class="p">)</span>
-        <span class="n">n_outliers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx_outliers</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="n">high_values_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.99</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dcf_sorted</span><span class="p">)</span> <span class="o">-</span> <span class="n">n_outliers</span><span class="p">))</span>
-        <span class="n">high_values_end</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dcf_sorted</span><span class="p">)</span> <span class="o">-</span> <span class="n">n_outliers</span>  <span class="c1"># this works also for n_outliers==0</span>
-        <span class="n">fill_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">dcf_sorted</span><span class="p">[</span><span class="n">high_values_start</span><span class="p">:</span><span class="n">high_values_end</span><span class="p">])</span>
-        <span class="n">dcf</span><span class="p">[</span><span class="n">idx_outliers</span><span class="p">]</span> <span class="o">=</span> <span class="n">fill_value</span>
-
-        <span class="c1"># Sort dcf values back into the original order (i.e. before calling unique)</span>
-        <span class="n">dcf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">dcf</span> <span class="o">/</span> <span class="n">counts</span><span class="p">)[</span><span class="n">inverse</span><span class="p">],</span> <span class="n">traj_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
-
-        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">dcf</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">traj</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DcfData.from_traj_voronoi">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.DcfData.html#mrpro.data.DcfData.from_traj_voronoi">[docs]</a>
@@ -260,7 +141,7 @@
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_singleton_ks</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="c1"># Found a dimension with only one non-singleton axes in ks</span>
                 <span class="c1"># --&gt; Can handle this as a 1D trajectory</span>
-                <span class="n">dcfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">smap</span><span class="p">(</span><span class="n">DcfData</span><span class="o">.</span><span class="n">_dcf_1d</span><span class="p">,</span> <span class="n">non_singleton_ks</span><span class="o">.</span><span class="n">pop</span><span class="p">(),</span> <span class="p">(</span><span class="n">dim</span><span class="p">,)))</span>
+                <span class="n">dcfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">smap</span><span class="p">(</span><span class="n">dcf_1d</span><span class="p">,</span> <span class="n">non_singleton_ks</span><span class="o">.</span><span class="n">pop</span><span class="p">(),</span> <span class="p">(</span><span class="n">dim</span><span class="p">,)))</span>
             <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_singleton_ks</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="c1"># More than one of the ks is non-singleton</span>
                 <span class="c1"># --&gt; A full dimension needing voronoi</span>
@@ -272,7 +153,7 @@
 
         <span class="k">if</span> <span class="n">ks_needing_voronoi</span><span class="p">:</span>
             <span class="c1"># Handle full dimensions needing voronoi</span>
-            <span class="n">dcfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">smap</span><span class="p">(</span><span class="n">DcfData</span><span class="o">.</span><span class="n">_dcf_2d3d_voronoi</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">ks_needing_voronoi</span><span class="p">),</span> <span class="o">-</span><span class="mi">4</span><span class="p">),</span> <span class="mi">4</span><span class="p">))</span>
+            <span class="n">dcfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">smap</span><span class="p">(</span><span class="n">dcf_2d3d_voronoi</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">ks_needing_voronoi</span><span class="p">),</span> <span class="o">-</span><span class="mi">4</span><span class="p">),</span> <span class="mi">4</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">dcfs</span><span class="p">:</span>
             <span class="c1"># Multiply all dcfs together</span>

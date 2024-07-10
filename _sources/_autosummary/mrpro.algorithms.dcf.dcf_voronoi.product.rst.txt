@@ -1,0 +1,25 @@
+mrpro.algorithms.dcf.dcf\_voronoi.product
+=========================================
+
+.. currentmodule:: mrpro.algorithms.dcf.dcf_voronoi
+
+.. autoclass:: product
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~product.__init__
+   
+   
+
+   
+   
+   

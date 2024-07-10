@@ -36,6 +36,7 @@
    :recursive:
 
    mrpro.algorithms.csm
+   mrpro.algorithms.dcf
    mrpro.algorithms.optimizers
    mrpro.algorithms.reconstruction
 
