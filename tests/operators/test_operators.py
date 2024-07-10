@@ -4,8 +4,7 @@ from typing import cast
 
 import pytest
 import torch
-from mrpro.operators import LinearOperator
-from mrpro.operators import Operator
+from mrpro.operators import LinearOperator, Operator
 
 from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test

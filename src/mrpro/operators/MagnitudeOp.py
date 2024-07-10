@@ -16,8 +16,7 @@
 
 import torch
 
-from mrpro.operators.EndomorphOperator import EndomorphOperator
-from mrpro.operators.EndomorphOperator import endomorph
+from mrpro.operators.EndomorphOperator import EndomorphOperator, endomorph
 
 
 class MagnitudeOp(EndomorphOperator):

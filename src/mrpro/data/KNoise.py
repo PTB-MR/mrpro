@@ -14,11 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 import dataclasses
 from collections.abc import Callable
 from pathlib import Path
+from typing import Self
 
 import ismrmrd
 import torch
@@ -43,7 +42,7 @@ class KNoise(MoveDataMixin):
     @classmethod
     def from_file(
         cls, filename: str | Path, dataset_idx: int = -1, acquisition_filter_criterion: Callable = is_noise_acquisition
-    ) -> KNoise:
+    ) -> Self:
         """Load noise measurements from ISMRMRD file.
 
         Parameters

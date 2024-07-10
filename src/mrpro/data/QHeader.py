@@ -14,9 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 from dataclasses import dataclass
+from typing import Self
 
 from pydicom.dataset import Dataset
 from pydicom.tag import Tag
@@ -35,7 +34,7 @@ class QHeader(MoveDataMixin):
     fov: SpatialDimension[float]
 
     @classmethod
-    def from_iheader(cls, iheader: IHeader) -> QHeader:
+    def from_iheader(cls, iheader: IHeader) -> Self:
         """Create QHeader object from KHeader object.
 
         Parameters
@@ -46,7 +45,7 @@ class QHeader(MoveDataMixin):
         return cls(fov=iheader.fov)
 
     @classmethod
-    def from_kheader(cls, kheader: KHeader) -> QHeader:
+    def from_kheader(cls, kheader: KHeader) -> Self:
         """Create QHeader object from KHeader object.
 
         Parameters
@@ -57,7 +56,7 @@ class QHeader(MoveDataMixin):
         return cls(fov=kheader.recon_fov)
 
     @classmethod
-    def from_dicom(cls, dicom_dataset: Dataset) -> QHeader:
+    def from_dicom(cls, dicom_dataset: Dataset) -> Self:
         """Read DICOM file containing qMRI data and return QHeader object.
 
         Parameters
