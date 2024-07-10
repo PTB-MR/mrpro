@@ -119,11 +119,22 @@
 
     <span class="c1"># ToDo: decide which attributes to store in the header</span>
     <span class="n">fov</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Field of view.&quot;&quot;&quot;</span>
+
     <span class="n">te</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Echo time.&quot;&quot;&quot;</span>
+
     <span class="n">ti</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inversion time.&quot;&quot;&quot;</span>
+
     <span class="n">fa</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Flip angle.&quot;&quot;&quot;</span>
+
     <span class="n">tr</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Repetition time.&quot;&quot;&quot;</span>
+
     <span class="n">misc</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dictionary with miscellaneous parameters.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="IHeader.from_kheader">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.IHeader.html#mrpro.data.IHeader.from_kheader">[docs]</a>

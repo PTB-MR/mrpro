@@ -113,22 +113,55 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Acquisition index for each readout.&quot;&quot;&quot;</span>
 
     <span class="n">k1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;First phase encoding.&quot;&quot;&quot;</span>
+
     <span class="n">k2</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Second phase encoding.&quot;&quot;&quot;</span>
+
     <span class="n">average</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Signal average.&quot;&quot;&quot;</span>
+
     <span class="nb">slice</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Slice number (multi-slice 2D).&quot;&quot;&quot;</span>
+
     <span class="n">contrast</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Echo number in multi-echo.&quot;&quot;&quot;</span>
+
     <span class="n">phase</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cardiac phase.&quot;&quot;&quot;</span>
+
     <span class="n">repetition</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Counter in repeated/dynamic acquisitions.&quot;&quot;&quot;</span>
+
     <span class="nb">set</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sets of different preparation, e.g. flow encoding, diffusion weighting.&quot;&quot;&quot;</span>
+
     <span class="n">segment</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Counter for segmented acquisitions.&quot;&quot;&quot;</span>
+
     <span class="n">user0</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User index 0.&quot;&quot;&quot;</span>
+
     <span class="n">user1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User index 1.&quot;&quot;&quot;</span>
+
     <span class="n">user2</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User index 2.&quot;&quot;&quot;</span>
+
     <span class="n">user3</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User index 3.&quot;&quot;&quot;</span>
+
     <span class="n">user4</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User index 4.&quot;&quot;&quot;</span>
+
     <span class="n">user5</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User index 5.&quot;&quot;&quot;</span>
+
     <span class="n">user6</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
-    <span class="n">user7</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User index 6.&quot;&quot;&quot;</span>
+
+    <span class="n">user7</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User index 7.&quot;&quot;&quot;</span></div>
 
 
 
@@ -139,33 +172,77 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Acquisition information for each readout.&quot;&quot;&quot;</span>
 
     <span class="n">idx</span><span class="p">:</span> <span class="n">AcqIdx</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Indices describing acquisitions (i.e. readouts).&quot;&quot;&quot;</span>
+
     <span class="n">acquisition_time_stamp</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Clock time stamp (e.g. milliseconds since midnight).&quot;&quot;&quot;</span>
+
     <span class="n">active_channels</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of active receiver coil elements.&quot;&quot;&quot;</span>
+
     <span class="n">available_channels</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of available receiver coil elements.&quot;&quot;&quot;</span>
+
     <span class="n">center_sample</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Index of the readout sample corresponding to k-space center (zero indexed).&quot;&quot;&quot;</span>
+
     <span class="n">channel_mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Bit mask indicating active coils (64*16 = 1024 bits).&quot;&quot;&quot;</span>
+
     <span class="n">discard_post</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of readout samples to be discarded at the end (e.g. if the ADC is active during gradient events).&quot;&quot;&quot;</span>
+
     <span class="n">discard_pre</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of readout samples to be discarded at the beginning (e.g. if the ADC is active during gradient events)&quot;&quot;&quot;</span>
+
     <span class="n">encoding_space_ref</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Indexed reference to the encoding spaces enumerated in the MRD (xml) header.&quot;&quot;&quot;</span>
+
     <span class="n">flags</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A bit mask of common attributes applicable to individual acquisition readouts.&quot;&quot;&quot;</span>
+
     <span class="n">measurement_uid</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unique ID corresponding to the readout.&quot;&quot;&quot;</span>
 
     <span class="n">number_of_samples</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of readout sample points per readout (readouts may have different</span>
 <span class="sd">    number of sample points).&quot;&quot;&quot;</span>
 
     <span class="n">patient_table_position</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Offset position of the patient table, in LPS coordinates.&quot;&quot;&quot;</span>
+
     <span class="n">phase_dir</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Directional cosine of phase encoding (2D).&quot;&quot;&quot;</span>
+
     <span class="n">physiology_time_stamp</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Time stamps relative to physiological triggering, e.g. ECG, pulse oximetry, respiratory.&quot;&quot;&quot;</span>
+
     <span class="n">position</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Center of the excited volume, in LPS coordinates relative to isocenter in millimeters.&quot;&quot;&quot;</span>
+
     <span class="n">read_dir</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Directional cosine of readout/frequency encoding.&quot;&quot;&quot;</span>
+
     <span class="n">sample_time_us</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Readout bandwidth, as time between samples in microseconds.&quot;&quot;&quot;</span>
+
     <span class="n">scan_counter</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Zero-indexed incrementing counter for readouts.&quot;&quot;&quot;</span>
+
     <span class="n">slice_dir</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Directional cosine of slice normal, i.e. cross-product of read_dir and phase_dir.&quot;&quot;&quot;</span>
+
     <span class="n">trajectory_dimensions</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>  <span class="c1"># =3. We only support 3D Trajectories: kz always exists.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dimensionality of the k-space trajectory vector.&quot;&quot;&quot;</span>
+
     <span class="n">user_float</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User-defined float parameters.&quot;&quot;&quot;</span>
+
     <span class="n">user_int</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User-defined int parameters.&quot;&quot;&quot;</span>
+
     <span class="n">version</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Major version number.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="AcqInfo.from_ismrmrd_acquisitions">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.AcqInfo.html#mrpro.data.AcqInfo.from_ismrmrd_acquisitions">[docs]</a>

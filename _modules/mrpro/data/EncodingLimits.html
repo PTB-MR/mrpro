@@ -108,8 +108,13 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Limits dataclass with min, max, and center attributes.&quot;&quot;&quot;</span>
 
     <span class="nb">min</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lower boundary.&quot;&quot;&quot;</span>
+
     <span class="nb">max</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Upper boundary.&quot;&quot;&quot;</span>
+
     <span class="n">center</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Center.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="Limits.from_ismrmrd">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.Limits.html#mrpro.data.Limits.from_ismrmrd">[docs]</a>
@@ -143,23 +148,58 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">k0</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;First k-space encoding.&quot;&quot;&quot;</span>
+
     <span class="n">k1</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Second k-space encoding.&quot;&quot;&quot;</span>
+
     <span class="n">k2</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Third k-space encoding.&quot;&quot;&quot;</span>
+
     <span class="n">average</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Signal average.&quot;&quot;&quot;</span>
+
     <span class="nb">slice</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Slice number (multi-slice 2D).&quot;&quot;&quot;</span>
+
     <span class="n">contrast</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Echo number in multi-echo.&quot;&quot;&quot;</span>
+
     <span class="n">phase</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cardiac phase.&quot;&quot;&quot;</span>
+
     <span class="n">repetition</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Repeated/dynamic acquisitions.&quot;&quot;&quot;</span>
+
     <span class="nb">set</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sets of different preparation.&quot;&quot;&quot;</span>
+
     <span class="n">segment</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Segments of segmented acquisition.&quot;&quot;&quot;</span>
+
     <span class="n">user_0</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User index 0.&quot;&quot;&quot;</span>
+
     <span class="n">user_1</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User index 1.&quot;&quot;&quot;</span>
+
     <span class="n">user_2</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User index 2.&quot;&quot;&quot;</span>
+
     <span class="n">user_3</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User index 3.&quot;&quot;&quot;</span>
+
     <span class="n">user_4</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User index 4.&quot;&quot;&quot;</span>
+
     <span class="n">user_5</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User index 5.&quot;&quot;&quot;</span>
+
     <span class="n">user_6</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User index 6.&quot;&quot;&quot;</span>
+
     <span class="n">user_7</span><span class="p">:</span> <span class="n">Limits</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Limits</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;User index 7.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="EncodingLimits.from_ismrmrd_encoding_limits_type">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.data.EncodingLimits.html#mrpro.data.EncodingLimits.from_ismrmrd_encoding_limits_type">[docs]</a>

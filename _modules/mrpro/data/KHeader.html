@@ -132,33 +132,88 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">trajectory</span><span class="p">:</span> <span class="n">KTrajectoryCalculator</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to calculate the k-space trajectory.&quot;&quot;&quot;</span>
+
     <span class="n">b0</span><span class="p">:</span> <span class="nb">float</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Magnetic field strength.&quot;&quot;&quot;</span>
+
     <span class="n">encoding_limits</span><span class="p">:</span> <span class="n">EncodingLimits</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;K-space encoding limits.&quot;&quot;&quot;</span>
+
     <span class="n">recon_matrix</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dimensions of the reconstruction matrix.&quot;&quot;&quot;</span>
+
     <span class="n">recon_fov</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Field-of-view of the reconstructed image.&quot;&quot;&quot;</span>
+
     <span class="n">encoding_matrix</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dimensions of the encoded k-space matrix.&quot;&quot;&quot;</span>
+
     <span class="n">encoding_fov</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Field of view of the image encoded by the k-space trajectory.&quot;&quot;&quot;</span>
+
     <span class="n">acq_info</span><span class="p">:</span> <span class="n">AcqInfo</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Information of the acquisitions (i.e. readout lines).&quot;&quot;&quot;</span>
+
     <span class="n">h1_freq</span><span class="p">:</span> <span class="nb">float</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lamor frequency of hydrogen nuclei.&quot;&quot;&quot;</span>
+
     <span class="n">n_coils</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of receiver coils.&quot;&quot;&quot;</span>
+
     <span class="n">datetime</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Date and time of acquisition.&quot;&quot;&quot;</span>
+
     <span class="n">te</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Echo time.&quot;&quot;&quot;</span>
+
     <span class="n">ti</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inversion time.&quot;&quot;&quot;</span>
+
     <span class="n">fa</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Flip angle.&quot;&quot;&quot;</span>
+
     <span class="n">tr</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Repetition time.&quot;&quot;&quot;</span>
+
     <span class="n">echo_spacing</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Echo spacing.&quot;&quot;&quot;</span>
+
     <span class="n">echo_train_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of echoes in a multi-echo acquisition.&quot;&quot;&quot;</span>
+
     <span class="n">seq_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">UNKNOWN</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Type of sequence.&quot;&quot;&quot;</span>
+
     <span class="n">model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">UNKNOWN</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scanner model.&quot;&quot;&quot;</span>
+
     <span class="n">vendor</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">UNKNOWN</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scanner vendor.&quot;&quot;&quot;</span>
+
     <span class="n">protocol_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">UNKNOWN</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Name of the acquisition protocol.&quot;&quot;&quot;</span>
+
     <span class="n">misc</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>  <span class="c1"># do not use {} here!</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dictionary with miscellaneous parameters.&quot;&quot;&quot;</span>
+
     <span class="n">calibration_mode</span><span class="p">:</span> <span class="n">enums</span><span class="o">.</span><span class="n">CalibrationMode</span> <span class="o">=</span> <span class="n">enums</span><span class="o">.</span><span class="n">CalibrationMode</span><span class="o">.</span><span class="n">OTHER</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mode of how calibration data is acquired. &quot;&quot;&quot;</span>
+
     <span class="n">interleave_dim</span><span class="p">:</span> <span class="n">enums</span><span class="o">.</span><span class="n">InterleavingDimension</span> <span class="o">=</span> <span class="n">enums</span><span class="o">.</span><span class="n">InterleavingDimension</span><span class="o">.</span><span class="n">OTHER</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Interleaving dimension.&quot;&quot;&quot;</span>
+
     <span class="n">traj_type</span><span class="p">:</span> <span class="n">enums</span><span class="o">.</span><span class="n">TrajectoryType</span> <span class="o">=</span> <span class="n">enums</span><span class="o">.</span><span class="n">TrajectoryType</span><span class="o">.</span><span class="n">OTHER</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Type of trajectory.&quot;&quot;&quot;</span>
+
     <span class="n">measurement_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">UNKNOWN</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Measurement ID.&quot;&quot;&quot;</span>
+
     <span class="n">patient_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">UNKNOWN</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Name of the patient.&quot;&quot;&quot;</span>
+
     <span class="n">trajectory_description</span><span class="p">:</span> <span class="n">TrajectoryDescription</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">TrajectoryDescription</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Description of the trajectory.&quot;&quot;&quot;</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">fa_degree</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>

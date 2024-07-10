@@ -161,8 +161,13 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;MR raw data / k-space data class.&quot;&quot;&quot;</span>
 
     <span class="n">header</span><span class="p">:</span> <span class="n">KHeader</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Header information for k-space data&quot;&quot;&quot;</span>
+
     <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;K-space data. Shape (...other coils k2 k1 k0)&quot;&quot;&quot;</span>
+
     <span class="n">traj</span><span class="p">:</span> <span class="n">KTrajectory</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;K-space trajectory along kz, ky and kx. Shape (...other k2 k1 k0)&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="KData.from_file">
 <a class="viewcode-back" href="../../../../_autosummary/mrpro.data.KData.html#mrpro.data.KData.from_file">[docs]</a>

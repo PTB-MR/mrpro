@@ -164,76 +164,76 @@
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">idx</span></code></p></td>
-<td><p></p></td>
+<td><p>Indices describing acquisitions (i.e. readouts).</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">acquisition_time_stamp</span></code></p></td>
-<td><p></p></td>
+<td><p>Clock time stamp (e.g. milliseconds since midnight).</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">active_channels</span></code></p></td>
-<td><p></p></td>
+<td><p>Number of active receiver coil elements.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">available_channels</span></code></p></td>
-<td><p></p></td>
+<td><p>Number of available receiver coil elements.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">center_sample</span></code></p></td>
-<td><p></p></td>
+<td><p>Index of the readout sample corresponding to k-space center (zero indexed).</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">channel_mask</span></code></p></td>
-<td><p></p></td>
+<td><p>Bit mask indicating active coils (64*16 = 1024 bits).</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">discard_post</span></code></p></td>
-<td><p></p></td>
+<td><p>Number of readout samples to be discarded at the end (e.g. if the ADC is active during gradient events).</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">discard_pre</span></code></p></td>
-<td><p></p></td>
+<td><p>Number of readout samples to be discarded at the beginning (e.g. if the ADC is active during gradient events).</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">encoding_space_ref</span></code></p></td>
-<td><p></p></td>
+<td><p>Indexed reference to the encoding spaces enumerated in the MRD (xml) header.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">flags</span></code></p></td>
-<td><p></p></td>
+<td><p>A bit mask of common attributes applicable to individual acquisition readouts.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">measurement_uid</span></code></p></td>
-<td><p></p></td>
+<td><p>Unique ID corresponding to the readout.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">number_of_samples</span></code></p></td>
 <td><p>Number of readout sample points per readout (readouts may have different number of sample points).</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">patient_table_position</span></code></p></td>
-<td><p></p></td>
+<td><p>Offset position of the patient table, in LPS coordinates.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">phase_dir</span></code></p></td>
-<td><p></p></td>
+<td><p>Directional cosine of phase encoding (2D).</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">physiology_time_stamp</span></code></p></td>
-<td><p></p></td>
+<td><p>Time stamps relative to physiological triggering, e.g. ECG, pulse oximetry, respiratory.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">position</span></code></p></td>
-<td><p></p></td>
+<td><p>Center of the excited volume, in LPS coordinates relative to isocenter in millimeters.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_dir</span></code></p></td>
-<td><p></p></td>
+<td><p>Directional cosine of readout/frequency encoding.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample_time_us</span></code></p></td>
-<td><p></p></td>
+<td><p>Readout bandwidth, as time between samples in microseconds.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">scan_counter</span></code></p></td>
-<td><p></p></td>
+<td><p>Zero-indexed incrementing counter for readouts.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">slice_dir</span></code></p></td>
-<td><p></p></td>
+<td><p>Directional cosine of slice normal, i.e. cross-product of read_dir and phase_dir.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">trajectory_dimensions</span></code></p></td>
-<td><p></p></td>
+<td><p>Dimensionality of the k-space trajectory vector.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">user_float</span></code></p></td>
-<td><p></p></td>
+<td><p>User-defined float parameters.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">user_int</span></code></p></td>
-<td><p></p></td>
+<td><p>User-defined int parameters.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">version</span></code></p></td>
-<td><p></p></td>
+<td><p>Major version number.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">device</span></code></p></td>
 <td><p>Return the device of the tensors.</p></td>
@@ -246,6 +246,36 @@
 </tr>
 </tbody>
 </table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.acquisition_time_stamp">
+<span class="sig-name descname"><span class="pre">acquisition_time_stamp</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.acquisition_time_stamp" title="Link to this definition"></a></dt>
+<dd><p>Clock time stamp (e.g. milliseconds since midnight).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.active_channels">
+<span class="sig-name descname"><span class="pre">active_channels</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.active_channels" title="Link to this definition"></a></dt>
+<dd><p>Number of active receiver coil elements.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.available_channels">
+<span class="sig-name descname"><span class="pre">available_channels</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.available_channels" title="Link to this definition"></a></dt>
+<dd><p>Number of available receiver coil elements.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.center_sample">
+<span class="sig-name descname"><span class="pre">center_sample</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.center_sample" title="Link to this definition"></a></dt>
+<dd><p>Index of the readout sample corresponding to k-space center (zero indexed).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.channel_mask">
+<span class="sig-name descname"><span class="pre">channel_mask</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.channel_mask" title="Link to this definition"></a></dt>
+<dd><p>Bit mask indicating active coils (64*16 = 1024 bits).</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.AcqInfo.clone">
 <span class="sig-name descname"><span class="pre">clone</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.AcqInfo.clone" title="Link to this definition"></a></dt>
@@ -304,6 +334,18 @@ None is returned.</p>
 </dl>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.discard_post">
+<span class="sig-name descname"><span class="pre">discard_post</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.discard_post" title="Link to this definition"></a></dt>
+<dd><p>Number of readout samples to be discarded at the end (e.g. if the ADC is active during gradient events).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.discard_pre">
+<span class="sig-name descname"><span class="pre">discard_pre</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.discard_pre" title="Link to this definition"></a></dt>
+<dd><p>Number of readout samples to be discarded at the beginning (e.g. if the ADC is active during gradient events)</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.data.AcqInfo.double">
 <span class="sig-name descname"><span class="pre">double</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.AcqInfo.double" title="Link to this definition"></a></dt>
@@ -318,6 +360,18 @@ This will also create new tensors for views</p></li>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.encoding_space_ref">
+<span class="sig-name descname"><span class="pre">encoding_space_ref</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.encoding_space_ref" title="Link to this definition"></a></dt>
+<dd><p>Indexed reference to the encoding spaces enumerated in the MRD (xml) header.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.flags">
+<span class="sig-name descname"><span class="pre">flags</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.flags" title="Link to this definition"></a></dt>
+<dd><p>A bit mask of common attributes applicable to individual acquisition readouts.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -347,6 +401,12 @@ This will also create new tensors for views</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.idx">
+<span class="sig-name descname"><span class="pre">idx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.AcqIdx.html#mrpro.data.AcqIdx" title="mrpro.data.AcqInfo.AcqIdx"><span class="pre">AcqIdx</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.idx" title="Link to this definition"></a></dt>
+<dd><p>Indices describing acquisitions (i.e. readouts).</p>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="mrpro.data.AcqInfo.is_cpu">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_cpu</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#mrpro.data.AcqInfo.is_cpu" title="Link to this definition"></a></dt>
@@ -368,10 +428,58 @@ returns True if the data class has no tensors as attributes.</p>
 </dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.measurement_uid">
+<span class="sig-name descname"><span class="pre">measurement_uid</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.measurement_uid" title="Link to this definition"></a></dt>
+<dd><p>Unique ID corresponding to the readout.</p>
+</dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="mrpro.data.AcqInfo.number_of_samples">
 <span class="sig-name descname"><span class="pre">number_of_samples</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.number_of_samples" title="Link to this definition"></a></dt>
 <dd><p>Number of readout sample points per readout (readouts may have different
 number of sample points).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.patient_table_position">
+<span class="sig-name descname"><span class="pre">patient_table_position</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.phantoms.coils.SpatialDimension.html#mrpro.phantoms.coils.SpatialDimension" title="mrpro.data.SpatialDimension.SpatialDimension"><span class="pre">SpatialDimension</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mrpro.data.AcqInfo.patient_table_position" title="Link to this definition"></a></dt>
+<dd><p>Offset position of the patient table, in LPS coordinates.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.phase_dir">
+<span class="sig-name descname"><span class="pre">phase_dir</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.phantoms.coils.SpatialDimension.html#mrpro.phantoms.coils.SpatialDimension" title="mrpro.data.SpatialDimension.SpatialDimension"><span class="pre">SpatialDimension</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mrpro.data.AcqInfo.phase_dir" title="Link to this definition"></a></dt>
+<dd><p>Directional cosine of phase encoding (2D).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.physiology_time_stamp">
+<span class="sig-name descname"><span class="pre">physiology_time_stamp</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.physiology_time_stamp" title="Link to this definition"></a></dt>
+<dd><p>Time stamps relative to physiological triggering, e.g. ECG, pulse oximetry, respiratory.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.position">
+<span class="sig-name descname"><span class="pre">position</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.phantoms.coils.SpatialDimension.html#mrpro.phantoms.coils.SpatialDimension" title="mrpro.data.SpatialDimension.SpatialDimension"><span class="pre">SpatialDimension</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mrpro.data.AcqInfo.position" title="Link to this definition"></a></dt>
+<dd><p>Center of the excited volume, in LPS coordinates relative to isocenter in millimeters.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.read_dir">
+<span class="sig-name descname"><span class="pre">read_dir</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.phantoms.coils.SpatialDimension.html#mrpro.phantoms.coils.SpatialDimension" title="mrpro.data.SpatialDimension.SpatialDimension"><span class="pre">SpatialDimension</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mrpro.data.AcqInfo.read_dir" title="Link to this definition"></a></dt>
+<dd><p>Directional cosine of readout/frequency encoding.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.sample_time_us">
+<span class="sig-name descname"><span class="pre">sample_time_us</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.sample_time_us" title="Link to this definition"></a></dt>
+<dd><p>Readout bandwidth, as time between samples in microseconds.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.scan_counter">
+<span class="sig-name descname"><span class="pre">scan_counter</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.scan_counter" title="Link to this definition"></a></dt>
+<dd><p>Zero-indexed incrementing counter for readouts.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -388,6 +496,12 @@ This will also create new tensors for views</p></li>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.slice_dir">
+<span class="sig-name descname"><span class="pre">slice_dir</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.phantoms.coils.SpatialDimension.html#mrpro.phantoms.coils.SpatialDimension" title="mrpro.data.SpatialDimension.SpatialDimension"><span class="pre">SpatialDimension</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mrpro.data.AcqInfo.slice_dir" title="Link to this definition"></a></dt>
+<dd><p>Directional cosine of slice normal, i.e. cross-product of read_dir and phase_dir.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -420,6 +534,30 @@ even if no conversion is necessary.
 If two fields are views of the same data before, in the result they will be independent
 copies if copy is set to True or a conversion is necessary.
 If set to False, some Tensors might be shared between the original and the new object.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.trajectory_dimensions">
+<span class="sig-name descname"><span class="pre">trajectory_dimensions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.trajectory_dimensions" title="Link to this definition"></a></dt>
+<dd><p>Dimensionality of the k-space trajectory vector.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.user_float">
+<span class="sig-name descname"><span class="pre">user_float</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.user_float" title="Link to this definition"></a></dt>
+<dd><p>User-defined float parameters.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.user_int">
+<span class="sig-name descname"><span class="pre">user_int</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.user_int" title="Link to this definition"></a></dt>
+<dd><p>User-defined int parameters.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.AcqInfo.version">
+<span class="sig-name descname"><span class="pre">version</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.version" title="Link to this definition"></a></dt>
+<dd><p>Major version number.</p>
 </dd></dl>
 
 </dd></dl>
