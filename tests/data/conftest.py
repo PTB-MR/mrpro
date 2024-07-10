@@ -14,15 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import pytest
 import torch
 from ismrmrd import xsd
 from mrpro.data import AcqInfo
 
 from tests import RandomGenerator
-from tests.data import Dicom2DTestImage
 from tests.conftest import generate_random_data
+from tests.data import Dicom2DTestImage
 
 
 @pytest.fixture(params=({'seed': 0},))
@@ -41,6 +40,7 @@ def cartesian_grid(request):
         return kz.unsqueeze(0), ky.unsqueeze(0), kx.unsqueeze(0)
 
     return generate
+
 
 @pytest.fixture(params=({'seed': 0},))
 def random_mandatory_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
