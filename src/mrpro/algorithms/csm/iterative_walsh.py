@@ -30,7 +30,9 @@ def iterative_walsh(
     This is for a single set of coil images. The input should be a tensor with dimensions
     (coils, z, y, x). The output will have the same dimensions.
     Either apply this function individually to each set of coil images,
-    or see CsmData.from_idata_walsh which performs this operation on a whole dataset [1]_ [2]_.
+    or see CsmData.from_idata_walsh which performs this operation on a whole dataset [1]_.
+
+    This function is inspired by https://github.com/ismrmrd/ismrmrd-python-tools.
 
     Parameters
     ----------
@@ -43,11 +45,8 @@ def iterative_walsh(
 
     References
     ----------
-    .. [1] https://github.com/ismrmrd/ismrmrd-python-tools
-    .. [2] Daval-Frerot G, Ciuciu P (2022) Iterative static field map estimation for off-resonance correction in
-    non-Cartesian susceptibility weighted imaging. MRM 88(4): mrm.29297.
-            https://onlinelibrary.wiley.com/doi/full/10.1002/mrm.29297
-    .. [3]
+    .. [1] Daval-Frerot G, Ciuciu P (2022) Iterative static field map estimation for off-resonance correction in
+           non-Cartesian susceptibility weighted imaging. MRM 88(4): mrm.29297.
     """
     if isinstance(smoothing_width, int):
         smoothing_width = SpatialDimension(smoothing_width, smoothing_width, smoothing_width)
