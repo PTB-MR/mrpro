@@ -1,3 +1,3 @@
 from mrpro.algorithms.reconstruction.Reconstruction import Reconstruction
 from mrpro.algorithms.reconstruction.DirectReconstruction import DirectReconstruction
-from mrpro.algorithms.reconstruction._iterative_sense_reconstruction import IterativeSenseReconstruction
+from mrpro.algorithms.reconstruction.IterativeSenseReconstruction import IterativeSenseReconstruction

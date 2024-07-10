@@ -19,17 +19,17 @@ from __future__ import annotations
 from typing import Literal
 from typing import Self
 
-from mrpro.algorithms._prewhiten_kspace import prewhiten_kspace
+from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
 from mrpro.algorithms.optimizers import cg
 from mrpro.algorithms.reconstruction import DirectReconstruction
 from mrpro.algorithms.reconstruction import Reconstruction
-from mrpro.data._CsmData import CsmData
-from mrpro.data._DcfData import DcfData
-from mrpro.data._IData import IData
-from mrpro.data._kdata._KData import KData
-from mrpro.data._KNoise import KNoise
-from mrpro.operators._FourierOp import FourierOp
-from mrpro.operators._LinearOperator import LinearOperator
+from mrpro.data.CsmData import CsmData
+from mrpro.data.DcfData import DcfData
+from mrpro.data.IData import IData
+from mrpro.data._kdata.KData import KData
+from mrpro.data.KNoise import KNoise
+from mrpro.operators.FourierOp import FourierOp
+from mrpro.operators.LinearOperator import LinearOperator
 
 
 class IterativeSenseReconstruction(Reconstruction):
@@ -53,30 +53,14 @@ class IterativeSenseReconstruction(Reconstruction):
     trajectories. Magn. Reson. Imaging 46, 638-651 (2001). https://doi.org/10.1002/mrm.1241
 
     """
-
-    dcf: DcfData | None
-    """Density Compensation Data."""
-
-    csm: CsmData
-    """Coil Sensitivity Data."""
-
-    noise: KNoise | None
-    """Noise Data used for prewhitening."""
-
-    fourier_op: LinearOperator
-    """Fourier Operator."""
-
-    n_max_iter: int
-    """Maximum number of CG iterations."""
-
     def __init__(
         self,
-        fourier_operator: LinearOperator,
-        csm: CsmData,
+        fourier_op: LinearOperator,
         n_max_iter: int,
+        csm: CsmData | None = None,
         noise: None | KNoise = None,
         dcf: DcfData | None = None,
-    ):
+    ) -> None:
         """Initialize DirectReconstruction.
 
         Parameters
@@ -94,15 +78,17 @@ class IterativeSenseReconstruction(Reconstruction):
             Also set to None, if the FourierOperator is already density compensated.
         """
         super().__init__()
-        self.fourier_op = fourier_operator
+        self.fourier_op = fourier_op
+        self.n_max_iter = n_max_iter
         # TODO: Make this buffers once DataBufferMixin is merged
-        self.dcf = dcf
         self.csm = csm
         self.noise = noise
-        self.n_max_iter = n_max_iter
+        self.dcf = dcf
+
+
 
     @classmethod
-    def from_kdata(cls, kdata: KData, n_max_iter: int, noise: KNoise | None = None) -> Self:
+    def from_kdata(cls, kdata: KData, n_max_iter: int, noise: KNoise | None = None, coil_combine: bool = True) -> Self:
         """Create a IterativeSenseReconstruction from kdata with default settings.
 
         Parameters
@@ -121,44 +107,7 @@ class IterativeSenseReconstruction(Reconstruction):
         adjoint = DirectReconstruction(fourier_op, dcf=dcf, noise=noise)
         image = adjoint(kdata)
         csm = CsmData.from_idata_walsh(image)
-        return cls(fourier_op, csm, n_max_iter, noise, dcf)
-
-    def recalculate_fourierop(self, kdata: KData):
-        """Update (in place) the Fourier Operator, e.g. for a new trajectory.
-
-        Also recalculates the DCF.
-
-        Parameters
-        ----------
-        kdata
-            KData to determine trajectory and recon/encoding matrix from.
-        """
-        self.fourier_op = FourierOp.from_kdata(kdata)
-        self.dcf = DcfData.from_traj_voronoi(kdata.traj)
-        return self
-
-    def recalculate_csm_walsh(self, kdata: KData, noise: KNoise | None | Literal[False] = None) -> Self:
-        """Update (in place) the CSM from KData using Walsh.
-
-        Parameters
-        ----------
-        kdata
-            KData used for adjoint reconstruction, which is then used for
-            Walsh CSM estimation.
-        noise
-            Noise measurement for prewhitening.
-            If None, self.noise (if previously set) is used.
-            If False, no prewithening is performed even if self.noise is set.
-            Use this if the kdata is already prewhitened.
-        """
-        if noise is False:
-            noise = None
-        elif noise is None:
-            noise = self.noise
-        adjoint = DirectReconstruction(self.fourier_op, dcf=self.dcf, noise=noise)
-        image = adjoint(kdata)
-        self.csm = CsmData.from_idata_walsh(image)
-        return self
+        return cls(fourier_op, n_max_iter, csm, noise, dcf)
 
     def forward(self, kdata: KData) -> IData:
         """Apply the reconstruction.
@@ -175,12 +124,17 @@ class IterativeSenseReconstruction(Reconstruction):
         device = kdata.data.device
         if self.noise is not None:
             kdata = prewhiten_kspace(kdata, self.noise.to(device))
-        operator = self.fourier_op @ self.csm.as_operator()
+
+        operator = self.fourier_op.H
         if self.dcf is not None:
-            operator = self.dcf.as_operator() @ operator
+            operator = operator @ self.dcf.as_operator()
+        if self.csm is not None:
+            operator = self.csm.as_operator() @ operator
+        (right_hand_side,) = operator.to(device)(kdata.data)
+        if self.csm is not None:
+            operator = operator @ self.csm.as_operator()
+        operator = operator @ self.fourier_op
         operator = operator.to(device)
-        (right_hand_side,) = operator.H(kdata.data)
-        operator = self.csm.as_operator().H @ self.fourier_op.H @ operator
         img_tensor = cg(operator, right_hand_side, initial_value=right_hand_side, max_iterations=self.n_max_iter)
         img = IData.from_tensor_and_kheader(img_tensor, kdata.header)
         return img
