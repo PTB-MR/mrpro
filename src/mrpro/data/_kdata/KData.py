@@ -171,7 +171,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
 
         kheader.acq_info = modify_acq_info(sort_and_reshape_tensor_fields, kheader.acq_info)
         kdata = rearrange(kdata[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=n_k1, k2=n_k2)
-
+        
         # Calculate trajectory and check if it matches the kdata shape
         match ktrajectory:
             case KTrajectoryIsmrmrd():
@@ -201,6 +201,9 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             ) from None
 
         return cls(kheader, kdata, ktrajectory_final)
+    
+    def __repr__(self):
+        return f"KData with shape {str(list(self.data.shape))} and \n{self.header}"
 
 
 class _KDataProtocol(Protocol):

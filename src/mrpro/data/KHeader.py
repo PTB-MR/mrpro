@@ -22,6 +22,7 @@ import warnings
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+import numpy as np
 import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
 import torch
 
@@ -235,3 +236,17 @@ class KHeader(MoveDataMixin):
                 'Consider setting them via the defaults dictionary',
             ) from None
         return instance
+    
+    def __repr__(self):
+        fov = self.encoding_fov if self.encoding_fov is not None else "none"
+        te = str(np.round(self.te.item(), 4)) if self.te is not None else "none"
+        ti = str(np.round(self.ti.item(), 4)) if self.ti is not None else "none"
+        fa = str(np.round(self.fa.item(), 4)) if self.fa is not None else "none"
+        out = (f"KHeader with\n"
+               f"FOV: "f"x = {fov.x}, " f"y = {fov.y}, "f"z = {fov.z},\n"
+               f"TE: {te}, \n"f"TI: {ti}, \n"f"Flip angle: {fa}\n"
+               f"Encoding matrix: "f"x = {self.encoding_matrix.x}, "
+               f"y = {self.encoding_matrix.y}, "f"z = {self.encoding_matrix.z}\n"
+               f"Recon matrix: "f"x = {self.recon_matrix.x}, "
+               f"y = {self.recon_matrix.y}, "f"z = {self.recon_matrix.z}.")
+        return out
