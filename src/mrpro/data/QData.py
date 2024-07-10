@@ -34,6 +34,7 @@ class QData(Data):
     """MR quantitative data (QData) class."""
 
     header: QHeader
+    """Header describing quantitative data."""
 
     def __init__(self, data: torch.Tensor, header: KHeader | IHeader | QHeader) -> None:
         """Create QData object from a tensor and an arbitrary MRpro header.

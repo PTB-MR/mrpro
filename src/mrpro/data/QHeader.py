@@ -32,6 +32,7 @@ class QHeader(MoveDataMixin):
 
     # ToDo: decide which attributes to store in the header
     fov: SpatialDimension[float]
+    """Field of view."""
 
     @classmethod
     def from_iheader(cls, iheader: IHeader) -> Self:
