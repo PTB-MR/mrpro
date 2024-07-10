@@ -18,12 +18,9 @@ from collections.abc import Sequence
 
 import numpy as np
 import torch
-from ptwt.conv_transform import wavedec
-from ptwt.conv_transform import waverec
-from ptwt.conv_transform_2 import wavedec2
-from ptwt.conv_transform_2 import waverec2
-from ptwt.conv_transform_3 import wavedec3
-from ptwt.conv_transform_3 import waverec3
+from ptwt.conv_transform import wavedec, waverec
+from ptwt.conv_transform_2 import wavedec2, waverec2
+from ptwt.conv_transform_3 import wavedec3, waverec3
 from pywt import Wavelet
 from pywt._multilevel import _check_level
 

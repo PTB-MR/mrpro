@@ -21,9 +21,7 @@ from ptwt.conv_transform_2 import wavedec2
 from ptwt.conv_transform_3 import wavedec3
 
 from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test
-from tests.helper import operator_isometry_test
-from tests.helper import operator_unitary_test
+from tests.helper import dotproduct_adjointness_test, operator_isometry_test, operator_unitary_test
 
 
 @pytest.mark.parametrize(
