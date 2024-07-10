@@ -28,7 +28,7 @@ from mrpro.data.traj_calculators import (
 )
 
 from tests.data import IsmrmrdRawTestData
-from tests.data._PulseqRadialTestSeq import PulseqRadialTestSeq
+from tests.data import PulseqRadialTestSeq
 
 
 @pytest.fixture()

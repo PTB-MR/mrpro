@@ -20,13 +20,13 @@ import ismrmrd
 import pytest
 import torch
 from ismrmrd import xsd
-from mrpro.data import AcqInfo, KHeader
+from mrpro.data import AcqInfo, KHeader, KTrajectory
 from mrpro.data.enums import AcqFlags
 from xsdata.models.datatype import XmlDate, XmlTime
 
 from tests import RandomGenerator
 from tests.data import Dicom2DTestImage
-from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData
+from tests.phantoms import EllipsePhantomTestData
 
 
 def generate_random_encodingcounter_properties(generator: RandomGenerator):
@@ -323,12 +323,37 @@ def dcm_multi_echo_times_multi_folders(request, ellipse_phantom, tmp_path_factor
     return dcm_image_data
 
 
-def create_parameter_tensor_tuples(parameter_shape=(10, 5, 100, 100, 100), number_of_tensors=2):
-    """Create tuples of tensors as input to operators."""
-    random_generator = RandomGenerator(seed=0)
-    parameter_tensors = random_generator.float32_tensor(size=(number_of_tensors, *parameter_shape), low=1e-10)
-    return torch.unbind(parameter_tensors)
+def create_uniform_traj(nk, k_shape):
+    """Create a tensor of uniform points with predefined shape nk."""
+    kidx = torch.where(torch.tensor(nk[1:]) > 1)[0]
+    if len(kidx) > 1:
+        raise ValueError('nk is allowed to have at most one non-singleton dimension')
+    if len(kidx) >= 1:
+        # kidx+1 because we searched in nk[1:]
+        n_kpoints = nk[kidx + 1]
+        # kidx+2 because k_shape also includes coils dimensions
+        k = torch.linspace(-k_shape[kidx + 2] // 2, k_shape[kidx + 2] // 2 - 1, n_kpoints, dtype=torch.float32)
+        views = [1 if i != n_kpoints else -1 for i in nk]
+        k = k.view(*views).expand(list(nk))
+    else:
+        k = torch.zeros(nk)
+    return k
 
+
+def create_traj(k_shape, nkx, nky, nkz, sx, sy, sz):
+    """Create trajectory with random entries."""
+    random_generator = RandomGenerator(seed=0)
+    k_list = []
+    for spacing, nk in zip([sz, sy, sx], [nkz, nky, nkx], strict=True):
+        if spacing == 'nuf':
+            k = random_generator.float32_tensor(size=nk)
+        elif spacing == 'uf':
+            k = create_uniform_traj(nk, k_shape=k_shape)
+        elif spacing == 'z':
+            k = torch.zeros(nk)
+        k_list.append(k)
+    trajectory = KTrajectory(k_list[0], k_list[1], k_list[2], repeat_detection_tolerance=None)
+    return trajectory
 
 COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
     ('im_shape', 'k_shape', 'nkx', 'nky', 'nkz', 'sx', 'sy', 'sz', 's0', 's1', 's2'),
@@ -490,24 +515,3 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
     ],
 )
 
-# Shape combinations for signal models
-SHAPE_VARIATIONS_SIGNAL_MODELS = pytest.mark.parametrize(
-    ('parameter_shape', 'contrast_dim_shape', 'signal_shape'),
-    [
-        ((1, 1, 10, 20, 30), (5,), (5, 1, 1, 10, 20, 30)),  # single map with different inversion times
-        ((1, 1, 10, 20, 30), (5, 1), (5, 1, 1, 10, 20, 30)),
-        ((4, 1, 1, 10, 20, 30), (5, 1), (5, 4, 1, 1, 10, 20, 30)),  # multiple maps along additional batch dimension
-        ((4, 1, 1, 10, 20, 30), (5,), (5, 4, 1, 1, 10, 20, 30)),
-        ((4, 1, 1, 10, 20, 30), (5, 4), (5, 4, 1, 1, 10, 20, 30)),
-        ((3, 1, 10, 20, 30), (5,), (5, 3, 1, 10, 20, 30)),  # multiple maps along other dimension
-        ((3, 1, 10, 20, 30), (5, 1), (5, 3, 1, 10, 20, 30)),
-        ((3, 1, 10, 20, 30), (5, 3), (5, 3, 1, 10, 20, 30)),
-        ((4, 3, 1, 10, 20, 30), (5,), (5, 4, 3, 1, 10, 20, 30)),  # multiple maps along other and batch dimension
-        ((4, 3, 1, 10, 20, 30), (5, 4), (5, 4, 3, 1, 10, 20, 30)),
-        ((4, 3, 1, 10, 20, 30), (5, 4, 1), (5, 4, 3, 1, 10, 20, 30)),
-        ((4, 3, 1, 10, 20, 30), (5, 1, 3), (5, 4, 3, 1, 10, 20, 30)),
-        ((4, 3, 1, 10, 20, 30), (5, 4, 3), (5, 4, 3, 1, 10, 20, 30)),
-        ((1,), (5,), (5, 1)),  # single voxel
-        ((4, 3, 1), (5, 4, 3), (5, 4, 3, 1)),
-    ],
-)
