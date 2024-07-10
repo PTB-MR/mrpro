@@ -124,16 +124,16 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
 
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
 
-        for i in (5, 6):
-            user_indices = getattr(acqinfo.idx, f'user{i}', [])
-            for j in user_indices:
-                if j != 0:
-                    warnings.warn(
-                        'The Siemens to ismrmrd converter currently (ab)uses '
-                        f'the user {i} indices for storing the kspace center line and partition number\n'
-                        f'User {i} indices will be ignored',
-                        stacklevel=1,
-                    )
+        user_indices = (acqinfo.idx.user5, acqinfo.idx.user6)
+
+        for j in user_indices:
+            if len(torch.unique(user_indices)) > 1:
+                warnings.warn(
+                    'The Siemens to ismrmrd converter currently (ab)uses '
+                    f'the user {j} indices for storing the kspace center line and partition number\n'
+                    f'User {j} indices will be ignored',
+                    stacklevel=1,
+                )
 
         # Raises ValueError if required fields are missing in the header
         kheader = KHeader.from_ismrmrd(
