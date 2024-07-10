@@ -37,11 +37,22 @@ class IHeader(MoveDataMixin):
 
     # ToDo: decide which attributes to store in the header
     fov: SpatialDimension[float]
+    """Field of view."""
+
     te: torch.Tensor | None
+    """Echo time."""
+
     ti: torch.Tensor | None
+    """Inversion time."""
+
     fa: torch.Tensor | None
+    """Flip angle."""
+
     tr: torch.Tensor | None
+    """Repetition time."""
+
     misc: dict = dataclasses.field(default_factory=dict)
+    """Dictionary with miscellaneous parameters."""
 
     @classmethod
     def from_kheader(cls, kheader: KHeader) -> Self:
