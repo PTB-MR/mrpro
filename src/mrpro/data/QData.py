@@ -74,7 +74,8 @@ class QData(Data):
 
         header = QHeader.from_dicom(dataset)
         return cls(data=qdata, header=header)
-    
+
     def __repr__(self):
-        fov = self.header.fov if self.header.fov is not None else "none"
-        return f"QData with \nshape: {str(list(self.data.shape))}, \nFOV: x={fov.x}, y={fov.y}, z={fov.z}."
+        """Representation method for QData class."""
+        fov = self.header.fov if self.header.fov is not None else 'none'
+        return f'QData with \nshape: {list(self.data.shape)!s}, \nFOV: x={fov.x}, y={fov.y}, z={fov.z}.'
