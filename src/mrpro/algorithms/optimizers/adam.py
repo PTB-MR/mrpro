@@ -31,10 +31,6 @@ def adam(
     eps: float = 1e-8,
     weight_decay: float = 0,
     amsgrad: bool = False,
-    foreach: bool | None = None,
-    maximize: bool = False,
-    differentiable: bool = False,
-    fused: bool | None = None,
 ) -> tuple[torch.Tensor, ...]:
     """Adam for non-linear minimization problems.
 
@@ -59,39 +55,14 @@ def adam(
     amsgrad
         whether to use the AMSGrad variant of this algorithm from the paper
         `On the Convergence of Adam and Beyond`
-    foreach
-        whether `foreach` implementation of optimizer is used
-    maximize
-        maximize the objective with respect to the params, instead of minimizing
-    differentiable
-        whether autograd should occur through the optimizer step. This is currently not implemented.
-    fused
-        whether the fused implementation (CUDA only) is used. Currently, torch.float64, torch.float32,
-        torch.float16, and torch.bfloat16 are supported.
 
     Returns
     -------
         list of optimized parameters
     """
-    if not differentiable:
-        parameters = [p.detach().clone().requires_grad_(True) for p in initial_parameters]
-    else:
-        # TODO: If differentiable is set, it is reasonable to expect that the result backpropagates to
-        # initial parameters. This is currently not implemented (due to detach).
-        raise NotImplementedError('Differentiable Optimization is not implemented')
+    parameters = [p.detach().clone().requires_grad_(True) for p in initial_parameters]
 
-    optim = Adam(
-        params=parameters,
-        lr=lr,
-        betas=betas,
-        eps=eps,
-        weight_decay=weight_decay,
-        amsgrad=amsgrad,
-        foreach=foreach,
-        maximize=maximize,
-        differentiable=differentiable,
-        fused=fused,
-    )
+    optim = Adam(params=parameters, lr=lr, betas=betas, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad)
 
     def closure():
         optim.zero_grad()
