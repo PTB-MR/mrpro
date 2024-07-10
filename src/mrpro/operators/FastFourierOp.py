@@ -31,13 +31,17 @@ class FastFourierOp(LinearOperator):
     along these selected dimensions
 
     The transformation is done with 'ortho' normalization, i.e. the normalization constant is split between
-    forward and adjoint. See https://numpy.org/doc/stable/reference/routines.fft.html for an explanation.
+    forward and adjoint [1]_.
 
     Remark regarding the fftshift/ifftshift:
     fftshift shifts the zero-frequency point to the center of the data, ifftshift undoes this operation.
     The input to both forward and ajoint assumes that the zero-frequency is in the center of the data.
     Torch.fft.fftn and torch.fft.ifftn expect the zero-frequency to be the first entry in the tensor.
     Therefore for forward and ajoint first ifftshift needs to be applied, then fftn or ifftn and then ifftshift.
+
+    References
+    ----------
+    .. [1] https://numpy.org/doc/stable/reference/routines.fft.html
 
     """
 

@@ -31,9 +31,7 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         gamma: float | torch.Tensor = 42.5764,
         freq: float | torch.Tensor = 127.7292,
     ) -> None:
-        """Initialize WASABI signal model for mapping of B0 and B1.
-
-        For more details see: https://doi.org/10.1002/mrm.26133
+        """Initialize WASABI signal model for mapping of B0 and B1 [1]_.
 
         Parameters
         ----------
@@ -48,6 +46,12 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
             gyromagnetic ratio [MHz/T]
         freq
             larmor frequency [MHz]
+
+        References
+        ----------
+        .. [1] Schuenke P, Zaiss M (2016) Simultaneous mapping of water shift
+        and B1(WASABI)—Application to field-Inhomogeneity correction of CEST MRI data. MRM 77(2): mrm.26133.
+               https://doi.org/10.1002/mrm.26133
         """
         super().__init__()
         # convert all parameters to tensors
