@@ -5,9 +5,9 @@ import mrpro
 import numpy as np
 import torch
 from mrpro.algorithms.reconstruction import DirectReconstruction
-from mrpro.data import KData  # Import the KData class
-from mrpro.data import KTrajectory
 from mrpro.data import SpatialDimension
+from mrpro.data._kdata._KData import KData  # Import the KData class
+from mrpro.data._KTrajectory import KTrajectory
 from mrpro.data.traj_calculators import KTrajectoryPulseq
 from mrpro.phantoms import EllipsePhantom  # Adjust the import path as needed
 from mrpro.phantoms.phantom_elements import EllipseParameters
@@ -456,7 +456,7 @@ for i, phantom in enumerate(phantom_samples):
 
     # Unpack the tuple and perform the subtraction
     kdata_simulated_us = acquisition_operator.H(kdata_us.data)[0]
-    
+
     # Create a KData object with the simulated k-space data
     kdata_simulated_us = mrpro.data.KData(data=kdata_simulated_us, traj=kdata_us.traj, header=kdata_us.header)
 
