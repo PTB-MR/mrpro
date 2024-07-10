@@ -10,15 +10,13 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-#%%
 import math
 
 import pytest
 import torch
 from mrpro.data import KTrajectory
 from mrpro.algorithms.dcf import dcf_1d, dcf_2d3d_voronoi
-from mrpro.utils import smap
-#%%
+
 
 def example_traj_rpe(n_kr, n_ka, n_k0, broadcast=True):
     """Create RPE trajectory with uniform angular gap."""
@@ -53,9 +51,6 @@ def example_traj_spiral_2d(n_kr, n_ki, n_ka, broadcast=True) -> KTrajectory:
     trajectory = KTrajectory(kz, ky, kx, repeat_detection_tolerance=1e-8 if broadcast else None)
     return trajectory
 
-traj = example_traj_rad_2d(100, 1, 0, True)
-
-#%%
 
 @pytest.mark.parametrize(
     ('n_kr', 'n_ka', 'phi0', 'broadcast'),
@@ -84,11 +79,11 @@ def test_dcf_rad_traj_voronoi(n_kr, n_ka, phi0, broadcast):
         # accurately using voronoi
         torch.testing.assert_close(dcf_analytical[:, :, 1:-1], dcf[:, :, 1:-1])
     else:
-        dcf = dcf_1d(trajectory[1:3,0,...])
+        dcf = dcf_1d(trajectory[0,...])
         dcf_ptp = dcf.max() - dcf.min()
         assert dcf_ptp / dcf.max() < 0.1, 'DCF for a single spoke should be constant-ish'
         assert dcf.sum() > 1e-3, 'DCF sum should not be zero'
-        assert dcf.shape == trajectory.broadcasted_shape, 'DCF shape should match broadcasted trajectory shape'
+        assert dcf.shape == traj.broadcasted_shape, 'DCF shape should match broadcasted trajectory shape'
 
 
 @pytest.mark.parametrize(('n_k2', 'n_k1', 'n_k0'), [(40, 16, 20), (1, 2, 2)])
@@ -104,12 +99,12 @@ def test_dcf_3d_cart_traj_broadcast_voronoi(n_k2, n_k1, n_k0):
     trajectory = traj.as_tensor()
 
     # Analytical dcf
-    dcf_analytical = torch.ones((n_k2, n_k1, n_k0))
+    dcf_analytical = torch.ones((1, n_k2, n_k1, n_k0))
     # calculate dcf
-    dcf = dcf_2d3d_voronoi(trajectory[1:3,0,...])
+    dcf = dcf_2d3d_voronoi(trajectory)
     # Do not test outer points because they have to be approximated and cannot be calculated
     # accurately using voronoi.
-    torch.testing.assert_close(dcf[1:-1, 1:-1, 1:-1], dcf_analytical[1:-1, 1:-1, 1:-1])
+    torch.testing.assert_close(dcf[:,1:-1, 1:-1, 1:-1], dcf_analytical[:,1:-1, 1:-1, 1:-1])
 
 
 @pytest.mark.parametrize(('n_k2', 'n_k1', 'n_k0'), [(40, 16, 20), (1, 2, 2)])
@@ -126,11 +121,11 @@ def test_dcf_3d_cart_full_traj_voronoi(n_k2, n_k1, n_k0):
     trajectory = KTrajectory(kz[None, ...], ky[None, ...], kx[None, ...], repeat_detection_tolerance=None)
     trajectory = trajectory.as_tensor()
     # Analytical dcf
-    dcf_analytical = torch.ones((n_k2, n_k1, n_k0))
-    dcf = dcf_2d3d_voronoi(trajectory[1:3,0,...])
+    dcf_analytical = torch.ones((1, n_k2, n_k1, n_k0))
+    dcf = dcf_2d3d_voronoi(trajectory)
     # Do not test outer points because they have to be approximated and cannot be calculated
     # accurately using voronoi
-    torch.testing.assert_close(dcf[1:-1, 1:-1, 1:-1], dcf_analytical[1:-1, 1:-1, 1:-1])
+    torch.testing.assert_close(dcf[:,1:-1, 1:-1, 1:-1], dcf_analytical[:,1:-1, 1:-1, 1:-1])
 
 
 @pytest.mark.parametrize(
