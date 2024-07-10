@@ -60,6 +60,10 @@ jobs:
       - name: Install mrpro with minimum dependencies
         run: uv pip install --resolution "lowest
 
+      - name: Run PyTest
+        run: |
+          pytest
+
   test:
     name: Run tests and get coverage report
     needs: get_dockerfiles
