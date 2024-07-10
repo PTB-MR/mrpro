@@ -104,8 +104,8 @@ def test_fast_fourier_op_onematrix():
 
 
 def test_invalid_dim():
-    """Test that the FastFourierOp throws an error if not all dimensions
-    for which the FFT should be calculated are in (-3,-2,-1)."""
+    """Tests that dims are in (-3,-2,-1) if recon_matrix
+    or encoding_matrix is SpatialDimension"""
 
     recon_matrix = SpatialDimension(z=101, y=201, x=61)
     encoding_matrix = SpatialDimension(z=14, y=220, x=61)
