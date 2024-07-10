@@ -16,8 +16,7 @@
 
 import torch
 from mrpro.algorithms.csm import iterative_walsh
-from mrpro.data import IData
-from mrpro.data import SpatialDimension
+from mrpro.data import IData, SpatialDimension
 from mrpro.phantoms.coils import birdcage_2d
 from tests.helper import relative_image_difference
 
