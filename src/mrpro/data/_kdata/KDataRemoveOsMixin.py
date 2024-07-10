@@ -24,9 +24,8 @@ class KDataRemoveOsMixin(_KDataProtocol):
     """Remove oversampling along readout dimension."""
 
     def remove_readout_os(self: Self) -> Self:
-        """Remove any oversampling along the readout (k0) direction.
+        """Remove any oversampling along the readout (k0) direction [1]_.
 
-        This function is inspired by https://github.com/gadgetron/gadgetron-python.
         Returns a copy of the data.
 
         Parameters
@@ -42,6 +41,10 @@ class KDataRemoveOsMixin(_KDataProtocol):
         ------
         ValueError
             If the recon matrix along x is larger than the encoding matrix along x.
+
+        References
+        ----------
+        .. [1] https://github.com/gadgetron/gadgetron-python
         """
         from mrpro.operators.FastFourierOp import FastFourierOp
 

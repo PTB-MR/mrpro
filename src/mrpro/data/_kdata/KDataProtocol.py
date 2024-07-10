@@ -27,10 +27,11 @@ class _KDataProtocol(Protocol):
     Note that the actual KData class can have more properties and methods than those defined here.
 
     If you want to use a property or method of KData in a new KDataMixin class,
-    you must add it to this Protocol to make sure that the type hinting works.
+    you must add it to this Protocol to make sure that the type hinting works [1]_.
 
-    For more information about Protocols see:
-    https://typing.readthedocs.io/en/latest/spec/protocol.html#protocols
+    References
+    ----------
+    .. [1] https://typing.readthedocs.io/en/latest/spec/protocol.html#protocols
     """
 
     @property
