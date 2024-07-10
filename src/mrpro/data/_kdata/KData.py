@@ -124,10 +124,10 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
 
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
 
-        user_indices = (acqinfo.idx.user5, acqinfo.idx.user6)
+        user_index = (acqinfo.idx.user5, acqinfo.idx.user6)
 
-        for ind in user_indices:
-            if len(torch.unique(ind)) > 1:
+        for indx in user_index:
+            if len(torch.unique(indx)) > 1:
                 warnings.warn(
                     'The Siemens to ismrmrd converter currently (ab)uses '
                     'the user 5 and 6 indices for storing the kspace center line and partition number.\n'
