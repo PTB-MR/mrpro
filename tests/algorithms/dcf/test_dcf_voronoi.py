@@ -18,17 +18,6 @@ from mrpro.algorithms.dcf import dcf_1d, dcf_2d3d_voronoi
 from mrpro.data import KTrajectory
 
 
-def example_traj_rpe(n_kr, n_ka, n_k0, broadcast=True):
-    """Create RPE trajectory with uniform angular gap."""
-    krad = torch.linspace(-n_kr // 2, n_kr // 2 - 1, n_kr) / n_kr
-    kang = torch.linspace(0, n_ka - 1, n_ka) * (torch.pi / n_ka)
-    kz = (torch.sin(kang[:, None]) * krad[None, :])[None, :, :, None]
-    ky = (torch.cos(kang[:, None]) * krad[None, :])[None, :, :, None]
-    kx = (torch.linspace(-n_k0 // 2, n_k0 // 2 - 1, n_k0) / n_k0)[None, None, None, :]
-    trajectory = KTrajectory(kz, ky, kx, repeat_detection_tolerance=1e-8 if broadcast else None)
-    return trajectory
-
-
 def example_traj_rad_2d(n_kr, n_ka, phi0=0.0, broadcast=True):
     """Create 2D radial trajectory with uniform angular gap."""
     krad = torch.linspace(-n_kr // 2, n_kr // 2 - 1, n_kr) / n_kr
@@ -36,18 +25,6 @@ def example_traj_rad_2d(n_kr, n_ka, phi0=0.0, broadcast=True):
     kz = torch.zeros(1, 1, 1, 1)
     ky = (torch.sin(kang[:, None]) * krad[None, :])[None, None, :, :]
     kx = (torch.cos(kang[:, None]) * krad[None, :])[None, None, :, :]
-    trajectory = KTrajectory(kz, ky, kx, repeat_detection_tolerance=1e-8 if broadcast else None)
-    return trajectory
-
-
-def example_traj_spiral_2d(n_kr, n_ki, n_ka, broadcast=True) -> KTrajectory:
-    """Create 2D spiral trajectory with n_kr points along each spiral arm, n_ki
-    turns per spiral arm and n_ka spiral arms."""
-    ang = torch.linspace(0, 2 * torch.pi * n_ki, n_kr)
-    start_ang = torch.linspace(0, 2 * torch.pi * (1 - 1 / n_ka), n_ka)
-    kz = torch.zeros(1, 1, 1, 1)
-    kx = (ang[None, :] * torch.cos(ang[None, :] + start_ang[:, None]))[None, None, :, :]
-    ky = (ang[None, :] * torch.sin(ang[None, :] + start_ang[:, None]))[None, None, :, :]
     trajectory = KTrajectory(kz, ky, kx, repeat_detection_tolerance=1e-8 if broadcast else None)
     return trajectory
 
