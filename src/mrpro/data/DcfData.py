@@ -18,12 +18,12 @@ from __future__ import annotations
 
 import dataclasses
 from functools import reduce
-from typing import TYPE_CHECKING
+from itertools import product
+from typing import TYPE_CHECKING, Self
 
 import torch
 
-from mrpro.algorithms.dcf.dcf_voronoi import dcf_1d
-from mrpro.algorithms.dcf.dcf_voronoi import dcf_2d3d_voronoi
+from mrpro.algorithms.dcf.dcf_voronoi import dcf_1d, dcf_2d3d_voronoi
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.utils import smap
@@ -40,7 +40,7 @@ class DcfData(MoveDataMixin):
     """Density compensation values. Shape (... other, k2, k1, k0)"""
 
     @classmethod
-    def from_traj_voronoi(cls, traj: KTrajectory) -> DcfData:
+    def from_traj_voronoi(cls, traj: KTrajectory) -> Self:
         """Calculate dcf using voronoi approach for 2D or 3D trajectories.
 
         Parameters

@@ -14,13 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 
 import torch
 
-from mrpro.data import IData
-from mrpro.data import KData
+from mrpro.data import IData, KData
 
 
 class Reconstruction(torch.nn.Module, ABC):

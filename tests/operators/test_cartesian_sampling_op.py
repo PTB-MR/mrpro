@@ -14,12 +14,11 @@
 
 import pytest
 import torch
-from mrpro.data import KTrajectory
-from mrpro.data import SpatialDimension
+from mrpro.data import KTrajectory, SpatialDimension
 from mrpro.operators import CartesianSamplingOp
 
 from tests import RandomGenerator
-from tests.data.test_trajectory import create_traj
+from tests.conftest import create_traj
 from tests.helper import dotproduct_adjointness_test
 
 

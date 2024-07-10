@@ -18,15 +18,16 @@ import torch
 from einops import repeat
 from mrpro.data import KData
 from mrpro.data.enums import AcqFlags
-from mrpro.data.traj_calculators import KTrajectoryCartesian
-from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
-from mrpro.data.traj_calculators import KTrajectoryPulseq
-from mrpro.data.traj_calculators import KTrajectoryRadial2D
-from mrpro.data.traj_calculators import KTrajectoryRpe
-from mrpro.data.traj_calculators import KTrajectorySunflowerGoldenRpe
+from mrpro.data.traj_calculators import (
+    KTrajectoryCartesian,
+    KTrajectoryIsmrmrd,
+    KTrajectoryPulseq,
+    KTrajectoryRadial2D,
+    KTrajectoryRpe,
+    KTrajectorySunflowerGoldenRpe,
+)
 
-from tests.data import IsmrmrdRawTestData
-from tests.data._PulseqRadialTestSeq import PulseqRadialTestSeq
+from tests.data import IsmrmrdRawTestData, PulseqRadialTestSeq
 
 
 @pytest.fixture()

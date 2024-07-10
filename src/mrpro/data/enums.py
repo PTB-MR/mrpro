@@ -14,18 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from enum import Enum
-from enum import Flag
-from enum import auto
+from enum import Enum, Flag, auto
 
 
 class AcqFlags(Flag):
     """Acquisition flags.
 
-    Reference:
-    https://github.com/ismrmrd/ismrmrd/blob/master/include/ismrmrd/ismrmrd.h
     NOTE: values in enum ISMRMRD_AcquisitionFlags start at 1 and not 0, but
-    1 << (val-1) is used in 'ismrmrd_is_flag_set' function to calc bitmask value.
+    1 << (val-1) is used in 'ismrmrd_is_flag_set' function to calc bitmask value [1]_.
+
+    References
+    ----------
+    .. [1] https://github.com/ismrmrd/ismrmrd/blob/master/include/ismrmrd/ismrmrd.h
     """
 
     ACQ_NO_FLAG = 0

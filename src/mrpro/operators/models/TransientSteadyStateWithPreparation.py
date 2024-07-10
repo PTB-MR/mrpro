@@ -26,13 +26,7 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
     a preparation pulse. The effect of the preparation pulse is modelled by a scaling factor applied to the
     equilibrium magnetisation. A delay after the preparation pulse can be defined. During this time T1 relaxation to M0
     occurs. Data acquisition starts after this delay. Perfect spoiling is assumed and hence T2 effects are not
-    considered in the model. In addition this model assumes TR << T1 and TR << T1* (see definition below). More
-    information can be found here:
-
-    Deichmann, R. & Haase, A. Quantification of T1 values by SNAPSHOT-FLASH NMR imaging. J. Magn. Reson. 612, 608-612
-    (1992) [http://doi.org/10.1016/0022-2364(92)90347-A].
-    Look, D. C. & Locker, D. R. Time Saving in Measurement of NMR and EPR Relaxation Times. Rev. Sci. Instrum 41, 250
-    (1970) [https://doi.org/10.1063/1.1684482].
+    considered in the model. In addition this model assumes TR << T1 and TR << T1* (see definition below) [1]_ [2]_.
 
     Let's assume we want to describe a continuous acquisition after an inversion pulse, then we have three parts:
     [Part A: 180° inversion pulse][Part B: spoiler gradient][Part C: Continuous data acquisition]
@@ -54,6 +48,12 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
             and the steady-state magnetisation is
                     M0* = M0 T1* / T1
 
+    References
+    ----------
+    .. [1] Deichmann R, Haase A (1992) Quantification of T1 values by SNAPSHOT-FLASH NMR imaging. J. Magn. Reson. 612
+        http://doi.org/10.1016/0022-2364(92)90347-A
+    .. [2] Look D, Locker R (1970) Time Saving in Measurement of NMR and EPR Relaxation Times. Rev. Sci. Instrum 41
+        https://doi.org/10.1063/1.1684482
     """
 
     def __init__(
