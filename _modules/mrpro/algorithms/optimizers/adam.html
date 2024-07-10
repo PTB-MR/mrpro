@@ -97,7 +97,7 @@
 <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
+<span class="kn">from</span> <span class="nn">torch.optim</span> <span class="kn">import</span> <span class="n">Adam</span><span class="p">,</span> <span class="n">AdamW</span>
 
 <span class="kn">from</span> <span class="nn">mrpro.operators.Operator</span> <span class="kn">import</span> <span class="n">Operator</span>
 
@@ -113,10 +113,7 @@
     <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
     <span class="n">weight_decay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">amsgrad</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">foreach</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">maximize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">differentiable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">fused</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">decoupled_weight_decay</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Adam for non-linear minimization problems.</span>
 
@@ -141,39 +138,26 @@
 <span class="sd">    amsgrad</span>
 <span class="sd">        whether to use the AMSGrad variant of this algorithm from the paper</span>
 <span class="sd">        `On the Convergence of Adam and Beyond`</span>
-<span class="sd">    foreach</span>
-<span class="sd">        whether `foreach` implementation of optimizer is used</span>
-<span class="sd">    maximize</span>
-<span class="sd">        maximize the objective with respect to the params, instead of minimizing</span>
-<span class="sd">    differentiable</span>
-<span class="sd">        whether autograd should occur through the optimizer step. This is currently not implemented.</span>
-<span class="sd">    fused</span>
-<span class="sd">        whether the fused implementation (CUDA only) is used. Currently, torch.float64, torch.float32,</span>
-<span class="sd">        torch.float16, and torch.bfloat16 are supported.</span>
+<span class="sd">    decoupled_weight_decay</span>
+<span class="sd">        whether to use Adam (default) or AdamW (if set to true) [1]_</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">        list of optimized parameters</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">differentiable</span><span class="p">:</span>
-        <span class="n">parameters</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">initial_parameters</span><span class="p">]</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># TODO: If differentiable is set, it is reasonable to expect that the result backpropagates to</span>
-        <span class="c1"># initial parameters. This is currently not implemented (due to detach).</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Differentiable Optimization is not implemented&#39;</span><span class="p">)</span>
 
-    <span class="n">optim</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span>
-        <span class="n">params</span><span class="o">=</span><span class="n">parameters</span><span class="p">,</span>
-        <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span>
-        <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">,</span>
-        <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">,</span>
-        <span class="n">weight_decay</span><span class="o">=</span><span class="n">weight_decay</span><span class="p">,</span>
-        <span class="n">amsgrad</span><span class="o">=</span><span class="n">amsgrad</span><span class="p">,</span>
-        <span class="n">foreach</span><span class="o">=</span><span class="n">foreach</span><span class="p">,</span>
-        <span class="n">maximize</span><span class="o">=</span><span class="n">maximize</span><span class="p">,</span>
-        <span class="n">differentiable</span><span class="o">=</span><span class="n">differentiable</span><span class="p">,</span>
-        <span class="n">fused</span><span class="o">=</span><span class="n">fused</span><span class="p">,</span>
-    <span class="p">)</span>
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] Loshchilov I, Hutter F (2019) Decoupled Weight Decay Regularization. ICLR</span>
+<span class="sd">            https://doi.org/10.48550/arXiv.1711.05101</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parameters</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">initial_parameters</span><span class="p">]</span>
+
+    <span class="n">optim</span><span class="p">:</span> <span class="n">AdamW</span> <span class="o">|</span> <span class="n">Adam</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">decoupled_weight_decay</span><span class="p">:</span>
+        <span class="n">optim</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">parameters</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span> <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="n">weight_decay</span><span class="p">,</span> <span class="n">amsgrad</span><span class="o">=</span><span class="n">amsgrad</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">optim</span> <span class="o">=</span> <span class="n">AdamW</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">parameters</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span> <span class="n">betas</span><span class="o">=</span><span class="n">betas</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="n">eps</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="n">weight_decay</span><span class="p">,</span> <span class="n">amsgrad</span><span class="o">=</span><span class="n">amsgrad</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">closure</span><span class="p">():</span>
         <span class="n">optim</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
