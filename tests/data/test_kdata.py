@@ -24,7 +24,7 @@ from mrpro.utils import modify_acq_info, split_idx
 from tests.conftest import RandomGenerator, generate_random_data
 from tests.data import IsmrmrdRawTestData
 from tests.helper import relative_image_difference
-from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData
+from tests.phantoms import EllipsePhantomTestData
 
 
 @pytest.fixture(scope='session')
