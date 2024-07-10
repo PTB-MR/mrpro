@@ -27,8 +27,7 @@ from mrpro.data.traj_calculators import (
     KTrajectorySunflowerGoldenRpe,
 )
 
-from tests.data import IsmrmrdRawTestData
-from tests.data import PulseqRadialTestSeq
+from tests.data import IsmrmrdRawTestData, PulseqRadialTestSeq
 
 
 @pytest.fixture()

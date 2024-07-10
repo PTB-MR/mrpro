@@ -17,10 +17,7 @@ import torch
 from mrpro.data import KTrajectory
 from mrpro.data.enums import TrajType
 
-from tests import RandomGenerator
-from tests.conftest import COMMON_MR_TRAJECTORIES
-from tests.conftest import create_traj
-
+from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
 
 
 def test_trajectory_repeat_detection_tol(cartesian_grid):

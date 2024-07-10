@@ -27,4 +27,3 @@ class Rosenbrock(Operator[torch.Tensor, torch.Tensor, tuple[torch.Tensor,]]):
         fval = (self.a - x1) ** 2 + self.b * (x1 - x2**2) ** 2
 
         return (fval,)
-
