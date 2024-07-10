@@ -14,10 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 import dataclasses
 from pathlib import Path
+from typing import Self
 
 import numpy as np
 import torch
@@ -59,7 +58,7 @@ class QData(Data):
         object.__setattr__(self, 'header', qheader)
 
     @classmethod
-    def from_single_dicom(cls, filename: str | Path) -> QData:
+    def from_single_dicom(cls, filename: str | Path) -> Self:
         """Read single DICOM file and return QData object.
 
         Parameters

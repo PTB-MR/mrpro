@@ -14,13 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 import dataclasses
 import datetime
 import warnings
 from collections.abc import Callable
 from pathlib import Path
+from typing import Protocol, Self
 
 import h5py
 import ismrmrd
@@ -63,7 +62,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         header_overwrites: dict[str, object] | None = None,
         dataset_idx: int = -1,
         acquisition_filter_criterion: Callable = is_image_acquisition,
-    ) -> KData:
+    ) -> Self:
         """Load k-space data from an ISMRMRD file.
 
         Parameters
