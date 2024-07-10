@@ -1,8 +1,11 @@
 
 from mrpro.operators.Operator import Operator
 from mrpro.operators.LinearOperator import LinearOperator
+from mrpro.operators.Functional import Functional
+
 from mrpro.operators import functionals
 from mrpro.operators import models
+
 from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp
 from mrpro.operators.ConstraintsOp import ConstraintsOp
 from mrpro.operators.DensityCompensationOp import DensityCompensationOp
