@@ -294,24 +294,29 @@ class KHeader(MoveDataMixin):
     def __repr__(self):
         """Representation method for KHeader class."""
         fov = self.encoding_fov if self.encoding_fov is not None else 'none'
-        te = [str(torch.round(te, decimals=4)) for te in self.te] if self.te is not None else 'none'
-        ti = [str(torch.round(ti, decimals=4)) for ti in self.ti] if self.ti is not None else 'none'
-        fa = [str(torch.round(fa, decimals=4)) for fa in self.fa] if self.fa is not None else 'none'
+        te = (
+            [str(torch.round(te, decimals=4)).replace('tensor', '') for te in self.te]
+            if self.te is not None
+            else 'none'
+        )
+        ti = (
+            [str(torch.round(ti, decimals=4)).replace('tensor', '') for ti in self.ti]
+            if self.ti is not None
+            else 'none'
+        )
+        fa = (
+            [str(torch.round(fa, decimals=4)).replace('tensor', '') for fa in self.fa]
+            if self.fa is not None
+            else 'none'
+        )
         out = (
-            f'FOV: '
-            f'x = {fov.x}, '
-            f'y = {fov.y}, '
-            f'z = {fov.z}\n'
-            f'TE: {te}\n'
-            f'TI: {ti}\n'
-            f'Flip angle: {fa}\n'
+            f'FOV [m]: {fov}\n'
+            f'TE [s]: {te}\n'
+            f'TI [s]: {ti}\n'
+            f'Flip angle [rad]: {fa}\n'
             f'Encoding matrix: '
-            f'x = {self.encoding_matrix.x}, '
-            f'y = {self.encoding_matrix.y}, '
-            f'z = {self.encoding_matrix.z}\n'
+            f'{self.encoding_matrix} \n'
             f'Recon matrix: '
-            f'x = {self.recon_matrix.x}, '
-            f'y = {self.recon_matrix.y}, '
-            f'z = {self.recon_matrix.z}.'
+            f'{self.recon_matrix}.'
         )
         return out

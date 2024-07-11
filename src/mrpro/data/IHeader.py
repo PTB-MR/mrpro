@@ -133,8 +133,20 @@ class IHeader(MoveDataMixin):
     def __repr__(self):
         """Representation method for IHeader class."""
         fov = self.fov if self.fov is not None else 'none'
-        te = [str(torch.round(te, decimals=4)) for te in self.te] if self.te is not None else 'none'
-        ti = [str(torch.round(ti, decimals=4)) for ti in self.ti] if self.ti is not None else 'none'
-        fa = [str(torch.round(fa, decimals=4)) for fa in self.fa] if self.fa is not None else 'none'
-        out = f'FOV: x={fov.x}, y={fov.y}, z={fov.z}\n' f'TE: {te}\nTI: {ti}\nflip angle: {fa}.'
+        te = (
+            [str(torch.round(te, decimals=4)).replace('tensor', '') for te in self.te]
+            if self.te is not None
+            else 'none'
+        )
+        ti = (
+            [str(torch.round(ti, decimals=4)).replace('tensor', '') for ti in self.ti]
+            if self.ti is not None
+            else 'none'
+        )
+        fa = (
+            [str(torch.round(fa, decimals=4)).replace('tensor', '') for fa in self.fa]
+            if self.fa is not None
+            else 'none'
+        )
+        out = f'FOV [m]: {fov}\n' f'TE [s]: {te}\nTI [s]: {ti}\nflip angle [rad]: {fa}.'
         return out
