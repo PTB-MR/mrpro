@@ -77,5 +77,5 @@ class QData(Data):
 
     def __repr__(self):
         """Representation method for QData class."""
-        fov = self.header.fov if self.header.fov is not None else 'none'
-        return f'QData with shape: {list(self.data.shape)!s}\nFOV [m]: x={fov.x}, y={fov.y}, z={fov.z}.'
+        fov = str(self.header.fov).replace('SpatialDimension', '')
+        return f'QData with shape: {list(self.data.shape)!s}\nFOV [m]: {fov}.'

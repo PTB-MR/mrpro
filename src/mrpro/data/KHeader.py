@@ -293,22 +293,10 @@ class KHeader(MoveDataMixin):
 
     def __repr__(self):
         """Representation method for KHeader class."""
-        fov = self.encoding_fov if self.encoding_fov is not None else 'none'
-        te = (
-            [str(torch.round(te, decimals=4)).replace('tensor', '') for te in self.te]
-            if self.te is not None
-            else 'none'
-        )
-        ti = (
-            [str(torch.round(ti, decimals=4)).replace('tensor', '') for ti in self.ti]
-            if self.ti is not None
-            else 'none'
-        )
-        fa = (
-            [str(torch.round(fa, decimals=4)).replace('tensor', '') for fa in self.fa]
-            if self.fa is not None
-            else 'none'
-        )
+        fov = str(self.encoding_fov).replace('SpatialDimension', '')
+        te = str(self.te).replace('tensor', '')
+        ti = str(self.ti).replace('tensor', '')
+        fa = str(self.fa).replace('tensor', '')
         out = (
             f'FOV [m]: {fov}\n'
             f'TE [s]: {te}\n'

@@ -79,13 +79,8 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
     """MR raw data / k-space data class."""
 
     header: KHeader
-    """Header information for k-space data"""
-
     data: torch.Tensor
-    """K-space data. Shape (...other coils k2 k1 k0)"""
-
     traj: KTrajectory
-    """K-space trajectory along kz, ky and kx. Shape (...other k2 k1 k0)"""
 
     @classmethod
     def from_file(

@@ -111,7 +111,3 @@ class SpatialDimension(MoveDataMixin, Generic[T]):
     def zyx(self) -> tuple[T, T, T]:
         """Return a z,y,x tuple."""
         return (self.z, self.y, self.x)
-
-    def __repr__(self):
-        """Representation method for SpatialDimension class."""
-        return f'x = {self.x}, ' f'y = {self.y}, ' f'z = {self.z}'
