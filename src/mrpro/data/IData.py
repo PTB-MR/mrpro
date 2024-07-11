@@ -65,6 +65,7 @@ class IData(Data):
     """MR image data (IData) class."""
 
     header: IHeader
+    """Header for image data."""
 
     def rss(self, keepdim: bool = False) -> torch.Tensor:
         """Root-sum-of-squares over coils image data.
