@@ -28,7 +28,7 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
-    "numpy>=1.23, <2.0",
+    "numpy>=1.26, <2.0",
     "torch>=2.3",
     "ismrmrd>=1.14.1",
     "einops",
