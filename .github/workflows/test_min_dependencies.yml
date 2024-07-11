@@ -1,28 +1,52 @@
-name: Test min dependencies
+name: Run Tests with Minimum Dependencies
 
-on:
-  schedule:
-    - cron: '0/10 * * * *'
+on: [push, pull_request]
 
 jobs:
-  test_min_dependencies:
-    name: Run tests with min dependencies
+  test:
     runs-on: ubuntu-latest
-    env:
-      PYTHON_VERSION: "${{needs.build_info.outputs.PYTHON_MIN_VERSION}}"
+
+    strategy:
+      matrix:
+        python-version: [3.11, 3.12]
+
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Install mrpro with minimum dependencies
-        run: uv pip install --resolution lowest .[test]
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
 
-      - name: Run PyTest with minimum dependencies
-        run: |
-          pytest -n 4 -m "not cuda" --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install toml
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+        # Generate requirements-min.txt
+        python - <<EOF
+          import toml
 
-  # Cancel in-progress runs when a new workflow with the same group name is triggered
-  cancel-in-progress: true
+          with open('pyproject.toml', 'r') as f:
+              pyproject = toml.load(f)
+
+          dependencies = pyproject.get('project', {}).get('dependencies', [])
+
+          with open('requirements-min.txt', 'w') as f:
+              for dep in dependencies:
+                  dep = dep.replace('>=', '==').split(',')[0]
+                  f.write(f"{dep}\n")
+        EOF
+
+        # Install minimum dependencies
+        pip install -r requirements-min.txt
+
+    - name: Install the package
+      run: pip install .
+
+    - name: Run tests
+      run: pytest
+
+    - name: Cleanup
+      run: rm requirements-min.txt
