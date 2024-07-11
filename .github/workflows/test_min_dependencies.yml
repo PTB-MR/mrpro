@@ -26,17 +26,17 @@ jobs:
 
         # Generate requirements-min.txt
         python - <<EOF
-          import toml
+        import toml
 
-          with open('pyproject.toml', 'r') as f:
-              pyproject = toml.load(f)
+        with open('pyproject.toml', 'r') as f:
+            pyproject = toml.load(f)
 
-          dependencies = pyproject.get('project', {}).get('dependencies', [])
+        dependencies = pyproject.get('project', {}).get('dependencies', [])
 
-          with open('requirements-min.txt', 'w') as f:
-              for dep in dependencies:
-                  dep = dep.replace('>=', '==').split(',')[0]
-                  f.write(f"{dep}\n")
+        with open('requirements-min.txt', 'w') as f:
+            for dep in dependencies:
+                dep = dep.replace('>=', '==').split(',')[0]
+                f.write(f"{dep}\n")
         EOF
 
         # Install minimum dependencies
