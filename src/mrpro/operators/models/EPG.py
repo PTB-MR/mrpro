@@ -217,9 +217,9 @@ class EpgMrfFispWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Te
     inv_prep_ti = [20,None,None,None]*4 # 20 ms delay after inversion pulse in block 0
     te_prep_te = [None,None,40,80]*4 # T2-preparation pulse with TE = 40 and 80 in block 2 and 3, respectively
     n_rf_pulses_per_block = 48 # 48 RF pulses in each block
-    # Cardiac trigger delay is 700 ms. The delay between blocks is smaller because the duration of the preparation
-    # pulses needs to be taken into consideration
-    delay_after_block = [680, 700, 660, 620]*4
+    # Assuming a heart rate of 60bpm, the time between two R-peaks is 1000ms. The delay between blocks is smaller
+    # because the duration of the preparation pulses needs to be taken into consideration
+    delay_after_block = [1000, 960, 920, 980]*4
 
     """
 
