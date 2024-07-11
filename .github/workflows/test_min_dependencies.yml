@@ -43,7 +43,7 @@ jobs:
       run: pip install -r requirements-min.txt
 
     - name: Install the package
-      run: pip install .
+      run: pip install .[test]
 
     - name: Run tests
       run: pytest
