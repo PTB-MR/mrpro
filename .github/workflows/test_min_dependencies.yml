@@ -46,7 +46,7 @@ jobs:
       run: pip install .[test]
 
     - name: Run tests
-      run: pytest
+      run: pytest -n 4 -m "not cuda"
 
     - name: Cleanup
       run: rm requirements-min.txt
