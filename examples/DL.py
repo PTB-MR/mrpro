@@ -349,7 +349,6 @@ class NUFFTCascade(nn.Module):
         max_iter: int = 100,
         initial_value: torch.Tensor = None,
     ) -> None:
-        
         super(NUFFTCascade, self).__init__()
         self.acquisition_operator = acquisition_operator
         self.unet = unet
