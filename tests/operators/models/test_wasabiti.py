@@ -17,7 +17,7 @@
 import pytest
 import torch
 from mrpro.operators.models import WASABITI
-from tests.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
+from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
 
 
 def create_data(offset_max=500, n_offsets=101, b0_shift=0, rb1=1.0, t1=1.0):
