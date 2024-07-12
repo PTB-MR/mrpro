@@ -151,7 +151,7 @@ class AcqInfo(MoveDataMixin):
     """Directional cosine of readout/frequency encoding."""
 
     sample_time_us: torch.Tensor
-    """Readout bandwidth, as time between samples [ms]."""
+    """Readout bandwidth, as time between samples [us]."""
 
     scan_counter: torch.Tensor
     """Zero-indexed incrementing counter for readouts."""
