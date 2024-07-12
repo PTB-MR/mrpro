@@ -59,7 +59,7 @@ class DirectReconstruction(Reconstruction):
         self.noise = noise
 
     @classmethod
-    def from_kdata(cls, kdata: KData, noise: KNoise | None = None, coil_combine: bool = True) -> Self:
+    def from_kdata(cls, kdata: KData, noise: KNoise | None = None, *, coil_combine: bool = True) -> Self:
         """Create a DirectReconstruction from kdata with default settings.
 
         Parameters
@@ -69,8 +69,7 @@ class DirectReconstruction(Reconstruction):
         noise
             KNoise used for prewhitening. If None, no prewhitening is performed.
         coil_combine
-            if True (default), uses kdata to estimate sensitivity maps
-            and perform adaptive coil combine reconstruction
+            if True (default), uses kdata to estimate sensitivity maps and perform adaptive coil combine reconstruction
             in the reconstruction.
         """
         if noise is not None:

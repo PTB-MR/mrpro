@@ -68,11 +68,11 @@ class IterativeSenseReconstruction(Reconstruction):
         Parameters
         ----------
         fourier_op
-            Instance of the FourierOperator whose adjoint is used for reconstruction.
-        csm
-            Sensitivity maps for coil combination
+            Instance of the FourierOperator whose adjoint is used for reconstruction
         n_iterations
             Number of CG iterations
+        csm
+            Sensitivity maps for coil combination
         noise
             Used for prewhitening
         dcf
@@ -88,17 +88,17 @@ class IterativeSenseReconstruction(Reconstruction):
         self.dcf = dcf
 
     @classmethod
-    def from_kdata(cls, kdata: KData, n_iterations: int, noise: KNoise | None = None) -> Self:
+    def from_kdata(cls, kdata: KData, noise: KNoise | None = None, *, n_iterations: int = 10) -> Self:
         """Create a IterativeSenseReconstruction from kdata with default settings.
 
         Parameters
         ----------
         kdata
             KData to use for trajektory and header information
-        n_iterations
-            Number of CG iterations
         noise
             KNoise used for prewhitening. If None, no prewhitening is performed
+        n_iterations
+            Number of CG iterations
         """
         if noise is not None:
             kdata = prewhiten_kspace(kdata, noise)

@@ -8,12 +8,10 @@ fname = 'pulseq_radial_2D_402spokes_golden_angle_with_traj.h5'
 # %%
 # Download raw data
 import tempfile
-from pathlib import Path
 
 import requests
 
-data_folder = Path(tempfile.mkdtemp())
-data_file = tempfile.NamedTemporaryFile(dir=data_folder, mode='wb', delete=False, suffix='.h5')
+data_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.h5')
 response = requests.get(zenodo_url + fname, timeout=30)
 data_file.write(response.content)
 
@@ -29,9 +27,7 @@ data_file.write(response.content)
 #
 # where $n$ describes complex Gaussian noise. The image $x$ can be obtained by minimising the functionl $F$
 #
-# $ x = \argmin_x F(x) $
-#
-# $ F(x) = \frac{1}{2}||W^{\frac{1}{2}}(Ax - y)||_2^2 $
+# $ F(x) = ||W^{\frac{1}{2}}(Ax - y)||_2^2 $
 #
 # where $W^\frac{1}{2}$ is the square root of the density compensation function (which corresponds to a diagonal
 # operator).
@@ -102,8 +98,6 @@ operator = acquisition_operator.H @ dcf_operator @ acquisition_operator
 # ##### Run conjugate gradient
 
 # %%
-import torch
-
 img_manual = mrpro.algorithms.optimizers.cg(
     operator, right_hand_side, initial_value=right_hand_side, max_iterations=4, tolerance=0.0
 )
@@ -113,14 +107,14 @@ img_manual = mrpro.algorithms.optimizers.cg(
 # For comparison we can also carry out a direct reconstruction
 direct_reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction.from_kdata(kdata)
 img_direct = direct_reconstruction(kdata).rss().cpu()
-img_direct = img_direct
 
 # %%
 # Display the reconstructed image
 import matplotlib.pyplot as plt
+import torch
 
 fig, ax = plt.subplots(1, 3, squeeze=False)
-ax[0, 0].imshow(img_direct.data[0, 0, :, :])
+ax[0, 0].imshow(img_direct[0, 0, :, :])
 ax[0, 0].set_title('Direct Reconstruction', fontsize=10)
 ax[0, 1].imshow(torch.abs(img.data[0, 0, 0, :, :]))
 ax[0, 1].set_title('Iterative SENSE', fontsize=10)
