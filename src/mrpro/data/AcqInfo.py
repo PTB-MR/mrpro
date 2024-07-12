@@ -14,9 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Self
+from typing import Self, TypeVar
 
 import ismrmrd
 import numpy as np
@@ -24,6 +24,19 @@ import torch
 
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
+
+# Conversion functions for units
+T = TypeVar('T', float, torch.Tensor)
+
+
+def ms_to_s(ms: T) -> T:
+    """Convert ms to s."""
+    return ms / 1000
+
+
+def mm_to_m(m: T) -> T:
+    """Convert mm to m."""
+    return m / 1000
 
 
 @dataclass(slots=True)
@@ -90,7 +103,7 @@ class AcqInfo(MoveDataMixin):
     """Indices describing acquisitions (i.e. readouts)."""
 
     acquisition_time_stamp: torch.Tensor
-    """Clock time stamp (e.g. milliseconds since midnight)."""
+    """Clock time stamp [s]."""
 
     active_channels: torch.Tensor
     """Number of active receiver coil elements."""
@@ -120,26 +133,25 @@ class AcqInfo(MoveDataMixin):
     """Unique ID corresponding to the readout."""
 
     number_of_samples: torch.Tensor
-    """Number of readout sample points per readout (readouts may have different
-    number of sample points)."""
+    """Number of readout sample points per readout (readouts may have different number of sample points)."""
 
     patient_table_position: SpatialDimension[torch.Tensor]
-    """Offset position of the patient table, in LPS coordinates."""
+    """Offset position of the patient table, in LPS coordinates [m]."""
 
     phase_dir: SpatialDimension[torch.Tensor]
     """Directional cosine of phase encoding (2D)."""
 
     physiology_time_stamp: torch.Tensor
-    """Time stamps relative to physiological triggering, e.g. ECG, pulse oximetry, respiratory."""
+    """Time stamps relative to physiological triggering, e.g. ECG, pulse oximetry, respiratory [s]."""
 
     position: SpatialDimension[torch.Tensor]
-    """Center of the excited volume, in LPS coordinates relative to isocenter in millimeters."""
+    """Center of the excited volume, in LPS coordinates relative to isocenter [m]."""
 
     read_dir: SpatialDimension[torch.Tensor]
     """Directional cosine of readout/frequency encoding."""
 
     sample_time_us: torch.Tensor
-    """Readout bandwidth, as time between samples in microseconds."""
+    """Readout bandwidth, as time between samples [ms]."""
 
     scan_counter: torch.Tensor
     """Zero-indexed incrementing counter for readouts."""
@@ -208,13 +220,15 @@ class AcqInfo(MoveDataMixin):
                 data_tensor = data_tensor[None, None]
             return data_tensor
 
-        def spatialdimension_2d(data: np.ndarray) -> SpatialDimension[torch.Tensor]:
+        def spatialdimension_2d(
+            data: np.ndarray, conversion: Callable[[torch.Tensor], torch.Tensor] | None = None
+        ) -> SpatialDimension[torch.Tensor]:
             # Ensure spatial dimension is (k1*k2*other, 1, 3)
             if data.ndim != 2:
                 raise ValueError('Spatial dimension is expected to be of shape (N,3)')
             data = data[:, None, :]
             # all spatial dimensions are float32
-            return SpatialDimension[torch.Tensor].from_array_xyz(torch.tensor(data.astype(np.float32)))
+            return SpatialDimension[torch.Tensor].from_array_xyz(torch.tensor(data.astype(np.float32)), conversion)
 
         acq_idx = AcqIdx(
             k1=tensor(idx['kspace_encode_step_1']),
@@ -249,10 +263,10 @@ class AcqInfo(MoveDataMixin):
             flags=tensor_2d(headers['flags']),
             measurement_uid=tensor_2d(headers['measurement_uid']),
             number_of_samples=tensor_2d(headers['number_of_samples']),
-            patient_table_position=spatialdimension_2d(headers['patient_table_position']),
+            patient_table_position=spatialdimension_2d(headers['patient_table_position'], mm_to_m),
             phase_dir=spatialdimension_2d(headers['phase_dir']),
             physiology_time_stamp=tensor_2d(headers['physiology_time_stamp']),
-            position=spatialdimension_2d(headers['position']),
+            position=spatialdimension_2d(headers['position'], mm_to_m),
             read_dir=spatialdimension_2d(headers['read_dir']),
             sample_time_us=tensor_2d(headers['sample_time_us']),
             scan_counter=tensor_2d(headers['scan_counter']),
