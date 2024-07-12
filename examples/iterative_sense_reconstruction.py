@@ -27,19 +27,20 @@ data_file.write(response.content)
 #
 # $ y = Ax + n $
 #
-# where $n$ describes complex Gaussian noise. Now we want to solve the inverse problem by minimizing
+# where $n$ describes complex Gaussian noise. The image $x$ can be obtained by minimising the functionl $F$
 #
-# $ \min_x \frac{1}{2}||W^{\frac{1}{2}}(Ax - y)||_2^2 $
+# $ x = \argmin_x F(x) $
 #
-# where $W^\frac{1}{2}$ is the square root of the density compensation function. We can rewrite this problem as:
+# $ F(x) = \frac{1}{2}||W^{\frac{1}{2}}(Ax - y)||_2^2 $
 #
-# $ W^\frac{1}{2}Ax = W^\frac{1}{2}y$
+# where $W^\frac{1}{2}$ is the square root of the density compensation function (which corresponds to a diagonal
+# operator).
+#
+# Setting the derivative of the functional $F$ to zero and rearranging yields
 #
 # $ A^H W A x = A^H W y$
 #
-# $ H x = b $ $\quad$ Eq (1)
-#
-# with $H = A^H W A$ and $b = A^H W y$ which can be solved with a conjugate gradient approach.
+# which is a linear system $Hx = b$ that needs to be solved for $x$.
 # %%
 import mrpro
 
@@ -64,7 +65,7 @@ img = iterative_sense_reconstruction(kdata)
 # ##### $W$
 
 # %%
-# Calculate dcf using the trajectory
+# The density compensation operator is calculated based on the k-space locations of the acquired data.
 dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata.traj).as_operator()
 
 
@@ -95,16 +96,16 @@ acquisition_operator = fourier_operator @ csm_operator
 # ##### $H = A^H W A$
 
 # %%
-cg_operator = acquisition_operator.H @ dcf_operator @ acquisition_operator
+operator = acquisition_operator.H @ dcf_operator @ acquisition_operator
 
 # %% [markdown]
-# ##### Conjugate gradient minimisation
+# ##### Run conjugate gradient
 
 # %%
 import torch
 
 img_manual = mrpro.algorithms.optimizers.cg(
-    cg_operator, right_hand_side, initial_value=right_hand_side, max_iterations=4, tolerance=0.0
+    operator, right_hand_side, initial_value=right_hand_side, max_iterations=4, tolerance=0.0
 )
 
 

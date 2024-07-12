@@ -1,4 +1,4 @@
-"""Iterative SENSE Reconstruction by Adjoint Fourier Transform."""
+"""Iterative SENSE Reconstruction by adjoint Fourier transform."""
 
 # Copyright 2024 Physikalisch-Technische Bundesanstalt
 #
@@ -47,8 +47,8 @@ class IterativeSenseReconstruction(Reconstruction):
     where :math:`A` is the acquisition model (coil sensitivity maps, Fourier operator, k-space sampling), :math:`y` is
     the acquired k-space data and :math:`W` describes the density compensation [1]_ .
 
-    .. [1] K. Pruessmann, M. Weiger, P. Boernert, and P. Boesiger, Advances in sensitivity encoding with arbitrary
-       k-space trajectories. Magn. Reson. Imaging 46, 638-651 (2001). https://doi.org/10.1002/mrm.1241
+    .. [1] Pruessmann K, Weiger M, Boernert P, and Boesiger P (2001), Advances in sensitivity encoding with arbitrary
+       k-space trajectories. MRI 46, 638-651. https://doi.org/10.1002/mrm.1241
 
     """
 
@@ -68,7 +68,7 @@ class IterativeSenseReconstruction(Reconstruction):
         Parameters
         ----------
         fourier_op
-            Instance of the FourierOperator which adjoint is used for reconstruction.
+            Instance of the FourierOperator whose adjoint is used for reconstruction.
         csm
             Sensitivity maps for coil combination
         n_iterations
