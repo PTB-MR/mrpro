@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+from mrpro.operators.FourierOp import FourierOp
 from mrpro.algorithms.reconstruction import DirectReconstruction
 from mrpro.data import SpatialDimension
 from mrpro.data._kdata._KData import KData  # Import the KData class
@@ -77,8 +78,8 @@ class NUFFTCascade(nn.Module):
         acquisition_operator: FourierOp,
         npcg: int,
         w: float,
-        op_norm_estimate: float,
-        max_iter: int = 100,
+        op_norm_estimate,
+        max_iter: int = 10,
         initial_value: torch.Tensor = None,
     ) -> None:
         super(NUFFTCascade, self).__init__()
@@ -88,23 +89,28 @@ class NUFFTCascade(nn.Module):
         self.w_raw = nn.Parameter(torch.tensor(-5.0, requires_grad=True))
         self.max_iter = max_iter
         self.initial_value = initial_value
-        self.op_norm_estimate = op_norm_estimate
+        self.op_norm_estimate = acquisition_operator.operator_norm(initial_value=initial_value, max_iterations=max_iter, dim=None)
 
     @property
     def w_reg(self):
         return (2 * F.sigmoid(self.w_raw)) / self.op_norm_estimate**2
     
     def apply_CNN(self):
-        return self
+        layers = (nn.Conv2d( 
+            n_ch_in=2,
+            n_ch_out=2,
+            kernel_size=3,
+            padding=int(np.floor(3/ 2)), ## kernel_size /2
+            bias=False,
+            padding_mode='zeros',))
+    
+        return nn.Sequential(layers)
 
 
     def forward(self, x, k_space_data):
-        if self.op_norm_estimate is None:
-            self.estimate_operator_norm()
-
         for _ in range(self.npcg):
-            operator_test = self.acquisition_operator.H(self.acquisition_operator(x) - k_space_data)
-            x = x - self.w_reg * operator_test - self.apply_CNN(x)
+            res_acq_error = self.acquisition_operator.H(self.acquisition_operator(x) - k_space_data)
+            x = x - self.w_reg * res_acq_error - self.apply_CNN(x)
 
         return x
 
@@ -269,13 +275,13 @@ for i in range (num_samples):
 from torch.utils.data import Dataset, DataLoader
 
 class CustomDataset(Dataset):
-    def __init__(self, kspace_data_fullsamp, kspace_data_us, num_ellipses_per_sample):
-        self.kspace_data_fullsamp = kspace_data_fullsamp
-        self.kspace_data_us = kspace_data_us
+    def __init__(self, num_ellipses_per_sample):
+        # self.kspace_data_fullsamp = kspace_data_fullsamp
+        # self.kspace_data_us = kspace_data_us
         self.num_ellipses_per_sample = num_ellipses_per_sample
 
     def __len__(self):
-        return self.kspace_data_fullsamp.shape[2]
+        return self.shifted_kdatapuls.data.shape[2]
 
     def generate_random_ellipses(self):
         """Generate random ellipses based on self.num_ellipses_per_sample."""
@@ -311,11 +317,7 @@ class CustomDataset(Dataset):
         direct_reconstruction_us = DirectReconstruction.from_kdata(kdata_us)
         img_us = direct_reconstruction_us(kdata_us)
          
-        ku = KData(
-            data = kspace_data_us,
-            header=kdata_us.header,
-            traj=kdata_us.traj
-        )
+        ku = kdata_us
 
         xu = img_fullsamp.data
         xf = img_us.data
@@ -327,29 +329,33 @@ class CustomDataset(Dataset):
 n_epochs = 10
 learning_rate = 1e-4
 batch_size = 16
-op_norm_estimate=0.1
 
-acquisition_operator = mrpro.operators.FourierOp.from_kdata(kdata_simulated_fullsamp)
+
 
 # Initialize the necessary objects
-# Initialize the necessary objects
-unet = UNet(dim=2, n_ch_in=2, n_ch_out=2, n_enc_stages=3, n_convs_per_stage=2, n_filters=16)
-### ???????????????????????
-model = NUFFTCascade(acquisition_operator, unet, nu=1, npcg=16, w=0.1,op_norm_estimate=op_norm_estimate, initial_value=1.)
-### ?????????????????????????   
+model = NUFFTCascade(acquisition_operator=None, npcg=16, w=0.1,op_norm_estimate=None, initial_value=None, max_iter=10)
 loss_fct = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 #
-dataset = CustomDataset(kspace_data_fullsamp, kspace_data_us, 8)
+dataset = CustomDataset(8)
 data_loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
 #%%
 # Model training
 for epoch in range(n_epochs):
     for _, data in enumerate(data_loader):
-        xu, xf = data
+        xu, ku, xf = data
+
+        # Update acquisition operator and norm estimate based on current batch's undersampled data
+        acquisition_operator = mrpro.operators.FourierOp.from_kdata(ku)
+        op_norm_estimate = acquisition_operator.operator_norm(xu, max_iterations=10)  
+
+        # Set the updated acquisition operator and norm estimate to the model
+        model.acquisition_operator = acquisition_operator
+        model.op_norm_estimate = op_norm_estimate
+        
         optimizer.zero_grad()
-        xreco = model(xu)
+        xreco = model(xu, ku)
         loss = loss_fct(xreco, xf)
         loss.backward()
         optimizer.step()
