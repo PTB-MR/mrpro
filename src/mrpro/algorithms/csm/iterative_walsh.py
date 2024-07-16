@@ -54,7 +54,7 @@ def iterative_walsh(
     coil_covariance = torch.einsum('azyx,bzyx->abzyx', coil_images, coil_images.conj())
 
     # Smooth the covariance along y-x for 2D and z-y-x for 3D data
-    coil_covariance = uniform_filter(coil_covariance, width=smoothing_width.zyx, axis=(-3, -2, -1))
+    coil_covariance = uniform_filter(coil_covariance, width=smoothing_width.zyx, dim=(-3, -2, -1))
 
     # At each point in the image, find the dominant eigenvector
     # of the signal covariance matrix using the power method
