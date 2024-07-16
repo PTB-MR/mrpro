@@ -1,0 +1,6 @@
+mrpro.utils.filters.reduce
+==========================
+
+.. currentmodule:: mrpro.utils.filters
+
+.. autofunction:: reduce

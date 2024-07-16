@@ -17,6 +17,7 @@ mrpro.utils.filters
       ceil
       filter_separable
       gaussian_filter
+      reduce
       uniform_filter
    
    
