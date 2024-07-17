@@ -14,15 +14,10 @@ import numpy as np
 import scipy as sp
 import pydicom
 from einops import rearrange
-from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore [import-untyped]
-from mrpro.algorithms.optimizers import adam
 from mrpro.data import DcfData
-from mrpro.operators import MagnitudeOp
-from mrpro.operators import FourierOp
+from mrpro.operators import FourierOp, SensitivityOp
 from mrpro.utils import split_idx
-from mrpro.operators.functionals import MSEDataDiscrepancy
-from mrpro.operators.models import InversionRecovery
-from mrpro.data import KData, DcfData
+from mrpro.data import KData, DcfData, IData, CsmData
 from mrpro.data import KTrajectory
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.data.traj_calculators import KTrajectoryRadial2D
@@ -61,6 +56,15 @@ rr_duration = 1200
 pname = Path('/echo/_allgemein/projects/pulseq/measurements/2024-10-16_T1MES_cMRF/meas_MID00074_FID06452_20240716_radial_cMRF_with_prep_705rep_trig_delay800ms/')
 scan_name = Path('meas_MID00074_FID06452_20240716_radial_cMRF_with_prep_705rep_trig_delay800ms_with_traj.h5')
 rr_duration = 1200 
+
+
+pname = Path('/echo/_allgemein/projects/pulseq/measurements/2024-10-17_T1MES_cMRF/meas_MID00049_FID06498_20240717_spiral_cMRF_705rep_trig_delay800ms/')
+scan_name = Path('meas_MID00049_FID06498_20240717_spiral_cMRF_705rep_trig_delay800ms_with_traj.h5')
+rr_duration = 1200 
+
+pname = Path('/echo/_allgemein/projects/pulseq/measurements/2024-10-17_T1MES_cMRF/meas_MID00048_FID06497_20240717_radial_cMRF_705rep_trig_delay800ms/')
+scan_name = Path('meas_MID00048_FID06497_20240717_radial_cMRF_705rep_trig_delay800ms_with_traj.h5')
+rr_duration = 1200 
      
 fname_angle = Path('/echo/_allgemein/projects/pulseq/mrf/cMRF_fa_705rep.txt')
 with open(fname_angle, "r") as file:
@@ -85,6 +89,12 @@ kdata.header.recon_matrix.y = 192
 
 dcf = DcfData.from_traj_voronoi(kdata.traj)
 dcf_data_voronoi = dcf.data
+
+fourier_op = FourierOp.from_kdata(kdata)
+(img,) = fourier_op.adjoint(kdata.data * dcf_data_voronoi[:,None,...])
+idata = IData.from_tensor_and_kheader(img, kdata.header)
+csm_data = CsmData.from_idata_walsh(idata)
+csm_op = SensitivityOp(csm_data)
 
 dyn_idx = split_idx(torch.arange(0,47), 10, 8)
 dyn_idx = torch.cat([dyn_idx + ind*47 for ind in range(15)], dim=0)
@@ -130,7 +140,8 @@ if False:
 
 fourier_op = FourierOp.from_kdata(kdata)
 (img,) = fourier_op.adjoint(kdata.data * dcf_data_voronoi[:,None,...])
-img = torch.sum(img,dim=1)
+#img = torch.sum(img,dim=1)
+(img,) = csm_op.adjoint(img)
 img = torch.squeeze(img)
 
 fig, ax = plt.subplots(1,3, figsize=(12,4))
