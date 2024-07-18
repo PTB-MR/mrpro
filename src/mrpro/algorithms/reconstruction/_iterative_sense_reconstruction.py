@@ -19,17 +19,17 @@ from __future__ import annotations
 from typing import Literal
 from typing import Self
 
-from mrpro.algorithms._prewhiten_kspace import prewhiten_kspace
-from mrpro.algorithms.optimizers import cg
-from mrpro.algorithms.reconstruction import DirectReconstruction
-from mrpro.algorithms.reconstruction import Reconstruction
-from mrpro.data._CsmData import CsmData
-from mrpro.data._DcfData import DcfData
-from mrpro.data._IData import IData
-from mrpro.data._kdata._KData import KData
-from mrpro.data._KNoise import KNoise
-from mrpro.operators._LinearOperator import LinearOperator
-from mrpro.operators._FourierOp import FourierOp
+from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
+from mrpro.algorithms.optimizers.cg import cg
+from mrpro.algorithms.reconstruction.DirectReconstruction import DirectReconstruction
+from mrpro.algorithms.reconstruction.Reconstruction import Reconstruction
+from mrpro.data.CsmData import CsmData
+from mrpro.data.DcfData import DcfData
+from mrpro.data.IData import IData
+from mrpro.data._kdata.KData import KData
+from mrpro.data.KNoise import KNoise
+from mrpro.operators.LinearOperator import LinearOperator
+from mrpro.operators.FourierOp import FourierOp
 
 class IterativeSenseReconstruction(Reconstruction):
     """Iterative SENSE Regularization reconstruction.
