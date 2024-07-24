@@ -297,19 +297,19 @@ class NUFFTCascade(nn.Module):
         self.initial_value = initial_value
         self.unet = UNet(n_ch_in=2, n_ch_out=2, n_enc_stages=3, n_convs_per_stage=2, n_filters=16)
 
+    # @property
+    def w_reg(self, initial_value):
         # Ensure acquisition_operator is provided
-        if acquisition_operator is not None:
-            self.op_norm_estimate = acquisition_operator.operator_norm(
-                initial_value=initial_value, max_iterations=max_iter, dim=(-3, -2, -1)
+        if self.acquisition_operator is not None:
+            op_norm_estimate = self.acquisition_operator.operator_norm(
+                initial_value=initial_value.unsqueeze(0).unsqueeze(0).unsqueeze(0), max_iterations=self.max_iter, dim=None
             )
         else:
             # Provide a default value or handle the case where acquisition_operator is None
-            self.op_norm_estimate = torch.tensor([[[1.0000]]])
+            op_norm_estimate = torch.tensor([[[1.0000]]])
 
-    @property
-    def w_reg(self):
-        return (2 * F.sigmoid(self.w_raw)) / self.op_norm_estimate**2
-
+        return (2 * F.sigmoid(self.w_raw)) / op_norm_estimate**2
+       
     def apply_UNet(self, x):
         x = torch.view_as_real(x).unsqueeze(0)
         x = rearrange(x, 'b x y ch -> b ch x y')
@@ -320,11 +320,11 @@ class NUFFTCascade(nn.Module):
 
     def forward(self, x, k_space_data):
         for _ in range(self.npcg):
-            dcf = mrpro.data.DcfData.from_traj_voronoi(kdata_us.traj)
+            dcf = mrpro.data.DcfData.from_traj_voronoi(k_space_data.traj)
             sqrt_dcf_dat = torch.sqrt(dcf.data)
             res_acq_error = self.acquisition_operator.H(self.acquisition_operator(x.unsqueeze(0).unsqueeze(0).unsqueeze(0))[0] - (k_space_data.data*sqrt_dcf_dat))
             xunet = self.apply_UNet(x)
-            x = x - (self.w_reg * res_acq_error[0]).squeeze(0).squeeze(0).squeeze(0) - xunet
+            x = x - (self.w_reg(x) * res_acq_error[0]).squeeze(0).squeeze(0).squeeze(0) - xunet
 
         return x
 
