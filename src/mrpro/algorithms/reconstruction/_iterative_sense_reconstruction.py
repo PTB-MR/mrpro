@@ -16,20 +16,20 @@
 
 from __future__ import annotations
 
-from typing import Literal
-from typing import Self
+from typing import Literal, Self
 
-from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
 from mrpro.algorithms.optimizers.cg import cg
+from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
 from mrpro.algorithms.reconstruction.DirectReconstruction import DirectReconstruction
 from mrpro.algorithms.reconstruction.Reconstruction import Reconstruction
+from mrpro.data._kdata.KData import KData
 from mrpro.data.CsmData import CsmData
 from mrpro.data.DcfData import DcfData
 from mrpro.data.IData import IData
-from mrpro.data._kdata.KData import KData
 from mrpro.data.KNoise import KNoise
-from mrpro.operators.LinearOperator import LinearOperator
 from mrpro.operators.FourierOp import FourierOp
+from mrpro.operators.LinearOperator import LinearOperator
+
 
 class IterativeSenseReconstruction(Reconstruction):
     """Iterative SENSE Regularization reconstruction.
@@ -101,9 +101,7 @@ class IterativeSenseReconstruction(Reconstruction):
         self.n_max_iter = n_max_iter
 
     @classmethod
-    def from_kdata(
-        cls, kdata: KData, n_max_iter: int, noise: KNoise | None = None
-    ) -> Self:
+    def from_kdata(cls, kdata: KData, n_max_iter: int, noise: KNoise | None = None) -> Self:
         """Create a IterativeSenseReconstruction from kdata with default settings.
 
         Parameters

@@ -66,216 +66,7 @@ shifted_kdatapuls.header.recon_matrix.x = 220
 shifted_kdatapuls.header.recon_matrix.y = 220
 
 import torch.nn as nn
-#%%
-import torch
-import torch.nn as nn
-import numpy as np
 
-
-class ConvBlock(nn.Module):
-    """
-    A simple block of convolutional layers (1D, 2D or 3D)
-    """
-
-    def __init__(
-        self,
-        n_ch_in,
-        n_ch_out,
-        n_convs,
-        kernel_size=3,
-        bias=True,
-        padding_mode="zeros",
-    ):
-        super().__init__()
-
-        padding = int(np.floor(kernel_size / 2))
-
-        conv_block_list = []
-        conv_block_list.extend(
-            [
-                nn.Conv2d(
-                    n_ch_in,
-                    n_ch_out,
-                    kernel_size,
-                    padding=padding,
-                    bias=bias,
-                    padding_mode=padding_mode,
-                ),
-                nn.LeakyReLU(),
-            ]
-        )
-
-        for i in range(n_convs - 1):
-            conv_block_list.extend(
-                [
-                    nn.Conv2d(
-                        n_ch_out,
-                        n_ch_out,
-                        kernel_size,
-                        padding=padding,
-                        bias=bias,
-                        padding_mode=padding_mode,
-                    ),
-                    nn.LeakyReLU(),
-                ]
-            )
-
-        self.conv_block = nn.Sequential(*conv_block_list)
-
-    def forward(self, x):
-        return self.conv_block(x)
-
-
-class Encoder(nn.Module):
-    def __init__(
-        self,
-        n_ch_in,
-        n_enc_stages,
-        n_convs_per_stage,
-        n_filters,
-        kernel_size=3,
-        bias=True,
-        padding_mode="zeros",
-    ):
-        super().__init__()
-
-        n_ch_list = [n_ch_in]
-        for ne in range(n_enc_stages):
-            n_ch_list.append(int(n_filters) * 2**ne)
-
-        self.enc_blocks = nn.ModuleList(
-            [
-                ConvBlock(
-                    n_ch_list[i],
-                    n_ch_list[i + 1],
-                    n_convs_per_stage,
-                    kernel_size=kernel_size,
-                    bias=bias,
-                    padding_mode=padding_mode,
-                )
-                for i in range(len(n_ch_list) - 1)
-            ]
-        )
-
-        self.pool = nn.MaxPool2d(2)
-    def forward(self, x):
-        features = []
-        for block in self.enc_blocks:
-            x = block(x)
-            features.append(x)
-            x = self.pool(x)
-        return features
-
-
-class Decoder(nn.Module):
-    def __init__(
-        self,
-        n_ch_in,
-        n_dec_stages,
-        n_convs_per_stage,
-        kernel_size=3,
-        bias=False,
-        padding_mode="zeros",
-    ):
-        super().__init__()
-
-        n_ch_list = []
-        for ne in range(n_dec_stages):
-            n_ch_list.append(int(n_ch_in * (1 / 2) ** ne))
-            
-        self.interp_mode = "bilinear"
-
-        padding = int(np.floor(kernel_size / 2))
-        self.upconvs = nn.ModuleList(
-            [
-                nn.Conv2d(
-                    n_ch_list[i],
-                    n_ch_list[i + 1],
-                    kernel_size=kernel_size,
-                    padding=padding,
-                    bias=bias,
-                    padding_mode=padding_mode,
-                )
-                for i in range(len(n_ch_list) - 1)
-            ]
-        )
-        self.dec_blocks = nn.ModuleList(
-            [
-                ConvBlock(
-                    n_ch_list[i],
-                    n_ch_list[i + 1],
-                    n_convs_per_stage,
-                    kernel_size=kernel_size,
-                    bias=bias,
-                    padding_mode=padding_mode,
-                )
-                for i in range(len(n_ch_list) - 1)
-            ]
-        )
-
-    def forward(self, x, encoder_features):
-        for i in range(len(self.dec_blocks)):
-            enc_features = encoder_features[i]
-            enc_features_shape = enc_features.shape
-            x = nn.functional.interpolate(
-                x, enc_features_shape[2:], mode=self.interp_mode, align_corners=False
-            )
-            x = self.upconvs[i](x)
-            x = torch.cat([x, enc_features], dim=1)
-            x = self.dec_blocks[i](x)
-        return x
-
-
-class UNet(nn.Module):
-    def __init__(
-        self,
-        n_ch_in=2,
-        n_ch_out=2,
-        n_enc_stages=3,
-        n_convs_per_stage=2,
-        n_filters=16,
-        kernel_size=3,
-        bias=True,
-        residual_connection=True,
-        padding_mode="zeros",
-    ):
-        super().__init__()
-        self.encoder = Encoder(
-            n_ch_in,
-            n_enc_stages,
-            n_convs_per_stage,
-            n_filters,
-            kernel_size=kernel_size,
-            bias=bias,
-            padding_mode=padding_mode,
-        )
-        self.decoder = Decoder(
-            n_filters * (2 ** (n_enc_stages - 1)),
-            n_enc_stages,
-            n_convs_per_stage,
-            kernel_size=kernel_size,
-            bias=bias,
-            padding_mode=padding_mode,
-        )
-
-        self.c1x1 = nn.Conv2d(n_filters, n_ch_out, kernel_size=1, padding=0, bias=bias)
-
-        self.residual_connection = residual_connection
-        if residual_connection:
-            if n_ch_in != n_ch_out:
-                raise ValueError(
-                    "For using the residual connection, the number of input and output channels of the \
-                    network must be the same.\
-                    Given {n_ch_in} and {n_ch_out}."
-                )
-
-    def forward(self, x):
-        enc_features = self.encoder(x)
-        dec = self.decoder(enc_features[-1], enc_features[::-1][1:])
-        out = self.c1x1(dec)
-        if self.residual_connection:
-            out = out + x
-        return out
 # %% NufftCascade
 from einops import rearrange
 
@@ -295,21 +86,19 @@ class NUFFTCascade(nn.Module):
         self.w_raw = nn.Parameter(torch.tensor(-5.0, requires_grad=True))
         self.max_iter = max_iter
         self.initial_value = initial_value
-        self.unet = UNet(n_ch_in=2, n_ch_out=2, n_enc_stages=3, n_convs_per_stage=2, n_filters=16)
 
-    
-    # @property
-    def w_reg(self, initial_value):
         # Ensure acquisition_operator is provided
-        if self.acquisition_operator is not None:
-            op_norm_estimate = self.acquisition_operator.operator_norm(
-                initial_value=initial_value.unsqueeze(0).unsqueeze(0).unsqueeze(0), max_iterations=self.max_iter, dim=None
+        if acquisition_operator is not None:
+            self.op_norm_estimate = acquisition_operator.operator_norm(
+                initial_value=initial_value, max_iterations=max_iter, dim=(-3, -2, -1)
             )
         else:
             # Provide a default value or handle the case where acquisition_operator is None
-            op_norm_estimate = torch.tensor([[[1.0000]]])
+            self.op_norm_estimate = torch.tensor([[[1.0000]]])
 
-        return (2 * F.sigmoid(self.w_raw)) / op_norm_estimate**2
+    @property
+    def w_reg(self):
+        return (2 * F.sigmoid(self.w_raw)) / self.op_norm_estimate**2
 
     def apply_CNN(self, x):
         x = torch.view_as_real(x)
@@ -337,23 +126,14 @@ class NUFFTCascade(nn.Module):
         x = torch.view_as_complex(x.contiguous())
         return x  # torch.Size([220, 220])
 
-    def apply_UNet(self, x):
-        x = torch.view_as_real(x).unsqueeze(0)
-        x = rearrange(x, 'b x y ch -> b ch x y')
-        x = self.unet(x)
-        x = rearrange(x, 'b ch x y -> b x y ch')
-        x = torch.view_as_complex(x.contiguous()).squeeze(0)
-        return x
 
     def forward(self, x, k_space_data):
         for _ in range(self.npcg):
-            dcf = mrpro.data.DcfData.from_traj_voronoi(k_space_data.traj)
+            dcf = mrpro.data.DcfData.from_traj_voronoi(kdata_us.traj)
             sqrt_dcf_dat = torch.sqrt(dcf.data)
-
             res_acq_error = self.acquisition_operator.H(self.acquisition_operator(x.unsqueeze(0).unsqueeze(0).unsqueeze(0))[0] - (k_space_data.data*sqrt_dcf_dat))
-            #xnn = self.apply_CNN(x)
-            #xunet = self.apply_UNet(x)
-            x = x - (self.w_reg(x) * res_acq_error[0]).squeeze(0).squeeze(0).squeeze(0) # - xunet # - xnn
+            xnn = self.apply_CNN(x)
+            x = x - (self.w_reg * res_acq_error[0]).squeeze(0).squeeze(0).squeeze(0) - xnn
 
         return x
 
@@ -411,107 +191,6 @@ us_idx = torch.arange(0, 70, 1)[None:]
 nx, ny = 220, 220
 kx = shifted_kdatapuls.traj.kx
 ky = shifted_kdatapuls.traj.ky
-
-
-# %% Creating Kspace_data (Not needed because doing it "on the fly")
-# Define image dimensions
-# image_dimensions = SpatialDimension(z=1, y=nx, x=ny)
-
-# # Create phantoms
-# phantom_samples = create_rand_phantom(num_samples, num_ellipses_per_sample, kx, ky)
-
-# kspace_data_samples = phantom_samples[0].kspace(ky, kx)
-# reconstructed_images = []
-# kspace_samples = []
-
-# for i, phantom in enumerate(phantom_samples):
-#     # Generate k-space data
-#     kspace_data = phantom.kspace(ky, kx)
-#     print(f'K-space data sample {i+1}: shape = {kspace_data.shape}')
-
-#     kdata_object = KData(data=kspace_data.unsqueeze(0), header=shifted_kdatapuls.header, traj=shifted_kdatapuls.traj)
-
-#     kdata_object.header.recon_matrix.x = nx
-#     kdata_object.header.recon_matrix.y = ny
-
-#     kdata_us = KData.split_k1_into_other(kdata_object, torch.arange(0, 128, 4)[None, :], other_label='repetition')
-
-#     direct_reconstruction_fullsamp = DirectReconstruction.from_kdata(kdata_object)
-#     img_fullsamp = direct_reconstruction_fullsamp(kdata_object)
-#     reconstructed_img_fullsamp = img_fullsamp.data
-
-#     direct_reconstruction_us = DirectReconstruction.from_kdata(kdata_us)
-#     img_us = direct_reconstruction_us(kdata_us)
-#     reconstructed_img_us = img_us.data
-
-#     if i == 0:
-#         reconstructed_images_fullsamp=reconstructed_img_fullsamp
-#         reconstructed_images_us=reconstructed_img_us
-#         kspace_data_fullsamp=kdata_object.data
-#         kspace_data_us=kdata_us.data
-#     else :
-#         reconstructed_images_fullsamp=torch.cat((reconstructed_images_fullsamp, reconstructed_img_fullsamp),2)
-#         reconstructed_images_us=torch.cat((reconstructed_images_us, reconstructed_img_us),2)
-#         kspace_data_fullsamp=torch.cat((kspace_data_fullsamp, kdata_object.data),2)
-#         kspace_data_us=torch.cat((kspace_data_us, kdata_us.data),2)
-
-# kdata_simulated_fullsamp = KData(
-#     data = kspace_data_fullsamp,
-#     header=shifted_kdatapuls.header,
-#     traj=shifted_kdatapuls.traj
-# )
-
-# kdata_simulated_us = KData(
-#     data = kspace_data_us,
-#     header=kdata_us.header,
-#     traj=kdata_us.traj
-# )
-
-# %% Plot the k-space trajectory for kdata_us for each num_sample
-# for i in range (num_samples):
-#     # Plot the k-space trajectory for fully sampled kdata
-#     plt.figure(figsize=(12, 6))
-#     plt.subplot(1, 2, 1)
-#     plt.plot(kdata_object.traj.ky.flatten(), kdata_object.traj.kx.flatten(), 'o', label='k-space trajectory')
-#     plt.title(f'Fully Sampled k-space Trajectory - Sample {i+1}')
-#     plt.xlabel('ky')
-#     plt.ylabel('kx')
-#     plt.legend()
-#     plt.grid(True)
-
-#     # Plot the fully sampled reconstructed image
-#     plt.subplot(1, 2, 2)
-#     plt.imshow(torch.abs(reconstructed_images_fullsamp[0, 0, i, :, :]), cmap='gray')
-#     plt.title(f'Fully Sampled Reconstructed Image - Sample {i+1}')
-#     plt.colorbar()
-#     plt.xlabel('Y')
-#     plt.ylabel('X')
-
-#     # Show the plot for fully sampled data
-#     plt.tight_layout()
-#     plt.show()
-
-#     # Plot the k-space trajectory for undersampled kdata
-#     plt.figure(figsize=(12, 6))
-#     plt.subplot(1, 2, 1)
-#     plt.plot(kdata_us.traj.ky.flatten(), kdata_us.traj.kx.flatten(), 'o', label='k-space trajectory')
-#     plt.title(f'Undersampled k-space Trajectory - Sample {i+1}')
-#     plt.xlabel('ky')
-#     plt.ylabel('kx')
-#     plt.legend()
-#     plt.grid(True)
-
-#     # Plot the undersampled reconstructed image
-#     plt.subplot(1, 2, 2)
-#     plt.imshow(torch.abs(reconstructed_images_us[0, 0, i, :, :]), cmap='gray')
-#     plt.title(f'Undersampled Reconstructed Image - Sample {i+1}')
-#     plt.colorbar()
-#     plt.xlabel('Y')
-#     plt.ylabel('X')
-
-#     # Show the plot for undersampled data
-#     plt.tight_layout()
-#     plt.show()
 
 # %% Custom Dataset
 from torch.utils.data.dataloader import DataLoader
@@ -583,6 +262,7 @@ tot_loss = 0
 list_xreco = []
 list_xu = []
 list_xf = []
+
 # Initialize the necessary objects
 
 model = NUFFTCascade(acquisition_operator=None, npcg=16, w=0.1, initial_value=None, max_iter=10)
@@ -667,13 +347,13 @@ print(f'losses = {lossesssss}')
 import pickle
 
 # Save the lists to files
-with open('reconstructed_images.pkl', 'wb') as f:
+with open('reconstructed_images_cnn.pkl', 'wb') as f:
     pickle.dump(list_xreco, f)
 
-with open('undersampled_images.pkl', 'wb') as f:
+with open('undersampled_images_cnn.pkl', 'wb') as f:
     pickle.dump(list_xu, f)
 
-with open('full_sampled_images.pkl', 'wb') as f:
+with open('full_sampled_images_cnn.pkl', 'wb') as f:
     pickle.dump(list_xf, f)
 
 print('Lists have been saved successfully.')
