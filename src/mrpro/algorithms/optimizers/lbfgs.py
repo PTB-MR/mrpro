@@ -61,7 +61,7 @@ def lbfgs(
     line_search_fn
         line search algorithm, either 'strong_wolfe' or None (meaning constant step size)
     callback
-        user-provided function to be called after each iteration.
+        function to be called after each iteration.
         N.B. the callback is NOT called within the line search of LBFGS
 
     Returns
@@ -91,8 +91,7 @@ def lbfgs(
             state = optim.state[optim.param_groups[0]['params'][0]]
             if state['n_iter'] > iteration:
                 callback({'solution': parameters, 'iteration_number': iteration})
-
-            iteration = state['n_iter']
+                iteration = state['n_iter']
 
         return objective
 

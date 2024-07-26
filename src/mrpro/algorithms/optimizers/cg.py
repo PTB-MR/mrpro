@@ -69,7 +69,7 @@ def cg(
         tolerance for the residual; if set to zero, the maximal number of iterations
         is the only stopping criterion used to stop the cg
     callback
-        user-provided function to be called at each iteration
+        function to be called at each iteration
 
     Returns
     -------

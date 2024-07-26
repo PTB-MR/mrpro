@@ -61,7 +61,7 @@ def adam(
     decoupled_weight_decay
         whether to use Adam (default) or AdamW (if set to true) [1]_
     callback
-        user-provided function to be called after each iteration
+        function to be called after each iteration
 
     Returns
     -------
