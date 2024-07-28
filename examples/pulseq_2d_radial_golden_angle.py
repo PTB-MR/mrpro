@@ -29,6 +29,7 @@ data_file = tempfile.NamedTemporaryFile(dir=data_folder, mode='wb', delete=False
 # Download raw data using requests
 response = requests.get(zenodo_url + fname, timeout=30)
 data_file.write(response.content)
+data_file.flush()
 
 # %% [markdown]
 # ### Image reconstruction using KTrajectoryIsmrmrd
@@ -94,7 +95,7 @@ seq_fname = 'pulseq_radial_2D_402spokes_golden_angle.seq'
 seq_file = tempfile.NamedTemporaryFile(dir=data_folder, mode='wb', delete=False, suffix='.seq')
 response = requests.get(zenodo_url + seq_fname, timeout=30)
 seq_file.write(response.content)
-
+seq_file.flush()
 
 # %%
 # Read raw data and calculate trajectory using KTrajectoryPulseq
