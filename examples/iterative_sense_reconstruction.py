@@ -14,6 +14,7 @@ import requests
 data_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.h5')
 response = requests.get(zenodo_url + fname, timeout=30)
 data_file.write(response.content)
+data_file.flush()
 
 # %% [markdown]
 # ### Image reconstruction
