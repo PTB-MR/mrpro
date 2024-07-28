@@ -31,7 +31,7 @@ from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.LinearOperator import LinearOperator
 
 
-class IterativeSenseReconstruction(Reconstruction):
+class IterativeSENSEReconstruction(Reconstruction):
     r"""Iterative SENSE reconstruction.
 
     This algorithm minizes the problem
@@ -46,6 +46,9 @@ class IterativeSenseReconstruction(Reconstruction):
 
     where :math:`A` is the acquisition model (coil sensitivity maps, Fourier operator, k-space sampling), :math:`y` is
     the acquired k-space data and :math:`W` describes the density compensation [1]_ .
+
+    Note: In [1]_ a k-space filter is applied as a final step to null all k-space values outside the k-space coverage.
+    This is not done here.
 
     .. [1] Pruessmann K, Weiger M, Boernert P, and Boesiger P (2001), Advances in sensitivity encoding with arbitrary
        k-space trajectories. MRI 46, 638-651. https://doi.org/10.1002/mrm.1241
@@ -89,7 +92,7 @@ class IterativeSenseReconstruction(Reconstruction):
 
     @classmethod
     def from_kdata(cls, kdata: KData, noise: KNoise | None = None, *, n_iterations: int = 10) -> Self:
-        """Create a IterativeSenseReconstruction from kdata with default settings.
+        """Create a IterativeSENSEReconstruction from kdata with default settings.
 
         Parameters
         ----------

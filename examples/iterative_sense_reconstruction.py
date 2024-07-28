@@ -1,6 +1,6 @@
 # %% [markdown]
 # # Iterative SENSE Reconstruction of 2D golden angle radial data
-# Here we use the IterativeSenseReconstruction class to reconstruct images from ISMRMRD 2D radial data
+# Here we use the IterativeSENSEReconstruction class to reconstruct images from ISMRMRD 2D radial data
 # %%
 # define zenodo URL of the example ismrmd data
 zenodo_url = 'https://zenodo.org/records/10854057/files/'
@@ -17,8 +17,8 @@ data_file.write(response.content)
 
 # %% [markdown]
 # ### Image reconstruction
-# We use the IterativeSenseReconstruction class to reconstruct images from 2D radial data.
-# IterativeSenseReconstruction solves the following reconstruction problem:
+# We use the IterativeSENSEReconstruction class to reconstruct images from 2D radial data.
+# IterativeSENSEReconstruction solves the following reconstruction problem:
 #
 # Let's assume we have obtained the k-space data $y$ from an image $x$ with an acquisition model (Fourier transforms,
 # coil sensitivity maps...) $A$ then we can formulate the forward problem as:
@@ -48,7 +48,7 @@ kdata.header.recon_matrix.x = 256
 kdata.header.recon_matrix.y = 256
 
 # %%
-iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSenseReconstruction.from_kdata(
+iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction.from_kdata(
     kdata, n_iterations=4
 )
 img = iterative_sense_reconstruction(kdata)
@@ -106,7 +106,7 @@ img_manual = mrpro.algorithms.optimizers.cg(
 # %%
 # For comparison we can also carry out a direct reconstruction
 direct_reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction.from_kdata(kdata)
-img_direct = direct_reconstruction(kdata).rss().cpu()
+img_direct = direct_reconstruction(kdata)
 
 # %%
 # Display the reconstructed image
@@ -114,11 +114,11 @@ import matplotlib.pyplot as plt
 import torch
 
 fig, ax = plt.subplots(1, 3, squeeze=False)
-ax[0, 0].imshow(img_direct[0, 0, :, :])
+ax[0, 0].imshow(img_direct.rss()[0, 0, :, :])
 ax[0, 0].set_title('Direct Reconstruction', fontsize=10)
-ax[0, 1].imshow(torch.abs(img.data[0, 0, 0, :, :]))
+ax[0, 1].imshow(img.rss()[0, 0, :, :])
 ax[0, 1].set_title('Iterative SENSE', fontsize=10)
-ax[0, 2].imshow(torch.abs(img_manual[0, 0, 0, :, :]))
+ax[0, 2].imshow(img_manual.abs()[0, 0, 0, :, :])
 ax[0, 2].set_title('"Manual" Iterative SENSE', fontsize=10)
 
 # %% [markdown]
