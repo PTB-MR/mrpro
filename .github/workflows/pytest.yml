@@ -2,8 +2,6 @@ name: PyTest
 
 on:
   pull_request:
-    paths-ignore:
-      - "**.md"
 
 jobs:
   get_dockerfiles:
