@@ -133,7 +133,7 @@ class AcqInfo(MoveDataMixin):
     """Unique ID corresponding to the readout."""
 
     number_of_samples: torch.Tensor
-    """Number of readout sample points per readout (readouts may have different number of sample points)."""
+    """Number of sample points per readout (readouts may have different number of sample points)."""
 
     patient_table_position: SpatialDimension[torch.Tensor]
     """Offset position of the patient table, in LPS coordinates [m]."""
