@@ -75,18 +75,18 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
     def adjoint_wrapper(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Wrap the adjoint."""
-        return (_AutogradWrapper.apply(lambda x: self._adjoint_implementation, self._adjoint_implementation, x),)
+        return _AutogradWrapper.apply(self._adjoint_implementation, self._forward_implementation, x)
 
     def forward_wrapper(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Wrap the forward."""
-        return (_AutogradWrapper.apply(self._forward_implementation, self._adjoint_implementation, x),)
+        return _AutogradWrapper.apply(self._forward_implementation, self._adjoint_implementation, x)
 
     def __init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
         """Wrap the forward and adjoint functions for autograd."""
-        cls._forward_implementation = cls.forward #type: ignore [method-assign]
-        cls._adjoint_implementation = cls.adjoint #type: ignore [method-assign]
-        cls.forward = LinearOperator.forward_wrapper #type: ignore [method-assign]
-        cls.adjoint = LinearOperator.adjoint_wrapper #type: ignore [method-assign]
+        cls._forward_implementation = cls.forward  # type: ignore [method-assign]
+        cls._adjoint_implementation = cls.adjoint  # type: ignore [method-assign]
+        cls.forward = LinearOperator.forward_wrapper  # type: ignore [method-assign]
+        cls.adjoint = LinearOperator.adjoint_wrapper  # type: ignore [method-assign]
         super().__init_subclass__(**kwargs)
 
     @abstractmethod
@@ -99,15 +99,13 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         """Adjoint of the operator."""
         ...
 
-    @abstractmethod
     def _forward_implementation(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Forward of the operator."""
-        ...
+        return self.forward(x)
 
-    @abstractmethod
     def _adjoint_implementation(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the operator."""
-        ...
+        return self.adjoint(x)
 
     @property
     def H(self) -> LinearOperator:  # noqa: N802
