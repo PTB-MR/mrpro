@@ -103,7 +103,7 @@ class AcqInfo(MoveDataMixin):
     """Indices describing acquisitions (i.e. readouts)."""
 
     acquisition_time_stamp: torch.Tensor
-    """Clock time stamp [s]."""
+    """Clock time stamp. Not in s but in vendor-specific time units (e.g. 2.5ms for Siemens)"""
 
     active_channels: torch.Tensor
     """Number of active receiver coil elements."""
@@ -142,7 +142,7 @@ class AcqInfo(MoveDataMixin):
     """Directional cosine of phase encoding (2D)."""
 
     physiology_time_stamp: torch.Tensor
-    """Time stamps relative to physiological triggering, e.g. ECG, pulse oximetry, respiratory [s]."""
+    """Time stamps relative to physiological triggering, e.g. ECG, pulse oximetry, respiratory."""
 
     position: SpatialDimension[torch.Tensor]
     """Center of the excited volume, in LPS coordinates relative to isocenter [m]."""
