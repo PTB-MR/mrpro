@@ -11,15 +11,18 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-
 import pytest
 import torch
 from mrpro.data import KTrajectory, SpatialDimension
 from mrpro.operators import CartesianSamplingOp
 
 from tests import RandomGenerator
-from tests.conftest import create_traj
-from tests.helper import dotproduct_adjointness_test
+from tests.data.test_trajectory import create_traj
+from tests.helper import (
+    dotproduct_adjointness_test,
+    forward_mode_autodiff_of_linear_operator_test,
+    gradient_of_linear_operator_test,
+)
 
 
 def test_cart_sampling_op_data_match():
@@ -32,15 +35,12 @@ def test_cart_sampling_op_data_match():
     sy = 'uf'
     sz = 'uf'
     trajectory = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
-
     # Create matching data
     random_generator = RandomGenerator(seed=0)
     kdata = random_generator.complex64_tensor(size=k_shape)
-
     # Create sampling operator
     encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
-
     # Subsample data and trajectory
     kdata_sub = kdata[:, :, ::2, ::4, ::3]
     trajectory_sub = KTrajectory(
@@ -49,33 +49,17 @@ def test_cart_sampling_op_data_match():
         kx=trajectory.kx[:, :, :, ::3],
     )
     sampling_op_sub = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory_sub)
-
     # Verify that the fully-sampled sampling operator does not do anything because the data is already sorted
     assert not sampling_op._needs_indexing
-
     # Verify identical shape
     (k,) = sampling_op.adjoint(kdata)
     (k_sub,) = sampling_op_sub.adjoint(kdata_sub)
     assert k.shape == k_sub.shape
-
     # Verify data is correctly sorted
     torch.testing.assert_close(kdata[:, :, ::2, ::4, ::3], k_sub[:, :, ::2, ::4, ::3])
 
 
-@pytest.mark.parametrize(
-    'sampling',
-    [
-        'random',
-        'partial_echo',
-        'partial_fourier',
-        'regular_undersampling',
-        'random_undersampling',
-        'different_random_undersampling',
-    ],
-)
-def test_cart_sampling_op_fwd_adj(sampling):
-    """Test adjoint property of Cartesian sampling operator."""
-
+def create_cart_sampling_op_and_range_domain(sampling):
     # Create 3D uniform trajectory
     k_shape = (2, 5, 20, 40, 60)
     nkx = (2, 1, 1, 60)
@@ -85,7 +69,6 @@ def test_cart_sampling_op_fwd_adj(sampling):
     sy = 'uf'
     sz = 'uf'
     trajectory_tensor = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz).as_tensor()
-
     # Subsample data and trajectory
     match sampling:
         case 'random':
@@ -108,12 +91,36 @@ def test_cart_sampling_op_fwd_adj(sampling):
             trajectory = KTrajectory.from_tensor(torch.stack(traj_list, dim=1))
         case _:
             raise NotImplementedError(f'Test {sampling} not implemented.')
-
     encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
 
-    # Test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v
     random_generator = RandomGenerator(seed=0)
     u = random_generator.complex64_tensor(size=k_shape)
     v = random_generator.complex64_tensor(size=k_shape[:2] + trajectory.as_tensor().shape[2:])
-    dotproduct_adjointness_test(sampling_op, u, v)
+    return sampling_op, u, v
+
+
+@pytest.mark.parametrize(
+    'sampling',
+    [
+        'random',
+        'partial_echo',
+        'partial_fourier',
+        'regular_undersampling',
+        'random_undersampling',
+        'different_random_undersampling',
+    ],
+)
+def test_cart_sampling_op_fwd_adj(sampling):
+    """Test adjoint property of Cartesian sampling operator."""
+    dotproduct_adjointness_test(*create_cart_sampling_op_and_range_domain(sampling))
+
+
+def test_cart_sampling_op_grad():
+    """Test the gradient of the Cartesian Sampling Op."""
+    gradient_of_linear_operator_test(*create_cart_sampling_op_and_range_domain('random'))
+
+
+def test_cart_sampling_op_forward_mode_autodiff():
+    """Test forward-mode autodiff of the Cartesian Sampling Op."""
+    forward_mode_autodiff_of_linear_operator_test(*create_cart_sampling_op_and_range_domain('random'))

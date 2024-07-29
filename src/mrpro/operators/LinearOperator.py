@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Callable, Sequence
-from typing import overload
+from typing import Any, overload
 
 import torch
 
@@ -32,6 +32,39 @@ from mrpro.operators.Operator import (
 )
 
 
+class _AutogradWrapper(torch.autograd.Function):
+    """Wrap forward and adjoint functions for autograd."""
+
+    # If the forward and adjoint implementation are vmap-compatible,
+    # the function can be marked as such to enable vmap support.
+    generate_vmap_rule = True
+
+    @staticmethod
+    def forward(  # type: ignore [override]
+        fw: Callable[[torch.Tensor], torch.Tensor],
+        bw: Callable[[torch.Tensor], torch.Tensor],  # noqa: ARG004
+        x: torch.Tensor,
+    ) -> torch.Tensor:
+        return fw(x)
+
+    @staticmethod
+    def setup_context(
+        ctx: Any,  # noqa: ANN401
+        inputs: tuple[Callable[[torch.Tensor], torch.Tensor], Callable[[torch.Tensor], torch.Tensor], torch.Tensor],
+        output: torch.Tensor,
+    ) -> torch.Tensor:
+        ctx.fw, ctx.bw, x = inputs
+        return output
+
+    @staticmethod
+    def backward(ctx: Any, *grad_output: torch.Tensor) -> tuple[None, None, torch.Tensor]:  # noqa: ANN401
+        return None, None, _AutogradWrapper.apply(ctx.bw, ctx.fw, grad_output[0])
+
+    @staticmethod
+    def jvp(ctx: Any, *grad_inputs: Any) -> torch.Tensor:  # noqa: ANN401
+        return _AutogradWrapper.apply(ctx.fw, ctx.bw, grad_inputs[-1])
+
+
 class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """General Linear Operator.
 
@@ -40,8 +73,39 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     with a,b scalars and x,y tensors.
     """
 
+    def adjoint_wrapper(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Wrap the adjoint."""
+        return (_AutogradWrapper.apply(lambda x: self._adjoint_implementation, self._adjoint_implementation, x),)
+
+    def forward_wrapper(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Wrap the forward."""
+        return (_AutogradWrapper.apply(self._forward_implementation, self._adjoint_implementation, x),)
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
+        """Wrap the forward and adjoint functions for autograd."""
+        cls._forward_implementation = cls.forward #type: ignore [method-assign]
+        cls._adjoint_implementation = cls.adjoint #type: ignore [method-assign]
+        cls.forward = LinearOperator.forward_wrapper #type: ignore [method-assign]
+        cls.adjoint = LinearOperator.adjoint_wrapper #type: ignore [method-assign]
+        super().__init_subclass__(**kwargs)
+
+    @abstractmethod
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Forward of the operator."""
+        ...
+
     @abstractmethod
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Adjoint of the operator."""
+        ...
+
+    @abstractmethod
+    def _forward_implementation(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Forward of the operator."""
+        ...
+
+    @abstractmethod
+    def _adjoint_implementation(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the operator."""
         ...
 
