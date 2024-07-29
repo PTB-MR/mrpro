@@ -142,7 +142,7 @@ class AcqInfo(MoveDataMixin):
     """Directional cosine of phase encoding (2D)."""
 
     physiology_time_stamp: torch.Tensor
-    """Time stamps relative to physiological triggering, e.g. ECG, pulse oximetry, respiratory."""
+    """Time stamps relative to physiological triggering, e.g. ECG. Not in s but in vendor-specific time units"""
 
     position: SpatialDimension[torch.Tensor]
     """Center of the excited volume, in LPS coordinates relative to isocenter [m]."""
