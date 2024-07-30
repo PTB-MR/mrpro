@@ -1209,6 +1209,8 @@ def test_rotation_within_numpy_object_array():
     assert array.shape == (3, 2)
 
 
+# Needed because of bug in torch 2.4.0. Should be fixed with 2.4.1
+@pytest.mark.filterwarnings('ignore::FutureWarning')
 def test_pickling():
     """Test pickling a Rotation"""
     r = Rotation.from_quat([0, 0, np.sin(torch.pi / 4), np.cos(torch.pi / 4)])
