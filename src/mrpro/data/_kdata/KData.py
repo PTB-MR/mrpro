@@ -248,3 +248,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             ) from None
 
         return cls(kheader, kdata, ktrajectory_final)
+
+    def __repr__(self):
+        """Representation method for KData class."""
+        return f'KData with shape {list(self.data.shape)!s}\n{self.header}'

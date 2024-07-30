@@ -290,3 +290,21 @@ class KHeader(MoveDataMixin):
                 'Consider setting them via the defaults dictionary',
             ) from None
         return instance
+
+    def __repr__(self):
+        """Representation method for KHeader class."""
+        fov = str(self.encoding_fov).replace('SpatialDimension', '')
+        te = str(self.te).replace('tensor', '')
+        ti = str(self.ti).replace('tensor', '')
+        fa = str(self.fa).replace('tensor', '')
+        out = (
+            f'FOV [m]: {fov}\n'
+            f'TE [s]: {te}\n'
+            f'TI [s]: {ti}\n'
+            f'Flip angle [rad]: {fa}\n'
+            f'Encoding matrix: '
+            f'{self.encoding_matrix} \n'
+            f'Recon matrix: '
+            f'{self.recon_matrix}.'
+        )
+        return out

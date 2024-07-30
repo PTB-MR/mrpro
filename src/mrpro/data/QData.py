@@ -74,3 +74,8 @@ class QData(Data):
 
         header = QHeader.from_dicom(dataset)
         return cls(data=qdata, header=header)
+
+    def __repr__(self):
+        """Representation method for QData class."""
+        fov = str(self.header.fov).replace('SpatialDimension', '')
+        return f'QData with shape: {list(self.data.shape)!s}\nFOV [m]: {fov}.'

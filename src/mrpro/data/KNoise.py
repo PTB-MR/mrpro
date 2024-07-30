@@ -64,3 +64,7 @@ class KNoise(MoveDataMixin):
         noise_data = rearrange(noise_data, 'other coils (k2 k1 k0)->other coils k2 k1 k0', k1=1, k2=1)
 
         return cls(noise_data)
+
+    def __repr__(self):
+        """Representation method for KNoise class."""
+        return f'KNoise with shape: {list(self.data.shape)!s}.'

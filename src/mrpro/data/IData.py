@@ -178,3 +178,8 @@ class IData(Data):
             raise ValueError(f'No dicom files with suffix {suffix} found in {foldername}')
 
         return cls.from_dicom_files(filenames=file_paths)
+
+    def __repr__(self):
+        """Representation method for IData class."""
+        out = f'IData with shape: {list(self.data.shape)!s}\n{self.header}'
+        return out
