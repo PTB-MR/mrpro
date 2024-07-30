@@ -51,7 +51,7 @@
    :template: module_template.rst
    :recursive:
 
-   mrpro.operators.EndomorphOperator
-   mrpro.operators.functionals
-   mrpro.operators.models
+   EndomorphOperator
+   functionals
+   models
 

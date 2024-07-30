@@ -1867,22 +1867,22 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#mrpro.utils.slice_profiles.Tensor.is_leaf" title="mrpro.utils.slice_profiles.Tensor.is_leaf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_leaf</span></code></a></p></td>
 <td><p>All Tensors that have <a class="reference internal" href="#mrpro.utils.slice_profiles.Tensor.requires_grad" title="mrpro.utils.slice_profiles.Tensor.requires_grad"><code class="xref py py-attr docutils literal notranslate"><span class="pre">requires_grad</span></code></a> which is <code class="docutils literal notranslate"><span class="pre">False</span></code> will be leaf Tensors by convention.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.utils.slice_profiles.Tensor.is_meta" title="mrpro.utils.slice_profiles.Tensor.is_meta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_meta</span></code></a></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_maia</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.utils.slice_profiles.Tensor.is_meta" title="mrpro.utils.slice_profiles.Tensor.is_meta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_meta</span></code></a></p></td>
 <td><p>Is <code class="docutils literal notranslate"><span class="pre">True</span></code> if the Tensor is a meta tensor, <code class="docutils literal notranslate"><span class="pre">False</span></code> otherwise.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_mkldnn</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_mkldnn</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.utils.slice_profiles.Tensor.is_mps" title="mrpro.utils.slice_profiles.Tensor.is_mps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_mps</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.utils.slice_profiles.Tensor.is_mps" title="mrpro.utils.slice_profiles.Tensor.is_mps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_mps</span></code></a></p></td>
 <td><p>Is <code class="docutils literal notranslate"><span class="pre">True</span></code> if the Tensor is stored on the MPS device, <code class="docutils literal notranslate"><span class="pre">False</span></code> otherwise.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_mtia</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_mtia</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_nested</span></code></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_ort</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_nested</span></code></p></td>
 <td><p></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.utils.slice_profiles.Tensor.is_quantized" title="mrpro.utils.slice_profiles.Tensor.is_quantized"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_quantized</span></code></a></p></td>
@@ -2455,8 +2455,8 @@ to the autograd graph. <code class="docutils literal notranslate"><span class="p
 <dd><p>Computes the gradient of current tensor wrt graph leaves.</p>
 <p>The graph is differentiated using the chain rule. If the tensor is
 non-scalar (i.e. its data has more than one element) and requires
-gradient, the function additionally requires specifying <code class="docutils literal notranslate"><span class="pre">gradient</span></code>.
-It should be a tensor of matching type and location, that contains
+gradient, the function additionally requires specifying a <code class="docutils literal notranslate"><span class="pre">gradient</span></code>.
+It should be a tensor of matching type and shape, that represents
 the gradient of the differentiated function w.r.t. <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
 <p>This function accumulates gradients in the leaves - you might need to zero
 <code class="docutils literal notranslate"><span class="pre">.grad</span></code> attributes or set them to <code class="docutils literal notranslate"><span class="pre">None</span></code> before calling it.
@@ -2478,12 +2478,9 @@ See <a class="reference external" href="https://github.com/pytorch/pytorch/pull/
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>gradient</strong> (<a class="reference internal" href="#mrpro.utils.slice_profiles.Tensor" title="mrpro.utils.slice_profiles.Tensor"><em>Tensor</em></a><em> or </em><em>None</em>) – Gradient w.r.t. the
-tensor. If it is a tensor, it will be automatically converted
-to a Tensor that does not require grad unless <code class="docutils literal notranslate"><span class="pre">create_graph</span></code> is True.
-None values can be specified for scalar Tensors or ones that
-don’t require grad. If a None value would be acceptable then
-this argument is optional.</p></li>
+<li><p><strong>gradient</strong> (<a class="reference internal" href="#mrpro.utils.slice_profiles.Tensor" title="mrpro.utils.slice_profiles.Tensor"><em>Tensor</em></a><em>, </em><em>optional</em>) – The gradient of the function
+being differentiated w.r.t. <code class="docutils literal notranslate"><span class="pre">self</span></code>.
+This argument can be omitted if <code class="docutils literal notranslate"><span class="pre">self</span></code> is a scalar.</p></li>
 <li><p><strong>retain_graph</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">False</span></code>, the graph used to compute
 the grads will be freed. Note that in nearly all cases setting
 this option to True is not needed and often can be worked around
@@ -2492,10 +2489,10 @@ in a much more efficient way. Defaults to the value of
 <li><p><strong>create_graph</strong> (<em>bool</em><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, graph of the derivative will
 be constructed, allowing to compute higher order derivative
 products. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
-<li><p><strong>inputs</strong> (<em>sequence</em><em> of </em><a class="reference internal" href="#mrpro.utils.slice_profiles.Tensor" title="mrpro.utils.slice_profiles.Tensor"><em>Tensor</em></a>) – Inputs w.r.t. which the gradient will be
-accumulated into <code class="docutils literal notranslate"><span class="pre">.grad</span></code>. All other Tensors will be ignored. If not
+<li><p><strong>inputs</strong> (<em>sequence</em><em> of </em><a class="reference internal" href="#mrpro.utils.slice_profiles.Tensor" title="mrpro.utils.slice_profiles.Tensor"><em>Tensor</em></a><em>, </em><em>optional</em>) – Inputs w.r.t. which the gradient will be
+accumulated into <code class="docutils literal notranslate"><span class="pre">.grad</span></code>. All other tensors will be ignored. If not
 provided, the gradient is accumulated into all the leaf Tensors that were
-used to compute the attr::tensors.</p></li>
+used to compute the <code class="xref py py-attr docutils literal notranslate"><span class="pre">tensors</span></code>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -4713,7 +4710,7 @@ tensor.</p>
 </div>
 <p class="rubric">Example</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="bp">self</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">source</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="bp">self</span><span class="o">.</span><span class="n">masked_scatter</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
 <span class="go">tensor([[0, 0, 0, 0, 1],</span>
@@ -4747,7 +4744,7 @@ as many elements as the number of ones in <code class="xref py py-attr docutils 
 </div>
 <p class="rubric">Example</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="bp">self</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">source</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="bp">self</span><span class="o">.</span><span class="n">masked_scatter_</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
 <span class="go">tensor([[0, 0, 0, 0, 1],</span>

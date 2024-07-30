@@ -37,6 +37,6 @@
    :template: module_template.rst
    :recursive:
 
-   mrpro.phantoms.coils
-   mrpro.phantoms.phantom_elements
+   coils
+   phantom_elements
 

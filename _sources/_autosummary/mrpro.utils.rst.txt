@@ -47,7 +47,7 @@
    :template: module_template.rst
    :recursive:
 
-   mrpro.utils.filters
-   mrpro.utils.slice_profiles
-   mrpro.utils.sliding_window
+   filters
+   slice_profiles
+   sliding_window
 

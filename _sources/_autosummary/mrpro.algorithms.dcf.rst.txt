@@ -36,5 +36,5 @@ mrpro.algorithms.dcf
    :template: module_template.rst
    :recursive:
 
-   mrpro.algorithms.dcf.dcf_voronoi
+   dcf_voronoi
 

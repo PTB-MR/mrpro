@@ -78,7 +78,8 @@
            <div itemprop="articleBody">
              
   <h1>Source code for torch._tensor</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">copyreg</span>
+<span></span><span class="c1"># mypy: allow-untyped-defs</span>
+<span class="kn">import</span> <span class="nn">copyreg</span>
 <span class="kn">import</span> <span class="nn">enum</span>
 <span class="kn">import</span> <span class="nn">functools</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
@@ -181,7 +182,7 @@
             <span class="k">if</span> <span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">is_sparse</span>
                 <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span>
-                <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;lazy&quot;</span><span class="p">,</span> <span class="s2">&quot;xla&quot;</span><span class="p">,</span> <span class="s2">&quot;mtia&quot;</span><span class="p">,</span> <span class="s2">&quot;mps&quot;</span><span class="p">,</span> <span class="s2">&quot;ort&quot;</span><span class="p">,</span> <span class="s2">&quot;meta&quot;</span><span class="p">,</span> <span class="s2">&quot;ipu&quot;</span><span class="p">]</span>
+                <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;lazy&quot;</span><span class="p">,</span> <span class="s2">&quot;xla&quot;</span><span class="p">,</span> <span class="s2">&quot;mtia&quot;</span><span class="p">,</span> <span class="s2">&quot;mps&quot;</span><span class="p">,</span> <span class="s2">&quot;maia&quot;</span><span class="p">,</span> <span class="s2">&quot;meta&quot;</span><span class="p">,</span> <span class="s2">&quot;ipu&quot;</span><span class="p">]</span>
                 <span class="ow">or</span> <span class="p">(</span>
                     <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">_has_storage</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
                     <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">_get_privateuse1_backend_name</span><span class="p">()</span>
@@ -332,7 +333,7 @@
         <span class="c1"># See Note [Don&#39;t serialize hooks]</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">hooks</span><span class="o">.</span><span class="n">warn_if_has_hooks</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="n">backward_hooks</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
-        <span class="c1"># Note: Numpy array is chosen to be the rebuild component for XLA, MTIA, ORT Tensors.</span>
+        <span class="c1"># Note: Numpy array is chosen to be the rebuild component for XLA, MTIA, MAIA Tensors.</span>
         <span class="c1"># We considered a few options:</span>
         <span class="c1"># 1. CPU tensor can&#39;t be used here.</span>
         <span class="c1">#    Otherwise in torch.load CPU storage is reconstructed with randomly</span>
@@ -342,7 +343,7 @@
         <span class="c1"># 2. Python list is not a good fit due to performance reason.</span>
         <span class="c1">#    `tolist()` converts every single element in the tensor into python objects</span>
         <span class="c1">#    and serialize them one by one.</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;xla&quot;</span><span class="p">,</span> <span class="s2">&quot;mtia&quot;</span><span class="p">,</span> <span class="s2">&quot;ort&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="p">(</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;xla&quot;</span><span class="p">,</span> <span class="s2">&quot;mtia&quot;</span><span class="p">,</span> <span class="s2">&quot;maia&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="p">(</span>
             <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">_has_storage</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
             <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">_C</span><span class="o">.</span><span class="n">_get_privateuse1_backend_name</span><span class="p">()</span>
         <span class="p">):</span>
@@ -461,9 +462,18 @@
             <span class="p">)</span>
             <span class="k">return</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">_utils</span><span class="o">.</span><span class="n">_rebuild_nested_tensor</span><span class="p">,</span> <span class="n">args_nested</span><span class="p">)</span>
         <span class="k">elif</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data_ptr</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span>
-            <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+            <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
             <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__torch_dispatch__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="o">.</span><span class="n">__torch_dispatch__</span>
+            <span class="ow">and</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="p">,</span>
+                    <span class="p">(</span>
+                        <span class="n">torch</span><span class="o">.</span><span class="n">_subclasses</span><span class="o">.</span><span class="n">fake_tensor</span><span class="o">.</span><span class="n">FakeTensor</span><span class="p">,</span>
+                        <span class="n">torch</span><span class="o">.</span><span class="n">_subclasses</span><span class="o">.</span><span class="n">functional_tensor</span><span class="o">.</span><span class="n">FunctionalTensor</span><span class="p">,</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+                <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_ptr</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span>
+            <span class="p">)</span>
         <span class="p">):</span>
             <span class="n">arg_wrapper_subclass</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
@@ -477,18 +487,7 @@
             <span class="p">)</span>
             <span class="k">return</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">_utils</span><span class="o">.</span><span class="n">_rebuild_wrapper_subclass</span><span class="p">,</span> <span class="n">arg_wrapper_subclass</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">v3_dtypes</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">torch</span><span class="o">.</span><span class="n">float8_e5m2</span><span class="p">,</span>
-                <span class="n">torch</span><span class="o">.</span><span class="n">float8_e4m3fn</span><span class="p">,</span>
-                <span class="n">torch</span><span class="o">.</span><span class="n">float8_e5m2fnuz</span><span class="p">,</span>
-                <span class="n">torch</span><span class="o">.</span><span class="n">float8_e4m3fnuz</span><span class="p">,</span>
-                <span class="n">torch</span><span class="o">.</span><span class="n">bits8</span><span class="p">,</span>
-                <span class="n">torch</span><span class="o">.</span><span class="n">bits16</span><span class="p">,</span>
-                <span class="n">torch</span><span class="o">.</span><span class="n">bits1x8</span><span class="p">,</span>
-                <span class="n">torch</span><span class="o">.</span><span class="n">bits2x4</span><span class="p">,</span>
-                <span class="n">torch</span><span class="o">.</span><span class="n">bits4x2</span><span class="p">,</span>
-                <span class="n">torch</span><span class="o">.</span><span class="n">complex32</span><span class="p">,</span>
-            <span class="p">]</span>
+            <span class="n">v3_dtypes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">_new_dtypes</span><span class="p">()</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="n">v3_dtypes</span><span class="p">:</span>
                 <span class="n">rebuild_func</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">_utils</span><span class="o">.</span><span class="n">_rebuild_tensor_v3</span>
                 <span class="n">storage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">untyped_storage</span><span class="p">()</span>
@@ -555,8 +554,8 @@
 
 <span class="sd">        The graph is differentiated using the chain rule. If the tensor is</span>
 <span class="sd">        non-scalar (i.e. its data has more than one element) and requires</span>
-<span class="sd">        gradient, the function additionally requires specifying ``gradient``.</span>
-<span class="sd">        It should be a tensor of matching type and location, that contains</span>
+<span class="sd">        gradient, the function additionally requires specifying a ``gradient``.</span>
+<span class="sd">        It should be a tensor of matching type and shape, that represents</span>
 <span class="sd">        the gradient of the differentiated function w.r.t. ``self``.</span>
 
 <span class="sd">        This function accumulates gradients in the leaves - you might need to zero</span>
@@ -578,12 +577,9 @@
 <span class="sd">            See https://github.com/pytorch/pytorch/pull/60521#issuecomment-867061780 for more details.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            gradient (Tensor or None): Gradient w.r.t. the</span>
-<span class="sd">                tensor. If it is a tensor, it will be automatically converted</span>
-<span class="sd">                to a Tensor that does not require grad unless ``create_graph`` is True.</span>
-<span class="sd">                None values can be specified for scalar Tensors or ones that</span>
-<span class="sd">                don&#39;t require grad. If a None value would be acceptable then</span>
-<span class="sd">                this argument is optional.</span>
+<span class="sd">            gradient (Tensor, optional): The gradient of the function</span>
+<span class="sd">                being differentiated w.r.t. ``self``.</span>
+<span class="sd">                This argument can be omitted if ``self`` is a scalar.</span>
 <span class="sd">            retain_graph (bool, optional): If ``False``, the graph used to compute</span>
 <span class="sd">                the grads will be freed. Note that in nearly all cases setting</span>
 <span class="sd">                this option to True is not needed and often can be worked around</span>
@@ -592,10 +588,10 @@
 <span class="sd">            create_graph (bool, optional): If ``True``, graph of the derivative will</span>
 <span class="sd">                be constructed, allowing to compute higher order derivative</span>
 <span class="sd">                products. Defaults to ``False``.</span>
-<span class="sd">            inputs (sequence of Tensor): Inputs w.r.t. which the gradient will be</span>
-<span class="sd">                accumulated into ``.grad``. All other Tensors will be ignored. If not</span>
+<span class="sd">            inputs (sequence of Tensor, optional): Inputs w.r.t. which the gradient will be</span>
+<span class="sd">                accumulated into ``.grad``. All other tensors will be ignored. If not</span>
 <span class="sd">                provided, the gradient is accumulated into all the leaf Tensors that were</span>
-<span class="sd">                used to compute the attr::tensors.</span>
+<span class="sd">                used to compute the :attr:`tensors`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">has_torch_function_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">handle_torch_function</span><span class="p">(</span>
@@ -729,7 +725,7 @@
             <span class="n">trim</span><span class="p">(</span>
 <span class="w">                </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;reinforce() was removed.</span>
 <span class="sd">            Use torch.distributions instead.</span>
-<span class="sd">            See https://pytorch.org/docs/master/distributions.html</span>
+<span class="sd">            See https://pytorch.org/docs/main/distributions.html</span>
 
 <span class="sd">            Instead of:</span>
 
@@ -1256,16 +1252,14 @@
         <span class="c1"># hasattr(cpu_tensor, &quot;__cuda_array_interface__&quot;) is False.</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_cuda</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-                <span class="s2">&quot;Can&#39;t get __cuda_array_interface__ on non-CUDA tensor type: </span><span class="si">%s</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Can&#39;t get __cuda_array_interface__ on non-CUDA tensor type: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">()</span><span class="si">}</span><span class="s2"> &quot;</span>
                 <span class="s2">&quot;If CUDA data is required use tensor.cuda() to copy tensor to device memory.&quot;</span>
-                <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">()</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_sparse</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
-                <span class="s2">&quot;Can&#39;t get __cuda_array_interface__ on sparse type: </span><span class="si">%s</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Can&#39;t get __cuda_array_interface__ on sparse type: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">()</span><span class="si">}</span><span class="s2"> &quot;</span>
                 <span class="s2">&quot;Use Tensor.to_dense() to convert to a dense tensor first.&quot;</span>
-                <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">()</span>
             <span class="p">)</span>
 
         <span class="c1"># RuntimeError, matching tensor.__array__() behavior.</span>
