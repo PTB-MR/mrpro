@@ -1,8 +1,10 @@
+# %%
 # # Reconstruction of respiratory resolved images from a GRPE acquisition
 # ### File name
 fname = r'/sc-projects/sc-proj-cc06-agsack/noja11/ImageReconstruction/Data/meas_MID00291_FID96729_20240520_fov288_288_200mm_192_192_640_3D_saggital.mrd'
 path_out = r'/sc-projects/sc-proj-cc06-agsack/noja11/ImageReconstruction/'
-
+fname = '/echo/kolbit01/data/GRPE_Charite/2024_05_30/meas_MID00291_FID96729_20240520_fov288_288_200mm_192_192_640_3D_saggital.mrd'
+path_out = '/echo/kolbit01/data/GRPE_Charite/2024_05_30/'
 # ### Imports
 import matplotlib.pyplot as plt
 import torch
@@ -158,15 +160,16 @@ resp_idx = split_idx(torch.argsort(resp_nav), 160, 20)
 kdata_resp_resolved = kdata.split_k2_into_other(resp_idx, other_label='repetition')
 kdcf = DcfData.from_traj_voronoi(kdata_resp_resolved.traj)
 
+
+#%%
 cart_sampling_op = CartesianSamplingOp(kdata_resp_resolved.header.encoding_matrix, kdata_resp_resolved.traj)
 fourier_op = FourierOp(kdata_resp_resolved.header.recon_matrix, kdata_resp_resolved.header.encoding_matrix, kdata_resp_resolved.traj)
-A = cart_sampling_op @ fourier_op @ csm_op
 
-#AW = kdcf.data[:,None,...] * cart_sampling_op @ fourier_op @ csm_op
-#x0 = AW.H(kdata_resp_resolved.data)[0]
+# Create A^H W
+AH_W = csm_op.H @ fourier_op.H @ cart_sampling_op.H @ kdcf.as_operator()
 
-# Direkt reconstruction for comparison
-x0 = A.H(kdata_resp_resolved.data * kdcf.data[:,None,...])[0]
+# Calculate x0 = A^H W y
+(x0,) = AH_W(kdata_resp_resolved.data)
 
 plot_resp_idx = [0, x0.shape[0]-1]
 fig, ax = plt.subplots(len(plot_resp_idx),3)
@@ -175,12 +178,13 @@ for nnd in range(len(plot_resp_idx)):
     ax[nnd,1].imshow(torch.abs(x0[plot_resp_idx[nnd],0,:,img.shape[-2]//2,:]))
     ax[nnd,2].imshow(torch.abs(x0[plot_resp_idx[nnd],0,:,:,img.shape[-1]//2]))
 
+# Create H = A^H W A
+H = AH_W @ cart_sampling_op @ fourier_op @ csm_op
+
 # Iterative reconstruction
-H = A.H @ A
-N = 2
-b = A.H(kdata_resp_resolved.data)[0]
+number_of_iterations = 8
 with torch.no_grad():
-    img_resp_resolved = cg(H, b, x0, N)
+    img_resp_resolved = cg(H, x0, x0, number_of_iterations)
 
 fig, ax = plt.subplots(len(plot_resp_idx),3)
 for nnd in range(len(plot_resp_idx)):
