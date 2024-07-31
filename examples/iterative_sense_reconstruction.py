@@ -129,7 +129,3 @@ ax[0, 2].set_title('"Manual" Iterative SENSE', fontsize=10)
 # %%
 # If the assert statement did not raise an exception, the results are equal.
 assert torch.allclose(img.data, img_manual)
-
-# %% [markdown]
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-# Apache License 2.0. See LICENSE file for details.

@@ -96,7 +96,3 @@ import torch
 # If the assert statement did not raise an exception, the results are equal.
 assert torch.allclose(img.data, img_manual.data)
 assert torch.allclose(img.data, img_more_manual.data)
-
-# %%
-# Clean-up by removing temporary directory
-shutil.rmtree(data_folder)

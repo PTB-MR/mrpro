@@ -2,7 +2,6 @@
 
 from typing import Self
 
-
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
 from mrpro.algorithms.reconstruction.Reconstruction import Reconstruction
 from mrpro.data._kdata.KData import KData

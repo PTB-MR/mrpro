@@ -131,8 +131,3 @@ for i, img in enumerate([img_using_ismrmrd_traj, img_using_rad2d_traj, img_using
     plt.imshow(torch.abs(img[0, 0, 0, :, :]))
     plt.title(titles[i])
     plt.axis('off')
-
-# %%
-# Clean-up by removing temporary directory
-shutil.rmtree(data_folder)
-
