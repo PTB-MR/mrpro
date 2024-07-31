@@ -20,24 +20,17 @@ from mrpro.operators.LinearOperator import LinearOperator
 class IterativeSENSEReconstruction(Reconstruction):
     r"""Iterative SENSE reconstruction.
 
-    This algorithm minizes the problem
-
-    .. math:: min_x \\frac{1}{2}||W^\\frac{1}{2} (Ax - y)||_2^2
-
+    This algorithm minizes the problem :math:`min_x \\frac{1}{2}||W^\\frac{1}{2} (Ax - y)||_2^2`
     by using a conjugate gradient algorithm to solve
+    :math:`H x = b` with :math:`H = A^H W A` and :math:`b = A^H W y` where :math:`A` is the acquisition model
+    (coil sensitivity maps, Fourier operator, k-space sampling), :math:`y` is the acquired k-space data and :math:`W`
+    describes the density compensation [PRU2001]_ .
 
-    .. math:: H x = b
+    Note: In [PRU2001]_ a k-space filter is applied as a final step to null all k-space values outside the k-space
+    coverage. This is not done here.
 
-    with :math:`H = A^H W A` and :math:`b = A^H W y`
-
-    where :math:`A` is the acquisition model (coil sensitivity maps, Fourier operator, k-space sampling), :math:`y` is
-    the acquired k-space data and :math:`W` describes the density compensation [1]_ .
-
-    Note: In [1]_ a k-space filter is applied as a final step to null all k-space values outside the k-space coverage.
-    This is not done here.
-
-    .. [1] Pruessmann K, Weiger M, Boernert P, and Boesiger P (2001), Advances in sensitivity encoding with arbitrary
-       k-space trajectories. MRI 46, 638-651. https://doi.org/10.1002/mrm.1241
+    .. [PRU2001] Pruessmann K, Weiger M, Boernert P, and Boesiger P (2001), Advances in sensitivity encoding with
+       arbitrary k-space trajectories. MRI 46, 638-651. https://doi.org/10.1002/mrm.1241
 
     """
 
