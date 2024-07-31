@@ -29,6 +29,9 @@ def birdcage_2d(
 ) -> torch.Tensor:
     """Numerical simulation of 2D Birdcage coil sensitivities.
 
+    This function is strongly inspired by ISMRMRD Python Tools [ISMc]_. The associated license
+    information can be found at the end of this file.
+
     Parameters
     ----------
     number_of_coils
@@ -40,9 +43,6 @@ def birdcage_2d(
         relative radius of birdcage
     normalize_with_rss
         If set to true, the calculated sensitivities are normalized by the root-sum-of-squares
-
-    This function is strongly inspired by ISMRMRD Python Tools [ISMc]_. The associated license
-    information can be found at the end of this file.
 
     References
     ----------

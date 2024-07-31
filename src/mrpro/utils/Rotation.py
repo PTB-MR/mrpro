@@ -625,6 +625,7 @@ class Rotation(torch.nn.Module):
             - First angle belongs to [-180, 180] degrees (both inclusive)
             - Third angle belongs to [-180, 180] degrees (both inclusive)
             - Second angle belongs to:
+
              + [-90, 90] degrees if all axes are different (like xyz)
              + [0, 180] degrees if first and third axes are the same (like zxz)
 
@@ -698,7 +699,7 @@ class Rotation(torch.nn.Module):
 
         - As a projection of vector components expressed in the final frame to the original frame.
         - As the physical rotation of a vector being glued to the original frame as it rotates. In this case the vector
-        components are expressed in the original frame before and after the rotation.
+          components are expressed in the original frame before and after the rotation.
 
         In terms of rotation matrices, this application is the same as
         ``self.as_matrix() @ vectors``.
