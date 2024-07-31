@@ -58,7 +58,3 @@ plt.imshow(torch.abs(img[0, 0, 0, :, :]))
 # %%
 # Clean-up by removing temporary directory
 shutil.rmtree(data_folder)
-
-# %% [markdown]
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-# Apache License 2.0. See LICENSE file for details.
