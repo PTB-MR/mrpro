@@ -138,7 +138,3 @@ for i, img in enumerate([img_using_ismrmrd_traj, img_using_rad2d_traj, img_using
 # %%
 # Clean-up by removing temporary directory
 shutil.rmtree(data_folder)
-
-# %% [markdown]
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-# Apache License 2.0. See LICENSE file for details.
