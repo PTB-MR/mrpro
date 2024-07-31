@@ -1,23 +1,9 @@
 """ADAM for solving non-linear minimization problems."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 from collections.abc import Sequence
 
 import torch
-from torch.optim import Adam
+from torch.optim import Adam, AdamW
 
 from mrpro.operators.Operator import Operator
 
@@ -31,10 +17,7 @@ def adam(
     eps: float = 1e-8,
     weight_decay: float = 0,
     amsgrad: bool = False,
-    foreach: bool | None = None,
-    maximize: bool = False,
-    differentiable: bool = False,
-    fused: bool | None = None,
+    decoupled_weight_decay: bool = False,
 ) -> tuple[torch.Tensor, ...]:
     """Adam for non-linear minimization problems.
 
@@ -59,39 +42,26 @@ def adam(
     amsgrad
         whether to use the AMSGrad variant of this algorithm from the paper
         `On the Convergence of Adam and Beyond`
-    foreach
-        whether `foreach` implementation of optimizer is used
-    maximize
-        maximize the objective with respect to the params, instead of minimizing
-    differentiable
-        whether autograd should occur through the optimizer step. This is currently not implemented.
-    fused
-        whether the fused implementation (CUDA only) is used. Currently, torch.float64, torch.float32,
-        torch.float16, and torch.bfloat16 are supported.
+    decoupled_weight_decay
+        whether to use Adam (default) or AdamW (if set to true) [1]_
 
     Returns
     -------
         list of optimized parameters
-    """
-    if not differentiable:
-        parameters = [p.detach().clone().requires_grad_(True) for p in initial_parameters]
-    else:
-        # TODO: If differentiable is set, it is reasonable to expect that the result backpropagates to
-        # initial parameters. This is currently not implemented (due to detach).
-        raise NotImplementedError('Differentiable Optimization is not implemented')
 
-    optim = Adam(
-        params=parameters,
-        lr=lr,
-        betas=betas,
-        eps=eps,
-        weight_decay=weight_decay,
-        amsgrad=amsgrad,
-        foreach=foreach,
-        maximize=maximize,
-        differentiable=differentiable,
-        fused=fused,
-    )
+    References
+    ----------
+    .. [1] Loshchilov I, Hutter F (2019) Decoupled Weight Decay Regularization. ICLR
+            https://doi.org/10.48550/arXiv.1711.05101
+    """
+    parameters = [p.detach().clone().requires_grad_(True) for p in initial_parameters]
+
+    optim: AdamW | Adam
+
+    if not decoupled_weight_decay:
+        optim = Adam(params=parameters, lr=lr, betas=betas, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad)
+    else:
+        optim = AdamW(params=parameters, lr=lr, betas=betas, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad)
 
     def closure():
         optim.zero_grad()
