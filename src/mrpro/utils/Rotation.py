@@ -255,6 +255,7 @@ class Rotation(torch.nn.Module):
     """A pytorch implementation of scipy.spatial.transform.Rotation.
 
     Differences compared to scipy.spatial.transform.Rotation:
+
     - torch.nn.Module based, the quaternions are a Parameter
     - .apply is replaced by call/forward.
     - not all features are implemented. Notably, mrp, davenport, and reduce are missing.
@@ -264,8 +265,7 @@ class Rotation(torch.nn.Module):
     def __init__(self, quaternions: torch.Tensor | _NestedSequence[float], normalize: bool = True, copy: bool = True):
         """Initialize a new Rotation.
 
-        Instead of calling this method, also consider the different
-        from_* class methods to construct a Rotation.
+        Instead of calling this method, also consider the different ``from_*`` class methods to construct a Rotation.
 
         Parameters
         ----------
@@ -314,7 +314,7 @@ class Rotation(torch.nn.Module):
     def from_quat(cls, quaternions: torch.Tensor | _NestedSequence[float]) -> Self:
         """Initialize from quaternions.
 
-        3D rotations can be represented using unit-norm quaternions [1]_.
+        3D rotations can be represented using unit-norm quaternions [QUAa]_.
 
         Parameters
         ----------
@@ -331,7 +331,7 @@ class Rotation(torch.nn.Module):
 
         References
         ----------
-        .. [1] https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
+        .. [QUAa] Quaternions and spatial rotation https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
         """
         if not isinstance(quaternions, torch.Tensor):
             quaternions = torch.as_tensor(quaternions)
@@ -342,8 +342,8 @@ class Rotation(torch.nn.Module):
         """Initialize from rotation matrix.
 
         Rotations in 3 dimensions can be represented with 3 x 3 proper
-        orthogonal matrices [1]_. If the input is not proper orthogonal,
-        an approximation is created using the method described in [2]_.
+        orthogonal matrices [ROTa]_. If the input is not proper orthogonal,
+        an approximation is created using the method described in [MAR2008]_.
 
         Parameters
         ----------
@@ -358,10 +358,9 @@ class Rotation(torch.nn.Module):
 
         References
         ----------
-        .. [1] https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
-        .. [2] F. Landis Markley, "Unit Quaternion from Rotation Matrix",
-               Journal of guidance, control, and dynamics vol. 31.2, pp.
-               440-442, 2008.
+        .. [ROTa] Rotation matrix https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
+        .. [MAR2008] Landis Markley F (2008) Unit Quaternion from Rotation Matrix, Journal of guidance, control, and
+           dynamics 31(2),440-442.
         """
         if not isinstance(matrix, torch.Tensor):
             matrix = torch.as_tensor(matrix)
@@ -421,7 +420,7 @@ class Rotation(torch.nn.Module):
 
         The three rotations can either be in a global frame of reference
         (extrinsic) or in a body centred frame of reference (intrinsic), which
-        is attached to, and moves with, the object under rotation [1]_.
+        is attached to, and moves with, the object under rotation [EULa]_.
 
         Parameters
         ----------
@@ -446,7 +445,7 @@ class Rotation(torch.nn.Module):
 
         References
         ----------
-        .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
+        .. [EULa] Euler angles https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
         """
         n_axes = len(seq)
         if n_axes < 1 or n_axes > 3:
@@ -501,7 +500,7 @@ class Rotation(torch.nn.Module):
         """Represent as quaternions.
 
         Active rotations in 3 dimensions can be represented using unit norm
-        quaternions [1]_. The mapping from quaternions to rotations is
+        quaternions [QUAb]_. The mapping from quaternions to rotations is
         two-to-one, i.e. quaternions ``q`` and ``-q``, where ``-q`` simply
         reverses the sign of each component, represent the same spatial
         rotation. The returned value is in scalar-last (x, y, z, w) format.
@@ -522,7 +521,7 @@ class Rotation(torch.nn.Module):
 
         References
         ----------
-        .. [1] https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
+        .. [QUAb] Quaternions https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
         """
         quaternions: torch.Tensor = self._quaternions
         if canonical:
@@ -535,7 +534,7 @@ class Rotation(torch.nn.Module):
         """Represent as rotation matrix.
 
         3D rotations can be represented using rotation matrices, which
-        are 3 x 3 real orthogonal matrices with determinant equal to +1 [1]_.
+        are 3 x 3 real orthogonal matrices with determinant equal to +1 [ROTb]_.
 
         Returns
         -------
@@ -544,7 +543,7 @@ class Rotation(torch.nn.Module):
 
         References
         ----------
-        .. [1] https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
+        .. [ROTb] Rotation matrix https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
         """
         quaternions = self._quaternions
         matrix = _quaternion_to_matrix(quaternions)
@@ -557,7 +556,7 @@ class Rotation(torch.nn.Module):
         """Represent as rotation vectors.
 
         A rotation vector is a 3 dimensional vector which is co-directional to
-        the axis of rotation and whose norm gives the angle of rotation [1]_.
+        the axis of rotation and whose norm gives the angle of rotation [ROTc]_.
 
         Parameters
         ----------
@@ -571,7 +570,7 @@ class Rotation(torch.nn.Module):
 
         References
         ----------
-        .. [1] https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation#Rotation_vector
+        .. [ROTc] Rotation vector https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation#Rotation_vector
         """
         quaternions: torch.Tensor = self._quaternions
         quaternions = _canonical_quaternion(quaternions)  # w > 0 ensures that 0 <= angle <= pi
@@ -594,12 +593,12 @@ class Rotation(torch.nn.Module):
 
         Any orientation can be expressed as a composition of 3 elementary
         rotations. Once the axis sequence has been chosen, Euler angles define
-        the angle of rotation around each respective axis [1]_.
+        the angle of rotation around each respective axis [EULb]_.
 
-        The algorithm from [2]_ has been used to calculate Euler angles for the
+        The algorithm from [BER2022]_ has been used to calculate Euler angles for the
         rotation about a given sequence of axes.
 
-        Euler angles suffer from the problem of gimbal lock [3]_, where the
+        Euler angles suffer from the problem of gimbal lock [GIM]_, where the
         representation loses a degree of freedom and it is not possible to
         determine the first and third angles uniquely. In this case,
         a warning is raised, and the third angle is set to zero. Note however
@@ -609,7 +608,7 @@ class Rotation(torch.nn.Module):
         ----------
         seq
             3 characters belonging to the set {'X', 'Y', 'Z'} for intrinsic
-            rotations, or {'x', 'y', 'z'} for extrinsic rotations [1]_.
+            rotations, or {'x', 'y', 'z'} for extrinsic rotations [EULb]_.
             Adjacent axes cannot be the same.
             Extrinsic and intrinsic rotations cannot be mixed in one function
             call.
@@ -622,21 +621,19 @@ class Rotation(torch.nn.Module):
         angles
             shape (3,) or (..., 3), depending on shape of inputs used to initialize object.
             The returned angles are in the range:
+
             - First angle belongs to [-180, 180] degrees (both inclusive)
             - Third angle belongs to [-180, 180] degrees (both inclusive)
             - Second angle belongs to:
-                - [-90, 90] degrees if all axes are different (like xyz)
-                - [0, 180] degrees if first and third axes are the same
-                  (like zxz)
+             + [-90, 90] degrees if all axes are different (like xyz)
+             + [0, 180] degrees if first and third axes are the same (like zxz)
 
         References
         ----------
-        .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
-        .. [2] Bernardes E, Viollet S (2022) Quaternion to Euler angles
-               conversion: A direct, general and computationally efficient
-               method. PLoS ONE 17(11): e0276302.
-               https://doi.org/10.1371/journal.pone.0276302
-        .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
+        .. [EULb] Euler Angles https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
+        .. [BER2022] Bernardes E, Viollet S (2022) Quaternion to Euler angles conversion: A direct, general and
+           computationally efficient method. PLoS ONE 17(11) https://doi.org/10.1371/journal.pone.0276302
+        .. [GIM] Gimbal lock https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
         """
         if len(seq) != 3:
             raise ValueError(f'Expected 3 axes, got {seq}.')
@@ -699,11 +696,9 @@ class Rotation(torch.nn.Module):
         If the original frame rotates to the final frame by this rotation, then
         its application to a vector can be seen in two ways:
 
-            - As a projection of vector components expressed in the final frame
-              to the original frame.
-            - As the physical rotation of a vector being glued to the original
-              frame as it rotates. In this case the vector components are
-              expressed in the original frame before and after the rotation.
+        - As a projection of vector components expressed in the final frame to the original frame.
+        - As the physical rotation of a vector being glued to the original frame as it rotates. In this case the vector
+        components are expressed in the original frame before and after the rotation.
 
         In terms of rotation matrices, this application is the same as
         ``self.as_matrix() @ vectors``.
@@ -724,6 +719,7 @@ class Rotation(torch.nn.Module):
         rotated_vectors
             Result of applying rotation on input vectors.
             Shape depends on the following cases:
+
                 - If object contains a single rotation (as opposed to a stack
                   with a single rotation) and a single vector is specified with
                   shape ``(3,)``, then `rotated_vectors` has shape ``(3,)``.
@@ -1213,14 +1209,10 @@ class Rotation(torch.nn.Module):
         r"""Get the mean of the rotations.
 
         The mean used is the chordal L2 mean (also called the projected or
-        induced arithmetic mean) [1]_. If ``A`` is a set of rotation matrices,
+        induced arithmetic mean) [HAR2013]_. If ``A`` is a set of rotation matrices,
         then the mean ``M`` is the rotation matrix that minimizes the
         following loss function:
-
-        .. math::
-
-            L(M) = \\sum_{i = 1}^{n} w_i \\lVert \\mathbf{A}_i -
-            \\mathbf{M} \\rVert^2 ,
+        :math:`L(M) = \sum_{i = 1}^{n} w_i \lVert \mathbf{A}_i - \mathbf{M} \rVert^2`,
 
         where :math:`w_i`'s are the `weights` corresponding to each matrix.
 
@@ -1247,8 +1239,8 @@ class Rotation(torch.nn.Module):
 
         References
         ----------
-        .. [1] Hartley R, Li H (2013) Rotation Averaging. International Journal of Computer Vision (103)
-               https://link.springer.com/article/10.1007/s11263-012-0601-0
+        .. [HAR2013] Hartley R, Li H (2013) Rotation Averaging. International Journal of Computer Vision (103)
+           https://link.springer.com/article/10.1007/s11263-012-0601-0
 
         """
         if weights is None:

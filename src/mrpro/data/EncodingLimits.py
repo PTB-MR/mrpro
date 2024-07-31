@@ -49,12 +49,11 @@ class Limits:
 
 @dataclass(slots=True)
 class EncodingLimits:
-    """Encoding limits dataclass with limits for each attribute [1]_.
+    """Encoding limits dataclass with limits for each attribute [INA2016]_.
 
     References
     ----------
-    .. [1] Inati S, Hanse M (2016) ISMRM Raw data format:
-    A proposed standard for MRI raw datasets. MRM 77(1): mrm.26089.
+    .. [INA2016] Inati S, Hansen M (2016) ISMRM Raw data format: A proposed standard for MRI raw datasets. MRM 77(1)
         https://doi.org/10.1002/mrm.26089
 
     """

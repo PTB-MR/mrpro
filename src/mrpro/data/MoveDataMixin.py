@@ -73,7 +73,7 @@ class MoveDataMixin:
         """Perform dtype and/or device conversion of data.
 
         A torch.dtype and torch.device are inferred from the arguments
-        of self.to(*args, **kwargs). Please have a look at the
+        args and kwargs. Please have a look at the
         documentation of torch.Tensor.to() for more details.
 
         A new instance of the dataclass will be returned.
@@ -82,15 +82,16 @@ class MoveDataMixin:
         fields of the dataclass, and to all fields that implement
         the MoveDataMixin.
 
-        The dtype-type, i.e. float/complex will always be preserved,
+        The dtype-type, i.e. float or complex will always be preserved,
         but the precision of floating point dtypes might be changed.
 
         Example:
-            If called with dtype=torch.float32 OR dtype=torch.complex64:
-                - A complex128 tensor will be converted to complex64
-                - A float64 tensor will be converted to float32
-                - A bool tensor will remain bool
-                - An int64 tensor will remain int64
+        If called with dtype=torch.float32 OR dtype=torch.complex64:
+
+        - A complex128 tensor will be converted to complex64
+        - A float64 tensor will be converted to float32
+        - A bool tensor will remain bool
+        - An int64 tensor will remain int64
 
         If other conversions are desired, please use the torch.Tensor.to() method of
         the fields directly.

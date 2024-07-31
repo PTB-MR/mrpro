@@ -57,7 +57,7 @@ class EllipsePhantom:
 
         For a corresponding image with 256 x 256 voxel, the k-space locations should be defined within [-128, 127]
 
-        The Fourier representation of ellipses can be analytically described by Bessel functions [1]_.
+        The Fourier representation of ellipses can be analytically described by Bessel functions [KOA2007]_.
 
         Parameters
         ----------
@@ -68,9 +68,8 @@ class EllipsePhantom:
 
         References
         ----------
-        .. [1] Koay C, Sarlls J, Özarslan E (2007) Three-dimensional analytical magnetic resonance imaging
-        phantom in the Fourier domain. MRM 58(2): mrm.21292.
-               https://doi.org/10.1002/mrm.21292
+        .. [KOA2007] Koay C, Sarlls J, Oezarslan E (2007) Three-dimensional analytical magnetic resonance imaging
+           phantom in the Fourier domain. MRM 58(2) https://doi.org/10.1002/mrm.21292
         ..
         """
         # kx and ky have to be of same shape

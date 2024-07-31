@@ -57,7 +57,7 @@ def adam(
         whether to use the AMSGrad variant of this algorithm from the paper
         `On the Convergence of Adam and Beyond`
     decoupled_weight_decay
-        whether to use Adam (default) or AdamW (if set to true) [1]_
+        whether to use Adam (default) or AdamW (if set to true) [LOS2019]_
 
     Returns
     -------
@@ -65,8 +65,8 @@ def adam(
 
     References
     ----------
-    .. [1] Loshchilov I, Hutter F (2019) Decoupled Weight Decay Regularization. ICLR
-            https://doi.org/10.48550/arXiv.1711.05101
+    .. [LOS2019] Loshchilov I, Hutter F (2019) Decoupled Weight Decay Regularization. ICLR
+       https://doi.org/10.48550/arXiv.1711.05101
     """
     parameters = [p.detach().clone().requires_grad_(True) for p in initial_parameters]
 
