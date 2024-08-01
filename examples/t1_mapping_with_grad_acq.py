@@ -77,9 +77,11 @@ plt.title('Average image')
 
 # %% [markdown]
 # ## Split the data into dynamics and reconstruct dynamic images
+# We split the k-space data into differnt dynamics each with 30 radial lines and no data overlap between the different
+# dynamics. Then we again perform a simple direct reconstruction where we use the same coil sensitivity map (which we
+# estimated above) for each dynamic.
 
 # %%
-# Split k-space data into different dynamics each with 30 radial lines
 idx_dynamic = split_idx(torch.argsort(kdata.header.acq_info.acquisition_time_stamp[0, 0, :, 0]), 30, 0)
 kdata_dynamic = kdata.split_k1_into_other(idx_dynamic, other_label='repetition')
 
@@ -182,6 +184,7 @@ functional = mse_loss @ magnitude_model_op @ constraints_op
 # %% [markdown]
 # ### Carry out fit
 
+# %%
 # The shortest echo time is a good approximation of the equilibrium magnetization
 m0_start = img_rss_dynamic[0, ...]
 # 1 s as a starting value for T1
@@ -201,6 +204,7 @@ params_result = constraints_op(*params_result)
 m0, t1, flip_angle = (p.detach() for p in params_result)
 
 # %%
+# Visualize parametric maps
 fig, axes = plt.subplots(1, 3, figsize=(10, 2), squeeze=False)
 colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05) for ax in axes[0, :]]
 im = axes[0, 0].imshow(m0[0, ...].abs(), cmap='gray')
