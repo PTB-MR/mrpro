@@ -18,7 +18,7 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         gamma: float | torch.Tensor = 42.5764,
         freq: float | torch.Tensor = 127.7292,
     ) -> None:
-        """Initialize WASABITI signal model for mapping of B0, B1 and T1 [PAP2023]_.
+        """Initialize WASABITI signal model for mapping of B0, B1 and T1 [SCH2023]_.
 
         Parameters
         ----------
@@ -37,8 +37,9 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
 
         References
         ----------
-        .. [PAP2023] Papageorgakis C, Casagranda S (2023) Fast WASABI post-processing: Access to rapid B0 and B1
-           correction in clinical routine for CEST MRI. MRM 102. https://doi.org/10.1016/j.mri.2023.06.001
+        .. [SCH2023] Schuenke P, Zimmermann F, Kaspar K, Zaiss M, Kolbitsch C (2023) An Analytic Solution for the
+           Modified WASABI Method: Application to Simultaneous B0, B1 and T1 Mapping and Correction of CEST MRI,
+           Proceedings of the Annual Meeting of ISMRM
         """
         super().__init__()
         # convert all parameters to tensors
