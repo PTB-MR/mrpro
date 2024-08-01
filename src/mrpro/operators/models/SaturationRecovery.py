@@ -38,7 +38,6 @@ class SaturationRecovery(SignalModel[torch.Tensor, torch.Tensor]):
             signal
             with shape (time ... other, coils, z, y, x)
         """
-        delta_ndim = m0.ndim - (self.ti.ndim - 1)  # -1 for time
-        ti = self.ti[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.ti
+        ti = self.expand_tensor_dim(self.ti, m0.ndim - (self.ti.ndim - 1))  # -1 for time
         signal = m0 * (1 - torch.exp(-(ti / t1)))
         return (signal,)

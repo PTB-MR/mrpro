@@ -84,8 +84,8 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
             with shape (offsets ... other, coils, z, y, x)
         """
         delta_ndim = b0_shift.ndim - (self.offsets.ndim - 1)  # -1 for offset
-        offsets = self.offsets[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.offsets
-        trec = self.trec[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.trec
+        offsets = self.expand_tensor_dim(self.offsets, delta_ndim)
+        trec = self.expand_tensor_dim(self.trec, delta_ndim)
 
         b1 = self.b1_nom * rb1
         da = offsets - b0_shift

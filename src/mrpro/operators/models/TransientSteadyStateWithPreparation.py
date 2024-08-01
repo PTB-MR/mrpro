@@ -51,28 +51,38 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
     ):
         """Initialize transient steady state signal model.
 
+        `repetition_time`, `m0_scaling_preparation` and `delay_after_preparation` can vary for each voxel and will be
+        broadcasted starting from the front (i.e. from the other dimension).
+
         Parameters
         ----------
         sampling_time
-            time points when model is evaluated. A sampling_time of 0 describes the first acquired data point after the
+            Time points when model is evaluated. A sampling_time of 0 describes the first acquired data point after the
             inversion pulse and spoiler gradients. To take the T1 relaxation during the delay between inversion pulse
             and start of data acquisition into account, set the delay_after_preparation > 0.
             with shape (time, ...)
         repetition_time
             repetition time
         m0_scaling_preparation
-            scaling of the equilibrium magnetisation due to the preparation pulse before the data acquisition
+            Scaling of the equilibrium magnetisation due to the preparation pulse before the data acquisition.
         delay_after_preparation
-            Time between preparation pulse and start of data acquisition.
-            During this time standard longitudinal relaxation occurs.
+            Time between preparation pulse and start of data acquisition. During this time standard longitudinal
+            relaxation occurs.
 
         """
         super().__init__()
         sampling_time = torch.as_tensor(sampling_time)
         self.sampling_time = torch.nn.Parameter(sampling_time, requires_grad=sampling_time.requires_grad)
-        self.repetition_time = repetition_time
-        self.m0_scaling_preparation = m0_scaling_preparation
-        self.delay_after_preparation = delay_after_preparation
+        repetition_time = torch.as_tensor(repetition_time)
+        self.repetition_time = torch.nn.Parameter(repetition_time, requires_grad=repetition_time.requires_grad)
+        m0_scaling_preparation = torch.as_tensor(m0_scaling_preparation)
+        self.m0_scaling_preparation = torch.nn.Parameter(
+            m0_scaling_preparation, requires_grad=m0_scaling_preparation.requires_grad
+        )
+        delay_after_preparation = torch.as_tensor(delay_after_preparation)
+        self.delay_after_preparation = torch.nn.Parameter(
+            delay_after_preparation, requires_grad=delay_after_preparation.requires_grad
+        )
 
     def forward(self, m0: torch.Tensor, t1: torch.Tensor, flip_angle: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply transient steady state signal model.
@@ -94,17 +104,27 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
             signal
             with shape (time ... other, coils, z, y, x)
         """
-        delta_ndim = m0.ndim - (self.sampling_time.ndim - 1)  # -1 for time
-        sampling_time = self.sampling_time[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.sampling_time
+        m0_ndim = m0.ndim
+
+        # -1 for time
+        sampling_time = self.expand_tensor_dim(self.sampling_time, m0_ndim - (self.sampling_time.ndim - 1))
+
+        repetition_time = self.expand_tensor_dim(self.repetition_time, m0_ndim - self.repetition_time.ndim)
+        m0_scaling_preparation = self.expand_tensor_dim(
+            self.m0_scaling_preparation, m0_ndim - self.m0_scaling_preparation.ndim
+        )
+        delay_after_preparation = self.expand_tensor_dim(
+            self.delay_after_preparation, m0_ndim - self.delay_after_preparation.ndim
+        )
 
         # effect of preparation pulse
-        m_start = m0 * self.m0_scaling_preparation
+        m_start = m0 * m0_scaling_preparation
 
         # relaxation towards M0
-        m_start = m0 + (m_start - m0) * torch.exp(-(self.delay_after_preparation / t1))
+        m_start = m0 + (m_start - m0) * torch.exp(-(delay_after_preparation / t1))
 
         # transient steady state
-        ln_cos_tr = torch.log(torch.cos(flip_angle)) / self.repetition_time
+        ln_cos_tr = torch.log(torch.cos(flip_angle)) / repetition_time
         r1_star = 1 / t1 - ln_cos_tr
         m0_star = m0 / (1 - t1 * ln_cos_tr)
         signal = m0_star + (m_start - m0_star) * torch.exp(-sampling_time * r1_star)
