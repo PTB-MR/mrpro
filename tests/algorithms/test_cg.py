@@ -4,6 +4,7 @@ import pytest
 import scipy
 import torch
 from mrpro.algorithms.optimizers import cg
+from mrpro.algorithms.optimizers.cg import CGStatus
 from mrpro.operators import EinsumOp
 from scipy.sparse.linalg import cg as cg_scp
 from tests import RandomGenerator
@@ -139,7 +140,8 @@ def test_callback(system):
 
     # callback function; if the function is called during the iterations, the
     # test is successful
-    def callback(solution):
+    def callback(cg_status: CGStatus) -> None:
+        _, _, _ = cg_status['iteration_number'], cg_status['solution'][0], cg_status['residual'].norm()
         assert True
 
     cg(h_operator, right_hand_side, callback=callback)
