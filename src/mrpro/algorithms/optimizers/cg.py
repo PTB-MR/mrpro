@@ -4,7 +4,15 @@ from collections.abc import Callable
 
 import torch
 
+from mrpro.algorithms.optimizers.OptimizerStatus import OptimizerStatus
 from mrpro.operators.LinearOperator import LinearOperator
+
+
+class CGStatus(OptimizerStatus):
+    """Conjugate gradient callback base class."""
+
+    residual: torch.Tensor
+    """Residual of the current estimate."""
 
 
 def cg(
@@ -13,7 +21,7 @@ def cg(
     initial_value: torch.Tensor | None = None,
     max_iterations: int = 128,
     tolerance: float = 1e-4,
-    callback: Callable | None = None,
+    callback: Callable[[CGStatus], None] | None = None,
 ) -> torch.Tensor:
     """CG for solving a linear system Hx=b.
 
@@ -47,7 +55,7 @@ def cg(
         tolerance for the residual; if set to zero, the maximal number of iterations
         is the only stopping criterion used to stop the cg
     callback
-        user-provided function to be called at each iteration
+        function to be called at each iteration
 
     Returns
     -------
@@ -102,6 +110,12 @@ def cg(
         residual_norm_squared_previous = residual_norm_squared
 
         if callback is not None:
-            callback(solution)
+            callback(
+                {
+                    'solution': (solution,),
+                    'iteration_number': iteration,
+                    'residual': residual,
+                }
+            )
 
     return solution
