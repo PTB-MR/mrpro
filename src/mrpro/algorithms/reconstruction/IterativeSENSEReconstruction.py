@@ -34,8 +34,8 @@ class IterativeSENSEReconstruction(Reconstruction):
 
     """
 
-    n_max_iter: int
-    """Maximum number of CG iterations."""
+    n_iterations: int
+    """Number of CG iterations."""
 
     def __init__(
         self,
@@ -107,21 +107,19 @@ class IterativeSENSEReconstruction(Reconstruction):
         if self.noise is not None:
             kdata = prewhiten_kspace(kdata, self.noise.to(device))
 
-        # Create A^H W
-        operator = self.fourier_op.H
+        operator = self.csm.as_operator() @ self.fourier_op if self.csm is not None else self.fourier_op
+
         if self.dcf is not None:
-            operator = operator @ self.dcf.as_operator()
-        if self.csm is not None:
-            operator = self.csm.as_operator().H @ operator
-
-        # Calculate b = A^H W y
-        (right_hand_side,) = operator.to(device)(kdata.data)
-
-        # Create H = A^H W A
-        operator = operator @ self.fourier_op
-        if self.csm is not None:
-            operator = operator @ self.csm.as_operator()
-        operator = operator.to(device)
+            dcf_operator = self.dcf.as_operator()
+            # Calculate b = A^H W y
+            (right_hand_side,) = operator.to(device).H(dcf_operator(kdata.data)[0])
+            # Create H = A^H W A
+            operator = operator.H @ dcf_operator @ operator
+        else:
+            # Calculate b = A^H y
+            (right_hand_side,) = operator.to(device).H(kdata.data)
+            # Create H = A^H A
+            operator = operator.H @ operator
 
         img_tensor = cg(
             operator, right_hand_side, initial_value=right_hand_side, max_iterations=self.n_iterations, tolerance=0.0

@@ -59,7 +59,7 @@ class Reconstruction(torch.nn.Module, ABC):
         Parameters
         ----------
         kdata
-            KData used for pseudo-inverse reconstruction, which is then used for
+            KData used for adjoint reconstruction (including DCF-weighting if available), which is then used for
             Walsh CSM estimation.
         noise
             Noise measurement for prewhitening.

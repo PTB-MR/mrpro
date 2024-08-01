@@ -59,7 +59,7 @@ img = iterative_sense_reconstruction(kdata)
 # ### Behind the scenes
 
 # %% [markdown]
-# ##### $W$
+# ##### Set-up the density compensation operator $W$
 
 # %%
 # The density compensation operator is calculated based on the k-space locations of the acquired data.
@@ -67,7 +67,7 @@ dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata.traj).as_operator()
 
 
 # %% [markdown]
-# ##### $A$
+# ##### Set-up the acquisition model $A$
 
 # %%
 # Define Fourier operator using the trajectory and header information in kdata
@@ -83,14 +83,14 @@ csm_operator = mrpro.data.CsmData.from_idata_walsh(img_coilwise).as_operator()
 acquisition_operator = fourier_operator @ csm_operator
 
 # %% [markdown]
-# ##### $b = A^H W y$
+# ##### Calculate the right-hand-side of the linear system $b = A^H W y$
 
 # %%
 (right_hand_side,) = acquisition_operator.H(dcf_operator(kdata.data)[0])
 
 
 # %% [markdown]
-# ##### $H = A^H W A$
+# ##### Set-up the linear self-adjoint operator $H = A^H W A$
 
 # %%
 operator = acquisition_operator.H @ dcf_operator @ acquisition_operator
