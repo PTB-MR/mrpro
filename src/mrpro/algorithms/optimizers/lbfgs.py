@@ -1,8 +1,6 @@
 """LBFGS for solving non-linear minimization problems."""
 
-
 from collections.abc import Callable, Sequence
-
 from typing import Literal
 
 import torch
