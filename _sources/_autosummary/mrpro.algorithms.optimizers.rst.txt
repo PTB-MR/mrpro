@@ -22,6 +22,14 @@ mrpro.algorithms.optimizers
 
    
    
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class_template.rst
+   
+      OptimizerStatus
+   
    
 
    

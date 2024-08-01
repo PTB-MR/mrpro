@@ -84,7 +84,15 @@
 
 <span class="kn">import</span> <span class="nn">torch</span>
 
+<span class="kn">from</span> <span class="nn">mrpro.algorithms.optimizers.OptimizerStatus</span> <span class="kn">import</span> <span class="n">OptimizerStatus</span>
 <span class="kn">from</span> <span class="nn">mrpro.operators.LinearOperator</span> <span class="kn">import</span> <span class="n">LinearOperator</span>
+
+
+<span class="k">class</span> <span class="nc">CGStatus</span><span class="p">(</span><span class="n">OptimizerStatus</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Conjugate gradient callback base class.&quot;&quot;&quot;</span>
+
+    <span class="n">residual</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Residual of the current estimate.&quot;&quot;&quot;</span>
 
 
 <div class="viewcode-block" id="cg">
@@ -95,7 +103,7 @@
     <span class="n">initial_value</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">max_iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
     <span class="n">tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-4</span><span class="p">,</span>
-    <span class="n">callback</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">callback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">CGStatus</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;CG for solving a linear system Hx=b.</span>
 
@@ -129,7 +137,7 @@
 <span class="sd">        tolerance for the residual; if set to zero, the maximal number of iterations</span>
 <span class="sd">        is the only stopping criterion used to stop the cg</span>
 <span class="sd">    callback</span>
-<span class="sd">        user-provided function to be called at each iteration</span>
+<span class="sd">        function to be called at each iteration</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -184,7 +192,13 @@
         <span class="n">residual_norm_squared_previous</span> <span class="o">=</span> <span class="n">residual_norm_squared</span>
 
         <span class="k">if</span> <span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">callback</span><span class="p">(</span><span class="n">solution</span><span class="p">)</span>
+            <span class="n">callback</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s1">&#39;solution&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">solution</span><span class="p">,),</span>
+                    <span class="s1">&#39;iteration_number&#39;</span><span class="p">:</span> <span class="n">iteration</span><span class="p">,</span>
+                    <span class="s1">&#39;residual&#39;</span><span class="p">:</span> <span class="n">residual</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">solution</span></div>
 

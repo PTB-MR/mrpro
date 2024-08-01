@@ -80,12 +80,13 @@
   <h1>Source code for mrpro.algorithms.optimizers.lbfgs</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;LBFGS for solving non-linear minimization problems.&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Sequence</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">torch.optim</span> <span class="kn">import</span> <span class="n">LBFGS</span>
 
+<span class="kn">from</span> <span class="nn">mrpro.algorithms.optimizers.OptimizerStatus</span> <span class="kn">import</span> <span class="n">OptimizerStatus</span>
 <span class="kn">from</span> <span class="nn">mrpro.operators.Operator</span> <span class="kn">import</span> <span class="n">Operator</span>
 
 
@@ -101,6 +102,7 @@
     <span class="n">tolerance_change</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-09</span><span class="p">,</span>
     <span class="n">history_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
     <span class="n">line_search_fn</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;strong_wolfe&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;strong_wolfe&#39;</span><span class="p">,</span>
+    <span class="n">callback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">OptimizerStatus</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;LBFGS for non-linear minimization problems.</span>
 
@@ -126,12 +128,15 @@
 <span class="sd">        update history size</span>
 <span class="sd">    line_search_fn</span>
 <span class="sd">        line search algorithm, either &#39;strong_wolfe&#39; or None (meaning constant step size)</span>
+<span class="sd">    callback</span>
+<span class="sd">        function to be called after each iteration.</span>
+<span class="sd">        N.B. the callback is NOT called within the line search of LBFGS</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">        list of optimized parameters</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">parameters</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">initial_parameters</span><span class="p">]</span>
+    <span class="n">parameters</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">initial_parameters</span><span class="p">)</span>
     <span class="n">optim</span> <span class="o">=</span> <span class="n">LBFGS</span><span class="p">(</span>
         <span class="n">params</span><span class="o">=</span><span class="n">parameters</span><span class="p">,</span>
         <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span>
@@ -143,16 +148,25 @@
         <span class="n">line_search_fn</span><span class="o">=</span><span class="n">line_search_fn</span><span class="p">,</span>
     <span class="p">)</span>
 
+    <span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>
+
     <span class="k">def</span> <span class="nf">closure</span><span class="p">():</span>
+        <span class="k">nonlocal</span> <span class="n">iteration</span>
         <span class="n">optim</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
         <span class="p">(</span><span class="n">objective</span><span class="p">,)</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">parameters</span><span class="p">)</span>
         <span class="n">objective</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">optim</span><span class="o">.</span><span class="n">param_groups</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;params&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
+            <span class="k">if</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;n_iter&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">iteration</span><span class="p">:</span>
+                <span class="n">callback</span><span class="p">({</span><span class="s1">&#39;solution&#39;</span><span class="p">:</span> <span class="n">parameters</span><span class="p">,</span> <span class="s1">&#39;iteration_number&#39;</span><span class="p">:</span> <span class="n">iteration</span><span class="p">})</span>
+                <span class="n">iteration</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s1">&#39;n_iter&#39;</span><span class="p">]</span>
+
         <span class="k">return</span> <span class="n">objective</span>
 
     <span class="c1"># run lbfgs</span>
     <span class="n">optim</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">closure</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">parameters</span></div>
 
 </pre></div>
 
