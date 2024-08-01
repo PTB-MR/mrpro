@@ -17,6 +17,8 @@ data_folder = Path(tempfile.mkdtemp())
 data_file = tempfile.NamedTemporaryFile(dir=data_folder, mode='wb', delete=False, suffix='.h5')
 response = requests.get(zenodo_url + fname, timeout=30)
 data_file.write(response.content)
+data_file.flush()
+
 # %% [markdown]
 # ### Image reconstruction
 # We use the DirectReconstruction class to reconstruct images from 2D radial data.
@@ -100,6 +102,3 @@ assert torch.allclose(img.data, img_more_manual.data)
 # %%
 # Clean-up by removing temporary directory
 shutil.rmtree(data_folder)
-# %% [markdown]
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-# Apache License 2.0. See LICENSE file for details.

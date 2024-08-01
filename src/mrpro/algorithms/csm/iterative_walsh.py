@@ -1,19 +1,5 @@
 """Iterative Walsh method for coil sensitivity map calculation."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import torch
 
 from mrpro.data.SpatialDimension import SpatialDimension
@@ -54,7 +40,7 @@ def iterative_walsh(
     coil_covariance = torch.einsum('azyx,bzyx->abzyx', coil_images, coil_images.conj())
 
     # Smooth the covariance along y-x for 2D and z-y-x for 3D data
-    coil_covariance = uniform_filter(coil_covariance, width=smoothing_width.zyx, axis=(-3, -2, -1))
+    coil_covariance = uniform_filter(coil_covariance, width=smoothing_width.zyx, dim=(-3, -2, -1))
 
     # At each point in the image, find the dominant eigenvector
     # of the signal covariance matrix using the power method
