@@ -107,7 +107,7 @@ class IterativeSENSEReconstruction(Reconstruction):
         if self.noise is not None:
             kdata = prewhiten_kspace(kdata, self.noise.to(device))
 
-        operator = self.csm.as_operator() @ self.fourier_op if self.csm is not None else self.fourier_op
+        operator = self.fourier_op @ self.csm.as_operator() if self.csm is not None else self.fourier_op
 
         if self.dcf is not None:
             dcf_operator = self.dcf.as_operator()
