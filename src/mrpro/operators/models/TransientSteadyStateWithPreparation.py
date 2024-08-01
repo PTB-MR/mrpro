@@ -45,9 +45,9 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
     def __init__(
         self,
         sampling_time: float | torch.Tensor,
-        repetition_time: float,
-        m0_scaling_preparation: float = 1.0,
-        delay_after_preparation: float = 0.0,
+        repetition_time: float | torch.Tensor,
+        m0_scaling_preparation: float | torch.Tensor = 1.0,
+        delay_after_preparation: float | torch.Tensor = 0.0,
     ):
         """Initialize transient steady state signal model.
 
