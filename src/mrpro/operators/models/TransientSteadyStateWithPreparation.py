@@ -8,30 +8,30 @@ from mrpro.operators.SignalModel import SignalModel
 class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
     """Signal model for transient steady state.
 
-    This signal model describes the behavior of the longitudinal magnetisation during continuous acquisition after
+    This signal model describes the behavior of the longitudinal magnetization during continuous acquisition after
     a preparation pulse. The effect of the preparation pulse is modelled by a scaling factor applied to the
-    equilibrium magnetisation. A delay after the preparation pulse can be defined. During this time T1 relaxation to M0
+    equilibrium magnetization. A delay after the preparation pulse can be defined. During this time T1 relaxation to M0
     occurs. Data acquisition starts after this delay. Perfect spoiling is assumed and hence T2 effects are not
     considered in the model. In addition this model assumes TR << T1 and TR << T1* (see definition below) [1]_ [2]_.
 
     Let's assume we want to describe a continuous acquisition after an inversion pulse, then we have three parts:
     [Part A: 180° inversion pulse][Part B: spoiler gradient][Part C: Continuous data acquisition]
 
-    Part A: The 180° pulse leads to an inversion of the equilibrium magnetisation (M0) to -M0. This can be described by
+    Part A: The 180° pulse leads to an inversion of the equilibrium magnetization (M0) to -M0. This can be described by
             setting the scaling factor m0_scaling_preparation to -1
 
     Part B: Commonly after an inversion pulse a strong spoiler gradient is played out to compensate for non-perfect
-            inversion. During this time the magnetisation follows Mz(t) the signal model:
+            inversion. During this time the magnetization follows Mz(t) the signal model:
                     Mz(t) = M0 + (m0_scaling_preparation*M0 - M0)e^(-t / T1)
 
-    Part C: After the spoiler gradient the data acquisition starts and the magnetisation Mz(t) can be described by the
+    Part C: After the spoiler gradient the data acquisition starts and the magnetization Mz(t) can be described by the
             signal model:
                     Mz(t) = M0* + (M0_init - M0*)e^(-t / T1*)
-            where the initial magnetisation is
+            where the initial magnetization is
                     M0_init = M0 + (m0_scaling_preparation*M0 - M0)e^(-delay_after_preparation / T1)
             the effective longitudinal relaxation time is
                     T1* = 1/(1/T1 - 1/repetition_time ln(cos(flip_angle)))
-            and the steady-state magnetisation is
+            and the steady-state magnetization is
                     M0* = M0 T1* / T1
 
     References
@@ -64,9 +64,9 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
         repetition_time
             repetition time
         m0_scaling_preparation
-            Scaling of the equilibrium magnetisation due to the preparation pulse before the data acquisition.
+            Scaling of the equilibrium magnetization due to the preparation pulse before the data acquisition.
         delay_after_preparation
-            Time between preparation pulse and start of data acquisition. During this time standard longitudinal
+            Time between preparation pulse and start of data acquisition. During this time, standard longitudinal
             relaxation occurs.
 
         """

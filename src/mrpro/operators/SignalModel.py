@@ -28,7 +28,7 @@ class SignalModel(Operator[*Tin, tuple[torch.Tensor,]]):
         parameter
             Parameter (e.g with shape (m,n))
         n_dim_to_expand
-            Number of dimensions to expand. If < 0 then parameter is not changed.
+            Number of dimensions to expand. If <= 0 then parameter is not changed.
 
         Returns
         -------
