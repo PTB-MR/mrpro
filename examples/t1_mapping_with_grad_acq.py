@@ -87,9 +87,8 @@ kdata_dynamic = kdata.split_k1_into_other(idx_dynamic, other_label='repetition')
 
 # %%
 # Perform the reconstruction
-reconstruction_dynamic = DirectReconstruction.from_kdata(kdata_dynamic)
-# Here we make sure that the same coil sensitivity map is used for all dynamics
-reconstruction_dynamic.csm = reconstruction.csm
+# Here we use the same coil sensitivity map for all dynamics
+reconstruction_dynamic = DirectReconstruction.from_kdata(kdata_dynamic, csm=reconstruction.csm)
 img_dynamic = reconstruction_dynamic(kdata_dynamic)
 # Get absolute value of complex image and normalise the images
 img_rss_dynamic = img_dynamic.rss()
