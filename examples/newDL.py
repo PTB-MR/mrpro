@@ -1,6 +1,7 @@
 # %% Import and data
 
 import mrpro
+from mrpro.data import SpatialDimension
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -21,6 +22,14 @@ h5_path = base_path + 'pulseq_spiral_2D_220k0_128interleaves_golden_angle_vds_wi
 seq_path = base_path + '20240319_spiral_2D_256mm_220k0_128interleaves_golden_angle_vds.seq'
 
 kdatapuls = KData.from_file(h5_path, KTrajectoryPulseq(seq_path=seq_path))
+
+
+# Local path
+h5_path_cartesian = '/data/bouill01/99/20240801_cartesian_2D_256mm_256Nx_256Ny_15alpha/meas_MID00107_FID07003_20240801_cartesian_2D_256mm_256Nx_256Ny_15alpha.h5'
+seq_path_cartesian = '/data/bouill01/99/20240801_cartesian_2D_256mm_256Nx_256Ny_15alpha/20240801_cartesian_2D_256mm_256Nx_256Ny_15alpha.seq'
+
+kdata_cart = KData.from_file(h5_path_cartesian, KTrajectoryPulseq(seq_path=seq_path_cartesian))
+kdata_cart.header.encoding_matrix = SpatialDimension(z=1, y=256, x=256)
 # %% shifting k-space
 
 def shift_k_space_trajectory(kdatapuls: KData) -> KData:
@@ -62,16 +71,11 @@ def shift_k_space_trajectory(kdatapuls: KData) -> KData:
 
 shifted_kdatapuls = shift_k_space_trajectory(kdatapuls)
 
-shifted_kdatapuls.header.recon_matrix.x = 220
-shifted_kdatapuls.header.recon_matrix.y = 220
+shifted_kdatapuls.header.recon_matrix.x = 256
+shifted_kdatapuls.header.recon_matrix.y = 256
 
 import torch.nn as nn
 #%%
-import torch
-import torch.nn as nn
-import numpy as np
-
-
 class ConvBlock(nn.Module):
     """
     A simple block of convolutional layers (1D, 2D or 3D)
@@ -347,10 +351,7 @@ class NUFFTCascade(nn.Module):
 
     def forward(self, x, k_space_data):
         for _ in range(self.npcg):
-            dcf = mrpro.data.DcfData.from_traj_voronoi(k_space_data.traj)
-            sqrt_dcf_dat = torch.sqrt(dcf.data)
-
-            res_acq_error = self.acquisition_operator.H(self.acquisition_operator(x.unsqueeze(0).unsqueeze(0).unsqueeze(0))[0] - (k_space_data.data*sqrt_dcf_dat))
+            res_acq_error = self.acquisition_operator.H(self.acquisition_operator(x.unsqueeze(0).unsqueeze(0).unsqueeze(0))[0] - (k_space_data.data))
             #xnn = self.apply_CNN(x)
             #xunet = self.apply_UNet(x)
             x = x - (self.w_reg(x) * res_acq_error[0]).squeeze(0).squeeze(0).squeeze(0) # - xunet # - xnn
@@ -579,13 +580,10 @@ class CustomDataset(Dataset):
         # xu = torch.stack((xu_real, xu_imag), dim=5)
         xu = x_us.data.squeeze(0).squeeze(0).squeeze(0)
 
-        kf = kspace_data.unsqueeze(0)
-
-        return xu, kf, xf
+        return xu, xf
 
 
-# %%
-#  Initialize hyperparameters
+# %% Initialize hyperparameters
 n_epochs = 10
 n_itera = 1
 learning_rate = 1e-3
@@ -604,9 +602,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 #
 dataset = CustomDataset(num_ellipses_per_sample=8)
 data_loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
-#%%
-import matplotlib.pyplot as plt
-# Function to visualize results
+#%% Function to visualize results
 def visualize_results(epoch, iteration, xu, xf, xreco):
     plt.figure(figsize=(12, 6))
     plt.subplot(1, 3, 1)
@@ -620,33 +616,50 @@ def visualize_results(epoch, iteration, xu, xf, xreco):
     plt.title('Reconstructed Image')
     plt.suptitle(f'Epoch {epoch+1}, Iteration {iteration+1}')
     plt.show()
+    
+    
+def i2k(im):
+    if len(im.shape) == 1: # Carry out 1D FFT: image space -> k-space
+        kdat = (np.fft.fftshift(np.fft.fftn(np.fft.fftshift(im,(0)),
+                        (im.shape[0],),(0,), norm=None), (0,)))
+    else: # Carry out 2D FFT: image space -> k-space
+        kdat = (np.fft.fftshift(np.fft.fftn(np.fft.fftshift(im,(0,1)),
+                        (im.shape[0], im.shape[1]),(0,1), norm=None), (0,1)))
+    
+    return(kdat)
 # %%
 # Model training
 for epoch in range(n_epochs):
     for i in range (n_itera):
         data = next(iter(data_loader))
-        xu, kf, xf = data
+        xu, xf = data
 
         # Remove the batch dimension 
         xu = xu.squeeze(0)
-        kf = kf.squeeze(0)
         xf = xf.squeeze(0)
         
-        kdata_object = KData(data=kf, header=shifted_kdatapuls.header, traj=shifted_kdatapuls.traj)
+        ku = torch.tensor(i2k(xu))
 
-        kdata_us = KData.split_k1_into_other(kdata_object, torch.arange(0, 127, 10)[None, :], other_label='repetition')
-
+        
+        kdata_us = KData(
+            data=ku.unsqueeze(0).unsqueeze(0).unsqueeze(0), traj=kdata_cart.traj , header=kdata_cart.header
+            )
+        
         # Update acquisition operator and norm estimate based on current batch's undersampled data
        # Calculate the square root of the DCF data
-        dcf_data = mrpro.data.DcfData.from_traj_voronoi(kdata_us.traj)
-        sqrt_dcf_data = torch.sqrt(dcf_data.data)
+        encoding_matrix = kdata_us.header.encoding_matrix
+        traj = kdata_us.traj
+        cartesian_sampling_operator = mrpro.operators.CartesianSamplingOp(encoding_matrix, traj)
 
-        # Create a new DCF operator with the square-rooted DCF data
-        sqrt_dcf_operator = mrpro.data.DcfData(sqrt_dcf_data).as_operator()
+        # Define the Fourier operator using the trajectory and header information in kdata
+        # Here we assume the k-space data is on a Cartesian grid
+        # fourier_operator = mrpro.operators.FourierOp.from_kdata(kdata_us)
 
-        # Define the acquisition operator using the new sqrt_dcf_operator
-        acquisition_operator = sqrt_dcf_operator @ FourierOp.from_kdata(kdata_us)
-        op_norm_estimate = acquisition_operator.operator_norm(initial_value= xu.unsqueeze(0).unsqueeze(0).unsqueeze(0), max_iterations=10, dim=None)
+        # Combine the Cartesian sampling and Fourier operators
+        # sampling_fourier_operator = fourier_operator @ cartesian_sampling_operator
+        # acquisition_operator = sampling_fourier_operator.H
+        acquisition_operator = mrpro.operators.FourierOp.from_kdata(kdata_us)
+        op_norm_estimate = acquisition_operator.operator_norm(initial_value= xu.unsqueeze(0).unsqueeze(0).unsqueeze(0), max_iterations=4, dim=None)
 
         # Set the updated acquisition operator and norm estimate to the model
         model.acquisition_operator = acquisition_operator
