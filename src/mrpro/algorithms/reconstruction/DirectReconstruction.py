@@ -19,8 +19,8 @@ class DirectReconstruction(Reconstruction):
     def __init__(
         self,
         fourier_op: LinearOperator,
-        csm: None | CsmData = None,
-        noise: None | KNoise = None,
+        csm: CsmData | None = None,
+        noise: KNoise | None = None,
         dcf: DcfData | None = None,
     ):
         """Initialize DirectReconstruction.

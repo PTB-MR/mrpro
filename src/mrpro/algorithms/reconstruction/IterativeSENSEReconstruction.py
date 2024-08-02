@@ -20,7 +20,7 @@ from mrpro.operators.LinearOperator import LinearOperator
 class IterativeSENSEReconstruction(Reconstruction):
     r"""Iterative SENSE reconstruction.
 
-    This algorithm minizes the problem :math:`min_x \frac{1}{2}||W^\frac{1}{2} (Ax - y)||_2^2`
+    This algorithm solves the problem :math:`min_x \frac{1}{2}||W^\frac{1}{2} (Ax - y)||_2^2`
     by using a conjugate gradient algorithm to solve
     :math:`H x = b` with :math:`H = A^H W A` and :math:`b = A^H W y` where :math:`A` is the acquisition model
     (coil sensitivity maps, Fourier operator, k-space sampling), :math:`y` is the acquired k-space data and :math:`W`
@@ -42,15 +42,15 @@ class IterativeSENSEReconstruction(Reconstruction):
         fourier_op: LinearOperator,
         n_iterations: int,
         csm: CsmData | None = None,
-        noise: None | KNoise = None,
+        noise: KNoise | None = None,
         dcf: DcfData | None = None,
     ) -> None:
-        """Initialize DirectReconstruction.
+        """Initialize IterativeSENSEReconstruction.
 
         Parameters
         ----------
         fourier_op
-            Instance of the FourierOperator whose adjoint is used for reconstruction
+            Instance of the FourierOperator used for reconstruction
         n_iterations
             Number of CG iterations
         csm
@@ -76,7 +76,7 @@ class IterativeSENSEReconstruction(Reconstruction):
         Parameters
         ----------
         kdata
-            KData to use for trajektory and header information
+            KData to use for trajectory and header information
         noise
             KNoise used for prewhitening. If None, no prewhitening is performed
         n_iterations
