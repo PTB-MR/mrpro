@@ -77,7 +77,7 @@ plt.title('Average image')
 
 # %% [markdown]
 # ## Split the data into dynamics and reconstruct dynamic images
-# We split the k-space data into differnt dynamics each with 30 radial lines and no data overlap between the different
+# We split the k-space data into different dynamics each with 30 radial lines and no data overlap between the different
 # dynamics. Then we again perform a simple direct reconstruction where we use the same coil sensitivity map (which we
 # estimated above) for each dynamic.
 
@@ -162,9 +162,12 @@ magnitude_model_op = MagnitudeOp() @ model_op
 # of 50%.
 
 # %%
-constraints_op = ConstraintsOp(
-    bounds=((None, None), (0.05, 3.0), (kdata_dynamic.header.fa * 0.5, kdata_dynamic.header.fa * 1.5))
-)
+if kdata_dynamic.header.fa is None:
+    raise ValueError('Nominal flip angle needs to be defined.')
+else:
+    nominal_flip_angle = float(kdata_dynamic.header.fa[0])
+
+constraints_op = ConstraintsOp(bounds=((None, None), (0.05, 3.0), (nominal_flip_angle * 0.5, nominal_flip_angle * 1.5)))
 
 # %% [markdown]
 # ### Loss function
