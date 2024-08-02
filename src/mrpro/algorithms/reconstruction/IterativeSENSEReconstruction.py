@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Self
+from typing import Literal, Self
 
 import torch
 
 from mrpro.algorithms.optimizers.cg import cg
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
-from mrpro.algorithms.reconstruction.DirectReconstruction import DirectReconstruction
 from mrpro.algorithms.reconstruction.Reconstruction import Reconstruction
 from mrpro.data._kdata.KData import KData
 from mrpro.data.CsmData import CsmData
@@ -72,7 +71,14 @@ class IterativeSENSEReconstruction(Reconstruction):
         self.dcf = dcf
 
     @classmethod
-    def from_kdata(cls, kdata: KData, noise: KNoise | None = None, *, n_iterations: int = 10) -> Self:
+    def from_kdata(
+        cls,
+        kdata: KData,
+        noise: KNoise | None = None,
+        csm: CsmData | None | Literal['walsh'] = 'walsh',
+        *,
+        n_iterations: int = 10,
+    ) -> Self:
         """Create a IterativeSENSEReconstruction from kdata with default settings.
 
         Parameters
@@ -81,6 +87,9 @@ class IterativeSENSEReconstruction(Reconstruction):
             KData to use for trajectory and header information
         noise
             KNoise used for prewhitening. If None, no prewhitening is performed
+        csm
+            Sensitivity maps. If None, no CSM operator will be applied. If 'walsh', coil sensitivity maps will be
+            estimated from KData using the Walsh method.
         n_iterations
             Number of CG iterations
         """
@@ -88,10 +97,13 @@ class IterativeSENSEReconstruction(Reconstruction):
             kdata = prewhiten_kspace(kdata, noise)
         dcf = DcfData.from_traj_voronoi(kdata.traj)
         fourier_op = FourierOp.from_kdata(kdata)
-        recon = DirectReconstruction(fourier_op, dcf=dcf, noise=noise)
-        image = recon.direct_reconstruction(kdata)
-        csm = CsmData.from_idata_walsh(image)
-        return cls(fourier_op, n_iterations, csm, noise, dcf)
+        self = cls(fourier_op, n_iterations, None, noise, dcf)
+        if csm is None or type(csm) is CsmData:
+            self.csm = csm
+        elif csm == 'walsh':
+            # kdata is prewhitened
+            self.recalculate_csm_walsh(kdata, noise=False)
+        return self
 
     def _self_adjoint_operator(self) -> LinearOperator:
         """Create the self-adjoint operator.

@@ -1,6 +1,6 @@
 """Direct Reconstruction by Adjoint Fourier Transform."""
 
-from typing import Self
+from typing import Literal, Self
 
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
 from mrpro.algorithms.reconstruction.Reconstruction import Reconstruction
@@ -45,7 +45,9 @@ class DirectReconstruction(Reconstruction):
         self.noise = noise
 
     @classmethod
-    def from_kdata(cls, kdata: KData, noise: KNoise | None = None, *, coil_combine: bool = True) -> Self:
+    def from_kdata(
+        cls, kdata: KData, noise: KNoise | None = None, csm: CsmData | None | Literal['walsh'] = 'walsh'
+    ) -> Self:
         """Create a DirectReconstruction from kdata with default settings.
 
         Parameters
@@ -54,16 +56,18 @@ class DirectReconstruction(Reconstruction):
             KData to use for trajektory and header information.
         noise
             KNoise used for prewhitening. If None, no prewhitening is performed.
-        coil_combine
-            if True (default), uses kdata to estimate sensitivity maps and perform adaptive coil combine reconstruction
-            in the reconstruction.
+        csm
+            Sensitivity maps for coil combination. If None, no coil combination will be performed. If 'walsh', coil
+            sensitivity maps will be estimated from KData using the Walsh method.
         """
         if noise is not None:
             kdata = prewhiten_kspace(kdata, noise)
         dcf = DcfData.from_traj_voronoi(kdata.traj)
         fourier_op = FourierOp.from_kdata(kdata)
         self = cls(fourier_op, None, noise, dcf)
-        if coil_combine:
+        if csm is None or type(csm) is CsmData:
+            self.csm = csm
+        elif csm == 'walsh':
             # kdata is prewhitened
             self.recalculate_csm_walsh(kdata, noise=False)
         return self
