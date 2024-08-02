@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Self
 
+import torch
+
 from mrpro.algorithms.optimizers.cg import cg
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
 from mrpro.algorithms.reconstruction.DirectReconstruction import DirectReconstruction
@@ -91,6 +93,52 @@ class IterativeSENSEReconstruction(Reconstruction):
         csm = CsmData.from_idata_walsh(image)
         return cls(fourier_op, n_iterations, csm, noise, dcf)
 
+    def _self_adjoint_operator(self) -> LinearOperator:
+        """Create the self-adjoint operator.
+
+        Create the acquisition model as :math:`A = F S` if the CSM :math:`S` is defined otherwise :math:`A = F` with
+        the Fourier operator :math:`F`.
+
+        Create the self-adjoint operator as :math:`H = A^H W A` if the DCF is not None otherwise as :math:`H = A^H A`.
+        """
+        operator = self.fourier_op @ self.csm.as_operator() if self.csm is not None else self.fourier_op
+
+        if self.dcf is not None:
+            dcf_operator = self.dcf.as_operator()
+            # Create H = A^H W A
+            operator = operator.H @ dcf_operator @ operator
+        else:
+            # Create H = A^H A
+            operator = operator.H @ operator
+
+        return operator
+
+    def _right_hand_side(self, kdata: KData) -> torch.Tensor:
+        """Calculate the right-hand-side of the normal equation.
+
+        Create the acquisition model as :math:`A = F S` if the CSM :math:`S` is defined otherwise :math:`A = F` with
+        the Fourier operator :math:`F`.
+
+        Calculate the right-hand-side as :math:`b = A^H W y` if the DCF is not None otherwise as :math:`b = A^H y`.
+
+        Parameters
+        ----------
+        kdata
+            k-space data to reconstruct.
+        """
+        device = kdata.data.device
+        operator = self.fourier_op @ self.csm.as_operator() if self.csm is not None else self.fourier_op
+
+        if self.dcf is not None:
+            dcf_operator = self.dcf.as_operator()
+            # Calculate b = A^H W y
+            (right_hand_side,) = operator.to(device).H(dcf_operator(kdata.data)[0])
+        else:
+            # Calculate b = A^H y
+            (right_hand_side,) = operator.to(device).H(kdata.data)
+
+        return right_hand_side
+
     def forward(self, kdata: KData) -> IData:
         """Apply the reconstruction.
 
@@ -107,19 +155,8 @@ class IterativeSENSEReconstruction(Reconstruction):
         if self.noise is not None:
             kdata = prewhiten_kspace(kdata, self.noise.to(device))
 
-        operator = self.fourier_op @ self.csm.as_operator() if self.csm is not None else self.fourier_op
-
-        if self.dcf is not None:
-            dcf_operator = self.dcf.as_operator()
-            # Calculate b = A^H W y
-            (right_hand_side,) = operator.to(device).H(dcf_operator(kdata.data)[0])
-            # Create H = A^H W A
-            operator = operator.H @ dcf_operator @ operator
-        else:
-            # Calculate b = A^H y
-            (right_hand_side,) = operator.to(device).H(kdata.data)
-            # Create H = A^H A
-            operator = operator.H @ operator
+        operator = self._self_adjoint_operator().to(device)
+        right_hand_side = self._right_hand_side(kdata)
 
         img_tensor = cg(
             operator, right_hand_side, initial_value=right_hand_side, max_iterations=self.n_iterations, tolerance=0.0
