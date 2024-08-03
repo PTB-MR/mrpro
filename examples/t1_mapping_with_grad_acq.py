@@ -3,6 +3,7 @@
 
 # %%
 # Imports
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -222,3 +223,5 @@ axes[0, 2].set_title('Flip angle (°)')
 fig.colorbar(im, cax=colorbar_ax[2])
 
 # %%
+# Clean-up by removing temporary directory
+shutil.rmtree(data_folder)
