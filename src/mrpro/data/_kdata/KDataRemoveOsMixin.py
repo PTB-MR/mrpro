@@ -12,7 +12,7 @@ class KDataRemoveOsMixin(_KDataProtocol):
     """Remove oversampling along readout dimension."""
 
     def remove_readout_os(self: Self) -> Self:
-        """Remove any oversampling along the readout (k0) direction [1]_.
+        """Remove any oversampling along the readout (k0) direction [GAD]_.
 
         Returns a copy of the data.
 
@@ -32,7 +32,7 @@ class KDataRemoveOsMixin(_KDataProtocol):
 
         References
         ----------
-        .. [1] https://github.com/gadgetron/gadgetron-python
+        .. [GAD] Gadgetron https://github.com/gadgetron/gadgetron-python
         """
         from mrpro.operators.FastFourierOp import FastFourierOp
 

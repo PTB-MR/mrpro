@@ -64,7 +64,17 @@ def test_transient_steady_state_inversion_recovery():
 def test_transient_steady_state_shape(parameter_shape, contrast_dim_shape, signal_shape):
     """Test correct signal shapes."""
     (sampling_time,) = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=1)
-    model_op = TransientSteadyStateWithPreparation(sampling_time, repetition_time=5)
+    if len(parameter_shape) == 1:
+        repetition_time = 5
+        m0_scaling_preparation = 1
+        delay_after_preparation = 0.01
+    else:
+        repetition_time, m0_scaling_preparation, delay_after_preparation = create_parameter_tensor_tuples(
+            contrast_dim_shape[1:], number_of_tensors=3
+        )
+    model_op = TransientSteadyStateWithPreparation(
+        sampling_time, repetition_time, m0_scaling_preparation, delay_after_preparation
+    )
     m0, t1, flip_angle = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=3)
     (signal,) = model_op.forward(m0, t1, flip_angle)
     assert signal.shape == signal_shape

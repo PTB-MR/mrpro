@@ -38,11 +38,9 @@ class MOLLI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
 
         Returns
         -------
-            signal
-            with shape (time ... other, coils, z, y, x)
+            signal with shape (time ... other, coils, z, y, x)
         """
-        delta_ndim = a.ndim - (self.ti.ndim - 1)  # -1 for time
-        ti = self.ti[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.ti
+        ti = self.expand_tensor_dim(self.ti, a.ndim - (self.ti.ndim - 1))  # -1 for time
         c = b / torch.where(a == 0, 1e-10, a)
         t1 = torch.where(t1 == 0, t1 + 1e-10, t1)
         signal = a * (1 - c * torch.exp(ti / t1 * (1 - c)))
