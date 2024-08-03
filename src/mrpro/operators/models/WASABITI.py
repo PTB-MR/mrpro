@@ -18,18 +18,14 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         gamma: float | torch.Tensor = 42.5764,
         freq: float | torch.Tensor = 127.7292,
     ) -> None:
-        """Initialize WASABITI signal model for mapping of B0, B1 and T1 [1]_.
-
-        For more details see: Proc. Intl. Soc. Mag. Reson. Med. 31 (2023): 0906
+        """Initialize WASABITI signal model for mapping of B0, B1 and T1 [SCH2023]_.
 
         Parameters
         ----------
         offsets
-            frequency offsets [Hz]
-            with shape (offsets, ...)
+            frequency offsets [Hz] with shape (offsets, ...)
         trec
-            recovery time between offsets [s]
-            with shape (offsets, ...)
+            recovery time between offsets [s] with shape (offsets, ...)
         tp
             RF pulse duration [s]
         b1_nom
@@ -41,9 +37,9 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
 
         References
         ----------
-        .. [1] Papageorgakis C, Casagranda S (2023) Fast WASABI post-processing:
-        Access to rapid B0 and B1 correction in clinical routine for CEST MRI. MRM 102(203-2011).
-               https://doi.org/10.1016/j.mri.2023.06.001
+        .. [SCH2023] Schuenke P, Zimmermann F, Kaspar K, Zaiss M, Kolbitsch C (2023) An Analytic Solution for the
+           Modified WASABI Method: Application to Simultaneous B0, B1 and T1 Mapping and Correction of CEST MRI,
+           Proceedings of the Annual Meeting of ISMRM
         """
         super().__init__()
         # convert all parameters to tensors
@@ -80,8 +76,7 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
 
         Returns
         -------
-            signal
-            with shape (offsets ... other, coils, z, y, x)
+            signal with shape (offsets ... other, coils, z, y, x)
         """
         delta_ndim = b0_shift.ndim - (self.offsets.ndim - 1)  # -1 for offset
         offsets = self.offsets[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.offsets

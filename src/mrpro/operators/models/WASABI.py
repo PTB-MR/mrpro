@@ -17,7 +17,7 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         gamma: float | torch.Tensor = 42.5764,
         freq: float | torch.Tensor = 127.7292,
     ) -> None:
-        """Initialize WASABI signal model for mapping of B0 and B1 [1]_.
+        """Initialize WASABI signal model for mapping of B0 and B1 [SCHU2016]_.
 
         Parameters
         ----------
@@ -35,9 +35,8 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
 
         References
         ----------
-        .. [1] Schuenke P, Zaiss M (2016) Simultaneous mapping of water shift
-        and B1(WASABI)—Application to field-Inhomogeneity correction of CEST MRI data. MRM 77(2): mrm.26133.
-               https://doi.org/10.1002/mrm.26133
+        .. [SCHU2016] Schuenke P, Zaiss M (2016) Simultaneous mapping of water shift and B1(WASABI)—Application to
+           field-Inhomogeneity correction of CEST MRI data. MRM 77(2). https://doi.org/10.1002/mrm.26133
         """
         super().__init__()
         # convert all parameters to tensors
@@ -79,8 +78,7 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
 
         Returns
         -------
-            signal
-            with shape (offsets ... other, coils, z, y, x)
+            signal with shape (offsets ... other, coils, z, y, x)
         """
         delta_ndim = b0_shift.ndim - (self.offsets.ndim - 1)  # -1 for offset
         offsets = self.offsets[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.offsets

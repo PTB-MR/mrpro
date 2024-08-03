@@ -9,36 +9,34 @@ from mrpro.operators.LinearOperator import LinearOperator
 
 
 class EinsumOp(LinearOperator):
-    """A Linear Operator that implements sum products in einstein notation.
+    r"""A Linear Operator that implements sum products in Einstein notation.
 
-    Implements A_{indices_A}*x^{indices_x} = y{indices_y}
+    Implements :math:`A_{indices_A}*x^{indices_x} = y_{indices_y}`
     with Einstein summation rules over the indices, see torch.einsum or einops.einsum
     for more information. Note, that the indices must be space separated (einops convention).
 
 
     It can be used to implement tensor contractions, such as for example, different versions of
-    matrix-vector / matrix-matrix products of the form A @ x, depending on the chosen einsum rules and
-    shapes of A and x.
+    matrix-vector or matrix-matrix products of the form :math:`A @ x`, depending on the chosen einsum rules and
+    shapes of :math:`A` and :math:`x`.
 
     Examples are:
-    - matrix-vector multiplication of A and the batched vector x = [x1,...,xN] consisting
-      of N vectors x1, x2, ..., xN. Then, the operation defined by
-        A @ x := diag(A, A, ..., A) * [x1, x2, ..., xN]^T = [A*x1, A*x2, ..., A*xN]^T
-      can be implemented by the einsum rule
-        "i j, ... j -> ... i"
 
-    - matrix-vector multiplication of a matrix A consisting of N different matrices
-      A1, A2, ... AN with one vector x. Then, the operation defined by
-        A @ x: = diag(A1, A2,..., AN) * [x, x, ..., x]^T
-      can be implemented by the einsum rule
-        "... i j, j -> ... i"
+    - matrix-vector multiplication of :math:`A` and the batched vector :math:`x = [x1,...,xN]` consisting
+      of :math:`N` vectors :math:`x1, x2, ..., xN`. Then, the operation defined by
+      :math:`A @ x := diag(A, A, ..., A) * [x1, x2, ..., xN]^T = [A*x1, A*x2, ..., A*xN]^T`
+      can be implemented by the einsum rule ``"i j, ... j -> ... i"``.
 
-    - matrix-vector multiplication of a matrix A consisting of N different matrices
-      A1, A2, ... AN with a vector x = [x1,...,xN] consisting
-      of N vectors x1, x2, ..., xN. Then, the operation defined by
-        A @ x: = diag(A1, A2,..., AN) * [x1, x2, ..., xN]^T
-      can be implemented by the einsum rule
-        "... i j, ... j -> ... i"
+    - matrix-vector multiplication of a matrix :math:`A` consisting of :math:`N` different matrices
+      :math:`A1, A2, ... AN` with one vector :math:`x`. Then, the operation defined by
+      :math:`A @ x: = diag(A1, A2,..., AN) * [x, x, ..., x]^T`
+      can be implemented by the einsum rule ``"... i j, j -> ... i"``.
+
+    - matrix-vector multiplication of a matrix :math:`A` consisting of :math:`N` different matrices
+      :math:`A1, A2, ... AN` with a vector :math:`x = [x1,...,xN]` consisting
+      of :math:`N` vectors :math:`x1, x2, ..., xN`. Then, the operation defined by
+      :math:`A @ x: = diag(A1, A2,..., AN) * [x1, x2, ..., xN]^T`
+      can be implemented by the einsum rule ``"... i j, ... j -> ... i"``.
       This is the default behaviour of the operator.
     """
 
@@ -48,7 +46,7 @@ class EinsumOp(LinearOperator):
         Parameters
         ----------
         matrix
-            'Matrix' `A` to be used as first factor in the sum product A*x
+            'Matrix' :math:`A` to be used as first factor in the sum product :math:`A*x`
 
         einsum_rule
             Einstein summation rule describing the forward of the operator.
