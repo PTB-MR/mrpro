@@ -3,10 +3,12 @@
 
 # %%
 # Imports
+import tempfile
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import torch
+import zenodo_get
 from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore [import-untyped]
 from mrpro.algorithms.optimizers import adam
 from mrpro.algorithms.reconstruction import DirectReconstruction
@@ -52,18 +54,18 @@ from mrpro.utils import split_idx
 
 # %%
 # Download raw data in ISMRMRD format from zenodo into a temporary directory
-# data_folder = Path(tempfile.mkdtemp())
-# dataset = '10671597'
-# zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
+data_folder = Path(tempfile.mkdtemp())
+dataset = '10671597'
+zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 
-data_folder = Path('/Users/kolbit01/Documents/PTB/Data/mrpro/raw/')
+
 # %% [markdown]
 # ## Reconstruct average image
 # Reconstruct one image as the average over all radial lines
 
 # %%
 # Read raw data and trajectory
-kdata = KData.from_file(data_folder / '2D_GRad_map_t1_traj_2s.h5', KTrajectoryIsmrmrd())
+kdata = KData.from_file(data_folder / '2D_GRad_map_t1.h5', KTrajectoryIsmrmrd())
 
 # Perform the reconstruction
 reconstruction = DirectReconstruction.from_kdata(kdata)
