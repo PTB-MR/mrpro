@@ -27,6 +27,7 @@ mrpro.operators.models.TransientSteadyStateWithPreparation
       ~TransientSteadyStateWithPreparation.cuda
       ~TransientSteadyStateWithPreparation.double
       ~TransientSteadyStateWithPreparation.eval
+      ~TransientSteadyStateWithPreparation.expand_tensor_dim
       ~TransientSteadyStateWithPreparation.extra_repr
       ~TransientSteadyStateWithPreparation.float
       ~TransientSteadyStateWithPreparation.forward

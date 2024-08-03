@@ -27,6 +27,7 @@ mrpro.operators.models.InversionRecovery
       ~InversionRecovery.cuda
       ~InversionRecovery.double
       ~InversionRecovery.eval
+      ~InversionRecovery.expand_tensor_dim
       ~InversionRecovery.extra_repr
       ~InversionRecovery.float
       ~InversionRecovery.forward

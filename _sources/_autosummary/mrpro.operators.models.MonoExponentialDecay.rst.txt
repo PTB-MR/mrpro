@@ -27,6 +27,7 @@ mrpro.operators.models.MonoExponentialDecay
       ~MonoExponentialDecay.cuda
       ~MonoExponentialDecay.double
       ~MonoExponentialDecay.eval
+      ~MonoExponentialDecay.expand_tensor_dim
       ~MonoExponentialDecay.extra_repr
       ~MonoExponentialDecay.float
       ~MonoExponentialDecay.forward

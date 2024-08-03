@@ -90,9 +90,9 @@
 <span class="k">class</span> <span class="nc">TransientSteadyStateWithPreparation</span><span class="p">(</span><span class="n">SignalModel</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Signal model for transient steady state.</span>
 
-<span class="sd">    This signal model describes the behavior of the longitudinal magnetisation during continuous acquisition after</span>
+<span class="sd">    This signal model describes the behavior of the longitudinal magnetization during continuous acquisition after</span>
 <span class="sd">    a preparation pulse. The effect of the preparation pulse is modelled by a scaling factor applied to the</span>
-<span class="sd">    equilibrium magnetisation. A delay after the preparation pulse can be defined. During this time T1 relaxation to M0</span>
+<span class="sd">    equilibrium magnetization. A delay after the preparation pulse can be defined. During this time T1 relaxation to M0</span>
 <span class="sd">    occurs. Data acquisition starts after this delay. Perfect spoiling is assumed and hence T2 effects are not</span>
 <span class="sd">    considered in the model. In addition this model assumes :math:`TR &lt;&lt; T1` and :math:`TR &lt;&lt; T1^*`</span>
 <span class="sd">    (see definition below) [DEI1992]_ [LOO1970]_.</span>
@@ -128,34 +128,44 @@
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">sampling_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-        <span class="n">repetition_time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-        <span class="n">m0_scaling_preparation</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-        <span class="n">delay_after_preparation</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">repetition_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">m0_scaling_preparation</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">delay_after_preparation</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize transient steady state signal model.</span>
+
+<span class="sd">        `repetition_time`, `m0_scaling_preparation` and `delay_after_preparation` can vary for each voxel and will be</span>
+<span class="sd">        broadcasted starting from the front (i.e. from the other dimension).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        sampling_time</span>
-<span class="sd">            time points when model is evaluated. A sampling_time of 0 describes the first acquired data point after the</span>
+<span class="sd">            Time points when model is evaluated. A sampling_time of 0 describes the first acquired data point after the</span>
 <span class="sd">            inversion pulse and spoiler gradients. To take the T1 relaxation during the delay between inversion pulse</span>
 <span class="sd">            and start of data acquisition into account, set the delay_after_preparation &gt; 0.</span>
 <span class="sd">            with shape (time, ...)</span>
 <span class="sd">        repetition_time</span>
 <span class="sd">            repetition time</span>
 <span class="sd">        m0_scaling_preparation</span>
-<span class="sd">            scaling of the equilibrium magnetisation due to the preparation pulse before the data acquisition</span>
+<span class="sd">            Scaling of the equilibrium magnetization due to the preparation pulse before the data acquisition.</span>
 <span class="sd">        delay_after_preparation</span>
-<span class="sd">            Time between preparation pulse and start of data acquisition.</span>
-<span class="sd">            During this time standard longitudinal relaxation occurs.</span>
+<span class="sd">            Time between preparation pulse and start of data acquisition. During this time, standard longitudinal</span>
+<span class="sd">            relaxation occurs.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="n">sampling_time</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">sampling_time</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sampling_time</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">sampling_time</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="n">sampling_time</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">repetition_time</span> <span class="o">=</span> <span class="n">repetition_time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">m0_scaling_preparation</span> <span class="o">=</span> <span class="n">m0_scaling_preparation</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">delay_after_preparation</span> <span class="o">=</span> <span class="n">delay_after_preparation</span></div>
+        <span class="n">repetition_time</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">repetition_time</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repetition_time</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">repetition_time</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="n">repetition_time</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">)</span>
+        <span class="n">m0_scaling_preparation</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">m0_scaling_preparation</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">m0_scaling_preparation</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">m0_scaling_preparation</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="n">m0_scaling_preparation</span><span class="o">.</span><span class="n">requires_grad</span>
+        <span class="p">)</span>
+        <span class="n">delay_after_preparation</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">delay_after_preparation</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delay_after_preparation</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">delay_after_preparation</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="n">delay_after_preparation</span><span class="o">.</span><span class="n">requires_grad</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="TransientSteadyStateWithPreparation.forward">
@@ -179,17 +189,27 @@
 <span class="sd">        -------</span>
 <span class="sd">            signal with shape (time ... other, coils, z, y, x)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">delta_ndim</span> <span class="o">=</span> <span class="n">m0</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sampling_time</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># -1 for time</span>
-        <span class="n">sampling_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_time</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">*</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">delta_ndim</span><span class="p">)]</span> <span class="k">if</span> <span class="n">delta_ndim</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_time</span>
+        <span class="n">m0_ndim</span> <span class="o">=</span> <span class="n">m0</span><span class="o">.</span><span class="n">ndim</span>
+
+        <span class="c1"># -1 for time</span>
+        <span class="n">sampling_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_tensor_dim</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sampling_time</span><span class="p">,</span> <span class="n">m0_ndim</span> <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sampling_time</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="n">repetition_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_tensor_dim</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">repetition_time</span><span class="p">,</span> <span class="n">m0_ndim</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">repetition_time</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
+        <span class="n">m0_scaling_preparation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_tensor_dim</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">m0_scaling_preparation</span><span class="p">,</span> <span class="n">m0_ndim</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">m0_scaling_preparation</span><span class="o">.</span><span class="n">ndim</span>
+        <span class="p">)</span>
+        <span class="n">delay_after_preparation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand_tensor_dim</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">delay_after_preparation</span><span class="p">,</span> <span class="n">m0_ndim</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay_after_preparation</span><span class="o">.</span><span class="n">ndim</span>
+        <span class="p">)</span>
 
         <span class="c1"># effect of preparation pulse</span>
-        <span class="n">m_start</span> <span class="o">=</span> <span class="n">m0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">m0_scaling_preparation</span>
+        <span class="n">m_start</span> <span class="o">=</span> <span class="n">m0</span> <span class="o">*</span> <span class="n">m0_scaling_preparation</span>
 
         <span class="c1"># relaxation towards M0</span>
-        <span class="n">m_start</span> <span class="o">=</span> <span class="n">m0</span> <span class="o">+</span> <span class="p">(</span><span class="n">m_start</span> <span class="o">-</span> <span class="n">m0</span><span class="p">)</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delay_after_preparation</span> <span class="o">/</span> <span class="n">t1</span><span class="p">))</span>
+        <span class="n">m_start</span> <span class="o">=</span> <span class="n">m0</span> <span class="o">+</span> <span class="p">(</span><span class="n">m_start</span> <span class="o">-</span> <span class="n">m0</span><span class="p">)</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">delay_after_preparation</span> <span class="o">/</span> <span class="n">t1</span><span class="p">))</span>
 
         <span class="c1"># transient steady state</span>
-        <span class="n">ln_cos_tr</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">flip_angle</span><span class="p">))</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">repetition_time</span>
+        <span class="n">ln_cos_tr</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">flip_angle</span><span class="p">))</span> <span class="o">/</span> <span class="n">repetition_time</span>
         <span class="n">r1_star</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">t1</span> <span class="o">-</span> <span class="n">ln_cos_tr</span>
         <span class="n">m0_star</span> <span class="o">=</span> <span class="n">m0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">t1</span> <span class="o">*</span> <span class="n">ln_cos_tr</span><span class="p">)</span>
         <span class="n">signal</span> <span class="o">=</span> <span class="n">m0_star</span> <span class="o">+</span> <span class="p">(</span><span class="n">m_start</span> <span class="o">-</span> <span class="n">m0_star</span><span class="p">)</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">sampling_time</span> <span class="o">*</span> <span class="n">r1_star</span><span class="p">)</span>

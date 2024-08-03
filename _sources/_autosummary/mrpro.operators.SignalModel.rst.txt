@@ -27,6 +27,7 @@ mrpro.operators.SignalModel
       ~SignalModel.cuda
       ~SignalModel.double
       ~SignalModel.eval
+      ~SignalModel.expand_tensor_dim
       ~SignalModel.extra_repr
       ~SignalModel.float
       ~SignalModel.forward

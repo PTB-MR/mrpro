@@ -93,7 +93,33 @@
 <div class="viewcode-block" id="SignalModel">
 <a class="viewcode-back" href="../../../_autosummary/mrpro.operators.SignalModel.html#mrpro.operators.SignalModel">[docs]</a>
 <span class="k">class</span> <span class="nc">SignalModel</span><span class="p">(</span><span class="n">Operator</span><span class="p">[</span><span class="o">*</span><span class="n">Tin</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,]]):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Signal Model Operator.&quot;&quot;&quot;</span></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Signal Model Operator.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SignalModel.expand_tensor_dim">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.operators.SignalModel.html#mrpro.operators.SignalModel.expand_tensor_dim">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">expand_tensor_dim</span><span class="p">(</span><span class="n">parameter</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">n_dim_to_expand</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extend the number of dimensions of a parameter tensor.</span>
+
+<span class="sd">        This is commonly used in the `model.forward` to ensure the model parameters can be broadcasted to the</span>
+<span class="sd">        quantitative maps. E.g. a simple `InversionRecovery` model is evaluated for six different inversion times `ti`.</span>
+<span class="sd">        The inversion times are commonly the same for each voxel and hence `ti` could be of shape (6,) and the T1 and M0</span>
+<span class="sd">        map could be of shape (100,100,100). To make sure `ti` can be broadcasted to the maps it needs to be extended to</span>
+<span class="sd">        the shape (6,1,1,1) which then yields a signal of shape (6,100,100,100).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        parameter</span>
+<span class="sd">            Parameter (e.g with shape (m,n))</span>
+<span class="sd">        n_dim_to_expand</span>
+<span class="sd">            Number of dimensions to expand. If &lt;= 0 then parameter is not changed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            Parameter with expanded dimensions (e.g. (m,n,1,1) for n_dim_to_expand = 2)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">parameter</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">*</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_dim_to_expand</span><span class="p">)]</span> <span class="k">if</span> <span class="n">n_dim_to_expand</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">parameter</span></div>
+</div>
 
 </pre></div>
 

@@ -27,6 +27,7 @@ mrpro.operators.models.SaturationRecovery
       ~SaturationRecovery.cuda
       ~SaturationRecovery.double
       ~SaturationRecovery.eval
+      ~SaturationRecovery.expand_tensor_dim
       ~SaturationRecovery.extra_repr
       ~SaturationRecovery.float
       ~SaturationRecovery.forward

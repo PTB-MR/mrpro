@@ -27,6 +27,7 @@ mrpro.operators.models.MOLLI
       ~MOLLI.cuda
       ~MOLLI.double
       ~MOLLI.eval
+      ~MOLLI.expand_tensor_dim
       ~MOLLI.extra_repr
       ~MOLLI.float
       ~MOLLI.forward

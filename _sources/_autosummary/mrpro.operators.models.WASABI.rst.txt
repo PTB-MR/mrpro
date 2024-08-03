@@ -27,6 +27,7 @@ mrpro.operators.models.WASABI
       ~WASABI.cuda
       ~WASABI.double
       ~WASABI.eval
+      ~WASABI.expand_tensor_dim
       ~WASABI.extra_repr
       ~WASABI.float
       ~WASABI.forward
