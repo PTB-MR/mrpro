@@ -163,12 +163,12 @@ class GridSamplingOp(LinearOperator):
         padding_mode: Literal['zeros', 'border', 'reflection'] = 'zeros',
         align_corners: bool = False,
     ):
-        """Initialize Sampling Operator.
+        r"""Initialize Sampling Operator.
 
         Parameters
         ----------
         grid
-            sampling grid. Shape *batchdim, z,y,x,3 / *batchdim, y,x,2.
+            sampling grid. Shape \*batchdim, z,y,x,3 / \*batchdim, y,x,2.
             Values should be in [-1, 1.]
         input_shape
             Used in the adjoint. The z,y,x shape of the domain of the operator.

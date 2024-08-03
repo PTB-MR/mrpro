@@ -35,8 +35,7 @@ class MonoExponentialDecay(SignalModel[torch.Tensor, torch.Tensor]):
 
         Returns
         -------
-            signal
-            with shape (time ... other, coils, z, y, x)
+            signal with shape (time ... other, coils, z, y, x)
         """
         delta_ndim = m0.ndim - (self.decay_time.ndim - 1)  # -1 for time
         decay_time = self.decay_time[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.decay_time

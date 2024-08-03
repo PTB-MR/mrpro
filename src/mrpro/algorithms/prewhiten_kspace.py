@@ -10,16 +10,16 @@ from mrpro.data.KNoise import KNoise
 
 
 def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float | torch.Tensor = 1.0) -> KData:
-    """Calculate noise prewhitening matrix and decorrelate coils [1]_ [2]_ [3]_.
+    """Calculate noise prewhitening matrix and decorrelate coils.
 
-    Step 1: Calculate noise correlation matrix N
-    Step 2: Carry out Cholesky decomposition L L^H = N
-    Step 3: Estimate noise decorrelation matrix D = inv(L)
-    Step 4: Apply D to k-space data
+    Steps:
 
-    More information can be found in
-    http://onlinelibrary.wiley.com/doi/10.1002/jmri.24687/full
-    https://doi.org/10.1002/mrm.1910160203
+    - Calculate noise correlation matrix N
+    - Carry out Cholesky decomposition L L^H = N
+    - Estimate noise decorrelation matrix D = inv(L)
+    - Apply D to k-space data
+
+    More information can be found in [ISMa]_ [HAN2014]_ [ROE1990]_.
 
     If the the data has more samples in the 'other'-dimensions (batch/slice/...),
     the noise covariance matrix is calculated jointly over all samples.
@@ -43,10 +43,10 @@ def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float | torch.T
 
     References
     ----------
-    .. [1] https://github.com/ismrmrd/ismrmrd-python-tools
-    .. [2] Hansen M, Kellman P (2014) Image reconstruction: An overview for clinicians. JMRI 41(3): jmri.24687.
+    .. [ISMa] ISMRMRD Python tools https://github.com/ismrmrd/ismrmrd-python-tools
+    .. [HAN2014] Hansen M, Kellman P (2014) Image reconstruction: An overview for clinicians. JMRI 41(3)
             https://doi.org/10.1002/jmri.24687
-    .. [3] Roemer P, Mueller O (1990) The NMR phased array. MRM 16(2): mrm.1910160203.
+    .. [ROE1990] Roemer P, Mueller O (1990) The NMR phased array. MRM 16(2)
             https://doi.org/10.1002/mrm.1910160203
     """
     # Reshape noise to (coil, everything else)
