@@ -19,6 +19,7 @@
         <script src="../_static/documentation_options.js?v=5929fcd5"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -125,42 +126,37 @@
 a preparation pulse. The effect of the preparation pulse is modelled by a scaling factor applied to the
 equilibrium magnetisation. A delay after the preparation pulse can be defined. During this time T1 relaxation to M0
 occurs. Data acquisition starts after this delay. Perfect spoiling is assumed and hence T2 effects are not
-considered in the model. In addition this model assumes TR &lt;&lt; T1 and TR &lt;&lt; T1* (see definition below) <a class="footnote-reference brackets" href="#id3" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a> <a class="footnote-reference brackets" href="#id4" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a>.</p>
+considered in the model. In addition this model assumes <span class="math notranslate nohighlight">\(TR &lt;&lt; T1\)</span> and <span class="math notranslate nohighlight">\(TR &lt;&lt; T1^*\)</span>
+(see definition below) <a class="reference internal" href="#dei1992" id="id1"><span>[DEI1992]</span></a> <a class="reference internal" href="#loo1970" id="id2"><span>[LOO1970]</span></a>.</p>
 <p>Let’s assume we want to describe a continuous acquisition after an inversion pulse, then we have three parts:
 [Part A: 180° inversion pulse][Part B: spoiler gradient][Part C: Continuous data acquisition]</p>
-<dl class="simple">
-<dt>Part A: The 180° pulse leads to an inversion of the equilibrium magnetisation (M0) to -M0. This can be described by</dt><dd><p>setting the scaling factor m0_scaling_preparation to -1</p>
-</dd>
-<dt>Part B: Commonly after an inversion pulse a strong spoiler gradient is played out to compensate for non-perfect</dt><dd><dl class="simple">
-<dt>inversion. During this time the magnetisation follows Mz(t) the signal model:</dt><dd><p>Mz(t) = M0 + (m0_scaling_preparation*M0 - M0)e^(-t / T1)</p>
-</dd>
-</dl>
-</dd>
-<dt>Part C: After the spoiler gradient the data acquisition starts and the magnetisation Mz(t) can be described by the</dt><dd><dl class="simple">
-<dt>signal model:</dt><dd><p>Mz(t) = M0* + (M0_init - M0*)e^(-t / T1*)</p>
-</dd>
-<dt>where the initial magnetisation is</dt><dd><p>M0_init = M0 + (m0_scaling_preparation*M0 - M0)e^(-delay_after_preparation / T1)</p>
-</dd>
-<dt>the effective longitudinal relaxation time is</dt><dd><p>T1* = 1/(1/T1 - 1/repetition_time ln(cos(flip_angle)))</p>
-</dd>
-<dt>and the steady-state magnetisation is</dt><dd><p>M0* = M0 T1* / T1</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<ul class="simple">
+<li><p>Part A: The 180° pulse leads to an inversion of the equilibrium magnetisation (<span class="math notranslate nohighlight">\(M_0\)</span>) to <span class="math notranslate nohighlight">\(-M_0\)</span>.
+This can be described by setting the scaling factor <code class="docutils literal notranslate"><span class="pre">m0_scaling_preparation</span></code> to -1.</p></li>
+<li><p>Part B: Commonly after an inversion pulse a strong spoiler gradient is played out to compensate for non-perfect
+inversion. During this time the magnetisation <span class="math notranslate nohighlight">\(M_z(t)\)</span> follows the signal model:
+<span class="math notranslate nohighlight">\(M_z(t) = M_0 + (s * M_0 - M_0)e^{(-t / T1)}\)</span> where <span class="math notranslate nohighlight">\(s\)</span> is <code class="docutils literal notranslate"><span class="pre">m0_scaling_preparation</span></code>.</p></li>
+<li><p>Part C: After the spoiler gradient the data acquisition starts and the magnetisation <span class="math notranslate nohighlight">\(M_z(t)\)</span> can be
+described by the signal model: <span class="math notranslate nohighlight">\(M_z(t) = M_0^* + (M_{init} - M_0^*)e^{(-t / T1^*)}\)</span> where the initial
+magnetisation is <span class="math notranslate nohighlight">\(M_{init} = M_0 + (s*M_0 - M_0)e^{(-\Delta t / T1)}\)</span> where <span class="math notranslate nohighlight">\(s\)</span> is
+<code class="docutils literal notranslate"><span class="pre">m0_scaling_preparation</span></code> and <span class="math notranslate nohighlight">\(\Delta t\)</span> is <code class="docutils literal notranslate"><span class="pre">delay_after_preparation</span></code>. The effective longitudinal
+relaxation time is <span class="math notranslate nohighlight">\(T1^* = 1/(1/T1 - ln(cos(\alpha)/TR)\)</span>
+where <span class="math notranslate nohighlight">\(TR\)</span> is <code class="docutils literal notranslate"><span class="pre">repetition_time</span></code> and <span class="math notranslate nohighlight">\(\alpha\)</span> is <code class="docutils literal notranslate"><span class="pre">flip_angle</span></code>.
+The steady-state magnetisation is <span class="math notranslate nohighlight">\(M_0^* = M_0 T1^* / T1\)</span>.</p></li>
+</ul>
 <p class="rubric">References</p>
-<aside class="footnote-list brackets">
-<aside class="footnote brackets" id="id3" role="doc-footnote">
-<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
-<p>Deichmann R, Haase A (1992) Quantification of T1 values by SNAPSHOT-FLASH NMR imaging. J. Magn. Reson. 612
-<a class="reference external" href="http://doi.org/10.1016/0022-2364(92)90347-A">http://doi.org/10.1016/0022-2364(92)90347-A</a></p>
-</aside>
-<aside class="footnote brackets" id="id4" role="doc-footnote">
-<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">2</a><span class="fn-bracket">]</span></span>
-<p>Look D, Locker R (1970) Time Saving in Measurement of NMR and EPR Relaxation Times. Rev. Sci. Instrum 41
-<a class="reference external" href="https://doi.org/10.1063/1.1684482">https://doi.org/10.1063/1.1684482</a></p>
-</aside>
-</aside>
+<div role="list" class="citation-list">
+<div class="citation" id="dei1992" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">DEI1992</a><span class="fn-bracket">]</span></span>
+<p>Deichmann R, Haase A (1992) Quantification of T1 values by SNAPSHOT-FLASH NMR imaging. J. Magn. Reson.
+612 <a class="reference external" href="http://doi.org/10.1016/0022-2364(92)90347-A">http://doi.org/10.1016/0022-2364(92)90347-A</a></p>
+</div>
+<div class="citation" id="loo1970" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">LOO1970</a><span class="fn-bracket">]</span></span>
+<p>Look D, Locker R (1970) Time Saving in Measurement of NMR and EPR Relaxation Times. Rev. Sci. Instrum
+41 <a class="reference external" href="https://doi.org/10.1063/1.1684482">https://doi.org/10.1063/1.1684482</a></p>
+</div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.operators.models.TransientSteadyStateWithPreparation.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sampling_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">repetition_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m0_scaling_preparation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay_after_preparation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/operators/models/TransientSteadyStateWithPreparation.html#TransientSteadyStateWithPreparation.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.operators.models.TransientSteadyStateWithPreparation.__init__" title="Link to this definition"></a></dt>
@@ -588,12 +584,8 @@ with shape (… other, coils, z, y, x)</p></li>
 with shape (… other, coils, z, y, x)</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><em>signal</em></p></li>
-<li><p><em>with shape (time … other, coils, z, y, x)</em></p></li>
-</ul>
-</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>signal with shape (time … other, coils, z, y, x)</p>
 </dd>
 </dl>
 </dd></dl>

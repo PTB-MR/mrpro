@@ -102,18 +102,14 @@
         <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="mf">42.5764</span><span class="p">,</span>
         <span class="n">freq</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="mf">127.7292</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize WASABITI signal model for mapping of B0, B1 and T1 [1]_.</span>
-
-<span class="sd">        For more details see: Proc. Intl. Soc. Mag. Reson. Med. 31 (2023): 0906</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize WASABITI signal model for mapping of B0, B1 and T1 [SCH2023]_.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        offsets</span>
-<span class="sd">            frequency offsets [Hz]</span>
-<span class="sd">            with shape (offsets, ...)</span>
+<span class="sd">            frequency offsets [Hz] with shape (offsets, ...)</span>
 <span class="sd">        trec</span>
-<span class="sd">            recovery time between offsets [s]</span>
-<span class="sd">            with shape (offsets, ...)</span>
+<span class="sd">            recovery time between offsets [s] with shape (offsets, ...)</span>
 <span class="sd">        tp</span>
 <span class="sd">            RF pulse duration [s]</span>
 <span class="sd">        b1_nom</span>
@@ -125,9 +121,9 @@
 
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
-<span class="sd">        .. [1] Papageorgakis C, Casagranda S (2023) Fast WASABI post-processing:</span>
-<span class="sd">        Access to rapid B0 and B1 correction in clinical routine for CEST MRI. MRM 102(203-2011).</span>
-<span class="sd">               https://doi.org/10.1016/j.mri.2023.06.001</span>
+<span class="sd">        .. [SCH2023] Schuenke P, Zimmermann F, Kaspar K, Zaiss M, Kolbitsch C (2023) An Analytic Solution for the</span>
+<span class="sd">           Modified WASABI Method: Application to Simultaneous B0, B1 and T1 Mapping and Correction of CEST MRI,</span>
+<span class="sd">           Proceedings of the Annual Meeting of ISMRM</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="c1"># convert all parameters to tensors</span>
@@ -167,8 +163,7 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">            signal</span>
-<span class="sd">            with shape (offsets ... other, coils, z, y, x)</span>
+<span class="sd">            signal with shape (offsets ... other, coils, z, y, x)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">delta_ndim</span> <span class="o">=</span> <span class="n">b0_shift</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">offsets</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># -1 for offset</span>
         <span class="n">offsets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offsets</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">*</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">delta_ndim</span><span class="p">)]</span> <span class="k">if</span> <span class="n">delta_ndim</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">offsets</span>

@@ -19,6 +19,7 @@
         <script src="../_static/documentation_options.js?v=5929fcd5"></script>
         <script src="../_static/doctools.js?v=9a2dae69"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -119,46 +120,29 @@
 <dt class="sig sig-object py" id="mrpro.operators.EinsumOp">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.operators.</span></span><span class="sig-name descname"><span class="pre">EinsumOp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">einsum_rule</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'...</span> <span class="pre">i</span> <span class="pre">j,</span> <span class="pre">...</span> <span class="pre">j</span> <span class="pre">-&gt;</span> <span class="pre">...</span> <span class="pre">i'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/operators/EinsumOp.html#EinsumOp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.operators.EinsumOp" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="mrpro.operators.LinearOperator.html#mrpro.operators.LinearOperator" title="mrpro.operators.LinearOperator.LinearOperator"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinearOperator</span></code></a></p>
-<p>A Linear Operator that implements sum products in einstein notation.</p>
-<p>Implements A_{indices_A}*x^{indices_x} = y{indices_y}
+<p>A Linear Operator that implements sum products in Einstein notation.</p>
+<p>Implements <span class="math notranslate nohighlight">\(A_{indices_A}*x^{indices_x} = y_{indices_y}\)</span>
 with Einstein summation rules over the indices, see torch.einsum or einops.einsum
 for more information. Note, that the indices must be space separated (einops convention).</p>
 <p>It can be used to implement tensor contractions, such as for example, different versions of
-matrix-vector / matrix-matrix products of the form A &#64; x, depending on the chosen einsum rules and
-shapes of A and x.</p>
-<p>Examples are:
-- matrix-vector multiplication of A and the batched vector x = [x1,…,xN] consisting</p>
-<blockquote>
-<div><dl class="simple">
-<dt>of N vectors x1, x2, …, xN. Then, the operation defined by</dt><dd><p>A &#64; x := diag(A, A, …, A) * [x1, x2, …, xN]^T = [A*x1, A*x2, …, A*xN]^T</p>
-</dd>
-<dt>can be implemented by the einsum rule</dt><dd><p>“i j, … j -&gt; … i”</p>
-</dd>
-</dl>
-</div></blockquote>
-<ul>
-<li><p>matrix-vector multiplication of a matrix A consisting of N different matrices
-A1, A2, … AN with one vector x. Then, the operation defined by</p>
-<blockquote>
-<div><p>A &#64; x: = diag(A1, A2,…, AN) * [x, x, …, x]^T</p>
-</div></blockquote>
-<dl class="simple">
-<dt>can be implemented by the einsum rule</dt><dd><p>“… i j, j -&gt; … i”</p>
-</dd>
-</dl>
-</li>
-<li><p>matrix-vector multiplication of a matrix A consisting of N different matrices
-A1, A2, … AN with a vector x = [x1,…,xN] consisting
-of N vectors x1, x2, …, xN. Then, the operation defined by</p>
-<blockquote>
-<div><p>A &#64; x: = diag(A1, A2,…, AN) * [x1, x2, …, xN]^T</p>
-</div></blockquote>
-<dl class="simple">
-<dt>can be implemented by the einsum rule</dt><dd><p>“… i j, … j -&gt; … i”</p>
-</dd>
-</dl>
-<p>This is the default behaviour of the operator.</p>
-</li>
+matrix-vector or matrix-matrix products of the form <span class="math notranslate nohighlight">\(A &#64; x\)</span>, depending on the chosen einsum rules and
+shapes of <span class="math notranslate nohighlight">\(A\)</span> and <span class="math notranslate nohighlight">\(x\)</span>.</p>
+<p>Examples are:</p>
+<ul class="simple">
+<li><p>matrix-vector multiplication of <span class="math notranslate nohighlight">\(A\)</span> and the batched vector <span class="math notranslate nohighlight">\(x = [x1,...,xN]\)</span> consisting
+of <span class="math notranslate nohighlight">\(N\)</span> vectors <span class="math notranslate nohighlight">\(x1, x2, ..., xN\)</span>. Then, the operation defined by
+<span class="math notranslate nohighlight">\(A &#64; x := diag(A, A, ..., A) * [x1, x2, ..., xN]^T = [A*x1, A*x2, ..., A*xN]^T\)</span>
+can be implemented by the einsum rule <code class="docutils literal notranslate"><span class="pre">&quot;i</span> <span class="pre">j,</span> <span class="pre">...</span> <span class="pre">j</span> <span class="pre">-&gt;</span> <span class="pre">...</span> <span class="pre">i&quot;</span></code>.</p></li>
+<li><p>matrix-vector multiplication of a matrix <span class="math notranslate nohighlight">\(A\)</span> consisting of <span class="math notranslate nohighlight">\(N\)</span> different matrices
+<span class="math notranslate nohighlight">\(A1, A2, ... AN\)</span> with one vector <span class="math notranslate nohighlight">\(x\)</span>. Then, the operation defined by
+<span class="math notranslate nohighlight">\(A &#64; x: = diag(A1, A2,..., AN) * [x, x, ..., x]^T\)</span>
+can be implemented by the einsum rule <code class="docutils literal notranslate"><span class="pre">&quot;...</span> <span class="pre">i</span> <span class="pre">j,</span> <span class="pre">j</span> <span class="pre">-&gt;</span> <span class="pre">...</span> <span class="pre">i&quot;</span></code>.</p></li>
+<li><p>matrix-vector multiplication of a matrix <span class="math notranslate nohighlight">\(A\)</span> consisting of <span class="math notranslate nohighlight">\(N\)</span> different matrices
+<span class="math notranslate nohighlight">\(A1, A2, ... AN\)</span> with a vector <span class="math notranslate nohighlight">\(x = [x1,...,xN]\)</span> consisting
+of <span class="math notranslate nohighlight">\(N\)</span> vectors <span class="math notranslate nohighlight">\(x1, x2, ..., xN\)</span>. Then, the operation defined by
+<span class="math notranslate nohighlight">\(A &#64; x: = diag(A1, A2,..., AN) * [x1, x2, ..., xN]^T\)</span>
+can be implemented by the einsum rule <code class="docutils literal notranslate"><span class="pre">&quot;...</span> <span class="pre">i</span> <span class="pre">j,</span> <span class="pre">...</span> <span class="pre">j</span> <span class="pre">-&gt;</span> <span class="pre">...</span> <span class="pre">i&quot;</span></code>.
+This is the default behaviour of the operator.</p></li>
 </ul>
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.operators.EinsumOp.__init__">
@@ -167,7 +151,7 @@ of N vectors x1, x2, …, xN. Then, the operation defined by</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>matrix</strong> – ‘Matrix’ <cite>A</cite> to be used as first factor in the sum product A*x</p></li>
+<li><p><strong>matrix</strong> – ‘Matrix’ <span class="math notranslate nohighlight">\(A\)</span> to be used as first factor in the sum product <span class="math notranslate nohighlight">\(A*x\)</span></p></li>
 <li><p><strong>einsum_rule</strong> – Einstein summation rule describing the forward of the operator.
 Also see torch.einsum for more information.</p></li>
 </ul>

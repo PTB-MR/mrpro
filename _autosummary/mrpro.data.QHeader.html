@@ -353,24 +353,22 @@ This will also create new tensors for views</p></li>
 <span class="sig-name descname"><span class="pre">to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.QHeader.to" title="Link to this definition"></a></dt>
 <dd><p>Perform dtype and/or device conversion of data.</p>
 <p>A torch.dtype and torch.device are inferred from the arguments
-of self.to(<a href="#id1"><span class="problematic" id="id2">*</span></a>args, <a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs). Please have a look at the
+args and kwargs. Please have a look at the
 documentation of torch.Tensor.to() for more details.</p>
 <p>A new instance of the dataclass will be returned.</p>
 <p>The conversion will be applied to all Tensor- or Module
 fields of the dataclass, and to all fields that implement
 the MoveDataMixin.</p>
-<p>The dtype-type, i.e. float/complex will always be preserved,
+<p>The dtype-type, i.e. float or complex will always be preserved,
 but the precision of floating point dtypes might be changed.</p>
-<p class="rubric">Example</p>
-<dl class="simple">
-<dt>If called with dtype=torch.float32 OR dtype=torch.complex64:</dt><dd><ul class="simple">
+<p>Example:
+If called with dtype=torch.float32 OR dtype=torch.complex64:</p>
+<ul class="simple">
 <li><p>A complex128 tensor will be converted to complex64</p></li>
 <li><p>A float64 tensor will be converted to float32</p></li>
 <li><p>A bool tensor will remain bool</p></li>
 <li><p>An int64 tensor will remain int64</p></li>
 </ul>
-</dd>
-</dl>
 <p>If other conversions are desired, please use the torch.Tensor.to() method of
 the fields directly.</p>
 <p>If the copy argument is set to True (default), a deep copy will be returned

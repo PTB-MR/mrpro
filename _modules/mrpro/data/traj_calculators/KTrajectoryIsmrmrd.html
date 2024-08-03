@@ -93,7 +93,7 @@
 <span class="k">class</span> <span class="nc">KTrajectoryIsmrmrd</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get trajectory in ISMRMRD raw data file.</span>
 
-<span class="sd">    The trajectory in the ISMRMRD raw data file is read out [1]_.</span>
+<span class="sd">    The trajectory in the ISMRMRD raw data file is read out [TRA]_.</span>
 
 <span class="sd">    The value range of the trajectory in the ISMRMRD file is not well defined. Here we simple normalize everything</span>
 <span class="sd">    based on the highest value and ensure it is within [-pi, pi]. The trajectory is in the shape of the unsorted</span>
@@ -101,7 +101,7 @@
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
-<span class="sd">    .. [1] https://ismrmrd.readthedocs.io/en/latest/mrd_raw_data.html#k-space-trajectory</span>
+<span class="sd">    .. [TRA] ISMRMRD trajectory https://ismrmrd.readthedocs.io/en/latest/mrd_raw_data.html#k-space-trajectory</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">acquisitions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ismrmrd</span><span class="o">.</span><span class="n">Acquisition</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">KTrajectoryRawShape</span><span class="p">:</span>

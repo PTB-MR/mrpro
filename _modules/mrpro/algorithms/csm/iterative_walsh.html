@@ -98,7 +98,7 @@
 <span class="sd">    This is for a single set of coil images. The input should be a tensor with dimensions</span>
 <span class="sd">    (coils, z, y, x). The output will have the same dimensions.</span>
 <span class="sd">    Either apply this function individually to each set of coil images,</span>
-<span class="sd">    or see CsmData.from_idata_walsh which performs this operation on a whole dataset [1]_.</span>
+<span class="sd">    or see CsmData.from_idata_walsh which performs this operation on a whole dataset [WAL2000]_.</span>
 
 <span class="sd">    This function is inspired by https://github.com/ismrmrd/ismrmrd-python-tools.</span>
 
@@ -113,8 +113,7 @@
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
-<span class="sd">    .. [1] Daval-Frerot G, Ciuciu P (2022) Iterative static field map estimation for off-resonance correction in</span>
-<span class="sd">           non-Cartesian susceptibility weighted imaging. MRM 88(4): mrm.29297.</span>
+<span class="sd">    .. [WAL2000] Walsh DO, Gmitro AF, Marcellin MW (2000) Adaptive reconstruction of phased array MR imagery. MRM 43</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">smoothing_width</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
         <span class="n">smoothing_width</span> <span class="o">=</span> <span class="n">SpatialDimension</span><span class="p">(</span><span class="n">smoothing_width</span><span class="p">,</span> <span class="n">smoothing_width</span><span class="p">,</span> <span class="n">smoothing_width</span><span class="p">)</span>

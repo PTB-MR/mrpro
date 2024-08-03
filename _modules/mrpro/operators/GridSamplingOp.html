@@ -247,12 +247,12 @@
         <span class="n">padding_mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;zeros&#39;</span><span class="p">,</span> <span class="s1">&#39;border&#39;</span><span class="p">,</span> <span class="s1">&#39;reflection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;zeros&#39;</span><span class="p">,</span>
         <span class="n">align_corners</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize Sampling Operator.</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initialize Sampling Operator.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        grid</span>
-<span class="sd">            sampling grid. Shape *batchdim, z,y,x,3 / *batchdim, y,x,2.</span>
+<span class="sd">            sampling grid. Shape \*batchdim, z,y,x,3 / \*batchdim, y,x,2.</span>
 <span class="sd">            Values should be in [-1, 1.]</span>
 <span class="sd">        input_shape</span>
 <span class="sd">            Used in the adjoint. The z,y,x shape of the domain of the operator.</span>

@@ -127,9 +127,10 @@
 <span class="sd">        whether to use the AMSGrad variant of this algorithm from the paper</span>
 <span class="sd">        `On the Convergence of Adam and Beyond`</span>
 <span class="sd">    decoupled_weight_decay</span>
-<span class="sd">        whether to use Adam (default) or AdamW (if set to true) [1]_</span>
+<span class="sd">        whether to use Adam (default) or AdamW (if set to true) [LOS2019]_</span>
 <span class="sd">    callback</span>
 <span class="sd">        function to be called after each iteration</span>
+
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -137,8 +138,8 @@
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
-<span class="sd">    .. [1] Loshchilov I, Hutter F (2019) Decoupled Weight Decay Regularization. ICLR</span>
-<span class="sd">            https://doi.org/10.48550/arXiv.1711.05101</span>
+<span class="sd">    .. [LOS2019] Loshchilov I, Hutter F (2019) Decoupled Weight Decay Regularization. ICLR</span>
+<span class="sd">       https://doi.org/10.48550/arXiv.1711.05101</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">parameters</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">initial_parameters</span><span class="p">)</span>
 

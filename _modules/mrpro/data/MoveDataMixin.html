@@ -143,7 +143,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform dtype and/or device conversion of data.</span>
 
 <span class="sd">        A torch.dtype and torch.device are inferred from the arguments</span>
-<span class="sd">        of self.to(*args, **kwargs). Please have a look at the</span>
+<span class="sd">        args and kwargs. Please have a look at the</span>
 <span class="sd">        documentation of torch.Tensor.to() for more details.</span>
 
 <span class="sd">        A new instance of the dataclass will be returned.</span>
@@ -152,15 +152,16 @@
 <span class="sd">        fields of the dataclass, and to all fields that implement</span>
 <span class="sd">        the MoveDataMixin.</span>
 
-<span class="sd">        The dtype-type, i.e. float/complex will always be preserved,</span>
+<span class="sd">        The dtype-type, i.e. float or complex will always be preserved,</span>
 <span class="sd">        but the precision of floating point dtypes might be changed.</span>
 
 <span class="sd">        Example:</span>
-<span class="sd">            If called with dtype=torch.float32 OR dtype=torch.complex64:</span>
-<span class="sd">                - A complex128 tensor will be converted to complex64</span>
-<span class="sd">                - A float64 tensor will be converted to float32</span>
-<span class="sd">                - A bool tensor will remain bool</span>
-<span class="sd">                - An int64 tensor will remain int64</span>
+<span class="sd">        If called with dtype=torch.float32 OR dtype=torch.complex64:</span>
+
+<span class="sd">        - A complex128 tensor will be converted to complex64</span>
+<span class="sd">        - A float64 tensor will be converted to float32</span>
+<span class="sd">        - A bool tensor will remain bool</span>
+<span class="sd">        - An int64 tensor will remain int64</span>
 
 <span class="sd">        If other conversions are desired, please use the torch.Tensor.to() method of</span>
 <span class="sd">        the fields directly.</span>

@@ -130,7 +130,7 @@ For the adjoint to be defined, the grid and the shape of the “input” has to 
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>grid</strong> – sampling grid. Shape <a href="#id1"><span class="problematic" id="id2">*</span></a>batchdim, z,y,x,3 / <a href="#id3"><span class="problematic" id="id4">*</span></a>batchdim, y,x,2.
+<li><p><strong>grid</strong> – sampling grid. Shape *batchdim, z,y,x,3 / *batchdim, y,x,2.
 Values should be in [-1, 1.]</p></li>
 <li><p><strong>input_shape</strong> – Used in the adjoint. The z,y,x shape of the domain of the operator.
 If grid has 2 as the last dimension, only y and x will be used.</p></li>

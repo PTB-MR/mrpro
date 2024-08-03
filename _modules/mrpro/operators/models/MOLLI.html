@@ -125,8 +125,7 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">            signal</span>
-<span class="sd">            with shape (time ... other, coils, z, y, x)</span>
+<span class="sd">            signal with shape (time ... other, coils, z, y, x)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">delta_ndim</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ti</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># -1 for time</span>
         <span class="n">ti</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ti</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">*</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">delta_ndim</span><span class="p">)]</span> <span class="k">if</span> <span class="n">delta_ndim</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">ti</span>

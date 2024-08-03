@@ -337,6 +337,7 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A pytorch implementation of scipy.spatial.transform.Rotation.</span>
 
 <span class="sd">    Differences compared to scipy.spatial.transform.Rotation:</span>
+
 <span class="sd">    - torch.nn.Module based, the quaternions are a Parameter</span>
 <span class="sd">    - .apply is replaced by call/forward.</span>
 <span class="sd">    - not all features are implemented. Notably, mrp, davenport, and reduce are missing.</span>
@@ -348,8 +349,7 @@
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quaternions</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">_NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">copy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a new Rotation.</span>
 
-<span class="sd">        Instead of calling this method, also consider the different</span>
-<span class="sd">        from_* class methods to construct a Rotation.</span>
+<span class="sd">        Instead of calling this method, also consider the different ``from_*`` class methods to construct a Rotation.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -401,7 +401,7 @@
     <span class="k">def</span> <span class="nf">from_quat</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">quaternions</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">_NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize from quaternions.</span>
 
-<span class="sd">        3D rotations can be represented using unit-norm quaternions [1]_.</span>
+<span class="sd">        3D rotations can be represented using unit-norm quaternions [QUAa]_.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -418,7 +418,7 @@
 
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
-<span class="sd">        .. [1] https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation</span>
+<span class="sd">        .. [QUAa] Quaternions and spatial rotation https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">quaternions</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
             <span class="n">quaternions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">quaternions</span><span class="p">)</span>
@@ -432,8 +432,8 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize from rotation matrix.</span>
 
 <span class="sd">        Rotations in 3 dimensions can be represented with 3 x 3 proper</span>
-<span class="sd">        orthogonal matrices [1]_. If the input is not proper orthogonal,</span>
-<span class="sd">        an approximation is created using the method described in [2]_.</span>
+<span class="sd">        orthogonal matrices [ROTa]_. If the input is not proper orthogonal,</span>
+<span class="sd">        an approximation is created using the method described in [MAR2008]_.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -448,10 +448,9 @@
 
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
-<span class="sd">        .. [1] https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions</span>
-<span class="sd">        .. [2] F. Landis Markley, &quot;Unit Quaternion from Rotation Matrix&quot;,</span>
-<span class="sd">               Journal of guidance, control, and dynamics vol. 31.2, pp.</span>
-<span class="sd">               440-442, 2008.</span>
+<span class="sd">        .. [ROTa] Rotation matrix https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions</span>
+<span class="sd">        .. [MAR2008] Landis Markley F (2008) Unit Quaternion from Rotation Matrix, Journal of guidance, control, and</span>
+<span class="sd">           dynamics 31(2),440-442.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
             <span class="n">matrix</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">matrix</span><span class="p">)</span>
@@ -517,7 +516,7 @@
 
 <span class="sd">        The three rotations can either be in a global frame of reference</span>
 <span class="sd">        (extrinsic) or in a body centred frame of reference (intrinsic), which</span>
-<span class="sd">        is attached to, and moves with, the object under rotation [1]_.</span>
+<span class="sd">        is attached to, and moves with, the object under rotation [EULa]_.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -542,7 +541,7 @@
 
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
-<span class="sd">        .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations</span>
+<span class="sd">        .. [EULa] Euler angles https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n_axes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">n_axes</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">n_axes</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
@@ -606,7 +605,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Represent as quaternions.</span>
 
 <span class="sd">        Active rotations in 3 dimensions can be represented using unit norm</span>
-<span class="sd">        quaternions [1]_. The mapping from quaternions to rotations is</span>
+<span class="sd">        quaternions [QUAb]_. The mapping from quaternions to rotations is</span>
 <span class="sd">        two-to-one, i.e. quaternions ``q`` and ``-q``, where ``-q`` simply</span>
 <span class="sd">        reverses the sign of each component, represent the same spatial</span>
 <span class="sd">        rotation. The returned value is in scalar-last (x, y, z, w) format.</span>
@@ -627,7 +626,7 @@
 
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
-<span class="sd">        .. [1] https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation</span>
+<span class="sd">        .. [QUAb] Quaternions https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">quaternions</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span>
         <span class="k">if</span> <span class="n">canonical</span><span class="p">:</span>
@@ -643,7 +642,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Represent as rotation matrix.</span>
 
 <span class="sd">        3D rotations can be represented using rotation matrices, which</span>
-<span class="sd">        are 3 x 3 real orthogonal matrices with determinant equal to +1 [1]_.</span>
+<span class="sd">        are 3 x 3 real orthogonal matrices with determinant equal to +1 [ROTb]_.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -652,7 +651,7 @@
 
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
-<span class="sd">        .. [1] https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions</span>
+<span class="sd">        .. [ROTb] Rotation matrix https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">quaternions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span>
         <span class="n">matrix</span> <span class="o">=</span> <span class="n">_quaternion_to_matrix</span><span class="p">(</span><span class="n">quaternions</span><span class="p">)</span>
@@ -668,7 +667,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Represent as rotation vectors.</span>
 
 <span class="sd">        A rotation vector is a 3 dimensional vector which is co-directional to</span>
-<span class="sd">        the axis of rotation and whose norm gives the angle of rotation [1]_.</span>
+<span class="sd">        the axis of rotation and whose norm gives the angle of rotation [ROTc]_.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -682,7 +681,7 @@
 
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
-<span class="sd">        .. [1] https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation#Rotation_vector</span>
+<span class="sd">        .. [ROTc] Rotation vector https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation#Rotation_vector</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">quaternions</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span>
         <span class="n">quaternions</span> <span class="o">=</span> <span class="n">_canonical_quaternion</span><span class="p">(</span><span class="n">quaternions</span><span class="p">)</span>  <span class="c1"># w &gt; 0 ensures that 0 &lt;= angle &lt;= pi</span>
@@ -708,12 +707,12 @@
 
 <span class="sd">        Any orientation can be expressed as a composition of 3 elementary</span>
 <span class="sd">        rotations. Once the axis sequence has been chosen, Euler angles define</span>
-<span class="sd">        the angle of rotation around each respective axis [1]_.</span>
+<span class="sd">        the angle of rotation around each respective axis [EULb]_.</span>
 
-<span class="sd">        The algorithm from [2]_ has been used to calculate Euler angles for the</span>
+<span class="sd">        The algorithm from [BER2022]_ has been used to calculate Euler angles for the</span>
 <span class="sd">        rotation about a given sequence of axes.</span>
 
-<span class="sd">        Euler angles suffer from the problem of gimbal lock [3]_, where the</span>
+<span class="sd">        Euler angles suffer from the problem of gimbal lock [GIM]_, where the</span>
 <span class="sd">        representation loses a degree of freedom and it is not possible to</span>
 <span class="sd">        determine the first and third angles uniquely. In this case,</span>
 <span class="sd">        a warning is raised, and the third angle is set to zero. Note however</span>
@@ -723,7 +722,7 @@
 <span class="sd">        ----------</span>
 <span class="sd">        seq</span>
 <span class="sd">            3 characters belonging to the set {&#39;X&#39;, &#39;Y&#39;, &#39;Z&#39;} for intrinsic</span>
-<span class="sd">            rotations, or {&#39;x&#39;, &#39;y&#39;, &#39;z&#39;} for extrinsic rotations [1]_.</span>
+<span class="sd">            rotations, or {&#39;x&#39;, &#39;y&#39;, &#39;z&#39;} for extrinsic rotations [EULb]_.</span>
 <span class="sd">            Adjacent axes cannot be the same.</span>
 <span class="sd">            Extrinsic and intrinsic rotations cannot be mixed in one function</span>
 <span class="sd">            call.</span>
@@ -736,21 +735,20 @@
 <span class="sd">        angles</span>
 <span class="sd">            shape (3,) or (..., 3), depending on shape of inputs used to initialize object.</span>
 <span class="sd">            The returned angles are in the range:</span>
+
 <span class="sd">            - First angle belongs to [-180, 180] degrees (both inclusive)</span>
 <span class="sd">            - Third angle belongs to [-180, 180] degrees (both inclusive)</span>
 <span class="sd">            - Second angle belongs to:</span>
-<span class="sd">                - [-90, 90] degrees if all axes are different (like xyz)</span>
-<span class="sd">                - [0, 180] degrees if first and third axes are the same</span>
-<span class="sd">                  (like zxz)</span>
+
+<span class="sd">             + [-90, 90] degrees if all axes are different (like xyz)</span>
+<span class="sd">             + [0, 180] degrees if first and third axes are the same (like zxz)</span>
 
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
-<span class="sd">        .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations</span>
-<span class="sd">        .. [2] Bernardes E, Viollet S (2022) Quaternion to Euler angles</span>
-<span class="sd">               conversion: A direct, general and computationally efficient</span>
-<span class="sd">               method. PLoS ONE 17(11): e0276302.</span>
-<span class="sd">               https://doi.org/10.1371/journal.pone.0276302</span>
-<span class="sd">        .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics</span>
+<span class="sd">        .. [EULb] Euler Angles https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations</span>
+<span class="sd">        .. [BER2022] Bernardes E, Viollet S (2022) Quaternion to Euler angles conversion: A direct, general and</span>
+<span class="sd">           computationally efficient method. PLoS ONE 17(11) https://doi.org/10.1371/journal.pone.0276302</span>
+<span class="sd">        .. [GIM] Gimbal lock https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Expected 3 axes, got </span><span class="si">{</span><span class="n">seq</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
@@ -825,11 +823,9 @@
 <span class="sd">        If the original frame rotates to the final frame by this rotation, then</span>
 <span class="sd">        its application to a vector can be seen in two ways:</span>
 
-<span class="sd">            - As a projection of vector components expressed in the final frame</span>
-<span class="sd">              to the original frame.</span>
-<span class="sd">            - As the physical rotation of a vector being glued to the original</span>
-<span class="sd">              frame as it rotates. In this case the vector components are</span>
-<span class="sd">              expressed in the original frame before and after the rotation.</span>
+<span class="sd">        - As a projection of vector components expressed in the final frame to the original frame.</span>
+<span class="sd">        - As the physical rotation of a vector being glued to the original frame as it rotates. In this case the vector</span>
+<span class="sd">          components are expressed in the original frame before and after the rotation.</span>
 
 <span class="sd">        In terms of rotation matrices, this application is the same as</span>
 <span class="sd">        ``self.as_matrix() @ vectors``.</span>
@@ -850,6 +846,7 @@
 <span class="sd">        rotated_vectors</span>
 <span class="sd">            Result of applying rotation on input vectors.</span>
 <span class="sd">            Shape depends on the following cases:</span>
+
 <span class="sd">                - If object contains a single rotation (as opposed to a stack</span>
 <span class="sd">                  with a single rotation) and a single vector is specified with</span>
 <span class="sd">                  shape ``(3,)``, then `rotated_vectors` has shape ``(3,)``.</span>
@@ -1360,14 +1357,10 @@
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Get the mean of the rotations.</span>
 
 <span class="sd">        The mean used is the chordal L2 mean (also called the projected or</span>
-<span class="sd">        induced arithmetic mean) [1]_. If ``A`` is a set of rotation matrices,</span>
+<span class="sd">        induced arithmetic mean) [HAR2013]_. If ``A`` is a set of rotation matrices,</span>
 <span class="sd">        then the mean ``M`` is the rotation matrix that minimizes the</span>
 <span class="sd">        following loss function:</span>
-
-<span class="sd">        .. math::</span>
-
-<span class="sd">            L(M) = \\sum_{i = 1}^{n} w_i \\lVert \\mathbf{A}_i -</span>
-<span class="sd">            \\mathbf{M} \\rVert^2 ,</span>
+<span class="sd">        :math:`L(M) = \sum_{i = 1}^{n} w_i \lVert \mathbf{A}_i - \mathbf{M} \rVert^2`,</span>
 
 <span class="sd">        where :math:`w_i`&#39;s are the `weights` corresponding to each matrix.</span>
 
@@ -1394,8 +1387,8 @@
 
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
-<span class="sd">        .. [1] Hartley R, Li H (2013) Rotation Averaging. International Journal of Computer Vision (103)</span>
-<span class="sd">               https://link.springer.com/article/10.1007/s11263-012-0601-0</span>
+<span class="sd">        .. [HAR2013] Hartley R, Li H (2013) Rotation Averaging. International Journal of Computer Vision (103)</span>
+<span class="sd">           https://link.springer.com/article/10.1007/s11263-012-0601-0</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>

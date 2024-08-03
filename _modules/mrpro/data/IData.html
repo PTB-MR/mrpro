@@ -100,16 +100,16 @@
 <span class="k">def</span> <span class="nf">_dcm_pixelarray_to_tensor</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform pixel array in dicom file to tensor.</span>
 
-<span class="sd">    &quot;Rescale intercept, (0028|1052), and rescale slope (0028|1053) are</span>
+<span class="sd">    Rescale intercept, (0028|1052), and rescale slope (0028|1053) are</span>
 <span class="sd">    DICOM tags that specify the linear transformation from pixels in</span>
 <span class="sd">    their stored on disk representation to their in memory</span>
 <span class="sd">    representation.     U = m*SV + b where U is in output units, m is</span>
 <span class="sd">    the rescale slope, SV is the stored value, and b is the rescale</span>
-<span class="sd">    intercept.&quot; [1]_</span>
+<span class="sd">    intercept. [RES]_</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
-<span class="sd">    .. [1] https://www.kitware.com/dicom-rescale-intercept-rescale-slope-and-itk/</span>
+<span class="sd">    .. [RES] Rescale intercept and slope https://www.kitware.com/dicom-rescale-intercept-rescale-slope-and-itk/</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">slope</span> <span class="o">=</span> <span class="p">(</span>
         <span class="nb">float</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
@@ -143,15 +143,12 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        keepdim</span>
-<span class="sd">            if True, the output tensor has the same number of dimensions as the data tensor,</span>
-<span class="sd">               and the coil dimension is kept as a singleton dimension.</span>
-<span class="sd">            If False, the coil dimension is removed.</span>
+<span class="sd">            if True, the output tensor has the same number of dimensions as the data tensor, and the coil dimension is</span>
+<span class="sd">            kept as a singleton dimension. If False, the coil dimension is removed.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">            image data tensor with shape either</span>
-<span class="sd">            (..., 1, z, y, x) if keepdim is True.</span>
-<span class="sd">            or (..., z, y, x), if  keepdim if False.</span>
+<span class="sd">            image data tensor with shape (..., 1, z, y, x) if keepdim is True or (..., z, y, x) if keepdim is False.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">coildim</span> <span class="o">=</span> <span class="o">-</span><span class="mi">4</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">square</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">coildim</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="n">keepdim</span><span class="p">)</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span></div>

@@ -105,22 +105,23 @@
     <span class="n">tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-4</span><span class="p">,</span>
     <span class="n">callback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">CGStatus</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;CG for solving a linear system Hx=b.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;CG for solving a linear system :math:`Hx=b`.</span>
 
-<span class="sd">    Thereby, H is a linear self-adjoint operator, b is the right-hand-side</span>
-<span class="sd">    of the system and x is the sought solution.</span>
+<span class="sd">    Thereby, :math:`H` is a linear self-adjoint operator, :math:`b` is the right-hand-side</span>
+<span class="sd">    of the system and :math:`x` is the sought solution.</span>
 
-<span class="sd">    Note that this implementation allows for simultaneously solving a batch of N problems</span>
-<span class="sd">    of the form</span>
-<span class="sd">        H_i x_i = b_i,      i=1,...,N.</span>
-<span class="sd">    Thereby, the underlying assumption is that the considered problem is H x = b with</span>
-<span class="sd">        H:= diag(H_1, ..., H_N), b:= [b_1, ..., b_N]^T.</span>
-<span class="sd">    Thus, if all H_i are self-adjoint, so is H and the CG can be applied.</span>
+<span class="sd">    Note that this implementation allows for simultaneously solving a batch of :math:`N` problems</span>
+<span class="sd">    of the form :math:`H_i x_i = b_i` with :math:`i=1,...,N`.</span>
+
+<span class="sd">    Thereby, the underlying assumption is that the considered problem is :math:`Hx=b` with</span>
+<span class="sd">    :math:`H:= diag(H_1, ..., H_N)` and  :math:`b:= [b_1, ..., b_N]^T`.</span>
+
+<span class="sd">    Thus, if all :math:`H_i` are self-adjoint, so is :math:`H` and the CG can be applied.</span>
 <span class="sd">    Note however, that the accuracy of the obtained solutions might vary among the different</span>
 <span class="sd">    problems.</span>
 <span class="sd">    Note also that we don&#39;t test if the input operator is self-adjoint or not.</span>
 
-<span class="sd">    Further, note that if the condition of H is very large, a small residual does not necessarily</span>
+<span class="sd">    Further, note that if the condition of :math:`H` is very large, a small residual does not necessarily</span>
 <span class="sd">    imply that the solution is accurate.</span>
 
 <span class="sd">    Parameters</span>

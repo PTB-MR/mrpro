@@ -91,14 +91,11 @@
 <span class="k">class</span> <span class="nc">MSEDataDiscrepancy</span><span class="p">(</span><span class="n">Operator</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Mean Squared Error (MSE) loss function.</span>
 
-<span class="sd">        This class implements the function</span>
-<span class="sd">            1./N * || . - data ||_2^2,</span>
-<span class="sd">        where N equals to the number of elements of the tensor.</span>
+<span class="sd">    This class implements the function :math:`1./N * || . - data ||_2^2`, where :math:`N` equals to the number of</span>
+<span class="sd">    elements of the tensor.</span>
 
-<span class="sd">        N.B. if one of data or input is complex-valued, we</span>
-<span class="sd">        identify the space C^N with R^2N and multiply the output</span>
-<span class="sd">        by 2. By this, we achieve that for example</span>
-<span class="sd">            MSE(1) = MSE(1+1j*0) = 1.</span>
+<span class="sd">    Note: if one of data or input is complex-valued, we identify the space :math:`C^N` with :math:`R^{2N}` and</span>
+<span class="sd">    multiply the output by 2. By this, we achieve that for example :math:`MSE(1)` = :math:`MSE(1+1j*0)` = 1.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
