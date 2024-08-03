@@ -17,7 +17,7 @@ class FastFourierOp(LinearOperator):
     along these selected dimensions
 
     The transformation is done with 'ortho' normalization, i.e. the normalization constant is split between
-    forward and adjoint [1]_.
+    forward and adjoint [FFT]_.
 
     Remark regarding the fftshift/ifftshift:
     fftshift shifts the zero-frequency point to the center of the data, ifftshift undoes this operation.
@@ -27,7 +27,7 @@ class FastFourierOp(LinearOperator):
 
     References
     ----------
-    .. [1] https://numpy.org/doc/stable/reference/routines.fft.html
+    .. [FFT] FFT https://numpy.org/doc/stable/reference/routines.fft.html
 
     """
 
