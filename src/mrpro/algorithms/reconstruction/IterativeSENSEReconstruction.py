@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal, Self
+from typing import Self
 
 import torch
 
@@ -75,7 +75,7 @@ class IterativeSENSEReconstruction(Reconstruction):
         cls,
         kdata: KData,
         noise: KNoise | None = None,
-        csm: CsmData | None | Literal['walsh'] = 'walsh',
+        csm: CsmData | None = None,
         *,
         n_iterations: int = 10,
     ) -> Self:
@@ -88,8 +88,7 @@ class IterativeSENSEReconstruction(Reconstruction):
         noise
             KNoise used for prewhitening. If None, no prewhitening is performed
         csm
-            Sensitivity maps. If None, no CSM operator will be applied. If 'walsh', coil sensitivity maps will be
-            estimated from KData using the Walsh method.
+            Sensitivity maps. If None, no CSM operator will be applied.
         n_iterations
             Number of CG iterations
         """
@@ -97,13 +96,7 @@ class IterativeSENSEReconstruction(Reconstruction):
             kdata = prewhiten_kspace(kdata, noise)
         dcf = DcfData.from_traj_voronoi(kdata.traj)
         fourier_op = FourierOp.from_kdata(kdata)
-        self = cls(fourier_op, n_iterations, None, noise, dcf)
-        if csm is None or type(csm) is CsmData:
-            self.csm = csm
-        elif csm == 'walsh':
-            # kdata is prewhitened
-            self.recalculate_csm_walsh(kdata, noise=False)
-        return self
+        return cls(fourier_op, n_iterations, csm, noise, dcf)
 
     def _self_adjoint_operator(self) -> LinearOperator:
         """Create the self-adjoint operator.
