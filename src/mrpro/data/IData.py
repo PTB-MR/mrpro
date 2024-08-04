@@ -7,7 +7,7 @@ from typing import Self
 
 import numpy as np
 import torch
-from einops import rearrange
+from einops import rearrange, repeat
 from pydicom import dcmread
 from pydicom.dataset import Dataset
 from pydicom.tag import TagType
@@ -93,9 +93,7 @@ class IData(Data):
             path to DICOM file.
         """
         dataset = dcmread(filename)
-        idata = _dcm_pixelarray_to_tensor(dataset)[None, :]
-        idata = rearrange(idata, '(other coils z) y x -> other coils z y x', other=1, coils=1, z=1)
-
+        idata = repeat(_dcm_pixelarray_to_tensor(dataset), 'y x -> other coils z y x', other=1, coils=1, z=1)
         header = IHeader.from_dicom_list([dataset])
         return cls(data=idata, header=header)
 
