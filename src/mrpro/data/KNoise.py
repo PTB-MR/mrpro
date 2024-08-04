@@ -7,7 +7,7 @@ from typing import Self
 
 import ismrmrd
 import torch
-from einops import rearrange
+from einops import repeat
 
 from mrpro.data.acq_filters import is_noise_acquisition
 from mrpro.data.MoveDataMixin import MoveDataMixin
@@ -47,6 +47,6 @@ class KNoise(MoveDataMixin):
         noise_data = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 
         # Reshape to standard dimensions
-        noise_data = rearrange(noise_data, 'other coils (k2 k1 k0)->other coils k2 k1 k0', k1=1, k2=1)
+        noise_data = repeat(noise_data, 'other coils k0->other coils k2 k1 k0', k1=1, k2=1)
 
         return cls(noise_data)

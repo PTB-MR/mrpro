@@ -39,7 +39,7 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         # Angles of readout lines
         kang = kheader.acq_info.idx.k1 * self.angle
 
-        # K-space cartesian coordinates
+        # K-space radial coordinates
         kx = krad * torch.cos(kang)[..., None]
         ky = krad * torch.sin(kang)[..., None]
         kz = torch.zeros(1, 1, 1, 1)
