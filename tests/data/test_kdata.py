@@ -1,35 +1,18 @@
 """Tests for the KData class."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 import pytest
 import torch
-from einops import rearrange
-from einops import repeat
-from mrpro.data import KData
-from mrpro.data import KTrajectory
-from mrpro.data import SpatialDimension
+from einops import rearrange, repeat
+from mrpro.data import KData, KTrajectory, SpatialDimension
 from mrpro.data.acq_filters import is_coil_calibration_acquisition
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
-from mrpro.utils import modify_acq_info
-from mrpro.utils import split_idx
+from mrpro.utils import modify_acq_info, split_idx
 
-from tests.conftest import RandomGenerator
-from tests.conftest import generate_random_data
+from tests.conftest import RandomGenerator, generate_random_data
 from tests.data import IsmrmrdRawTestData
 from tests.helper import relative_image_difference
-from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData
+from tests.phantoms import EllipsePhantomTestData
 
 
 @pytest.fixture(scope='session')
