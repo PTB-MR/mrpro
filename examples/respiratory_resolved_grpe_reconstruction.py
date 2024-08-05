@@ -8,6 +8,7 @@ path_out = '/echo/kolbit01/data/GRPE_Charite/2024_05_30/'
 # ### Imports
 import matplotlib.pyplot as plt
 import torch
+import numpy as np
 from einops import rearrange
 from mrpro.data import CsmData, KTrajectory, DcfData, IData, KData
 from mrpro.data.traj_calculators import KTrajectoryRpe, KTrajectoryPulseq
@@ -88,7 +89,7 @@ fft_op_1d = FastFourierOp(dim=(-1,))
 ky0_kz0_idx = torch.where(((kdata.traj.ky == 0) & (kdata.traj.kz == 0)))
 nav_data = kdata.data[ky0_kz0_idx[0],:,ky0_kz0_idx[1],ky0_kz0_idx[2],:]
 nav_data = torch.abs(fft_op_1d(nav_data)[0])
-nav_signal_time_stamp = kdata.header.acq_info.acquisition_time_stamp[ky0_kz0_idx[0],ky0_kz0_idx[1],ky0_kz0_idx[2]]
+nav_signal_time_in_s = 2.5*kdata.header.acq_info.acquisition_time_stamp[ky0_kz0_idx[0],ky0_kz0_idx[1],ky0_kz0_idx[2]]/1000
 
 fig, ax = plt.subplots(3,1);
 for ind in range(3):
@@ -101,9 +102,8 @@ nav_data = rearrange(nav_data, 'k1k2 coil k0 -> k1k2 (coil k0)')
 u, _, _ = torch.linalg.svd(nav_data - nav_data.mean(dim=0, keepdim=True))
 
 # Find SVD component that is closest to expected respitory frequency
-t_sec = 2.5*kdata.header.acq_info.acquisition_time_stamp[ky0_kz0_idx[0],ky0_kz0_idx[1],ky0_kz0_idx[2],:]/1000
 resp_freq_window_Hz = [0.2, 0.3]
-dt = torch.mean(torch.diff(t_sec, dim=0))
+dt = torch.mean(torch.diff(nav_signal_time_in_s, dim=0))
 U_freq = torch.abs(torch.fft.fft(u, dim=0)) 
 
 fmax_Hz = 1/dt 
@@ -130,9 +130,15 @@ plt.imshow(rearrange(torch.abs(nav_data_pre_rearrange[:,0,:]), 'angle x->x angle
 plt.plot(rescaled_resp_nav, ':w')
 plt.xlim(0,200)
 
+# Combine k2 and k1
+kdata = kdata.rearrange_k2_k1_into_k1()
+
+# Interpolate navigator from k-space center ky=kz=0 to all phase encoding points
+resp_nav_interpolated = np.interp(2.5*kdata.header.acq_info.acquisition_time_stamp[0,0,:,0]/1000, nav_signal_time_in_s[:,0], resp_nav)
+
 # Non iterative reconstruction
-resp_idx = split_idx(torch.argsort(resp_nav), 160, 20)
-kdata_resp_resolved = kdata.split_k2_into_other(resp_idx, other_label='repetition')
+resp_idx = split_idx(torch.argsort(torch.as_tensor(resp_nav_interpolated)), 160*112)
+kdata_resp_resolved = kdata.split_k1_into_other(resp_idx, other_label='repetition')
 kdcf = DcfData.from_traj_voronoi(kdata_resp_resolved.traj)
 
 cart_sampling_op = CartesianSamplingOp(kdata_resp_resolved.header.encoding_matrix, kdata_resp_resolved.traj)
@@ -155,15 +161,6 @@ for i in range(img.shape[0]):
 # ### Motion-resolved image reconstruction
 # Now we can reconstruct the respirator motion-resolved images. 
 # Here we have to deal with undersampled data and so we use an iterative reconstruction (iterative SENSE).
-
-resp_idx = split_idx(torch.argsort(resp_nav), 160, 20)
-kdata_resp_resolved = kdata.split_k2_into_other(resp_idx, other_label='repetition')
-kdcf = DcfData.from_traj_voronoi(kdata_resp_resolved.traj)
-
-
-#%%
-cart_sampling_op = CartesianSamplingOp(kdata_resp_resolved.header.encoding_matrix, kdata_resp_resolved.traj)
-fourier_op = FourierOp(kdata_resp_resolved.header.recon_matrix, kdata_resp_resolved.header.encoding_matrix, kdata_resp_resolved.traj)
 
 # Create A^H W
 AH_W = csm_op.H @ fourier_op.H @ cart_sampling_op.H @ kdcf.as_operator()
@@ -193,5 +190,5 @@ for nnd in range(len(plot_resp_idx)):
     ax[nnd,2].imshow(torch.abs(img_resp_resolved[plot_resp_idx[nnd],0,:,:,img.shape[-1]//2]))
 
 for i in range(img_resp_resolved.shape[0]):
-    nii_resp = nib.Nifti1Image(img_resp_resolved[i,0].numpy(), affine=torch.eye(4))
+    nii_resp = nib.Nifti1Image(img_resp_resolved[i,0].abs().numpy(), affine=torch.eye(4))
     nib.save(nii_resp,os.path.join(path_out,"resp_state_iterative_"+str(i)))
