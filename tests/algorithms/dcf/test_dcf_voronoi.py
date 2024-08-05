@@ -4,17 +4,20 @@ import math
 
 import pytest
 import torch
+from einops import repeat
 from mrpro.algorithms.dcf import dcf_1d, dcf_2d3d_voronoi
 from mrpro.data import KTrajectory
 
 
 def example_traj_rad_2d(n_kr, n_ka, phi0=0.0, broadcast=True):
     """Create 2D radial trajectory with uniform angular gap."""
-    krad = torch.linspace(-n_kr // 2, n_kr // 2 - 1, n_kr) / n_kr
-    kang = torch.linspace(0, n_ka - 1, n_ka) * (torch.pi / n_ka) + phi0
+    krad = repeat(torch.linspace(-n_kr // 2, n_kr // 2 - 1, n_kr) / n_kr, 'k0 -> other k2 k1 k0', other=1, k2=1, k1=1)
+    kang = repeat(
+        torch.linspace(0, n_ka - 1, n_ka) * (torch.pi / n_ka) + phi0, 'k1 -> other k2 k1 k0', other=1, k2=1, k0=1
+    )
     kz = torch.zeros(1, 1, 1, 1)
-    ky = (torch.sin(kang[:, None]) * krad[None, :])[None, None, :, :]
-    kx = (torch.cos(kang[:, None]) * krad[None, :])[None, None, :, :]
+    ky = torch.sin(kang) * krad
+    kx = torch.cos(kang) * krad
     trajectory = KTrajectory(kz, ky, kx, repeat_detection_tolerance=1e-8 if broadcast else None)
     return trajectory
 
@@ -41,7 +44,7 @@ def test_dcf_rad_traj_voronoi(n_kr, n_ka, phi0, broadcast):
         krad_idx = torch.linspace(-n_kr // 2, n_kr // 2 - 1, n_kr)
         dcf_analytical = torch.pi / n_ka * torch.abs(krad_idx) * (1 / n_kr) ** 2
         dcf_analytical[krad_idx == 0] = 2 * torch.pi / n_ka * 1 / 8 * (1 / n_kr) ** 2
-        dcf_analytical = torch.repeat_interleave(dcf_analytical[None, ...], n_ka, dim=0)[None, :, :]
+        dcf_analytical = torch.repeat_interleave(repeat(dcf_analytical, 'k0->k2 k1 k0', k1=1, k2=1), n_ka, dim=-2)
         # Do not test outer points because they have to be approximated and cannot be calculated
         # accurately using voronoi
         torch.testing.assert_close(dcf_analytical[:, :, 1:-1], dcf[:, :, 1:-1])
@@ -59,9 +62,9 @@ def test_dcf_3d_cart_traj_broadcast_voronoi(n_k2, n_k1, n_k0):
     Cartesian trajectory to analytical solution which is 1 for each k-space
     point."""
     # 3D trajectory with points on Cartesian grid with step size of 1
-    kx = torch.linspace(-n_k0 // 2, n_k0 // 2 - 1, n_k0)[None, None, None, :]
-    ky = torch.linspace(-n_k1 // 2, n_k1 // 2 - 1, n_k1)[None, None, :, None]
-    kz = torch.linspace(-n_k2 // 2, n_k2 // 2 - 1, n_k2)[None, :, None, None]
+    kx = repeat(torch.linspace(-n_k0 // 2, n_k0 // 2 - 1, n_k0), 'k0 -> other k2 k1 k0', other=1, k2=1, k1=1)
+    ky = repeat(torch.linspace(-n_k1 // 2, n_k1 // 2 - 1, n_k1), 'k1 -> other k2 k1 k0', other=1, k2=1, k0=1)
+    kz = repeat(torch.linspace(-n_k2 // 2, n_k2 // 2 - 1, n_k2), 'k2 -> other k2 k1 k0', other=1, k1=1, k0=1)
     trajectory = KTrajectory(kx, ky, kz)
 
     # Analytical dcf
@@ -84,7 +87,12 @@ def test_dcf_3d_cart_full_traj_voronoi(n_k2, n_k1, n_k0):
         torch.linspace(-n_k0 // 2, n_k0 // 2 - 1, n_k0),
         indexing='xy',
     )
-    trajectory = KTrajectory(kz[None, ...], ky[None, ...], kx[None, ...], repeat_detection_tolerance=None)
+    trajectory = KTrajectory(
+        repeat(kz, '... -> other ...', other=1),
+        repeat(ky, '... -> other ...', other=1),
+        repeat(kx, '... -> other ...', other=1),
+        repeat_detection_tolerance=None,
+    )
     # Analytical dcf
     dcf_analytical = torch.ones((1, n_k2, n_k1, n_k0))
     dcf = dcf_2d3d_voronoi(trajectory.as_tensor())
@@ -114,19 +122,19 @@ def test_dcf_3d_cart_nonuniform_traj_voronoi(n_k2, n_k1, n_k0, k2_steps, k1_step
 
     ky_full, kz_full, kx_full = torch.meshgrid(k1_range, k2_range, k0_range, indexing='xy')
     trajectory_full = KTrajectory(
-        kz_full[None, ...],
-        ky_full[None, ...],
-        kx_full[None, ...],
+        repeat(kz_full, '... -> other ...', other=1),
+        repeat(ky_full, '... -> other ...', other=1),
+        repeat(kx_full, '... -> other ...', other=1),
         repeat_detection_tolerance=None,
     )
 
-    kx_broadcast = k0_range[None, None, :]
-    ky_broadcast = k1_range[None, :, None]
-    kz_broadcast = k2_range[:, None, None]
+    kx_broadcast = repeat(k0_range, 'k0 -> k2 k1 k0', k2=1, k1=1)
+    ky_broadcast = repeat(k1_range, 'k1 -> k2 k1 k0', k2=1, k0=1)
+    kz_broadcast = repeat(k2_range, 'k2 -> k2 k1 k0', k1=1, k0=1)
     trajectory_broadcast = KTrajectory(
-        kz_broadcast[None, ...],
-        ky_broadcast[None, ...],
-        kx_broadcast[None, ...],
+        repeat(kz_broadcast, '... -> other ...', other=1),
+        repeat(ky_broadcast, '... -> other ...', other=1),
+        repeat(kx_broadcast, '... -> other ...', other=1),
         repeat_detection_tolerance=None,
     )
 

@@ -2,6 +2,7 @@
 
 import pytest
 import torch
+from einops import repeat
 from mrpro.operators.models import TransientSteadyStateWithPreparation
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
 
@@ -49,10 +50,10 @@ def test_transient_steady_state_inversion_recovery():
     t1 = torch.as_tensor([100, 200, 300, 400, 500, 1000, 2000, 4000])
     flip_angle = torch.ones_like(t1) * 0.0001
     m0 = torch.ones_like(t1)
-    sampling_time = torch.as_tensor([0, 100, 400, 800, 2000])
+    sampling_time = repeat(torch.as_tensor([0, 100, 400, 800, 2000]), 'time -> time m0_t1_values', m0_t1_values=1)
 
     # analytical signal
-    analytical_signal = m0 * (1 - 2 * torch.exp(-(sampling_time[..., None] / t1)))
+    analytical_signal = m0 * (1 - 2 * torch.exp(-(sampling_time / t1)))
 
     model = TransientSteadyStateWithPreparation(sampling_time, repetition_time=100, m0_scaling_preparation=-1)
     (signal,) = model.forward(m0, t1, flip_angle)

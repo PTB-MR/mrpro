@@ -1,6 +1,7 @@
 """Radial phase encoding (RPE) trajectory class."""
 
 import torch
+from einops import repeat
 
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
@@ -90,7 +91,7 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         -------
             angles of phase encoding lines
         """
-        return kheader.acq_info.idx.k2 * self.angle
+        return repeat(kheader.acq_info.idx.k2 * self.angle, '... k2 k1 -> ... k2 k1 k0', k0=1)
 
     def _krad(self, kheader: KHeader) -> torch.Tensor:
         """Calculate the k-space locations along the phase encoding lines.
@@ -106,7 +107,7 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         """
         krad = (kheader.acq_info.idx.k1 - kheader.encoding_limits.k1.center).to(torch.float32)
         krad = self._apply_shifts_between_rpe_lines(krad, kheader.acq_info.idx.k2)
-        return krad
+        return repeat(krad, '... k2 k1 -> ... k2 k1 k0', k0=1)
 
     def __call__(self, kheader: KHeader) -> KTrajectory:
         """Calculate radial phase encoding trajectory for given KHeader.
@@ -129,6 +130,6 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         # K-space locations along phase encoding lines
         krad = self._krad(kheader)
 
-        kz = (krad * torch.sin(kang))[..., None]
-        ky = (krad * torch.cos(kang))[..., None]
+        kz = krad * torch.sin(kang)
+        ky = krad * torch.cos(kang)
         return KTrajectory(kz, ky, kx)

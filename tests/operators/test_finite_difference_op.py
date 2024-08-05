@@ -2,6 +2,7 @@
 
 import pytest
 import torch
+from einops import repeat
 from mrpro.operators import FiniteDifferenceOp
 
 from tests import RandomGenerator
@@ -12,7 +13,9 @@ from tests.helper import dotproduct_adjointness_test
 def test_finite_difference_op_forward(mode):
     """Test correct finite difference of simple object."""
     # Test object with positive linear gradient in real and negative linear gradient imaginary part
-    linear_gradient_object = torch.arange(1, 21)[None, :] + 2 * torch.arange(1, 21)[:, None].to(dtype=torch.float32)
+    linear_gradient_object = (
+        repeat(torch.arange(1, 21), 'x -> y x', y=1) + 2 * repeat(torch.arange(1, 21), 'y -> y x', x=1)
+    ).to(dtype=torch.float32)
     linear_gradient_object = linear_gradient_object - 1j * linear_gradient_object
 
     # Generate and apply finite difference operator

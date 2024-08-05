@@ -5,6 +5,7 @@ from collections.abc import Callable, Sequence
 from typing import Literal
 
 import torch
+from einops import rearrange
 
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
@@ -224,7 +225,7 @@ class GridSamplingOp(LinearOperator):
             )
 
         #   The gridsample operator only works for real data, thus we handle complex inputs as an additional channel
-        x_real = torch.view_as_real(x).moveaxis(-1, -dim - 1) if x.is_complex() else x
+        x_real = rearrange(torch.view_as_real(x), '... real_imag  -> real_imag ...') if x.is_complex() else x
         shape_grid_batch = self.grid.shape[: -dim - 1]  # the batch dimensions of grid
         n_batchdim = len(shape_grid_batch)
         shape_x_batch = x_real.shape[:n_batchdim]  # the batch dimensions of the input
@@ -252,7 +253,7 @@ class GridSamplingOp(LinearOperator):
         # .. and reshape back.
         result = sampled.reshape(*shape_batch, *shape_channels, *sampled.shape[-dim:])
         if x.is_complex():
-            result = torch.view_as_complex(result.moveaxis(-dim - 1, -1).contiguous())
+            result = torch.view_as_complex(rearrange(result, 'real_imag ... -> ... real_imag').contiguous())
         return (result,)
 
     def _forward_implementation(

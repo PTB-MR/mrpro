@@ -2,6 +2,7 @@
 
 import pypulseq
 import torch
+from einops import repeat
 from mrpro.data import KTrajectory
 
 
@@ -49,9 +50,9 @@ class PulseqRadialTestSeq:
         self.seq_filename = seq_filename
 
         kz = torch.zeros(1, 1, n_spokes, n_x)
-        angle = torch.pi / n_spokes * torch.arange(n_spokes)
-        k0 = delta_k * torch.linspace(-n_x / 2, n_x / 2 - 1, n_x)
-        kx = (torch.cos(angle)[:, None] * k0)[None, None, ...]
-        ky = (torch.sin(angle)[:, None] * k0)[None, None, ...]
+        angle = repeat(torch.pi / n_spokes * torch.arange(n_spokes), 'k1 -> other k2 k1 k0', other=1, k2=1, k0=1)
+        k0 = repeat(delta_k * torch.linspace(-n_x / 2, n_x / 2 - 1, n_x), 'k0 -> other k2 k1 k0', other=1, k2=1, k1=1)
+        kx = torch.cos(angle) * k0
+        ky = torch.sin(angle) * k0
 
         self.traj_analytical = KTrajectory(kz, ky, kx)

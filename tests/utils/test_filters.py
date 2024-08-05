@@ -2,6 +2,7 @@
 
 import pytest
 import torch
+from einops import repeat
 from mrpro.utils.filters import filter_separable, gaussian_filter, uniform_filter
 
 
@@ -20,7 +21,7 @@ def data():
 def test_filter_separable(pad_mode, center_value, edge_value):
     """Test filter_separable and different padding modes."""
 
-    data = torch.arange(1, 21)[None, :].to(dtype=torch.float32)
+    data = repeat(torch.arange(1, 21), 'x -> y x', y=1).to(dtype=torch.float32)
     kernels = (torch.as_tensor([1.0, 2.0, 1.0]),)
     result = filter_separable(
         data, kernels, dim=(1,), pad_mode=pad_mode, pad_value=3.0 if pad_mode == 'constant' else 0.0
@@ -38,7 +39,7 @@ def test_filter_separable(pad_mode, center_value, edge_value):
 def test_filter_separable_dtype(filter_dtype, data_dtype):
     """Test filter_separable and different padding modes."""
 
-    data = torch.arange(1, 21)[None, :].to(dtype=data_dtype)
+    data = repeat(torch.arange(1, 21), 'x -> y x', y=1).to(dtype=data_dtype)
     kernels = (torch.tensor([1, 2, 1], dtype=filter_dtype),)
     result = filter_separable(data, kernels, dim=(1,))
     expected_dtype = torch.result_type(data, kernels[0])

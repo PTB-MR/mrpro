@@ -41,13 +41,16 @@ def birdcage_2d(
         indexing='xy',
     )
 
-    c = torch.linspace(0, dim[0] - 1, dim[0])[:, None, None]
+    x_co = repeat(x_co, 'y x -> coils y x', coils=1)
+    y_co = repeat(y_co, 'y x -> coils y x', coils=1)
+
+    c = repeat(torch.linspace(0, dim[0] - 1, dim[0]), 'coils -> coils y x', y=1, x=1)
     coil_center_x = dim[2] * relative_radius * np.cos(c * (2 * torch.pi / dim[0]))
     coil_center_y = dim[1] * relative_radius * np.sin(c * (2 * torch.pi / dim[0]))
     coil_phase = -c * (2 * torch.pi / dim[0])
 
-    rr = torch.sqrt((x_co[None, ...] - coil_center_x) ** 2 + (y_co[None, ...] - coil_center_y) ** 2)
-    phi = torch.arctan2((x_co[None, ...] - coil_center_x), -(y_co[None, ...] - coil_center_y)) + coil_phase
+    rr = torch.sqrt((x_co - coil_center_x) ** 2 + (y_co - coil_center_y) ** 2)
+    phi = torch.arctan2((x_co - coil_center_x), -(y_co - coil_center_y)) + coil_phase
     sensitivities = (1 / rr) * np.exp(1j * phi)
 
     if normalize_with_rss:

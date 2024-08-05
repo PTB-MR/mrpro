@@ -426,7 +426,7 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader):
     random_generator = RandomGenerator(seed=0)
 
     # List of k1 indices in the shape
-    idx_k1 = torch.arange(n_k1, dtype=torch.int32)[None, None, ...]
+    idx_k1 = repeat(torch.arange(n_k1, dtype=torch.int32), 'k1 -> other k2 k1', other=1, k2=1)
 
     # Set parameters need in remove_os
     monkeypatch.setattr(random_kheader.encoding_matrix, 'x', n_k0_oversampled)

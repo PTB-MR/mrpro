@@ -27,9 +27,9 @@ def valid_rad2d_kheader(monkeypatch, random_kheader):
     n_k2 = 1
 
     # List of k1 indices in the shape
-    idx_k1 = torch.arange(n_k1, dtype=torch.int32)[None, None, ...]
+    idx_k1 = repeat(torch.arange(n_k1, dtype=torch.int32), 'k1 -> other k2 k1', other=1, k2=1)
 
-    # Set parameters for radial 2D trajectory
+    # Set parameters for radial 2D trajectory (AcqInfo is of shape (other k2 k1 dim=1 or 3))
     monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1)[..., None] + n_k0)
     monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1)[..., None] + n_k0 // 2)
     monkeypatch.setattr(random_kheader.acq_info, 'flags', torch.zeros_like(idx_k1)[..., None])
@@ -81,7 +81,7 @@ def valid_rpe_kheader(monkeypatch, random_kheader):
     idx_k1 = torch.reshape(idx_k1, (1, n_k2, n_k1))
     idx_k2 = torch.reshape(idx_k2, (1, n_k2, n_k1))
 
-    # Set parameters for RPE trajectory
+    # Set parameters for RPE trajectory (AcqInfo is of shape (other k2 k1 dim=1 or 3))
     monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1)[..., None] + n_k0)
     monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1)[..., None] + n_k0 // 2)
     monkeypatch.setattr(random_kheader.acq_info, 'flags', torch.zeros_like(idx_k1)[..., None])
@@ -167,7 +167,7 @@ def valid_cartesian_kheader(monkeypatch, random_kheader):
     idx_k1 = repeat(torch.reshape(idx_k1, (n_k2, n_k1)), 'k2 k1->other k2 k1', other=n_other)
     idx_k2 = repeat(torch.reshape(idx_k2, (n_k2, n_k1)), 'k2 k1->other k2 k1', other=n_other)
 
-    # Set parameters for Cartesian trajectory
+    # Set parameters for Cartesian trajectory (AcqInfo is of shape (other k2 k1 dim=1 or 3))
     monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1)[..., None] + n_k0)
     monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1)[..., None] + n_k0 // 2)
     monkeypatch.setattr(random_kheader.acq_info, 'flags', torch.zeros_like(idx_k1)[..., None])
