@@ -1,6 +1,7 @@
 """2D radial trajectory class."""
 
 import torch
+from einops import repeat
 
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
@@ -37,11 +38,11 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         krad = self._kfreq(kheader)
 
         # Angles of readout lines
-        kang = kheader.acq_info.idx.k1 * self.angle
+        kang = repeat(kheader.acq_info.idx.k1 * self.angle, '... k2 k1 -> ... k2 k1 k0', k0=1)
 
         # K-space radial coordinates
-        kx = krad * torch.cos(kang)[..., None]
-        ky = krad * torch.sin(kang)[..., None]
+        kx = krad * torch.cos(kang)
+        ky = krad * torch.sin(kang)
         kz = torch.zeros(1, 1, 1, 1)
 
         return KTrajectory(kz, ky, kx)
