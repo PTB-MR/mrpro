@@ -3,7 +3,7 @@
 import matplotlib.pyplot as plt
 from mrpro.algorithms.reconstruction import DirectReconstruction
 from mrpro.data import KData  # Import the KData class
-from mrpro.data._SpatialDimension import SpatialDimension
+from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.traj_calculators import KTrajectoryPulseq
 
 # Base path
