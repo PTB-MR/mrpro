@@ -1,19 +1,5 @@
 """Inati method for coil sensitivity map calculation."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import torch
 
 from mrpro.data.SpatialDimension import SpatialDimension
@@ -25,17 +11,17 @@ def inati(
     kernel_size: SpatialDimension[int] | int,
     n_power_iterations: int,
 ) -> torch.Tensor:
-    """Calculate a coil sensitivity map (csm) using an the Inati method [1]_ [2]_.
+    """Calculate a coil sensitivity map (csm) using an the Inati method [INA2013]_ [INA2014]_.
 
     This is for a single set of coil images. The input should be a tensor with dimensions (coils, z, y, x). The output
     will have the same dimensions. Either apply this function individually to each set of coil images, or see
     CsmData.from_idata_walsh which performs this operation on a whole dataset.
 
-    .. [1] S. Inati, M. Hansen, and P. Kellman, A solution to the phase problem in adaptvie coil combination.
-       in Proceedings of the 21st Annual Meeting of ISMRM, Salt Lake City, USA, 2672 (2013).
+    .. [INA2013] Inati S, Hansen M, Kellman P (2013) A solution to the phase problem in adaptvie coil combination.
+       in Proceedings of the 21st Annual Meeting of ISMRM, Salt Lake City, USA, 2672.
 
-    .. [2] S. Inati, and M. Hansen, A Fast Optimal Method for Coil Sensitivity Estimation and Adaptive Coil Combination
-       for Complex Images. in Proceedings of Joint Annual Meeting ISMRM-ESMRMB, Milan, Italy, 7115 (2014).
+    .. [INA2014] Inati S, Hansen M (2014) A Fast Optimal Method for Coil Sensitivity Estimation and Adaptive Coil Combination
+       for Complex Images. in Proceedings of Joint Annual Meeting ISMRM-ESMRMB, Milan, Italy, 7115.
 
     Parameters
     ----------
@@ -43,7 +29,7 @@ def inati(
         images for each coil element
     kernel_size
         kernel size
-    power_iterations
+    n_power_iterations
         number of iterations used to determine dominant eigenvector
     """
     padding_mode = 'circular'
