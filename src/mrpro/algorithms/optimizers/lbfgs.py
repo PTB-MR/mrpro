@@ -1,25 +1,12 @@
 """LBFGS for solving non-linear minimization problems."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Literal
 
 import torch
 from torch.optim import LBFGS
 
+from mrpro.algorithms.optimizers.OptimizerStatus import OptimizerStatus
 from mrpro.operators.Operator import Operator
 
 
@@ -33,6 +20,7 @@ def lbfgs(
     tolerance_change: float = 1e-09,
     history_size: int = 10,
     line_search_fn: None | Literal['strong_wolfe'] = 'strong_wolfe',
+    callback: Callable[[OptimizerStatus], None] | None = None,
 ) -> tuple[torch.Tensor, ...]:
     """LBFGS for non-linear minimization problems.
 
@@ -58,12 +46,15 @@ def lbfgs(
         update history size
     line_search_fn
         line search algorithm, either 'strong_wolfe' or None (meaning constant step size)
+    callback
+        function to be called after each iteration.
+        N.B. the callback is NOT called within the line search of LBFGS
 
     Returns
     -------
         list of optimized parameters
     """
-    parameters = [p.detach().clone().requires_grad_(True) for p in initial_parameters]
+    parameters = tuple(p.detach().clone().requires_grad_(True) for p in initial_parameters)
     optim = LBFGS(
         params=parameters,
         lr=lr,
@@ -75,13 +66,22 @@ def lbfgs(
         line_search_fn=line_search_fn,
     )
 
+    iteration = 0
+
     def closure():
+        nonlocal iteration
         optim.zero_grad()
         (objective,) = f(*parameters)
         objective.backward()
+        if callback is not None:
+            state = optim.state[optim.param_groups[0]['params'][0]]
+            if state['n_iter'] > iteration:
+                callback({'solution': parameters, 'iteration_number': iteration})
+                iteration = state['n_iter']
+
         return objective
 
     # run lbfgs
     optim.step(closure)
 
-    return tuple(parameters)
+    return parameters

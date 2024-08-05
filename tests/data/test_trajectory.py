@@ -1,57 +1,11 @@
 """Tests for KTrajectory class."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 import pytest
 import torch
 from mrpro.data import KTrajectory
 from mrpro.data.enums import TrajType
 
-from tests import RandomGenerator
-from tests.conftest import COMMON_MR_TRAJECTORIES
-
-
-def create_uniform_traj(nk, k_shape):
-    """Create a tensor of uniform points with predefined shape nk."""
-    kidx = torch.where(torch.tensor(nk[1:]) > 1)[0]
-    if len(kidx) > 1:
-        raise ValueError('nk is allowed to have at most one non-singleton dimension')
-    if len(kidx) >= 1:
-        # kidx+1 because we searched in nk[1:]
-        n_kpoints = nk[kidx + 1]
-        # kidx+2 because k_shape also includes coils dimensions
-        k = torch.linspace(-k_shape[kidx + 2] // 2, k_shape[kidx + 2] // 2 - 1, n_kpoints, dtype=torch.float32)
-        views = [1 if i != n_kpoints else -1 for i in nk]
-        k = k.view(*views).expand(list(nk))
-    else:
-        k = torch.zeros(nk)
-    return k
-
-
-def create_traj(k_shape, nkx, nky, nkz, sx, sy, sz):
-    """Create trajectory with random entries."""
-    random_generator = RandomGenerator(seed=0)
-    k_list = []
-    for spacing, nk in zip([sz, sy, sx], [nkz, nky, nkx], strict=True):
-        if spacing == 'nuf':
-            k = random_generator.float32_tensor(size=nk)
-        elif spacing == 'uf':
-            k = create_uniform_traj(nk, k_shape=k_shape)
-        elif spacing == 'z':
-            k = torch.zeros(nk)
-        k_list.append(k)
-    trajectory = KTrajectory(k_list[0], k_list[1], k_list[2], repeat_detection_tolerance=None)
-    return trajectory
+from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
 
 
 def test_trajectory_repeat_detection_tol(cartesian_grid):
