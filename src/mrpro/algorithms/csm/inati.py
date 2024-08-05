@@ -52,11 +52,11 @@ def inati(
     # Covariance with shape (z y x coils coils)
     coil_images_covariance = torch.einsum('i...j,k...j->...ik', coil_images_roi.conj(), coil_images_roi)
     singular_vector = torch.sum(coil_images_roi, dim=-1)  # coils z y x
-    singular_vector /= singular_vector.abs().square().sum(0, keepdim=True).sqrt()
+    singular_vector /= singular_vector.norm(dim=0, keepdim=True)
     for _ in range(max_power_iterations):
         singular_vector_old = singular_vector
         singular_vector = torch.einsum('...ij,j...->i...', coil_images_covariance, singular_vector)  # coils z y x
-        singular_vector /= singular_vector.abs().square().sum(0, keepdim=True).sqrt()
+        singular_vector /= singular_vector.norm(dim=0, keepdim=True)
         if torch.isclose(singular_vector, singular_vector_old, rtol=1e-1).all():
             break
 
