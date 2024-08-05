@@ -1,22 +1,8 @@
 """Tests for filters."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 import pytest
 import torch
-from mrpro.utils.filters import filter_separable
-from mrpro.utils.filters import gaussian_filter
-from mrpro.utils.filters import uniform_filter
+from mrpro.utils.filters import filter_separable, gaussian_filter, uniform_filter
 
 
 @pytest.fixture()
@@ -37,7 +23,7 @@ def test_filter_separable(pad_mode, center_value, edge_value):
     data = torch.arange(1, 21)[None, :].to(dtype=torch.float32)
     kernels = (torch.as_tensor([1.0, 2.0, 1.0]),)
     result = filter_separable(
-        data, kernels, axis=(1,), pad_mode=pad_mode, pad_value=3.0 if pad_mode == 'constant' else 0.0
+        data, kernels, dim=(1,), pad_mode=pad_mode, pad_value=3.0 if pad_mode == 'constant' else 0.0
     )
     if pad_mode == 'none':
         assert result.shape == (data.shape[0], data.shape[1] - len(kernels[0]) + 1)
@@ -45,6 +31,19 @@ def test_filter_separable(pad_mode, center_value, edge_value):
         assert data.shape == result.shape
     assert result[0, 10] == center_value
     assert result[0, 0] == edge_value
+
+
+@pytest.mark.parametrize('filter_dtype', [torch.float32, torch.float64, torch.int32, torch.complex64, torch.complex128])
+@pytest.mark.parametrize('data_dtype', [torch.float32, torch.float64, torch.int32, torch.complex64, torch.complex128])
+def test_filter_separable_dtype(filter_dtype, data_dtype):
+    """Test filter_separable and different padding modes."""
+
+    data = torch.arange(1, 21)[None, :].to(dtype=data_dtype)
+    kernels = (torch.tensor([1, 2, 1], dtype=filter_dtype),)
+    result = filter_separable(data, kernels, dim=(1,))
+    expected_dtype = torch.result_type(data, kernels[0])
+    assert result.dtype == expected_dtype
+    assert result[0, 10] == 44
 
 
 def test_gaussian_filter_int_axis(data):
@@ -88,7 +87,7 @@ def test_gaussian_filter_noaxis(data):
 def test_gaussian_invalid_sigmas(data):
     """Test Gaussian filter with invalid sigma values."""
     with pytest.raises(ValueError, match='positive'):
-        gaussian_filter(data, axis=(-1, 2), sigmas=torch.tensor([0.2, 0.0]))
+        gaussian_filter(data, dim=(-1, 2), sigmas=torch.tensor([0.2, 0.0]))
     with pytest.raises(ValueError, match='positive'):
         gaussian_filter(data, sigmas=torch.tensor(-1.0))
     with pytest.raises(ValueError, match='positive'):
@@ -136,7 +135,7 @@ def test_uniform_filter_noaxis(data):
 def test_uniform_invalid_width(data):
     """Test uniform filter with invalid width."""
     with pytest.raises(ValueError, match='positive'):
-        uniform_filter(data, axis=(-1, 2), width=torch.tensor([3, 0]))
+        uniform_filter(data, dim=(-1, 2), width=torch.tensor([3, 0]))
     with pytest.raises(ValueError, match='positive'):
         uniform_filter(data, width=torch.tensor(-1.0))
     with pytest.raises(ValueError, match='positive'):

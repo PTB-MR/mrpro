@@ -1,23 +1,8 @@
 """Acquisition information dataclass."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from __future__ import annotations
-
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Self
 
 import ismrmrd
 import numpy as np
@@ -32,22 +17,55 @@ class AcqIdx(MoveDataMixin):
     """Acquisition index for each readout."""
 
     k1: torch.Tensor
+    """First phase encoding."""
+
     k2: torch.Tensor
+    """Second phase encoding."""
+
     average: torch.Tensor
+    """Signal average."""
+
     slice: torch.Tensor
+    """Slice number (multi-slice 2D)."""
+
     contrast: torch.Tensor
+    """Echo number in multi-echo."""
+
     phase: torch.Tensor
+    """Cardiac phase."""
+
     repetition: torch.Tensor
+    """Counter in repeated/dynamic acquisitions."""
+
     set: torch.Tensor
+    """Sets of different preparation, e.g. flow encoding, diffusion weighting."""
+
     segment: torch.Tensor
+    """Counter for segmented acquisitions."""
+
     user0: torch.Tensor
+    """User index 0."""
+
     user1: torch.Tensor
+    """User index 1."""
+
     user2: torch.Tensor
+    """User index 2."""
+
     user3: torch.Tensor
+    """User index 3."""
+
     user4: torch.Tensor
+    """User index 4."""
+
     user5: torch.Tensor
+    """User index 5."""
+
     user6: torch.Tensor
+    """User index 6."""
+
     user7: torch.Tensor
+    """User index 7."""
 
 
 @dataclass(slots=True)
@@ -55,36 +73,80 @@ class AcqInfo(MoveDataMixin):
     """Acquisition information for each readout."""
 
     idx: AcqIdx
+    """Indices describing acquisitions (i.e. readouts)."""
+
     acquisition_time_stamp: torch.Tensor
+    """Clock time stamp (e.g. milliseconds since midnight)."""
+
     active_channels: torch.Tensor
+    """Number of active receiver coil elements."""
+
     available_channels: torch.Tensor
+    """Number of available receiver coil elements."""
+
     center_sample: torch.Tensor
+    """Index of the readout sample corresponding to k-space center (zero indexed)."""
+
     channel_mask: torch.Tensor
+    """Bit mask indicating active coils (64*16 = 1024 bits)."""
+
     discard_post: torch.Tensor
+    """Number of readout samples to be discarded at the end (e.g. if the ADC is active during gradient events)."""
+
     discard_pre: torch.Tensor
+    """Number of readout samples to be discarded at the beginning (e.g. if the ADC is active during gradient events)"""
+
     encoding_space_ref: torch.Tensor
+    """Indexed reference to the encoding spaces enumerated in the MRD (xml) header."""
+
     flags: torch.Tensor
+    """A bit mask of common attributes applicable to individual acquisition readouts."""
+
     measurement_uid: torch.Tensor
+    """Unique ID corresponding to the readout."""
 
     number_of_samples: torch.Tensor
     """Number of readout sample points per readout (readouts may have different
     number of sample points)."""
 
     patient_table_position: SpatialDimension[torch.Tensor]
+    """Offset position of the patient table, in LPS coordinates."""
+
     phase_dir: SpatialDimension[torch.Tensor]
+    """Directional cosine of phase encoding (2D)."""
+
     physiology_time_stamp: torch.Tensor
+    """Time stamps relative to physiological triggering, e.g. ECG, pulse oximetry, respiratory."""
+
     position: SpatialDimension[torch.Tensor]
+    """Center of the excited volume, in LPS coordinates relative to isocenter in millimeters."""
+
     read_dir: SpatialDimension[torch.Tensor]
+    """Directional cosine of readout/frequency encoding."""
+
     sample_time_us: torch.Tensor
+    """Readout bandwidth, as time between samples in microseconds."""
+
     scan_counter: torch.Tensor
+    """Zero-indexed incrementing counter for readouts."""
+
     slice_dir: SpatialDimension[torch.Tensor]
+    """Directional cosine of slice normal, i.e. cross-product of read_dir and phase_dir."""
+
     trajectory_dimensions: torch.Tensor  # =3. We only support 3D Trajectories: kz always exists.
+    """Dimensionality of the k-space trajectory vector."""
+
     user_float: torch.Tensor
+    """User-defined float parameters."""
+
     user_int: torch.Tensor
+    """User-defined int parameters."""
+
     version: torch.Tensor
+    """Major version number."""
 
     @classmethod
-    def from_ismrmrd_acquisitions(cls, acquisitions: Sequence[ismrmrd.Acquisition]) -> AcqInfo:
+    def from_ismrmrd_acquisitions(cls, acquisitions: Sequence[ismrmrd.Acquisition]) -> Self:
         """Read the header of a list of acquisition and store information.
 
         Parameters

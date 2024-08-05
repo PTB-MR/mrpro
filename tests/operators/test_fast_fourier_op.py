@@ -1,17 +1,5 @@
 """Tests for Fast Fourier Operator class."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 import numpy as np
 import pytest
 import torch
@@ -101,3 +89,17 @@ def test_fast_fourier_op_onematrix():
         FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=None)
     with pytest.raises(ValueError, match='None'):
         FastFourierOp(recon_matrix=None, encoding_matrix=encoding_matrix)
+
+
+def test_invalid_dim():
+    """Tests that dims are in (-3,-2,-1) if recon_matrix
+    or encoding_matrix is SpatialDimension"""
+
+    recon_matrix = SpatialDimension(z=101, y=201, x=61)
+    encoding_matrix = SpatialDimension(z=14, y=220, x=61)
+
+    with pytest.raises(NotImplementedError, match='recon_matrix'):
+        FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=None, dim=(-4, -2, -1))
+
+    with pytest.raises(NotImplementedError, match='encoding_matrix'):
+        FastFourierOp(recon_matrix=None, encoding_matrix=encoding_matrix, dim=(-4, -2, -1))

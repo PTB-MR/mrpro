@@ -14,15 +14,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import requests
 import torch
-from mrpro.data import CsmData
-from mrpro.data import DcfData
-from mrpro.data import IData
-from mrpro.data import KData
-from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
-from mrpro.data.traj_calculators import KTrajectoryPulseq
-from mrpro.data.traj_calculators import KTrajectoryRadial2D
-from mrpro.operators import FourierOp
-from mrpro.operators import SensitivityOp
+from mrpro.data import CsmData, DcfData, IData, KData
+from mrpro.data.traj_calculators import KTrajectoryIsmrmrd, KTrajectoryPulseq, KTrajectoryRadial2D
+from mrpro.operators import FourierOp, SensitivityOp
 
 # %%
 # define zenodo records URL and create a temporary directory and h5-file
@@ -35,6 +29,7 @@ data_file = tempfile.NamedTemporaryFile(dir=data_folder, mode='wb', delete=False
 # Download raw data using requests
 response = requests.get(zenodo_url + fname, timeout=30)
 data_file.write(response.content)
+data_file.flush()
 
 # %% [markdown]
 # ### Image reconstruction using KTrajectoryIsmrmrd
@@ -100,7 +95,7 @@ seq_fname = 'pulseq_radial_2D_402spokes_golden_angle.seq'
 seq_file = tempfile.NamedTemporaryFile(dir=data_folder, mode='wb', delete=False, suffix='.seq')
 response = requests.get(zenodo_url + seq_fname, timeout=30)
 seq_file.write(response.content)
-
+seq_file.flush()
 
 # %%
 # Read raw data and calculate trajectory using KTrajectoryPulseq
@@ -143,7 +138,3 @@ for i, img in enumerate([img_using_ismrmrd_traj, img_using_rad2d_traj, img_using
 # %%
 # Clean-up by removing temporary directory
 shutil.rmtree(data_folder)
-
-# %% [markdown]
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-# Apache License 2.0. See LICENSE file for details.
