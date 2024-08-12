@@ -1,19 +1,5 @@
 """MoveDataMixin."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import dataclasses
 from collections.abc import Iterator
 from copy import copy as shallowcopy
@@ -73,7 +59,7 @@ class MoveDataMixin:
         """Perform dtype and/or device conversion of data.
 
         A torch.dtype and torch.device are inferred from the arguments
-        of self.to(*args, **kwargs). Please have a look at the
+        args and kwargs. Please have a look at the
         documentation of torch.Tensor.to() for more details.
 
         A new instance of the dataclass will be returned.
@@ -82,15 +68,16 @@ class MoveDataMixin:
         fields of the dataclass, and to all fields that implement
         the MoveDataMixin.
 
-        The dtype-type, i.e. float/complex will always be preserved,
+        The dtype-type, i.e. float or complex will always be preserved,
         but the precision of floating point dtypes might be changed.
 
         Example:
-            If called with dtype=torch.float32 OR dtype=torch.complex64:
-                - A complex128 tensor will be converted to complex64
-                - A float64 tensor will be converted to float32
-                - A bool tensor will remain bool
-                - An int64 tensor will remain int64
+        If called with dtype=torch.float32 OR dtype=torch.complex64:
+
+        - A complex128 tensor will be converted to complex64
+        - A float64 tensor will be converted to float32
+        - A bool tensor will remain bool
+        - An int64 tensor will remain int64
 
         If other conversions are desired, please use the torch.Tensor.to() method of
         the fields directly.

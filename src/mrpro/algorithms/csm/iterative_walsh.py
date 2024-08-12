@@ -1,19 +1,5 @@
 """Iterative Walsh method for coil sensitivity map calculation."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import torch
 
 from mrpro.data.SpatialDimension import SpatialDimension
@@ -30,7 +16,7 @@ def iterative_walsh(
     This is for a single set of coil images. The input should be a tensor with dimensions
     (coils, z, y, x). The output will have the same dimensions.
     Either apply this function individually to each set of coil images,
-    or see CsmData.from_idata_walsh which performs this operation on a whole dataset [1]_.
+    or see CsmData.from_idata_walsh which performs this operation on a whole dataset [WAL2000]_.
 
     This function is inspired by https://github.com/ismrmrd/ismrmrd-python-tools.
 
@@ -45,8 +31,7 @@ def iterative_walsh(
 
     References
     ----------
-    .. [1] Daval-Frerot G, Ciuciu P (2022) Iterative static field map estimation for off-resonance correction in
-           non-Cartesian susceptibility weighted imaging. MRM 88(4): mrm.29297.
+    .. [WAL2000] Walsh DO, Gmitro AF, Marcellin MW (2000) Adaptive reconstruction of phased array MR imagery. MRM 43
     """
     if isinstance(smoothing_width, int):
         smoothing_width = SpatialDimension(smoothing_width, smoothing_width, smoothing_width)
@@ -54,7 +39,7 @@ def iterative_walsh(
     coil_covariance = torch.einsum('azyx,bzyx->abzyx', coil_images, coil_images.conj())
 
     # Smooth the covariance along y-x for 2D and z-y-x for 3D data
-    coil_covariance = uniform_filter(coil_covariance, width=smoothing_width.zyx, axis=(-3, -2, -1))
+    coil_covariance = uniform_filter(coil_covariance, width=smoothing_width.zyx, dim=(-3, -2, -1))
 
     # At each point in the image, find the dominant eigenvector
     # of the signal covariance matrix using the power method

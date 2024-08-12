@@ -1,24 +1,11 @@
 """ADAM for solving non-linear minimization problems."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 
 import torch
 from torch.optim import Adam, AdamW
 
+from mrpro.algorithms.optimizers.OptimizerStatus import OptimizerStatus
 from mrpro.operators.Operator import Operator
 
 
@@ -32,6 +19,7 @@ def adam(
     weight_decay: float = 0,
     amsgrad: bool = False,
     decoupled_weight_decay: bool = False,
+    callback: Callable[[OptimizerStatus], None] | None = None,
 ) -> tuple[torch.Tensor, ...]:
     """Adam for non-linear minimization problems.
 
@@ -52,12 +40,15 @@ def adam(
     eps
         term added to the denominator to improve numerical stability
     weight_decay
-        weight decay (L2 penalty)
+        weight decay (L2 penalty if decoupled_weight_decay is False)
     amsgrad
         whether to use the AMSGrad variant of this algorithm from the paper
         `On the Convergence of Adam and Beyond`
     decoupled_weight_decay
-        whether to use Adam (default) or AdamW (if set to true) [1]_
+        whether to use Adam (default) or AdamW (if set to true) [LOS2019]_
+    callback
+        function to be called after each iteration
+
 
     Returns
     -------
@@ -65,10 +56,10 @@ def adam(
 
     References
     ----------
-    .. [1] Loshchilov I, Hutter F (2019) Decoupled Weight Decay Regularization. ICLR
-            https://doi.org/10.48550/arXiv.1711.05101
+    .. [LOS2019] Loshchilov I, Hutter F (2019) Decoupled Weight Decay Regularization. ICLR
+       https://doi.org/10.48550/arXiv.1711.05101
     """
-    parameters = [p.detach().clone().requires_grad_(True) for p in initial_parameters]
+    parameters = tuple(p.detach().clone().requires_grad_(True) for p in initial_parameters)
 
     optim: AdamW | Adam
 
@@ -81,10 +72,14 @@ def adam(
         optim.zero_grad()
         (objective,) = f(*parameters)
         objective.backward()
+
+        if callback is not None:
+            callback({'solution': parameters, 'iteration_number': iteration})
+
         return objective
 
     # run adam
-    for _ in range(max_iter):
+    for iteration in range(max_iter):  # noqa: B007
         optim.step(closure)
 
-    return tuple(parameters)
+    return parameters
