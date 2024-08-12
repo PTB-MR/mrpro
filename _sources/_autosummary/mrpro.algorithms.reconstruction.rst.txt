@@ -20,6 +20,7 @@ mrpro.algorithms.reconstruction
       :template: class_template.rst
    
       DirectReconstruction
+      IterativeSENSEReconstruction
       Reconstruction
    
    

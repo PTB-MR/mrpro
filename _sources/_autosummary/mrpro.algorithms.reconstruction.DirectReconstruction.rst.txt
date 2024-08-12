@@ -25,6 +25,7 @@ mrpro.algorithms.reconstruction.DirectReconstruction
       ~DirectReconstruction.compile
       ~DirectReconstruction.cpu
       ~DirectReconstruction.cuda
+      ~DirectReconstruction.direct_reconstruction
       ~DirectReconstruction.double
       ~DirectReconstruction.eval
       ~DirectReconstruction.extra_repr

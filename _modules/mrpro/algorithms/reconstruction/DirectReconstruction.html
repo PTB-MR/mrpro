@@ -80,7 +80,7 @@
   <h1>Source code for mrpro.algorithms.reconstruction.DirectReconstruction</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Direct Reconstruction by Adjoint Fourier Transform.&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Self</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Self</span>
 
 <span class="kn">from</span> <span class="nn">mrpro.algorithms.prewhiten_kspace</span> <span class="kn">import</span> <span class="n">prewhiten_kspace</span>
 <span class="kn">from</span> <span class="nn">mrpro.algorithms.reconstruction.Reconstruction</span> <span class="kn">import</span> <span class="n">Reconstruction</span>
@@ -98,32 +98,20 @@
 <span class="k">class</span> <span class="nc">DirectReconstruction</span><span class="p">(</span><span class="n">Reconstruction</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Direct Reconstruction by Adjoint Fourier Transform.&quot;&quot;&quot;</span>
 
-    <span class="n">dcf</span><span class="p">:</span> <span class="n">DcfData</span> <span class="o">|</span> <span class="kc">None</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Density Compensation Data.&quot;&quot;&quot;</span>
-
-    <span class="n">csm</span><span class="p">:</span> <span class="n">CsmData</span> <span class="o">|</span> <span class="kc">None</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Coil Sensitivity Data.&quot;&quot;&quot;</span>
-
-    <span class="n">noise</span><span class="p">:</span> <span class="n">KNoise</span> <span class="o">|</span> <span class="kc">None</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Noise Data used for prewhitening.&quot;&quot;&quot;</span>
-
-    <span class="n">fourier_op</span><span class="p">:</span> <span class="n">LinearOperator</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fourier Operator used for the adjoint.&quot;&quot;&quot;</span>
-
 <div class="viewcode-block" id="DirectReconstruction.__init__">
 <a class="viewcode-back" href="../../../../_autosummary/mrpro.algorithms.reconstruction.DirectReconstruction.html#mrpro.algorithms.reconstruction.DirectReconstruction.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">fourier_operator</span><span class="p">:</span> <span class="n">LinearOperator</span><span class="p">,</span>
-        <span class="n">csm</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">CsmData</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">noise</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">KNoise</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">fourier_op</span><span class="p">:</span> <span class="n">LinearOperator</span><span class="p">,</span>
+        <span class="n">csm</span><span class="p">:</span> <span class="n">CsmData</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">noise</span><span class="p">:</span> <span class="n">KNoise</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">dcf</span><span class="p">:</span> <span class="n">DcfData</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize DirectReconstruction.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        fourier_operator</span>
+<span class="sd">        fourier_op</span>
 <span class="sd">            Instance of the FourierOperator which adjoint is used for reconstruction.</span>
 <span class="sd">        csm</span>
 <span class="sd">            Sensitivity maps for coil combination. If None, no coil combination will be performed.</span>
@@ -134,7 +122,7 @@
 <span class="sd">            Also set to None, if the FourierOperator is already density compensated.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fourier_op</span> <span class="o">=</span> <span class="n">fourier_operator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fourier_op</span> <span class="o">=</span> <span class="n">fourier_op</span>
         <span class="c1"># TODO: Make this buffers once DataBufferMixin is merged</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dcf</span> <span class="o">=</span> <span class="n">dcf</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">csm</span> <span class="o">=</span> <span class="n">csm</span>
@@ -144,7 +132,7 @@
 <div class="viewcode-block" id="DirectReconstruction.from_kdata">
 <a class="viewcode-back" href="../../../../_autosummary/mrpro.algorithms.reconstruction.DirectReconstruction.html#mrpro.algorithms.reconstruction.DirectReconstruction.from_kdata">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_kdata</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">kdata</span><span class="p">:</span> <span class="n">KData</span><span class="p">,</span> <span class="n">noise</span><span class="p">:</span> <span class="n">KNoise</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">coil_combine</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_kdata</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">kdata</span><span class="p">:</span> <span class="n">KData</span><span class="p">,</span> <span class="n">noise</span><span class="p">:</span> <span class="n">KNoise</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">coil_combine</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a DirectReconstruction from kdata with default settings.</span>
 
 <span class="sd">        Parameters</span>
@@ -154,8 +142,7 @@
 <span class="sd">        noise</span>
 <span class="sd">            KNoise used for prewhitening. If None, no prewhitening is performed.</span>
 <span class="sd">        coil_combine</span>
-<span class="sd">            if True (default), uses kdata to estimate sensitivity maps</span>
-<span class="sd">            and perform adaptive coil combine reconstruction</span>
+<span class="sd">            if True (default), uses kdata to estimate sensitivity maps and perform adaptive coil combine reconstruction</span>
 <span class="sd">            in the reconstruction.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">noise</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -166,49 +153,6 @@
         <span class="k">if</span> <span class="n">coil_combine</span><span class="p">:</span>
             <span class="c1"># kdata is prewhitened</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">recalculate_csm_walsh</span><span class="p">(</span><span class="n">kdata</span><span class="p">,</span> <span class="n">noise</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span></div>
-
-
-<div class="viewcode-block" id="DirectReconstruction.recalculate_fourierop">
-<a class="viewcode-back" href="../../../../_autosummary/mrpro.algorithms.reconstruction.DirectReconstruction.html#mrpro.algorithms.reconstruction.DirectReconstruction.recalculate_fourierop">[docs]</a>
-    <span class="k">def</span> <span class="nf">recalculate_fourierop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kdata</span><span class="p">:</span> <span class="n">KData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update (in place) the Fourier Operator, e.g. for a new trajectory.</span>
-
-<span class="sd">        Also recalculates the DCF.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        kdata</span>
-<span class="sd">            KData to determine trajectory and recon/encoding matrix from.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fourier_op</span> <span class="o">=</span> <span class="n">FourierOp</span><span class="o">.</span><span class="n">from_kdata</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dcf</span> <span class="o">=</span> <span class="n">DcfData</span><span class="o">.</span><span class="n">from_traj_voronoi</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">traj</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span></div>
-
-
-<div class="viewcode-block" id="DirectReconstruction.recalculate_csm_walsh">
-<a class="viewcode-back" href="../../../../_autosummary/mrpro.algorithms.reconstruction.DirectReconstruction.html#mrpro.algorithms.reconstruction.DirectReconstruction.recalculate_csm_walsh">[docs]</a>
-    <span class="k">def</span> <span class="nf">recalculate_csm_walsh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kdata</span><span class="p">:</span> <span class="n">KData</span><span class="p">,</span> <span class="n">noise</span><span class="p">:</span> <span class="n">KNoise</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update (in place) the CSM from KData using Walsh.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        kdata</span>
-<span class="sd">            KData used for adjoint reconstruction, which is then used for</span>
-<span class="sd">            Walsh CSM estimation.</span>
-<span class="sd">        noise</span>
-<span class="sd">            Noise measurement for prewhitening.</span>
-<span class="sd">            If None, self.noise (if previously set) is used.</span>
-<span class="sd">            If False, no prewithening is performed even if self.noise is set.</span>
-<span class="sd">            Use this if the kdata is already prewhitened.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">noise</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
-            <span class="n">noise</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">elif</span> <span class="n">noise</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">noise</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise</span>
-        <span class="n">adjoint</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">fourier_op</span><span class="p">,</span> <span class="n">dcf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dcf</span><span class="p">,</span> <span class="n">noise</span><span class="o">=</span><span class="n">noise</span><span class="p">)</span>
-        <span class="n">image</span> <span class="o">=</span> <span class="n">adjoint</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">csm</span> <span class="o">=</span> <span class="n">CsmData</span><span class="o">.</span><span class="n">from_idata_walsh</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span></div>
 
 
@@ -226,18 +170,7 @@
 <span class="sd">        -------</span>
 <span class="sd">            the reconstruced image.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">device</span> <span class="o">=</span> <span class="n">kdata</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">device</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">kdata</span> <span class="o">=</span> <span class="n">prewhiten_kspace</span><span class="p">(</span><span class="n">kdata</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">))</span>
-        <span class="n">operator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fourier_op</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">csm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">operator</span> <span class="o">=</span> <span class="n">operator</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">csm</span><span class="o">.</span><span class="n">as_operator</span><span class="p">()</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dcf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">operator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dcf</span><span class="o">.</span><span class="n">as_operator</span><span class="p">()</span> <span class="o">@</span> <span class="n">operator</span>
-        <span class="n">operator</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-        <span class="p">(</span><span class="n">img_tensor</span><span class="p">,)</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">H</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-        <span class="n">img</span> <span class="o">=</span> <span class="n">IData</span><span class="o">.</span><span class="n">from_tensor_and_kheader</span><span class="p">(</span><span class="n">img_tensor</span><span class="p">,</span> <span class="n">kdata</span><span class="o">.</span><span class="n">header</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">img</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">direct_reconstruction</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span></div>
 </div>
 
 </pre></div>
