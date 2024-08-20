@@ -80,9 +80,9 @@
   <h1>Source code for mrpro.data.AcqInfo</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Acquisition information dataclass.&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Sequence</span>
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Self</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Self</span><span class="p">,</span> <span class="n">TypeVar</span>
 
 <span class="kn">import</span> <span class="nn">ismrmrd</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -90,6 +90,19 @@
 
 <span class="kn">from</span> <span class="nn">mrpro.data.MoveDataMixin</span> <span class="kn">import</span> <span class="n">MoveDataMixin</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.SpatialDimension</span> <span class="kn">import</span> <span class="n">SpatialDimension</span>
+
+<span class="c1"># Conversion functions for units</span>
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">ms_to_s</span><span class="p">(</span><span class="n">ms</span><span class="p">:</span> <span class="n">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert ms to s.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">ms</span> <span class="o">/</span> <span class="mi">1000</span>
+
+
+<span class="k">def</span> <span class="nf">mm_to_m</span><span class="p">(</span><span class="n">m</span><span class="p">:</span> <span class="n">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert mm to m.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">m</span> <span class="o">/</span> <span class="mi">1000</span>
 
 
 <div class="viewcode-block" id="AcqIdx">
@@ -161,7 +174,7 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Indices describing acquisitions (i.e. readouts).&quot;&quot;&quot;</span>
 
     <span class="n">acquisition_time_stamp</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Clock time stamp (e.g. milliseconds since midnight).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Clock time stamp. Not in s but in vendor-specific time units (e.g. 2.5ms for Siemens)&quot;&quot;&quot;</span>
 
     <span class="n">active_channels</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of active receiver coil elements.&quot;&quot;&quot;</span>
@@ -191,26 +204,25 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unique ID corresponding to the readout.&quot;&quot;&quot;</span>
 
     <span class="n">number_of_samples</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of readout sample points per readout (readouts may have different</span>
-<span class="sd">    number of sample points).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of sample points per readout (readouts may have different number of sample points).&quot;&quot;&quot;</span>
 
     <span class="n">patient_table_position</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Offset position of the patient table, in LPS coordinates.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Offset position of the patient table, in LPS coordinates [m].&quot;&quot;&quot;</span>
 
     <span class="n">phase_dir</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Directional cosine of phase encoding (2D).&quot;&quot;&quot;</span>
 
     <span class="n">physiology_time_stamp</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Time stamps relative to physiological triggering, e.g. ECG, pulse oximetry, respiratory.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Time stamps relative to physiological triggering, e.g. ECG. Not in s but in vendor-specific time units&quot;&quot;&quot;</span>
 
     <span class="n">position</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Center of the excited volume, in LPS coordinates relative to isocenter in millimeters.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Center of the excited volume, in LPS coordinates relative to isocenter [m].&quot;&quot;&quot;</span>
 
     <span class="n">read_dir</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Directional cosine of readout/frequency encoding.&quot;&quot;&quot;</span>
 
     <span class="n">sample_time_us</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Readout bandwidth, as time between samples in microseconds.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Readout bandwidth, as time between samples [us].&quot;&quot;&quot;</span>
 
     <span class="n">scan_counter</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Zero-indexed incrementing counter for readouts.&quot;&quot;&quot;</span>
@@ -281,13 +293,15 @@
                 <span class="n">data_tensor</span> <span class="o">=</span> <span class="n">data_tensor</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
             <span class="k">return</span> <span class="n">data_tensor</span>
 
-        <span class="k">def</span> <span class="nf">spatialdimension_2d</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+        <span class="k">def</span> <span class="nf">spatialdimension_2d</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">conversion</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
             <span class="c1"># Ensure spatial dimension is (k1*k2*other, 1, 3)</span>
             <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Spatial dimension is expected to be of shape (N,3)&#39;</span><span class="p">)</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
             <span class="c1"># all spatial dimensions are float32</span>
-            <span class="k">return</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span><span class="o">.</span><span class="n">from_array_xyz</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)))</span>
+            <span class="k">return</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span><span class="o">.</span><span class="n">from_array_xyz</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)),</span> <span class="n">conversion</span><span class="p">)</span>
 
         <span class="n">acq_idx</span> <span class="o">=</span> <span class="n">AcqIdx</span><span class="p">(</span>
             <span class="n">k1</span><span class="o">=</span><span class="n">tensor</span><span class="p">(</span><span class="n">idx</span><span class="p">[</span><span class="s1">&#39;kspace_encode_step_1&#39;</span><span class="p">]),</span>
@@ -322,10 +336,10 @@
             <span class="n">flags</span><span class="o">=</span><span class="n">tensor_2d</span><span class="p">(</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;flags&#39;</span><span class="p">]),</span>
             <span class="n">measurement_uid</span><span class="o">=</span><span class="n">tensor_2d</span><span class="p">(</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;measurement_uid&#39;</span><span class="p">]),</span>
             <span class="n">number_of_samples</span><span class="o">=</span><span class="n">tensor_2d</span><span class="p">(</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;number_of_samples&#39;</span><span class="p">]),</span>
-            <span class="n">patient_table_position</span><span class="o">=</span><span class="n">spatialdimension_2d</span><span class="p">(</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;patient_table_position&#39;</span><span class="p">]),</span>
+            <span class="n">patient_table_position</span><span class="o">=</span><span class="n">spatialdimension_2d</span><span class="p">(</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;patient_table_position&#39;</span><span class="p">],</span> <span class="n">mm_to_m</span><span class="p">),</span>
             <span class="n">phase_dir</span><span class="o">=</span><span class="n">spatialdimension_2d</span><span class="p">(</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;phase_dir&#39;</span><span class="p">]),</span>
             <span class="n">physiology_time_stamp</span><span class="o">=</span><span class="n">tensor_2d</span><span class="p">(</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;physiology_time_stamp&#39;</span><span class="p">]),</span>
-            <span class="n">position</span><span class="o">=</span><span class="n">spatialdimension_2d</span><span class="p">(</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;position&#39;</span><span class="p">]),</span>
+            <span class="n">position</span><span class="o">=</span><span class="n">spatialdimension_2d</span><span class="p">(</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;position&#39;</span><span class="p">],</span> <span class="n">mm_to_m</span><span class="p">),</span>
             <span class="n">read_dir</span><span class="o">=</span><span class="n">spatialdimension_2d</span><span class="p">(</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;read_dir&#39;</span><span class="p">]),</span>
             <span class="n">sample_time_us</span><span class="o">=</span><span class="n">tensor_2d</span><span class="p">(</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;sample_time_us&#39;</span><span class="p">]),</span>
             <span class="n">scan_counter</span><span class="o">=</span><span class="n">tensor_2d</span><span class="p">(</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;scan_counter&#39;</span><span class="p">]),</span>

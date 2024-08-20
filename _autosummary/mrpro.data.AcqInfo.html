@@ -167,7 +167,7 @@
 <td><p>Indices describing acquisitions (i.e. readouts).</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">acquisition_time_stamp</span></code></p></td>
-<td><p>Clock time stamp (e.g. milliseconds since midnight).</p></td>
+<td><p>Clock time stamp.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">active_channels</span></code></p></td>
 <td><p>Number of active receiver coil elements.</p></td>
@@ -197,25 +197,25 @@
 <td><p>Unique ID corresponding to the readout.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">number_of_samples</span></code></p></td>
-<td><p>Number of readout sample points per readout (readouts may have different number of sample points).</p></td>
+<td><p>Number of sample points per readout (readouts may have different number of sample points).</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">patient_table_position</span></code></p></td>
-<td><p>Offset position of the patient table, in LPS coordinates.</p></td>
+<td><p>Offset position of the patient table, in LPS coordinates [m].</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">phase_dir</span></code></p></td>
 <td><p>Directional cosine of phase encoding (2D).</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">physiology_time_stamp</span></code></p></td>
-<td><p>Time stamps relative to physiological triggering, e.g. ECG, pulse oximetry, respiratory.</p></td>
+<td><p>Time stamps relative to physiological triggering, e.g. ECG.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">position</span></code></p></td>
-<td><p>Center of the excited volume, in LPS coordinates relative to isocenter in millimeters.</p></td>
+<td><p>Center of the excited volume, in LPS coordinates relative to isocenter [m].</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_dir</span></code></p></td>
 <td><p>Directional cosine of readout/frequency encoding.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample_time_us</span></code></p></td>
-<td><p>Readout bandwidth, as time between samples in microseconds.</p></td>
+<td><p>Readout bandwidth, as time between samples [us].</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">scan_counter</span></code></p></td>
 <td><p>Zero-indexed incrementing counter for readouts.</p></td>
@@ -249,7 +249,7 @@
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mrpro.data.AcqInfo.acquisition_time_stamp">
 <span class="sig-name descname"><span class="pre">acquisition_time_stamp</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.acquisition_time_stamp" title="Link to this definition"></a></dt>
-<dd><p>Clock time stamp (e.g. milliseconds since midnight).</p>
+<dd><p>Clock time stamp. Not in s but in vendor-specific time units (e.g. 2.5ms for Siemens)</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -436,14 +436,13 @@ returns True if the data class has no tensors as attributes.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mrpro.data.AcqInfo.number_of_samples">
 <span class="sig-name descname"><span class="pre">number_of_samples</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.number_of_samples" title="Link to this definition"></a></dt>
-<dd><p>Number of readout sample points per readout (readouts may have different
-number of sample points).</p>
+<dd><p>Number of sample points per readout (readouts may have different number of sample points).</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mrpro.data.AcqInfo.patient_table_position">
 <span class="sig-name descname"><span class="pre">patient_table_position</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.phantoms.coils.SpatialDimension.html#mrpro.phantoms.coils.SpatialDimension" title="mrpro.data.SpatialDimension.SpatialDimension"><span class="pre">SpatialDimension</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mrpro.data.AcqInfo.patient_table_position" title="Link to this definition"></a></dt>
-<dd><p>Offset position of the patient table, in LPS coordinates.</p>
+<dd><p>Offset position of the patient table, in LPS coordinates [m].</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -455,13 +454,13 @@ number of sample points).</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mrpro.data.AcqInfo.physiology_time_stamp">
 <span class="sig-name descname"><span class="pre">physiology_time_stamp</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.physiology_time_stamp" title="Link to this definition"></a></dt>
-<dd><p>Time stamps relative to physiological triggering, e.g. ECG, pulse oximetry, respiratory.</p>
+<dd><p>Time stamps relative to physiological triggering, e.g. ECG. Not in s but in vendor-specific time units</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mrpro.data.AcqInfo.position">
 <span class="sig-name descname"><span class="pre">position</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.phantoms.coils.SpatialDimension.html#mrpro.phantoms.coils.SpatialDimension" title="mrpro.data.SpatialDimension.SpatialDimension"><span class="pre">SpatialDimension</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mrpro.data.AcqInfo.position" title="Link to this definition"></a></dt>
-<dd><p>Center of the excited volume, in LPS coordinates relative to isocenter in millimeters.</p>
+<dd><p>Center of the excited volume, in LPS coordinates relative to isocenter [m].</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -473,7 +472,7 @@ number of sample points).</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="mrpro.data.AcqInfo.sample_time_us">
 <span class="sig-name descname"><span class="pre">sample_time_us</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.AcqInfo.sample_time_us" title="Link to this definition"></a></dt>
-<dd><p>Readout bandwidth, as time between samples in microseconds.</p>
+<dd><p>Readout bandwidth, as time between samples [us].</p>
 </dd></dl>
 
 <dl class="py attribute">

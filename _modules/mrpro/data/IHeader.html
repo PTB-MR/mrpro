@@ -105,19 +105,19 @@
 
     <span class="c1"># ToDo: decide which attributes to store in the header</span>
     <span class="n">fov</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Field of view.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Field of view [m].&quot;&quot;&quot;</span>
 
     <span class="n">te</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Echo time.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Echo time [s].&quot;&quot;&quot;</span>
 
     <span class="n">ti</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inversion time.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inversion time [s].&quot;&quot;&quot;</span>
 
     <span class="n">fa</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Flip angle.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Flip angle [rad].&quot;&quot;&quot;</span>
 
     <span class="n">tr</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Repetition time.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Repetition time [s].&quot;&quot;&quot;</span>
 
     <span class="n">misc</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Dictionary with miscellaneous parameters.&quot;&quot;&quot;</span>
@@ -180,15 +180,22 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
 
-        <span class="n">fa</span> <span class="o">=</span> <span class="n">make_unique_tensor</span><span class="p">(</span><span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;FlipAngle&#39;</span><span class="p">))</span>
-        <span class="n">ti</span> <span class="o">=</span> <span class="n">make_unique_tensor</span><span class="p">(</span><span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;InversionTime&#39;</span><span class="p">))</span>
-        <span class="n">tr</span> <span class="o">=</span> <span class="n">make_unique_tensor</span><span class="p">(</span><span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;RepetitionTime&#39;</span><span class="p">))</span>
+        <span class="c1"># Conversion functions for units</span>
+        <span class="k">def</span> <span class="nf">ms_to_s</span><span class="p">(</span><span class="n">ms</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">ms</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">ms</span> <span class="o">/</span> <span class="mi">1000</span>
+
+        <span class="k">def</span> <span class="nf">deg_to_rad</span><span class="p">(</span><span class="n">deg</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">deg</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">deg</span><span class="p">)</span>
+
+        <span class="n">fa</span> <span class="o">=</span> <span class="n">deg_to_rad</span><span class="p">(</span><span class="n">make_unique_tensor</span><span class="p">(</span><span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;FlipAngle&#39;</span><span class="p">)))</span>
+        <span class="n">ti</span> <span class="o">=</span> <span class="n">ms_to_s</span><span class="p">(</span><span class="n">make_unique_tensor</span><span class="p">(</span><span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;InversionTime&#39;</span><span class="p">)))</span>
+        <span class="n">tr</span> <span class="o">=</span> <span class="n">ms_to_s</span><span class="p">(</span><span class="n">make_unique_tensor</span><span class="p">(</span><span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;RepetitionTime&#39;</span><span class="p">)))</span>
 
         <span class="c1"># get echo time(s). Some scanners use &#39;EchoTime&#39;, some use &#39;EffectiveEchoTime&#39;</span>
         <span class="n">te_list</span> <span class="o">=</span> <span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;EchoTime&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">te_list</span><span class="p">):</span>  <span class="c1"># check if all entries are None</span>
             <span class="n">te_list</span> <span class="o">=</span> <span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;EffectiveEchoTime&#39;</span><span class="p">)</span>
-        <span class="n">te</span> <span class="o">=</span> <span class="n">make_unique_tensor</span><span class="p">(</span><span class="n">te_list</span><span class="p">)</span>
+        <span class="n">te</span> <span class="o">=</span> <span class="n">ms_to_s</span><span class="p">(</span><span class="n">make_unique_tensor</span><span class="p">(</span><span class="n">te_list</span><span class="p">))</span>
 
         <span class="n">fov_x_mm</span> <span class="o">=</span> <span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;Rows&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">get_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;PixelSpacing&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">fov_y_mm</span> <span class="o">=</span> <span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;Columns&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span>
