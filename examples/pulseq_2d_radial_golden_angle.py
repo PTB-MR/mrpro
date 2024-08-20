@@ -7,9 +7,7 @@
 
 # %%
 # Imports
-import shutil
 import tempfile
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 import requests
@@ -21,8 +19,7 @@ from mrpro.data.traj_calculators import KTrajectoryIsmrmrd, KTrajectoryPulseq, K
 # define zenodo records URL and create a temporary directory and h5-file
 zenodo_url = 'https://zenodo.org/records/10854057/files/'
 fname = 'pulseq_radial_2D_402spokes_golden_angle_with_traj.h5'
-data_folder = Path(tempfile.mkdtemp())
-data_file = tempfile.NamedTemporaryFile(dir=data_folder, mode='wb', delete=False, suffix='.h5')
+data_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.h5')
 
 # %%
 # Download raw data using requests
@@ -65,7 +62,7 @@ img_using_rad2d_traj = direct_reconstruction.forward(kdata)
 # download the sequence file from zenodo
 zenodo_url = 'https://zenodo.org/records/10868061/files/'
 seq_fname = 'pulseq_radial_2D_402spokes_golden_angle.seq'
-seq_file = tempfile.NamedTemporaryFile(dir=data_folder, mode='wb', delete=False, suffix='.seq')
+seq_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.seq')
 response = requests.get(zenodo_url + seq_fname, timeout=30)
 seq_file.write(response.content)
 seq_file.flush()
@@ -93,7 +90,3 @@ for i, img in enumerate([img_using_ismrmrd_traj.rss(), img_using_rad2d_traj.rss(
     plt.imshow(img[0, 0, :, :])
     plt.title(titles[i])
     plt.axis('off')
-
-# %%
-# Clean-up by removing temporary directory
-shutil.rmtree(data_folder)
