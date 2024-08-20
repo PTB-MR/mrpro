@@ -1,19 +1,5 @@
 """Class for Grid Sampling Operator."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import warnings
 from collections.abc import Callable, Sequence
 from typing import Literal
@@ -177,12 +163,12 @@ class GridSamplingOp(LinearOperator):
         padding_mode: Literal['zeros', 'border', 'reflection'] = 'zeros',
         align_corners: bool = False,
     ):
-        """Initialize Sampling Operator.
+        r"""Initialize Sampling Operator.
 
         Parameters
         ----------
         grid
-            sampling grid. Shape *batchdim, z,y,x,3 / *batchdim, y,x,2.
+            sampling grid. Shape \*batchdim, z,y,x,3 / \*batchdim, y,x,2.
             Values should be in [-1, 1.]
         input_shape
             Used in the adjoint. The z,y,x shape of the domain of the operator.
