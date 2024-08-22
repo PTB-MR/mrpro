@@ -27,7 +27,7 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """Functional Base Class."""
 
     def __init__(
-        self, weight: torch.Tensor | float = 1.0, target: torch.Tensor | None = None, dim: Sequence[int] | None = None, divide_by_n : bool = False
+        self, weight: torch.Tensor | float = 1.0, target: torch.Tensor | None = None, dim: Sequence[int] | None = None, divide_by_n : bool = False, keep_dim: bool = True
     ) -> None:
         """Initialize a Functional.
         
@@ -52,6 +52,7 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
         self.register_buffer('target', target)
         self.dim = dim
         self.divide_by_n = divide_by_n
+        self.keep_dim = keep_dim
 
 
 class ProximableFunctional(Functional, ABC):
