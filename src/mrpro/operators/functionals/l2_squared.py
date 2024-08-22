@@ -6,7 +6,7 @@ from mrpro.operators.Functional import ProximableFunctional
 
 
 class L2NormSquared(ProximableFunctional):
-    """Functional for L2 Norm Squared.
+    """Functional for L2 Norm squared.
 
     Parameters
     ----------
