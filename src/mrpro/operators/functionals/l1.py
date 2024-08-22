@@ -98,7 +98,7 @@ class L1Norm(ProximableFunctional):
 
 
 class L1NormViewAsReal(ProximableFunctional):
-    """Functional for L1 Norm with real and imaginary part treated seperately.
+    """Functional for L1 Norm with real and imag part treated seperately.
 
     Parameters
     ----------
