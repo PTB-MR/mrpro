@@ -52,10 +52,7 @@ class L2NormSquared(ProximableFunctional):
         -------
             squared l2 norm of the input tensor
         """
-        if dim is None:
-            dim = self.dim
-        if keep_dim is None:
-            keep_dim = self.keep_dim
+
         dtype = torch.promote_types(self.target.dtype, x.dtype)
         x = x.to(dtype)
         target = self.target.to(dtype)
@@ -68,9 +65,9 @@ class L2NormSquared(ProximableFunctional):
             keepdim = self.keepdim
 
         if divide_by_n:
-            return (0.5 * (self.weight * (x - target)).abs().pow(2).mean(self.dim, keepdim=keepdim),)
+            return (0.5 * (self.weight * (x - target)).abs().pow(2).mean(dim, keepdim=keepdim),)
         else:
-            return (0.5 * (self.weight * (x - target)).abs().pow(2).sum(self.dim, keepdim=keepdim),)
+            return (0.5 * (self.weight * (x - target)).abs().pow(2).sum(dim, keepdim=keepdim),)
 
     def prox(
         self,

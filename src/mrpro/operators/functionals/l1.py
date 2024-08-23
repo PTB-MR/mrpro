@@ -13,7 +13,7 @@ class L1Norm(ProximableFunctional):
         weight = 1
     """
 
-    def forward(self, x: torch.Tensor, dim: Sequence[int] | None = None, keep_dim: bool | None = None, divide_by_n : bool | None = None) -> tuple[torch.Tensor]:
+    def forward(self, x: torch.Tensor, dim: Sequence[int] | None = None, keepdim: bool | None = None, divide_by_n : bool | None = None) -> tuple[torch.Tensor]:
         """Forward method.
 
         Parameters
@@ -27,8 +27,8 @@ class L1Norm(ProximableFunctional):
         """
         if dim is None:
             dim = self.dim
-        if keep_dim is None:
-            keep_dim = self.keep_dim
+        if keepdim is None:
+            keepdim = self.keepdim
         if divide_by_n is None:
             divide_by_n = self.divide_by_n
             
@@ -37,9 +37,9 @@ class L1Norm(ProximableFunctional):
         target = self.target.to(dtype)
         
         if divide_by_n:
-            return ((self.weight * (x - target)).abs().mean(dim=dim, keepdim=keep_dim),)
+            return ((self.weight * (x - target)).abs().mean(dim=dim, keepdim=keepdim),)
         else:
-            return ((self.weight * (x - target)).abs().sum(dim=dim, keepdim=keep_dim),)
+            return ((self.weight * (x - target)).abs().sum(dim=dim, keepdim=keepdim),)
 
     def prox(self, x: torch.Tensor, sigma: torch.Tensor, dim: Sequence[int] | None = None, divide_by_n : bool | None = None) -> tuple[torch.Tensor]:
         """Prox of L1 Norm.
@@ -125,7 +125,7 @@ class L1NormViewAsReal(ProximableFunctional):
         weight = 1
     """
 
-    def forward(self, x: torch.Tensor, dim: torch.Tensor | None = None, keep_dim: bool | None = None, divide_by_n : bool | None = None) -> tuple[torch.Tensor]:
+    def forward(self, x: torch.Tensor, dim: torch.Tensor | None = None, keepdim: bool | None = None, divide_by_n : bool | None = None) -> tuple[torch.Tensor]:
         """Forward method.
 
         Parameters
@@ -139,8 +139,8 @@ class L1NormViewAsReal(ProximableFunctional):
         """
         if dim is None:
             dim = self.dim
-        if keep_dim is None:
-            keep_dim = self.keep_dim
+        if keepdim is None:
+            keepdim = self.keepdim
         if divide_by_n is None:
             divide_by_n = self.divide_by_n
             
@@ -150,9 +150,9 @@ class L1NormViewAsReal(ProximableFunctional):
         diff = x - target
         is_complex = diff.is_complex()
         if is_complex:
-            return ((L1Norm().forward(diff.real, dim=dim, keep_dim=keep_dim, divide_by_n=divide_by_n)[0]) + (L1Norm().forward(diff.imag, dim=dim, keep_dim=keep_dim, divide_by_n=divide_by_n)[0]),)
+            return ((L1Norm().forward(diff.real, dim=dim, keepdim=keepdim, divide_by_n=divide_by_n)[0]) + (L1Norm().forward(diff.imag, dim=dim, keepdim=keepdim, divide_by_n=divide_by_n)[0]),)
         else:
-            return ((L1Norm().forward(diff, dim=dim, keep_dim=keep_dim, divide_by_n=divide_by_n)[0]),)
+            return ((L1Norm().forward(diff, dim=dim, keepdim=keepdim, divide_by_n=divide_by_n)[0]),)
 
     def prox(self, x: torch.Tensor, sigma: torch.Tensor, dim: torch.Tensor | None = None, divide_by_n : bool | None = None) -> tuple[torch.Tensor]:
         """Prox of L1 Norm.
