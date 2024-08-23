@@ -52,6 +52,10 @@ class L2NormSquared(ProximableFunctional):
         -------
             squared l2 norm of the input tensor
         """
+        if dim is None:
+            dim = self.dim
+        if keep_dim is None:
+            keep_dim = self.keep_dim
         dtype = torch.promote_types(self.target.dtype, x.dtype)
         x = x.to(dtype)
         target = self.target.to(dtype)

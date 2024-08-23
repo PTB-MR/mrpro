@@ -1,8 +1,8 @@
 """L1 Norm."""
 
 import torch
-
 from mrpro.operators.Functional import ProximableFunctional
+from collections.abc import Sequence
 
 
 class L1Norm(ProximableFunctional):
@@ -13,7 +13,7 @@ class L1Norm(ProximableFunctional):
         weight = 1
     """
 
-    def forward(self, x: torch.Tensor, dim: torch.Tensor | None = None, keep_dim: bool | None = None) -> tuple[torch.Tensor]:
+    def forward(self, x: torch.Tensor, dim: Sequence[int] | None = None, keep_dim: bool | None = None, divide_by_n : bool | None = None) -> tuple[torch.Tensor]:
         """Forward method.
 
         Parameters
@@ -29,15 +29,19 @@ class L1Norm(ProximableFunctional):
             dim = self.dim
         if keep_dim is None:
             keep_dim = self.keep_dim
+        if divide_by_n is None:
+            divide_by_n = self.divide_by_n
+            
         dtype = torch.promote_types(self.target.dtype, x.dtype)
         x = x.to(dtype)
         target = self.target.to(dtype)
-        if self.divide_by_n:
+        
+        if divide_by_n:
             return ((self.weight * (x - target)).abs().mean(dim=dim, keepdim=keep_dim),)
         else:
             return ((self.weight * (x - target)).abs().sum(dim=dim, keepdim=keep_dim),)
 
-    def prox(self, x: torch.Tensor, sigma: torch.Tensor) -> tuple[torch.Tensor]:
+    def prox(self, x: torch.Tensor, sigma: torch.Tensor, dim: Sequence[int] | None = None, divide_by_n : bool | None = None) -> tuple[torch.Tensor]:
         """Prox of L1 Norm.
 
         Parameters
@@ -51,16 +55,23 @@ class L1Norm(ProximableFunctional):
         -------
             Proximal of data
         """
+        if dim is None:
+            dim = self.dim
+        if divide_by_n is None:
+            divide_by_n = self.divide_by_n
+            
         dtype = torch.promote_types(self.target.dtype, x.dtype)
         x = x.to(dtype)
         target = self.target.to(dtype)
         diff = x - target
         is_complex = diff.is_complex()
         threshold = torch.tensor([self.weight * sigma])
-        if self.divide_by_n and self.dim is not None:
-            dim_to_keep = [d if d >= 0 else d + x.ndimension() for d in self.dim]
-            n = torch.prod(torch.tensor([x.shape[i] for i in dim_to_keep]))
-            threshold /= n   
+        
+        if divide_by_n:
+            n = torch.prod(torch.tensor([x.shape[i] for i in dim])) if dim is not None else x.numel()
+            threshold = threshold.to(torch.float32)
+            threshold /= n
+            
         if is_complex:
             x_out = target + torch.polar(torch.nn.functional.relu(diff.abs() - threshold), torch.angle(diff))
         else:
@@ -69,7 +80,7 @@ class L1Norm(ProximableFunctional):
             )
         return (x_out,)
 
-    def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor) -> tuple[torch.Tensor]:
+    def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor, dim: Sequence[int] | None = None, divide_by_n : bool | None = None) -> tuple[torch.Tensor]:
         """Prox convex conjugate of data.
 
         Parameters
@@ -83,6 +94,15 @@ class L1Norm(ProximableFunctional):
         -------
             Proximal of convex conjugate of data
         """
+        if dim is None:
+            dim = self.dim
+        if divide_by_n is None:
+            divide_by_n = self.divide_by_n
+            
+        if divide_by_n:
+            n = torch.prod(torch.tensor([x.shape[i] for i in dim])) if dim is not None else x.numel()
+            sigma /= n
+            
         dtype = torch.promote_types(self.target.dtype, x.dtype)
         x = x.to(dtype)
         target = self.target.to(dtype)
@@ -105,7 +125,7 @@ class L1NormViewAsReal(ProximableFunctional):
         weight = 1
     """
 
-    def forward(self, x: torch.Tensor, dim: torch.Tensor | None = None, keep_dim: bool | None = None) -> tuple[torch.Tensor]:
+    def forward(self, x: torch.Tensor, dim: torch.Tensor | None = None, keep_dim: bool | None = None, divide_by_n : bool | None = None) -> tuple[torch.Tensor]:
         """Forward method.
 
         Parameters
@@ -117,17 +137,24 @@ class L1NormViewAsReal(ProximableFunctional):
         -------
             L1 norm of data
         """
+        if dim is None:
+            dim = self.dim
+        if keep_dim is None:
+            keep_dim = self.keep_dim
+        if divide_by_n is None:
+            divide_by_n = self.divide_by_n
+            
         dtype = torch.promote_types(self.target.dtype, x.dtype)
         x = x.to(dtype)
         target = self.target.to(dtype)
         diff = x - target
         is_complex = diff.is_complex()
         if is_complex:
-            return ((L1Norm().forward(diff.real, dim=dim, keep_dim=keep_dim)[0]) + (L1Norm().forward(diff.imag, dim=dim, keep_dim=keep_dim)[0]),)
+            return ((L1Norm().forward(diff.real, dim=dim, keep_dim=keep_dim, divide_by_n=divide_by_n)[0]) + (L1Norm().forward(diff.imag, dim=dim, keep_dim=keep_dim, divide_by_n=divide_by_n)[0]),)
         else:
-            return ((L1Norm().forward(diff, dim=dim, keep_dim=keep_dim)[0]),)
+            return ((L1Norm().forward(diff, dim=dim, keep_dim=keep_dim, divide_by_n=divide_by_n)[0]),)
 
-    def prox(self, x: torch.Tensor, sigma: torch.Tensor) -> tuple[torch.Tensor]:
+    def prox(self, x: torch.Tensor, sigma: torch.Tensor, dim: torch.Tensor | None = None, divide_by_n : bool | None = None) -> tuple[torch.Tensor]:
         """Prox of L1 Norm.
 
         Parameters
@@ -141,17 +168,27 @@ class L1NormViewAsReal(ProximableFunctional):
         -------
             Proximal of data
         """
+        if dim is None:
+            dim = self.dim
+        if divide_by_n is None:
+            divide_by_n = self.divide_by_n
+            
+        if divide_by_n:
+            n = torch.prod(torch.tensor([x.shape[i] for i in dim])) if dim is not None else x.numel()
+            sigma /= n
+            divide_by_n = False
+            
         dtype = torch.promote_types(self.target.dtype, x.dtype)
         x = x.to(dtype)
         target = self.target.to(dtype)
         diff = x - target
         is_complex = diff.is_complex()
         if is_complex:
-            return (torch.complex(L1Norm().prox(diff.real, sigma)[0], L1Norm().prox(diff.imag, sigma)[0]),)
+            return (torch.complex(L1Norm().prox(diff.real, sigma, dim, divide_by_n)[0], L1Norm().prox(diff.imag, sigma, dim, divide_by_n)[0]),)
         else:
-            return (torch.tensor([(L1Norm().prox(diff, sigma)[0])]),)
+            return (torch.tensor([(L1Norm().prox(diff, sigma, dim, divide_by_n)[0])]),)
 
-    def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor) -> tuple[torch.Tensor]:
+    def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor, dim: torch.Tensor | None = None, divide_by_n : bool | None = None) -> tuple[torch.Tensor]:
         """Prox convex conjugate of data.
 
         Parameters
@@ -165,6 +202,16 @@ class L1NormViewAsReal(ProximableFunctional):
         -------
             Proximal of convex conjugate of data
         """        
+        if dim is None:
+            dim = self.dim
+        if divide_by_n is None:
+            divide_by_n = self.divide_by_n
+            
+        if divide_by_n:
+            n = torch.prod(torch.tensor([x.shape[i] for i in dim])) if dim is not None else x.numel()
+            sigma /= n
+            divide_by_n = False
+            
         dtype = torch.promote_types(self.target.dtype, x.dtype)
         x = x.to(dtype)
         target = self.target.to(dtype)
@@ -173,9 +220,9 @@ class L1NormViewAsReal(ProximableFunctional):
         if is_complex:
             return (
                 torch.complex(
-                    L1Norm().prox_convex_conj(diff.real, sigma)[0], L1Norm().prox_convex_conj(diff.imag, sigma)[0]
+                    L1Norm().prox_convex_conj(diff.real, sigma, dim, divide_by_n)[0], L1Norm().prox_convex_conj(diff.imag, sigma, dim, divide_by_n)[0]
                 ),
             )
         else:
-            return (torch.tensor([L1Norm().prox_convex_conj(diff, sigma)[0]]),)
+            return (torch.tensor([L1Norm().prox_convex_conj(diff, sigma, dim, divide_by_n)[0]]),)
         
