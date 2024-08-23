@@ -14,8 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Sequence
 
 import torch
@@ -27,11 +26,16 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """Functional Base Class."""
 
     def __init__(
-        self, weight: torch.Tensor | float = 1.0, target: torch.Tensor | None = None, dim: Sequence[int] | None = None, divide_by_n : bool = False, keep_dim: bool = True
+        self,
+        weight: torch.Tensor | float = 1.0,
+        target: torch.Tensor | None = None,
+        dim: Sequence[int] | None = None,
+        divide_by_n: bool = False,
+        keepdim: bool = True,
     ) -> None:
         """Initialize a Functional.
-        
-        To calculate an Lp norm in the form of || weight * (x - target) ||_p 
+
+        To calculate an Lp norm in the form of || weight * (x - target) ||_p
 
         Parameters
         ----------
@@ -44,6 +48,9 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
             divide_by_n
                 True: norm calculated with mean
                 False: norm calculated with sum
+            keepdim
+                whether or not to maintain the dimensions of the input
+
         """
         super().__init__()
         self.register_buffer('weight', torch.as_tensor(weight))
@@ -52,7 +59,7 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
         self.register_buffer('target', target)
         self.dim = dim
         self.divide_by_n = divide_by_n
-        self.keep_dim = keep_dim
+        self.keepdim = keepdim
 
 
 class ProximableFunctional(Functional, ABC):
