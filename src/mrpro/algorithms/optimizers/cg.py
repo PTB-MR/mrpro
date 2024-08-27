@@ -4,7 +4,15 @@ from collections.abc import Callable
 
 import torch
 
+from mrpro.algorithms.optimizers.OptimizerStatus import OptimizerStatus
 from mrpro.operators.LinearOperator import LinearOperator
+
+
+class CGStatus(OptimizerStatus):
+    """Conjugate gradient callback base class."""
+
+    residual: torch.Tensor
+    """Residual of the current estimate."""
 
 
 def cg(
@@ -13,24 +21,25 @@ def cg(
     initial_value: torch.Tensor | None = None,
     max_iterations: int = 128,
     tolerance: float = 1e-4,
-    callback: Callable | None = None,
+    callback: Callable[[CGStatus], None] | None = None,
 ) -> torch.Tensor:
-    """CG for solving a linear system Hx=b.
+    r"""CG for solving a linear system :math:`Hx=b`.
 
-    Thereby, H is a linear self-adjoint operator, b is the right-hand-side
-    of the system and x is the sought solution.
+    Thereby, :math:`H` is a linear self-adjoint operator, :math:`b` is the right-hand-side
+    of the system and :math:`x` is the sought solution.
 
-    Note that this implementation allows for simultaneously solving a batch of N problems
-    of the form
-        H_i x_i = b_i,      i=1,...,N.
-    Thereby, the underlying assumption is that the considered problem is H x = b with
-        H:= diag(H_1, ..., H_N), b:= [b_1, ..., b_N]^T.
-    Thus, if all H_i are self-adjoint, so is H and the CG can be applied.
+    Note that this implementation allows for simultaneously solving a batch of :math:`N` problems
+    of the form :math:`H_i x_i = b_i` with :math:`i=1,...,N`.
+
+    Thereby, the underlying assumption is that the considered problem is :math:`Hx=b` with
+    :math:`H:= diag(H_1, ..., H_N)` and  :math:`b:= [b_1, ..., b_N]^T`.
+
+    Thus, if all :math:`H_i` are self-adjoint, so is :math:`H` and the CG can be applied.
     Note however, that the accuracy of the obtained solutions might vary among the different
     problems.
     Note also that we don't test if the input operator is self-adjoint or not.
 
-    Further, note that if the condition of H is very large, a small residual does not necessarily
+    Further, note that if the condition of :math:`H` is very large, a small residual does not necessarily
     imply that the solution is accurate.
 
     Parameters
@@ -47,7 +56,7 @@ def cg(
         tolerance for the residual; if set to zero, the maximal number of iterations
         is the only stopping criterion used to stop the cg
     callback
-        user-provided function to be called at each iteration
+        function to be called at each iteration
 
     Returns
     -------
@@ -102,6 +111,12 @@ def cg(
         residual_norm_squared_previous = residual_norm_squared
 
         if callback is not None:
-            callback(solution)
+            callback(
+                {
+                    'solution': (solution,),
+                    'iteration_number': iteration,
+                    'residual': residual,
+                }
+            )
 
     return solution

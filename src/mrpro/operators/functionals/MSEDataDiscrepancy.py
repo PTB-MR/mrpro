@@ -9,14 +9,11 @@ from mrpro.operators.Operator import Operator
 class MSEDataDiscrepancy(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """Mean Squared Error (MSE) loss function.
 
-        This class implements the function
-            1./N * || . - data ||_2^2,
-        where N equals to the number of elements of the tensor.
+    This class implements the function :math:`1./N * || . - data ||_2^2`, where :math:`N` equals to the number of
+    elements of the tensor.
 
-        N.B. if one of data or input is complex-valued, we
-        identify the space C^N with R^2N and multiply the output
-        by 2. By this, we achieve that for example
-            MSE(1) = MSE(1+1j*0) = 1.
+    Note: if one of data or input is complex-valued, we identify the space :math:`C^N` with :math:`R^{2N}` and
+    multiply the output by 2. By this, we achieve that for example :math:`MSE(1)` = :math:`MSE(1+1j*0)` = 1.
 
     Parameters
     ----------
