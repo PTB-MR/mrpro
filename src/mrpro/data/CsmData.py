@@ -9,6 +9,7 @@ import torch
 from mrpro.data.IData import IData
 from mrpro.data.QData import QData
 from mrpro.data.SpatialDimension import SpatialDimension
+from mrpro.utils import smap
 
 if TYPE_CHECKING:
     from mrpro.operators.SensitivityOp import SensitivityOp
@@ -58,7 +59,6 @@ class CsmData(QData):
         cls,
         idata: IData,
         smoothing_width: int | SpatialDimension[int] = 5,
-        chunk_size_otherdim: int | None = None,
     ) -> Self:
         """Create csm object from image data using Inati method.
 
@@ -68,9 +68,6 @@ class CsmData(QData):
             IData object containing the images for each coil element.
         smoothing_width
             Size of the smoothing kernel.
-        chunk_size_otherdim:
-            How many elements of the other dimensions should be processed at once.
-            Default is None, which means that all elements are processed at once.
         """
         from mrpro.algorithms.csm.inati import inati
 
@@ -78,11 +75,7 @@ class CsmData(QData):
         if isinstance(smoothing_width, int):
             smoothing_width = SpatialDimension(smoothing_width, smoothing_width, smoothing_width)
 
-        csm_fun = torch.vmap(
-            lambda img: inati(img, smoothing_width),
-            chunk_size=chunk_size_otherdim,
-        )
-        csm_tensor = csm_fun(idata.data)
+        csm_tensor = smap(lambda img: inati(img, smoothing_width), idata.data, 4)
         csm = cls(header=idata.header, data=csm_tensor)
         return csm
 

@@ -18,7 +18,7 @@ def test_CsmData_is_frozen_dataclass(random_test_data, random_kheader):
 
 
 @pytest.mark.parametrize('csm_method', [CsmData.from_idata_walsh, CsmData.from_idata_inati])
-def test_CsmData_interactive_Walsh_smoothing_width(csm_method, ellipse_phantom, random_kheader):
+def test_CsmData_smoothing_width(csm_method, ellipse_phantom, random_kheader):
     """CsmData SpatialDimension and int for smoothing width."""
     idata, csm_ref = multi_coil_image(n_coils=4, ph_ellipse=ellipse_phantom, random_kheader=random_kheader)
 
@@ -35,7 +35,7 @@ def test_CsmData_interactive_Walsh_smoothing_width(csm_method, ellipse_phantom, 
 
 @pytest.mark.cuda()
 @pytest.mark.parametrize('csm_method', [CsmData.from_idata_walsh, CsmData.from_idata_inati])
-def test_CsmData_iterative_Walsh_cuda(csm_method, ellipse_phantom, random_kheader):
+def test_CsmData_cuda(csm_method, ellipse_phantom, random_kheader):
     """CsmData obtained on GPU in CUDA memory."""
     idata, csm_ref = multi_coil_image(n_coils=4, ph_ellipse=ellipse_phantom, random_kheader=random_kheader)
 
