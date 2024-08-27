@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mrpro.utils.filters.reduce &mdash; mrpro</title>
+  <title>mrpro.utils.filters.repeat &mdash; mrpro</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=16f952a1" />
@@ -22,8 +22,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="mrpro.utils.filters.repeat" href="mrpro.utils.filters.repeat.html" />
-    <link rel="prev" title="mrpro.utils.filters.gaussian_filter" href="mrpro.utils.filters.gaussian_filter.html" /> 
+    <link rel="next" title="mrpro.utils.filters.uniform_filter" href="mrpro.utils.filters.uniform_filter.html" />
+    <link rel="prev" title="mrpro.utils.filters.reduce" href="mrpro.utils.filters.reduce.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -94,9 +94,9 @@
           <li class="breadcrumb-item"><a href="../api.html">API</a></li>
           <li class="breadcrumb-item"><a href="mrpro.utils.html">mrpro.utils</a></li>
           <li class="breadcrumb-item"><a href="mrpro.utils.filters.html">mrpro.utils.filters</a></li>
-      <li class="breadcrumb-item active">mrpro.utils.filters.reduce</li>
+      <li class="breadcrumb-item active">mrpro.utils.filters.repeat</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/_autosummary/mrpro.utils.filters.reduce.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/_autosummary/mrpro.utils.filters.repeat.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -104,17 +104,49 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="mrpro-utils-filters-reduce">
-<h1>mrpro.utils.filters.reduce<a class="headerlink" href="#mrpro-utils-filters-reduce" title="Link to this heading"></a></h1>
+  <section id="mrpro-utils-filters-repeat">
+<h1>mrpro.utils.filters.repeat<a class="headerlink" href="#mrpro-utils-filters-repeat" title="Link to this heading"></a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="mrpro.utils.filters.reduce">
-<span class="sig-prename descclassname"><span class="pre">mrpro.utils.filters.</span></span><span class="sig-name descname"><span class="pre">reduce</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">function</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterable</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">initial</span></span></em><span class="optional">]</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">value</span></span></span><a class="headerlink" href="#mrpro.utils.filters.reduce" title="Link to this definition"></a></dt>
-<dd><p>Apply a function of two arguments cumulatively to the items of a sequence
-or iterable, from left to right, so as to reduce the iterable to a single
-value.  For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates
-((((1+2)+3)+4)+5).  If initial is present, it is placed before the items
-of the iterable in the calculation, and serves as a default when the
-iterable is empty.</p>
+<dt class="sig sig-object py" id="mrpro.utils.filters.repeat">
+<span class="sig-prename descclassname"><span class="pre">mrpro.utils.filters.</span></span><span class="sig-name descname"><span class="pre">repeat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pattern</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">axes_lengths</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/einops/einops.html#repeat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.utils.filters.repeat" title="Link to this definition"></a></dt>
+<dd><p>einops.repeat allows reordering elements and repeating them in arbitrary combinations.
+This operation includes functionality of repeat, tile, broadcast functions.</p>
+<p>Examples for repeat operation:</p>
+<p><a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>python
+# a grayscale image (of shape height x width)
+&gt;&gt;&gt; image = np.random.randn(30, 40)</p>
+<p># change it to RGB format by repeating in each channel
+&gt;&gt;&gt; repeat(image, ‘h w -&gt; h w c’, c=3).shape
+(30, 40, 3)</p>
+<p># repeat image 2 times along height (vertical axis)
+&gt;&gt;&gt; repeat(image, ‘h w -&gt; (repeat h) w’, repeat=2).shape
+(60, 40)</p>
+<p># repeat image 2 time along height and 3 times along width
+&gt;&gt;&gt; repeat(image, ‘h w -&gt; (h2 h) (w3 w)’, h2=2, w3=3).shape
+(60, 120)</p>
+<p># convert each pixel to a small square 2x2. Upsample image by 2x
+&gt;&gt;&gt; repeat(image, ‘h w -&gt; (h h2) (w w2)’, h2=2, w2=2).shape
+(60, 80)</p>
+<p># pixelate image first by downsampling by 2x, then upsampling
+&gt;&gt;&gt; downsampled = reduce(image, ‘(h h2) (w w2) -&gt; h w’, ‘mean’, h2=2, w2=2)
+&gt;&gt;&gt; repeat(downsampled, ‘h w -&gt; (h h2) (w w2)’, h2=2, w2=2).shape
+(30, 40)</p>
+<p><a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
+<p>When composing axes, C-order enumeration used (consecutive elements have different last axis)
+Find more examples in einops tutorial.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tensor</strong> – tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch).
+list of tensors is also accepted, those should be of the same type and shape</p></li>
+<li><p><strong>pattern</strong> – string, rearrangement pattern</p></li>
+<li><p><strong>axes_lengths</strong> – any additional specifications for dimensions</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor of the same type as input. If possible, a view to the original tensor is returned.</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
@@ -123,8 +155,8 @@ iterable is empty.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="mrpro.utils.filters.gaussian_filter.html" class="btn btn-neutral float-left" title="mrpro.utils.filters.gaussian_filter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="mrpro.utils.filters.repeat.html" class="btn btn-neutral float-right" title="mrpro.utils.filters.repeat" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="mrpro.utils.filters.reduce.html" class="btn btn-neutral float-left" title="mrpro.utils.filters.reduce" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mrpro.utils.filters.uniform_filter.html" class="btn btn-neutral float-right" title="mrpro.utils.filters.uniform_filter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

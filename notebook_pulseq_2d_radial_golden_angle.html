@@ -7602,7 +7602,7 @@ a.anchor-link {
 </style>
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
-<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=247fb377">
+<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=4fa30911">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7644,10 +7644,9 @@ for a more high-level example using the <code>DirectReconstruction</code> class.
 
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">requests</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">CsmData</span><span class="p">,</span> <span class="n">DcfData</span><span class="p">,</span> <span class="n">IData</span><span class="p">,</span> <span class="n">KData</span>
+<span class="kn">from</span> <span class="nn">mrpro.algorithms.reconstruction</span> <span class="kn">import</span> <span class="n">DirectReconstruction</span>
+<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">KData</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.traj_calculators</span> <span class="kn">import</span> <span class="n">KTrajectoryIsmrmrd</span><span class="p">,</span> <span class="n">KTrajectoryPulseq</span><span class="p">,</span> <span class="n">KTrajectoryRadial2D</span>
-<span class="kn">from</span> <span class="nn">mrpro.operators</span> <span class="kn">import</span> <span class="n">FourierOp</span><span class="p">,</span> <span class="n">SensitivityOp</span>
 </pre></div>
 </div>
 </div>
@@ -7709,22 +7708,9 @@ for a more high-level example using the <code>DirectReconstruction</code> class.
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Read the raw data and the trajectory from ISMRMRD file</span>
 <span class="n">kdata</span> <span class="o">=</span> <span class="n">KData</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">data_file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">KTrajectoryIsmrmrd</span><span class="p">())</span>
 
-<span class="c1"># Calculate dcf using the trajectory</span>
-<span class="n">dcf</span> <span class="o">=</span> <span class="n">DcfData</span><span class="o">.</span><span class="n">from_traj_voronoi</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">traj</span><span class="p">)</span>
-
-<span class="c1"># Define Fourier operator and reconstruct coil images</span>
-<span class="n">fourier_op</span> <span class="o">=</span> <span class="n">FourierOp</span><span class="p">(</span>
-    <span class="n">recon_matrix</span><span class="o">=</span><span class="n">kdata</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">recon_matrix</span><span class="p">,</span>
-    <span class="n">encoding_matrix</span><span class="o">=</span><span class="n">kdata</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">encoding_matrix</span><span class="p">,</span>
-    <span class="n">traj</span><span class="o">=</span><span class="n">kdata</span><span class="o">.</span><span class="n">traj</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="p">(</span><span class="n">img</span><span class="p">,)</span> <span class="o">=</span> <span class="n">fourier_op</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">data</span> <span class="o">*</span> <span class="n">dcf</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span>
-
-<span class="c1"># Calculate and apply coil maps</span>
-<span class="n">idata</span> <span class="o">=</span> <span class="n">IData</span><span class="o">.</span><span class="n">from_tensor_and_kheader</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">kdata</span><span class="o">.</span><span class="n">header</span><span class="p">)</span>
-<span class="n">csm</span> <span class="o">=</span> <span class="n">CsmData</span><span class="o">.</span><span class="n">from_idata_walsh</span><span class="p">(</span><span class="n">idata</span><span class="p">)</span>
-<span class="n">csm_op</span> <span class="o">=</span> <span class="n">SensitivityOp</span><span class="p">(</span><span class="n">csm</span><span class="p">)</span>
-<span class="p">(</span><span class="n">img_using_ismrmrd_traj</span><span class="p">,)</span> <span class="o">=</span> <span class="n">csm_op</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+<span class="c1"># Reconstruct image</span>
+<span class="n">direct_reconstruction</span> <span class="o">=</span> <span class="n">DirectReconstruction</span><span class="o">.</span><span class="n">from_kdata</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
+<span class="n">img_using_ismrmrd_traj</span> <span class="o">=</span> <span class="n">direct_reconstruction</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7752,22 +7738,9 @@ for a more high-level example using the <code>DirectReconstruction</code> class.
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Read raw data and calculate trajectory using KTrajectoryRadial2D</span>
 <span class="n">kdata</span> <span class="o">=</span> <span class="n">KData</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">data_file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">KTrajectoryRadial2D</span><span class="p">())</span>
 
-<span class="c1"># Calculate dcf using the calculated trajectory</span>
-<span class="n">dcf</span> <span class="o">=</span> <span class="n">DcfData</span><span class="o">.</span><span class="n">from_traj_voronoi</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">traj</span><span class="p">)</span>
-
-<span class="c1"># Define Fourier operator and reconstruct coil images</span>
-<span class="n">fourier_op</span> <span class="o">=</span> <span class="n">FourierOp</span><span class="p">(</span>
-    <span class="n">recon_matrix</span><span class="o">=</span><span class="n">kdata</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">recon_matrix</span><span class="p">,</span>
-    <span class="n">encoding_matrix</span><span class="o">=</span><span class="n">kdata</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">encoding_matrix</span><span class="p">,</span>
-    <span class="n">traj</span><span class="o">=</span><span class="n">kdata</span><span class="o">.</span><span class="n">traj</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="p">(</span><span class="n">img</span><span class="p">,)</span> <span class="o">=</span> <span class="n">fourier_op</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">data</span> <span class="o">*</span> <span class="n">dcf</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span>
-
-<span class="c1"># Calculate and apply coil maps</span>
-<span class="n">idata</span> <span class="o">=</span> <span class="n">IData</span><span class="o">.</span><span class="n">from_tensor_and_kheader</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">kdata</span><span class="o">.</span><span class="n">header</span><span class="p">)</span>
-<span class="n">csm</span> <span class="o">=</span> <span class="n">CsmData</span><span class="o">.</span><span class="n">from_idata_walsh</span><span class="p">(</span><span class="n">idata</span><span class="p">)</span>
-<span class="n">csm_op</span> <span class="o">=</span> <span class="n">SensitivityOp</span><span class="p">(</span><span class="n">csm</span><span class="p">)</span>
-<span class="p">(</span><span class="n">img_using_rad2d_traj</span><span class="p">,)</span> <span class="o">=</span> <span class="n">csm_op</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+<span class="c1"># Reconstruct image</span>
+<span class="n">direct_reconstruction</span> <span class="o">=</span> <span class="n">DirectReconstruction</span><span class="o">.</span><span class="n">from_kdata</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
+<span class="n">img_using_rad2d_traj</span> <span class="o">=</span> <span class="n">direct_reconstruction</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7818,22 +7791,9 @@ The path to the sequence file is provided as an argument to KTrajectoryPulseq.</
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Read raw data and calculate trajectory using KTrajectoryPulseq</span>
 <span class="n">kdata</span> <span class="o">=</span> <span class="n">KData</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">data_file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">KTrajectoryPulseq</span><span class="p">(</span><span class="n">seq_path</span><span class="o">=</span><span class="n">seq_file</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
 
-<span class="c1"># Calculate dcf using the calculated trajectory</span>
-<span class="n">dcf</span> <span class="o">=</span> <span class="n">DcfData</span><span class="o">.</span><span class="n">from_traj_voronoi</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">traj</span><span class="p">)</span>
-
-<span class="c1"># Define Fourier operator and reconstruct coil images</span>
-<span class="n">fourier_op</span> <span class="o">=</span> <span class="n">FourierOp</span><span class="p">(</span>
-    <span class="n">recon_matrix</span><span class="o">=</span><span class="n">kdata</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">recon_matrix</span><span class="p">,</span>
-    <span class="n">encoding_matrix</span><span class="o">=</span><span class="n">kdata</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">encoding_matrix</span><span class="p">,</span>
-    <span class="n">traj</span><span class="o">=</span><span class="n">kdata</span><span class="o">.</span><span class="n">traj</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="p">(</span><span class="n">img</span><span class="p">,)</span> <span class="o">=</span> <span class="n">fourier_op</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">data</span> <span class="o">*</span> <span class="n">dcf</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span>
-
-<span class="c1"># Calculate and apply coil maps</span>
-<span class="n">idata</span> <span class="o">=</span> <span class="n">IData</span><span class="o">.</span><span class="n">from_tensor_and_kheader</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">kdata</span><span class="o">.</span><span class="n">header</span><span class="p">)</span>
-<span class="n">csm</span> <span class="o">=</span> <span class="n">CsmData</span><span class="o">.</span><span class="n">from_idata_walsh</span><span class="p">(</span><span class="n">idata</span><span class="p">)</span>
-<span class="n">csm_op</span> <span class="o">=</span> <span class="n">SensitivityOp</span><span class="p">(</span><span class="n">csm</span><span class="p">)</span>
-<span class="p">(</span><span class="n">img_using_pulseq_traj</span><span class="p">,)</span> <span class="o">=</span> <span class="n">csm_op</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+<span class="c1"># Reconstruct image</span>
+<span class="n">direct_reconstruction</span> <span class="o">=</span> <span class="n">DirectReconstruction</span><span class="o">.</span><span class="n">from_kdata</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
+<span class="n">img_using_pulseq_traj</span> <span class="o">=</span> <span class="n">direct_reconstruction</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7864,9 +7824,9 @@ an updated trajectory and adjust this example accordingly.</p>
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">titles</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'KTrajectoryIsmrmrd'</span><span class="p">,</span> <span class="s1">'KTrajectoryRadial2D'</span><span class="p">,</span> <span class="s1">'KTrajectoryPulseq'</span><span class="p">]</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">titles</span><span class="p">))</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">img</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">([</span><span class="n">img_using_ismrmrd_traj</span><span class="p">,</span> <span class="n">img_using_rad2d_traj</span><span class="p">,</span> <span class="n">img_using_pulseq_traj</span><span class="p">]):</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">img</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">([</span><span class="n">img_using_ismrmrd_traj</span><span class="o">.</span><span class="n">rss</span><span class="p">(),</span> <span class="n">img_using_rad2d_traj</span><span class="o">.</span><span class="n">rss</span><span class="p">(),</span> <span class="n">img_using_pulseq_traj</span><span class="o">.</span><span class="n">rss</span><span class="p">()]):</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">titles</span><span class="p">),</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">img</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">img</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:])</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">titles</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">'off'</span><span class="p">)</span>
 </pre></div>

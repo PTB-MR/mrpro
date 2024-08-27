@@ -81,6 +81,7 @@
 <span></span><span class="sd">&quot;&quot;&quot;2D radial trajectory class.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">repeat</span>
 
 <span class="kn">from</span> <span class="nn">mrpro.data.KHeader</span> <span class="kn">import</span> <span class="n">KHeader</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.KTrajectory</span> <span class="kn">import</span> <span class="n">KTrajectory</span>
@@ -122,11 +123,11 @@
         <span class="n">krad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kfreq</span><span class="p">(</span><span class="n">kheader</span><span class="p">)</span>
 
         <span class="c1"># Angles of readout lines</span>
-        <span class="n">kang</span> <span class="o">=</span> <span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">k1</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">angle</span>
+        <span class="n">kang</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">k1</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">angle</span><span class="p">,</span> <span class="s1">&#39;... k2 k1 -&gt; ... k2 k1 k0&#39;</span><span class="p">,</span> <span class="n">k0</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
-        <span class="c1"># K-space cartesian coordinates</span>
-        <span class="n">kx</span> <span class="o">=</span> <span class="n">krad</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">kang</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
-        <span class="n">ky</span> <span class="o">=</span> <span class="n">krad</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">kang</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="c1"># K-space radial coordinates</span>
+        <span class="n">kx</span> <span class="o">=</span> <span class="n">krad</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">kang</span><span class="p">)</span>
+        <span class="n">ky</span> <span class="o">=</span> <span class="n">krad</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">kang</span><span class="p">)</span>
         <span class="n">kz</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">KTrajectory</span><span class="p">(</span><span class="n">kz</span><span class="p">,</span> <span class="n">ky</span><span class="p">,</span> <span class="n">kx</span><span class="p">)</span></div>

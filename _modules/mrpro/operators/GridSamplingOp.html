@@ -85,6 +85,7 @@
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">rearrange</span>
 
 <span class="kn">from</span> <span class="nn">mrpro.data.SpatialDimension</span> <span class="kn">import</span> <span class="n">SpatialDimension</span>
 <span class="kn">from</span> <span class="nn">mrpro.operators.LinearOperator</span> <span class="kn">import</span> <span class="n">LinearOperator</span>
@@ -309,7 +310,7 @@
             <span class="p">)</span>
 
         <span class="c1">#   The gridsample operator only works for real data, thus we handle complex inputs as an additional channel</span>
-        <span class="n">x_real</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">view_as_real</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="n">dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">is_complex</span><span class="p">()</span> <span class="k">else</span> <span class="n">x</span>
+        <span class="n">x_real</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">view_as_real</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="s1">&#39;... real_imag  -&gt; real_imag ...&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">is_complex</span><span class="p">()</span> <span class="k">else</span> <span class="n">x</span>
         <span class="n">shape_grid_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span> <span class="o">-</span><span class="n">dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># the batch dimensions of grid</span>
         <span class="n">n_batchdim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape_grid_batch</span><span class="p">)</span>
         <span class="n">shape_x_batch</span> <span class="o">=</span> <span class="n">x_real</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="n">n_batchdim</span><span class="p">]</span>  <span class="c1"># the batch dimensions of the input</span>
@@ -337,7 +338,7 @@
         <span class="c1"># .. and reshape back.</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">sampled</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">shape_batch</span><span class="p">,</span> <span class="o">*</span><span class="n">shape_channels</span><span class="p">,</span> <span class="o">*</span><span class="n">sampled</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="n">dim</span><span class="p">:])</span>
         <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">is_complex</span><span class="p">():</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">view_as_complex</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">moveaxis</span><span class="p">(</span><span class="o">-</span><span class="n">dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">())</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">view_as_complex</span><span class="p">(</span><span class="n">rearrange</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s1">&#39;real_imag ... -&gt; ... real_imag&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">())</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">result</span><span class="p">,)</span>
 
     <span class="k">def</span> <span class="nf">_forward_implementation</span><span class="p">(</span>

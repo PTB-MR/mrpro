@@ -82,6 +82,7 @@
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">repeat</span>
 
 <span class="kn">from</span> <span class="nn">mrpro.data.KHeader</span> <span class="kn">import</span> <span class="n">KHeader</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.traj_calculators.KTrajectoryRpe</span> <span class="kn">import</span> <span class="n">KTrajectoryRpe</span>
@@ -153,7 +154,7 @@
 <span class="sd">        -------</span>
 <span class="sd">            angles of phase encoding lines</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">k2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">angle</span><span class="p">)</span> <span class="o">%</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span>
+        <span class="k">return</span> <span class="n">repeat</span><span class="p">((</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">k2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">angle</span><span class="p">)</span> <span class="o">%</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="s1">&#39;... k2 k1 -&gt; ... k2 k1 k0&#39;</span><span class="p">,</span> <span class="n">k0</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_krad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the k-space locations along the phase encoding lines.</span>
@@ -168,7 +169,11 @@
 <span class="sd">            k-space locations along the phase encoding lines</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">kang</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kang</span><span class="p">(</span><span class="n">kheader</span><span class="p">)</span>
-        <span class="n">krad</span> <span class="o">=</span> <span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">k1</span> <span class="o">-</span> <span class="n">kheader</span><span class="o">.</span><span class="n">encoding_limits</span><span class="o">.</span><span class="n">k1</span><span class="o">.</span><span class="n">center</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">krad</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">k1</span> <span class="o">-</span> <span class="n">kheader</span><span class="o">.</span><span class="n">encoding_limits</span><span class="o">.</span><span class="n">k1</span><span class="o">.</span><span class="n">center</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span>
+            <span class="s1">&#39;... k2 k1 -&gt; ... k2 k1 k0&#39;</span><span class="p">,</span>
+            <span class="n">k0</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="n">krad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_sunflower_shift_between_rpe_lines</span><span class="p">(</span><span class="n">krad</span><span class="p">,</span> <span class="n">kang</span><span class="p">,</span> <span class="n">kheader</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">krad</span></div>
 

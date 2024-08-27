@@ -18,6 +18,7 @@ mrpro.utils.filters
       filter_separable
       gaussian_filter
       reduce
+      repeat
       uniform_filter
    
    
