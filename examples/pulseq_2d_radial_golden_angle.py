@@ -11,10 +11,9 @@ import tempfile
 
 import matplotlib.pyplot as plt
 import requests
-import torch
-from mrpro.data import CsmData, DcfData, IData, KData
+from mrpro.algorithms.reconstruction import DirectReconstruction
+from mrpro.data import KData
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd, KTrajectoryPulseq, KTrajectoryRadial2D
-from mrpro.operators import FourierOp, SensitivityOp
 
 # %%
 # define zenodo records URL and create a temporary directory and h5-file
@@ -36,22 +35,9 @@ data_file.flush()
 # Read the raw data and the trajectory from ISMRMRD file
 kdata = KData.from_file(data_file.name, KTrajectoryIsmrmrd())
 
-# Calculate dcf using the trajectory
-dcf = DcfData.from_traj_voronoi(kdata.traj)
-
-# Define Fourier operator and reconstruct coil images
-fourier_op = FourierOp(
-    recon_matrix=kdata.header.recon_matrix,
-    encoding_matrix=kdata.header.encoding_matrix,
-    traj=kdata.traj,
-)
-(img,) = fourier_op.adjoint(kdata.data * dcf.data[:, None, ...])
-
-# Calculate and apply coil maps
-idata = IData.from_tensor_and_kheader(img, kdata.header)
-csm = CsmData.from_idata_walsh(idata)
-csm_op = SensitivityOp(csm)
-(img_using_ismrmrd_traj,) = csm_op.adjoint(img)
+# Reconstruct image
+direct_reconstruction = DirectReconstruction.from_kdata(kdata)
+img_using_ismrmrd_traj = direct_reconstruction.forward(kdata)
 
 # %% [markdown]
 # ### Image reconstruction using KTrajectoryRadial2D
@@ -61,22 +47,9 @@ csm_op = SensitivityOp(csm)
 # Read raw data and calculate trajectory using KTrajectoryRadial2D
 kdata = KData.from_file(data_file.name, KTrajectoryRadial2D())
 
-# Calculate dcf using the calculated trajectory
-dcf = DcfData.from_traj_voronoi(kdata.traj)
-
-# Define Fourier operator and reconstruct coil images
-fourier_op = FourierOp(
-    recon_matrix=kdata.header.recon_matrix,
-    encoding_matrix=kdata.header.encoding_matrix,
-    traj=kdata.traj,
-)
-(img,) = fourier_op.adjoint(kdata.data * dcf.data[:, None, ...])
-
-# Calculate and apply coil maps
-idata = IData.from_tensor_and_kheader(img, kdata.header)
-csm = CsmData.from_idata_walsh(idata)
-csm_op = SensitivityOp(csm)
-(img_using_rad2d_traj,) = csm_op.adjoint(img)
+# Reconstruct image
+direct_reconstruction = DirectReconstruction.from_kdata(kdata)
+img_using_rad2d_traj = direct_reconstruction.forward(kdata)
 
 # %% [markdown]
 # ### Image reconstruction using KTrajectoryPulseq
@@ -98,23 +71,9 @@ seq_file.flush()
 # Read raw data and calculate trajectory using KTrajectoryPulseq
 kdata = KData.from_file(data_file.name, KTrajectoryPulseq(seq_path=seq_file.name))
 
-# Calculate dcf using the calculated trajectory
-dcf = DcfData.from_traj_voronoi(kdata.traj)
-
-# Define Fourier operator and reconstruct coil images
-fourier_op = FourierOp(
-    recon_matrix=kdata.header.recon_matrix,
-    encoding_matrix=kdata.header.encoding_matrix,
-    traj=kdata.traj,
-)
-(img,) = fourier_op.adjoint(kdata.data * dcf.data[:, None, ...])
-
-# Calculate and apply coil maps
-idata = IData.from_tensor_and_kheader(img, kdata.header)
-csm = CsmData.from_idata_walsh(idata)
-csm_op = SensitivityOp(csm)
-(img_using_pulseq_traj,) = csm_op.adjoint(img)
-
+# Reconstruct image
+direct_reconstruction = DirectReconstruction.from_kdata(kdata)
+img_using_pulseq_traj = direct_reconstruction.forward(kdata)
 
 # %% [markdown]
 # ### Plot the different reconstructed images
@@ -126,8 +85,8 @@ csm_op = SensitivityOp(csm)
 # %%
 titles = ['KTrajectoryIsmrmrd', 'KTrajectoryRadial2D', 'KTrajectoryPulseq']
 plt.subplots(1, len(titles))
-for i, img in enumerate([img_using_ismrmrd_traj, img_using_rad2d_traj, img_using_pulseq_traj]):
+for i, img in enumerate([img_using_ismrmrd_traj.rss(), img_using_rad2d_traj.rss(), img_using_pulseq_traj.rss()]):
     plt.subplot(1, len(titles), i + 1)
-    plt.imshow(torch.abs(img[0, 0, 0, :, :]))
+    plt.imshow(img[0, 0, :, :])
     plt.title(titles[i])
     plt.axis('off')
