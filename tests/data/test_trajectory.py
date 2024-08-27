@@ -2,6 +2,7 @@
 
 import pytest
 import torch
+from einops import rearrange
 from mrpro.data import KTrajectory
 from mrpro.data.enums import TrajType
 
@@ -45,8 +46,10 @@ def test_trajectory_tensor_conversion(cartesian_grid):
     tensor = torch.stack((kz_full, ky_full, kx_full), dim=0).to(torch.float32)
 
     tensor_from_traj = trajectory.as_tensor()  # stack_dim=0
-    tensor_from_traj_dim2 = trajectory.as_tensor(stack_dim=2).moveaxis(2, 0)
-    tensor_from_traj_from_tensor_dim3 = KTrajectory.from_tensor(tensor.moveaxis(0, 3), stack_dim=3).as_tensor()
+    tensor_from_traj_dim2 = rearrange(trajectory.as_tensor(stack_dim=2), 'other k2 dim k1 k0->dim other k2 k1 k0')
+    tensor_from_traj_from_tensor_dim3 = KTrajectory.from_tensor(
+        rearrange(tensor, 'dim other k2 k1 k0->other k2 k1 dim k0'), stack_dim=3
+    ).as_tensor()
     tensor_from_traj_from_tensor = KTrajectory.from_tensor(tensor).as_tensor()  # stack_dim=0
 
     torch.testing.assert_close(tensor, tensor_from_traj)

@@ -371,13 +371,13 @@ class IsmrmrdRawTestData:
         acceleration
             undersampling factor
         """
-        # Fully sampled frequency encoding
-        kfe = torch.arange(-n_freq_encoding // 2, n_freq_encoding // 2)
+        # Fully sampled frequency encoding (sorting of ISMRMD is x,y,z)
+        kfe = repeat(torch.arange(-n_freq_encoding // 2, n_freq_encoding // 2), 'k0 -> k0 k1', k1=1)
 
-        # Uniform angular sampling
+        # Uniform angular sampling (sorting of ISMRMD is x,y,z)
         kpe = torch.linspace(0, n_phase_encoding - 1, n_phase_encoding // acceleration, dtype=torch.int32)
-        kang = kpe * (torch.pi / len(kpe))
+        kang = repeat(kpe * (torch.pi / len(kpe)), 'k1 -> k0 k1', k0=1)
 
-        traj_ky = torch.sin(kang[None, :]) * kfe[:, None]
-        traj_kx = torch.cos(kang[None, :]) * kfe[:, None]
+        traj_ky = torch.sin(kang) * kfe
+        traj_kx = torch.cos(kang) * kfe
         return traj_ky, traj_kx, kpe
