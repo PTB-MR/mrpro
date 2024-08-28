@@ -171,3 +171,11 @@ class KTrajectory(MoveDataMixin):
         """
         shape = self.broadcasted_shape
         return torch.stack([traj.expand(*shape) for traj in (self.kz, self.ky, self.kx)], dim=stack_dim)
+
+    def __repr__(self):
+        """Representation method for KTrajectory class."""
+        z = str(self.kz.shape).replace('torch.Size', '')
+        y = str(self.ky.shape).replace('torch.Size', '')
+        x = str(self.kx.shape).replace('torch.Size', '')
+        out = f'KTrajectory with shape: z={z}, y={y}, x={x}'
+        return out

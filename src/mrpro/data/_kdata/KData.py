@@ -237,4 +237,14 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
 
     def __repr__(self):
         """Representation method for KData class."""
-        return f'KData with shape {list(self.data.shape)!s}\n{self.header}'
+        traj = str(self.traj.as_tensor().shape).replace('torch.Size', '')
+        device_traj = 'cuda' if self.traj.device == torch.device('cuda') else 'cpu'
+        device_data = 'cuda' if self.data.device == torch.device('cuda') else 'cpu'
+        device = device_data if device_data == device_traj else 'mixed'
+        out = (
+            f'KData with shape {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
+            f'Device: {device}\n'
+            f'Trajectory of shape (...other k2 k1 k0): {traj}\n'
+            f'{self.header}'
+        )
+        return out

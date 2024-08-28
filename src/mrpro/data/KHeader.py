@@ -291,6 +291,6 @@ class KHeader(MoveDataMixin):
             f'Encoding matrix: '
             f'{self.encoding_matrix} \n'
             f'Recon matrix: '
-            f'{self.recon_matrix}.'
+            f'{self.recon_matrix} \n'
         )
         return out
