@@ -19,9 +19,11 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
         divide_by_n: bool = False,
         keepdim: bool = True,
     ) -> None:
-        """Initialize a Functional.
+        r"""Initialize a Functional.
 
-        To calculate an Lp norm in the form of || weight * (x - target) ||_p
+        We assume that functionals are given in the form
+            f(x) = \phi( weight ( x - target))
+        for some functional phi.
 
         Parameters
         ----------

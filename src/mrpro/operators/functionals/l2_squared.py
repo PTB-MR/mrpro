@@ -14,7 +14,7 @@ class L2NormSquared(ProximableFunctional):
         f: C^N --> [0, \infty), x ->  1/2 * \| W*(x-b)\|_2^2,
     where W is a either a scalar or tensor that corresponds to a (block-) diagonal operator
     that is applied to the input. This is, for example, useful for non-Cartesian MRI
-    reconstruction when     using a density-compensation function for k-space pre-conditioning.
+    reconstruction when using a density-compensation function for k-space pre-conditioning.
 
     The norm of the vector is computed along the dimensions given by "dim".
 
@@ -23,7 +23,11 @@ class L2NormSquared(ProximableFunctional):
     If "dim" is set to None and "keepdim" to False, the result is a single number, which
     is typically of interest for computing loss functions.
 
-    Further, the proximal mapping and the proximal mapping of the convex conjugate
+    Further, the proximal mapping and the proximal mapping of the convex conjugate are given.
+
+    Note that here, the proximal mapping and the convex conjugate of the proximal mapping are
+    derived assuming that the weight vector defines an invertible (block-) diagonal W such that
+    the operator W^H W is invertible, i.e. W has only non-zero diagonal elements.
     """
 
     def forward(
@@ -52,7 +56,6 @@ class L2NormSquared(ProximableFunctional):
         -------
             squared l2 norm of the input tensor
         """
-
         dtype = torch.promote_types(self.target.dtype, x.dtype)
         x = x.to(dtype)
         target = self.target.to(dtype)
@@ -65,9 +68,9 @@ class L2NormSquared(ProximableFunctional):
             keepdim = self.keepdim
 
         if divide_by_n:
-            return (0.5 * (self.weight * (x - target)).abs().pow(2).mean(dim, keepdim=keepdim),)
+            return (0.5 * (self.weight * (x - target)).abs().pow(2).mean(self.dim, keepdim=keepdim),)
         else:
-            return (0.5 * (self.weight * (x - target)).abs().pow(2).sum(dim, keepdim=keepdim),)
+            return (0.5 * (self.weight * (x - target)).abs().pow(2).sum(self.dim, keepdim=keepdim),)
 
     def prox(
         self,
@@ -76,7 +79,7 @@ class L2NormSquared(ProximableFunctional):
         dim: Sequence[int] | None = None,
         divide_by_n: bool | None = None,
     ) -> tuple[torch.Tensor]:
-        """Proximal Mapping of the Squared L2 Norm.
+        """Proximal Mapping of the squared L2 Norm.
 
         Compute the proximal mapping of the squared l2-norm.
 
@@ -106,16 +109,20 @@ class L2NormSquared(ProximableFunctional):
 
         if divide_by_n:
             n = torch.prod(torch.tensor([x.shape[i] for i in dim])) if dim is not None else x.numel()
-            sigma /= n
+            factor = n
+        else:
+            factor = 1.0
 
-        x_out = (x + sigma * self.weight.conj() * self.weight * target) / (1 + sigma * self.weight.conj() * self.weight)
+        x_out = (x + sigma / factor * self.weight.conj() * self.weight * target) / (
+            1.0 + sigma / factor * self.weight.conj() * self.weight
+        )
 
         return (x_out,)
 
     def prox_convex_conj(
         self, x: torch.Tensor, sigma: torch.Tensor, dim: Sequence[int] | None = None, divide_by_n: bool | None = None
     ) -> tuple[torch.Tensor]:
-        """Convex conjugate of L2 Norm Squared.
+        """Convex conjugate of squared L2 Norm.
 
         Compute the proximal mapping of the convex conjugate of the squared l2-norm.
 
@@ -132,7 +139,7 @@ class L2NormSquared(ProximableFunctional):
 
         Returns
         -------
-            Proximal of convex conjugate of data
+            Proximal of convex conjugate applied to the input tensor
         """
         dtype = torch.promote_types(self.target.dtype, x.dtype)
         x = x.to(dtype)
@@ -149,5 +156,6 @@ class L2NormSquared(ProximableFunctional):
         else:
             factor = 1.0
 
-        x_out = (x - sigma * target) / (1 + sigma * factor / (self.weight * self.weight.conj()))
+        x_out = (x - sigma * target) / (1 + sigma * factor / (self.weight.conj() * self.weight))
+
         return (x_out,)
