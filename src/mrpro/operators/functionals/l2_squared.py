@@ -68,9 +68,9 @@ class L2NormSquared(ProximableFunctional):
             keepdim = self.keepdim
 
         if divide_by_n:
-            return (0.5 * (self.weight * (x - target)).abs().pow(2).mean(self.dim, keepdim=keepdim),)
+            return (0.5 * (self.weight * (x - target)).abs().pow(2).mean(dim, keepdim=keepdim),)
         else:
-            return (0.5 * (self.weight * (x - target)).abs().pow(2).sum(self.dim, keepdim=keepdim),)
+            return (0.5 * (self.weight * (x - target)).abs().pow(2).sum(dim, keepdim=keepdim),)
 
     def prox(
         self,

@@ -151,7 +151,11 @@ class L1Norm(ProximableFunctional):
         target = self.target.to(dtype)
         diff = x - sigma * target
 
-        x_out = torch.clamp(diff, -threshold, threshold)
+        is_complex = diff.is_complex()
+        if is_complex:
+            x_out = torch.polar(torch.clamp(diff.abs(), -threshold, threshold), torch.angle(diff))
+        else:
+            x_out = torch.clamp(diff, -threshold, threshold)
 
         return (x_out,)
 
@@ -220,12 +224,16 @@ class L1NormViewAsReal(ProximableFunctional):
 
         l1norm = L1Norm(weight=self.weight, target=self.target, divide_by_n=divide_by_n)
 
-        if is_complex():
+        if is_complex:
+            l1norm_real = L1Norm(weight=self.weight, target=self.target.real, divide_by_n=divide_by_n)
+            l1norm_imag = L1Norm(weight=self.weight, target=self.target.imag, divide_by_n=divide_by_n)
+
             return (
-                l1norm.forward(diff.real, dim, keepdim, divide_by_n)[0]
-                + l1norm.forward(diff.imag, dim, keepdim, divide_by_n)[0],
+                l1norm_real.forward(diff.real, dim, keepdim, divide_by_n)[0]
+                + l1norm_imag.forward(diff.imag, dim, keepdim, divide_by_n)[0],
             )
         else:
+            l1norm = L1Norm(weight=self.weight, target=self.target, divide_by_n=divide_by_n)
             return (l1norm.forward(diff, dim, keepdim, divide_by_n)[0],)
 
     def prox(
@@ -255,15 +263,17 @@ class L1NormViewAsReal(ProximableFunctional):
         if divide_by_n is None:
             divide_by_n = self.divide_by_n
 
-        l1norm = L1Norm(weight=self.weight, target=self.target, divide_by_n=divide_by_n)
         if x.is_complex():
+            l1norm_real = L1Norm(weight=self.weight, target=self.target.real, divide_by_n=divide_by_n)
+            l1norm_imag = L1Norm(weight=self.weight, target=self.target.imag, divide_by_n=divide_by_n)
             return (
                 torch.complex(
-                    l1norm.prox(x.real, sigma=sigma, dim=dim, divide_by_n=divide_by_n)[0],
-                    l1norm.prox(x.imag, sigma=sigma, dim=dim, divide_by_n=divide_by_n)[0],
+                    l1norm_real.prox(x.real, sigma=sigma, dim=dim, divide_by_n=divide_by_n)[0],
+                    l1norm_imag.prox(x.imag, sigma=sigma, dim=dim, divide_by_n=divide_by_n)[0],
                 ),
             )
         else:
+            l1norm = L1Norm(weight=self.weight, target=self.target, divide_by_n=divide_by_n)
             return ((l1norm.prox(x, sigma=sigma, dim=dim, divide_by_n=divide_by_n)[0]),)
 
     def prox_convex_conj(
@@ -293,13 +303,15 @@ class L1NormViewAsReal(ProximableFunctional):
         if divide_by_n is None:
             divide_by_n = self.divide_by_n
 
-        l1norm = L1Norm(weight=self.weight, target=self.target, divide_by_n=divide_by_n)
         if x.is_complex():
+            l1norm_real = L1Norm(weight=self.weight, target=self.target.real, divide_by_n=divide_by_n)
+            l1norm_imag = L1Norm(weight=self.weight, target=self.target.imag, divide_by_n=divide_by_n)
             return (
                 torch.complex(
-                    l1norm.prox_convex_conj(x.real, sigma=sigma, dim=dim, divide_by_n=divide_by_n)[0],
-                    l1norm.prox_convex_conj(x.imag, sigma=sigma, dim=dim, divide_by_n=divide_by_n)[0],
+                    l1norm_real.prox_convex_conj(x.real, sigma=sigma, dim=dim, divide_by_n=divide_by_n)[0],
+                    l1norm_imag.prox_convex_conj(x.imag, sigma=sigma, dim=dim, divide_by_n=divide_by_n)[0],
                 ),
             )
         else:
+            l1norm = L1Norm(weight=self.weight, target=self.target, divide_by_n=divide_by_n)
             return (l1norm.prox_convex_conj(x, sigma=sigma, dim=dim, divide_by_n=divide_by_n)[0],)
