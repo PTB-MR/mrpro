@@ -6,7 +6,7 @@ from typing import Self
 
 import numpy as np
 import torch
-from einops import rearrange
+from einops import repeat
 from pydicom import dcmread
 
 from mrpro.data.Data import Data
@@ -56,8 +56,7 @@ class QData(Data):
         dataset = dcmread(filename)
         # Image data is 2D np.array of Uint16, which cannot directly be converted to tensor
         qdata = torch.as_tensor(dataset.pixel_array.astype(np.complex64))
-        qdata = rearrange(qdata[None, ...], '(other coils z) y x -> other coils z y x', other=1, coils=1, z=1)
-
+        qdata = repeat(qdata, 'y x -> other coils z y x', other=1, coils=1, z=1)
         header = QHeader.from_dicom(dataset)
         return cls(data=qdata, header=header)
 

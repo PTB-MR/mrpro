@@ -8,6 +8,7 @@ from typing import Literal
 
 import numpy as np
 import torch
+from einops import repeat
 
 
 def filter_separable(
@@ -72,9 +73,11 @@ def filter_separable(
             left_pad = (len(kernel) - 1) // 2
             right_pad = (len(kernel) - 1) - left_pad
             x_flat = torch.nn.functional.pad(x_flat, pad=(left_pad, right_pad), mode=pad_mode, value=pad_value)
-        x = torch.nn.functional.conv1d(x_flat[:, None, :], kernel[None, None, :], padding=padding_conv).reshape(
-            *x.shape[:-1], -1
-        )
+        x = torch.nn.functional.conv1d(
+            repeat(x_flat, 'batch x -> batch channels x', channels=1),
+            repeat(kernel, 'x -> batch channels x', batch=1, channels=1),
+            padding=padding_conv,
+        ).reshape(*x.shape[:-1], -1)
         # for a single permutation, this undoes the permutation
         x = x.permute(idx)
     return x

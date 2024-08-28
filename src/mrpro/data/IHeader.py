@@ -23,19 +23,19 @@ class IHeader(MoveDataMixin):
 
     # ToDo: decide which attributes to store in the header
     fov: SpatialDimension[float]
-    """Field of view."""
+    """Field of view [m]."""
 
     te: torch.Tensor | None
-    """Echo time."""
+    """Echo time [s]."""
 
     ti: torch.Tensor | None
-    """Inversion time."""
+    """Inversion time [s]."""
 
     fa: torch.Tensor | None
-    """Flip angle."""
+    """Flip angle [rad]."""
 
     tr: torch.Tensor | None
-    """Repetition time."""
+    """Repetition time [s]."""
 
     misc: dict = dataclasses.field(default_factory=dict)
     """Dictionary with miscellaneous parameters."""
@@ -93,15 +93,22 @@ class IHeader(MoveDataMixin):
             else:
                 return torch.as_tensor(values)
 
-        fa = make_unique_tensor(get_float_items_from_all_dicoms('FlipAngle'))
-        ti = make_unique_tensor(get_float_items_from_all_dicoms('InversionTime'))
-        tr = make_unique_tensor(get_float_items_from_all_dicoms('RepetitionTime'))
+        # Conversion functions for units
+        def ms_to_s(ms: torch.Tensor | None) -> torch.Tensor | None:
+            return None if ms is None else ms / 1000
+
+        def deg_to_rad(deg: torch.Tensor | None) -> torch.Tensor | None:
+            return None if deg is None else torch.deg2rad(deg)
+
+        fa = deg_to_rad(make_unique_tensor(get_float_items_from_all_dicoms('FlipAngle')))
+        ti = ms_to_s(make_unique_tensor(get_float_items_from_all_dicoms('InversionTime')))
+        tr = ms_to_s(make_unique_tensor(get_float_items_from_all_dicoms('RepetitionTime')))
 
         # get echo time(s). Some scanners use 'EchoTime', some use 'EffectiveEchoTime'
         te_list = get_float_items_from_all_dicoms('EchoTime')
         if all(val is None for val in te_list):  # check if all entries are None
             te_list = get_float_items_from_all_dicoms('EffectiveEchoTime')
-        te = make_unique_tensor(te_list)
+        te = ms_to_s(make_unique_tensor(te_list))
 
         fov_x_mm = get_float_items_from_all_dicoms('Rows')[0] * float(get_items_from_all_dicoms('PixelSpacing')[0][0])
         fov_y_mm = get_float_items_from_all_dicoms('Columns')[0] * float(

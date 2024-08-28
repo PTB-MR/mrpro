@@ -12,7 +12,7 @@ import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
 import torch
 
 from mrpro.data import enums
-from mrpro.data.AcqInfo import AcqInfo
+from mrpro.data.AcqInfo import AcqInfo, mm_to_m, ms_to_s
 from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
@@ -39,7 +39,7 @@ class KHeader(MoveDataMixin):
     """Function to calculate the k-space trajectory."""
 
     b0: float
-    """Magnetic field strength."""
+    """Magnetic field strength [T]."""
 
     encoding_limits: EncodingLimits
     """K-space encoding limits."""
@@ -48,19 +48,19 @@ class KHeader(MoveDataMixin):
     """Dimensions of the reconstruction matrix."""
 
     recon_fov: SpatialDimension[float]
-    """Field-of-view of the reconstructed image."""
+    """Field-of-view of the reconstructed image [m]."""
 
     encoding_matrix: SpatialDimension[int]
     """Dimensions of the encoded k-space matrix."""
 
     encoding_fov: SpatialDimension[float]
-    """Field of view of the image encoded by the k-space trajectory."""
+    """Field of view of the image encoded by the k-space trajectory [m]."""
 
     acq_info: AcqInfo
     """Information of the acquisitions (i.e. readout lines)."""
 
     h1_freq: float
-    """Lamor frequency of hydrogen nuclei."""
+    """Lamor frequency of hydrogen nuclei [Hz]."""
 
     n_coils: int | None = None
     """Number of receiver coils."""
@@ -69,19 +69,19 @@ class KHeader(MoveDataMixin):
     """Date and time of acquisition."""
 
     te: torch.Tensor | None = None
-    """Echo time."""
+    """Echo time [s]."""
 
     ti: torch.Tensor | None = None
-    """Inversion time."""
+    """Inversion time [s]."""
 
     fa: torch.Tensor | None = None
-    """Flip angle."""
+    """Flip angle [rad]."""
 
     tr: torch.Tensor | None = None
-    """Repetition time."""
+    """Repetition time [s]."""
 
     echo_spacing: torch.Tensor | None = None
-    """Echo spacing."""
+    """Echo spacing [s]."""
 
     echo_train_length: int = 1
     """Number of echoes in a multi-echo acquisition."""
@@ -152,14 +152,6 @@ class KHeader(MoveDataMixin):
         encoding_number
             as ismrmrdHeader can contain multiple encodings, selects which to consider
         """
-
-        # Conversion functions for units
-        def ms_to_s(ms: torch.Tensor) -> torch.Tensor:
-            return ms / 1000
-
-        def mm_to_m(m: float) -> float:
-            return m / 1000
-
         if not 0 <= encoding_number < len(header.encoding):
             raise ValueError(f'encoding_number must be between 0 and {len(header.encoding)}')
 
