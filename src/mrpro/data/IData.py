@@ -156,8 +156,11 @@ class IData(Data):
 
     def __repr__(self):
         """Representation method for IData class."""
-        device = 'cuda' if self.data.device == torch.device('cuda') else 'cpu'
+        try:
+            device = self.device
+        except RuntimeError:
+            device = 'mixed'
         out = (
-            f'IData with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\nDevice: {device}\n{self.header}'
+            f'IData with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\nDevice: {str(device)}\n{self.header}'
         )
         return out
