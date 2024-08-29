@@ -1,17 +1,5 @@
 """Tests the IData class."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 from pathlib import Path
 
 import pytest
@@ -33,7 +21,8 @@ def test_IData_from_dcm_folder(dcm_multi_echo_times):
     # Verify correct echo times
     original_echo_times = torch.as_tensor([ds.te for ds in dcm_multi_echo_times])
     assert idata.header.te is not None
-    assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(idata.header.te)[0])
+    # dicom expects echo times in ms, mrpro in s
+    assert torch.allclose(torch.sort(original_echo_times)[0] / 1000, torch.sort(idata.header.te)[0])
     # Verify all images were read in
     assert idata.data.shape[0] == original_echo_times.shape[0]
 
@@ -44,7 +33,8 @@ def test_IData_from_dcm_folder_via_path(dcm_multi_echo_times):
     # Verify correct echo times
     original_echo_times = torch.as_tensor([ds.te for ds in dcm_multi_echo_times])
     assert idata.header.te is not None
-    assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(idata.header.te)[0])
+    # dicom expects echo times in ms, mrpro in s
+    assert torch.allclose(torch.sort(original_echo_times)[0] / 1000, torch.sort(idata.header.te)[0])
     # Verify all images were read in
     assert idata.data.shape[0] == len(original_echo_times)
 
@@ -67,7 +57,8 @@ def test_IData_from_dcm_files(dcm_multi_echo_times_multi_folders):
     # Verify correct echo times
     original_echo_times = torch.as_tensor([ds.te for ds in dcm_multi_echo_times_multi_folders])
     assert idata.header.te is not None
-    assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(idata.header.te)[0])
+    # dicom expects echo times in ms, mrpro in s
+    assert torch.allclose(torch.sort(original_echo_times)[0] / 1000, torch.sort(idata.header.te)[0])
     # Verify all images were read in
     assert idata.data.shape[0] == len(original_echo_times)
 
