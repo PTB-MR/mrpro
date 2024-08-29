@@ -258,7 +258,7 @@ class AdjointLinearOperator(LinearOperator):
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the adjoint of the original LinearOperator."""
-        return self._operator2.adjoint(*self._operator1.adjoint(x))
+        return self._operator.adjoint(x)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the adjoint of the adjoint, i.e. the original LinearOperator."""

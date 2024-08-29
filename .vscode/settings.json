@@ -18,4 +18,7 @@
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
+
+"remote.SSH.enableRemoteCommand": true,
+"remote.SSH.useLocalServer": true,
 }
