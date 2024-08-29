@@ -54,7 +54,7 @@ class KNoise(MoveDataMixin):
     def __repr__(self):
         """Representation method for KNoise class."""
         try:
-            device = self.device
+            device = str(self.device)
         except RuntimeError:
             device = 'mixed'
-        return f'KNoise with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\nDevice: {str(device)}.'
+        return f'KNoise with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\nDevice: {device}.'

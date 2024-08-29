@@ -239,12 +239,12 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         """Representation method for KData class."""
         traj = str(self.traj.as_tensor().shape).replace('torch.Size', '')
         try:
-            device = self.device
+            device = str(self.device)
         except RuntimeError:
             device = 'mixed'
         out = (
             f'KData with shape {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
-            f'Device: {str(device)}\n'
+            f'Device: {device}\n'
             f'Trajectory of shape (...other k2 k1 k0): {traj}\n'
             f'{self.header}'
         )

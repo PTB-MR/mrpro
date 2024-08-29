@@ -75,7 +75,7 @@ class DcfData(MoveDataMixin):
     def __repr__(self):
         """Representation method for DcfData class."""
         try:
-            device = self.device
+            device = str(self.device)
         except RuntimeError:
             device = 'mixed'
-        return f'DcfData with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\nDevice: {str(device)}.'
+        return f'DcfData with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\nDevice: {device}.'

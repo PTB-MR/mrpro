@@ -157,10 +157,11 @@ class IData(Data):
     def __repr__(self):
         """Representation method for IData class."""
         try:
-            device = self.device
+            device = str(self.device)
         except RuntimeError:
             device = 'mixed'
         out = (
-            f'IData with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\nDevice: {str(device)}\n{self.header}'
+            f'IData with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
+            f'Device: {device}\n{self.header}'
         )
         return out
