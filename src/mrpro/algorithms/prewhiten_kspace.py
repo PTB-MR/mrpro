@@ -1,27 +1,9 @@
 """Prewhiten k-space data."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from __future__ import annotations
-
 from copy import deepcopy
 
 import torch
-from einops import einsum
-from einops import parse_shape
-from einops import rearrange
+from einops import einsum, parse_shape, rearrange
 
 from mrpro.data._kdata.KData import KData
 from mrpro.data.KNoise import KNoise
@@ -30,16 +12,14 @@ from mrpro.data.KNoise import KNoise
 def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float | torch.Tensor = 1.0) -> KData:
     """Calculate noise prewhitening matrix and decorrelate coils.
 
-    This function is inspired by https://github.com/ismrmrd/ismrmrd-python-tools.
+    Steps:
 
-    Step 1: Calculate noise correlation matrix N
-    Step 2: Carry out Cholesky decomposition L L^H = N
-    Step 3: Estimate noise decorrelation matrix D = inv(L)
-    Step 4: Apply D to k-space data
+    - Calculate noise correlation matrix N
+    - Carry out Cholesky decomposition L L^H = N
+    - Estimate noise decorrelation matrix D = inv(L)
+    - Apply D to k-space data
 
-    More information can be found in
-    http://onlinelibrary.wiley.com/doi/10.1002/jmri.24687/full
-    https://doi.org/10.1002/mrm.1910160203
+    More information can be found in [ISMa]_ [HAN2014]_ [ROE1990]_.
 
     If the the data has more samples in the 'other'-dimensions (batch/slice/...),
     the noise covariance matrix is calculated jointly over all samples.
@@ -55,11 +35,19 @@ def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float | torch.T
     scale_factor
         Square root is applied on the noise covariance matrix. Used to adjust for effective noise bandwidth
         and difference in sampling rate between noise calibration and actual measurement:
-        scale_factor = (T_acq_dwell/T_noise_dwell)*NoiseReceiverBandwidthRatio, by default 1.0
+        scale_factor = (T_acq_dwell/T_noise_dwell)*NoiseReceiverBandwidthRatio
 
     Returns
     -------
         Prewhitened copy of k-space data
+
+    References
+    ----------
+    .. [ISMa] ISMRMRD Python tools https://github.com/ismrmrd/ismrmrd-python-tools
+    .. [HAN2014] Hansen M, Kellman P (2014) Image reconstruction: An overview for clinicians. JMRI 41(3)
+            https://doi.org/10.1002/jmri.24687
+    .. [ROE1990] Roemer P, Mueller O (1990) The NMR phased array. MRM 16(2)
+            https://doi.org/10.1002/mrm.1910160203
     """
     # Reshape noise to (coil, everything else)
     noise = rearrange(knoise.data, '... coils k2 k1 k0->coils (... k2 k1 k0)')
