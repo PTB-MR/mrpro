@@ -8,17 +8,16 @@ import torch
 
 from mrpro.algorithms.optimizers.cg import cg
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
-from mrpro.algorithms.reconstruction.Reconstruction import Reconstruction
+from mrpro.algorithms.reconstruction.DirectReconstruction import DirectReconstruction
 from mrpro.data._kdata.KData import KData
 from mrpro.data.CsmData import CsmData
 from mrpro.data.DcfData import DcfData
 from mrpro.data.IData import IData
 from mrpro.data.KNoise import KNoise
-from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.LinearOperator import LinearOperator
 
 
-class IterativeSENSEReconstruction(Reconstruction):
+class IterativeSENSEReconstruction(DirectReconstruction):
     r"""Iterative SENSE reconstruction.
 
     This algorithm solves the problem :math:`min_x \frac{1}{2}||W^\frac{1}{2} (Ax - y)||_2^2`
@@ -71,30 +70,7 @@ class IterativeSENSEReconstruction(Reconstruction):
         ValueError
             If the kdata and fourier_op are None or if csm is a Callable but kdata is None.
         """
-        super().__init__()
-        if fourier_op is None:
-            if kdata is None:
-                raise ValueError('Either kdata or fourier_op needs to be defined.')
-            else:
-                self.fourier_op = FourierOp.from_kdata(kdata)
-        else:
-            self.fourier_op = fourier_op
-
-        if kdata is not None and dcf is None:
-            self.dcf = DcfData.from_traj_voronoi(kdata.traj)
-        else:
-            self.dcf = dcf
-
-        self.noise = noise
-
-        if csm is None or type(csm) is CsmData:
-            self.csm = csm
-        else:
-            if kdata is None:
-                raise ValueError('kdata needs to be defined to calculate the sensitivity maps.')
-            else:
-                self.recalculate_csm(kdata, csm)
-
+        super().__init__(kdata, fourier_op, csm, noise, dcf)
         self.n_iterations = n_iterations
 
     def _self_adjoint_operator(self) -> LinearOperator:

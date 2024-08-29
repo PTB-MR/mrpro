@@ -19,7 +19,7 @@ class DirectReconstruction(Reconstruction):
         self,
         kdata: KData | None = None,
         fourier_op: LinearOperator | None = None,
-        csm: Callable | CsmData | None = CsmData.from_idata_walsh,
+        csm: Callable[[IData], CsmData] | CsmData | None = CsmData.from_idata_walsh,
         noise: KNoise | None = None,
         dcf: DcfData | None = None,
     ):

@@ -57,7 +57,7 @@ class Reconstruction(torch.nn.Module, ABC):
     def recalculate_csm(
         self,
         kdata: KData,
-        csm_calculation: Callable = CsmData.from_idata_walsh,
+        csm_calculation: Callable[[IData], CsmData] = CsmData.from_idata_walsh,
         noise: KNoise | None | Literal[False] = None,
     ) -> Self:
         """Update (in place) the CSM from KData.

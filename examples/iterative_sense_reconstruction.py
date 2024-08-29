@@ -57,7 +57,7 @@ kdata.header.recon_matrix.y = 256
 
 # %%
 # For comparison we can carry out a direct reconstruction
-direct_reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction.from_kdata(kdata)
+direct_reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
 img_direct = direct_reconstruction(kdata)
 
 # %% [markdown]
@@ -65,7 +65,7 @@ img_direct = direct_reconstruction(kdata)
 
 # %%
 # We can use the direct reconstruction to obtain the coil maps.
-iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction.from_kdata(
+iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
     kdata, csm=direct_reconstruction.csm, n_iterations=4
 )
 img = iterative_sense_reconstruction(kdata)
