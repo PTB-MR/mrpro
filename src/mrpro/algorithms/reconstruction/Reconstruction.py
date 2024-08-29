@@ -1,6 +1,7 @@
 """Reconstruction module."""
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from typing import Literal, Self
 
 import torch
@@ -53,14 +54,21 @@ class Reconstruction(torch.nn.Module, ABC):
         self.dcf = DcfData.from_traj_voronoi(kdata.traj)
         return self
 
-    def recalculate_csm_walsh(self, kdata: KData, noise: KNoise | None | Literal[False] = None) -> Self:
-        """Update (in place) the CSM from KData using Walsh.
+    def recalculate_csm(
+        self,
+        kdata: KData,
+        csm_calculation: Callable = CsmData.from_idata_walsh,
+        noise: KNoise | None | Literal[False] = None,
+    ) -> Self:
+        """Update (in place) the CSM from KData.
 
         Parameters
         ----------
         kdata
             KData used for adjoint reconstruction (including DCF-weighting if available), which is then used for
-            Walsh CSM estimation.
+            CSM estimation.
+        csm_calculation
+            Function to calculate csm expecting idata as input and returning csmdata.
         noise
             Noise measurement for prewhitening.
             If None, self.noise (if previously set) is used.
@@ -71,9 +79,9 @@ class Reconstruction(torch.nn.Module, ABC):
             noise = None
         elif noise is None:
             noise = self.noise
-        recon = type(self)(self.fourier_op, dcf=self.dcf, noise=noise)
+        recon = type(self)(fourier_op=self.fourier_op, dcf=self.dcf, noise=noise, csm=None)
         image = recon.direct_reconstruction(kdata)
-        self.csm = CsmData.from_idata_walsh(image)
+        self.csm = csm_calculation(image)
         return self
 
     def direct_reconstruction(self, kdata: KData) -> IData:

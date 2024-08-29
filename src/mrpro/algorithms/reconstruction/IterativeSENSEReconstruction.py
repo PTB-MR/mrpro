@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Self
+from collections.abc import Callable
 
 import torch
 
@@ -40,63 +40,62 @@ class IterativeSENSEReconstruction(Reconstruction):
 
     def __init__(
         self,
-        fourier_op: LinearOperator,
-        n_iterations: int,
-        csm: CsmData | None = None,
+        kdata: KData | None = None,
+        fourier_op: LinearOperator | None = None,
+        csm: Callable | CsmData | None = CsmData.from_idata_walsh,
         noise: KNoise | None = None,
         dcf: DcfData | None = None,
+        *,
+        n_iterations: int = 5,
     ) -> None:
         """Initialize IterativeSENSEReconstruction.
 
         Parameters
         ----------
-        fourier_op
-            Instance of the FourierOperator used for reconstruction
-        n_iterations
-            Number of CG iterations
-        csm
-            Sensitivity maps for coil combination
-        noise
-            Used for prewhitening
-        dcf
-            Density compensation. If None, no dcf will be performed.
-            Also set to None, if the FourierOperator is already density compensated.
-        """
-        super().__init__()
-        self.fourier_op = fourier_op
-        self.n_iterations = n_iterations
-        # TODO: Make this buffers once DataBufferMixin is merged
-        self.csm = csm
-        self.noise = noise
-        self.dcf = dcf
-
-    @classmethod
-    def from_kdata(
-        cls,
-        kdata: KData,
-        noise: KNoise | None = None,
-        csm: CsmData | None = None,
-        *,
-        n_iterations: int = 10,
-    ) -> Self:
-        """Create a IterativeSENSEReconstruction from kdata with default settings.
-
-        Parameters
-        ----------
         kdata
-            KData to use for trajectory and header information
+            KData. If kdata is provided and fourier_op or dcf are None, then fourier_op and dcf are estimated based on
+            kdata. Otherwise fourier_op and dcf are used as provided.
+        fourier_op
+            Instance of the FourierOperator used for reconstruction. If None, set up based on kdata.
+        csm
+            Sensitivity maps for coil combination. If a callable is provided, then kdata needs also to be provided.
         noise
             KNoise used for prewhitening. If None, no prewhitening is performed
-        csm
-            Sensitivity maps. If None, no CSM operator will be applied.
+        dcf
+            K-space sampling density compensation. If None, set up based on kdata.
         n_iterations
             Number of CG iterations
+
+        Raises
+        ------
+        ValueError
+            If the kdata and fourier_op are None or if csm is a Callable but kdata is None.
         """
-        if noise is not None:
-            kdata = prewhiten_kspace(kdata, noise)
-        dcf = DcfData.from_traj_voronoi(kdata.traj)
-        fourier_op = FourierOp.from_kdata(kdata)
-        return cls(fourier_op, n_iterations, csm, noise, dcf)
+        super().__init__()
+        if fourier_op is None:
+            if kdata is None:
+                raise ValueError('Either kdata or fourier_op needs to be defined.')
+            else:
+                self.fourier_op = FourierOp.from_kdata(kdata)
+        else:
+            self.fourier_op = fourier_op
+
+        if kdata is not None and dcf is None:
+            self.dcf = DcfData.from_traj_voronoi(kdata.traj)
+        else:
+            self.dcf = dcf
+
+        self.noise = noise
+
+        if csm is None or type(csm) is CsmData:
+            self.csm = csm
+        else:
+            if kdata is None:
+                raise ValueError('kdata needs to be defined to calculate the sensitivity maps.')
+            else:
+                self.recalculate_csm(kdata, csm)
+
+        self.n_iterations = n_iterations
 
     def _self_adjoint_operator(self) -> LinearOperator:
         """Create the self-adjoint operator.
