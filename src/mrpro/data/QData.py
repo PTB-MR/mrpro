@@ -62,13 +62,12 @@ class QData(Data):
 
     def __repr__(self):
         """Representation method for QData class."""
-        fov = str(self.header.fov).replace('SpatialDimension', '')
         try:
             device = str(self.device)
         except RuntimeError:
             device = 'mixed'
         out = (
             f'QData with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
-            f'Device: {device}\nFOV [m]: {fov}.'
+            f'Device: {device}\nFOV [m]: {self.header.fov!s}.'
         )
         return out

@@ -17,6 +17,7 @@ from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.TrajectoryDescription import TrajectoryDescription
+from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 
 if TYPE_CHECKING:
     # avoid circular imports by importing only when type checking
@@ -271,18 +272,15 @@ class KHeader(MoveDataMixin):
 
     def __repr__(self):
         """Representation method for KHeader class."""
-        fov = str(self.encoding_fov).replace('SpatialDimension', '')
-        te = str(self.te).replace('tensor', '')
-        ti = str(self.ti).replace('tensor', '')
-        fa = str(self.fa).replace('tensor', '')
+        te = summarize_tensorvalues(self.te, 0)
+        ti = summarize_tensorvalues(self.ti, 0)
+        fa = summarize_tensorvalues(self.fa, 0)
         out = (
-            f'FOV [m]: {fov}\n'
+            f'FOV [m]: {self.encoding_fov!s}\n'
             f'TE [s]: {te}\n'
             f'TI [s]: {ti}\n'
             f'Flip angle [rad]: {fa}\n'
-            f'Encoding matrix: '
-            f'{self.encoding_matrix} \n'
-            f'Recon matrix: '
-            f'{self.recon_matrix} \n'
+            f'Encoding matrix: {self.encoding_matrix!s} \n'
+            f'Recon matrix: {self.recon_matrix!s} \n'
         )
         return out
