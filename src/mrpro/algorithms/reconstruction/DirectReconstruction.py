@@ -48,8 +48,7 @@ class DirectReconstruction(Reconstruction):
         if fourier_op is None:
             if kdata is None:
                 raise ValueError('Either kdata or fourier_op needs to be defined.')
-            else:
-                self.fourier_op = FourierOp.from_kdata(kdata)
+            self.fourier_op = FourierOp.from_kdata(kdata)
         else:
             self.fourier_op = fourier_op
 
@@ -60,13 +59,12 @@ class DirectReconstruction(Reconstruction):
 
         self.noise = noise
 
-        if csm is None or type(csm) is CsmData:
+        if csm is None or isinstance(csm, CsmData):
             self.csm = csm
         else:
             if kdata is None:
                 raise ValueError('kdata needs to be defined to calculate the sensitivity maps.')
-            else:
-                self.recalculate_csm(kdata, csm)
+            self.recalculate_csm(kdata, csm)
 
     def forward(self, kdata: KData) -> IData:
         """Apply the reconstruction.
