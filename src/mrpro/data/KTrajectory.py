@@ -175,8 +175,8 @@ class KTrajectory(MoveDataMixin):
 
     def __repr__(self):
         """Representation method for KTrajectory class."""
-        z = summarize_tensorvalues(torch.tensor(self.kz.shape), 0)
-        y = summarize_tensorvalues(torch.tensor(self.ky.shape), 0)
-        x = summarize_tensorvalues(torch.tensor(self.kx.shape), 0)
+        z = summarize_tensorvalues(torch.tensor(self.kz.shape))
+        y = summarize_tensorvalues(torch.tensor(self.ky.shape))
+        x = summarize_tensorvalues(torch.tensor(self.kx.shape))
         out = f'KTrajectory with shape: kz={z}, ky={y}, kx={x}'
         return out

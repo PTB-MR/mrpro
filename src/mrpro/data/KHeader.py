@@ -272,9 +272,9 @@ class KHeader(MoveDataMixin):
 
     def __repr__(self):
         """Representation method for KHeader class."""
-        te = summarize_tensorvalues(self.te, 0)
-        ti = summarize_tensorvalues(self.ti, 0)
-        fa = summarize_tensorvalues(self.fa, 0)
+        te = summarize_tensorvalues(self.te)
+        ti = summarize_tensorvalues(self.ti)
+        fa = summarize_tensorvalues(self.fa)
         out = (
             f'FOV [m]: {self.encoding_fov!s}\n'
             f'TE [s]: {te}\n'

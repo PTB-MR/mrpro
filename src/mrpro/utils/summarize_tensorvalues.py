@@ -3,7 +3,7 @@
 import torch
 
 
-def summarize_tensorvalues(tensor: torch.Tensor | None, summarization_threshold: int) -> str:
+def summarize_tensorvalues(tensor: torch.Tensor | None, summarization_threshold: int = 0) -> str:
     """Summarize the values of a tensor to a string.
 
     Returns a string representation of the tensor values. If the tensor is None, the string 'None' is returned.
