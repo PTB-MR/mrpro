@@ -78,4 +78,5 @@ class DcfData(MoveDataMixin):
             device = str(self.device)
         except RuntimeError:
             device = 'mixed'
-        return f'DcfData with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\nDevice: {device}.'
+        name = type(self).__name__
+        return f'{name} with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\nDevice: {device}.'

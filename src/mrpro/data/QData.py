@@ -67,7 +67,7 @@ class QData(Data):
         except RuntimeError:
             device = 'mixed'
         out = (
-            f'QData with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
+            f'{type(self).__name__} with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
             f'Device: {device}\nFOV [m]: {self.header.fov!s}.'
         )
         return out

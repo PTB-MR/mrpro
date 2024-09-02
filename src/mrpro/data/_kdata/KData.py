@@ -243,7 +243,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         except RuntimeError:
             device = 'mixed'
         out = (
-            f'KData with shape {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
+            f'{type(self).__name__} with shape {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
             f'Device: {device}\n'
             f'{traj}\n'
             f'{self.header}'

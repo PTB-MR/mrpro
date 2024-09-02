@@ -178,5 +178,5 @@ class KTrajectory(MoveDataMixin):
         z = summarize_tensorvalues(torch.tensor(self.kz.shape))
         y = summarize_tensorvalues(torch.tensor(self.ky.shape))
         x = summarize_tensorvalues(torch.tensor(self.kx.shape))
-        out = f'KTrajectory with shape: kz={z}, ky={y}, kx={x}'
+        out = f'{type(self).__name__} with shape: kz={z}, ky={y}, kx={x}'
         return out

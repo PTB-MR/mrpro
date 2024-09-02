@@ -161,7 +161,7 @@ class IData(Data):
         except RuntimeError:
             device = 'mixed'
         out = (
-            f'IData with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
+            f'{type(self).__name__} with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
             f'Device: {device}\n{self.header}'
         )
         return out
