@@ -33,7 +33,10 @@ class DirectReconstruction(Reconstruction):
         fourier_op
             Instance of the FourierOperator used for reconstruction. If None, set up based on kdata.
         csm
-            Sensitivity maps for coil combination. If a callable is provided, then kdata needs also to be provided.
+            Sensitivity maps for coil combination. If None, no coil combination is carried out, i.e. images for each
+            coil are returned. If a callable is provided, coil images are reconstructed using the adjoint of the
+            FourierOperator (including density compensation) and then sensitivity maps are calculated using the
+            callable. For this, kdata needs also to be provided.
         noise
             KNoise used for prewhitening. If None, no prewhitening is performed
         dcf
