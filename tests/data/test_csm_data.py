@@ -23,7 +23,7 @@ def test_CsmData_smoothing_width(csm_method, ellipse_phantom, random_kheader):
     idata, csm_ref = multi_coil_image(n_coils=4, ph_ellipse=ellipse_phantom, random_kheader=random_kheader)
 
     # Estimate coil sensitivity maps using SpatialDimension for smoothing width
-    smoothing_width = SpatialDimension(z=5, y=5, x=5)
+    smoothing_width = SpatialDimension(z=1, y=5, x=5)
     csm_using_spatial_dimension = csm_method(idata, smoothing_width)
 
     # Estimate coil sensitivity maps using int for smoothing width
