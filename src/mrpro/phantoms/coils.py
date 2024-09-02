@@ -15,6 +15,9 @@ def birdcage_2d(
 ) -> torch.Tensor:
     """Numerical simulation of 2D Birdcage coil sensitivities.
 
+    This function is strongly inspired by ISMRMRD Python Tools [ISMc]_. The associated license
+    information can be found at the end of this file.
+
     Parameters
     ----------
     number_of_coils
@@ -27,12 +30,9 @@ def birdcage_2d(
     normalize_with_rss
         If set to true, the calculated sensitivities are normalized by the root-sum-of-squares
 
-    This function is strongly inspired by ISMRMRD Python Tools [1]_. The associated license
-    information can be found at the end of this file.
-
     References
     ----------
-    .. [1] https://github.com/ismrmrd/ismrmrd-python-tools
+    .. [ISMc] ISMRMRD Python tools https://github.com/ismrmrd/ismrmrd-python-tools
     """
     dim = [number_of_coils, image_dimensions.y, image_dimensions.x]
     x_co, y_co = torch.meshgrid(
@@ -41,13 +41,16 @@ def birdcage_2d(
         indexing='xy',
     )
 
-    c = torch.linspace(0, dim[0] - 1, dim[0])[:, None, None]
+    x_co = repeat(x_co, 'y x -> coils y x', coils=1)
+    y_co = repeat(y_co, 'y x -> coils y x', coils=1)
+
+    c = repeat(torch.linspace(0, dim[0] - 1, dim[0]), 'coils -> coils y x', y=1, x=1)
     coil_center_x = dim[2] * relative_radius * np.cos(c * (2 * torch.pi / dim[0]))
     coil_center_y = dim[1] * relative_radius * np.sin(c * (2 * torch.pi / dim[0]))
     coil_phase = -c * (2 * torch.pi / dim[0])
 
-    rr = torch.sqrt((x_co[None, ...] - coil_center_x) ** 2 + (y_co[None, ...] - coil_center_y) ** 2)
-    phi = torch.arctan2((x_co[None, ...] - coil_center_x), -(y_co[None, ...] - coil_center_y)) + coil_phase
+    rr = torch.sqrt((x_co - coil_center_x) ** 2 + (y_co - coil_center_y) ** 2)
+    phi = torch.arctan2((x_co - coil_center_x), -(y_co - coil_center_y)) + coil_phase
     sensitivities = (1 / rr) * np.exp(1j * phi)
 
     if normalize_with_rss:

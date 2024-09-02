@@ -2,6 +2,7 @@
 
 import numpy as np
 import torch
+from einops import repeat
 
 from mrpro.data.KHeader import KHeader
 from mrpro.data.traj_calculators.KTrajectoryRpe import KTrajectoryRpe
@@ -68,7 +69,7 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
         -------
             angles of phase encoding lines
         """
-        return (kheader.acq_info.idx.k2 * self.angle) % torch.pi
+        return repeat((kheader.acq_info.idx.k2 * self.angle) % torch.pi, '... k2 k1 -> ... k2 k1 k0', k0=1)
 
     def _krad(self, kheader: KHeader) -> torch.Tensor:
         """Calculate the k-space locations along the phase encoding lines.
@@ -83,6 +84,10 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
             k-space locations along the phase encoding lines
         """
         kang = self._kang(kheader)
-        krad = (kheader.acq_info.idx.k1 - kheader.encoding_limits.k1.center).to(torch.float32)
+        krad = repeat(
+            (kheader.acq_info.idx.k1 - kheader.encoding_limits.k1.center).to(torch.float32),
+            '... k2 k1 -> ... k2 k1 k0',
+            k0=1,
+        )
         krad = self._apply_sunflower_shift_between_rpe_lines(krad, kang, kheader)
         return krad

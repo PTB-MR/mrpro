@@ -7,7 +7,7 @@ from typing import Self
 
 import numpy as np
 import torch
-from einops import rearrange
+from einops import repeat
 from pydicom import dcmread
 from pydicom.dataset import Dataset
 from pydicom.tag import TagType
@@ -20,16 +20,16 @@ from mrpro.data.KHeader import KHeader
 def _dcm_pixelarray_to_tensor(dataset: Dataset) -> torch.Tensor:
     """Transform pixel array in dicom file to tensor.
 
-    "Rescale intercept, (0028|1052), and rescale slope (0028|1053) are
+    Rescale intercept, (0028|1052), and rescale slope (0028|1053) are
     DICOM tags that specify the linear transformation from pixels in
     their stored on disk representation to their in memory
     representation.     U = m*SV + b where U is in output units, m is
     the rescale slope, SV is the stored value, and b is the rescale
-    intercept." [1]_
+    intercept. [RES]_
 
     References
     ----------
-    .. [1] https://www.kitware.com/dicom-rescale-intercept-rescale-slope-and-itk/
+    .. [RES] Rescale intercept and slope https://www.kitware.com/dicom-rescale-intercept-rescale-slope-and-itk/
     """
     slope = (
         float(element.value)
@@ -59,15 +59,12 @@ class IData(Data):
         Parameters
         ----------
         keepdim
-            if True, the output tensor has the same number of dimensions as the data tensor,
-               and the coil dimension is kept as a singleton dimension.
-            If False, the coil dimension is removed.
+            if True, the output tensor has the same number of dimensions as the data tensor, and the coil dimension is
+            kept as a singleton dimension. If False, the coil dimension is removed.
 
         Returns
         -------
-            image data tensor with shape either
-            (..., 1, z, y, x) if keepdim is True.
-            or (..., z, y, x), if  keepdim if False.
+            image data tensor with shape (..., 1, z, y, x) if keepdim is True or (..., z, y, x) if keepdim is False.
         """
         coildim = -4
         return self.data.abs().square().sum(dim=coildim, keepdim=keepdim).sqrt()
@@ -96,9 +93,7 @@ class IData(Data):
             path to DICOM file.
         """
         dataset = dcmread(filename)
-        idata = _dcm_pixelarray_to_tensor(dataset)[None, :]
-        idata = rearrange(idata, '(other coils z) y x -> other coils z y x', other=1, coils=1, z=1)
-
+        idata = repeat(_dcm_pixelarray_to_tensor(dataset), 'y x -> other coils z y x', other=1, coils=1, z=1)
         header = IHeader.from_dicom_list([dataset])
         return cls(data=idata, header=header)
 
@@ -134,13 +129,7 @@ class IData(Data):
             raise ValueError('Only dicoms with the same orientation can be read in.')
         # stack required due to mypy: einops rearrange list[tensor]->tensor not recognized
         idata = torch.stack([_dcm_pixelarray_to_tensor(ds) for ds in dataset_list])
-        idata = rearrange(
-            idata,
-            '(other coils z) y x -> other coils z y x',
-            other=len(idata),
-            coils=1,
-            z=1,
-        )
+        idata = repeat(idata, 'other y x -> other coils z y x', coils=1, z=1)
 
         header = IHeader.from_dicom_list(dataset_list)
         return cls(data=idata, header=header)
