@@ -1,20 +1,9 @@
 """Tests for the WASABITI signal model."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 import pytest
 import torch
 from mrpro.operators.models import WASABITI
+from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
 
 
 def create_data(offset_max=500, n_offsets=101, b0_shift=0, rb1=1.0, t1=1.0):
@@ -75,3 +64,13 @@ def test_WASABITI_offsets_trec_mismatch():
     trec = torch.ones((1,))
     with pytest.raises(ValueError, match='Shape of trec'):
         WASABITI(offsets=offsets, trec=trec)
+
+
+@SHAPE_VARIATIONS_SIGNAL_MODELS
+def test_WASABITI_shape(parameter_shape, contrast_dim_shape, signal_shape):
+    """Test correct signal shapes."""
+    ti, trec = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=2)
+    model_op = WASABITI(ti, trec)
+    b0_shift, rb1, t1 = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=3)
+    (signal,) = model_op.forward(b0_shift, rb1, t1)
+    assert signal.shape == signal_shape

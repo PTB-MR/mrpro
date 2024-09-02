@@ -10,13 +10,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import torch
 import zenodo_get
-from mrpro.data import CsmData
-from mrpro.data import DcfData
-from mrpro.data import IData
-from mrpro.data import KData
+from mrpro.data import CsmData, DcfData, IData, KData
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
-from mrpro.operators import FourierOp
-from mrpro.operators import SensitivityOp
+from mrpro.operators import FourierOp, SensitivityOp
 
 # %%
 # Download raw data in ISMRMRD format from zenodo into a temporary directory
@@ -62,7 +58,3 @@ plt.imshow(torch.abs(img[0, 0, 0, :, :]))
 # %%
 # Clean-up by removing temporary directory
 shutil.rmtree(data_folder)
-
-# %% [markdown]
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-# Apache License 2.0. See LICENSE file for details.

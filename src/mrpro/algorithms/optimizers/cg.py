@@ -1,24 +1,18 @@
 """Conjugate Gradient for linear systems with self-adjoint linear operator."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 from collections.abc import Callable
 
 import torch
 
+from mrpro.algorithms.optimizers.OptimizerStatus import OptimizerStatus
 from mrpro.operators.LinearOperator import LinearOperator
+
+
+class CGStatus(OptimizerStatus):
+    """Conjugate gradient callback base class."""
+
+    residual: torch.Tensor
+    """Residual of the current estimate."""
 
 
 def cg(
@@ -27,24 +21,25 @@ def cg(
     initial_value: torch.Tensor | None = None,
     max_iterations: int = 128,
     tolerance: float = 1e-4,
-    callback: Callable | None = None,
+    callback: Callable[[CGStatus], None] | None = None,
 ) -> torch.Tensor:
-    """CG for solving a linear system Hx=b.
+    r"""CG for solving a linear system :math:`Hx=b`.
 
-    Thereby, H is a linear self-adjoint operator, b is the right-hand-side
-    of the system and x is the sought solution.
+    Thereby, :math:`H` is a linear self-adjoint operator, :math:`b` is the right-hand-side
+    of the system and :math:`x` is the sought solution.
 
-    Note that this implementation allows for simultaneously solving a batch of N problems
-    of the form
-        H_i x_i = b_i,      i=1,...,N.
-    Thereby, the underlying assumption is that the considered problem is H x = b with
-        H:= diag(H_1, ..., H_N), b:= [b_1, ..., b_N]^T.
-    Thus, if all H_i are self-adjoint, so is H and the CG can be applied.
+    Note that this implementation allows for simultaneously solving a batch of :math:`N` problems
+    of the form :math:`H_i x_i = b_i` with :math:`i=1,...,N`.
+
+    Thereby, the underlying assumption is that the considered problem is :math:`Hx=b` with
+    :math:`H:= diag(H_1, ..., H_N)` and  :math:`b:= [b_1, ..., b_N]^T`.
+
+    Thus, if all :math:`H_i` are self-adjoint, so is :math:`H` and the CG can be applied.
     Note however, that the accuracy of the obtained solutions might vary among the different
     problems.
     Note also that we don't test if the input operator is self-adjoint or not.
 
-    Further, note that if the condition of H is very large, a small residual does not necessarily
+    Further, note that if the condition of :math:`H` is very large, a small residual does not necessarily
     imply that the solution is accurate.
 
     Parameters
@@ -53,15 +48,15 @@ def cg(
         self-adjoint operator (named H above)
     right_hand_side
         right-hand-side of the system (named b above)
-    initial_value, optional
+    initial_value
         initial value of the algorithm; if None, it will be set to right_hand_side
-    max_iterations, optional
+    max_iterations
         maximal number of iterations
-    tolerance, optional
+    tolerance
         tolerance for the residual; if set to zero, the maximal number of iterations
         is the only stopping criterion used to stop the cg
-    callback, optional
-        user-provided function to be called at each iteration
+    callback
+        function to be called at each iteration
 
     Returns
     -------
@@ -116,6 +111,12 @@ def cg(
         residual_norm_squared_previous = residual_norm_squared
 
         if callback is not None:
-            callback(solution)
+            callback(
+                {
+                    'solution': (solution,),
+                    'iteration_number': iteration,
+                    'residual': residual,
+                }
+            )
 
     return solution

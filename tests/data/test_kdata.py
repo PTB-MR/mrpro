@@ -1,34 +1,18 @@
 """Tests for the KData class."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 import pytest
 import torch
-from einops import rearrange
-from einops import repeat
-from mrpro.data import KData
-from mrpro.data import KTrajectory
-from mrpro.data import SpatialDimension
+from einops import rearrange, repeat
+from mrpro.data import KData, KTrajectory, SpatialDimension
+from mrpro.data.acq_filters import is_coil_calibration_acquisition
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
-from mrpro.utils import modify_acq_info
-from mrpro.utils import split_idx
+from mrpro.utils import modify_acq_info, split_idx
 
-from tests.conftest import RandomGenerator
-from tests.conftest import generate_random_data
+from tests.conftest import RandomGenerator, generate_random_data
 from tests.data import IsmrmrdRawTestData
 from tests.helper import relative_image_difference
-from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData
+from tests.phantoms import EllipsePhantomTestData
 
 
 @pytest.fixture(scope='session')
@@ -54,6 +38,21 @@ def ismrmrd_cart_bodycoil_and_surface_coil(ellipse_phantom, tmp_path_factory):
         repetitions=3,
         phantom=ellipse_phantom.phantom,
         add_bodycoil_acquisitions=True,
+    )
+    return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_with_calibration_lines(ellipse_phantom, tmp_path_factory):
+    """Undersampled Cartesian data set with calibration lines."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=1,
+        acceleration=2,
+        phantom=ellipse_phantom.phantom,
+        n_separate_calibration_lines=16,
     )
     return ismrmrd_kdata
 
@@ -157,6 +156,24 @@ def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
         kdata = KData.from_file(ismrmrd_cart_invalid_reps.filename, DummyTrajectory())
     assert kdata.data.shape[-2] == 1, 'k1 should be 1'
     assert kdata.data.shape[-3] == 1, 'k2 should be 1'
+
+
+def test_KData_calibration_lines(ismrmrd_cart_with_calibration_lines):
+    """Correct handling of calibration lines."""
+    # Exclude calibration lines
+    kdata = KData.from_file(ismrmrd_cart_with_calibration_lines.filename, DummyTrajectory())
+    assert (
+        kdata.data.shape[-2]
+        == ismrmrd_cart_with_calibration_lines.matrix_size // ismrmrd_cart_with_calibration_lines.acceleration
+    )
+
+    # Get only calibration lines
+    kdata = KData.from_file(
+        ismrmrd_cart_with_calibration_lines.filename,
+        DummyTrajectory(),
+        acquisition_filter_criterion=is_coil_calibration_acquisition,
+    )
+    assert kdata.data.shape[-2] == ismrmrd_cart_with_calibration_lines.n_separate_calibration_lines
 
 
 def test_KData_kspace(ismrmrd_cart):
@@ -435,7 +452,7 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader):
     random_generator = RandomGenerator(seed=0)
 
     # List of k1 indices in the shape
-    idx_k1 = torch.arange(n_k1, dtype=torch.int32)[None, None, ...]
+    idx_k1 = repeat(torch.arange(n_k1, dtype=torch.int32), 'k1 -> other k2 k1', other=1, k2=1)
 
     # Set parameters need in remove_os
     monkeypatch.setattr(random_kheader.encoding_matrix, 'x', n_k0_oversampled)
