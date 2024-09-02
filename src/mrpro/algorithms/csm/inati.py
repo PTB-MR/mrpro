@@ -9,6 +9,7 @@ from mrpro.utils.sliding_window import sliding_window
 def inati(
     coil_images: torch.Tensor,
     smoothing_width: SpatialDimension[int] | int,
+    max_power_iterations: int = 1,
 ) -> torch.Tensor:
     """Calculate a coil sensitivity map (csm) using an the Inati method [INA2013]_ [INA2014]_.
 
@@ -32,9 +33,6 @@ def inati(
     # Padding at the edge of the images
     padding_mode = 'replicate'
 
-    # Maximum number of power iterations. Stop if relative change < 0.1
-    max_power_iterations = 100
-
     if isinstance(smoothing_width, int):
         smoothing_width = SpatialDimension(smoothing_width, smoothing_width, smoothing_width)
 
@@ -53,12 +51,9 @@ def inati(
     coil_images_covariance = torch.einsum('i...j,k...j->...ik', coil_images_roi.conj(), coil_images_roi)
     singular_vector = torch.sum(coil_images_roi, dim=-1)  # coils z y x
     singular_vector /= singular_vector.norm(dim=0, keepdim=True)
-    for _ in range(max_power_iterations):
-        singular_vector_old = singular_vector
+    for run in range(max_power_iterations):
         singular_vector = torch.einsum('...ij,j...->i...', coil_images_covariance, singular_vector)  # coils z y x
         singular_vector /= singular_vector.norm(dim=0, keepdim=True)
-        if torch.isclose(singular_vector, singular_vector_old, rtol=1e-1).all():
-            break
 
     singular_value = torch.einsum('i...j,i...->...j', coil_images_roi, singular_vector)  # z y x ks*ks
     phase = singular_value.sum(-1)
