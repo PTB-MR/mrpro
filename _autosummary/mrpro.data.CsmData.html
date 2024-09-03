@@ -158,19 +158,22 @@
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">double</span></code>(*[, memory_format, copy])</p></td>
 <td><p>Convert all float tensors to double precision.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_idata_walsh</span></code>(idata[, smoothing_width, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_idata_inati</span></code>(idata[, smoothing_width, ...])</p></td>
+<td><p>Create csm object from image data using Inati method.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_idata_walsh</span></code>(idata[, smoothing_width, ...])</p></td>
 <td><p>Create csm object from image data using iterative Walsh method.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_single_dicom</span></code>(filename)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_single_dicom</span></code>(filename)</p></td>
 <td><p>Read single DICOM file and return QData object.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">half</span></code>(*[, memory_format, copy])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">half</span></code>(*[, memory_format, copy])</p></td>
 <td><p>Convert all float tensors to half precision.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">single</span></code>(*[, memory_format, copy])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">single</span></code>(*[, memory_format, copy])</p></td>
 <td><p>Convert all float tensors to single precision.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code>(*args, **kwargs)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code>(*args, **kwargs)</p></td>
 <td><p>Perform dtype and/or device conversion of data.</p></td>
 </tr>
 </tbody>
@@ -276,6 +279,22 @@ None is returned.</p>
 <li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
 <li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
 This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.CsmData.from_idata_inati">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_idata_inati</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.IData.html#mrpro.data.IData" title="mrpro.data.IData.IData"><span class="pre">IData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">smoothing_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.phantoms.coils.SpatialDimension.html#mrpro.phantoms.coils.SpatialDimension" title="mrpro.data.SpatialDimension.SpatialDimension"><span class="pre">SpatialDimension</span></a><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size_otherdim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="../_modules/mrpro/data/CsmData.html#CsmData.from_idata_inati"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.CsmData.from_idata_inati" title="Link to this definition"></a></dt>
+<dd><p>Create csm object from image data using Inati method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>idata</strong> – IData object containing the images for each coil element.</p></li>
+<li><p><strong>smoothing_width</strong> – Size of the smoothing kernel.</p></li>
+<li><p><strong>chunk_size_otherdim</strong> – How many elements of the other dimensions should be processed at once.
+Default is None, which means that all elements are processed at once.</p></li>
 </ul>
 </dd>
 </dl>

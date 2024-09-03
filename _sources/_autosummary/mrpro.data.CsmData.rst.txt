@@ -22,6 +22,7 @@ mrpro.data.CsmData
       ~CsmData.cpu
       ~CsmData.cuda
       ~CsmData.double
+      ~CsmData.from_idata_inati
       ~CsmData.from_idata_walsh
       ~CsmData.from_single_dicom
       ~CsmData.half
