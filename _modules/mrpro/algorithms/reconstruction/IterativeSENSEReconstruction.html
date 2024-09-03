@@ -82,24 +82,24 @@
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Self</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
 
 <span class="kn">from</span> <span class="nn">mrpro.algorithms.optimizers.cg</span> <span class="kn">import</span> <span class="n">cg</span>
 <span class="kn">from</span> <span class="nn">mrpro.algorithms.prewhiten_kspace</span> <span class="kn">import</span> <span class="n">prewhiten_kspace</span>
 <span class="kn">from</span> <span class="nn">mrpro.algorithms.reconstruction.DirectReconstruction</span> <span class="kn">import</span> <span class="n">DirectReconstruction</span>
-<span class="kn">from</span> <span class="nn">mrpro.algorithms.reconstruction.Reconstruction</span> <span class="kn">import</span> <span class="n">Reconstruction</span>
 <span class="kn">from</span> <span class="nn">mrpro.data._kdata.KData</span> <span class="kn">import</span> <span class="n">KData</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.CsmData</span> <span class="kn">import</span> <span class="n">CsmData</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.DcfData</span> <span class="kn">import</span> <span class="n">DcfData</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.IData</span> <span class="kn">import</span> <span class="n">IData</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.KNoise</span> <span class="kn">import</span> <span class="n">KNoise</span>
-<span class="kn">from</span> <span class="nn">mrpro.operators.FourierOp</span> <span class="kn">import</span> <span class="n">FourierOp</span>
 <span class="kn">from</span> <span class="nn">mrpro.operators.LinearOperator</span> <span class="kn">import</span> <span class="n">LinearOperator</span>
 
 
 <div class="viewcode-block" id="IterativeSENSEReconstruction">
 <a class="viewcode-back" href="../../../../_autosummary/mrpro.algorithms.reconstruction.IterativeSENSEReconstruction.html#mrpro.algorithms.reconstruction.IterativeSENSEReconstruction">[docs]</a>
-<span class="k">class</span> <span class="nc">IterativeSENSEReconstruction</span><span class="p">(</span><span class="n">Reconstruction</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">IterativeSENSEReconstruction</span><span class="p">(</span><span class="n">DirectReconstruction</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Iterative SENSE reconstruction.</span>
 
 <span class="sd">    This algorithm solves the problem :math:`min_x \frac{1}{2}||W^\frac{1}{2} (Ax - y)||_2^2`</span>
@@ -123,61 +123,90 @@
 <a class="viewcode-back" href="../../../../_autosummary/mrpro.algorithms.reconstruction.IterativeSENSEReconstruction.html#mrpro.algorithms.reconstruction.IterativeSENSEReconstruction.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">fourier_op</span><span class="p">:</span> <span class="n">LinearOperator</span><span class="p">,</span>
-        <span class="n">n_iterations</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">csm</span><span class="p">:</span> <span class="n">CsmData</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">kdata</span><span class="p">:</span> <span class="n">KData</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">fourier_op</span><span class="p">:</span> <span class="n">LinearOperator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">csm</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">|</span> <span class="n">CsmData</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">CsmData</span><span class="o">.</span><span class="n">from_idata_walsh</span><span class="p">,</span>
         <span class="n">noise</span><span class="p">:</span> <span class="n">KNoise</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">dcf</span><span class="p">:</span> <span class="n">DcfData</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">n_iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize IterativeSENSEReconstruction.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+<span class="sd">        kdata</span>
+<span class="sd">            KData. If kdata is provided and fourier_op or dcf are None, then fourier_op and dcf are estimated based on</span>
+<span class="sd">            kdata. Otherwise fourier_op and dcf are used as provided.</span>
 <span class="sd">        fourier_op</span>
-<span class="sd">            Instance of the FourierOperator used for reconstruction</span>
+<span class="sd">            Instance of the FourierOperator used for reconstruction. If None, set up based on kdata.</span>
+<span class="sd">        csm</span>
+<span class="sd">            Sensitivity maps for coil combination. If None, no coil combination is carried out, i.e. images for each</span>
+<span class="sd">            coil are returned. If a callable is provided, coil images are reconstructed using the adjoint of the</span>
+<span class="sd">            FourierOperator (including density compensation) and then sensitivity maps are calculated using the</span>
+<span class="sd">            callable. For this, kdata needs also to be provided. For examples have a look at the CsmData class</span>
+<span class="sd">            e.g. from_idata_walsh or from_idata_inati.</span>
+<span class="sd">        noise</span>
+<span class="sd">            KNoise used for prewhitening. If None, no prewhitening is performed</span>
+<span class="sd">        dcf</span>
+<span class="sd">            K-space sampling density compensation. If None, set up based on kdata.</span>
 <span class="sd">        n_iterations</span>
 <span class="sd">            Number of CG iterations</span>
-<span class="sd">        csm</span>
-<span class="sd">            Sensitivity maps for coil combination</span>
-<span class="sd">        noise</span>
-<span class="sd">            Used for prewhitening</span>
-<span class="sd">        dcf</span>
-<span class="sd">            Density compensation. If None, no dcf will be performed.</span>
-<span class="sd">            Also set to None, if the FourierOperator is already density compensated.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the kdata and fourier_op are None or if csm is a Callable but kdata is None.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fourier_op</span> <span class="o">=</span> <span class="n">fourier_op</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_iterations</span> <span class="o">=</span> <span class="n">n_iterations</span>
-        <span class="c1"># TODO: Make this buffers once DataBufferMixin is merged</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">csm</span> <span class="o">=</span> <span class="n">csm</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">noise</span> <span class="o">=</span> <span class="n">noise</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dcf</span> <span class="o">=</span> <span class="n">dcf</span></div>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">kdata</span><span class="p">,</span> <span class="n">fourier_op</span><span class="p">,</span> <span class="n">csm</span><span class="p">,</span> <span class="n">noise</span><span class="p">,</span> <span class="n">dcf</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_iterations</span> <span class="o">=</span> <span class="n">n_iterations</span></div>
 
 
-<div class="viewcode-block" id="IterativeSENSEReconstruction.from_kdata">
-<a class="viewcode-back" href="../../../../_autosummary/mrpro.algorithms.reconstruction.IterativeSENSEReconstruction.html#mrpro.algorithms.reconstruction.IterativeSENSEReconstruction.from_kdata">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_kdata</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">kdata</span><span class="p">:</span> <span class="n">KData</span><span class="p">,</span> <span class="n">noise</span><span class="p">:</span> <span class="n">KNoise</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">n_iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a IterativeSENSEReconstruction from kdata with default settings.</span>
+    <span class="k">def</span> <span class="nf">_self_adjoint_operator</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LinearOperator</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the self-adjoint operator.</span>
+
+<span class="sd">        Create the acquisition model as :math:`A = F S` if the CSM :math:`S` is defined otherwise :math:`A = F` with</span>
+<span class="sd">        the Fourier operator :math:`F`.</span>
+
+<span class="sd">        Create the self-adjoint operator as :math:`H = A^H W A` if the DCF is not None otherwise as :math:`H = A^H A`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">operator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fourier_op</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">csm</span><span class="o">.</span><span class="n">as_operator</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">csm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">fourier_op</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dcf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dcf_operator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dcf</span><span class="o">.</span><span class="n">as_operator</span><span class="p">()</span>
+            <span class="c1"># Create H = A^H W A</span>
+            <span class="n">operator</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">H</span> <span class="o">@</span> <span class="n">dcf_operator</span> <span class="o">@</span> <span class="n">operator</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Create H = A^H A</span>
+            <span class="n">operator</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">H</span> <span class="o">@</span> <span class="n">operator</span>
+
+        <span class="k">return</span> <span class="n">operator</span>
+
+    <span class="k">def</span> <span class="nf">_right_hand_side</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kdata</span><span class="p">:</span> <span class="n">KData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the right-hand-side of the normal equation.</span>
+
+<span class="sd">        Create the acquisition model as :math:`A = F S` if the CSM :math:`S` is defined otherwise :math:`A = F` with</span>
+<span class="sd">        the Fourier operator :math:`F`.</span>
+
+<span class="sd">        Calculate the right-hand-side as :math:`b = A^H W y` if the DCF is not None otherwise as :math:`b = A^H y`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        kdata</span>
-<span class="sd">            KData to use for trajectory and header information</span>
-<span class="sd">        noise</span>
-<span class="sd">            KNoise used for prewhitening. If None, no prewhitening is performed</span>
-<span class="sd">        n_iterations</span>
-<span class="sd">            Number of CG iterations</span>
+<span class="sd">            k-space data to reconstruct.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">noise</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">kdata</span> <span class="o">=</span> <span class="n">prewhiten_kspace</span><span class="p">(</span><span class="n">kdata</span><span class="p">,</span> <span class="n">noise</span><span class="p">)</span>
-        <span class="n">dcf</span> <span class="o">=</span> <span class="n">DcfData</span><span class="o">.</span><span class="n">from_traj_voronoi</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">traj</span><span class="p">)</span>
-        <span class="n">fourier_op</span> <span class="o">=</span> <span class="n">FourierOp</span><span class="o">.</span><span class="n">from_kdata</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
-        <span class="n">recon</span> <span class="o">=</span> <span class="n">DirectReconstruction</span><span class="p">(</span><span class="n">fourier_op</span><span class="p">,</span> <span class="n">dcf</span><span class="o">=</span><span class="n">dcf</span><span class="p">,</span> <span class="n">noise</span><span class="o">=</span><span class="n">noise</span><span class="p">)</span>
-        <span class="n">image</span> <span class="o">=</span> <span class="n">recon</span><span class="o">.</span><span class="n">direct_reconstruction</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
-        <span class="n">csm</span> <span class="o">=</span> <span class="n">CsmData</span><span class="o">.</span><span class="n">from_idata_walsh</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">fourier_op</span><span class="p">,</span> <span class="n">n_iterations</span><span class="p">,</span> <span class="n">csm</span><span class="p">,</span> <span class="n">noise</span><span class="p">,</span> <span class="n">dcf</span><span class="p">)</span></div>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">kdata</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">device</span>
+        <span class="n">operator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fourier_op</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">csm</span><span class="o">.</span><span class="n">as_operator</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">csm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">fourier_op</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dcf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dcf_operator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dcf</span><span class="o">.</span><span class="n">as_operator</span><span class="p">()</span>
+            <span class="c1"># Calculate b = A^H W y</span>
+            <span class="p">(</span><span class="n">right_hand_side</span><span class="p">,)</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">H</span><span class="p">(</span><span class="n">dcf_operator</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Calculate b = A^H y</span>
+            <span class="p">(</span><span class="n">right_hand_side</span><span class="p">,)</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">H</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">right_hand_side</span>
 
 <div class="viewcode-block" id="IterativeSENSEReconstruction.forward">
 <a class="viewcode-back" href="../../../../_autosummary/mrpro.algorithms.reconstruction.IterativeSENSEReconstruction.html#mrpro.algorithms.reconstruction.IterativeSENSEReconstruction.forward">[docs]</a>
@@ -197,19 +226,8 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">kdata</span> <span class="o">=</span> <span class="n">prewhiten_kspace</span><span class="p">(</span><span class="n">kdata</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">))</span>
 
-        <span class="n">operator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fourier_op</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">csm</span><span class="o">.</span><span class="n">as_operator</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">csm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">fourier_op</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dcf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">dcf_operator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dcf</span><span class="o">.</span><span class="n">as_operator</span><span class="p">()</span>
-            <span class="c1"># Calculate b = A^H W y</span>
-            <span class="p">(</span><span class="n">right_hand_side</span><span class="p">,)</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">H</span><span class="p">(</span><span class="n">dcf_operator</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="c1"># Create H = A^H W A</span>
-            <span class="n">operator</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">H</span> <span class="o">@</span> <span class="n">dcf_operator</span> <span class="o">@</span> <span class="n">operator</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Calculate b = A^H y</span>
-            <span class="p">(</span><span class="n">right_hand_side</span><span class="p">,)</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">H</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-            <span class="c1"># Create H = A^H A</span>
-            <span class="n">operator</span> <span class="o">=</span> <span class="n">operator</span><span class="o">.</span><span class="n">H</span> <span class="o">@</span> <span class="n">operator</span>
+        <span class="n">operator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_self_adjoint_operator</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">right_hand_side</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_right_hand_side</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
 
         <span class="n">img_tensor</span> <span class="o">=</span> <span class="n">cg</span><span class="p">(</span>
             <span class="n">operator</span><span class="p">,</span> <span class="n">right_hand_side</span><span class="p">,</span> <span class="n">initial_value</span><span class="o">=</span><span class="n">right_hand_side</span><span class="p">,</span> <span class="n">max_iterations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_iterations</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="mf">0.0</span>

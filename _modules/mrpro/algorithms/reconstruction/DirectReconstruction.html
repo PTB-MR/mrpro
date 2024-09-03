@@ -80,9 +80,8 @@
   <h1>Source code for mrpro.algorithms.reconstruction.DirectReconstruction</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Direct Reconstruction by Adjoint Fourier Transform.&quot;&quot;&quot;</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Self</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
 
-<span class="kn">from</span> <span class="nn">mrpro.algorithms.prewhiten_kspace</span> <span class="kn">import</span> <span class="n">prewhiten_kspace</span>
 <span class="kn">from</span> <span class="nn">mrpro.algorithms.reconstruction.Reconstruction</span> <span class="kn">import</span> <span class="n">Reconstruction</span>
 <span class="kn">from</span> <span class="nn">mrpro.data._kdata.KData</span> <span class="kn">import</span> <span class="n">KData</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.CsmData</span> <span class="kn">import</span> <span class="n">CsmData</span>
@@ -102,8 +101,9 @@
 <a class="viewcode-back" href="../../../../_autosummary/mrpro.algorithms.reconstruction.DirectReconstruction.html#mrpro.algorithms.reconstruction.DirectReconstruction.__init__">[docs]</a>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">fourier_op</span><span class="p">:</span> <span class="n">LinearOperator</span><span class="p">,</span>
-        <span class="n">csm</span><span class="p">:</span> <span class="n">CsmData</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">kdata</span><span class="p">:</span> <span class="n">KData</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">fourier_op</span><span class="p">:</span> <span class="n">LinearOperator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">csm</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">IData</span><span class="p">],</span> <span class="n">CsmData</span><span class="p">]</span> <span class="o">|</span> <span class="n">CsmData</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">CsmData</span><span class="o">.</span><span class="n">from_idata_walsh</span><span class="p">,</span>
         <span class="n">noise</span><span class="p">:</span> <span class="n">KNoise</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">dcf</span><span class="p">:</span> <span class="n">DcfData</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
@@ -111,49 +111,48 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+<span class="sd">        kdata</span>
+<span class="sd">            KData. If kdata is provided and fourier_op or dcf are None, then fourier_op and dcf are estimated based on</span>
+<span class="sd">            kdata. Otherwise fourier_op and dcf are used as provided.</span>
 <span class="sd">        fourier_op</span>
-<span class="sd">            Instance of the FourierOperator which adjoint is used for reconstruction.</span>
+<span class="sd">            Instance of the FourierOperator used for reconstruction. If None, set up based on kdata.</span>
 <span class="sd">        csm</span>
-<span class="sd">            Sensitivity maps for coil combination. If None, no coil combination will be performed.</span>
+<span class="sd">            Sensitivity maps for coil combination. If None, no coil combination is carried out, i.e. images for each</span>
+<span class="sd">            coil are returned. If a callable is provided, coil images are reconstructed using the adjoint of the</span>
+<span class="sd">            FourierOperator (including density compensation) and then sensitivity maps are calculated using the</span>
+<span class="sd">            callable. For this, kdata needs also to be provided. For examples have a look at the CsmData class</span>
+<span class="sd">            e.g. from_idata_walsh or from_idata_inati.</span>
 <span class="sd">        noise</span>
-<span class="sd">            Used for prewhitening</span>
+<span class="sd">            KNoise used for prewhitening. If None, no prewhitening is performed</span>
 <span class="sd">        dcf</span>
-<span class="sd">            Density compensation. If None, no dcf will be performed.</span>
-<span class="sd">            Also set to None, if the FourierOperator is already density compensated.</span>
+<span class="sd">            K-space sampling density compensation. If None, set up based on kdata.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the kdata and fourier_op are None or if csm is a Callable but kdata is None.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fourier_op</span> <span class="o">=</span> <span class="n">fourier_op</span>
-        <span class="c1"># TODO: Make this buffers once DataBufferMixin is merged</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dcf</span> <span class="o">=</span> <span class="n">dcf</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">csm</span> <span class="o">=</span> <span class="n">csm</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">noise</span> <span class="o">=</span> <span class="n">noise</span></div>
+        <span class="k">if</span> <span class="n">fourier_op</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kdata</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Either kdata or fourier_op needs to be defined.&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fourier_op</span> <span class="o">=</span> <span class="n">FourierOp</span><span class="o">.</span><span class="n">from_kdata</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fourier_op</span> <span class="o">=</span> <span class="n">fourier_op</span>
 
+        <span class="k">if</span> <span class="n">kdata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">dcf</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dcf</span> <span class="o">=</span> <span class="n">DcfData</span><span class="o">.</span><span class="n">from_traj_voronoi</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">traj</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dcf</span> <span class="o">=</span> <span class="n">dcf</span>
 
-<div class="viewcode-block" id="DirectReconstruction.from_kdata">
-<a class="viewcode-back" href="../../../../_autosummary/mrpro.algorithms.reconstruction.DirectReconstruction.html#mrpro.algorithms.reconstruction.DirectReconstruction.from_kdata">[docs]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_kdata</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">kdata</span><span class="p">:</span> <span class="n">KData</span><span class="p">,</span> <span class="n">noise</span><span class="p">:</span> <span class="n">KNoise</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">coil_combine</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a DirectReconstruction from kdata with default settings.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">noise</span> <span class="o">=</span> <span class="n">noise</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        kdata</span>
-<span class="sd">            KData to use for trajektory and header information.</span>
-<span class="sd">        noise</span>
-<span class="sd">            KNoise used for prewhitening. If None, no prewhitening is performed.</span>
-<span class="sd">        coil_combine</span>
-<span class="sd">            if True (default), uses kdata to estimate sensitivity maps and perform adaptive coil combine reconstruction</span>
-<span class="sd">            in the reconstruction.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">noise</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">kdata</span> <span class="o">=</span> <span class="n">prewhiten_kspace</span><span class="p">(</span><span class="n">kdata</span><span class="p">,</span> <span class="n">noise</span><span class="p">)</span>
-        <span class="n">dcf</span> <span class="o">=</span> <span class="n">DcfData</span><span class="o">.</span><span class="n">from_traj_voronoi</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">traj</span><span class="p">)</span>
-        <span class="n">fourier_op</span> <span class="o">=</span> <span class="n">FourierOp</span><span class="o">.</span><span class="n">from_kdata</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
-        <span class="bp">self</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">fourier_op</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">noise</span><span class="p">,</span> <span class="n">dcf</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">coil_combine</span><span class="p">:</span>
-            <span class="c1"># kdata is prewhitened</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">recalculate_csm_walsh</span><span class="p">(</span><span class="n">kdata</span><span class="p">,</span> <span class="n">noise</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span></div>
+        <span class="k">if</span> <span class="n">csm</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">csm</span><span class="p">,</span> <span class="n">CsmData</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">csm</span> <span class="o">=</span> <span class="n">csm</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kdata</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;kdata needs to be defined to calculate the sensitivity maps.&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">recalculate_csm</span><span class="p">(</span><span class="n">kdata</span><span class="p">,</span> <span class="n">csm</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DirectReconstruction.forward">

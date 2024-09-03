@@ -31,7 +31,6 @@ mrpro.algorithms.reconstruction.DirectReconstruction
       ~DirectReconstruction.extra_repr
       ~DirectReconstruction.float
       ~DirectReconstruction.forward
-      ~DirectReconstruction.from_kdata
       ~DirectReconstruction.get_buffer
       ~DirectReconstruction.get_extra_state
       ~DirectReconstruction.get_parameter
@@ -45,7 +44,7 @@ mrpro.algorithms.reconstruction.DirectReconstruction
       ~DirectReconstruction.named_modules
       ~DirectReconstruction.named_parameters
       ~DirectReconstruction.parameters
-      ~DirectReconstruction.recalculate_csm_walsh
+      ~DirectReconstruction.recalculate_csm
       ~DirectReconstruction.recalculate_fourierop
       ~DirectReconstruction.register_backward_hook
       ~DirectReconstruction.register_buffer

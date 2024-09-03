@@ -7602,7 +7602,7 @@ a.anchor-link {
 </style>
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
-<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=775f055e">
+<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=08527877">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7709,7 +7709,7 @@ for a more high-level example using the <code>DirectReconstruction</code> class.
 <span class="n">kdata</span> <span class="o">=</span> <span class="n">KData</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">data_file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">KTrajectoryIsmrmrd</span><span class="p">())</span>
 
 <span class="c1"># Reconstruct image</span>
-<span class="n">direct_reconstruction</span> <span class="o">=</span> <span class="n">DirectReconstruction</span><span class="o">.</span><span class="n">from_kdata</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
+<span class="n">direct_reconstruction</span> <span class="o">=</span> <span class="n">DirectReconstruction</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
 <span class="n">img_using_ismrmrd_traj</span> <span class="o">=</span> <span class="n">direct_reconstruction</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -7739,7 +7739,7 @@ for a more high-level example using the <code>DirectReconstruction</code> class.
 <span class="n">kdata</span> <span class="o">=</span> <span class="n">KData</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">data_file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">KTrajectoryRadial2D</span><span class="p">())</span>
 
 <span class="c1"># Reconstruct image</span>
-<span class="n">direct_reconstruction</span> <span class="o">=</span> <span class="n">DirectReconstruction</span><span class="o">.</span><span class="n">from_kdata</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
+<span class="n">direct_reconstruction</span> <span class="o">=</span> <span class="n">DirectReconstruction</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
 <span class="n">img_using_rad2d_traj</span> <span class="o">=</span> <span class="n">direct_reconstruction</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -7792,7 +7792,7 @@ The path to the sequence file is provided as an argument to KTrajectoryPulseq.</
 <span class="n">kdata</span> <span class="o">=</span> <span class="n">KData</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">data_file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">KTrajectoryPulseq</span><span class="p">(</span><span class="n">seq_path</span><span class="o">=</span><span class="n">seq_file</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
 
 <span class="c1"># Reconstruct image</span>
-<span class="n">direct_reconstruction</span> <span class="o">=</span> <span class="n">DirectReconstruction</span><span class="o">.</span><span class="n">from_kdata</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
+<span class="n">direct_reconstruction</span> <span class="o">=</span> <span class="n">DirectReconstruction</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
 <span class="n">img_using_pulseq_traj</span> <span class="o">=</span> <span class="n">direct_reconstruction</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
 </pre></div>
 </div>

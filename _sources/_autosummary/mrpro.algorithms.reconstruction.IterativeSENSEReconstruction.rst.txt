@@ -31,7 +31,6 @@ mrpro.algorithms.reconstruction.IterativeSENSEReconstruction
       ~IterativeSENSEReconstruction.extra_repr
       ~IterativeSENSEReconstruction.float
       ~IterativeSENSEReconstruction.forward
-      ~IterativeSENSEReconstruction.from_kdata
       ~IterativeSENSEReconstruction.get_buffer
       ~IterativeSENSEReconstruction.get_extra_state
       ~IterativeSENSEReconstruction.get_parameter
@@ -45,7 +44,7 @@ mrpro.algorithms.reconstruction.IterativeSENSEReconstruction
       ~IterativeSENSEReconstruction.named_modules
       ~IterativeSENSEReconstruction.named_parameters
       ~IterativeSENSEReconstruction.parameters
-      ~IterativeSENSEReconstruction.recalculate_csm_walsh
+      ~IterativeSENSEReconstruction.recalculate_csm
       ~IterativeSENSEReconstruction.recalculate_fourierop
       ~IterativeSENSEReconstruction.register_backward_hook
       ~IterativeSENSEReconstruction.register_buffer

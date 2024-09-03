@@ -7602,7 +7602,7 @@ a.anchor-link {
 </style>
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
-<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=ff0d9cdb">
+<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=042dc95c">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7688,7 +7688,7 @@ operator).</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=38fe6ce8">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=ca3e27d2">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7697,8 +7697,31 @@ operator).</p>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">mrpro</span>
-
-<span class="c1"># Use the trajectory that is stored in the ISMRMRD file</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=c3e84bc8">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h5 id="Read-in-the-raw-data">Read-in the raw data<a class="anchor-link" href="#Read-in-the-raw-data">¶</a></h5>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=38fe6ce8">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Use the trajectory that is stored in the ISMRMRD file</span>
 <span class="n">trajectory</span> <span class="o">=</span> <span class="n">mrpro</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">traj_calculators</span><span class="o">.</span><span class="n">KTrajectoryIsmrmrd</span><span class="p">()</span>
 <span class="c1"># Load in the Data from the ISMRMRD file</span>
 <span class="n">kdata</span> <span class="o">=</span> <span class="n">mrpro</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">KData</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">data_file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">trajectory</span><span class="p">)</span>
@@ -7709,16 +7732,55 @@ operator).</p>
 </div>
 </div>
 </div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=c6c1975b">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h5 id="Direct-reconstruction-for-comparison">Direct reconstruction for comparison<a class="anchor-link" href="#Direct-reconstruction-for-comparison">¶</a></h5>
+</div>
+</div>
+</div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=5dafe6fd">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">iterative_sense_reconstruction</span> <span class="o">=</span> <span class="n">mrpro</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">reconstruction</span><span class="o">.</span><span class="n">IterativeSENSEReconstruction</span><span class="o">.</span><span class="n">from_kdata</span><span class="p">(</span>
-    <span class="n">kdata</span><span class="p">,</span> <span class="n">n_iterations</span><span class="o">=</span><span class="mi">4</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># For comparison we can carry out a direct reconstruction</span>
+<span class="n">direct_reconstruction</span> <span class="o">=</span> <span class="n">mrpro</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">reconstruction</span><span class="o">.</span><span class="n">DirectReconstruction</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
+<span class="n">img_direct</span> <span class="o">=</span> <span class="n">direct_reconstruction</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=15833b4b">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h5 id="Iterative-SENSE-reconstruction">Iterative SENSE reconstruction<a class="anchor-link" href="#Iterative-SENSE-reconstruction">¶</a></h5>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=6aee812a">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># We can use the direct reconstruction to obtain the coil maps.</span>
+<span class="n">iterative_sense_reconstruction</span> <span class="o">=</span> <span class="n">mrpro</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">reconstruction</span><span class="o">.</span><span class="n">IterativeSENSEReconstruction</span><span class="p">(</span>
+    <span class="n">kdata</span><span class="p">,</span> <span class="n">csm</span><span class="o">=</span><span class="n">direct_reconstruction</span><span class="o">.</span><span class="n">csm</span><span class="p">,</span> <span class="n">n_iterations</span><span class="o">=</span><span class="mi">4</span>
 <span class="p">)</span>
 <span class="n">img</span> <span class="o">=</span> <span class="n">iterative_sense_reconstruction</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
 </pre></div>
@@ -7753,7 +7815,7 @@ operator).</p>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># The density compensation operator is calculated based on the k-space locations of the acquired data.</span>
@@ -7779,7 +7841,7 @@ operator).</p>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Define Fourier operator using the trajectory and header information in kdata</span>
@@ -7814,7 +7876,7 @@ operator).</p>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="p">(</span><span class="n">right_hand_side</span><span class="p">,)</span> <span class="o">=</span> <span class="n">acquisition_operator</span><span class="o">.</span><span class="n">H</span><span class="p">(</span><span class="n">dcf_operator</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
@@ -7839,7 +7901,7 @@ operator).</p>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">operator</span> <span class="o">=</span> <span class="n">acquisition_operator</span><span class="o">.</span><span class="n">H</span> <span class="o">@</span> <span class="n">dcf_operator</span> <span class="o">@</span> <span class="n">acquisition_operator</span>
@@ -7864,7 +7926,7 @@ operator).</p>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">img_manual</span> <span class="o">=</span> <span class="n">mrpro</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">cg</span><span class="p">(</span>
@@ -7875,28 +7937,12 @@ operator).</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=64976733">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># For comparison we can also carry out a direct reconstruction</span>
-<span class="n">direct_reconstruction</span> <span class="o">=</span> <span class="n">mrpro</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">reconstruction</span><span class="o">.</span><span class="n">DirectReconstruction</span><span class="o">.</span><span class="n">from_kdata</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
-<span class="n">img_direct</span> <span class="o">=</span> <span class="n">direct_reconstruction</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=cbc7849c">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Display the reconstructed image</span>
@@ -7920,7 +7966,7 @@ operator).</p>
 </div>
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
-<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[12]:</div>
+<div class="jp-OutputPrompt jp-OutputArea-prompt">Out[13]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
 <pre>Text(0.5, 1.0, '"Manual" Iterative SENSE')</pre>
 </div>
@@ -7949,7 +7995,7 @@ operator).</p>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># If the assert statement did not raise an exception, the results are equal.</span>

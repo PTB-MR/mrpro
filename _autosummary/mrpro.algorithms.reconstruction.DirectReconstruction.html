@@ -104,22 +104,30 @@
 <h1>mrpro.algorithms.reconstruction.DirectReconstruction<a class="headerlink" href="#mrpro-algorithms-reconstruction-directreconstruction" title="Link to this heading"></a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="mrpro.algorithms.reconstruction.DirectReconstruction">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.algorithms.reconstruction.</span></span><span class="sig-name descname"><span class="pre">DirectReconstruction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fourier_op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.operators.LinearOperator.html#mrpro.operators.LinearOperator" title="mrpro.operators.LinearOperator.LinearOperator"><span class="pre">LinearOperator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">csm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.CsmData.html#mrpro.data.CsmData" title="mrpro.data.CsmData.CsmData"><span class="pre">CsmData</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.KNoise.html#mrpro.data.KNoise" title="mrpro.data.KNoise.KNoise"><span class="pre">KNoise</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dcf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.DcfData.html#mrpro.data.DcfData" title="mrpro.data.DcfData.DcfData"><span class="pre">DcfData</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/algorithms/reconstruction/DirectReconstruction.html#DirectReconstruction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.algorithms.reconstruction.DirectReconstruction" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.algorithms.reconstruction.</span></span><span class="sig-name descname"><span class="pre">DirectReconstruction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">kdata:</span> <span class="pre">~mrpro.data._kdata.KData.KData</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">fourier_op:</span> <span class="pre">~mrpro.operators.LinearOperator.LinearOperator</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">csm:</span> <span class="pre">~collections.abc.Callable[[~mrpro.data.IData.IData],</span> <span class="pre">~mrpro.data.CsmData.CsmData]</span> <span class="pre">|</span> <span class="pre">~mrpro.data.CsmData.CsmData</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">&lt;bound</span> <span class="pre">method</span> <span class="pre">CsmData.from_idata_walsh</span> <span class="pre">of</span> <span class="pre">&lt;class</span> <span class="pre">'mrpro.data.CsmData.CsmData'&gt;&gt;,</span> <span class="pre">noise:</span> <span class="pre">~mrpro.data.KNoise.KNoise</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">dcf:</span> <span class="pre">~mrpro.data.DcfData.DcfData</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/algorithms/reconstruction/DirectReconstruction.html#DirectReconstruction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.algorithms.reconstruction.DirectReconstruction" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="mrpro.algorithms.reconstruction.Reconstruction.html#mrpro.algorithms.reconstruction.Reconstruction" title="mrpro.algorithms.reconstruction.Reconstruction.Reconstruction"><code class="xref py py-class docutils literal notranslate"><span class="pre">Reconstruction</span></code></a></p>
 <p>Direct Reconstruction by Adjoint Fourier Transform.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="mrpro.algorithms.reconstruction.DirectReconstruction.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fourier_op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.operators.LinearOperator.html#mrpro.operators.LinearOperator" title="mrpro.operators.LinearOperator.LinearOperator"><span class="pre">LinearOperator</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">csm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.CsmData.html#mrpro.data.CsmData" title="mrpro.data.CsmData.CsmData"><span class="pre">CsmData</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.KNoise.html#mrpro.data.KNoise" title="mrpro.data.KNoise.KNoise"><span class="pre">KNoise</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dcf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.DcfData.html#mrpro.data.DcfData" title="mrpro.data.DcfData.DcfData"><span class="pre">DcfData</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/algorithms/reconstruction/DirectReconstruction.html#DirectReconstruction.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.algorithms.reconstruction.DirectReconstruction.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">kdata:</span> <span class="pre">~mrpro.data._kdata.KData.KData</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">fourier_op:</span> <span class="pre">~mrpro.operators.LinearOperator.LinearOperator</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">csm:</span> <span class="pre">~collections.abc.Callable[[~mrpro.data.IData.IData],</span> <span class="pre">~mrpro.data.CsmData.CsmData]</span> <span class="pre">|</span> <span class="pre">~mrpro.data.CsmData.CsmData</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">&lt;bound</span> <span class="pre">method</span> <span class="pre">CsmData.from_idata_walsh</span> <span class="pre">of</span> <span class="pre">&lt;class</span> <span class="pre">'mrpro.data.CsmData.CsmData'&gt;&gt;,</span> <span class="pre">noise:</span> <span class="pre">~mrpro.data.KNoise.KNoise</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">dcf:</span> <span class="pre">~mrpro.data.DcfData.DcfData</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/algorithms/reconstruction/DirectReconstruction.html#DirectReconstruction.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.algorithms.reconstruction.DirectReconstruction.__init__" title="Link to this definition"></a></dt>
 <dd><p>Initialize DirectReconstruction.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>fourier_op</strong> – Instance of the FourierOperator which adjoint is used for reconstruction.</p></li>
-<li><p><strong>csm</strong> – Sensitivity maps for coil combination. If None, no coil combination will be performed.</p></li>
-<li><p><strong>noise</strong> – Used for prewhitening</p></li>
-<li><p><strong>dcf</strong> – Density compensation. If None, no dcf will be performed.
-Also set to None, if the FourierOperator is already density compensated.</p></li>
+<li><p><strong>kdata</strong> – KData. If kdata is provided and fourier_op or dcf are None, then fourier_op and dcf are estimated based on
+kdata. Otherwise fourier_op and dcf are used as provided.</p></li>
+<li><p><strong>fourier_op</strong> – Instance of the FourierOperator used for reconstruction. If None, set up based on kdata.</p></li>
+<li><p><strong>csm</strong> – Sensitivity maps for coil combination. If None, no coil combination is carried out, i.e. images for each
+coil are returned. If a callable is provided, coil images are reconstructed using the adjoint of the
+FourierOperator (including density compensation) and then sensitivity maps are calculated using the
+callable. For this, kdata needs also to be provided. For examples have a look at the CsmData class
+e.g. from_idata_walsh or from_idata_inati.</p></li>
+<li><p><strong>noise</strong> – KNoise used for prewhitening. If None, no prewhitening is performed</p></li>
+<li><p><strong>dcf</strong> – K-space sampling density compensation. If None, set up based on kdata.</p></li>
 </ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the kdata and fourier_op are None or if csm is a Callable but kdata is None.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -127,7 +135,7 @@ Also set to None, if the FourierOperator is already density compensated.</p></li
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code>(fourier_op[, csm, noise, dcf])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code>([kdata, fourier_op, csm, noise, dcf])</p></td>
 <td><p>Initialize DirectReconstruction.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_module</span></code>(name, module)</p></td>
@@ -172,112 +180,109 @@ Also set to None, if the FourierOperator is already density compensated.</p></li
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code>(kdata)</p></td>
 <td><p>Apply the reconstruction.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_kdata</span></code>(kdata[, noise, coil_combine])</p></td>
-<td><p>Create a DirectReconstruction from kdata with default settings.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_buffer</span></code>(target)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_buffer</span></code>(target)</p></td>
 <td><p>Return the buffer given by <code class="docutils literal notranslate"><span class="pre">target</span></code> if it exists, otherwise throw an error.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_extra_state</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_extra_state</span></code>()</p></td>
 <td><p>Return any extra state to include in the module's state_dict.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_parameter</span></code>(target)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_parameter</span></code>(target)</p></td>
 <td><p>Return the parameter given by <code class="docutils literal notranslate"><span class="pre">target</span></code> if it exists, otherwise throw an error.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_submodule</span></code>(target)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_submodule</span></code>(target)</p></td>
 <td><p>Return the submodule given by <code class="docutils literal notranslate"><span class="pre">target</span></code> if it exists, otherwise throw an error.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">half</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">half</span></code>()</p></td>
 <td><p>Casts all floating point parameters and buffers to <code class="docutils literal notranslate"><span class="pre">half</span></code> datatype.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ipu</span></code>([device])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ipu</span></code>([device])</p></td>
 <td><p>Move all model parameters and buffers to the IPU.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_state_dict</span></code>(state_dict[, strict, assign])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_state_dict</span></code>(state_dict[, strict, assign])</p></td>
 <td><p>Copy parameters and buffers from <a class="reference internal" href="#mrpro.algorithms.reconstruction.DirectReconstruction.state_dict" title="mrpro.algorithms.reconstruction.DirectReconstruction.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a> into this module and its descendants.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">modules</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">modules</span></code>()</p></td>
 <td><p>Return an iterator over all modules in the network.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">named_buffers</span></code>([prefix, recurse, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">named_buffers</span></code>([prefix, recurse, ...])</p></td>
 <td><p>Return an iterator over module buffers, yielding both the name of the buffer as well as the buffer itself.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">named_children</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">named_children</span></code>()</p></td>
 <td><p>Return an iterator over immediate children modules, yielding both the name of the module as well as the module itself.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">named_modules</span></code>([memo, prefix, remove_duplicate])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">named_modules</span></code>([memo, prefix, remove_duplicate])</p></td>
 <td><p>Return an iterator over all modules in the network, yielding both the name of the module as well as the module itself.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">named_parameters</span></code>([prefix, recurse, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">named_parameters</span></code>([prefix, recurse, ...])</p></td>
 <td><p>Return an iterator over module parameters, yielding both the name of the parameter as well as the parameter itself.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parameters</span></code>([recurse])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parameters</span></code>([recurse])</p></td>
 <td><p>Return an iterator over module parameters.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recalculate_csm_walsh</span></code>(kdata[, noise])</p></td>
-<td><p>Update (in place) the CSM from KData using Walsh.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recalculate_csm</span></code>(kdata[, csm_calculation, noise])</p></td>
+<td><p>Update (in place) the CSM from KData.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recalculate_fourierop</span></code>(kdata)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recalculate_fourierop</span></code>(kdata)</p></td>
 <td><p>Update (in place) the Fourier Operator, e.g. for a new trajectory.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_backward_hook</span></code>(hook)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_backward_hook</span></code>(hook)</p></td>
 <td><p>Register a backward hook on the module.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_buffer</span></code>(name, tensor[, persistent])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_buffer</span></code>(name, tensor[, persistent])</p></td>
 <td><p>Add a buffer to the module.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_forward_hook</span></code>(hook, *[, prepend, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_forward_hook</span></code>(hook, *[, prepend, ...])</p></td>
 <td><p>Register a forward hook on the module.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_forward_pre_hook</span></code>(hook, *[, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_forward_pre_hook</span></code>(hook, *[, ...])</p></td>
 <td><p>Register a forward pre-hook on the module.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_full_backward_hook</span></code>(hook[, prepend])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_full_backward_hook</span></code>(hook[, prepend])</p></td>
 <td><p>Register a backward hook on the module.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_full_backward_pre_hook</span></code>(hook[, prepend])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_full_backward_pre_hook</span></code>(hook[, prepend])</p></td>
 <td><p>Register a backward pre-hook on the module.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_load_state_dict_post_hook</span></code>(hook)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_load_state_dict_post_hook</span></code>(hook)</p></td>
 <td><p>Register a post hook to be run after module's <code class="docutils literal notranslate"><span class="pre">load_state_dict</span></code> is called.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_module</span></code>(name, module)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_module</span></code>(name, module)</p></td>
 <td><p>Alias for <a class="reference internal" href="#mrpro.algorithms.reconstruction.DirectReconstruction.add_module" title="mrpro.algorithms.reconstruction.DirectReconstruction.add_module"><code class="xref py py-func docutils literal notranslate"><span class="pre">add_module()</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_parameter</span></code>(name, param)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_parameter</span></code>(name, param)</p></td>
 <td><p>Add a parameter to the module.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_state_dict_pre_hook</span></code>(hook)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_state_dict_pre_hook</span></code>(hook)</p></td>
 <td><p>Register a pre-hook for the <code class="xref py py-meth docutils literal notranslate"><span class="pre">state_dict()</span></code> method.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">requires_grad_</span></code>([requires_grad])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">requires_grad_</span></code>([requires_grad])</p></td>
 <td><p>Change if autograd should record operations on parameters in this module.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_extra_state</span></code>(state)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_extra_state</span></code>(state)</p></td>
 <td><p>Set extra state contained in the loaded <cite>state_dict</cite>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">share_memory</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">share_memory</span></code>()</p></td>
 <td><p>See <code class="xref py py-meth docutils literal notranslate"><span class="pre">torch.Tensor.share_memory_()</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">state_dict</span></code>(*args[, destination, prefix, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">state_dict</span></code>(*args[, destination, prefix, ...])</p></td>
 <td><p>Return a dictionary containing references to the whole state of the module.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code>(*args, **kwargs)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code>(*args, **kwargs)</p></td>
 <td><p>Move and/or cast the parameters and buffers.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_empty</span></code>(*, device[, recurse])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_empty</span></code>(*, device[, recurse])</p></td>
 <td><p>Move the parameters and buffers to the specified device without copying storage.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">train</span></code>([mode])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">train</span></code>([mode])</p></td>
 <td><p>Set the module in training mode.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">type</span></code>(dst_type)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">type</span></code>(dst_type)</p></td>
 <td><p>Casts all parameters and buffers to <code class="xref py py-attr docutils literal notranslate"><span class="pre">dst_type</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">xpu</span></code>([device])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">xpu</span></code>([device])</p></td>
 <td><p>Move all model parameters and buffers to the XPU.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">zero_grad</span></code>([set_to_none])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">zero_grad</span></code>([set_to_none])</p></td>
 <td><p>Reset gradients of all model parameters.</p></td>
 </tr>
 </tbody>
@@ -586,22 +591,6 @@ strings are acceptable.</p>
 <dt class="sig sig-object py" id="mrpro.algorithms.reconstruction.DirectReconstruction.fourier_op">
 <span class="sig-name descname"><span class="pre">fourier_op</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.operators.LinearOperator.html#mrpro.operators.LinearOperator" title="mrpro.operators.LinearOperator"><span class="pre">LinearOperator</span></a></em><a class="headerlink" href="#mrpro.algorithms.reconstruction.DirectReconstruction.fourier_op" title="Link to this definition"></a></dt>
 <dd><p>Fourier Operator.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="mrpro.algorithms.reconstruction.DirectReconstruction.from_kdata">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_kdata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.KData.html#mrpro.data.KData" title="mrpro.data._kdata.KData.KData"><span class="pre">KData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.KNoise.html#mrpro.data.KNoise" title="mrpro.data.KNoise.KNoise"><span class="pre">KNoise</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coil_combine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="../_modules/mrpro/algorithms/reconstruction/DirectReconstruction.html#DirectReconstruction.from_kdata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.algorithms.reconstruction.DirectReconstruction.from_kdata" title="Link to this definition"></a></dt>
-<dd><p>Create a DirectReconstruction from kdata with default settings.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>kdata</strong> – KData to use for trajektory and header information.</p></li>
-<li><p><strong>noise</strong> – KNoise used for prewhitening. If None, no prewhitening is performed.</p></li>
-<li><p><strong>coil_combine</strong> – if True (default), uses kdata to estimate sensitivity maps and perform adaptive coil combine reconstruction
-in the reconstruction.</p></li>
-</ul>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -997,14 +986,16 @@ are direct members of this module.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.algorithms.reconstruction.DirectReconstruction.recalculate_csm_walsh">
-<span class="sig-name descname"><span class="pre">recalculate_csm_walsh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.KData.html#mrpro.data.KData" title="mrpro.data._kdata.KData.KData"><span class="pre">KData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.KNoise.html#mrpro.data.KNoise" title="mrpro.data.KNoise.KNoise"><span class="pre">KNoise</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">False</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.algorithms.reconstruction.DirectReconstruction.recalculate_csm_walsh" title="Link to this definition"></a></dt>
-<dd><p>Update (in place) the CSM from KData using Walsh.</p>
+<dt class="sig sig-object py" id="mrpro.algorithms.reconstruction.DirectReconstruction.recalculate_csm">
+<span class="sig-name descname"><span class="pre">recalculate_csm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">kdata:</span> <span class="pre">~mrpro.data._kdata.KData.KData,</span> <span class="pre">csm_calculation:</span> <span class="pre">~collections.abc.Callable[[~mrpro.data.IData.IData],</span> <span class="pre">~mrpro.data.CsmData.CsmData]</span> <span class="pre">=</span> <span class="pre">&lt;bound</span> <span class="pre">method</span> <span class="pre">CsmData.from_idata_walsh</span> <span class="pre">of</span> <span class="pre">&lt;class</span> <span class="pre">'mrpro.data.CsmData.CsmData'&gt;&gt;,</span> <span class="pre">noise:</span> <span class="pre">~mrpro.data.KNoise.KNoise</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">|</span> <span class="pre">~typing.Literal[False]</span> <span class="pre">=</span> <span class="pre">None</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.algorithms.reconstruction.DirectReconstruction.recalculate_csm" title="Link to this definition"></a></dt>
+<dd><p>Update (in place) the CSM from KData.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>kdata</strong> – KData used for adjoint reconstruction (including DCF-weighting if available), which is then used for
-Walsh CSM estimation.</p></li>
+CSM estimation.</p></li>
+<li><p><strong>csm_calculation</strong> – Function to calculate csm expecting idata as input and returning csmdata. For examples have a look at the
+CsmData class e.g. from_idata_walsh or from_idata_inati.</p></li>
 <li><p><strong>noise</strong> – Noise measurement for prewhitening.
 If None, self.noise (if previously set) is used.
 If False, no prewithening is performed even if self.noise is set.

@@ -7602,7 +7602,7 @@ a.anchor-link {
 </style>
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
-<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=3e9fc119">
+<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=aee09b2d">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7694,7 +7694,7 @@ This is a high-level interface to the reconstruction pipeline.</p>
 <span class="c1"># Load in the Data from the ISMRMRD file</span>
 <span class="n">kdata</span> <span class="o">=</span> <span class="n">mrpro</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">KData</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">data_file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">trajectory</span><span class="p">)</span>
 <span class="c1"># Perform the reconstruction</span>
-<span class="n">reconstruction</span> <span class="o">=</span> <span class="n">mrpro</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">reconstruction</span><span class="o">.</span><span class="n">DirectReconstruction</span><span class="o">.</span><span class="n">from_kdata</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
+<span class="n">reconstruction</span> <span class="o">=</span> <span class="n">mrpro</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">reconstruction</span><span class="o">.</span><span class="n">DirectReconstruction</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
 <span class="c1"># Use this to run on gpu: kdata = kdata.cuda()</span>
 <span class="n">img</span> <span class="o">=</span> <span class="n">reconstruction</span><span class="p">(</span><span class="n">kdata</span><span class="p">)</span>
 </pre></div>
@@ -7728,7 +7728,7 @@ This is a high-level interface to the reconstruction pipeline.</p>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[5]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>&lt;matplotlib.image.AxesImage at 0x7f75de372110&gt;</pre>
+<pre>&lt;matplotlib.image.AxesImage at 0x7f96efbdd1d0&gt;</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">

@@ -44,7 +44,7 @@ mrpro.algorithms.reconstruction.Reconstruction
       ~Reconstruction.named_modules
       ~Reconstruction.named_parameters
       ~Reconstruction.parameters
-      ~Reconstruction.recalculate_csm_walsh
+      ~Reconstruction.recalculate_csm
       ~Reconstruction.recalculate_fourierop
       ~Reconstruction.register_backward_hook
       ~Reconstruction.register_buffer

@@ -200,8 +200,8 @@
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parameters</span></code>([recurse])</p></td>
 <td><p>Return an iterator over module parameters.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recalculate_csm_walsh</span></code>(kdata[, noise])</p></td>
-<td><p>Update (in place) the CSM from KData using Walsh.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recalculate_csm</span></code>(kdata[, csm_calculation, noise])</p></td>
+<td><p>Update (in place) the CSM from KData.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recalculate_fourierop</span></code>(kdata)</p></td>
 <td><p>Update (in place) the Fourier Operator, e.g. for a new trajectory.</p></td>
@@ -959,14 +959,16 @@ are direct members of this module.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.algorithms.reconstruction.Reconstruction.recalculate_csm_walsh">
-<span class="sig-name descname"><span class="pre">recalculate_csm_walsh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.KData.html#mrpro.data.KData" title="mrpro.data._kdata.KData.KData"><span class="pre">KData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.KNoise.html#mrpro.data.KNoise" title="mrpro.data.KNoise.KNoise"><span class="pre">KNoise</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="k"><span class="pre">False</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="../_modules/mrpro/algorithms/reconstruction/Reconstruction.html#Reconstruction.recalculate_csm_walsh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.algorithms.reconstruction.Reconstruction.recalculate_csm_walsh" title="Link to this definition"></a></dt>
-<dd><p>Update (in place) the CSM from KData using Walsh.</p>
+<dt class="sig sig-object py" id="mrpro.algorithms.reconstruction.Reconstruction.recalculate_csm">
+<span class="sig-name descname"><span class="pre">recalculate_csm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">kdata:</span> <span class="pre">~mrpro.data._kdata.KData.KData,</span> <span class="pre">csm_calculation:</span> <span class="pre">~collections.abc.Callable[[~mrpro.data.IData.IData],</span> <span class="pre">~mrpro.data.CsmData.CsmData]</span> <span class="pre">=</span> <span class="pre">&lt;bound</span> <span class="pre">method</span> <span class="pre">CsmData.from_idata_walsh</span> <span class="pre">of</span> <span class="pre">&lt;class</span> <span class="pre">'mrpro.data.CsmData.CsmData'&gt;&gt;,</span> <span class="pre">noise:</span> <span class="pre">~mrpro.data.KNoise.KNoise</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">|</span> <span class="pre">~typing.Literal[False]</span> <span class="pre">=</span> <span class="pre">None</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="../_modules/mrpro/algorithms/reconstruction/Reconstruction.html#Reconstruction.recalculate_csm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.algorithms.reconstruction.Reconstruction.recalculate_csm" title="Link to this definition"></a></dt>
+<dd><p>Update (in place) the CSM from KData.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>kdata</strong> – KData used for adjoint reconstruction (including DCF-weighting if available), which is then used for
-Walsh CSM estimation.</p></li>
+CSM estimation.</p></li>
+<li><p><strong>csm_calculation</strong> – Function to calculate csm expecting idata as input and returning csmdata. For examples have a look at the
+CsmData class e.g. from_idata_walsh or from_idata_inati.</p></li>
 <li><p><strong>noise</strong> – Noise measurement for prewhitening.
 If None, self.noise (if previously set) is used.
 If False, no prewithening is performed even if self.noise is set.
