@@ -68,7 +68,8 @@ class Reconstruction(torch.nn.Module, ABC):
             KData used for adjoint reconstruction (including DCF-weighting if available), which is then used for
             CSM estimation.
         csm_calculation
-            Function to calculate csm expecting idata as input and returning csmdata.
+            Function to calculate csm expecting idata as input and returning csmdata. For examples have a look at the
+            CsmData class e.g. from_idata_walsh or from_idata_inati.
         noise
             Noise measurement for prewhitening.
             If None, self.noise (if previously set) is used.

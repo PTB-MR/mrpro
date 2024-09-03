@@ -60,7 +60,8 @@ class IterativeSENSEReconstruction(DirectReconstruction):
             Sensitivity maps for coil combination. If None, no coil combination is carried out, i.e. images for each
             coil are returned. If a callable is provided, coil images are reconstructed using the adjoint of the
             FourierOperator (including density compensation) and then sensitivity maps are calculated using the
-            callable. For this, kdata needs also to be provided.
+            callable. For this, kdata needs also to be provided. For examples have a look at the CsmData class
+            e.g. from_idata_walsh or from_idata_inati.
         noise
             KNoise used for prewhitening. If None, no prewhitening is performed
         dcf
