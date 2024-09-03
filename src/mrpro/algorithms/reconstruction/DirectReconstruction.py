@@ -1,8 +1,7 @@
 """Direct Reconstruction by Adjoint Fourier Transform."""
 
-from typing import Self
+from collections.abc import Callable
 
-from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
 from mrpro.algorithms.reconstruction.Reconstruction import Reconstruction
 from mrpro.data._kdata.KData import KData
 from mrpro.data.CsmData import CsmData
@@ -18,8 +17,9 @@ class DirectReconstruction(Reconstruction):
 
     def __init__(
         self,
-        fourier_op: LinearOperator,
-        csm: CsmData | None = None,
+        kdata: KData | None = None,
+        fourier_op: LinearOperator | None = None,
+        csm: Callable[[IData], CsmData] | CsmData | None = CsmData.from_idata_walsh,
         noise: KNoise | None = None,
         dcf: DcfData | None = None,
     ):
@@ -27,46 +27,48 @@ class DirectReconstruction(Reconstruction):
 
         Parameters
         ----------
+        kdata
+            KData. If kdata is provided and fourier_op or dcf are None, then fourier_op and dcf are estimated based on
+            kdata. Otherwise fourier_op and dcf are used as provided.
         fourier_op
-            Instance of the FourierOperator which adjoint is used for reconstruction.
+            Instance of the FourierOperator used for reconstruction. If None, set up based on kdata.
         csm
-            Sensitivity maps for coil combination. If None, no coil combination will be performed.
+            Sensitivity maps for coil combination. If None, no coil combination is carried out, i.e. images for each
+            coil are returned. If a callable is provided, coil images are reconstructed using the adjoint of the
+            FourierOperator (including density compensation) and then sensitivity maps are calculated using the
+            callable. For this, kdata needs also to be provided. For examples have a look at the CsmData class
+            e.g. from_idata_walsh or from_idata_inati.
         noise
-            Used for prewhitening
+            KNoise used for prewhitening. If None, no prewhitening is performed
         dcf
-            Density compensation. If None, no dcf will be performed.
-            Also set to None, if the FourierOperator is already density compensated.
+            K-space sampling density compensation. If None, set up based on kdata.
+
+        Raises
+        ------
+        ValueError
+            If the kdata and fourier_op are None or if csm is a Callable but kdata is None.
         """
         super().__init__()
-        self.fourier_op = fourier_op
-        # TODO: Make this buffers once DataBufferMixin is merged
-        self.dcf = dcf
-        self.csm = csm
+        if fourier_op is None:
+            if kdata is None:
+                raise ValueError('Either kdata or fourier_op needs to be defined.')
+            self.fourier_op = FourierOp.from_kdata(kdata)
+        else:
+            self.fourier_op = fourier_op
+
+        if kdata is not None and dcf is None:
+            self.dcf = DcfData.from_traj_voronoi(kdata.traj)
+        else:
+            self.dcf = dcf
+
         self.noise = noise
 
-    @classmethod
-    def from_kdata(cls, kdata: KData, noise: KNoise | None = None, *, coil_combine: bool = True) -> Self:
-        """Create a DirectReconstruction from kdata with default settings.
-
-        Parameters
-        ----------
-        kdata
-            KData to use for trajektory and header information.
-        noise
-            KNoise used for prewhitening. If None, no prewhitening is performed.
-        coil_combine
-            if True (default), uses kdata to estimate sensitivity maps and perform adaptive coil combine reconstruction
-            in the reconstruction.
-        """
-        if noise is not None:
-            kdata = prewhiten_kspace(kdata, noise)
-        dcf = DcfData.from_traj_voronoi(kdata.traj)
-        fourier_op = FourierOp.from_kdata(kdata)
-        self = cls(fourier_op, None, noise, dcf)
-        if coil_combine:
-            # kdata is prewhitened
-            self.recalculate_csm_walsh(kdata, noise=False)
-        return self
+        if csm is None or isinstance(csm, CsmData):
+            self.csm = csm
+        else:
+            if kdata is None:
+                raise ValueError('kdata needs to be defined to calculate the sensitivity maps.')
+            self.recalculate_csm(kdata, csm)
 
     def forward(self, kdata: KData) -> IData:
         """Apply the reconstruction.
