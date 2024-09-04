@@ -59,7 +59,7 @@ kdcf = DcfData.from_traj_voronoi(kdata.traj)
 kdata.header.encoding_matrix.z = kdata.header.encoding_matrix.y
 kdata.header.recon_matrix.x = 192
 kdata.header.recon_matrix.y = 192
-kdata.header.recon_matrix.z = 192
+kdata.header.recon_matrix.z = 220
 
 # Direct image reconstruction of individual coil images
 fourier_op = FourierOp(kdata.header.recon_matrix, kdata.header.encoding_matrix, kdata.traj)
@@ -81,6 +81,14 @@ fig, ax = plt.subplots(1,3);
 ax[0].imshow(torch.abs(img[0,0,img.shape[-3]//2,:,:]))
 ax[1].imshow(torch.abs(img[0,0,:,img.shape[-2]//2,:]))
 ax[2].imshow(torch.abs(img[0,0,:,:,img.shape[-1]//2]))
+
+img_abs = img.abs().numpy()
+img_abs /= img_abs.max()
+cim = np.concatenate((np.rot90(img_abs[0,0,:,96]),
+                        np.rot90(img_abs[0,0,50]),
+                        np.rot90(img_abs[0,0,:,:,115])), axis=1)
+plt.imsave(os.path.join(path_out,f'average.png'), cim, dpi=300, cmap='grey', vmin=0, vmax=0.35)
+
 
 # ### Respiratory self-navigator
 # We are going to obtain a self-navigator from the k-space centre line ky = kz = 0
@@ -136,11 +144,12 @@ kdata = kdata.rearrange_k2_k1_into_k1()
 # Interpolate navigator from k-space center ky=kz=0 to all phase encoding points
 resp_nav_interpolated = np.interp(2.5*kdata.header.acq_info.acquisition_time_stamp[0,0,:,0]/1000, nav_signal_time_in_s[:,0], resp_nav)
 
-# Non iterative reconstruction
-resp_idx = split_idx(torch.argsort(torch.as_tensor(resp_nav_interpolated)), 160*112)
+# %%  Split data into different motion phases
+resp_idx = split_idx(torch.argsort(torch.as_tensor(resp_nav_interpolated)), 160*112, 160*50)
 kdata_resp_resolved = kdata.split_k1_into_other(resp_idx, other_label='repetition')
 kdcf = DcfData.from_traj_voronoi(kdata_resp_resolved.traj)
 
+# %% Motion-resolved direct image reconstruction
 cart_sampling_op = CartesianSamplingOp(kdata_resp_resolved.header.encoding_matrix, kdata_resp_resolved.traj)
 fourier_op = FourierOp(kdata_resp_resolved.header.recon_matrix, kdata_resp_resolved.header.encoding_matrix, kdata_resp_resolved.traj)
 (img,) = fourier_op.adjoint(kdata_resp_resolved.data * kdcf.data[:,None,...])
@@ -158,7 +167,7 @@ for i in range(img.shape[0]):
     nib.save(nii_resp,os.path.join(path_out,"resp_state_"+str(i)))
 
 
-# ### Motion-resolved image reconstruction
+# %% Motion-resolved iterative image reconstruction
 # Now we can reconstruct the respirator motion-resolved images. 
 # Here we have to deal with undersampled data and so we use an iterative reconstruction (iterative SENSE).
 
@@ -189,6 +198,16 @@ for nnd in range(len(plot_resp_idx)):
     ax[nnd,1].imshow(torch.abs(img_resp_resolved[plot_resp_idx[nnd],0,:,img.shape[-2]//2,:]))
     ax[nnd,2].imshow(torch.abs(img_resp_resolved[plot_resp_idx[nnd],0,:,:,img.shape[-1]//2]))
 
-for i in range(img_resp_resolved.shape[0]):
-    nii_resp = nib.Nifti1Image(img_resp_resolved[i,0].abs().numpy(), affine=torch.eye(4))
+#%%
+img_resp_resolved_abs = img_resp_resolved.abs().numpy()
+img_resp_resolved_abs /= img_resp_resolved_abs.max()
+for i in range(img_resp_resolved_abs.shape[0]):
+    nii_resp = nib.Nifti1Image(img_resp_resolved_abs[i,0], affine=torch.eye(4))
     nib.save(nii_resp,os.path.join(path_out,"resp_state_iterative_"+str(i)))
+    cim = np.concatenate((np.rot90(img_resp_resolved_abs[i,0,:,96]),
+                           np.rot90(img_resp_resolved_abs[i,0,50]),
+                            np.rot90(img_resp_resolved_abs[i,0,:,:,115])), axis=1)
+    plt.imsave(os.path.join(path_out,f'resp_state_iterative_{i}.png'), cim, dpi=300, cmap='grey', vmin=0, vmax=0.35)
+
+
+
