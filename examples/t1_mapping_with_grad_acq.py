@@ -228,7 +228,7 @@ fig.colorbar(im, cax=colorbar_ax[2])
 # reconstruction methods we can improve the image quality and hence the quality of the maps.
 #
 # Try to exchange `DirectReconstruction` above with `IterativeSENSEReconstruction` and compare the quality of the
-# $T_1$ maps for different number of iterations (`n_iterations`)
+# $T_1$ maps for different number of iterations (`n_iterations`).
 
 
 # %%
