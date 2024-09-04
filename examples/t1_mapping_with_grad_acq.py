@@ -222,6 +222,15 @@ im = axes[0, 2].imshow(flip_angle[0, ...] / torch.pi * 180, vmin=0, vmax=8)
 axes[0, 2].set_title('Flip angle (°)')
 fig.colorbar(im, cax=colorbar_ax[2])
 
+# %% [markdown]
+# ### Next steps
+# The quality of the final $T_1$ maps depends on the quality of the individual dynamic images. Using more advanced image
+# reconstruction methods we can improve the image quality and hence the quality of the maps.
+#
+# Try to exchange `DirectReconstruction` above with `IterativeSENSEReconstruction` and compare the quality of the
+# $T_1$ maps for different number of iterations (`n_iterations`)
+
+
 # %%
 # Clean-up by removing temporary directory
 shutil.rmtree(data_folder)
