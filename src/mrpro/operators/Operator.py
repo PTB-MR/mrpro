@@ -31,12 +31,15 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
         """
         return OperatorComposition(self, other)
 
-    def __add__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]:
+    def __add__(self, other: Operator[*Tin, Tout] | torch.Tensor) -> Operator[*Tin, Tout]:
         """Operator addition.
 
-        Returns lambda x: self(x) + other(x)
+        Returns lambda x: self(x) + other(x) if other is a tensor otherwise lambda x: self(x) + other
         """
-        return OperatorSum(self, other)
+        if isinstance(other, Operator):
+            return OperatorSum(self, other)
+        else:
+            return OperatorTensorSum(self, other)
 
     def __mul__(self, other: torch.Tensor) -> Operator[*Tin, Tout]:
         """Operator multiplication with tensor.
@@ -45,7 +48,7 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
         """
         return OperatorElementwiseProductLeft(self, other)
 
-    def __rmul__(self, other: torch.Tensor) -> Operator[*Tin, Tout]:  # type: ignore[misc]
+    def __rmul__(self, other: torch.Tensor) -> Operator[*Tin, Tout]: # type: ignore[misc]
         """Operator multiplication with tensor.
 
         Returns lambda x: other*self(x)
@@ -90,6 +93,19 @@ class OperatorSum(Operator[*Tin, Tout]):
         """Operator addition."""
         return cast(Tout, tuple(a + b for a, b in zip(self._operator1(*args), self._operator2(*args), strict=True)))
 
+class OperatorTensorSum(Operator[*Tin, Tout]):
+    """Operator addition with tensor."""
+
+    def __init__(self, operator: Operator[*Tin, Tout], tensor: torch.Tensor):
+        """Operator addition with tensor initialization."""
+        super().__init__()
+        self._operator = operator
+        self._tensor = tensor
+
+    def forward(self, *args: *Tin) -> Tout:
+        """Operator addition with tensor."""
+        out = self._operator(*args)
+        return cast(Tout, tuple(a + self._tensor for a in out))
 
 class OperatorElementwiseProductRight(Operator[*Tin, Tout]):
     """Operator elementwise right multiplication with a tensor.

@@ -134,6 +134,59 @@ def test_sum_operator_linearoperator():
     assert not isinstance(c, LinearOperator), 'Operator + LinearOperator should not be a LinearOperator'
 
 
+def test_sum_operator_tensor():
+    rng = RandomGenerator(0)
+    a = DummyOperator(torch.tensor(3.0))
+    b = rng.complex64_tensor((3, 10))
+    c = a + b
+    x = rng.complex64_tensor(10)
+    (y1,) = c(x)
+    y2 = a(x)[0] + b
+
+    torch.testing.assert_close(y1, y2)
+    assert isinstance(c, Operator), 'Operator + tensor should be an Operator'
+    assert not isinstance(c, LinearOperator), 'Operator + tensor should not be a LinearOperator'
+
+def test_rsum_operator_tensor():
+    rng = RandomGenerator(0)
+    a = DummyOperator(torch.tensor(3.0))
+    b = rng.complex64_tensor((3, 10))
+    c = b + a
+    x = rng.complex64_tensor(10)
+    (y1,) = c(x)
+    y2 = a(x)[0] + b
+
+    torch.testing.assert_close(y1, y2)
+    assert isinstance(c, Operator), 'Operator + tensor should be an Operator'
+    assert not isinstance(c, LinearOperator), 'Operator + tensor should not be a LinearOperator'
+
+def test_sum_linearoperator_tensor():
+    rng = RandomGenerator(0)
+    a = DummyLinearOperator(rng.complex64_tensor((3, 10)))
+    b = rng.complex64_tensor((3, 10))
+    c = a + b
+    x = rng.complex64_tensor(10)
+    (y1,) = c(x)
+    y2 = a(x)[0] + b
+
+    torch.testing.assert_close(y1, y2)
+    assert isinstance(c, LinearOperator), 'LinearOperator + tensor should be a LinearOperator'
+    assert not isinstance(c, Operator), 'LinearOperator + tensor should not be an Operator'
+
+
+def test_rsum_linearoperator_tensor():
+    rng = RandomGenerator(0)
+    a = DummyLinearOperator(rng.complex64_tensor((3, 10)))
+    b = rng.complex64_tensor((3, 10))
+    c = b + a
+    x = rng.complex64_tensor(10)
+    (y1,) = c(x)
+    y2 = a(x)[0] + b
+
+    torch.testing.assert_close(y1, y2)
+    assert isinstance(c, LinearOperator), 'LinearOperator + tensor should be a LinearOperator'
+    assert not isinstance(c, Operator), 'LinearOperator + tensor should not be an Operator'
+
 @pytest.mark.parametrize('value', [2, 3j])
 def test_elementwise_product_operator(value):
     a = DummyOperator(torch.tensor(2.0))
