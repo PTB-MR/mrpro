@@ -41,15 +41,14 @@ from mrpro.utils import split_idx
 # and the steady-state magnetization is
 #   $$ M_0^* = M_0 \frac{T_1^*}{T_1} .$$
 #
-# The initial magnetization $M_0^{init}$ after in inversion pulse is $-M_0$. Nevertheless, commonly after an inversion
-# pulse a strong spoiler gradient is played out, which removes any residual transversal magnetization due to
-# imperfections of the inversion pulse. During the spoiler gradient, the magnetization recovers with $T_1$. Commonly the
-# duration of this spoiler gradient $\Delta t$ is between 10 to 20ms. This leads to the initial magnetization
+# The initial magnetization $M_0^{init}$ after an inversion pulse is $-M_0$. Nevertheless, commonly after an inversion
+# pulse, a strong spoiler gradient is played out to remove any residual transversal magnetization due to
+# imperfections of the inversion pulse. During the spoiler gradient, the magnetization recovers with $T_1$. Commonly,
+# the duration of this spoiler gradient $\Delta t$ is between 10 to 20 ms. This leads to the initial magnetization
 #   $$ M_0^{init} = M_0(1 - 2e^{(-\Delta t / T_1)}) .$$
 #
 # In this example, we are going to:
-# - Reconstruct a single image using all acquired radial lines. We do this to check the data, but also to utilize all
-# the data to obtain a high quality coil sensitivity map (CSM)
+# - Reconstruct a single high quality image using all acquired radial lines.
 # - Split the data into multiple dynamics and reconstruct these dynamic images
 # - Define a signal model and a loss function to obtain the $T_1$ maps
 
