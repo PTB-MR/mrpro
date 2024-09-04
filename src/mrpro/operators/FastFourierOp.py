@@ -1,19 +1,5 @@
 """Class for Fast Fourier Operator."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 from collections.abc import Sequence
 from dataclasses import astuple
 
@@ -31,13 +17,17 @@ class FastFourierOp(LinearOperator):
     along these selected dimensions
 
     The transformation is done with 'ortho' normalization, i.e. the normalization constant is split between
-    forward and adjoint. See https://numpy.org/doc/stable/reference/routines.fft.html for an explanation.
+    forward and adjoint [FFT]_.
 
     Remark regarding the fftshift/ifftshift:
     fftshift shifts the zero-frequency point to the center of the data, ifftshift undoes this operation.
     The input to both forward and ajoint assumes that the zero-frequency is in the center of the data.
     Torch.fft.fftn and torch.fft.ifftn expect the zero-frequency to be the first entry in the tensor.
     Therefore for forward and ajoint first ifftshift needs to be applied, then fftn or ifftn and then ifftshift.
+
+    References
+    ----------
+    .. [FFT] FFT https://numpy.org/doc/stable/reference/routines.fft.html
 
     """
 
@@ -79,22 +69,24 @@ class FastFourierOp(LinearOperator):
         self._pad_op: ZeroPadOp
 
         if isinstance(recon_matrix, SpatialDimension):
-            original_shape: Sequence[int] | None = [int(astuple(recon_matrix)[d]) for d in dim]
             if not all(d in (-1, -2, -3) for d in dim):
                 raise NotImplementedError(
                     f'recon_matrix can only be a SpatialDimension if each value in dim is in (-3,-2,-1),'
                     f'got {dim=}\nInstead, you can also supply a list of values of same length as dim'
                 )
+            original_shape: Sequence[int] | None = [int(astuple(recon_matrix)[d]) for d in dim]
+
         else:
             original_shape = recon_matrix
 
         if isinstance(encoding_matrix, SpatialDimension):
-            padded_shape: Sequence[int] | None = [int(astuple(encoding_matrix)[d]) for d in dim]
             if not all(d in (-1, -2, -3) for d in dim):
                 raise NotImplementedError(
                     f'encoding_matrix can only be a SpatialDimension if each value in dim is in (-3,-2,-1),'
                     f'got {dim=}\nInstead, you can also supply a list of values of same length as dim'
                 )
+            padded_shape: Sequence[int] | None = [int(astuple(encoding_matrix)[d]) for d in dim]
+
         else:
             padded_shape = encoding_matrix
 

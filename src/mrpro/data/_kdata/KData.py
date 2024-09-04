@@ -1,26 +1,11 @@
 """MR raw data / k-space data class."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from __future__ import annotations
-
 import dataclasses
 import datetime
 import warnings
+from collections.abc import Callable
 from pathlib import Path
-from typing import Protocol
+from typing import Self
 
 import h5py
 import ismrmrd
@@ -31,9 +16,9 @@ from mrpro.data._kdata.KDataRearrangeMixin import KDataRearrangeMixin
 from mrpro.data._kdata.KDataRemoveOsMixin import KDataRemoveOsMixin
 from mrpro.data._kdata.KDataSelectMixin import KDataSelectMixin
 from mrpro.data._kdata.KDataSplitMixin import KDataSplitMixin
+from mrpro.data.acq_filters import is_image_acquisition
 from mrpro.data.AcqInfo import AcqInfo
 from mrpro.data.EncodingLimits import Limits
-from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
@@ -42,20 +27,36 @@ from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalcula
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
 from mrpro.utils import modify_acq_info
 
-KDIM_SORT_LABELS = ('k1', 'k2', 'average', 'slice', 'contrast', 'phase', 'repetition', 'set')
-# TODO: Consider adding the users labels here, but remember issue #32 and NOT add user5 and user6.
-OTHER_LABELS = ('average', 'slice', 'contrast', 'phase', 'repetition', 'set')
+KDIM_SORT_LABELS = (
+    'k1',
+    'k2',
+    'average',
+    'slice',
+    'contrast',
+    'phase',
+    'repetition',
+    'set',
+    'user0',
+    'user1',
+    'user2',
+    'user3',
+    'user4',
+    'user7',
+)
 
-# Same criteria as https://github.com/wtclarke/pymapvbvd/blob/master/mapvbvd/mapVBVD.py uses
-DEFAULT_IGNORE_FLAGS = (
-    AcqFlags.ACQ_IS_NOISE_MEASUREMENT
-    | AcqFlags.ACQ_IS_DUMMYSCAN_DATA
-    | AcqFlags.ACQ_IS_HPFEEDBACK_DATA
-    | AcqFlags.ACQ_IS_NAVIGATION_DATA
-    | AcqFlags.ACQ_IS_PHASECORR_DATA
-    | AcqFlags.ACQ_IS_PHASE_STABILIZATION
-    | AcqFlags.ACQ_IS_PHASE_STABILIZATION_REFERENCE
-    | AcqFlags.ACQ_IS_PARALLEL_CALIBRATION
+OTHER_LABELS = (
+    'average',
+    'slice',
+    'contrast',
+    'phase',
+    'repetition',
+    'set',
+    'user0',
+    'user1',
+    'user2',
+    'user3',
+    'user4',
+    'user7',
 )
 
 
@@ -64,8 +65,13 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
     """MR raw data / k-space data class."""
 
     header: KHeader
+    """Header information for k-space data"""
+
     data: torch.Tensor
+    """K-space data. Shape (...other coils k2 k1 k0)"""
+
     traj: KTrajectory
+    """K-space trajectory along kz, ky and kx. Shape (...other k2 k1 k0)"""
 
     @classmethod
     def from_file(
@@ -74,8 +80,8 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         ktrajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
         header_overwrites: dict[str, object] | None = None,
         dataset_idx: int = -1,
-        ignore_flags: AcqFlags = DEFAULT_IGNORE_FLAGS,
-    ) -> KData:
+        acquisition_filter_criterion: Callable = is_image_acquisition,
+    ) -> Self:
         """Load k-space data from an ISMRMRD file.
 
         Parameters
@@ -87,12 +93,9 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         header_overwrites
             dictionary of key-value pairs to overwrite the header
         dataset_idx
-            index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
-        ignore_flags
-            Acqisition flags to filter out. Defaults to all non-images as defined by pymapvbvd.
-            Use ACQ_NO_FLAG to disable the filter.
-            Note: If ACQ_IS_PARALLEL_CALIBRATION is set without also setting ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING
-                    we interpret it as: Ignore if IS_PARALLEL_CALIBRATION and not PARALLEL_CALIBRATION_AND_IMAGING
+            index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...)
+        acquisition_filter_criterion
+            function which returns True if an acquisition should be included in KData
         """
         # Can raise FileNotFoundError
         with ismrmrd.File(filename, 'r') as file:
@@ -105,25 +108,26 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
                 mtime = 0
             modification_time = datetime.datetime.fromtimestamp(mtime)
 
-        if (
-            AcqFlags.ACQ_IS_PARALLEL_CALIBRATION in ignore_flags
-            and AcqFlags.ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING not in ignore_flags
-        ):
-            # if only ACQ_IS_PARALLEL_CALIBRATION is set, reinterpret it as: ignore if
-            # ACQ_IS_PARALLEL_CALIBRATION is set and ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING is not set
-            ignore_flags = ignore_flags & ~AcqFlags.ACQ_IS_PARALLEL_CALIBRATION
-            acquisitions = list(
-                filter(
-                    lambda acq: (AcqFlags.ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING.value & acq.flags)
-                    or not (AcqFlags.ACQ_IS_PARALLEL_CALIBRATION.value & acq.flags),
-                    acquisitions,
-                ),
-            )
-
-        acquisitions = list(filter(lambda acq: not (ignore_flags.value & acq.flags), acquisitions))
+        acquisitions = [acq for acq in acquisitions if acquisition_filter_criterion(acq)]
         kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
+
+        if len(torch.unique(acqinfo.idx.user5)) > 1:
+            warnings.warn(
+                'The Siemens to ismrmrd converter currently (ab)uses '
+                'the user 5 indices for storing the kspace center line number.\n'
+                'User 5 indices will be ignored',
+                stacklevel=1,
+            )
+
+        if len(torch.unique(acqinfo.idx.user6)) > 1:
+            warnings.warn(
+                'The Siemens to ismrmrd converter currently (ab)uses '
+                'the user 6 indices for storing the kspace center partition number.\n'
+                'User 6 indices will be ignored',
+                stacklevel=1,
+            )
 
         # Raises ValueError if required fields are missing in the header
         kheader = KHeader.from_ismrmrd(
@@ -230,31 +234,3 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             ) from None
 
         return cls(kheader, kdata, ktrajectory_final)
-
-
-class _KDataProtocol(Protocol):
-    """Protocol for KData used for type hinting in KData mixins.
-
-    Note that the actual KData class can have more properties and methods than those defined here.
-
-    If you want to use a property or method of KData in a new KDataMixin class,
-    you must add it to this Protocol to make sure that the type hinting works.
-
-    For more information about Protocols see:
-    https://typing.readthedocs.io/en/latest/spec/protocol.html#protocols
-    """
-
-    @property
-    def header(self) -> KHeader: ...
-
-    @property
-    def data(self) -> torch.Tensor: ...
-
-    @property
-    def traj(self) -> KTrajectory: ...
-
-    def __init__(self, header: KHeader, data: torch.Tensor, traj: KTrajectory): ...
-
-    def _split_k2_or_k1_into_other(
-        self, split_idx: torch.Tensor, other_label: str, split_dir: str
-    ) -> _KDataProtocol: ...

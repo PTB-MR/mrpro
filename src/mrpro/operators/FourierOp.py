@@ -1,27 +1,11 @@
 """Fourier Operator."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from __future__ import annotations
-
 from collections.abc import Sequence
+from typing import Self
 
 import numpy as np
 import torch
-from torchkbnufft import KbNufft
-from torchkbnufft import KbNufftAdjoint
+from torchkbnufft import KbNufft, KbNufftAdjoint
 
 from mrpro.data._kdata.KData import KData
 from mrpro.data.enums import TrajType
@@ -134,7 +118,7 @@ class FourierOp(LinearOperator):
             self._kshape = traj.broadcasted_shape
 
     @classmethod
-    def from_kdata(cls, kdata: KData, recon_shape: SpatialDimension[int] | None = None) -> FourierOp:
+    def from_kdata(cls, kdata: KData, recon_shape: SpatialDimension[int] | None = None) -> Self:
         """Create an instance of FourierOp from kdata with default settings.
 
         Parameters

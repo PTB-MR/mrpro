@@ -1,22 +1,8 @@
 """Class for coil sensitivity maps (csm)."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 import torch
 
@@ -38,7 +24,7 @@ class CsmData(QData):
         smoothing_width: int | SpatialDimension[int] = 5,
         power_iterations: int = 3,
         chunk_size_otherdim: int | None = None,
-    ) -> CsmData:
+    ) -> Self:
         """Create csm object from image data using iterative Walsh method.
 
         Parameters
@@ -63,6 +49,32 @@ class CsmData(QData):
             lambda img: iterative_walsh(img, smoothing_width, power_iterations),
             chunk_size=chunk_size_otherdim,
         )
+        csm_tensor = csm_fun(idata.data)
+        csm = cls(header=idata.header, data=csm_tensor)
+        return csm
+
+    @classmethod
+    def from_idata_inati(
+        cls,
+        idata: IData,
+        smoothing_width: int | SpatialDimension[int] = 5,
+        chunk_size_otherdim: int | None = None,
+    ) -> Self:
+        """Create csm object from image data using Inati method.
+
+        Parameters
+        ----------
+        idata
+            IData object containing the images for each coil element.
+        smoothing_width
+            Size of the smoothing kernel.
+        chunk_size_otherdim:
+            How many elements of the other dimensions should be processed at once.
+            Default is None, which means that all elements are processed at once.
+        """
+        from mrpro.algorithms.csm.inati import inati
+
+        csm_fun = torch.vmap(lambda img: inati(img, smoothing_width), chunk_size=chunk_size_otherdim)
         csm_tensor = csm_fun(idata.data)
         csm = cls(header=idata.header, data=csm_tensor)
         return csm
