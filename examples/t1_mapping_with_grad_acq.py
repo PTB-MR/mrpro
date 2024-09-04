@@ -69,7 +69,7 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 kdata = KData.from_file(data_folder / '2D_GRad_map_t1.h5', KTrajectoryIsmrmrd())
 
 # Perform the reconstruction
-reconstruction = DirectReconstruction.from_kdata(kdata)
+reconstruction = DirectReconstruction(kdata)
 img_average = reconstruction(kdata)
 
 # %%
@@ -91,7 +91,7 @@ kdata_dynamic = kdata.split_k1_into_other(idx_dynamic, other_label='repetition')
 # %%
 # Perform the reconstruction
 # Here we use the same coil sensitivity map for all dynamics
-reconstruction_dynamic = DirectReconstruction.from_kdata(kdata_dynamic, csm=reconstruction.csm)
+reconstruction_dynamic = DirectReconstruction(kdata_dynamic, csm=reconstruction.csm)
 img_dynamic = reconstruction_dynamic(kdata_dynamic)
 # Get absolute value of complex image and normalise the images
 img_rss_dynamic = img_dynamic.rss()
