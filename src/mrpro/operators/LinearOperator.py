@@ -14,6 +14,7 @@ from mrpro.operators.Operator import (
     OperatorElementwiseProductLeft,
     OperatorElementwiseProductRight,
     OperatorSum,
+    OperatorTensorSumRight,
     Tin2,
 )
 
@@ -152,7 +153,23 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
             return OperatorComposition(self, other)
 
     @overload
-    def __add__(self, other: LinearOperator) -> LinearOperator: ...
+    def __radd__(self, other: LinearOperator | torch.Tensor) -> LinearOperator: ...
+
+    @overload
+    def __radd__(
+        self, other: Operator[torch.Tensor, tuple[torch.Tensor,]]
+    ) -> Operator[torch.Tensor, tuple[torch.Tensor,]]: ...
+
+    def __radd__(self, other: torch.Tensor|LinearOperator | Operator[torch.Tensor, tuple[torch.Tensor,]]):
+        """Operator addition.
+
+        Returns lambda x: self(x) + other(x) if other is a operator,
+        lambda x: self(x) + other if other is a tensor
+        """
+        return self + other
+
+    @overload
+    def __add__(self, other: LinearOperator | torch.Tensor) -> LinearOperator: ...
 
     @overload
     def __add__(
@@ -160,12 +177,16 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     ) -> Operator[torch.Tensor, tuple[torch.Tensor,]]: ...
 
     def __add__(
-        self, other: Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator
+        self, other: Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator | torch.Tensor
     ) -> Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator:
         """Operator addition.
 
-        Returns lambda x: self(x) + other(x)
+        Returns lambda x: self(x) + other(x) if other is a operator,
+        lambda x: self(x) + other if other is a tensor
         """
+        if isinstance(other, torch.Tensor):
+            # tensor addition
+            return LinearOperatorTensorSumRight(self, other)
         if not isinstance(other, LinearOperator):
             # general case
             return OperatorSum(self, other)  # other + cast(Operator[torch.Tensor, tuple[torch.Tensor,]], self)
@@ -198,13 +219,21 @@ class LinearOperatorComposition(LinearOperator, OperatorComposition[torch.Tensor
         # (AB)^T = B^T A^T
         return self._operator2.adjoint(*self._operator1.adjoint(x))
 
+class LinearOperatorTensorSumRight(LinearOperator, OperatorTensorSumRight[torch.Tensor, tuple[torch.Tensor,]]):
+    """Operator addition with tensor
+    
+    Performs Tensor+LinearOperator(x)"""
+    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Adjoint of the operator addition with tensor."""
+        # (A+B)^H = A^H + B'
+        return (self._operator.adjoint(x)[0] + self._tensor.conj,)
 
 class LinearOperatorSum(LinearOperator, OperatorSum[torch.Tensor, tuple[torch.Tensor,]]):
     """Operator addition."""
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the operator addition."""
-        # (A+B)^T = A^T + B^T
+        # (A+B)^H = A^H + B^H
         return (self._operator1.adjoint(x)[0] + self._operator2.adjoint(x)[0],)
 
 
