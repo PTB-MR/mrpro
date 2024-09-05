@@ -234,3 +234,18 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             ) from None
 
         return cls(kheader, kdata, ktrajectory_final)
+
+    def __repr__(self):
+        """Representation method for KData class."""
+        traj = KTrajectory(self.traj.kz, self.traj.ky, self.traj.kx)
+        try:
+            device = str(self.device)
+        except RuntimeError:
+            device = 'mixed'
+        out = (
+            f'{type(self).__name__} with shape {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
+            f'Device: {device}\n'
+            f'{traj}\n'
+            f'{self.header}'
+        )
+        return out

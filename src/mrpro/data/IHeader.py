@@ -13,6 +13,7 @@ from pydicom.tag import Tag, TagType
 from mrpro.data.KHeader import KHeader
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
+from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 
 MISC_TAGS = {'TimeAfterStart': 0x00191016}
 
@@ -122,3 +123,11 @@ class IHeader(MoveDataMixin):
         for name in MISC_TAGS:
             misc[name] = make_unique_tensor(get_float_items_from_all_dicoms(MISC_TAGS[name]))
         return cls(fov=fov, te=te, ti=ti, fa=fa, tr=tr, misc=misc)
+
+    def __repr__(self):
+        """Representation method for IHeader class."""
+        te = summarize_tensorvalues(self.te)
+        ti = summarize_tensorvalues(self.ti)
+        fa = summarize_tensorvalues(self.fa)
+        out = f'FOV [m]: {self.fov!s}\n' f'TE [s]: {te}\nTI [s]: {ti}\nFlip angle [rad]: {fa}.'
+        return out
