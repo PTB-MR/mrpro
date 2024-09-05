@@ -58,7 +58,7 @@ def get_coronal_sagittal_axial_view(img, other=None, z=None, y=None, x=None):
     
     return np.concatenate((np.rot90(img[other,:,y,:]),
                         np.rot90(img[other,z,:,:]),
-                        np.rot90(img[other,:,:,x])), axis=1)
+                        np.rot90(img[other,:,::-1,x])), axis=1)
     
     
 # Display slices
@@ -83,7 +83,7 @@ plt.plot(kdata.traj.ky[0,:10,:,0], kdata.traj.kz[0,:10,:,0], 'ob')
 itSENSE_recon = IterativeSENSEReconstruction(kdata)
 img_itSENSE = itSENSE_recon.forward(kdata)
 
-img_coronal_sagittal_axial = get_coronal_sagittal_axial_view(img_itSENSE.rss(), z=showz, y=showy, x=showx)
+img_coronal_sagittal_axial = get_coronal_sagittal_axial_view(img_itSENSE.rss().numpy(), z=showz, y=showy, x=showx)
 img_coronal_sagittal_axial /= img_coronal_sagittal_axial.max()
 plt.figure()
 plt.imshow(img_coronal_sagittal_axial, cmap='grey', vmin=0, vmax=0.35)
@@ -175,7 +175,7 @@ for i in range(img_resp_resolved_abs.shape[0]):
     nii_resp = nib.Nifti1Image(img_resp_resolved_abs[i], affine=torch.eye(4))
     nib.save(nii_resp,os.path.join(path_out,"resp_state_iterative_"+str(i))) 
     
-    img_coronal_sagittal_axial = get_coronal_sagittal_axial_view(img_resp_resolved_abs, other=nnd, z=showz, y=showy, x=showx)
-    plt.imsave(os.path.join(path_out,f'resp_state_iterative_{nnd}.png'), img_coronal_sagittal_axial, dpi=300, cmap='grey', vmin=0, vmax=0.25)
+    img_coronal_sagittal_axial = get_coronal_sagittal_axial_view(img_resp_resolved_abs, other=i, z=showz, y=showy, x=showx)
+    plt.imsave(os.path.join(path_out,f'resp_state_iterative_{i}.png'), img_coronal_sagittal_axial, dpi=300, cmap='grey', vmin=0, vmax=0.25)
     
     
