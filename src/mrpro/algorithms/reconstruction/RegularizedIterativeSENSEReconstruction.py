@@ -21,12 +21,12 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
     r"""Regularized iterative SENSE reconstruction.
 
     This algorithm solves the problem :math:`min_x \frac{1}{2}||W^\frac{1}{2} (Ax - y)||_2^2 +
-    \frac{1}{2}L||x - x_0||_2^2`
+    \frac{1}{2}L||Bx - x_0||_2^2`
     by using a conjugate gradient algorithm to solve
-    :math:`H x = b` with :math:`H = A^H W A + L I` and :math:`b = A^H W y + L x_0` where :math:`A`
+    :math:`H x = b` with :math:`H = A^H W A + L B` and :math:`b = A^H W y + L x_0` where :math:`A`
     is the acquisition model (coil sensitivity maps, Fourier operator, k-space sampling), :math:`y` is the acquired
-    k-space data, :math:`W` describes the density compensation, :math:`I` is the unity matrix, :math:`L` is the
-    strength of the regularisation and :math:`x_0` is the regularisation image (i.e. the prior).
+    k-space data, :math:`W` describes the density compensation, :math:`L` is the strength of the regularisation and
+    :math:`x_0` is the regularisation image (i.e. the prior). :math:`B` is a linear operator applied to :math:`x`.
     """
 
     n_iterations: int
@@ -37,6 +37,9 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
 
     regularisation_weight: torch.Tensor
     """Strength of the regularisation :math:`L`."""
+
+    linear_op: LinearOperator | None
+    """Linear operator :math:`B` applied to the current estimate in the regularisation term."""
 
     def __init__(
         self,
@@ -49,6 +52,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         n_iterations: int = 5,
         regularisation_data: float | torch.Tensor = 0.0,
         regularisation_weight: float | torch.Tensor,
+        linear_op: LinearOperator | None = None,
     ) -> None:
         """Initialize RegularizedIterativeSENSEReconstruction.
 
@@ -75,6 +79,9 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
             Regularisation data, e.g. a reference image (:math:`x_0`).
         regularisation_weight
             Strength of the regularisation (:math:`L`).
+        linear_op
+            Linear operator :math:`B` applied to the current estimate in the regularisation term. If None, nothing is
+            applied to the current estimate.
 
 
         Raises
@@ -86,6 +93,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         self.n_iterations = n_iterations
         self.regularisation_data = torch.as_tensor(regularisation_data)
         self.regularisation_weight = torch.as_tensor(regularisation_weight)
+        self.linear_op = linear_op
 
     def _self_adjoint_operator(self) -> LinearOperator:
         """Create the self-adjoint operator.
@@ -154,7 +162,10 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
 
         # Add regularisation
         if not torch.all(self.regularisation_weight == 0):
-            operator = operator + self.regularisation_weight
+            if self.linear_op is None:
+                operator = operator + self.regularisation_weight * self.linear_op
+            else:
+                operator = operator + self.regularisation_weight
             right_hand_side += self.regularisation_weight * self.regularisation_data
 
         img_tensor = cg(
