@@ -50,3 +50,12 @@ class KNoise(MoveDataMixin):
         noise_data = repeat(noise_data, '... coils k0->... coils k2 k1 k0', k1=1, k2=1)
 
         return cls(noise_data)
+
+    def __repr__(self):
+        """Representation method for KNoise class."""
+        try:
+            device = str(self.device)
+        except RuntimeError:
+            device = 'mixed'
+        name = type(self).__name__
+        return f'{name} with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\nDevice: {device}.'
