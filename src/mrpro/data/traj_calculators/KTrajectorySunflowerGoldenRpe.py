@@ -1,23 +1,8 @@
 """Radial phase encoding (RPE) trajectory class with sunflower pattern."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from __future__ import annotations
-
 import numpy as np
 import torch
+from einops import repeat
 
 from mrpro.data.KHeader import KHeader
 from mrpro.data.traj_calculators.KTrajectoryRpe import KTrajectoryRpe
@@ -84,7 +69,7 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
         -------
             angles of phase encoding lines
         """
-        return (kheader.acq_info.idx.k2 * self.angle) % torch.pi
+        return repeat((kheader.acq_info.idx.k2 * self.angle) % torch.pi, '... k2 k1 -> ... k2 k1 k0', k0=1)
 
     def _krad(self, kheader: KHeader) -> torch.Tensor:
         """Calculate the k-space locations along the phase encoding lines.
@@ -99,6 +84,10 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
             k-space locations along the phase encoding lines
         """
         kang = self._kang(kheader)
-        krad = (kheader.acq_info.idx.k1 - kheader.encoding_limits.k1.center).to(torch.float32)
+        krad = repeat(
+            (kheader.acq_info.idx.k1 - kheader.encoding_limits.k1.center).to(torch.float32),
+            '... k2 k1 -> ... k2 k1 k0',
+            k0=1,
+        )
         krad = self._apply_sunflower_shift_between_rpe_lines(krad, kang, kheader)
         return krad

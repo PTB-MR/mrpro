@@ -1,19 +1,5 @@
 """WASABI signal model for mapping of B0 and B1."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import torch
 from torch import nn
 
@@ -31,9 +17,7 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         gamma: float | torch.Tensor = 42.5764,
         freq: float | torch.Tensor = 127.7292,
     ) -> None:
-        """Initialize WASABI signal model for mapping of B0 and B1.
-
-        For more details see: https://doi.org/10.1002/mrm.26133
+        """Initialize WASABI signal model for mapping of B0 and B1 [SCHU2016]_.
 
         Parameters
         ----------
@@ -48,6 +32,11 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
             gyromagnetic ratio [MHz/T]
         freq
             larmor frequency [MHz]
+
+        References
+        ----------
+        .. [SCHU2016] Schuenke P, Zaiss M (2016) Simultaneous mapping of water shift and B1(WASABI)—Application to
+           field-Inhomogeneity correction of CEST MRI data. MRM 77(2). https://doi.org/10.1002/mrm.26133
         """
         super().__init__()
         # convert all parameters to tensors
@@ -89,11 +78,9 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
 
         Returns
         -------
-            signal
-            with shape (offsets ... other, coils, z, y, x)
+            signal with shape (offsets ... other, coils, z, y, x)
         """
-        delta_ndim = b0_shift.ndim - (self.offsets.ndim - 1)  # -1 for offset
-        offsets = self.offsets[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.offsets
+        offsets = self.expand_tensor_dim(self.offsets, b0_shift.ndim - (self.offsets.ndim - 1))  # -1 for offset
         delta_x = offsets - b0_shift
         b1 = self.b1_nom * relative_b1
 

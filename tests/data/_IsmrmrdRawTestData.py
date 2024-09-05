@@ -1,19 +1,5 @@
 """Create ismrmrd datasets."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
-from __future__ import annotations
-
 from pathlib import Path
 from typing import Literal
 
@@ -385,13 +371,13 @@ class IsmrmrdRawTestData:
         acceleration
             undersampling factor
         """
-        # Fully sampled frequency encoding
-        kfe = torch.arange(-n_freq_encoding // 2, n_freq_encoding // 2)
+        # Fully sampled frequency encoding (sorting of ISMRMD is x,y,z)
+        kfe = repeat(torch.arange(-n_freq_encoding // 2, n_freq_encoding // 2), 'k0 -> k0 k1', k1=1)
 
-        # Uniform angular sampling
+        # Uniform angular sampling (sorting of ISMRMD is x,y,z)
         kpe = torch.linspace(0, n_phase_encoding - 1, n_phase_encoding // acceleration, dtype=torch.int32)
-        kang = kpe * (torch.pi / len(kpe))
+        kang = repeat(kpe * (torch.pi / len(kpe)), 'k1 -> k0 k1', k0=1)
 
-        traj_ky = torch.sin(kang[None, :]) * kfe[:, None]
-        traj_kx = torch.cos(kang[None, :]) * kfe[:, None]
+        traj_ky = torch.sin(kang) * kfe
+        traj_kx = torch.cos(kang) * kfe
         return traj_ky, traj_kx, kpe
