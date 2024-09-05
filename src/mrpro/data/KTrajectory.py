@@ -9,6 +9,7 @@ import torch
 from mrpro.data.enums import TrajType
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.utils import remove_repeat
+from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 
 
 @dataclass(slots=True, frozen=True)
@@ -171,3 +172,11 @@ class KTrajectory(MoveDataMixin):
         """
         shape = self.broadcasted_shape
         return torch.stack([traj.expand(*shape) for traj in (self.kz, self.ky, self.kx)], dim=stack_dim)
+
+    def __repr__(self):
+        """Representation method for KTrajectory class."""
+        z = summarize_tensorvalues(torch.tensor(self.kz.shape))
+        y = summarize_tensorvalues(torch.tensor(self.ky.shape))
+        x = summarize_tensorvalues(torch.tensor(self.kx.shape))
+        out = f'{type(self).__name__} with shape: kz={z}, ky={y}, kx={x}'
+        return out
