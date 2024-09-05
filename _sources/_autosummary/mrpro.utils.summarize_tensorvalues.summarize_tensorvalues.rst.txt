@@ -1,0 +1,6 @@
+mrpro.utils.summarize\_tensorvalues.summarize\_tensorvalues
+===========================================================
+
+.. currentmodule:: mrpro.utils.summarize_tensorvalues
+
+.. autofunction:: summarize_tensorvalues

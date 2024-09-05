@@ -50,4 +50,5 @@
    filters
    slice_profiles
    sliding_window
+   summarize_tensorvalues
 

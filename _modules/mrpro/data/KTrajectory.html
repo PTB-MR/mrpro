@@ -89,6 +89,7 @@
 <span class="kn">from</span> <span class="nn">mrpro.data.enums</span> <span class="kn">import</span> <span class="n">TrajType</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.MoveDataMixin</span> <span class="kn">import</span> <span class="n">MoveDataMixin</span>
 <span class="kn">from</span> <span class="nn">mrpro.utils</span> <span class="kn">import</span> <span class="n">remove_repeat</span>
+<span class="kn">from</span> <span class="nn">mrpro.utils.summarize_tensorvalues</span> <span class="kn">import</span> <span class="n">summarize_tensorvalues</span>
 
 
 <div class="viewcode-block" id="KTrajectory">
@@ -258,7 +259,15 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">broadcasted_shape</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">traj</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">)</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kz</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ky</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kx</span><span class="p">)],</span> <span class="n">dim</span><span class="o">=</span><span class="n">stack_dim</span><span class="p">)</span></div>
-</div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Representation method for KTrajectory class.&quot;&quot;&quot;</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">summarize_tensorvalues</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kz</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">summarize_tensorvalues</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ky</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">summarize_tensorvalues</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kx</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1"> with shape: kz=</span><span class="si">{</span><span class="n">z</span><span class="si">}</span><span class="s1">, ky=</span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s1">, kx=</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">return</span> <span class="n">out</span></div>
 
 </pre></div>
 

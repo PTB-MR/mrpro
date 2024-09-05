@@ -93,6 +93,7 @@
 <span class="kn">from</span> <span class="nn">mrpro.data.KHeader</span> <span class="kn">import</span> <span class="n">KHeader</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.MoveDataMixin</span> <span class="kn">import</span> <span class="n">MoveDataMixin</span>
 <span class="kn">from</span> <span class="nn">mrpro.data.SpatialDimension</span> <span class="kn">import</span> <span class="n">SpatialDimension</span>
+<span class="kn">from</span> <span class="nn">mrpro.utils.summarize_tensorvalues</span> <span class="kn">import</span> <span class="n">summarize_tensorvalues</span>
 
 <span class="n">MISC_TAGS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;TimeAfterStart&#39;</span><span class="p">:</span> <span class="mh">0x00191016</span><span class="p">}</span>
 
@@ -209,7 +210,15 @@
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">MISC_TAGS</span><span class="p">:</span>
             <span class="n">misc</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">make_unique_tensor</span><span class="p">(</span><span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="n">MISC_TAGS</span><span class="p">[</span><span class="n">name</span><span class="p">]))</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">fov</span><span class="o">=</span><span class="n">fov</span><span class="p">,</span> <span class="n">te</span><span class="o">=</span><span class="n">te</span><span class="p">,</span> <span class="n">ti</span><span class="o">=</span><span class="n">ti</span><span class="p">,</span> <span class="n">fa</span><span class="o">=</span><span class="n">fa</span><span class="p">,</span> <span class="n">tr</span><span class="o">=</span><span class="n">tr</span><span class="p">,</span> <span class="n">misc</span><span class="o">=</span><span class="n">misc</span><span class="p">)</span></div>
-</div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Representation method for IHeader class.&quot;&quot;&quot;</span>
+        <span class="n">te</span> <span class="o">=</span> <span class="n">summarize_tensorvalues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">te</span><span class="p">)</span>
+        <span class="n">ti</span> <span class="o">=</span> <span class="n">summarize_tensorvalues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ti</span><span class="p">)</span>
+        <span class="n">fa</span> <span class="o">=</span> <span class="n">summarize_tensorvalues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fa</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;FOV [m]: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fov</span><span class="si">!s}</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="sa">f</span><span class="s1">&#39;TE [s]: </span><span class="si">{</span><span class="n">te</span><span class="si">}</span><span class="se">\n</span><span class="s1">TI [s]: </span><span class="si">{</span><span class="n">ti</span><span class="si">}</span><span class="se">\n</span><span class="s1">Flip angle [rad]: </span><span class="si">{</span><span class="n">fa</span><span class="si">}</span><span class="s1">.&#39;</span>
+        <span class="k">return</span> <span class="n">out</span></div>
 
 </pre></div>
 
