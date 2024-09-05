@@ -31,6 +31,13 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
         """
         return OperatorComposition(self, other)
 
+     def __radd__(self, other: Operator[*Tin, Tout] | torch.Tensor) -> Operator[*Tin, Tout]:
+        """Operator right addition.
+
+        Returns lambda x: self(x) + other(x) if other is a tensor otherwise lambda x: self(x) + other
+        """
+        return self + other
+    
     def __add__(self, other: Operator[*Tin, Tout] | torch.Tensor) -> Operator[*Tin, Tout]:
         """Operator addition.
 
