@@ -31,11 +31,10 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
         """
         return OperatorComposition(self, other)
 
-    def __radd__(self, other: Operator[*Tin, Tout] | torch.Tensor) -> Operator[*Tin, Tout]:
+    def __radd__(self, other: torch.Tensor) -> Operator[*Tin, Tout]:  # type: ignore[misc]
         """Operator right addition.
 
-        Returns lambda x: other(x) + self(x) if other is a operator,
-        lambda x: other + self(x) if other is a tensor
+        Returns lambda x: other + self(x)
         """
         return self + other
 
@@ -45,10 +44,9 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
         Returns lambda x: self(x) + other(x) if other is a operator,
         lambda x: self(x) + other if other is a tensor
         """
-        if isinstance(other, Operator):
-            return OperatorSum(self, other)
-        else:
+        if isinstance(other, torch.Tensor):
             return OperatorTensorSumRight(self, other)
+        return OperatorSum(self, other)
 
     def __mul__(self, other: torch.Tensor) -> Operator[*Tin, Tout]:
         """Operator multiplication with tensor.
@@ -57,7 +55,7 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
         """
         return OperatorElementwiseProductLeft(self, other)
 
-    def __rmul__(self, other: torch.Tensor) -> Operator[*Tin, Tout]: # type: ignore[misc]
+    def __rmul__(self, other: torch.Tensor) -> Operator[*Tin, Tout]:  # type: ignore[misc]
         """Operator multiplication with tensor.
 
         Returns lambda x: other*self(x)
@@ -105,7 +103,7 @@ class OperatorSum(Operator[*Tin, Tout]):
 
 class OperatorTensorSumRight(Operator[*Tin, Tout]):
     """Operator right addition with tensor.
-    
+
     Performs Tensor + Operator(x)
     """
 

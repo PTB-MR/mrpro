@@ -189,6 +189,7 @@ def test_rsum_linearoperator_tensor():
     assert isinstance(c, LinearOperator), 'LinearOperator + tensor should be a LinearOperator'
     assert isinstance(c, Operator), 'LinearOperator + tensor should be an Operator'
 
+
 @pytest.mark.parametrize('value', [2, 3j])
 def test_elementwise_product_operator(value):
     a = DummyOperator(torch.tensor(2.0))
@@ -300,6 +301,7 @@ def test_adjoint_sum():
     v = rng.complex64_tensor(3)
     linear_op_sum = a + b
     dotproduct_adjointness_test(linear_op_sum, u, v)
+
 
 def test_adjoint_tensor_sum():
     rng = RandomGenerator(3)
