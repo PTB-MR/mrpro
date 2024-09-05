@@ -34,7 +34,7 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
     def __radd__(self, other: torch.Tensor) -> Operator[*Tin, Tout]:  # type: ignore[misc]
         """Operator right addition.
 
-        Returns lambda x: other + self(x)
+        Returns lambda x: other*x + self(x)
         """
         return self + other
 
@@ -42,10 +42,10 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
         """Operator addition.
 
         Returns lambda x: self(x) + other(x) if other is a operator,
-        lambda x: self(x) + other if other is a tensor
+        lambda x: self(x) + other*x if other is a tensor
         """
         if isinstance(other, torch.Tensor):
-            return OperatorTensorSumRight(self, other)
+            return OperatorTensorSum(self, other)
         return OperatorSum(self, other)
 
     def __mul__(self, other: torch.Tensor) -> Operator[*Tin, Tout]:
@@ -101,10 +101,10 @@ class OperatorSum(Operator[*Tin, Tout]):
         return cast(Tout, tuple(a + b for a, b in zip(self._operator1(*args), self._operator2(*args), strict=True)))
 
 
-class OperatorTensorSumRight(Operator[*Tin, Tout]):
+class OperatorTensorSum(Operator[*Tin, Tout]):
     """Operator right addition with tensor.
 
-    Performs Tensor + Operator(x)
+    Performs Tensor*x + Operator(x)
     """
 
     def __init__(self, operator: Operator[*Tin, Tout], tensor: torch.Tensor):
@@ -115,8 +115,10 @@ class OperatorTensorSumRight(Operator[*Tin, Tout]):
 
     def forward(self, *args: *Tin) -> Tout:
         """Operator addition with tensor."""
-        out = self._operator(*args)
-        return cast(Tout, tuple(a + self._tensor for a in out))
+        operatorargs = self._operator(*args)
+        tensorargs = (a * self._tensor for a in args)
+        out = tuple(op + ten for op, ten in zip(operatorargs, tensorargs, strict=False))
+        return cast(Tout, out)
 
 
 class OperatorElementwiseProductRight(Operator[*Tin, Tout]):

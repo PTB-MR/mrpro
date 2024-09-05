@@ -141,7 +141,7 @@ def test_sum_operator_tensor():
     c = a + b
     x = rng.complex64_tensor(10)
     (y1,) = c(x)
-    y2 = a(x)[0] + b
+    y2 = a(x)[0] + b * x
 
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator), 'Operator + tensor should be an Operator'
@@ -155,7 +155,7 @@ def test_rsum_operator_tensor():
     c = b + a
     x = rng.complex64_tensor(10)
     (y1,) = c(x)
-    y2 = a(x)[0] + b
+    y2 = a(x)[0] + b * x
 
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator), 'Operator + tensor should be an Operator'
@@ -164,12 +164,12 @@ def test_rsum_operator_tensor():
 
 def test_sum_linearoperator_tensor():
     rng = RandomGenerator(0)
-    a = DummyLinearOperator(rng.complex64_tensor((3, 10)))
+    a = DummyLinearOperator(rng.complex64_tensor((3, 3)))
     b = rng.complex64_tensor((3,))
     c = a + b
-    x = rng.complex64_tensor(10)
+    x = rng.complex64_tensor(3)
     (y1,) = c(x)
-    y2 = a(x)[0] + b
+    y2 = a(x)[0] + b * x
 
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, LinearOperator), 'LinearOperator + tensor should be a LinearOperator'
@@ -178,12 +178,12 @@ def test_sum_linearoperator_tensor():
 
 def test_rsum_linearoperator_tensor():
     rng = RandomGenerator(0)
-    a = DummyLinearOperator(rng.complex64_tensor((3, 10)))
+    a = DummyLinearOperator(rng.complex64_tensor((3, 3)))
     b = rng.complex64_tensor((3,))
     c = b + a
-    x = rng.complex64_tensor(10)
+    x = rng.complex64_tensor(3)
     (y1,) = c(x)
-    y2 = a(x)[0] + b
+    y2 = a(x)[0] + b * x
 
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, LinearOperator), 'LinearOperator + tensor should be a LinearOperator'
@@ -305,9 +305,9 @@ def test_adjoint_sum():
 
 def test_adjoint_tensor_sum():
     rng = RandomGenerator(3)
-    a = DummyLinearOperator(rng.complex64_tensor((3, 10)))
-    b = 0 * rng.float32_tensor(1) + 0j  # FIXME
-    u = rng.complex64_tensor(10)
+    a = DummyLinearOperator(rng.complex64_tensor((3, 3)))
+    b = rng.float32_tensor(3)
+    u = rng.complex64_tensor(3)
     v = rng.complex64_tensor(3)
     linear_op_sum = a + b
     dotproduct_adjointness_test(linear_op_sum, u, v)
