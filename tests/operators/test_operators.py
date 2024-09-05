@@ -171,7 +171,7 @@ def test_sum_linearoperator_tensor():
 
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, LinearOperator), 'LinearOperator + tensor should be a LinearOperator'
-    assert not isinstance(c, Operator), 'LinearOperator + tensor should not be an Operator'
+    assert isinstance(c, Operator), 'LinearOperator + tensor should be an Operator'
 
 
 def test_rsum_linearoperator_tensor():
@@ -185,7 +185,7 @@ def test_rsum_linearoperator_tensor():
 
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, LinearOperator), 'LinearOperator + tensor should be a LinearOperator'
-    assert not isinstance(c, Operator), 'LinearOperator + tensor should not be an Operator'
+    assert isinstance(c, Operator), 'LinearOperator + tensor should be an Operator'
 
 @pytest.mark.parametrize('value', [2, 3j])
 def test_elementwise_product_operator(value):
