@@ -44,13 +44,23 @@ import requests
 # $ (A^H W A + l B) x = A^H W y + l x_{reg}$
 #
 # which is a linear system $Hx = b$ that needs to be solved for $x$.
+#
+# One important question of course is, what to use for $x_{reg}$. For dynamic images (e.g. cine MRI) low-resolution
+# dynamic images or high-quality static images have been proposed. In recent years, also the output of neural-networks
+# has been used as an image regulariser.
+#
+# In this example we are going to use a high-quality image to regularise the reconstruction of an undersampled image.
+# Both images are obtained from the same data acquisition (one using all the acquired data ($x_{reg}$) and one using
+# only parts of it ($x$)). This of course is an unrealistic case but it will allow us to study the effect of the
+# regularisation.
+
 # %%
 import mrpro
 
 # %% [markdown]
 # ##### Read-in the raw data
 
-fname = '/Users/kolbit01/Documents/PTB/Data/mrpro/raw/pulseq_radial_2D_24spokes_golden_angle_with_traj.h5'
+fname = '/Users/kolbit01/Documents/PTB/Data/mrpro/raw/pulseq_radial_2D_402spokes_golden_angle_with_traj.h5'
 
 # %%
 from mrpro.data import KData
@@ -62,77 +72,80 @@ kdata.header.recon_matrix.x = 256
 kdata.header.recon_matrix.y = 256
 
 # %% [markdown]
-# ##### Direct reconstruction and Iterative SENSE reconstruction for comparison
+# ##### Image $x_{reg}$ from fully sampled data
 
 # %%
 from mrpro.algorithms.reconstruction import DirectReconstruction, IterativeSENSEReconstruction
+from mrpro.data import CsmData
 
-# For comparison we can carry out a direct reconstruction
-direct_reconstruction = DirectReconstruction(kdata)
-img_direct = direct_reconstruction(kdata)
+# Estimate coil maps
+direct_reconstruction = DirectReconstruction(kdata, csm=None)
+img_coilwise = direct_reconstruction(kdata)
+csm = CsmData.from_idata_walsh(img_coilwise)
 
-iterative_sense_reconstruction = IterativeSENSEReconstruction(kdata, csm=direct_reconstruction.csm, n_iterations=6)
+# Iterative SENSE reconstruction
+iterative_sense_reconstruction = IterativeSENSEReconstruction(kdata, csm=csm, n_iterations=3)
 img_iterative_sense = iterative_sense_reconstruction(kdata)
+
+# %% [markdown]
+# ##### Image $x$ from undersampled data
+
+# %%
+import torch
+
+# Data undersampling
+idx_us = torch.arange(0, 20)[None, :]
+kdata_us = kdata.split_k1_into_other(idx_us, other_label='repetition')
+
+# %%
+# Iterativ SENSE reconstruction
+iterative_sense_reconstruction = IterativeSENSEReconstruction(kdata_us, csm=csm, n_iterations=6)
+img_us_iterative_sense = iterative_sense_reconstruction(kdata_us)
+
+# %%
+from mrpro.algorithms.reconstruction import RegularizedIterativeSENSEReconstruction
+
+# Regularised iterativ SENSE reconstruction
+regularized_iterative_sense_reconstruction = RegularizedIterativeSENSEReconstruction(kdata_us, csm=csm, n_iterations=6, regularisation_data=img_iterative_sense, regularisation_weight=1)
+img_us_regularised_iterative_sense = regularized_iterative_sense_reconstruction(kdata_us)
 
 # %%
 import matplotlib.pyplot as plt
 
-vis_im = [img_direct.rss(), img_iterative_sense.rss()]
-vis_title = ['Direct', 'Iterative SENSE']
-fig, ax = plt.subplots(1, 2, squeeze=False, figsize=(8, 4))
-for ind in range(2):
+vis_im = [img_iterative_sense.rss(), img_us_iterative_sense.rss(), img_us_regularised_iterative_sense.rss()]
+vis_title = ['Fully sampled', 'Iterative SENSE R=20', 'Regularized Iterative SENSE R=20']
+fig, ax = plt.subplots(1, 3, squeeze=False, figsize=(12, 4))
+for ind in range(3):
     ax[0, ind].imshow(vis_im[ind][0, 0, ...])
     ax[0, ind].set_title(vis_title[ind])
 
-# %% [markdown]
-# ##### Regularized Iterative SENSE reconstruction
-
-# %%
-# We can use the direct reconstruction to obtain the coil maps.
-iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
-    kdata, csm=direct_reconstruction.csm, n_iterations=4
-)
-img = iterative_sense_reconstruction(kdata)
 
 # %% [markdown]
 # ### Behind the scenes
 
 # %% [markdown]
-# ##### Set-up the density compensation operator $W$
-
+# ##### Set-up the density compensation operator $W$ and acquisition model $A$
+#
+# This is the same as for the iterative SENSE reconstruction. For more detail please look at the
+# iterative_sense_reconstruction notebook.
 # %%
-# The density compensation operator is calculated based on the k-space locations of the acquired data.
-dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata.traj).as_operator()
-
-
-# %% [markdown]
-# ##### Set-up the acquisition model $A$
-
-# %%
-# Define Fourier operator using the trajectory and header information in kdata
-fourier_operator = mrpro.operators.FourierOp.from_kdata(kdata)
-
-# Calculate coil maps
-# Note that operators return a tuple of tensors, so we need to unpack it,
-# even though there is only one tensor returned from adjoint operator.
-img_coilwise = mrpro.data.IData.from_tensor_and_kheader(*fourier_operator.H(*dcf_operator(kdata.data)), kdata.header)
-csm_operator = mrpro.data.CsmData.from_idata_walsh(img_coilwise).as_operator()
-
-# Create the acquisition operator A
+dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata_us.traj).as_operator()
+fourier_operator = mrpro.operators.FourierOp.from_kdata(kdata_us)
+csm_operator = csm.as_operator()
 acquisition_operator = fourier_operator @ csm_operator
 
 # %% [markdown]
-# ##### Calculate the right-hand-side of the linear system $b = A^H W y$
+# ##### Calculate the right-hand-side of the linear system $b = A^H W y + l x_{reg}$
 
 # %%
-(right_hand_side,) = acquisition_operator.H(dcf_operator(kdata.data)[0])
+right_hand_side = acquisition_operator.H(dcf_operator(kdata.data)[0])[0] + regularisation_weight * img_iterative_sense.data
 
 
 # %% [markdown]
-# ##### Set-up the linear self-adjoint operator $H = A^H W A$
+# ##### Set-up the linear self-adjoint operator $H = A^H W A + l$
 
 # %%
-operator = acquisition_operator.H @ dcf_operator @ acquisition_operator
+operator = acquisition_operator.H @ dcf_operator @ acquisition_operator + regularisation_weight
 
 # %% [markdown]
 # ##### Run conjugate gradient
@@ -144,21 +157,17 @@ img_manual = mrpro.algorithms.optimizers.cg(
 
 # %%
 # Display the reconstructed image
-import matplotlib.pyplot as plt
-import torch
-
-fig, ax = plt.subplots(1, 3, squeeze=False)
-ax[0, 0].imshow(img_direct.rss()[0, 0, :, :])
-ax[0, 0].set_title('Direct Reconstruction', fontsize=10)
-ax[0, 1].imshow(img.rss()[0, 0, :, :])
-ax[0, 1].set_title('Iterative SENSE', fontsize=10)
-ax[0, 2].imshow(img_manual.abs()[0, 0, 0, :, :])
-ax[0, 2].set_title('"Manual" Iterative SENSE', fontsize=10)
+vis_im = [img_us_iterative_sense.rss(), img_manual.abs()]
+vis_title = ['Regularised Iterative SENSE R=20', '"Manual" Regularized Iterative SENSE R=20']
+fig, ax = plt.subplots(1, 2, squeeze=False, figsize=(8, 4))
+for ind in range(2):
+    ax[0, ind].imshow(vis_im[ind][0, 0, ...])
+    ax[0, ind].set_title(vis_title[ind])
 
 # %% [markdown]
 # ### Check for equal results
-# The two versions result should in the same image data.
+# The two versions should result in the same image data.
 
 # %%
 # If the assert statement did not raise an exception, the results are equal.
-assert torch.allclose(img.data, img_manual)
+assert torch.allclose(img_us_iterative_sense.data, img_manual)
