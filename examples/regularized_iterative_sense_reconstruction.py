@@ -7,14 +7,12 @@ zenodo_url = 'https://zenodo.org/records/10854057/files/'
 fname = 'pulseq_radial_2D_402spokes_golden_angle_with_traj.h5'
 # %%
 # Download raw data
-import tempfile
 
-import requests
 
-#data_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.h5')
-#response = requests.get(zenodo_url + fname, timeout=30)
-#data_file.write(response.content)
-#data_file.flush()
+# data_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.h5')
+# response = requests.get(zenodo_url + fname, timeout=30)
+# data_file.write(response.content)
+# data_file.flush()
 
 # %% [markdown]
 # ### Image reconstruction
@@ -31,12 +29,12 @@ import requests
 # $ F(x) = ||W^{\frac{1}{2}}(Ax - y)||_2^2 $
 #
 # where $W^\frac{1}{2}$ is the square root of the density compensation function (which corresponds to a diagonal
-# operator). Because this is an ill-posed problem, we can add a regularisation term to stablize the problem and obtain
+# operator). Because this is an ill-posed problem, we can add a regularization term to stabilize the problem and obtain
 # a solution with certain properties:
 #
 # $ F(x) = ||W^{\frac{1}{2}}(Ax - y)||_2^2 + l||Bx - x_{reg}||_2^2$
 #
-# where $l$ is the strength of the regularisation, $B$ is a linear operator and $x_{reg}$ is a regularisation image.
+# where $l$ is the strength of the regularization, $B$ is a linear operator and $x_{reg}$ is a regularization image.
 # With this functional $F$ we obtain a solution which is close to $x_{reg}$ and to the acquired data $y$.
 #
 # Setting the derivative of the functional $F$ to zero and rearranging yields
@@ -52,7 +50,7 @@ import requests
 # In this example we are going to use a high-quality image to regularise the reconstruction of an undersampled image.
 # Both images are obtained from the same data acquisition (one using all the acquired data ($x_{reg}$) and one using
 # only parts of it ($x$)). This of course is an unrealistic case but it will allow us to study the effect of the
-# regularisation.
+# regularization.
 
 # %%
 import mrpro
@@ -106,13 +104,15 @@ img_us_iterative_sense = iterative_sense_reconstruction(kdata_us)
 from mrpro.algorithms.reconstruction import RegularizedIterativeSENSEReconstruction
 
 # Regularised iterativ SENSE reconstruction
-regularized_iterative_sense_reconstruction = RegularizedIterativeSENSEReconstruction(kdata_us, csm=csm, n_iterations=6, regularisation_data=img_iterative_sense, regularisation_weight=1)
-img_us_regularised_iterative_sense = regularized_iterative_sense_reconstruction(kdata_us)
+regularized_iterative_sense_reconstruction = RegularizedIterativeSENSEReconstruction(
+    kdata_us, csm=csm, n_iterations=6, regularization_data=img_iterative_sense, regularization_weight=1
+)
+img_us_regularized_iterative_sense = regularized_iterative_sense_reconstruction(kdata_us)
 
 # %%
 import matplotlib.pyplot as plt
 
-vis_im = [img_iterative_sense.rss(), img_us_iterative_sense.rss(), img_us_regularised_iterative_sense.rss()]
+vis_im = [img_iterative_sense.rss(), img_us_iterative_sense.rss(), img_us_regularized_iterative_sense.rss()]
 vis_title = ['Fully sampled', 'Iterative SENSE R=20', 'Regularized Iterative SENSE R=20']
 fig, ax = plt.subplots(1, 3, squeeze=False, figsize=(12, 4))
 for ind in range(3):
@@ -138,14 +138,16 @@ acquisition_operator = fourier_operator @ csm_operator
 # ##### Calculate the right-hand-side of the linear system $b = A^H W y + l x_{reg}$
 
 # %%
-right_hand_side = acquisition_operator.H(dcf_operator(kdata.data)[0])[0] + regularisation_weight * img_iterative_sense.data
+right_hand_side = (
+    acquisition_operator.H(dcf_operator(kdata.data)[0])[0] + regularization_weight * img_iterative_sense.data
+)
 
 
 # %% [markdown]
 # ##### Set-up the linear self-adjoint operator $H = A^H W A + l$
 
 # %%
-operator = acquisition_operator.H @ dcf_operator @ acquisition_operator + regularisation_weight
+operator = acquisition_operator.H @ dcf_operator @ acquisition_operator + regularization_weight
 
 # %% [markdown]
 # ##### Run conjugate gradient

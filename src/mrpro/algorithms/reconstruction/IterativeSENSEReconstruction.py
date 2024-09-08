@@ -46,7 +46,7 @@ class IterativeSENSEReconstruction(RegularizedIterativeSENSEReconstruction):
     ) -> None:
         """Initialize IterativeSENSEReconstruction.
 
-        For a regularised version of the iterative SENSE algorithm please see RegularizedIterativeSENSEReconstruction.
+        For a regularized version of the iterative SENSE algorithm please see RegularizedIterativeSENSEReconstruction.
 
         Parameters
         ----------
@@ -73,4 +73,4 @@ class IterativeSENSEReconstruction(RegularizedIterativeSENSEReconstruction):
         ValueError
             If the kdata and fourier_op are None or if csm is a Callable but kdata is None.
         """
-        super().__init__(kdata, fourier_op, csm, noise, dcf, n_iterations=n_iterations, regularisation_weight=0)
+        super().__init__(kdata, fourier_op, csm, noise, dcf, n_iterations=n_iterations, regularization_weight=0)

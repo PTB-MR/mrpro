@@ -25,21 +25,21 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
     by using a conjugate gradient algorithm to solve
     :math:`H x = b` with :math:`H = A^H W A + L B` and :math:`b = A^H W y + L x_0` where :math:`A`
     is the acquisition model (coil sensitivity maps, Fourier operator, k-space sampling), :math:`y` is the acquired
-    k-space data, :math:`W` describes the density compensation, :math:`L` is the strength of the regularisation and
-    :math:`x_0` is the regularisation image (i.e. the prior). :math:`B` is a linear operator applied to :math:`x`.
+    k-space data, :math:`W` describes the density compensation, :math:`L` is the strength of the regularization and
+    :math:`x_0` is the regularization image (i.e. the prior). :math:`B` is a linear operator applied to :math:`x`.
     """
 
     n_iterations: int
     """Number of CG iterations."""
 
-    regularisation_data: torch.Tensor
+    regularization_data: torch.Tensor
     """Regularisation data (i.e. prior) :math:`x_0`."""
 
-    regularisation_weight: torch.Tensor
-    """Strength of the regularisation :math:`L`."""
+    regularization_weight: torch.Tensor
+    """Strength of the regularization :math:`L`."""
 
     linear_op: LinearOperator | None
-    """Linear operator :math:`B` applied to the current estimate in the regularisation term."""
+    """Linear operator :math:`B` applied to the current estimate in the regularization term."""
 
     def __init__(
         self,
@@ -50,8 +50,8 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         dcf: DcfData | None = None,
         *,
         n_iterations: int = 5,
-        regularisation_data: float | torch.Tensor = 0.0,
-        regularisation_weight: float | torch.Tensor,
+        regularization_data: float | torch.Tensor = 0.0,
+        regularization_weight: float | torch.Tensor,
         linear_op: LinearOperator | None = None,
     ) -> None:
         """Initialize RegularizedIterativeSENSEReconstruction.
@@ -75,12 +75,12 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
             K-space sampling density compensation. If None, set up based on kdata.
         n_iterations
             Number of CG iterations
-        regularisation_data
+        regularization_data
             Regularisation data, e.g. a reference image (:math:`x_0`).
-        regularisation_weight
-            Strength of the regularisation (:math:`L`).
+        regularization_weight
+            Strength of the regularization (:math:`L`).
         linear_op
-            Linear operator :math:`B` applied to the current estimate in the regularisation term. If None, nothing is
+            Linear operator :math:`B` applied to the current estimate in the regularization term. If None, nothing is
             applied to the current estimate.
 
 
@@ -91,8 +91,8 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         """
         super().__init__(kdata, fourier_op, csm, noise, dcf)
         self.n_iterations = n_iterations
-        self.regularisation_data = torch.as_tensor(regularisation_data)
-        self.regularisation_weight = torch.as_tensor(regularisation_weight)
+        self.regularization_data = torch.as_tensor(regularization_data)
+        self.regularization_weight = torch.as_tensor(regularization_weight)
         self.linear_op = linear_op
 
     def _self_adjoint_operator(self) -> LinearOperator:
@@ -160,13 +160,13 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         operator = self._self_adjoint_operator().to(device)
         right_hand_side = self._right_hand_side(kdata)
 
-        # Add regularisation
-        if not torch.all(self.regularisation_weight == 0):
+        # Add regularization
+        if not torch.all(self.regularization_weight == 0):
             if self.linear_op is None:
-                operator = operator + self.regularisation_weight * self.linear_op
+                operator = operator + self.regularization_weight * self.linear_op
             else:
-                operator = operator + self.regularisation_weight
-            right_hand_side += self.regularisation_weight * self.regularisation_data
+                operator = operator + self.regularization_weight
+            right_hand_side += self.regularization_weight * self.regularization_data
 
         img_tensor = cg(
             operator, right_hand_side, initial_value=right_hand_side, max_iterations=self.n_iterations, tolerance=0.0
