@@ -16,7 +16,12 @@ class IdentityOp(LinearOperator):
         super().__init__()
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Identity of input `x`.
+        """Identity of input.
+
+        Parameters
+        ----------
+        x
+            input tensor
 
         Returns
         -------
@@ -25,7 +30,12 @@ class IdentityOp(LinearOperator):
         return (x,)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Adjoint Identity of input `x`.
+        """Adjoint Identity.
+
+        Parameters
+        ----------
+        x
+            input tensor
 
         Returns
         -------
