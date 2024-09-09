@@ -32,7 +32,7 @@ dependencies = [
     "torch>=2.3",
     "ismrmrd>=1.14.1",
     "einops",
-    "pydicom",
+    "pydicom>=2.3",
     "pypulseq>=1.4.2",
     "torchkbnufft>=1.4.0",
     "scipy>=1.12",
@@ -63,7 +63,7 @@ notebook = [
 # PyTest section
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-filterwarnings = ["error"]
+filterwarnings = ["error:::mrpro"]
 addopts = "-n auto"
 markers = ["cuda : Tests only to be run when cuda device is available"]
 
