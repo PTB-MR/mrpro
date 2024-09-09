@@ -98,6 +98,7 @@ def test_quat_double_to_canonical_single_cover():
     torch.testing.assert_close(r.as_quat(canonical=True), expected_quat)
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_quat_double_cover():
     # See the scipy Rotation.from_quat() docstring for scope of the quaternion
     # double cover property.

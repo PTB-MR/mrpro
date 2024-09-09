@@ -63,7 +63,10 @@ notebook = [
 # PyTest section
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-filterwarnings = ["error:::mrpro"]
+filterwarnings = [
+    "error",
+    "ignore:'write_like_original':DeprecationWarning:pydicom:"
+]
 addopts = "-n auto"
 markers = ["cuda : Tests only to be run when cuda device is available"]
 
