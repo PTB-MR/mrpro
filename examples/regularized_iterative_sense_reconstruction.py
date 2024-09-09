@@ -104,8 +104,10 @@ img_us_iterative_sense = iterative_sense_reconstruction(kdata_us)
 from mrpro.algorithms.reconstruction import RegularizedIterativeSENSEReconstruction
 
 # Regularised iterativ SENSE reconstruction
+regularization_weight = 1
+n_iterations = 6
 regularized_iterative_sense_reconstruction = RegularizedIterativeSENSEReconstruction(
-    kdata_us, csm=csm, n_iterations=6, regularization_data=img_iterative_sense, regularization_weight=1
+    kdata_us, csm=csm, n_iterations=n_iterations, regularization_data=img_iterative_sense, regularization_weight=regularization_weight
 )
 img_us_regularized_iterative_sense = regularized_iterative_sense_reconstruction(kdata_us)
 
@@ -154,7 +156,7 @@ operator = acquisition_operator.H @ dcf_operator @ acquisition_operator + regula
 
 # %%
 img_manual = mrpro.algorithms.optimizers.cg(
-    operator, right_hand_side, initial_value=right_hand_side, max_iterations=4, tolerance=0.0
+    operator, right_hand_side, initial_value=right_hand_side, max_iterations=n_iterations, tolerance=0.0
 )
 
 # %%
