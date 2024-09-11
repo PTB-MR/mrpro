@@ -1,6 +1,7 @@
 """Wavelet operator."""
 
 from collections.abc import Sequence
+from typing import Literal
 
 import numpy as np
 import torch
@@ -12,7 +13,31 @@ from pywt._multilevel import _check_level
 
 from mrpro.operators.LinearOperator import LinearOperator
 
-
+# Switch of formater here to avoid having only one wavelet type per line
+# fmt: off
+WaveletType = Literal[
+    'haar',
+    'db1', 'db2', 'db3', 'db4', 'db5', 'db6', 'db7', 'db8', 'db9',
+    'db10', 'db11', 'db12', 'db13', 'db14', 'db15', 'db16', 'db17', 'db18', 'db19',
+    'db20', 'db21', 'db22', 'db23', 'db24', 'db25', 'db26', 'db27', 'db28', 'db29',
+    'db30', 'db31', 'db32', 'db33', 'db34', 'db35', 'db36', 'db37', 'db38',
+    'sym2', 'sym3', 'sym4', 'sym5', 'sym6', 'sym7', 'sym8', 'sym9',
+    'sym10', 'sym11', 'sym12', 'sym13', 'sym14', 'sym15', 'sym16', 'sym17', 'sym18', 'sym19', 'sym20',
+    'coif1', 'coif2', 'coif3', 'coif4', 'coif5', 'coif6', 'coif7', 'coif8', 'coif9',
+    'coif10', 'coif11', 'coif12', 'coif13', 'coif14', 'coif15', 'coif16', 'coif17',
+    'bior1.1', 'bior1.3', 'bior1.5', 'bior2.2', 'bior2.4', 'bior2.6', 'bior2.8',
+    'bior3.1', 'bior3.3', 'bior3.5', 'bior3.7', 'bior3.9', 'bior4.4', 'bior5.5', 'bior6.8',
+    'rbio1.1', 'rbio1.3', 'rbio1.5', 'rbio2.2', 'rbio2.4', 'rbio2.6', 'rbio2.8',
+    'rbio3.1', 'rbio3.3', 'rbio3.5', 'rbio3.7', 'rbio3.9', 'rbio4.4', 'rbio5.5', 'rbio6.8',
+    'dmey',
+    'gaus1', 'gaus2', 'gaus3', 'gaus4', 'gaus5', 'gaus6', 'gaus7', 'gaus8',
+    'mexh',
+    'morl',
+    'cgau1', 'cgau2', 'cgau3', 'cgau4', 'cgau5', 'cgau6', 'cgau7', 'cgau8',
+    'shan',
+    'fbsp',
+    'cmor'
+]
 class WaveletOp(LinearOperator):
     """Wavelet operator class."""
 
@@ -20,16 +45,12 @@ class WaveletOp(LinearOperator):
         self,
         domain_shape: Sequence[int] | None = None,
         dim: tuple[int] | tuple[int, int] | tuple[int, int, int] = (-2, -1),
-        wavelet_name: str = 'db4',
+        wavelet_name: WaveletType = 'db4',
         level: int | None = None,
     ):
         """Wavelet operator.
 
         For complex images the wavelet coefficients are calculated for real and imaginary part separately.
-        Wavelet names supported by pywt are: haar, db1 - db38, sym2 - sym20, coif1 - coif17, bior1.1, bior1.3, bior1.5,
-        bior2.2, bior2.4, bior2.6, bior2.8, bior3.1, bior3.3 bior3.5, bior3.7, bior3.9, bior4.4, bior5.5, bior6.8,
-        rbio1.1, rbio1.3, rbio1.5, rbio2.2, rbio2.4, rbio2.6, rbio2.8, rbio3.1, rbio3.3, rbio3.5, rbio3.7, rbio3.9,
-        rbio4.4, rbio5.5, rbio6.8,- bior6.8, dmey, gaus1- gaus8, mexh, cgau1 - cgau8, shan, fbsp, cmor
 
         For a 2D image, the coefficients are labelled [aa, (ad_n, da_n, dd_n), ..., (ad_1, da_1, dd_1)] where a refers
         to the approximation coefficients and d to the detail coefficients. The index indicates the level.
@@ -130,21 +151,21 @@ class WaveletOp(LinearOperator):
         if len(dim) != len(set(dim)):
             raise ValueError(f'Axis must be unique. Normalized axis are {dim}')
 
-        # swapping the last axes and the axes to calculate wavelets of
+        # move axes where wavelets are calculated to the end
         x = torch.moveaxis(x, dim, list(range(-len(self._dim), 0)))
 
         # the ptwt functions work only for real data, thus we handle complex inputs as an additional channel
         x_real = torch.view_as_real(x).moveaxis(-1, 0) if x.is_complex() else x
 
         if len(self._dim) == 1:
-            coeffs1 = wavedec(x_real, self._wavelet_name, level=self._level, mode='zero', axis=-1)
-            coefficients_list = self._format_coeffs_1d(coeffs1)
+            coeffs_1d = wavedec(x_real, self._wavelet_name, level=self._level, mode='zero', axis=-1)
+            coefficients_list = self._format_coeffs_1d(coeffs_1d)
         elif len(self._dim) == 2:
-            coeffs2 = wavedec2(x_real, self._wavelet_name, level=self._level, mode='zero', axes=(-2, -1))
-            coefficients_list = self._format_coeffs_2d(coeffs2)
+            coeffs_2d = wavedec2(x_real, self._wavelet_name, level=self._level, mode='zero', axes=(-2, -1))
+            coefficients_list = self._format_coeffs_2d(coeffs_2d)
         elif len(self._dim) == 3:
-            coeffs3 = wavedec3(x_real, self._wavelet_name, level=self._level, mode='zero', axes=(-3, -2, -1))
-            coefficients_list = self._format_coeffs_3d(coeffs3)
+            coeffs_3d = wavedec3(x_real, self._wavelet_name, level=self._level, mode='zero', axes=(-3, -2, -1))
+            coefficients_list = self._format_coeffs_3d(coeffs_3d)
         else:
             raise ValueError(f'Wavelets are only available for 1D, 2D and 3D and not {self._dim}D')
 
@@ -200,18 +221,18 @@ class WaveletOp(LinearOperator):
         coefficients_list = self._stacked_tensor_to_coeff(coefficients_stack_real)
 
         if len(self._dim) == 1:
-            coeffs1 = self._undo_format_coeffs_1d(coefficients_list)
-            data = waverec(coeffs1, self._wavelet_name, axis=-1)
+            coeffs_1d = self._undo_format_coeffs_1d(coefficients_list)
+            data = waverec(coeffs_1d, self._wavelet_name, axis=-1)
         elif len(self._dim) == 2:
-            coeffs2 = self._undo_format_coeffs_2d(coefficients_list)
-            data = waverec2(coeffs2, self._wavelet_name, axes=(-2, -1))
+            coeffs_2d = self._undo_format_coeffs_2d(coefficients_list)
+            data = waverec2(coeffs_2d, self._wavelet_name, axes=(-2, -1))
         elif len(self._dim) == 3:
-            coeffs3 = self._undo_format_coeffs_3d(coefficients_list)
-            data = waverec3(coeffs3, self._wavelet_name, axes=(-3, -2, -1))
+            coeffs_3d = self._undo_format_coeffs_3d(coefficients_list)
+            data = waverec3(coeffs_3d, self._wavelet_name, axes=(-3, -2, -1))
         else:
             raise ValueError(f'Wavelets are only available for 1D, 2D and 3D and not {self._dim}D')
 
-        # undo swapping of axes
+        # undo moving of axes
         if coefficients_stack.is_complex():
             data = torch.moveaxis(
                 data, list(range(-len(self._dim), 0)), [d + 1 for d in dim]
