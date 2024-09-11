@@ -4,7 +4,6 @@ from pathlib import Path
 
 import numpy as np
 import pydicom
-import pydicom._storage_sopclass_uids
 import torch
 from mrpro.data import SpatialDimension
 from mrpro.phantoms import EllipsePhantom
@@ -51,7 +50,7 @@ class Dicom2DTestImage:
 
         # Metadata
         file_meta = pydicom.dataset.FileMetaDataset()
-        file_meta.MediaStorageSOPClassUID = pydicom._storage_sopclass_uids.MRImageStorage
+        file_meta.MediaStorageSOPClassUID = pydicom.uid.MRImageStorage
         file_meta.MediaStorageSOPInstanceUID = pydicom.uid.generate_uid()
         file_meta.TransferSyntaxUID = pydicom.uid.ExplicitVRLittleEndian
 
