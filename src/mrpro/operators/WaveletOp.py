@@ -13,7 +13,7 @@ from pywt._multilevel import _check_level
 
 from mrpro.operators.LinearOperator import LinearOperator
 
-# Switch of formater here to avoid having only one wavelet type per line
+# Switch off formatter to avoid having only one wavelet type per line
 # fmt: off
 WaveletType = Literal[
     'haar',
