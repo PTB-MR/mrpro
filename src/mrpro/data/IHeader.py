@@ -64,10 +64,8 @@ class IHeader(MoveDataMixin):
 
         def get_item(dataset: Dataset, name: TagType):
             """Get item with a given name or Tag from a pydicom dataset."""
-            tag = Tag(name) if isinstance(name, str) else name  # find item via value name
-
             # iterall is recursive, so it will find all items with the given name
-            found_item = [item.value for item in dataset.iterall() if item.tag == tag]
+            found_item = [item.value for item in dataset.iterall() if item.tag == Tag(name)]
 
             if len(found_item) == 0:
                 return None
