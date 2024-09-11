@@ -34,6 +34,7 @@
       SensitivityOp
       SignalModel
       SliceProjectionOp
+      WaveletOp
       ZeroPadOp
    
    
