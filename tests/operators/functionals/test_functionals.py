@@ -2,7 +2,7 @@ import inspect
 from collections.abc import Callable, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, TypedDict
 
 import pytest
 import torch
@@ -200,7 +200,7 @@ def test_functional_shift(case: FunctionalTestCase):
 def test_functional_scaling(case: FunctionalTestCase):
     """Test if scaling with scalar weight is correct"""
     # scaling property
-    # \mathrm{prox}_{\sigma F(\alpha \, \cdot)}(x) = \frac{1}{\alpha} \mathrm{prox}_{\sigma \alpha^2 F(\cdot) }(\alpha x)
+    # \mathrm{prox}_{\sigma F(\alpha \,\cdot)}(x)=\frac{1}{\alpha}\mathrm{prox}_{\sigma \alpha^2 F(\cdot)}(\alpha x)
     alpha = case.rng.float32_tensor(1, 1, 2)
     functional = case.functional
     x = case.rand_x()
@@ -228,7 +228,7 @@ def test_prox_zero_scaling(case: FunctionalTestCase):
 
 
 @pytest.mark.parametrize('functional', FUNCTIONALS)
-@pytest.mark.parametrize('case', ('random', 'zero', 'complex'))
+@pytest.mark.parametrize('case', ['random', 'zero', 'complex'])
 def test_functional_grad(functional: type[Functional], case: Literal['random', 'zero', 'complex']):
     """Test if autograd works for functional."""
     rng = RandomGenerator(13)
@@ -244,11 +244,10 @@ def test_functional_grad(functional: type[Functional], case: Literal['random', '
     weight = rng.float64_tensor((1, 2, 3)).requires_grad_(True)
     f = functional(weight=weight, target=target, dim=(-1, -2))
 
-    with pytest.warns(UserWarning, match='Anomaly Detection has been enabled'):
-        with torch.autograd.detect_anomaly():
-            x = rng.float64_tensor((1, 2, 3)).requires_grad_(True)
-            (fx,) = f(x)
-            fx.sum().backward()
+    with pytest.warns(UserWarning, match='Anomaly Detection has been enabled'), torch.autograd.detect_anomaly():
+        x = rng.float64_tensor((1, 2, 3)).requires_grad_(True)
+        (fx,) = f(x)
+        fx.sum().backward()
 
     assert x.grad is not None
     torch.autograd.gradcheck(f, x, fast_mode=True)
@@ -277,10 +276,19 @@ def test_functional_values(functional: type[ProximableFunctional]):
     }
     """
 
-    cases = {
+    class Case(TypedDict):
+        x: torch.Tensor
+        weight: float
+        target: torch.Tensor
+        sigma: float
+        fx_expected: torch.Tensor
+        prox_expected: torch.Tensor
+        prox_convex_conj_expected: torch.Tensor
+
+    cases: dict[str, Case] = {
         'L1Norm': {
             'x': torch.tensor([[[-3.0, -2.0, -1.0], [0.0, 1.0, 2.0]]]),
-            'weight': 2,
+            'weight': 2.0,
             'target': torch.tensor([[[0.340, 0.130, 0.230], [0.230, -1.120, -0.190]]]),
             'sigma': 0.5,
             'fx_expected': torch.tensor(22.480),
@@ -289,7 +297,7 @@ def test_functional_values(functional: type[ProximableFunctional]):
         },
         'L2NormSquared': {
             'x': torch.tensor([[[-3.0, -2.0, -1.0], [0.0, 1.0, 2.0]]]),
-            'weight': 2,
+            'weight': 2.0,
             'target': torch.tensor([[[0.340, 0.130, 0.230], [0.230, -1.120, -0.190]]]),
             'sigma': 0.5,
             'fx_expected': torch.tensor(106.195198),
@@ -301,7 +309,8 @@ def test_functional_values(functional: type[ProximableFunctional]):
     }
     if functional.__name__ not in cases:
         pytest.skip(f'No test case for {functional}')
-    _test_functional_values(functional, **cases[functional.__name__])
+    parameters = cases[functional.__name__]
+    _test_functional_values(functional, **parameters)
 
 
 def _test_functional_values(
