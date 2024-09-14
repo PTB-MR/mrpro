@@ -38,17 +38,14 @@ class L1Norm(ProximableFunctional):
 
         Parameters
         ----------
-            x
-                input tensor
+        x
+            input tensor
 
         Returns
         -------
             l1 norm of the input tensor
         """
-        dtype = torch.promote_types(self.target.dtype, x.dtype)
-        x = x.to(dtype)
-        target = self.target.to(dtype)
-        value = (self.weight * (x - target)).abs()
+        value = (self.weight * (x - self.target)).abs()
 
         if self.divide_by_n:
             return (torch.mean(value, dim=self.dim, keepdim=self.keepdim),)
@@ -62,19 +59,16 @@ class L1Norm(ProximableFunctional):
 
         Parameters
         ----------
-            x
-                input tensor
-            sigma
-                scaling factor
+        x
+            input tensor
+        sigma
+            scaling factor
 
         Returns
         -------
             Proximal mapping applied to the input tensor
         """
-        dtype = torch.promote_types(self.target.dtype, x.dtype)
-        x = x.to(dtype)
-        target = self.target.to(dtype)
-        diff = x - target
+        diff = x - self.target
 
         threshold = self.weight * sigma
         threshold = self._divide_by_n(threshold, torch.broadcast_shapes(x.shape, threshold.shape))
@@ -94,19 +88,16 @@ class L1Norm(ProximableFunctional):
 
         Parameters
         ----------
-            x
-                data tensor
-            sigma
-                scaling factor
+        x
+            input tensor
+        sigma
+            scaling factor
 
         Returns
         -------
             Proximal of the convex conjugate applied to the input tensor
         """
-        dtype = torch.promote_types(self.target.dtype, x.dtype)
-        x = x.to(dtype)
-        target = self.target.to(dtype)
-        diff = x - sigma * target
+        diff = x - sigma * self.target
         threshold = self._divide_by_n(self.weight.abs(), torch.broadcast_shapes(x.shape, self.weight.shape))
 
         if diff.is_complex():

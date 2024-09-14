@@ -33,17 +33,14 @@ class L2NormSquared(ProximableFunctional):
 
         Parameters
         ----------
-            x
-                input tensor
+        x
+            input tensor
 
         Returns
         -------
             squared l2 norm of the input tensor
         """
-        dtype = torch.promote_types(self.target.dtype, x.dtype)
-        x = x.to(dtype)
-        target = self.target.to(dtype)
-        value = (self.weight * (x - target)).abs().square()
+        value = (self.weight * (x - self.target)).abs().square()
 
         if self.divide_by_n:
             return (torch.mean(value, dim=self.dim, keepdim=self.keepdim),)
@@ -61,23 +58,20 @@ class L2NormSquared(ProximableFunctional):
 
         Parameters
         ----------
-            x
-                input tensor
-            sigma
-                scaling factor
+        x
+            input tensor
+        sigma
+            scaling factor
 
         Returns
         -------
             Proximal mapping applied to the input tensor
         """
-        dtype = torch.promote_types(self.target.dtype, x.dtype)
-        x = x.to(dtype)
-        target = self.target.to(dtype)
         weight_square_2_sigma = self._divide_by_n(
             self.weight.conj() * self.weight * 2 * sigma,
-            torch.broadcast_shapes(x.shape, target.shape, self.weight.shape),
+            torch.broadcast_shapes(x.shape, self.target.shape, self.weight.shape),
         )
-        x_out = (x + weight_square_2_sigma * target) / (1.0 + weight_square_2_sigma)
+        x_out = (x + weight_square_2_sigma * self.target) / (1.0 + weight_square_2_sigma)
 
         return (x_out,)
 
@@ -92,21 +86,18 @@ class L2NormSquared(ProximableFunctional):
 
         Parameters
         ----------
-            x
-                data tensor
-            sigma
-                scaling factor
+        x
+            data tensor
+        sigma
+            scaling factor
 
         Returns
         -------
             Proximal of convex conjugate applied to the input tensor
         """
-        dtype = torch.promote_types(self.target.dtype, x.dtype)
-        x = x.to(dtype)
-        target = self.target.to(dtype)
         weight_square = self._divide_by_n(
-            self.weight.conj() * self.weight, torch.broadcast_shapes(x.shape, target.shape, self.weight.shape)
+            self.weight.conj() * self.weight, torch.broadcast_shapes(x.shape, self.target.shape, self.weight.shape)
         )
 
-        x_out = (2 * weight_square * (x - sigma * target)) / (sigma + 2 * weight_square)
+        x_out = (2 * weight_square * (x - sigma * self.target)) / (sigma + 2 * weight_square)
         return (x_out,)
