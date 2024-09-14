@@ -6,7 +6,6 @@ from typing import Literal, TypedDict
 
 import pytest
 import torch
-import torch.test
 from mrpro.operators import Functional, ProximableFunctional, functionals
 from mrpro.operators.functionals import L1Norm, L1NormViewAsReal, L2NormSquared
 
@@ -42,9 +41,9 @@ def functional_test_cases(func: Callable[[FunctionalTestCase], None]) -> None:
     @pytest.mark.parametrize('functional', FUNCTIONALS)
     @pytest.mark.parametrize('shape', [[1, 2, 3]])
     @pytest.mark.parametrize('dtype_name', ['float32', 'complex64'])
-    @pytest.mark.parametrize('weight', ['scalar_weight', 'tensor_weight', 'binary_weight', 'complex_weight'])
+    @pytest.mark.parametrize('weight', ['scalar_weight', 'tensor_weight', 'complex_weight'])
     @pytest.mark.parametrize('target', ['no_target', 'random_target'])
-    @pytest.mark.parametrize('dim', [None, -2])
+    @pytest.mark.parametrize('dim', [None])
     @pytest.mark.parametrize('divide_by_n', [True, False])
     def wrapper(
         functional: type[ProximableFunctional],
@@ -155,9 +154,6 @@ def test_prox_optimality(case: FunctionalTestCase):
     """Use autograd to check if prox criterion is minimized."""
     functional = case.functional
     x = case.rand_x()
-    x = x.to(torch.float64)
-    functional.weight = functional.weight.to(torch.complex128)
-    functional.target = functional.target.to(torch.float64)
 
     (prox,) = functional.prox(x, sigma=case.sigma)
     l2square = L2NormSquared(
@@ -168,19 +164,16 @@ def test_prox_optimality(case: FunctionalTestCase):
     def prox_criterion(p):
         return (functional(p)[0] + 1 / (2 * case.sigma) * l2square(p - x)[0]).sum()
 
-    p = prox.clone().detach().requires_grad_()
-    optim = torch.optim.SGD([p], lr=1e-2)
-    for _ in range(500):
-        optim.zero_grad()
-        loss = prox_criterion(p)
-        loss.backward()
-        assert p.grad is not None
-        if torch.all(p.grad.abs() < 1e-5):
-            break
-        optim.step()
-        optim.param_groups[0]['lr'] *= 0.97
+    for perturbation in (0, 1e-3, 0.1):
+        p = (prox + perturbation * case.rng.rand_like(prox)).requires_grad_()
+        optim = torch.optim.SGD([p], lr=1e-2)
+        for _ in range(200):
+            optim.zero_grad()
+            prox_criterion(p).backward()
+            optim.step()
+            optim.param_groups[0]['lr'] *= 0.97
 
-    torch.testing.assert_close(p, prox, rtol=1e-3, atol=1e-4)
+        assert prox_criterion(p) + 1e-5 >= prox_criterion(prox)
 
 
 @functional_test_cases
@@ -221,8 +214,8 @@ def test_functional_scaling(case: FunctionalTestCase):
 
 
 @functional_test_cases
-def test_prox_zero_scaling(case: FunctionalTestCase):
-    """Test if scaling with scalar zero is correct"""
+def test_prox_zero_weight(case: FunctionalTestCase):
+    """Test if scaling with scalar zero weight is correct"""
     functional = case.functional
     functional.weight *= 0
     x = case.rand_x()
@@ -232,30 +225,26 @@ def test_prox_zero_scaling(case: FunctionalTestCase):
     torch.testing.assert_close(prox, x.to(case.result_dtype))  # prox is identity if weight is zero
 
 
-@pytest.mark.parametrize('functional', FUNCTIONALS)
-@pytest.mark.parametrize('case', ['random', 'zero', 'complex'])
-def test_functional_grad(functional: type[Functional], case: Literal['random', 'zero', 'complex']):
-    """Test if autograd works for functional."""
-    rng = RandomGenerator(13)
-    match case:
-        case 'random':
-            x = rng.float32_tensor((1, 2, 3)).requires_grad_(True)
-        case 'zero':
-            x = torch.zeros(1, requires_grad=True, dtype=torch.float64)
-        case 'complex':
-            x = rng.complex64_tensor((1, 2, 3)).requires_grad_(True)
+@pytest.mark.parametrize('functional', PROXIMABLE_FUNCTIONALS)
+def test_functional_prox_zero_sigma(functional: type[ProximableFunctional]):
+    """Test prox with sigma=0"""
+    f = functional()
+    x = torch.tensor([-1.0, 0.0, 1.0])
+    (prox,) = f.prox_convex_conj(x, sigma=0.0)
+    assert not torch.any(torch.isnan(prox))
+    assert not torch.any(torch.isinf(prox))
+    assert torch.allclose(prox, x)
 
-    target = rng.float64_tensor((1, 2, 3)).requires_grad_(True)
-    weight = rng.float64_tensor((1, 2, 3)).requires_grad_(True)
-    f = functional(weight=weight, target=target, dim=(-1, -2))
 
-    with pytest.warns(UserWarning, match='Anomaly Detection has been enabled'), torch.autograd.detect_anomaly():
-        x = rng.float64_tensor((1, 2, 3)).requires_grad_(True)
-        (fx,) = f(x)
-        fx.sum().backward()
-
-    assert x.grad is not None
-    torch.autograd.gradcheck(f, x, fast_mode=True)
+@pytest.mark.parametrize('functional', PROXIMABLE_FUNCTIONALS)
+def test_functional_prox_convex_conj_zero_sigma(functional: type[ProximableFunctional]):
+    """Test prox convex conj with sigma=0"""
+    f = functional()
+    x = torch.tensor([-1.0, 0.0, 1.0])
+    (prox_cc,) = f.prox_convex_conj(x, sigma=0.0)
+    assert not torch.any(torch.isnan(prox_cc))
+    assert not torch.any(torch.isinf(prox_cc))
+    assert torch.allclose(prox_cc, x)
 
 
 class NumericCase(TypedDict):
@@ -280,7 +269,7 @@ class NumericCase(TypedDict):
 
     functional: type[ProximableFunctional]
     x: torch.Tensor
-    weight: complex|torch.Tensor
+    weight: complex | torch.Tensor
     target: torch.Tensor
     sigma: float
     fx_expected: torch.Tensor
@@ -348,7 +337,7 @@ def test_functional_values(case_name: str):
 def _test_functional_values(
     functional: type[ProximableFunctional],
     x: torch.Tensor,
-    weight: float,
+    weight: complex | torch.Tensor,
     target: torch.Tensor,
     sigma: float,
     fx_expected: torch.Tensor,

@@ -72,7 +72,6 @@ class L1Norm(ProximableFunctional):
 
         threshold = self.weight * sigma
         threshold = self._divide_by_n(threshold, torch.broadcast_shapes(x.shape, threshold.shape))
-
         x_out = x - diff / torch.clamp_min((diff / threshold).abs(), 1)
         x_out = x_out.to(torch.result_type(threshold, x_out))
         return (x_out,)

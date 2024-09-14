@@ -14,11 +14,11 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
     def __init__(
         self,
-        weight: torch.Tensor | float = 1.0,
+        weight: torch.Tensor | complex = 1.0,
         target: torch.Tensor | None = None,
         dim: int | Sequence[int] | None = None,
         divide_by_n: bool = False,
-        keepdim: bool = True,
+        keepdim: bool = False,
     ) -> None:
         r"""Initialize a Functional.
 
@@ -76,4 +76,6 @@ class ProximableFunctional(Functional, ABC):
 
     def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor | float) -> tuple[torch.Tensor]:
         """Apply proximal of convex conjugate of functional."""
+        sigma = torch.as_tensor(sigma, device=self.target.device)
+        sigma[sigma.abs() < 1e-8] += 1e-6
         return (x - sigma * self.prox(x * 1 / sigma, 1 / sigma)[0],)
