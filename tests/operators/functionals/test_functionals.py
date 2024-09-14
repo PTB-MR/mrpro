@@ -280,7 +280,7 @@ class NumericCase(TypedDict):
 
     functional: type[ProximableFunctional]
     x: torch.Tensor
-    weight: float
+    weight: complex|torch.Tensor
     target: torch.Tensor
     sigma: float
     fx_expected: torch.Tensor
