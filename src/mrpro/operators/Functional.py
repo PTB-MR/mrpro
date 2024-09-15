@@ -15,7 +15,7 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
     def __init__(
         self,
         weight: torch.Tensor | complex = 1.0,
-        target: torch.Tensor | None = None,
+        target: torch.Tensor | None | complex = None,
         dim: int | Sequence[int] | None = None,
         divide_by_n: bool = False,
         keepdim: bool = False,
@@ -45,7 +45,7 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
         self.register_buffer('weight', torch.as_tensor(weight))
         if target is None:
             target = torch.tensor(0, dtype=torch.float32)
-        self.register_buffer('target', target)
+        self.register_buffer('target', torch.as_tensor(target))
         if isinstance(dim, int):
             dim = (dim,)
         elif isinstance(dim, Sequence):
@@ -71,11 +71,12 @@ class ProximableFunctional(Functional, ABC):
     """ProximableFunction Base Class."""
 
     @abstractmethod
-    def prox(self, x: torch.Tensor, sigma: torch.Tensor | float) -> tuple[torch.Tensor]:
+    def prox(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         """Apply proximal operator."""
 
-    def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor | float) -> tuple[torch.Tensor]:
+    def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         """Apply proximal of convex conjugate of functional."""
-        sigma = torch.as_tensor(sigma, device=self.target.device)
+        if not isinstance(sigma, torch.Tensor):
+            sigma = torch.as_tensor(1.0 * sigma, device=self.target.device)
         sigma[sigma.abs() < 1e-8] += 1e-6
         return (x - sigma * self.prox(x * 1 / sigma, 1 / sigma)[0],)

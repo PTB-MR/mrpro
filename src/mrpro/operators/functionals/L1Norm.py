@@ -52,7 +52,7 @@ class L1Norm(ProximableFunctional):
         else:
             return (torch.sum(value, dim=self.dim, keepdim=self.keepdim),)
 
-    def prox(self, x: torch.Tensor, sigma: torch.Tensor | float) -> tuple[torch.Tensor]:
+    def prox(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         """Proximal Mapping of the L1 Norm.
 
         Compute the proximal mapping of the L1-norm.
@@ -79,7 +79,7 @@ class L1Norm(ProximableFunctional):
     def prox_convex_conj(
         self,
         x: torch.Tensor,
-        sigma: torch.Tensor | float,
+        sigma: torch.Tensor | float = 1.0,
     ) -> tuple[torch.Tensor]:
         """Convex conjugate of the L1 Norm.
 

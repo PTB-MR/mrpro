@@ -56,7 +56,7 @@ class L1NormViewAsReal(ProximableFunctional):
         else:
             return (torch.sum(value, dim=self.dim, keepdim=self.keepdim),)
 
-    def prox(self, x: torch.Tensor, sigma: torch.Tensor | float) -> tuple[torch.Tensor]:
+    def prox(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         """Proximal Mapping of the L1 Norm.
 
         Compute the proximal mapping of the L1-norm with C identified as R^2.

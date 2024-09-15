@@ -50,7 +50,7 @@ class L2NormSquared(ProximableFunctional):
     def prox(
         self,
         x: torch.Tensor,
-        sigma: torch.Tensor | float,
+        sigma: torch.Tensor | float = 1.0,
     ) -> tuple[torch.Tensor]:
         """Proximal Mapping of the squared L2 Norm.
 
@@ -78,7 +78,7 @@ class L2NormSquared(ProximableFunctional):
     def prox_convex_conj(
         self,
         x: torch.Tensor,
-        sigma: torch.Tensor | float,
+        sigma: torch.Tensor | float = 1.0,
     ) -> tuple[torch.Tensor]:
         """Convex conjugate of squared L2 Norm.
 

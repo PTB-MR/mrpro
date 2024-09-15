@@ -38,13 +38,13 @@ PROXIMABLE_FUNCTIONALS: list[type[ProximableFunctional]] = [
 
 
 def functional_test_cases(func: Callable[[FunctionalTestCase], None]) -> None:
-    @pytest.mark.parametrize('functional', FUNCTIONALS)
     @pytest.mark.parametrize('shape', [[1, 2, 3]])
     @pytest.mark.parametrize('dtype_name', ['float32', 'complex64'])
     @pytest.mark.parametrize('weight', ['scalar_weight', 'tensor_weight', 'complex_weight'])
     @pytest.mark.parametrize('target', ['no_target', 'random_target'])
     @pytest.mark.parametrize('dim', [None])
     @pytest.mark.parametrize('divide_by_n', [True, False])
+    @pytest.mark.parametrize('functional', FUNCTIONALS)
     def wrapper(
         functional: type[ProximableFunctional],
         shape: torch.Size,
@@ -80,10 +80,10 @@ def functional_test_cases(func: Callable[[FunctionalTestCase], None]) -> None:
     return wrapper
 
 
-@pytest.mark.parametrize('functional', FUNCTIONALS)
 @pytest.mark.parametrize('shape', [[1, 2, 3], ()])
 @pytest.mark.parametrize('dim', [None, -2])
 @pytest.mark.parametrize('keepdim', [True, False])
+@pytest.mark.parametrize('functional', FUNCTIONALS)
 def test_functional_shape(functional: type[Functional], shape: torch.Size, dim: None | int, keepdim: bool):
     f = functional(dim=dim, keepdim=keepdim)
     x = torch.ones(shape)
@@ -113,10 +113,10 @@ def test_functional_shape(functional: type[Functional], shape: torch.Size, dim: 
     assert fx.shape == expected_shape
 
 
-@pytest.mark.parametrize('functional', FUNCTIONALS)
 @pytest.mark.parametrize('shape', [[2, 3, 4], ()])
 @pytest.mark.parametrize('dim', [None, (0, -2)])
 @pytest.mark.parametrize('keepdim', [True, False])
+@pytest.mark.parametrize('functional', FUNCTIONALS)
 def test_functional_divide_by_n(
     functional: type[Functional], shape: torch.Size, dim: None | tuple[int, ...], keepdim: bool
 ):
@@ -139,7 +139,7 @@ def test_functional_divide_by_n(
 
 
 @functional_test_cases
-def test_moreau(case: FunctionalTestCase):
+def test_functional_moreau(case: FunctionalTestCase):
     """Test if Moreua identity holds."""
     functional = case.functional
     x = case.rand_x()
@@ -150,7 +150,7 @@ def test_moreau(case: FunctionalTestCase):
 
 
 @functional_test_cases
-def test_prox_optimality(case: FunctionalTestCase):
+def test_functional_prox_optimality(case: FunctionalTestCase):
     """Use autograd to check if prox criterion is minimized."""
     functional = case.functional
     x = case.rand_x()
@@ -214,7 +214,7 @@ def test_functional_scaling(case: FunctionalTestCase):
 
 
 @functional_test_cases
-def test_prox_zero_weight(case: FunctionalTestCase):
+def test_functional_prox_zero_weight(case: FunctionalTestCase):
     """Test if scaling with scalar zero weight is correct"""
     functional = case.functional
     functional.weight *= 0
@@ -358,3 +358,96 @@ def test_functional_has_testcase(functional):
     """Check if there is at least one test case for each functional."""
     cases = [k for k in NUMERICCASES if NUMERICCASES[k]['functional'] == functional]
     assert len(cases), f'No test case found for {functional.__name__}!'
+
+
+@pytest.mark.cuda()
+@pytest.mark.parametrize('functional', FUNCTIONALS)
+@pytest.mark.parametrize('parameters', ['scalar', 'none', 'tensor'])
+def test_functional_cuda_forward(functional: type[Functional], parameters: Literal['scalar', 'none', 'tensor']):
+    """Test if the forward pass works on the GPU."""
+    match parameters:
+        case 'scalar':
+            f = functional(weight=1.0, target=0.0)
+        case 'none':
+            f = functional()
+        case 'tensor':
+            f = functional(weight=torch.tensor(1.0), target=torch.tensor(0.0))
+    x = torch.tensor(1.0).cuda()
+    f.cuda()
+    (fx,) = f(x)
+    assert fx.is_cuda
+
+
+@pytest.mark.cuda()
+@pytest.mark.parametrize('parameters', ['scalar', 'none', 'tensor'])
+@pytest.mark.parametrize('functional', PROXIMABLE_FUNCTIONALS)
+def test_functional_cuda_prox(functional: type[ProximableFunctional], parameters: Literal['scalar', 'none', 'tensor']):
+    """Test if the forward pass works on the GPU."""
+    x = torch.tensor(1.0).cuda()
+    match parameters:
+        case 'scalar':
+            f = functional(weight=1.0, target=0.0).cuda()
+            (prox,) = f.prox(x, sigma=1)
+            (prox_convex_conj,) = f.prox_convex_conj(x, sigma=1)
+        case 'none':
+            f = functional().cuda()
+            (prox,) = f.prox(x)
+            (prox_convex_conj,) = f.prox_convex_conj(x)
+        case 'tensor':
+            f = functional(weight=torch.tensor(1.0), target=torch.tensor(0.0)).cuda()
+            sigma = torch.tensor(1.0).cuda()
+            (prox,) = f.prox(x, sigma)
+            (prox_convex_conj,) = f.prox_convex_conj(x, sigma)
+
+    assert prox.is_cuda
+    assert prox_convex_conj.is_cuda
+
+
+@pytest.mark.parametrize('functional', FUNCTIONALS)
+def test_functional_scalar_arguments_forward(functional: type[Functional]):
+    """Test if the forward pass works with scalar weight and target."""
+    x = torch.tensor(1.0)
+    f_scalar = functional(weight=1.0, target=0.0)
+    f_tensor = functional(weight=torch.tensor(1.0), target=torch.tensor(0.0))
+    (fx_scalar,) = f_scalar(x)
+    (fx_tensor,) = f_tensor(x)
+    assert torch.allclose(fx_scalar, fx_tensor)
+
+
+@pytest.mark.parametrize('functional', PROXIMABLE_FUNCTIONALS)
+def test_functional_scalar_arguments_prox(functional: type[ProximableFunctional]):
+    """Test if the prox and prox_convex_conj work with scalar weight and target."""
+    x = torch.tensor(1.0)
+    f_scalar = functional(weight=1.0, target=0.0)
+    f_tensor = functional(weight=torch.tensor(1.0), target=torch.tensor(0.0))
+    (prox_scalar,) = f_scalar.prox(x, sigma=1.0)
+    (prox_tensor,) = f_tensor.prox(x, sigma=torch.tensor(1.0))
+    assert torch.allclose(prox_scalar, prox_tensor)
+    (prox_convex_conj_scalar,) = f_scalar.prox_convex_conj(x, sigma=1.0)
+    (prox_convex_conj_tensor,) = f_tensor.prox_convex_conj(x, sigma=torch.tensor(1.0))
+    assert torch.allclose(prox_convex_conj_scalar, prox_convex_conj_tensor)
+
+
+@pytest.mark.parametrize('functional', FUNCTIONALS)
+def test_functional_default_arguments_forward(functional: type[Functional]):
+    """Test if the forward pass works with default weight and target."""
+    x = torch.tensor(1.0)
+    f_default = functional()
+    f_tensor = functional(weight=torch.tensor(1.0), target=torch.tensor(0.0))
+    (fx_default,) = f_default(x)
+    (fx_tensor,) = f_tensor(x)
+    assert torch.allclose(fx_default, fx_tensor)
+
+
+@pytest.mark.parametrize('functional', PROXIMABLE_FUNCTIONALS)
+def test_functional_default_arguments_prox(functional: type[ProximableFunctional]):
+    """Test if the prox and prox_convex_conj work with default weight and target."""
+    x = torch.tensor(1.0)
+    f_default = functional()
+    f_tensor = functional(weight=torch.tensor(1.0), target=torch.tensor(0.0))
+    (prox_default,) = f_default.prox(x, sigma=1.0)
+    (prox_tensor,) = f_tensor.prox(x, sigma=torch.tensor(1.0))
+    assert torch.allclose(prox_default, prox_tensor)
+    (prox_convex_conj_default,) = f_default.prox_convex_conj(x, sigma=1.0)
+    (prox_convex_conj_tensor,) = f_tensor.prox_convex_conj(x, sigma=torch.tensor(1.0))
+    assert torch.allclose(prox_convex_conj_default, prox_convex_conj_tensor)
