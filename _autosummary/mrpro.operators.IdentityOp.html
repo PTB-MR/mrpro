@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mrpro.operators.PhaseOp &mdash; mrpro</title>
+  <title>mrpro.operators.IdentityOp &mdash; mrpro</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=16f952a1" />
@@ -22,8 +22,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="mrpro.operators.SensitivityOp" href="mrpro.operators.SensitivityOp.html" />
-    <link rel="prev" title="mrpro.operators.Operator" href="mrpro.operators.Operator.html" /> 
+    <link rel="next" title="mrpro.operators.LinearOperator" href="mrpro.operators.LinearOperator.html" />
+    <link rel="prev" title="mrpro.operators.GridSamplingOp" href="mrpro.operators.GridSamplingOp.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -62,11 +62,11 @@
 <li class="toctree-l4"><a class="reference internal" href="mrpro.operators.FiniteDifferenceOp.html">mrpro.operators.FiniteDifferenceOp</a></li>
 <li class="toctree-l4"><a class="reference internal" href="mrpro.operators.FourierOp.html">mrpro.operators.FourierOp</a></li>
 <li class="toctree-l4"><a class="reference internal" href="mrpro.operators.GridSamplingOp.html">mrpro.operators.GridSamplingOp</a></li>
-<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.IdentityOp.html">mrpro.operators.IdentityOp</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">mrpro.operators.IdentityOp</a></li>
 <li class="toctree-l4"><a class="reference internal" href="mrpro.operators.LinearOperator.html">mrpro.operators.LinearOperator</a></li>
 <li class="toctree-l4"><a class="reference internal" href="mrpro.operators.MagnitudeOp.html">mrpro.operators.MagnitudeOp</a></li>
 <li class="toctree-l4"><a class="reference internal" href="mrpro.operators.Operator.html">mrpro.operators.Operator</a></li>
-<li class="toctree-l4 current"><a class="current reference internal" href="#">mrpro.operators.PhaseOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.PhaseOp.html">mrpro.operators.PhaseOp</a></li>
 <li class="toctree-l4"><a class="reference internal" href="mrpro.operators.SensitivityOp.html">mrpro.operators.SensitivityOp</a></li>
 <li class="toctree-l4"><a class="reference internal" href="mrpro.operators.SignalModel.html">mrpro.operators.SignalModel</a></li>
 <li class="toctree-l4"><a class="reference internal" href="mrpro.operators.SliceProjectionOp.html">mrpro.operators.SliceProjectionOp</a></li>
@@ -105,9 +105,9 @@
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../api.html">API</a></li>
           <li class="breadcrumb-item"><a href="mrpro.operators.html">mrpro.operators</a></li>
-      <li class="breadcrumb-item active">mrpro.operators.PhaseOp</li>
+      <li class="breadcrumb-item active">mrpro.operators.IdentityOp</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/_autosummary/mrpro.operators.PhaseOp.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/_autosummary/mrpro.operators.IdentityOp.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -115,99 +115,106 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="mrpro-operators-phaseop">
-<h1>mrpro.operators.PhaseOp<a class="headerlink" href="#mrpro-operators-phaseop" title="Link to this heading"></a></h1>
+  <section id="mrpro-operators-identityop">
+<h1>mrpro.operators.IdentityOp<a class="headerlink" href="#mrpro-operators-identityop" title="Link to this heading"></a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.operators.</span></span><span class="sig-name descname"><span class="pre">PhaseOp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/operators/PhaseOp.html#PhaseOp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.operators.PhaseOp" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="mrpro.operators.EndomorphOperator.EndomorphOperator.html#mrpro.operators.EndomorphOperator.EndomorphOperator" title="mrpro.operators.EndomorphOperator.EndomorphOperator"><code class="xref py py-class docutils literal notranslate"><span class="pre">EndomorphOperator</span></code></a></p>
-<p>Phase of input tensors.</p>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.operators.</span></span><span class="sig-name descname"><span class="pre">IdentityOp</span></span><a class="reference internal" href="../_modules/mrpro/operators/IdentityOp.html#IdentityOp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.operators.IdentityOp" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="mrpro.operators.LinearOperator.html#mrpro.operators.LinearOperator" title="mrpro.operators.LinearOperator.LinearOperator"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinearOperator</span></code></a></p>
+<p>The Identity Operator.</p>
+<p>A Linear Operator that returns a single input unchanged.</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.__init__" title="Link to this definition"></a></dt>
-<dd><p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/mrpro/operators/IdentityOp.html#IdentityOp.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.operators.IdentityOp.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize Identity Operator.</p>
 </dd></dl>
 
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code>(*args, **kwargs)</p></td>
-<td><p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code>()</p></td>
+<td><p>Initialize Identity Operator.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_module</span></code>(name, module)</p></td>
 <td><p>Add a child module to the current module.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply</span></code>(fn)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">adjoint</span></code>(x)</p></td>
+<td><p>Adjoint Identity.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply</span></code>(fn)</p></td>
 <td><p>Apply <code class="docutils literal notranslate"><span class="pre">fn</span></code> recursively to every submodule (as returned by <code class="docutils literal notranslate"><span class="pre">.children()</span></code>) as well as self.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">bfloat16</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">bfloat16</span></code>()</p></td>
 <td><p>Casts all floating point parameters and buffers to <code class="docutils literal notranslate"><span class="pre">bfloat16</span></code> datatype.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">buffers</span></code>([recurse])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">buffers</span></code>([recurse])</p></td>
 <td><p>Return an iterator over module buffers.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">children</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">children</span></code>()</p></td>
 <td><p>Return an iterator over immediate children modules.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">compile</span></code>(*args, **kwargs)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">compile</span></code>(*args, **kwargs)</p></td>
 <td><p>Compile this Module's forward using <code class="xref py py-func docutils literal notranslate"><span class="pre">torch.compile()</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cpu</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cpu</span></code>()</p></td>
 <td><p>Move all model parameters and buffers to the CPU.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cuda</span></code>([device])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cuda</span></code>([device])</p></td>
 <td><p>Move all model parameters and buffers to the GPU.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">double</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">double</span></code>()</p></td>
 <td><p>Casts all floating point parameters and buffers to <code class="docutils literal notranslate"><span class="pre">double</span></code> datatype.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">eval</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">eval</span></code>()</p></td>
 <td><p>Set the module in evaluation mode.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">extra_repr</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">extra_repr</span></code>()</p></td>
 <td><p>Set the extra representation of the module.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">float</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">float</span></code>()</p></td>
 <td><p>Casts all floating point parameters and buffers to <code class="docutils literal notranslate"><span class="pre">float</span></code> datatype.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code>(*x)</p></td>
-<td><p>Phase of tensors.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code>(x)</p></td>
+<td><p>Identity of input.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_buffer</span></code>(target)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_buffer</span></code>(target)</p></td>
 <td><p>Return the buffer given by <code class="docutils literal notranslate"><span class="pre">target</span></code> if it exists, otherwise throw an error.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_extra_state</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_extra_state</span></code>()</p></td>
 <td><p>Return any extra state to include in the module's state_dict.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_parameter</span></code>(target)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_parameter</span></code>(target)</p></td>
 <td><p>Return the parameter given by <code class="docutils literal notranslate"><span class="pre">target</span></code> if it exists, otherwise throw an error.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_submodule</span></code>(target)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_submodule</span></code>(target)</p></td>
 <td><p>Return the submodule given by <code class="docutils literal notranslate"><span class="pre">target</span></code> if it exists, otherwise throw an error.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">half</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">half</span></code>()</p></td>
 <td><p>Casts all floating point parameters and buffers to <code class="docutils literal notranslate"><span class="pre">half</span></code> datatype.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ipu</span></code>([device])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ipu</span></code>([device])</p></td>
 <td><p>Move all model parameters and buffers to the IPU.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_state_dict</span></code>(state_dict[, strict, assign])</p></td>
-<td><p>Copy parameters and buffers from <a class="reference internal" href="#mrpro.operators.PhaseOp.state_dict" title="mrpro.operators.PhaseOp.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a> into this module and its descendants.</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_state_dict</span></code>(state_dict[, strict, assign])</p></td>
+<td><p>Copy parameters and buffers from <a class="reference internal" href="#mrpro.operators.IdentityOp.state_dict" title="mrpro.operators.IdentityOp.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a> into this module and its descendants.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">modules</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">modules</span></code>()</p></td>
 <td><p>Return an iterator over all modules in the network.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">named_buffers</span></code>([prefix, recurse, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">named_buffers</span></code>([prefix, recurse, ...])</p></td>
 <td><p>Return an iterator over module buffers, yielding both the name of the buffer as well as the buffer itself.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">named_children</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">named_children</span></code>()</p></td>
 <td><p>Return an iterator over immediate children modules, yielding both the name of the module as well as the module itself.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">named_modules</span></code>([memo, prefix, remove_duplicate])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">named_modules</span></code>([memo, prefix, remove_duplicate])</p></td>
 <td><p>Return an iterator over all modules in the network, yielding both the name of the module as well as the module itself.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">named_parameters</span></code>([prefix, recurse, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">named_parameters</span></code>([prefix, recurse, ...])</p></td>
 <td><p>Return an iterator over module parameters, yielding both the name of the parameter as well as the parameter itself.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">operator_norm</span></code>(initial_value, dim[, ...])</p></td>
+<td><p>Power iteration for computing the operator norm of the linear operator.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">parameters</span></code>([recurse])</p></td>
 <td><p>Return an iterator over module parameters.</p></td>
@@ -234,7 +241,7 @@
 <td><p>Register a post hook to be run after module's <code class="docutils literal notranslate"><span class="pre">load_state_dict</span></code> is called.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_module</span></code>(name, module)</p></td>
-<td><p>Alias for <a class="reference internal" href="#mrpro.operators.PhaseOp.add_module" title="mrpro.operators.PhaseOp.add_module"><code class="xref py py-func docutils literal notranslate"><span class="pre">add_module()</span></code></a>.</p></td>
+<td><p>Alias for <a class="reference internal" href="#mrpro.operators.IdentityOp.add_module" title="mrpro.operators.IdentityOp.add_module"><code class="xref py py-func docutils literal notranslate"><span class="pre">add_module()</span></code></a>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">register_parameter</span></code>(name, param)</p></td>
 <td><p>Add a parameter to the module.</p></td>
@@ -277,20 +284,29 @@
 <p class="rubric">Attributes</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">T_destination</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">H</span></code></p></td>
+<td><p>Adjoint operator.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">T_destination</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">call_super_init</span></code></p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">call_super_init</span></code></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dump_patches</span></code></p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dump_patches</span></code></p></td>
 <td><p></p></td>
 </tr>
 </tbody>
 </table>
+<dl class="py property">
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.H">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">H</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.operators.LinearOperator.html#mrpro.operators.LinearOperator" title="mrpro.operators.LinearOperator.LinearOperator"><span class="pre">LinearOperator</span></a></em><a class="headerlink" href="#mrpro.operators.IdentityOp.H" title="Link to this definition"></a></dt>
+<dd><p>Adjoint operator.</p>
+</dd></dl>
+
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.add_module">
-<span class="sig-name descname"><span class="pre">add_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.add_module" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.add_module">
+<span class="sig-name descname"><span class="pre">add_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.add_module" title="Link to this definition"></a></dt>
 <dd><p>Add a child module to the current module.</p>
 <p>The module can be accessed as an attribute using the given name.</p>
 <dl class="field-list simple">
@@ -305,8 +321,22 @@ accessed from this module using the given name</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Module</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.apply" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.adjoint">
+<span class="sig-name descname"><span class="pre">adjoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/mrpro/operators/IdentityOp.html#IdentityOp.adjoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.operators.IdentityOp.adjoint" title="Link to this definition"></a></dt>
+<dd><p>Adjoint Identity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> – input tensor</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>the input tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Module</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply <code class="docutils literal notranslate"><span class="pre">fn</span></code> recursively to every submodule (as returned by <code class="docutils literal notranslate"><span class="pre">.children()</span></code>) as well as self.</p>
 <p>Typical use includes initializing the parameters of a model
 (see also <span class="xref std std-ref">nn-init-doc</span>).</p>
@@ -347,8 +377,8 @@ accessed from this module using the given name</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.bfloat16">
-<span class="sig-name descname"><span class="pre">bfloat16</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.bfloat16" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.bfloat16">
+<span class="sig-name descname"><span class="pre">bfloat16</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.bfloat16" title="Link to this definition"></a></dt>
 <dd><p>Casts all floating point parameters and buffers to <code class="docutils literal notranslate"><span class="pre">bfloat16</span></code> datatype.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -365,8 +395,8 @@ accessed from this module using the given name</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.buffers">
-<span class="sig-name descname"><span class="pre">buffers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recurse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.buffers" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.buffers">
+<span class="sig-name descname"><span class="pre">buffers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recurse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.buffers" title="Link to this definition"></a></dt>
 <dd><p>Return an iterator over module buffers.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -389,8 +419,8 @@ are direct members of this module.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.children">
-<span class="sig-name descname"><span class="pre">children</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><span class="pre">Module</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.children" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.children">
+<span class="sig-name descname"><span class="pre">children</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><span class="pre">Module</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.children" title="Link to this definition"></a></dt>
 <dd><p>Return an iterator over immediate children modules.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Yields<span class="colon">:</span></dt>
@@ -400,8 +430,8 @@ are direct members of this module.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.compile">
-<span class="sig-name descname"><span class="pre">compile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.operators.PhaseOp.compile" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.compile">
+<span class="sig-name descname"><span class="pre">compile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.operators.IdentityOp.compile" title="Link to this definition"></a></dt>
 <dd><p>Compile this Module’s forward using <code class="xref py py-func docutils literal notranslate"><span class="pre">torch.compile()</span></code>.</p>
 <p>This Module’s <cite>__call__</cite> method is compiled and all arguments are passed as-is
 to <code class="xref py py-func docutils literal notranslate"><span class="pre">torch.compile()</span></code>.</p>
@@ -409,8 +439,8 @@ to <code class="xref py py-func docutils literal notranslate"><span class="pre">
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.cpu">
-<span class="sig-name descname"><span class="pre">cpu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.cpu" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.cpu">
+<span class="sig-name descname"><span class="pre">cpu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.cpu" title="Link to this definition"></a></dt>
 <dd><p>Move all model parameters and buffers to the CPU.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -427,8 +457,8 @@ to <code class="xref py py-func docutils literal notranslate"><span class="pre">
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.cuda">
-<span class="sig-name descname"><span class="pre">cuda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.cuda" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.cuda">
+<span class="sig-name descname"><span class="pre">cuda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.cuda" title="Link to this definition"></a></dt>
 <dd><p>Move all model parameters and buffers to the GPU.</p>
 <p>This also makes associated parameters and buffers different objects. So
 it should be called before constructing optimizer if the module will
@@ -452,8 +482,8 @@ copied to that device</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.double">
-<span class="sig-name descname"><span class="pre">double</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.double" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.double">
+<span class="sig-name descname"><span class="pre">double</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.double" title="Link to this definition"></a></dt>
 <dd><p>Casts all floating point parameters and buffers to <code class="docutils literal notranslate"><span class="pre">double</span></code> datatype.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -470,8 +500,8 @@ copied to that device</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.eval">
-<span class="sig-name descname"><span class="pre">eval</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.eval" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.eval">
+<span class="sig-name descname"><span class="pre">eval</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.eval" title="Link to this definition"></a></dt>
 <dd><p>Set the module in evaluation mode.</p>
 <p>This has any effect only on certain modules. See documentations of
 particular modules for details of their behaviors in training/evaluation
@@ -491,8 +521,8 @@ etc.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.extra_repr">
-<span class="sig-name descname"><span class="pre">extra_repr</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.extra_repr" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.extra_repr">
+<span class="sig-name descname"><span class="pre">extra_repr</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.extra_repr" title="Link to this definition"></a></dt>
 <dd><p>Set the extra representation of the module.</p>
 <p>To print customized extra information, you should re-implement
 this method in your own modules. Both single-line and multi-line
@@ -500,8 +530,8 @@ strings are acceptable.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.float">
-<span class="sig-name descname"><span class="pre">float</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.float" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.float">
+<span class="sig-name descname"><span class="pre">float</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.float" title="Link to this definition"></a></dt>
 <dd><p>Casts all floating point parameters and buffers to <code class="docutils literal notranslate"><span class="pre">float</span></code> datatype.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -518,22 +548,22 @@ strings are acceptable.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/mrpro/operators/PhaseOp.html#PhaseOp.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.operators.PhaseOp.forward" title="Link to this definition"></a></dt>
-<dd><p>Phase of tensors.</p>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/mrpro/operators/IdentityOp.html#IdentityOp.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.operators.IdentityOp.forward" title="Link to this definition"></a></dt>
+<dd><p>Identity of input.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> – input tensors</p>
+<dd class="field-odd"><p><strong>x</strong> – input tensor</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>tensors with phase of input tensors</p>
+<dd class="field-even"><p>the input tensor</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.get_buffer">
-<span class="sig-name descname"><span class="pre">get_buffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.get_buffer" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.get_buffer">
+<span class="sig-name descname"><span class="pre">get_buffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.get_buffer" title="Link to this definition"></a></dt>
 <dd><p>Return the buffer given by <code class="docutils literal notranslate"><span class="pre">target</span></code> if it exists, otherwise throw an error.</p>
 <p>See the docstring for <code class="docutils literal notranslate"><span class="pre">get_submodule</span></code> for a more detailed
 explanation of this method’s functionality as well as how to
@@ -559,10 +589,10 @@ fully-qualified string.)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.get_extra_state">
-<span class="sig-name descname"><span class="pre">get_extra_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.get_extra_state" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.get_extra_state">
+<span class="sig-name descname"><span class="pre">get_extra_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.get_extra_state" title="Link to this definition"></a></dt>
 <dd><p>Return any extra state to include in the module’s state_dict.</p>
-<p>Implement this and a corresponding <a class="reference internal" href="#mrpro.operators.PhaseOp.set_extra_state" title="mrpro.operators.PhaseOp.set_extra_state"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_extra_state()</span></code></a> for your module
+<p>Implement this and a corresponding <a class="reference internal" href="#mrpro.operators.IdentityOp.set_extra_state" title="mrpro.operators.IdentityOp.set_extra_state"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_extra_state()</span></code></a> for your module
 if you need to store extra state. This function is called when building the
 module’s <cite>state_dict()</cite>.</p>
 <p>Note that extra state should be picklable to ensure working serialization
@@ -580,8 +610,8 @@ their serialized pickled form changes.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.get_parameter">
-<span class="sig-name descname"><span class="pre">get_parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Parameter</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.get_parameter" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.get_parameter">
+<span class="sig-name descname"><span class="pre">get_parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Parameter</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.get_parameter" title="Link to this definition"></a></dt>
 <dd><p>Return the parameter given by <code class="docutils literal notranslate"><span class="pre">target</span></code> if it exists, otherwise throw an error.</p>
 <p>See the docstring for <code class="docutils literal notranslate"><span class="pre">get_submodule</span></code> for a more detailed
 explanation of this method’s functionality as well as how to
@@ -607,8 +637,8 @@ fully-qualified string.)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.get_submodule">
-<span class="sig-name descname"><span class="pre">get_submodule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Module</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.get_submodule" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.get_submodule">
+<span class="sig-name descname"><span class="pre">get_submodule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Module</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.get_submodule" title="Link to this definition"></a></dt>
 <dd><p>Return the submodule given by <code class="docutils literal notranslate"><span class="pre">target</span></code> if it exists, otherwise throw an error.</p>
 <p>For example, let’s say you have an <code class="docutils literal notranslate"><span class="pre">nn.Module</span></code> <code class="docutils literal notranslate"><span class="pre">A</span></code> that
 looks like this:</p>
@@ -656,8 +686,8 @@ fully-qualified string.)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.half">
-<span class="sig-name descname"><span class="pre">half</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.half" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.half">
+<span class="sig-name descname"><span class="pre">half</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.half" title="Link to this definition"></a></dt>
 <dd><p>Casts all floating point parameters and buffers to <code class="docutils literal notranslate"><span class="pre">half</span></code> datatype.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -674,8 +704,8 @@ fully-qualified string.)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.ipu">
-<span class="sig-name descname"><span class="pre">ipu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.ipu" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.ipu">
+<span class="sig-name descname"><span class="pre">ipu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.ipu" title="Link to this definition"></a></dt>
 <dd><p>Move all model parameters and buffers to the IPU.</p>
 <p>This also makes associated parameters and buffers different objects. So
 it should be called before constructing optimizer if the module will
@@ -699,16 +729,16 @@ copied to that device</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.load_state_dict">
-<span class="sig-name descname"><span class="pre">load_state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assign</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.operators.PhaseOp.load_state_dict" title="Link to this definition"></a></dt>
-<dd><p>Copy parameters and buffers from <a class="reference internal" href="#mrpro.operators.PhaseOp.state_dict" title="mrpro.operators.PhaseOp.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a> into this module and its descendants.</p>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.load_state_dict">
+<span class="sig-name descname"><span class="pre">load_state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assign</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.operators.IdentityOp.load_state_dict" title="Link to this definition"></a></dt>
+<dd><p>Copy parameters and buffers from <a class="reference internal" href="#mrpro.operators.IdentityOp.state_dict" title="mrpro.operators.IdentityOp.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a> into this module and its descendants.</p>
 <p>If <code class="xref py py-attr docutils literal notranslate"><span class="pre">strict</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>, then
-the keys of <a class="reference internal" href="#mrpro.operators.PhaseOp.state_dict" title="mrpro.operators.PhaseOp.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a> must exactly match the keys returned
+the keys of <a class="reference internal" href="#mrpro.operators.IdentityOp.state_dict" title="mrpro.operators.IdentityOp.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a> must exactly match the keys returned
 by this module’s <code class="xref py py-meth docutils literal notranslate"><span class="pre">state_dict()</span></code> function.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>If <code class="xref py py-attr docutils literal notranslate"><span class="pre">assign</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code> the optimizer must be created after
-the call to <a class="reference internal" href="#mrpro.operators.PhaseOp.load_state_dict" title="mrpro.operators.PhaseOp.load_state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">load_state_dict</span></code></a> unless
+the call to <a class="reference internal" href="#mrpro.operators.IdentityOp.load_state_dict" title="mrpro.operators.IdentityOp.load_state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">load_state_dict</span></code></a> unless
 <code class="xref py py-func docutils literal notranslate"><span class="pre">get_swap_module_params_on_conversion()</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p>
 </div>
 <dl class="field-list simple">
@@ -717,7 +747,7 @@ the call to <a class="reference internal" href="#mrpro.operators.PhaseOp.load_st
 <li><p><strong>state_dict</strong> (<em>dict</em>) – a dict containing parameters and
 persistent buffers.</p></li>
 <li><p><strong>strict</strong> (<em>bool</em><em>, </em><em>optional</em>) – whether to strictly enforce that the keys
-in <a class="reference internal" href="#mrpro.operators.PhaseOp.state_dict" title="mrpro.operators.PhaseOp.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a> match the keys returned by this module’s
+in <a class="reference internal" href="#mrpro.operators.IdentityOp.state_dict" title="mrpro.operators.IdentityOp.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a> match the keys returned by this module’s
 <code class="xref py py-meth docutils literal notranslate"><span class="pre">state_dict()</span></code> function. Default: <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
 <li><p><strong>assign</strong> (<em>bool</em><em>, </em><em>optional</em>) – When <code class="docutils literal notranslate"><span class="pre">False</span></code>, the properties of the tensors
 in the current module are preserved while when <code class="docutils literal notranslate"><span class="pre">True</span></code>, the
@@ -748,14 +778,14 @@ exception is the <code class="docutils literal notranslate"><span class="pre">re
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If a parameter or buffer is registered as <code class="docutils literal notranslate"><span class="pre">None</span></code> and its corresponding key
-exists in <a class="reference internal" href="#mrpro.operators.PhaseOp.state_dict" title="mrpro.operators.PhaseOp.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a>, <a class="reference internal" href="#mrpro.operators.PhaseOp.load_state_dict" title="mrpro.operators.PhaseOp.load_state_dict"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_state_dict()</span></code></a> will raise a
+exists in <a class="reference internal" href="#mrpro.operators.IdentityOp.state_dict" title="mrpro.operators.IdentityOp.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a>, <a class="reference internal" href="#mrpro.operators.IdentityOp.load_state_dict" title="mrpro.operators.IdentityOp.load_state_dict"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_state_dict()</span></code></a> will raise a
 <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code>.</p>
 </div>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.modules">
-<span class="sig-name descname"><span class="pre">modules</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><span class="pre">Module</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.modules" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.modules">
+<span class="sig-name descname"><span class="pre">modules</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><span class="pre">Module</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.modules" title="Link to this definition"></a></dt>
 <dd><p>Return an iterator over all modules in the network.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Yields<span class="colon">:</span></dt>
@@ -783,8 +813,8 @@ example, <code class="docutils literal notranslate"><span class="pre">l</span></
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.named_buffers">
-<span class="sig-name descname"><span class="pre">named_buffers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recurse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_duplicate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.named_buffers" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.named_buffers">
+<span class="sig-name descname"><span class="pre">named_buffers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recurse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_duplicate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.named_buffers" title="Link to this definition"></a></dt>
 <dd><p>Return an iterator over module buffers, yielding both the name of the buffer as well as the buffer itself.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -810,8 +840,8 @@ are direct members of this module. Defaults to True.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.named_children">
-<span class="sig-name descname"><span class="pre">named_children</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Module</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.named_children" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.named_children">
+<span class="sig-name descname"><span class="pre">named_children</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Module</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.named_children" title="Link to this definition"></a></dt>
 <dd><p>Return an iterator over immediate children modules, yielding both the name of the module as well as the module itself.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Yields<span class="colon">:</span></dt>
@@ -828,8 +858,8 @@ are direct members of this module. Defaults to True.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.named_modules">
-<span class="sig-name descname"><span class="pre">named_modules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">memo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">Module</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_duplicate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.operators.PhaseOp.named_modules" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.named_modules">
+<span class="sig-name descname"><span class="pre">named_modules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">memo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">Module</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_duplicate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.operators.IdentityOp.named_modules" title="Link to this definition"></a></dt>
 <dd><p>Return an iterator over all modules in the network, yielding both the name of the module as well as the module itself.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -865,8 +895,8 @@ example, <code class="docutils literal notranslate"><span class="pre">l</span></
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.named_parameters">
-<span class="sig-name descname"><span class="pre">named_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recurse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_duplicate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Parameter</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.named_parameters" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.named_parameters">
+<span class="sig-name descname"><span class="pre">named_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recurse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_duplicate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Parameter</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.named_parameters" title="Link to this definition"></a></dt>
 <dd><p>Return an iterator over module parameters, yielding both the name of the parameter as well as the parameter itself.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -893,8 +923,45 @@ parameters in the result. Defaults to True.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.parameters">
-<span class="sig-name descname"><span class="pre">parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recurse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><span class="pre">Parameter</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.parameters" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.operator_norm">
+<span class="sig-name descname"><span class="pre">operator_norm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.sliding_window.Sequence.html#mrpro.utils.sliding_window.Sequence" title="collections.abc.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relative_tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absolute_tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.operators.EndomorphOperator.Callable.html#mrpro.operators.EndomorphOperator.Callable" title="collections.abc.Callable"><span class="pre">Callable</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.operator_norm" title="Link to this definition"></a></dt>
+<dd><p>Power iteration for computing the operator norm of the linear operator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>initial_value</strong> – initial value to start the iteration; if the initial value contains a zero-vector for
+one of the considered problems, the function throws an value error.</p></li>
+<li><p><strong>dim</strong> – the dimensions of the tensors on which the operator operates.
+For example, for a matrix-vector multiplication example, a batched matrix tensor with shape (4,30,80,160),
+input tensors of shape (4,30,160) to be multiplied, and dim = None, it is understood that the the
+matrix representation of the operator corresponds to a block diagonal operator (with 4*30 matrices)
+and thus the algorithm returns a tensor of shape (1,1,1) containing one single value.
+In contrast, if for example, dim=(-1,), the algorithm computes a batched operator
+norm and returns a tensor of shape (4,30,1) corresponding to the operator norms of the respective
+matrices in the diagonal of the block-diagonal operator (if considered in matrix representation).
+In any case, the output of the algorithm has the same number of dimensions as the elements of the
+domain of the considered operator (whose dimensionality is implicitly defined by choosing dim), such that
+the pointwise multiplication of the operator norm and elements of the domain (to be for example used
+in a Landweber iteration) is well-defined.</p></li>
+<li><p><strong>max_iterations</strong> – maximum number of iterations</p></li>
+<li><p><strong>relative_tolerance</strong> – absolute tolerance for the change of the operator-norm at each iteration;
+if set to zero, the maximal number of iterations is the only stopping criterion used to stop
+the power iteration</p></li>
+<li><p><strong>absolute_tolerance</strong> – absolute tolerance for the change of the operator-norm at each iteration;
+if set to zero, the maximal number of iterations is the only stopping criterion used to stop
+the power iteration</p></li>
+<li><p><strong>callback</strong> – user-provided function to be called at each iteration</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>an estimaton of the operator norm</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recurse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><span class="pre">Parameter</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.parameters" title="Link to this definition"></a></dt>
 <dd><p>Return an iterator over module parameters.</p>
 <p>This is typically passed to an optimizer.</p>
 <dl class="field-list simple">
@@ -918,8 +985,8 @@ are direct members of this module.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.register_backward_hook">
-<span class="sig-name descname"><span class="pre">register_backward_hook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hook</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Module</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">RemovableHandle</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.register_backward_hook" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.register_backward_hook">
+<span class="sig-name descname"><span class="pre">register_backward_hook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hook</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Module</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">RemovableHandle</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.register_backward_hook" title="Link to this definition"></a></dt>
 <dd><p>Register a backward hook on the module.</p>
 <p>This function is deprecated in favor of <code class="xref py py-meth docutils literal notranslate"><span class="pre">register_full_backward_hook()</span></code> and
 the behavior of this function will change in future versions.</p>
@@ -935,8 +1002,8 @@ the behavior of this function will change in future versions.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.register_buffer">
-<span class="sig-name descname"><span class="pre">register_buffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">persistent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.register_buffer" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.register_buffer">
+<span class="sig-name descname"><span class="pre">register_buffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">persistent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.register_buffer" title="Link to this definition"></a></dt>
 <dd><p>Add a buffer to the module.</p>
 <p>This is typically used to register a buffer that should not to be
 considered a model parameter. For example, BatchNorm’s <code class="docutils literal notranslate"><span class="pre">running_mean</span></code>
@@ -945,7 +1012,7 @@ default, are persistent and will be saved alongside parameters. This
 behavior can be changed by setting <code class="xref py py-attr docutils literal notranslate"><span class="pre">persistent</span></code> to <code class="docutils literal notranslate"><span class="pre">False</span></code>. The
 only difference between a persistent buffer and a non-persistent buffer
 is that the latter will not be a part of this module’s
-<a class="reference internal" href="#mrpro.operators.PhaseOp.state_dict" title="mrpro.operators.PhaseOp.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a>.</p>
+<a class="reference internal" href="#mrpro.operators.IdentityOp.state_dict" title="mrpro.operators.IdentityOp.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a>.</p>
 <p>Buffers can be accessed as attributes using given names.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -953,10 +1020,10 @@ is that the latter will not be a part of this module’s
 <li><p><strong>name</strong> (<em>str</em>) – name of the buffer. The buffer can be accessed
 from this module using the given name</p></li>
 <li><p><strong>tensor</strong> (<a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="mrpro.utils.slice_profiles.Tensor"><em>Tensor</em></a><em> or </em><em>None</em>) – buffer to be registered. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, then operations
-that run on buffers, such as <a class="reference internal" href="#mrpro.operators.PhaseOp.cuda" title="mrpro.operators.PhaseOp.cuda"><code class="xref py py-attr docutils literal notranslate"><span class="pre">cuda</span></code></a>, are ignored. If <code class="docutils literal notranslate"><span class="pre">None</span></code>,
-the buffer is <strong>not</strong> included in the module’s <a class="reference internal" href="#mrpro.operators.PhaseOp.state_dict" title="mrpro.operators.PhaseOp.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a>.</p></li>
+that run on buffers, such as <a class="reference internal" href="#mrpro.operators.IdentityOp.cuda" title="mrpro.operators.IdentityOp.cuda"><code class="xref py py-attr docutils literal notranslate"><span class="pre">cuda</span></code></a>, are ignored. If <code class="docutils literal notranslate"><span class="pre">None</span></code>,
+the buffer is <strong>not</strong> included in the module’s <a class="reference internal" href="#mrpro.operators.IdentityOp.state_dict" title="mrpro.operators.IdentityOp.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a>.</p></li>
 <li><p><strong>persistent</strong> (<em>bool</em>) – whether the buffer is part of this module’s
-<a class="reference internal" href="#mrpro.operators.PhaseOp.state_dict" title="mrpro.operators.PhaseOp.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a>.</p></li>
+<a class="reference internal" href="#mrpro.operators.IdentityOp.state_dict" title="mrpro.operators.IdentityOp.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a>.</p></li>
 </ul>
 </dd>
 </dl>
@@ -968,15 +1035,15 @@ the buffer is <strong>not</strong> included in the module’s <a class="referenc
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.register_forward_hook">
-<span class="sig-name descname"><span class="pre">register_forward_hook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hook</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prepend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">always_call</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">RemovableHandle</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.register_forward_hook" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.register_forward_hook">
+<span class="sig-name descname"><span class="pre">register_forward_hook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hook</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prepend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">always_call</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">RemovableHandle</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.register_forward_hook" title="Link to this definition"></a></dt>
 <dd><p>Register a forward hook on the module.</p>
-<p>The hook will be called every time after <a class="reference internal" href="#mrpro.operators.PhaseOp.forward" title="mrpro.operators.PhaseOp.forward"><code class="xref py py-func docutils literal notranslate"><span class="pre">forward()</span></code></a> has computed an output.</p>
+<p>The hook will be called every time after <a class="reference internal" href="#mrpro.operators.IdentityOp.forward" title="mrpro.operators.IdentityOp.forward"><code class="xref py py-func docutils literal notranslate"><span class="pre">forward()</span></code></a> has computed an output.</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">with_kwargs</span></code> is <code class="docutils literal notranslate"><span class="pre">False</span></code> or not specified, the input contains only
 the positional arguments given to the module. Keyword arguments won’t be
 passed to the hooks and only to the <code class="docutils literal notranslate"><span class="pre">forward</span></code>. The hook can modify the
 output. It can modify the input inplace but it will not have effect on
-forward since this is called after <a class="reference internal" href="#mrpro.operators.PhaseOp.forward" title="mrpro.operators.PhaseOp.forward"><code class="xref py py-func docutils literal notranslate"><span class="pre">forward()</span></code></a> is called. The hook
+forward since this is called after <a class="reference internal" href="#mrpro.operators.IdentityOp.forward" title="mrpro.operators.IdentityOp.forward"><code class="xref py py-func docutils literal notranslate"><span class="pre">forward()</span></code></a> is called. The hook
 should have the following signature:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">hook</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">modified</span> <span class="n">output</span>
 </pre></div>
@@ -1019,10 +1086,10 @@ Default: <code class="docutils literal notranslate"><span class="pre">False</spa
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.register_forward_pre_hook">
-<span class="sig-name descname"><span class="pre">register_forward_pre_hook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hook</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prepend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">RemovableHandle</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.register_forward_pre_hook" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.register_forward_pre_hook">
+<span class="sig-name descname"><span class="pre">register_forward_pre_hook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hook</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prepend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">RemovableHandle</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.register_forward_pre_hook" title="Link to this definition"></a></dt>
 <dd><p>Register a forward pre-hook on the module.</p>
-<p>The hook will be called every time before <a class="reference internal" href="#mrpro.operators.PhaseOp.forward" title="mrpro.operators.PhaseOp.forward"><code class="xref py py-func docutils literal notranslate"><span class="pre">forward()</span></code></a> is invoked.</p>
+<p>The hook will be called every time before <a class="reference internal" href="#mrpro.operators.IdentityOp.forward" title="mrpro.operators.IdentityOp.forward"><code class="xref py py-func docutils literal notranslate"><span class="pre">forward()</span></code></a> is invoked.</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">with_kwargs</span></code> is false or not specified, the input contains only
 the positional arguments given to the module. Keyword arguments won’t be
 passed to the hooks and only to the <code class="docutils literal notranslate"><span class="pre">forward</span></code>. The hook can modify the
@@ -1069,8 +1136,8 @@ Default: <code class="docutils literal notranslate"><span class="pre">False</spa
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.register_full_backward_hook">
-<span class="sig-name descname"><span class="pre">register_full_backward_hook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hook</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Module</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prepend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">RemovableHandle</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.register_full_backward_hook" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.register_full_backward_hook">
+<span class="sig-name descname"><span class="pre">register_full_backward_hook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hook</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Module</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prepend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">RemovableHandle</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.register_full_backward_hook" title="Link to this definition"></a></dt>
 <dd><p>Register a backward hook on the module.</p>
 <p>The hook will be called every time the gradients with respect to a module
 are computed, i.e. the hook will execute if and only if the gradients with
@@ -1120,8 +1187,8 @@ all hooks registered by this method.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.register_full_backward_pre_hook">
-<span class="sig-name descname"><span class="pre">register_full_backward_pre_hook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hook</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Module</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prepend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">RemovableHandle</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.register_full_backward_pre_hook" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.register_full_backward_pre_hook">
+<span class="sig-name descname"><span class="pre">register_full_backward_pre_hook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hook</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Module</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prepend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">RemovableHandle</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.register_full_backward_pre_hook" title="Link to this definition"></a></dt>
 <dd><p>Register a backward pre-hook on the module.</p>
 <p>The hook will be called every time the gradients for the module are computed.
 The hook should have the following signature:</p>
@@ -1166,8 +1233,8 @@ all hooks registered by this method.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.register_load_state_dict_post_hook">
-<span class="sig-name descname"><span class="pre">register_load_state_dict_post_hook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hook</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.operators.PhaseOp.register_load_state_dict_post_hook" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.register_load_state_dict_post_hook">
+<span class="sig-name descname"><span class="pre">register_load_state_dict_post_hook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hook</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.operators.IdentityOp.register_load_state_dict_post_hook" title="Link to this definition"></a></dt>
 <dd><p>Register a post hook to be run after module’s <code class="docutils literal notranslate"><span class="pre">load_state_dict</span></code> is called.</p>
 <dl class="simple">
 <dt>It should have the following signature::</dt><dd><p>hook(module, incompatible_keys) -&gt; None</p>
@@ -1179,7 +1246,7 @@ of attributes <code class="docutils literal notranslate"><span class="pre">missi
 is a <code class="docutils literal notranslate"><span class="pre">list</span></code> of <code class="docutils literal notranslate"><span class="pre">str</span></code> containing the missing keys and
 <code class="docutils literal notranslate"><span class="pre">unexpected_keys</span></code> is a <code class="docutils literal notranslate"><span class="pre">list</span></code> of <code class="docutils literal notranslate"><span class="pre">str</span></code> containing the unexpected keys.</p>
 <p>The given incompatible_keys can be modified inplace if needed.</p>
-<p>Note that the checks performed when calling <a class="reference internal" href="#mrpro.operators.PhaseOp.load_state_dict" title="mrpro.operators.PhaseOp.load_state_dict"><code class="xref py py-func docutils literal notranslate"><span class="pre">load_state_dict()</span></code></a> with
+<p>Note that the checks performed when calling <a class="reference internal" href="#mrpro.operators.IdentityOp.load_state_dict" title="mrpro.operators.IdentityOp.load_state_dict"><code class="xref py py-func docutils literal notranslate"><span class="pre">load_state_dict()</span></code></a> with
 <code class="docutils literal notranslate"><span class="pre">strict=True</span></code> are affected by modifications the hook makes to
 <code class="docutils literal notranslate"><span class="pre">missing_keys</span></code> or <code class="docutils literal notranslate"><span class="pre">unexpected_keys</span></code>, as expected. Additions to either
 set of keys will result in an error being thrown when <code class="docutils literal notranslate"><span class="pre">strict=True</span></code>, and
@@ -1196,14 +1263,14 @@ clearing out both missing and unexpected keys will avoid an error.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.register_module">
-<span class="sig-name descname"><span class="pre">register_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.register_module" title="Link to this definition"></a></dt>
-<dd><p>Alias for <a class="reference internal" href="#mrpro.operators.PhaseOp.add_module" title="mrpro.operators.PhaseOp.add_module"><code class="xref py py-func docutils literal notranslate"><span class="pre">add_module()</span></code></a>.</p>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.register_module">
+<span class="sig-name descname"><span class="pre">register_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.register_module" title="Link to this definition"></a></dt>
+<dd><p>Alias for <a class="reference internal" href="#mrpro.operators.IdentityOp.add_module" title="mrpro.operators.IdentityOp.add_module"><code class="xref py py-func docutils literal notranslate"><span class="pre">add_module()</span></code></a>.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.register_parameter">
-<span class="sig-name descname"><span class="pre">register_parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Parameter</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.register_parameter" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.register_parameter">
+<span class="sig-name descname"><span class="pre">register_parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Parameter</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.register_parameter" title="Link to this definition"></a></dt>
 <dd><p>Add a parameter to the module.</p>
 <p>The parameter can be accessed as an attribute using given name.</p>
 <dl class="field-list simple">
@@ -1212,17 +1279,17 @@ clearing out both missing and unexpected keys will avoid an error.</p>
 <li><p><strong>name</strong> (<em>str</em>) – name of the parameter. The parameter can be accessed
 from this module using the given name</p></li>
 <li><p><strong>param</strong> (<em>Parameter</em><em> or </em><em>None</em>) – parameter to be added to the module. If
-<code class="docutils literal notranslate"><span class="pre">None</span></code>, then operations that run on parameters, such as <a class="reference internal" href="#mrpro.operators.PhaseOp.cuda" title="mrpro.operators.PhaseOp.cuda"><code class="xref py py-attr docutils literal notranslate"><span class="pre">cuda</span></code></a>,
+<code class="docutils literal notranslate"><span class="pre">None</span></code>, then operations that run on parameters, such as <a class="reference internal" href="#mrpro.operators.IdentityOp.cuda" title="mrpro.operators.IdentityOp.cuda"><code class="xref py py-attr docutils literal notranslate"><span class="pre">cuda</span></code></a>,
 are ignored. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, the parameter is <strong>not</strong> included in the
-module’s <a class="reference internal" href="#mrpro.operators.PhaseOp.state_dict" title="mrpro.operators.PhaseOp.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a>.</p></li>
+module’s <a class="reference internal" href="#mrpro.operators.IdentityOp.state_dict" title="mrpro.operators.IdentityOp.state_dict"><code class="xref py py-attr docutils literal notranslate"><span class="pre">state_dict</span></code></a>.</p></li>
 </ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.register_state_dict_pre_hook">
-<span class="sig-name descname"><span class="pre">register_state_dict_pre_hook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hook</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.operators.PhaseOp.register_state_dict_pre_hook" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.register_state_dict_pre_hook">
+<span class="sig-name descname"><span class="pre">register_state_dict_pre_hook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hook</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.operators.IdentityOp.register_state_dict_pre_hook" title="Link to this definition"></a></dt>
 <dd><p>Register a pre-hook for the <code class="xref py py-meth docutils literal notranslate"><span class="pre">state_dict()</span></code> method.</p>
 <p>These hooks will be called with arguments: <code class="docutils literal notranslate"><span class="pre">self</span></code>, <code class="docutils literal notranslate"><span class="pre">prefix</span></code>,
 and <code class="docutils literal notranslate"><span class="pre">keep_vars</span></code> before calling <code class="docutils literal notranslate"><span class="pre">state_dict</span></code> on <code class="docutils literal notranslate"><span class="pre">self</span></code>. The registered
@@ -1231,8 +1298,8 @@ call is made.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.requires_grad_">
-<span class="sig-name descname"><span class="pre">requires_grad_</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">requires_grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.requires_grad_" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.requires_grad_">
+<span class="sig-name descname"><span class="pre">requires_grad_</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">requires_grad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.requires_grad_" title="Link to this definition"></a></dt>
 <dd><p>Change if autograd should record operations on parameters in this module.</p>
 <p>This method sets the parameters’ <code class="xref py py-attr docutils literal notranslate"><span class="pre">requires_grad</span></code> attributes
 in-place.</p>
@@ -1255,12 +1322,12 @@ parameters in this module. Default: <code class="docutils literal notranslate"><
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.set_extra_state">
-<span class="sig-name descname"><span class="pre">set_extra_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.set_extra_state" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.set_extra_state">
+<span class="sig-name descname"><span class="pre">set_extra_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.set_extra_state" title="Link to this definition"></a></dt>
 <dd><p>Set extra state contained in the loaded <cite>state_dict</cite>.</p>
-<p>This function is called from <a class="reference internal" href="#mrpro.operators.PhaseOp.load_state_dict" title="mrpro.operators.PhaseOp.load_state_dict"><code class="xref py py-func docutils literal notranslate"><span class="pre">load_state_dict()</span></code></a> to handle any extra state
+<p>This function is called from <a class="reference internal" href="#mrpro.operators.IdentityOp.load_state_dict" title="mrpro.operators.IdentityOp.load_state_dict"><code class="xref py py-func docutils literal notranslate"><span class="pre">load_state_dict()</span></code></a> to handle any extra state
 found within the <cite>state_dict</cite>. Implement this function and a corresponding
-<a class="reference internal" href="#mrpro.operators.PhaseOp.get_extra_state" title="mrpro.operators.PhaseOp.get_extra_state"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_extra_state()</span></code></a> for your module if you need to store extra state within its
+<a class="reference internal" href="#mrpro.operators.IdentityOp.get_extra_state" title="mrpro.operators.IdentityOp.get_extra_state"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_extra_state()</span></code></a> for your module if you need to store extra state within its
 <cite>state_dict</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1270,14 +1337,14 @@ found within the <cite>state_dict</cite>. Implement this function and a correspo
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.share_memory">
-<span class="sig-name descname"><span class="pre">share_memory</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.share_memory" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.share_memory">
+<span class="sig-name descname"><span class="pre">share_memory</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.share_memory" title="Link to this definition"></a></dt>
 <dd><p>See <code class="xref py py-meth docutils literal notranslate"><span class="pre">torch.Tensor.share_memory_()</span></code>.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.state_dict">
-<span class="sig-name descname"><span class="pre">state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_vars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.operators.PhaseOp.state_dict" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.state_dict">
+<span class="sig-name descname"><span class="pre">state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_vars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.operators.IdentityOp.state_dict" title="Link to this definition"></a></dt>
 <dd><p>Return a dictionary containing references to the whole state of the module.</p>
 <p>Both parameters and persistent buffers (e.g. running averages) are
 included. Keys are corresponding parameter and buffer names.
@@ -1330,8 +1397,8 @@ Default: <code class="docutils literal notranslate"><span class="pre">False</spa
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.to">
-<span class="sig-name descname"><span class="pre">to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.operators.PhaseOp.to" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.to">
+<span class="sig-name descname"><span class="pre">to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#mrpro.operators.IdentityOp.to" title="Link to this definition"></a></dt>
 <dd><p>Move and/or cast the parameters and buffers.</p>
 <p>This can be called as</p>
 <dl class="py function">
@@ -1431,8 +1498,8 @@ only argument)</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.to_empty">
-<span class="sig-name descname"><span class="pre">to_empty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recurse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.to_empty" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.to_empty">
+<span class="sig-name descname"><span class="pre">to_empty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recurse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.to_empty" title="Link to this definition"></a></dt>
 <dd><p>Move the parameters and buffers to the specified device without copying storage.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1453,8 +1520,8 @@ be recursively moved to the specified device.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.train">
-<span class="sig-name descname"><span class="pre">train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.train" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.train">
+<span class="sig-name descname"><span class="pre">train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.train" title="Link to this definition"></a></dt>
 <dd><p>Set the module in training mode.</p>
 <p>This has any effect only on certain modules. See documentations of
 particular modules for details of their behaviors in training/evaluation
@@ -1475,8 +1542,8 @@ mode (<code class="docutils literal notranslate"><span class="pre">False</span><
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.type">
-<span class="sig-name descname"><span class="pre">type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dst_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dtype</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.type" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.type">
+<span class="sig-name descname"><span class="pre">type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dst_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dtype</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.type" title="Link to this definition"></a></dt>
 <dd><p>Casts all parameters and buffers to <code class="xref py py-attr docutils literal notranslate"><span class="pre">dst_type</span></code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -1496,8 +1563,8 @@ mode (<code class="docutils literal notranslate"><span class="pre">False</span><
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.xpu">
-<span class="sig-name descname"><span class="pre">xpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.xpu" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.xpu">
+<span class="sig-name descname"><span class="pre">xpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.xpu" title="Link to this definition"></a></dt>
 <dd><p>Move all model parameters and buffers to the XPU.</p>
 <p>This also makes associated parameters and buffers different objects. So
 it should be called before constructing optimizer if the module will
@@ -1521,8 +1588,8 @@ copied to that device</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="mrpro.operators.PhaseOp.zero_grad">
-<span class="sig-name descname"><span class="pre">zero_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">set_to_none</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.operators.PhaseOp.zero_grad" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="mrpro.operators.IdentityOp.zero_grad">
+<span class="sig-name descname"><span class="pre">zero_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">set_to_none</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.operators.IdentityOp.zero_grad" title="Link to this definition"></a></dt>
 <dd><p>Reset gradients of all model parameters.</p>
 <p>See similar function under <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.optim.Optimizer</span></code> for more context.</p>
 <dl class="field-list simple">
@@ -1541,8 +1608,8 @@ See <code class="xref py py-meth docutils literal notranslate"><span class="pre"
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="mrpro.operators.Operator.html" class="btn btn-neutral float-left" title="mrpro.operators.Operator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="mrpro.operators.SensitivityOp.html" class="btn btn-neutral float-right" title="mrpro.operators.SensitivityOp" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="mrpro.operators.GridSamplingOp.html" class="btn btn-neutral float-left" title="mrpro.operators.GridSamplingOp" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mrpro.operators.LinearOperator.html" class="btn btn-neutral float-right" title="mrpro.operators.LinearOperator" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

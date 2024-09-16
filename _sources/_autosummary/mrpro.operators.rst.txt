@@ -27,6 +27,7 @@
       FiniteDifferenceOp
       FourierOp
       GridSamplingOp
+      IdentityOp
       LinearOperator
       MagnitudeOp
       Operator
