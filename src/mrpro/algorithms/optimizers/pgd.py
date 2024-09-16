@@ -1,16 +1,4 @@
 """Proximal Gradient Descent algorithm."""
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 import math
 
 import torch
@@ -45,8 +33,44 @@ def pgd(
 ) -> torch.Tensor:
     """Proximal gradient descent algorithm for solving problem min_x f(x) + g(x).
 
-    It relies on the implementation of the proximal map of g.
-
+    f is convex, differentiable, and with L-Lispchitz gradient. 
+    g is convex, non-smooth with computable proximal map.
+    
+    For fixed stepsize t, pgd converges globally when t \in (0, 1/L), where L is the Lipschitz constant of the gradient of f.
+    
+    In applications, f is usually of the form f(x) = 1/2 ||Ax - target||^2, where A is a linear operator.
+    In this case, t \in (0, 1/||A^T A||) for convergence.
+    If no backtracking is used, the fixed stepsize should be given accordingly to the convergence condition.
+    
+    
+    Case example: image reconstruction.
+    Problem formulation: min_x 1/2 ||Fx - target||^2 + ||x||_1,
+    with F being Fast Fourier Tranform, target acquired data \in k-space and x \in image space,
+    f(x) = 1/2 ||Fx - target||^2, g(x) = ||x||_1.
+    In this case, ||F^T F|| = 1.
+    
+    
+    Example of usage:
+    fft = FastFourierOp()
+    l2 = L2NormSquared(target=kspace_data)
+    f = l2 @ fft
+    g = L1Norm()
+    fft_norm = 1.
+    suitalbe_stepsize = 0.85 * 1 / fft_norm
+    initial_value = torch.ones(image_space_shape)
+    
+    pgd_image_solution = pgd(
+        f=f,
+        g=g,
+        initial_value=initial_value,
+        stepsize=suitable_stepsize,
+        reg_parameter=0.01,
+        max_iterations=200,
+        backtrack_factor=1.0,
+    )
+    
+    
+    
     Parameters
     ----------
     f
