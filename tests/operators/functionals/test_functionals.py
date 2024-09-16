@@ -7,6 +7,7 @@ from typing import Literal, TypedDict
 import pytest
 import torch
 from mrpro.operators import Functional, ProximableFunctional, functionals
+from mrpro.operators.functionals import L2NormSquared
 
 from tests import RandomGenerator
 
@@ -314,6 +315,19 @@ class NumericCase(TypedDict):
 
 # This is more readable than using pytest.mark.parametrize directly
 NUMERICCASES: dict[str, NumericCase] = {  # Name: Case
+    'L2NormSquared real odl': {
+        # Generated with ODL
+        'functional': L2NormSquared,
+        'x': torch.tensor([[[-3.0, -2.0, -1.0], [0.0, 1.0, 2.0]]]),
+        'weight': 2.0,
+        'target': torch.tensor([[[0.340, 0.130, 0.230], [0.230, -1.120, -0.190]]]),
+        'sigma': 0.5,
+        'fx_expected': torch.tensor(106.195198),
+        'prox_expected': torch.tensor([[[-0.328, -0.296, -0.016], [0.184, -0.696, 0.248]]]),
+        'prox_convex_conj_expected': torch.tensor(
+            [[[-2.983529, -1.943529, -1.049412], [-0.108235, 1.468235, 1.971765]]]
+        ),
+    },
 }
 
 
