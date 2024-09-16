@@ -43,29 +43,28 @@ def pgd(
     In this case, t \in (0, 1/||A^T A||) for convergence.
     If no backtracking is used, the fixed stepsize should be given accordingly to the convergence condition.
 
-    Case example: image reconstruction.
-    Problem formulation: min_x 1/2 ||Fx - target||^2 + ||x||_1,
-    with F being the Fast Fourier Transform, target the acquired data \in k-space and x \in image space,
-    f(x) = 1/2 ||Fx - target||^2, g(x) = ||x||_1.
-    In this case, ||F^T F|| = 1.
+    Example:
+        L1 regularized image reconstruction. Problem formulation: min_x 1/2 ||Fx - target||^2 + ||x||_1,
+        with F being the Fourier Transform, target the acquired data \in k-space and x \in image space,
+        f(x) = 1/2 ||Fx - target||^2, g(x) = ||x||_1.
+        In this case, ||F^T F|| = 1. ::
+                fft = FastFourierOp()
+                l2 = L2NormSquared(target=kspace_data)
+                f = l2 @ fft
+                g = L1Norm()
+                fft_norm = 1.
+                stepsize = 0.85 * 1 / fft_norm
+                initial_value = torch.ones(image_space_shape)
+                pgd_image_solution = pgd(
+                    f=f,
+                    g=g,
+                    initial_value=initial_value,
+                    stepsize=stepsize,
+                    reg_parameter=0.01,
+                    max_iterations=200,
+                    backtrack_factor=1.0,
+                )
 
-    Example of usage:
-    fft = FastFourierOp()
-    l2 = L2NormSquared(target=kspace_data)
-    f = l2 @ fft
-    g = L1Norm()
-    fft_norm = 1.
-    stepsize = 0.85 * 1 / fft_norm
-    initial_value = torch.ones(image_space_shape)
-    pgd_image_solution = pgd(
-        f=f,
-        g=g,
-        initial_value=initial_value,
-        stepsize=stepsize,
-        reg_parameter=0.01,
-        max_iterations=200,
-        backtrack_factor=1.0,
-    )
 
     Parameters
     ----------
