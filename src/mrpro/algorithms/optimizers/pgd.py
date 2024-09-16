@@ -1,4 +1,5 @@
 """Proximal Gradient Descent algorithm."""
+
 import math
 
 import torch
@@ -31,46 +32,41 @@ def pgd(
     max_iterations: int = 128,
     backtrack_factor: float = 1.0,
 ) -> torch.Tensor:
-    """Proximal gradient descent algorithm for solving problem min_x f(x) + g(x).
+    r"""Proximal gradient descent algorithm for solving problem min_x f(x) + g(x).
 
-    f is convex, differentiable, and with L-Lispchitz gradient. 
+    f is convex, differentiable, and with L-Lispchitz gradient.
     g is convex, non-smooth with computable proximal map.
-    
-    For fixed stepsize t, pgd converges globally when t \in (0, 1/L), where L is the Lipschitz constant of the gradient of f.
-    
+
+    For fixed stepsize t, pgd converges globally when t \in (0, 1/L),
+    where L is the Lipschitz constant of the gradient of f.
     In applications, f is usually of the form f(x) = 1/2 ||Ax - target||^2, where A is a linear operator.
     In this case, t \in (0, 1/||A^T A||) for convergence.
     If no backtracking is used, the fixed stepsize should be given accordingly to the convergence condition.
-    
-    
+
     Case example: image reconstruction.
     Problem formulation: min_x 1/2 ||Fx - target||^2 + ||x||_1,
-    with F being Fast Fourier Tranform, target acquired data \in k-space and x \in image space,
+    with F being the Fast Fourier Transform, target the acquired data \in k-space and x \in image space,
     f(x) = 1/2 ||Fx - target||^2, g(x) = ||x||_1.
     In this case, ||F^T F|| = 1.
-    
-    
+
     Example of usage:
     fft = FastFourierOp()
     l2 = L2NormSquared(target=kspace_data)
     f = l2 @ fft
     g = L1Norm()
     fft_norm = 1.
-    suitalbe_stepsize = 0.85 * 1 / fft_norm
+    stepsize = 0.85 * 1 / fft_norm
     initial_value = torch.ones(image_space_shape)
-    
     pgd_image_solution = pgd(
         f=f,
         g=g,
         initial_value=initial_value,
-        stepsize=suitable_stepsize,
+        stepsize=stepsize,
         reg_parameter=0.01,
         max_iterations=200,
         backtrack_factor=1.0,
     )
-    
-    
-    
+
     Parameters
     ----------
     f
@@ -109,14 +105,14 @@ def pgd(
                 # no need to check stepsize, continue to next iteration
                 break
             difference = x - y
-            Q = (
+            quadratic_approx = (
                 f_y
                 + 1 / (2 * stepsize) * difference.abs().square().sum()
                 + torch.vdot(gradient.flatten(), difference.flatten()).real
             )
 
             (f_x,) = f(x)
-            if f_x <= Q:
+            if f_x <= quadratic_approx:
                 # stepsize is ok, continue to next iteration
                 break
             stepsize *= backtrack_factor
