@@ -13,6 +13,7 @@ from pydicom.tag import Tag, TagType
 from mrpro.data.KHeader import KHeader
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
+from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 
 MISC_TAGS = {'TimeAfterStart': 0x00191016}
 
@@ -61,12 +62,10 @@ class IHeader(MoveDataMixin):
             list of dataset objects containing the DICOM file.
         """
 
-        def get_item(dataset: Dataset, name: str | TagType):
+        def get_item(dataset: Dataset, name: TagType):
             """Get item with a given name or Tag from a pydicom dataset."""
-            tag = Tag(name) if isinstance(name, str) else name  # find item via value name
-
             # iterall is recursive, so it will find all items with the given name
-            found_item = [item.value for item in dataset.iterall() if item.tag == tag]
+            found_item = [item.value for item in dataset.iterall() if item.tag == Tag(name)]
 
             if len(found_item) == 0:
                 return None
@@ -75,11 +74,11 @@ class IHeader(MoveDataMixin):
             else:
                 raise ValueError(f'Item {name} found {len(found_item)} times.')
 
-        def get_items_from_all_dicoms(name: str | TagType):
+        def get_items_from_all_dicoms(name: TagType):
             """Get list of items for all dataset objects in the list."""
             return [get_item(ds, name) for ds in dicom_datasets]
 
-        def get_float_items_from_all_dicoms(name: str | TagType):
+        def get_float_items_from_all_dicoms(name: TagType):
             """Convert items to float."""
             items = get_items_from_all_dicoms(name)
             return [float(val) if val is not None else None for val in items]
@@ -122,3 +121,11 @@ class IHeader(MoveDataMixin):
         for name in MISC_TAGS:
             misc[name] = make_unique_tensor(get_float_items_from_all_dicoms(MISC_TAGS[name]))
         return cls(fov=fov, te=te, ti=ti, fa=fa, tr=tr, misc=misc)
+
+    def __repr__(self):
+        """Representation method for IHeader class."""
+        te = summarize_tensorvalues(self.te)
+        ti = summarize_tensorvalues(self.ti)
+        fa = summarize_tensorvalues(self.fa)
+        out = f'FOV [m]: {self.fov!s}\n' f'TE [s]: {te}\nTI [s]: {ti}\nFlip angle [rad]: {fa}.'
+        return out

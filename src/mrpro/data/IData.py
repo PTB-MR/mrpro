@@ -153,3 +153,15 @@ class IData(Data):
             raise ValueError(f'No dicom files with suffix {suffix} found in {foldername}')
 
         return cls.from_dicom_files(filenames=file_paths)
+
+    def __repr__(self):
+        """Representation method for IData class."""
+        try:
+            device = str(self.device)
+        except RuntimeError:
+            device = 'mixed'
+        out = (
+            f'{type(self).__name__} with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
+            f'Device: {device}\n{self.header}'
+        )
+        return out
