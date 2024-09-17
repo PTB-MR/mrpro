@@ -1,19 +1,5 @@
 """Index for splitting data."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import torch
 
 
@@ -27,9 +13,9 @@ def split_idx(idx: torch.Tensor, np_per_block: int, np_overlap: int = 0, cyclic:
     np_per_block
         Number of points per block.
     np_overlap
-        Number of points overlapping between blocks, by default 0, i.e. no overlap between blocks
+        Number of points overlapping between blocks, default of 0 means no overlap between blocks
     cyclic
-        Last block is filled up with points from the first block, e.g. due to cyclic cardiac motion, by default False
+        Last block is filled up with points from the first block, e.g. due to cyclic cardiac motion
 
 
     Example:

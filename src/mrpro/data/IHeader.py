@@ -1,34 +1,19 @@
 """MR image data header (IHeader) dataclass."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from __future__ import annotations
-
 import dataclasses
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Self
 
 import numpy as np
 import torch
 from pydicom.dataset import Dataset
-from pydicom.tag import Tag
-from pydicom.tag import TagType
+from pydicom.tag import Tag, TagType
 
 from mrpro.data.KHeader import KHeader
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
+from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 
 MISC_TAGS = {'TimeAfterStart': 0x00191016}
 
@@ -39,14 +24,25 @@ class IHeader(MoveDataMixin):
 
     # ToDo: decide which attributes to store in the header
     fov: SpatialDimension[float]
+    """Field of view [m]."""
+
     te: torch.Tensor | None
+    """Echo time [s]."""
+
     ti: torch.Tensor | None
+    """Inversion time [s]."""
+
     fa: torch.Tensor | None
+    """Flip angle [rad]."""
+
     tr: torch.Tensor | None
+    """Repetition time [s]."""
+
     misc: dict = dataclasses.field(default_factory=dict)
+    """Dictionary with miscellaneous parameters."""
 
     @classmethod
-    def from_kheader(cls, kheader: KHeader) -> IHeader:
+    def from_kheader(cls, kheader: KHeader) -> Self:
         """Create IHeader object from KHeader object.
 
         Parameters
@@ -57,7 +53,7 @@ class IHeader(MoveDataMixin):
         return cls(fov=kheader.recon_fov, te=kheader.te, ti=kheader.ti, fa=kheader.fa, tr=kheader.tr)
 
     @classmethod
-    def from_dicom_list(cls, dicom_datasets: Sequence[Dataset]) -> IHeader:
+    def from_dicom_list(cls, dicom_datasets: Sequence[Dataset]) -> Self:
         """Read DICOM files and return IHeader object.
 
         Parameters
@@ -66,12 +62,10 @@ class IHeader(MoveDataMixin):
             list of dataset objects containing the DICOM file.
         """
 
-        def get_item(dataset: Dataset, name: str | TagType):
+        def get_item(dataset: Dataset, name: TagType):
             """Get item with a given name or Tag from a pydicom dataset."""
-            tag = Tag(name) if isinstance(name, str) else name  # find item via value name
-
             # iterall is recursive, so it will find all items with the given name
-            found_item = [item.value for item in dataset.iterall() if item.tag == tag]
+            found_item = [item.value for item in dataset.iterall() if item.tag == Tag(name)]
 
             if len(found_item) == 0:
                 return None
@@ -80,11 +74,11 @@ class IHeader(MoveDataMixin):
             else:
                 raise ValueError(f'Item {name} found {len(found_item)} times.')
 
-        def get_items_from_all_dicoms(name: str | TagType):
+        def get_items_from_all_dicoms(name: TagType):
             """Get list of items for all dataset objects in the list."""
             return [get_item(ds, name) for ds in dicom_datasets]
 
-        def get_float_items_from_all_dicoms(name: str | TagType):
+        def get_float_items_from_all_dicoms(name: TagType):
             """Convert items to float."""
             items = get_items_from_all_dicoms(name)
             return [float(val) if val is not None else None for val in items]
@@ -98,15 +92,22 @@ class IHeader(MoveDataMixin):
             else:
                 return torch.as_tensor(values)
 
-        fa = make_unique_tensor(get_float_items_from_all_dicoms('FlipAngle'))
-        ti = make_unique_tensor(get_float_items_from_all_dicoms('InversionTime'))
-        tr = make_unique_tensor(get_float_items_from_all_dicoms('RepetitionTime'))
+        # Conversion functions for units
+        def ms_to_s(ms: torch.Tensor | None) -> torch.Tensor | None:
+            return None if ms is None else ms / 1000
+
+        def deg_to_rad(deg: torch.Tensor | None) -> torch.Tensor | None:
+            return None if deg is None else torch.deg2rad(deg)
+
+        fa = deg_to_rad(make_unique_tensor(get_float_items_from_all_dicoms('FlipAngle')))
+        ti = ms_to_s(make_unique_tensor(get_float_items_from_all_dicoms('InversionTime')))
+        tr = ms_to_s(make_unique_tensor(get_float_items_from_all_dicoms('RepetitionTime')))
 
         # get echo time(s). Some scanners use 'EchoTime', some use 'EffectiveEchoTime'
         te_list = get_float_items_from_all_dicoms('EchoTime')
         if all(val is None for val in te_list):  # check if all entries are None
             te_list = get_float_items_from_all_dicoms('EffectiveEchoTime')
-        te = make_unique_tensor(te_list)
+        te = ms_to_s(make_unique_tensor(te_list))
 
         fov_x_mm = get_float_items_from_all_dicoms('Rows')[0] * float(get_items_from_all_dicoms('PixelSpacing')[0][0])
         fov_y_mm = get_float_items_from_all_dicoms('Columns')[0] * float(
@@ -120,3 +121,11 @@ class IHeader(MoveDataMixin):
         for name in MISC_TAGS:
             misc[name] = make_unique_tensor(get_float_items_from_all_dicoms(MISC_TAGS[name]))
         return cls(fov=fov, te=te, ti=ti, fa=fa, tr=tr, misc=misc)
+
+    def __repr__(self):
+        """Representation method for IHeader class."""
+        te = summarize_tensorvalues(self.te)
+        ti = summarize_tensorvalues(self.ti)
+        fa = summarize_tensorvalues(self.fa)
+        out = f'FOV [m]: {self.fov!s}\n' f'TE [s]: {te}\nTI [s]: {ti}\nFlip angle [rad]: {fa}.'
+        return out
