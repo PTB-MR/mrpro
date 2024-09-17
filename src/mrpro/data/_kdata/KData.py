@@ -16,7 +16,7 @@ from mrpro.data._kdata.KDataRearrangeMixin import KDataRearrangeMixin
 from mrpro.data._kdata.KDataRemoveOsMixin import KDataRemoveOsMixin
 from mrpro.data._kdata.KDataSelectMixin import KDataSelectMixin
 from mrpro.data._kdata.KDataSplitMixin import KDataSplitMixin
-from mrpro.data.acq_filters import is_image_acquisition
+from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
 from mrpro.data.AcqInfo import AcqInfo
 from mrpro.data.EncodingLimits import Limits
 from mrpro.data.KHeader import KHeader
@@ -112,37 +112,36 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
 
         # Select only acquisitions with the desired number of receiver channels/coils.
         # If the number of coils is not defined use all acquisitions
-        n_coils = None
         n_coils_available = {acq.data.shape[0] for acq in acquisitions}
-        if len(n_coils_available) > 1:
-            warnings.warn(
-                f'Acquisitions with different number {n_coils_available} of receiver coil elements detected.',
-                stacklevel=1,
-            )
+
         # We need to handle the n_coils parameter of header_overwrites here separately rather than in
         # KHeader.from_ismrmrd, because the acquisitions have to be selected before we can calculate the header
-        if header_overwrites is not None and 'n_coils' in header_overwrites:
-            n_coils = header_overwrites['n_coils']
-        elif (
-            ismrmrd_header.acquisitionSystemInformation is not None
-            and ismrmrd_header.acquisitionSystemInformation.receiverChannels is not None
-        ):
-            n_coils = ismrmrd_header.acquisitionSystemInformation.receiverChannels
-        if n_coils is not None:
-            if n_coils not in n_coils_available:
-                raise ValueError(f'No acquisitions for {n_coils} coil elements found.')
-            acquisitions = [acq for acq in acquisitions if acq.data.shape[0] == n_coils]
-            if len(n_coils_available) > 1:
-                warnings.warn(
-                    f'{len(acquisitions)} acquisitions with {n_coils} receiver coil elements selected.', stacklevel=1
-                )
-        else:
-            if len(n_coils_available) > 1:
-                raise ValueError(
-                    'Cannot combine acquisitions with different number of receiver coil elements. \n'
-                    'Please specify "header_overwrites={"n_coils": n_coils}", where n_coils is selected '
-                    f'from {n_coils_available}.'
-                )
+        if len(n_coils_available) > 1:
+            if header_overwrites is not None and 'n_coils' in header_overwrites:
+                if isinstance(header_overwrites['n_coils'], int | float):
+                    n_coils = int(header_overwrites['n_coils'])
+                else:
+                    raise ValueError(f'n_coils has to be numeric but is {type(header_overwrites["n_coils"])}')
+            elif (
+                ismrmrd_header.acquisitionSystemInformation is not None
+                and ismrmrd_header.acquisitionSystemInformation.receiverChannels is not None
+            ):
+                n_coils = int(ismrmrd_header.acquisitionSystemInformation.receiverChannels)
+            else:
+                n_coils = int(max(n_coils_available))
+
+            warnings.warn(
+                f'Acquisitions with different number {n_coils_available} of receiver coil elements detected.'
+                'Data with {n_coils} receiver coil elements will be used.',
+                stacklevel=1,
+            )
+
+            # Select acquisition with n_coils receiver coils
+            acquisitions = [acq for acq in acquisitions if has_n_coils(n_coils, acq)]
+
+        # Make sure there are any acquisitions left
+        if len(acquisitions) == 0:
+            raise ValueError('No acquisitions meeting the given filter criteria were found.')
 
         kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 

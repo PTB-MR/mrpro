@@ -4,7 +4,7 @@ import pytest
 import torch
 from einops import rearrange, repeat
 from mrpro.data import KData, KTrajectory, SpatialDimension
-from mrpro.data.acq_filters import is_coil_calibration_acquisition
+from mrpro.data.acq_filters import has_n_coils, is_coil_calibration_acquisition, is_image_acquisition
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
 from mrpro.utils import modify_acq_info, split_idx
@@ -138,16 +138,49 @@ def test_KData_raise_wrong_trajectory_shape(ismrmrd_cart):
         _ = KData.from_file(ismrmrd_cart.filename, trajectory)
 
 
-def test_KData_raise_wrong_coil_number(ismrmrd_cart):
-    """Wrong number of coils leads to empty acquisitions."""
-    with pytest.raises(ValueError, match='No acquisitions for'):
-        _ = KData.from_file(ismrmrd_cart.filename, DummyTrajectory(), header_overwrites={'n_coils': 3})
-
-
 def test_KData_raise_warning_for_bodycoil(ismrmrd_cart_bodycoil_and_surface_coil):
     """Mix of bodycoil and surface coil acquisitions leads to warning."""
     with pytest.raises(UserWarning, match='Acquisitions with different number'):
         _ = KData.from_file(ismrmrd_cart_bodycoil_and_surface_coil.filename, DummyTrajectory())
+
+
+@pytest.mark.filterwarnings('ignore:Acquisitions with different number:UserWarning')
+def test_KData_select_bodycoil_via_filter(ismrmrd_cart_bodycoil_and_surface_coil):
+    """Bodycoil can be selected via a custom acquisition filter."""
+    # This is the recommended way of selecting the body coil (i.e. 2 receiver elements)
+    kdata = KData.from_file(
+        ismrmrd_cart_bodycoil_and_surface_coil.filename,
+        DummyTrajectory(),
+        acquisition_filter_criterion=lambda acq: has_n_coils(2, acq) and is_image_acquisition(acq),
+    )
+    assert kdata.data.shape[-4] == 2
+
+
+def test_KData_raise_wrong_coil_number(ismrmrd_cart):
+    """Wrong number of coils leads to empty acquisitions."""
+    with pytest.raises(ValueError, match='No acquisitions meeting the given filter criteria were found'):
+        _ = KData.from_file(
+            ismrmrd_cart.filename,
+            DummyTrajectory(),
+            acquisition_filter_criterion=lambda acq: has_n_coils(2, acq) and is_image_acquisition(acq),
+        )
+
+
+@pytest.mark.filterwarnings('ignore:Acquisitions with different number:UserWarning')
+def test_KData_select_bodycoil_via_header_overwrite(ismrmrd_cart_bodycoil_and_surface_coil):
+    # Unrecommended alternative to using an acquisition filter
+    kdata = KData.from_file(
+        ismrmrd_cart_bodycoil_and_surface_coil.filename, DummyTrajectory(), header_overwrites={'n_coils': 2}
+    )
+    assert kdata.data.shape[-4] == 2
+
+
+def test_KData_raise_error_for_wrong_n_coils_type(ismrmrd_cart_bodycoil_and_surface_coil):
+    """n_coils has to int or float."""
+    with pytest.raises(ValueError, match='n_coils has to be numeric'):
+        _ = KData.from_file(
+            ismrmrd_cart_bodycoil_and_surface_coil.filename, DummyTrajectory(), header_overwrites={'n_coils': '2'}
+        )
 
 
 def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
