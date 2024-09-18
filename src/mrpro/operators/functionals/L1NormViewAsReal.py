@@ -74,12 +74,10 @@ class L1NormViewAsReal(ProximableFunctional):
         """
         diff = x - self.target
         threshold = self._divide_by_n(self.weight * sigma, torch.broadcast_shapes(x.shape, self.weight.shape))
+        out = torch.sgn(diff.real) * torch.clamp_max(diff.real.abs(), threshold.real.abs())
         if diff.is_complex():
-            real = x.real - diff.real / torch.clamp_min((diff.real / threshold.real).abs(), 1)
             threshold_imag = threshold.imag if self.weight.is_complex() else threshold
-            imag = x.imag - diff.imag / torch.clamp_min((diff.imag / threshold_imag).abs(), 1)
-            out = torch.complex(real, imag)
-        else:
-            out = x - diff / torch.clamp_min((diff / threshold.real).abs(), 1)
+            imag = torch.sgn(diff.imag) * torch.clamp_max(diff.imag.abs(), threshold_imag.abs())
+            out = torch.complex(out, imag)
         out = out.to(torch.result_type(threshold, out))
         return (out,)
