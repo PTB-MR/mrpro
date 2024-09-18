@@ -11,7 +11,7 @@ from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, crea
     ('ti', 'result'),
     [
         (0, 'a(1-c)'),  # short ti
-        (200, 'a'),  # long ti
+        (20, 'a'),  # long ti
     ],
 )
 def test_molli(ti, result):
@@ -21,9 +21,9 @@ def test_molli(ti, result):
     that idata output tensor at large ti is close to a(1-c).
     """
     a, t1 = create_parameter_tensor_tuples()
-    # c>1 is necessary for t1_star to be >= 0 and c<2 to ensure t1_star < t1
+    # c>2 is necessary for t1_star to be >= 0 and to ensure t1_star < t1
     random_generator = RandomGenerator(seed=0)
-    c = random_generator.float32_tensor(size=a.shape, low=1.1, high=1.9)
+    c = random_generator.float32_tensor(size=a.shape, low=2.0, high=4.0)
 
     # Generate signal model and torch tensor for comparison
     model = MOLLI(ti)
