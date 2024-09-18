@@ -1,7 +1,9 @@
 """Helper/Utilities for test functions."""
 
+from typing import Any
+
 import torch
-from mrpro.operators import Operator
+from mrpro.operators import LinearOperator, Operator
 
 
 def relative_image_difference(img1: torch.Tensor, img2: torch.Tensor) -> torch.Tensor:
@@ -26,9 +28,13 @@ def relative_image_difference(img1: torch.Tensor, img2: torch.Tensor) -> torch.T
 
 
 def dotproduct_adjointness_test(
-    operator: Operator, u: torch.Tensor, v: torch.Tensor, relative_tolerance: float = 1e-3, absolute_tolerance=1e-5
+    linear_operator: LinearOperator,
+    u: torch.Tensor,
+    v: torch.Tensor,
+    relative_tolerance: float = 1e-3,
+    absolute_tolerance=1e-5,
 ):
-    """Test the adjointness of operator and operator.H.
+    """Test the adjointness of linear operator and operator.H.
 
     Test if
          <Operator(u),v> == <u, Operator^H(v)>
@@ -41,8 +47,8 @@ def dotproduct_adjointness_test(
 
     Parameters
     ----------
-    operator
-        operator
+    linear_operator
+        linear operator
     u
         element of the domain of the operator
     v
@@ -57,12 +63,12 @@ def dotproduct_adjointness_test(
     AssertionError
         if the adjointness property does not hold
     AssertionError
-        if the shape of operator(u) and v does not match
-        if the shape of u and operator.H(v) does not match
+        if the shape of linear_operator(u) and v does not match
+        if the shape of u and linear_operator.H(v) does not match
 
     """
-    (forward_u,) = operator(u)
-    (adjoint_v,) = operator.adjoint(v)
+    (forward_u,) = linear_operator(u)
+    (adjoint_v,) = linear_operator.adjoint(v)
 
     # explicitly check the shapes, as flatten makes the dot product insensitive to wrong shapes
     assert forward_u.shape == v.shape
@@ -73,10 +79,10 @@ def dotproduct_adjointness_test(
     torch.testing.assert_close(dotproduct_range, dotproduct_domain, rtol=relative_tolerance, atol=absolute_tolerance)
 
 
-def operator_isometry_test(
-    operator: Operator, u: torch.Tensor, relative_tolerance: float = 1e-3, absolute_tolerance=1e-5
+def linear_operator_isometry_test(
+    linear_operator: LinearOperator, u: torch.Tensor, relative_tolerance: float = 1e-3, absolute_tolerance=1e-5
 ):
-    """Test the isometry of an operator.
+    """Test the isometry of a linear operator.
 
     Test if
          ||Operator(u)|| == ||u||
@@ -84,8 +90,8 @@ def operator_isometry_test(
 
     Parameters
     ----------
-    operator
-        operator
+    linear_operator
+        linear operator
     u
         element of the domain of the operator
     relative_tolerance
@@ -99,14 +105,14 @@ def operator_isometry_test(
         if the adjointness property does not hold
     """
     torch.testing.assert_close(
-        torch.norm(u), torch.norm(operator(u)[0]), rtol=relative_tolerance, atol=absolute_tolerance
+        torch.norm(u), torch.norm(linear_operator(u)[0]), rtol=relative_tolerance, atol=absolute_tolerance
     )
 
 
-def operator_unitary_test(
-    operator: Operator, u: torch.Tensor, relative_tolerance: float = 1e-3, absolute_tolerance=1e-5
+def linear_operator_unitary_test(
+    linear_operator: LinearOperator, u: torch.Tensor, relative_tolerance: float = 1e-3, absolute_tolerance=1e-5
 ):
-    """Test if an operator is unitary.
+    """Test if a linear operator is unitary.
 
     Test if
          Operator.adjoint(Operator(u)) == u
@@ -114,8 +120,8 @@ def operator_unitary_test(
 
     Parameters
     ----------
-    operator
-        operator
+    linear_operator
+        linear operator
     u
         element of the domain of the operator
     relative_tolerance
@@ -128,4 +134,37 @@ def operator_unitary_test(
     AssertionError
         if the adjointness property does not hold
     """
-    torch.testing.assert_close(u, operator.adjoint(operator(u)[0])[0], rtol=relative_tolerance, atol=absolute_tolerance)
+    torch.testing.assert_close(
+        u, linear_operator.adjoint(linear_operator(u)[0])[0], rtol=relative_tolerance, atol=absolute_tolerance
+    )
+
+
+def autodiff_of_operator_test(
+    operator: Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]],
+    *u: Any,
+):
+    """Test if autodiff of an operator is working.
+    This test does not check that the gradient is correct but simply that it can be calculated using autodiff.
+    torch.autograd.detect_anomaly will raise the Warning:
+    Anomaly Detection has been enabled. This mode will increase the runtime and should only be enabled for debugging.
+    If you want to add this function in a test, use the decorator:
+    @pytest.mark.filterwarnings("ignore:Anomaly Detection has been enabled")
+    Parameters
+    ----------
+    operator
+        operator
+    u
+        element(s) of the domain of the operator
+    Raises
+    ------
+    AssertionError
+        if autodiff fails
+    """
+    # Forward-mode autodiff using jvp
+    with torch.autograd.detect_anomaly():
+        v_range, _ = torch.func.jvp(operator.forward, u, u)
+
+    # Backward-mode autodiff using vjp
+    with torch.autograd.detect_anomaly():
+        (_, vjpfunc) = torch.func.vjp(operator.forward, *u)
+        vjpfunc(v_range)
