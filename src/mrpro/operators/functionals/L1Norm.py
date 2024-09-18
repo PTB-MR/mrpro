@@ -72,7 +72,7 @@ class L1Norm(ProximableFunctional):
 
         threshold = self.weight * sigma
         threshold = self._divide_by_n(threshold, torch.broadcast_shapes(x.shape, threshold.shape))
-        x_out = x - diff / torch.clamp_min((diff / threshold).abs(), 1)
+        x_out = torch.sgn(diff) * torch.relu(diff.abs() - threshold.abs()) + self.target
         x_out = x_out.to(torch.result_type(threshold, x_out))
         return (x_out,)
 
@@ -98,10 +98,5 @@ class L1Norm(ProximableFunctional):
         """
         diff = x - sigma * self.target
         threshold = self._divide_by_n(self.weight.abs(), torch.broadcast_shapes(x.shape, self.weight.shape))
-
-        if diff.is_complex():
-            x_out = torch.polar(torch.clamp(diff.abs(), -threshold, threshold), torch.angle(diff))
-        else:
-            x_out = torch.clamp(diff, -threshold, threshold)
-
+        x_out = torch.sgn(diff)*torch.clamp_max(diff.abs(), threshold.abs())
         return (x_out,)
