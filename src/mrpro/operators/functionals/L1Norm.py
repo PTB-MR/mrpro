@@ -19,13 +19,6 @@ class L1Norm(ProximableFunctional):
     the elements of the vector space that is spanned by the dimensions indexed by "dim".
     If "dim" is set to None and "keepdim" to False, the result is a single number, which
     is typically of interest for computing loss functions.
-
-    Further, the proximal mapping and the proximal mapping of the convex conjugate are given.
-
-    Note that here, the proximal mapping and the convex conjugate of the proximal mapping are
-    derived assuming the weight vector defines an invertible (block-) diagonal
-    operator with all entries being strictly greater than zero, i.e. only real-valued
-    weight-tensors are allowed.
     """
 
     def forward(
