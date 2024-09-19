@@ -15,12 +15,7 @@ class L2NormSquared(ProximableFunctional):
     reconstruction when using a density-compensation function for k-space pre-conditioning,
     for masking of image data, or for spatially varying regularization weights.
 
-    The norm of the vector is computed along the dimensions given by "dim".
-
-    Further, it is possible to scale the functional by N, i.e. by the number voxels of
-    the elements of the vector space that is spanned by the dimensions indexed by "dim".
-    If "dim" is set to None and "keepdim" to False, the result is a single number, which
-    is typically of interest for computing loss functions.
+    The norm of the vector is computed along the dimensions given at initialization.
     """
 
     def forward(
@@ -67,6 +62,7 @@ class L2NormSquared(ProximableFunctional):
         -------
             Proximal mapping applied to the input tensor
         """
+        self._throw_if_not_positive(sigma)
         weight_square_2_sigma = self._divide_by_n(
             self.weight.conj() * self.weight * 2 * sigma,
             torch.broadcast_shapes(x.shape, self.target.shape, self.weight.shape),
@@ -95,6 +91,7 @@ class L2NormSquared(ProximableFunctional):
         -------
             Proximal of convex conjugate applied to the input tensor
         """
+        self._throw_if_not_positive(sigma)
         weight_square = self._divide_by_n(
             self.weight.conj() * self.weight, torch.broadcast_shapes(x.shape, self.target.shape, self.weight.shape)
         )
