@@ -56,7 +56,7 @@ class L1Norm(ProximableFunctional):
         -------
             Proximal mapping applied to the input tensor
         """
-        self._throw_if_not_positive(sigma)
+        self._throw_if_negative_or_complex(sigma)
         diff = x - self.target
         threshold = self.weight * sigma
         threshold = self._divide_by_n(threshold, torch.broadcast_shapes(x.shape, threshold.shape))
@@ -84,7 +84,7 @@ class L1Norm(ProximableFunctional):
         -------
             Proximal of the convex conjugate applied to the input tensor
         """
-        self._throw_if_not_positive(sigma)
+        self._throw_if_negative_or_complex(sigma)
         diff = x - sigma * self.target
         threshold = self._divide_by_n(self.weight.abs(), torch.broadcast_shapes(x.shape, self.weight.shape))
         x_out = torch.sgn(diff) * torch.clamp_max(diff.abs(), threshold.abs())
