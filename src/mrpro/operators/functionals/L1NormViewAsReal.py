@@ -9,18 +9,13 @@ class L1NormViewAsReal(ProximableFunctional):
     r"""Functional class for the L1 Norm, where C is identified with R^2.
 
     This implements the functional given by
-        f: C^N --> [0, \infty), x ->  \|Wr.*Re(x-b) )\|_1 + \|( Wi.*Im(x-b) )\|_1
+        :math:`f: C^N --> [0, \infty), x ->  \|Wr.*Re(x-b) )\|_1 + \|( Wi.*Im(x-b) )\|_1`
     where Wr and Wi are a either scalars or tensors and .* denotes element-wise multiplication.
 
-    If the weight parameter W is real-valued, Wr and Wi are both set to W.
-    If it is complex-valued, Wr and Wi are set to the real and imaginary part of W, respectively.
+    If the parameter `weight` is real-valued, `Wr` and `Wi` are both set to `weight`.
+    If it is complex-valued, Wr and Wi are set to the real and imaginary part, respectively.
 
-    The norm of the vector is computed along the dimensions given by "dim".
-    Further, it is possible to scale the functional by N, i.e. by the number voxels of
-    the elements of the vector space that is spanned by the dimensions indexed by "dim".
-    If "dim" is set to None and "keepdim" to False, the result is a single number, which
-    is typically of interest for computing loss functions.
-
+    The norm of the vector is computed along the dimensions set at initialization.
     """
 
     def forward(
@@ -59,19 +54,20 @@ class L1NormViewAsReal(ProximableFunctional):
     def prox(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         """Proximal Mapping of the L1 Norm.
 
-        Compute the proximal mapping of the L1-norm with C identified as R^2.
+        Apply the proximal mapping of the L1-norm with C identified as R^2.
 
         Parameters
         ----------
         x
             input tensor
         sigma
-            real valued scaling factor
+            real valued positive scaling factor
 
         Returns
         -------
             Proximal mapping applied to the input tensor
         """
+        self._throw_if_negative_or_complex(sigma)
         diff = x - self.target
         threshold = self._divide_by_n(self.weight * sigma, torch.broadcast_shapes(x.shape, self.weight.shape))
         out = torch.sgn(diff.real) * torch.relu(diff.real.abs() - threshold.real.abs())
