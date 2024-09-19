@@ -9,7 +9,33 @@ from ptwt.conv_transform_2 import wavedec2
 from ptwt.conv_transform_3 import wavedec3
 
 from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test, linear_operator_isometry_test, linear_operator_unitary_test
+from tests.helper import (
+    dotproduct_adjointness_test,
+    forward_mode_autodiff_of_linear_operator_test,
+    gradient_of_linear_operator_test,
+    linear_operator_isometry_test,
+    linear_operator_unitary_test,
+)
+
+
+def create_wavelet_op_and_domain_range(im_shape, domain_shape, dim, wavelet_name):
+    """Create a wavelet operator and an element from domain and range."""
+    random_generator = RandomGenerator(seed=0)
+
+    wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name=wavelet_name)
+
+    # calculate 1D length of wavelet coefficients
+    wavelet_stack_length = torch.sum(torch.as_tensor([(np.prod(shape)) for shape in wavelet_op.coefficients_shape]))
+
+    # sorted and normed dimensions needed to correctly calculate range
+    dim_sorted = sorted([d % len(im_shape) for d in dim], reverse=True)
+    range_shape = list(im_shape)
+    range_shape[dim_sorted[-1]] = int(wavelet_stack_length)
+    [range_shape.pop(d) for d in dim_sorted[:-1]]
+
+    u = random_generator.complex64_tensor(size=im_shape)
+    v = random_generator.complex64_tensor(size=range_shape)
+    return wavelet_op, u, v
 
 
 @pytest.mark.parametrize(
@@ -130,22 +156,27 @@ def test_wavelet_op_isometry(im_shape, domain_shape, dim, wavelet_name):
 )
 def test_wavelet_op_adjointness(im_shape, domain_shape, dim, wavelet_name):
     """Test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v."""
-    random_generator = RandomGenerator(seed=0)
+    dotproduct_adjointness_test(*create_wavelet_op_and_domain_range(im_shape, domain_shape, dim, wavelet_name))
 
-    wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name=wavelet_name)
 
-    # calculate 1D length of wavelet coefficients
-    wavelet_stack_length = torch.sum(torch.as_tensor([(np.prod(shape)) for shape in wavelet_op.coefficients_shape]))
+def test_wavelet_op_grad():
+    """Test gradient of wavelet operator."""
+    im_shape = (6, 10, 20, 30)
+    domain_shape = (6, 20, 30)
+    dim = (-4, -2, -1)
+    wavelet_name = 'db4'
+    gradient_of_linear_operator_test(*create_wavelet_op_and_domain_range(im_shape, domain_shape, dim, wavelet_name))
 
-    # sorted and normed dimensions needed to correctly calculate range
-    dim_sorted = sorted([d % len(im_shape) for d in dim], reverse=True)
-    range_shape = list(im_shape)
-    range_shape[dim_sorted[-1]] = int(wavelet_stack_length)
-    [range_shape.pop(d) for d in dim_sorted[:-1]]
 
-    u = random_generator.complex64_tensor(size=im_shape)
-    v = random_generator.complex64_tensor(size=range_shape)
-    dotproduct_adjointness_test(wavelet_op, u, v)
+def test_wavelet_op_forward_mode_autodiff():
+    """Test forward-mode autodiff of wavelet operator."""
+    im_shape = (6, 10, 20, 30)
+    domain_shape = (6, 20, 30)
+    dim = (-4, -2, -1)
+    wavelet_name = 'db4'
+    forward_mode_autodiff_of_linear_operator_test(
+        *create_wavelet_op_and_domain_range(im_shape, domain_shape, dim, wavelet_name)
+    )
 
 
 @pytest.mark.parametrize('wavelet_name', ['haar', 'db4'])
