@@ -23,7 +23,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="QMRI Challenge ISMRM 2024 - T2* mapping" href="notebook_qmri_sg_challenge_2024_t2_star.html" />
-    <link rel="prev" title="Examples" href="examples.html" /> 
+    <link rel="prev" title="T1 mapping from a continuous Golden radial acquisition" href="notebook_t1_mapping_with_grad_acq.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -51,11 +51,11 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="examples.html">Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="notebook_pulseq_2d_radial_golden_angle.html">Reconstruction of 2D golden angle radial data from pulseq sequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebook_t1_mapping_with_grad_acq.html">T1 mapping from a continuous Golden radial acquisition</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Direct Reconstruction of 2D golden angle radial data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="notebook_qmri_sg_challenge_2024_t2_star.html">QMRI Challenge ISMRM 2024 - T2* mapping</a></li>
 <li class="toctree-l2"><a class="reference internal" href="notebook_iterative_sense_reconstruction.html">Iterative SENSE Reconstruction of 2D golden angle radial data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="notebook_t1_mapping_with_grad_acq.html">T1 mapping from a continuous Golden radial acquisition</a></li>
-<li class="toctree-l2"><a class="reference internal" href="notebook_pulseq_2d_radial_golden_angle.html">Reconstruction of 2D golden angle radial data from pulseq sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="notebook_qmri_sg_challenge_2024_t1.html">QMRI Challenge ISMRM 2024 - T1 mapping</a></li>
 </ul>
 </li>
@@ -7602,7 +7602,7 @@ a.anchor-link {
 </style>
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
-<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=98ea480b">
+<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=1ecbb611">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7717,7 +7717,7 @@ US1_J2KR.dcm:   0%|          | 0.00/154k [00:00&lt;?, ?B/s]</pre>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-US1_J2KR.dcm:   0%|          | 38.0/154k [00:00&lt;00:17, 8.82kB/s]</pre>
+US1_J2KR.dcm:   0%|          | 38.0/154k [00:00&lt;00:07, 19.4kB/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -7738,7 +7738,7 @@ MR-SIEMENS-DICOM-WithOverlays.dcm:   0%|          | 0.00/511k [00:00&lt;?, ?B/s]
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-MR-SIEMENS-DICOM-WithOverlays.dcm:   0%|          | 125/511k [00:00&lt;00:32, 15.5kB/s]</pre>
+MR-SIEMENS-DICOM-WithOverlays.dcm:   0%|          | 125/511k [00:00&lt;00:16, 30.7kB/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -7759,7 +7759,7 @@ OBXXXX1A.dcm:   0%|          | 0.00/486k [00:00&lt;?, ?B/s]</pre>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-OBXXXX1A.dcm:   0%|          | 119/486k [00:00&lt;00:31, 15.6kB/s]</pre>
+OBXXXX1A.dcm:   0%|          | 119/486k [00:00&lt;00:15, 32.1kB/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -7780,7 +7780,7 @@ US1_UNCR.dcm:   0%|          | 0.00/923k [00:00&lt;?, ?B/s]</pre>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-US1_UNCR.dcm:   0%|          | 226/923k [00:00&lt;00:39, 23.3kB/s]</pre>
+US1_UNCR.dcm:   0%|          | 226/923k [00:00&lt;00:28, 32.0kB/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -7801,7 +7801,7 @@ color3d_jpeg_baseline.dcm:   0%|          | 0.00/6.14M [00:00&lt;?, ?B/s]</pre>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-color3d_jpeg_baseline.dcm:   0%|          | 1.50k/6.14M [00:00&lt;02:31, 40.5kB/s]</pre>
+color3d_jpeg_baseline.dcm:   0%|          | 1.50k/6.14M [00:00&lt;02:33, 40.0kB/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -7839,7 +7839,7 @@ color3d_jpeg_baseline.dcm:   0%|          | 1.50k/6.14M [00:00&lt;02:31, 40.5kB/
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[5]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>&lt;matplotlib.image.AxesImage at 0x7f3218f7d050&gt;</pre>
+<pre>&lt;matplotlib.image.AxesImage at 0x7f6f22845a50&gt;</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -7977,7 +7977,7 @@ color3d_jpeg_baseline.dcm:   0%|          | 1.50k/6.14M [00:00&lt;02:31, 40.5kB/
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="examples.html" class="btn btn-neutral float-left" title="Examples" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="notebook_t1_mapping_with_grad_acq.html" class="btn btn-neutral float-left" title="T1 mapping from a continuous Golden radial acquisition" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="notebook_qmri_sg_challenge_2024_t2_star.html" class="btn btn-neutral float-right" title="QMRI Challenge ISMRM 2024 - T2* mapping" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

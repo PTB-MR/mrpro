@@ -22,7 +22,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="T1 mapping from a continuous Golden radial acquisition" href="notebook_t1_mapping_with_grad_acq.html" />
+    <link rel="next" title="QMRI Challenge ISMRM 2024 - T1 mapping" href="notebook_qmri_sg_challenge_2024_t1.html" />
     <link rel="prev" title="QMRI Challenge ISMRM 2024 - T2* mapping" href="notebook_qmri_sg_challenge_2024_t2_star.html" /> 
 </head>
 
@@ -51,11 +51,11 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="examples.html">Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="notebook_pulseq_2d_radial_golden_angle.html">Reconstruction of 2D golden angle radial data from pulseq sequence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebook_t1_mapping_with_grad_acq.html">T1 mapping from a continuous Golden radial acquisition</a></li>
 <li class="toctree-l2"><a class="reference internal" href="notebook_direct_reconstruction.html">Direct Reconstruction of 2D golden angle radial data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="notebook_qmri_sg_challenge_2024_t2_star.html">QMRI Challenge ISMRM 2024 - T2* mapping</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Iterative SENSE Reconstruction of 2D golden angle radial data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="notebook_t1_mapping_with_grad_acq.html">T1 mapping from a continuous Golden radial acquisition</a></li>
-<li class="toctree-l2"><a class="reference internal" href="notebook_pulseq_2d_radial_golden_angle.html">Reconstruction of 2D golden angle radial data from pulseq sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="notebook_qmri_sg_challenge_2024_t1.html">QMRI Challenge ISMRM 2024 - T1 mapping</a></li>
 </ul>
 </li>
@@ -7602,7 +7602,7 @@ a.anchor-link {
 </style>
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
-<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=bba1705b">
+<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=3db542d1">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7717,7 +7717,7 @@ US1_J2KR.dcm:   0%|          | 0.00/154k [00:00&lt;?, ?B/s]</pre>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-US1_J2KR.dcm:   0%|          | 38.0/154k [00:00&lt;00:56, 2.70kB/s]</pre>
+US1_J2KR.dcm:   0%|          | 38.0/154k [00:00&lt;00:35, 4.38kB/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -7738,7 +7738,7 @@ MR-SIEMENS-DICOM-WithOverlays.dcm:   0%|          | 0.00/511k [00:00&lt;?, ?B/s]
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-MR-SIEMENS-DICOM-WithOverlays.dcm:   0%|          | 125/511k [00:00&lt;00:32, 15.8kB/s]</pre>
+MR-SIEMENS-DICOM-WithOverlays.dcm:   0%|          | 125/511k [00:00&lt;01:16, 6.68kB/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -7759,7 +7759,7 @@ OBXXXX1A.dcm:   0%|          | 0.00/486k [00:00&lt;?, ?B/s]</pre>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-OBXXXX1A.dcm:   0%|          | 119/486k [00:00&lt;00:25, 19.2kB/s]</pre>
+OBXXXX1A.dcm:   0%|          | 119/486k [00:00&lt;01:20, 6.05kB/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -7780,7 +7780,7 @@ US1_UNCR.dcm:   0%|          | 0.00/923k [00:00&lt;?, ?B/s]</pre>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-US1_UNCR.dcm:   0%|          | 226/923k [00:00&lt;00:52, 17.4kB/s]</pre>
+US1_UNCR.dcm:   0%|          | 226/923k [00:00&lt;01:34, 9.80kB/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -7801,7 +7801,7 @@ color3d_jpeg_baseline.dcm:   0%|          | 0.00/6.14M [00:00&lt;?, ?B/s]</pre>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-color3d_jpeg_baseline.dcm:   0%|          | 1.50k/6.14M [00:00&lt;03:56, 25.9kB/s]</pre>
+color3d_jpeg_baseline.dcm:   0%|          | 1.50k/6.14M [00:00&lt;03:23, 30.3kB/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -8127,7 +8127,7 @@ color3d_jpeg_baseline.dcm:   0%|          | 1.50k/6.14M [00:00&lt;03:56, 25.9kB/
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="notebook_qmri_sg_challenge_2024_t2_star.html" class="btn btn-neutral float-left" title="QMRI Challenge ISMRM 2024 - T2* mapping" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="notebook_t1_mapping_with_grad_acq.html" class="btn btn-neutral float-right" title="T1 mapping from a continuous Golden radial acquisition" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="notebook_qmri_sg_challenge_2024_t1.html" class="btn btn-neutral float-right" title="QMRI Challenge ISMRM 2024 - T1 mapping" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

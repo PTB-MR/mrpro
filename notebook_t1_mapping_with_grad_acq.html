@@ -22,8 +22,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Reconstruction of 2D golden angle radial data from pulseq sequence" href="notebook_pulseq_2d_radial_golden_angle.html" />
-    <link rel="prev" title="Iterative SENSE Reconstruction of 2D golden angle radial data" href="notebook_iterative_sense_reconstruction.html" /> 
+    <link rel="next" title="Direct Reconstruction of 2D golden angle radial data" href="notebook_direct_reconstruction.html" />
+    <link rel="prev" title="Reconstruction of 2D golden angle radial data from pulseq sequence" href="notebook_pulseq_2d_radial_golden_angle.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -51,11 +51,11 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="examples.html">Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="notebook_pulseq_2d_radial_golden_angle.html">Reconstruction of 2D golden angle radial data from pulseq sequence</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">T1 mapping from a continuous Golden radial acquisition</a></li>
 <li class="toctree-l2"><a class="reference internal" href="notebook_direct_reconstruction.html">Direct Reconstruction of 2D golden angle radial data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="notebook_qmri_sg_challenge_2024_t2_star.html">QMRI Challenge ISMRM 2024 - T2* mapping</a></li>
 <li class="toctree-l2"><a class="reference internal" href="notebook_iterative_sense_reconstruction.html">Iterative SENSE Reconstruction of 2D golden angle radial data</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">T1 mapping from a continuous Golden radial acquisition</a></li>
-<li class="toctree-l2"><a class="reference internal" href="notebook_pulseq_2d_radial_golden_angle.html">Reconstruction of 2D golden angle radial data from pulseq sequence</a></li>
 <li class="toctree-l2"><a class="reference internal" href="notebook_qmri_sg_challenge_2024_t1.html">QMRI Challenge ISMRM 2024 - T1 mapping</a></li>
 </ul>
 </li>
@@ -7602,7 +7602,7 @@ a.anchor-link {
 </style>
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
-<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=05af1bce">
+<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs celltag_injected-parameters" id="cell-id=1ec0d1a5">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7673,7 +7673,7 @@ US1_J2KR.dcm:   0%|          | 0.00/154k [00:00&lt;?, ?B/s]</pre>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-US1_J2KR.dcm:   0%|          | 38.0/154k [00:00&lt;00:15, 9.92kB/s]</pre>
+US1_J2KR.dcm:   0%|          | 38.0/154k [00:00&lt;00:09, 16.2kB/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -7694,7 +7694,7 @@ MR-SIEMENS-DICOM-WithOverlays.dcm:   0%|          | 0.00/511k [00:00&lt;?, ?B/s]
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-MR-SIEMENS-DICOM-WithOverlays.dcm:   0%|          | 125/511k [00:00&lt;00:27, 18.5kB/s]</pre>
+MR-SIEMENS-DICOM-WithOverlays.dcm:   0%|          | 125/511k [00:00&lt;00:19, 25.6kB/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -7715,7 +7715,7 @@ OBXXXX1A.dcm:   0%|          | 0.00/486k [00:00&lt;?, ?B/s]</pre>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-OBXXXX1A.dcm:   0%|          | 119/486k [00:00&lt;00:27, 17.9kB/s]</pre>
+OBXXXX1A.dcm:   0%|          | 119/486k [00:00&lt;00:24, 19.5kB/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -7736,7 +7736,7 @@ US1_UNCR.dcm:   0%|          | 0.00/923k [00:00&lt;?, ?B/s]</pre>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-US1_UNCR.dcm:   0%|          | 226/923k [00:00&lt;00:54, 16.9kB/s]</pre>
+US1_UNCR.dcm:   0%|          | 226/923k [00:00&lt;00:26, 35.0kB/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -7757,7 +7757,7 @@ color3d_jpeg_baseline.dcm:   0%|          | 0.00/6.14M [00:00&lt;?, ?B/s]</pre>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-color3d_jpeg_baseline.dcm:   0%|          | 1.50k/6.14M [00:00&lt;02:34, 39.7kB/s]</pre>
+color3d_jpeg_baseline.dcm:   0%|          | 1.50k/6.14M [00:00&lt;02:03, 49.8kB/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -8295,7 +8295,7 @@ model $q$.</p>
 <div class="jp-OutputArea-child jp-OutputArea-executeResult">
 <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[18]:</div>
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain" tabindex="0">
-<pre>&lt;matplotlib.colorbar.Colorbar at 0x7fb7e2ba6350&gt;</pre>
+<pre>&lt;matplotlib.colorbar.Colorbar at 0x7fa0d4bc7310&gt;</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -8345,8 +8345,8 @@ $T_1$ maps for different number of iterations (<code>n_iterations</code>).</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="notebook_iterative_sense_reconstruction.html" class="btn btn-neutral float-left" title="Iterative SENSE Reconstruction of 2D golden angle radial data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="notebook_pulseq_2d_radial_golden_angle.html" class="btn btn-neutral float-right" title="Reconstruction of 2D golden angle radial data from pulseq sequence" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="notebook_pulseq_2d_radial_golden_angle.html" class="btn btn-neutral float-left" title="Reconstruction of 2D golden angle radial data from pulseq sequence" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="notebook_direct_reconstruction.html" class="btn btn-neutral float-right" title="Direct Reconstruction of 2D golden angle radial data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
