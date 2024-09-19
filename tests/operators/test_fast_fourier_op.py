@@ -7,7 +7,23 @@ from mrpro.data import SpatialDimension
 from mrpro.operators import FastFourierOp
 
 from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test
+from tests.helper import (
+    dotproduct_adjointness_test,
+    forward_mode_autodiff_of_linear_operator_test,
+    gradient_of_linear_operator_test,
+)
+
+
+def create_fast_fourier_op_and_range_domain(recon_matrix, encoding_matrix):
+    """Create a fast Fourier operator and an element from domain and range."""
+    # Create test data
+    generator = RandomGenerator(seed=0)
+    u = generator.complex64_tensor(recon_matrix)
+    v = generator.complex64_tensor(encoding_matrix)
+
+    # Create operator and apply
+    ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix)
+    return ff_op, u, v
 
 
 @pytest.mark.parametrize(('npoints', 'a'), [(100, 20), (300, 20)])
@@ -46,15 +62,21 @@ def test_fast_fourier_op_forward(npoints, a):
 )
 def test_fast_fourier_op_adjoint(encoding_matrix, recon_matrix):
     """Test adjointness of Fast Fourier Op."""
+    dotproduct_adjointness_test(*create_fast_fourier_op_and_range_domain(recon_matrix, encoding_matrix))
 
-    # Create test data
-    generator = RandomGenerator(seed=0)
-    u = generator.complex64_tensor(recon_matrix)
-    v = generator.complex64_tensor(encoding_matrix)
 
-    # Create operator and apply
-    ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix)
-    dotproduct_adjointness_test(ff_op, u, v)
+def test_density_compensation_op_grad():
+    """Test the gradient of the fast Fourier operator."""
+    gradient_of_linear_operator_test(
+        *create_fast_fourier_op_and_range_domain(recon_matrix=(13, 221, 64), encoding_matrix=(101, 201, 50))
+    )
+
+
+def test_density_compensation_op_forward_mode_autodiff():
+    """Test forward-mode autodiff of the fast Fourier operator."""
+    forward_mode_autodiff_of_linear_operator_test(
+        *create_fast_fourier_op_and_range_domain(recon_matrix=(13, 221, 64), encoding_matrix=(101, 201, 50))
+    )
 
 
 def test_fast_fourier_op_spatial_dim():
