@@ -200,12 +200,12 @@ class RandomGenerator:
     def ascii(self, size: int) -> str:
         return ''.join([chr(self.uint8(32, 127)) for _ in range(size)])
 
-    def rand_like(self, x: torch.Tensor) -> torch.Tensor:
-        """Generates a tensor with the same shape as x filled with uniform random numbers."""
-        return self.rand_tensor(x.shape, x.dtype, low=0, high=1)
+    def rand_like(self, x: torch.Tensor, low=0.0, high=1.0) -> torch.Tensor:
+        """Generate a tensor with the same shape as x filled with uniform random numbers in [low , high)."""
+        return self.rand_tensor(x.shape, x.dtype, low=low, high=high)
 
     def rand_tensor(self, shape: Sequence[int], dtype: torch.dtype, low: float, high: float) -> torch.Tensor:
-        """Generates a tensor with the given shape and dtype filled with uniform random numbers."""
+        """Generates a tensor with the given shape and dtype filled with uniform random numbers in [low , high)."""
         if dtype.is_complex:
             tensor = self.complex64_tensor(shape, low, high).to(dtype=dtype)
         elif dtype.is_floating_point:
