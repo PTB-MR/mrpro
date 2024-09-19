@@ -13,12 +13,7 @@ class L1Norm(ProximableFunctional):
     where W is a either a scalar or tensor that corresponds to a (block-) diagonal operator
     that is applied to the input.
 
-    The norm of the vector is computed along the dimensions given by "dim".
-
-    Further, it is possible to scale the functional by N, i.e. by the number voxels of
-    the elements of the vector space that is spanned by the dimensions indexed by "dim".
-    If "dim" is set to None and "keepdim" to False, the result is a single number, which
-    is typically of interest for computing loss functions.
+    The norm of the vector is computed along the dimensions given at initialization.
     """
 
     def forward(
@@ -61,8 +56,8 @@ class L1Norm(ProximableFunctional):
         -------
             Proximal mapping applied to the input tensor
         """
+        self._throw_if_not_positive(sigma)
         diff = x - self.target
-
         threshold = self.weight * sigma
         threshold = self._divide_by_n(threshold, torch.broadcast_shapes(x.shape, threshold.shape))
         x_out = torch.sgn(diff) * torch.relu(diff.abs() - threshold.abs()) + self.target
@@ -89,6 +84,7 @@ class L1Norm(ProximableFunctional):
         -------
             Proximal of the convex conjugate applied to the input tensor
         """
+        self._throw_if_not_positive(sigma)
         diff = x - sigma * self.target
         threshold = self._divide_by_n(self.weight.abs(), torch.broadcast_shapes(x.shape, self.weight.shape))
         x_out = torch.sgn(diff) * torch.clamp_max(diff.abs(), threshold.abs())
