@@ -62,7 +62,7 @@ class L2NormSquared(ProximableFunctional):
         -------
             Proximal mapping applied to the input tensor
         """
-        self._throw_if_not_positive(sigma)
+        self._throw_if_negative_or_complex(sigma)
         weight_square_2_sigma = self._divide_by_n(
             self.weight.conj() * self.weight * 2 * sigma,
             torch.broadcast_shapes(x.shape, self.target.shape, self.weight.shape),
@@ -91,7 +91,7 @@ class L2NormSquared(ProximableFunctional):
         -------
             Proximal of convex conjugate applied to the input tensor
         """
-        self._throw_if_not_positive(sigma)
+        self._throw_if_negative_or_complex(sigma)
         weight_square = self._divide_by_n(
             self.weight.conj() * self.weight, torch.broadcast_shapes(x.shape, self.target.shape, self.weight.shape)
         )
