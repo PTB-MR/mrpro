@@ -49,8 +49,8 @@ def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, 
     dotproduct_adjointness_test(*create_fourier_op_and_range_domain(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz))
 
 
-def test_finite_difference_op_grad():
-    """Test gradient of fourier operator."""
+def test_fourier_op_grad():
+    """Test gradient of Fourier operator."""
     im_shape = (2, 8, 64, 32, 48)
     k_shape = (2, 8, 8, 64, 96)
     nkx = (2, 1, 1, 96)
@@ -61,8 +61,8 @@ def test_finite_difference_op_grad():
     )
 
 
-def test_finite_difference_op_forward_mode_autodiff():
-    """Test forward-mode autodiff of fourier operator."""
+def test_fourier_op_forward_mode_autodiff():
+    """Test forward-mode autodiff of Fourier operator."""
     im_shape = (2, 8, 64, 32, 48)
     k_shape = (2, 8, 8, 64, 96)
     nkx = (2, 1, 1, 96)
