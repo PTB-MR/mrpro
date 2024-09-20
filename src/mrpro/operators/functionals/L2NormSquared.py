@@ -49,7 +49,7 @@ class L2NormSquared(ProximableFunctional):
     ) -> tuple[torch.Tensor]:
         """Proximal Mapping of the squared L2 Norm.
 
-        Compute the proximal mapping of the squared l2-norm.
+        Apply the proximal mapping of the squared l2-norm.
 
         Parameters
         ----------
@@ -78,7 +78,7 @@ class L2NormSquared(ProximableFunctional):
     ) -> tuple[torch.Tensor]:
         """Convex conjugate of squared L2 Norm.
 
-        Compute the proximal mapping of the convex conjugate of the squared l2-norm.
+        Apply the proximal mapping of the convex conjugate of the squared l2-norm.
 
         Parameters
         ----------
