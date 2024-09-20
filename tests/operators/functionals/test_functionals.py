@@ -271,7 +271,7 @@ def test_functional_negative_sigma(
 
     def case(sigma):
         x = torch.zeros(2)
-        f = functional(keepdim=True).getattr(function)
+        f = getattr(functional(keepdim=True), function)
         with pytest.raises(ValueError):
             f(x, sigma)
 

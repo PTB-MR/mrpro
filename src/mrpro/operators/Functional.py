@@ -86,7 +86,7 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
         return x / math.prod(size)
 
     def _throw_if_negative_or_complex(self, x: torch.Tensor | float, name: str = 'sigma'):
-        """Throw an exepction if any element of x is negative or complex.
+        """Throw an exception if any element of x is negative or complex.
 
         Parameters
         ----------
@@ -95,7 +95,7 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
         name
             name used in error message
         """
-        if isinstance(x, float) and x > 0 or isinstance(x, torch.Tensor) and not x.dtype.is_complex and (x > 0).all():
+        if isinstance(x, float) and x >= 0 or isinstance(x, torch.Tensor) and not x.dtype.is_complex and (x >= 0).all():
             return
         raise ValueError(f'The parameter {name} must be real and contain only positive values')
 
