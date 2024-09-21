@@ -14,6 +14,7 @@ from mrpro.data.CsmData import CsmData
 from mrpro.data.DcfData import DcfData
 from mrpro.data.IData import IData
 from mrpro.data.KNoise import KNoise
+from mrpro.operators.IdentityOp import IdentityOp
 from mrpro.operators.LinearOperator import LinearOperator
 
 
@@ -157,19 +158,23 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         if self.noise is not None:
             kdata = prewhiten_kspace(kdata, self.noise.to(device))
 
-        operator = self._self_adjoint_operator().to(device)
+        operator = self._self_adjoint_operator()
         right_hand_side = self._right_hand_side(kdata)
 
         # Add regularization
         if not torch.all(self.regularization_weight == 0):
-            if self.linear_op is None:
-                operator = operator + self.regularization_weight * self.linear_op
+            if self.linear_op is not None:
+                operator = operator + IdentityOp() @ self.regularization_weight * self.linear_op
             else:
-                operator = operator + self.regularization_weight
+                operator = operator + IdentityOp() * self.regularization_weight
             right_hand_side += self.regularization_weight * self.regularization_data
 
         img_tensor = cg(
-            operator, right_hand_side, initial_value=right_hand_side, max_iterations=self.n_iterations, tolerance=0.0
+            operator.to(device),
+            right_hand_side,
+            initial_value=right_hand_side,
+            max_iterations=self.n_iterations,
+            tolerance=0.0,
         )
         img = IData.from_tensor_and_kheader(img_tensor, kdata.header)
         return img

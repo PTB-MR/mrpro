@@ -7,12 +7,14 @@ zenodo_url = 'https://zenodo.org/records/10854057/files/'
 fname = 'pulseq_radial_2D_402spokes_golden_angle_with_traj.h5'
 # %%
 # Download raw data
+import tempfile
 
+import requests
 
-# data_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.h5')
-# response = requests.get(zenodo_url + fname, timeout=30)
-# data_file.write(response.content)
-# data_file.flush()
+data_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.h5')
+response = requests.get(zenodo_url + fname, timeout=30)
+data_file.write(response.content)
+data_file.flush()
 
 # %% [markdown]
 # ### Image reconstruction
@@ -57,15 +59,12 @@ import mrpro
 
 # %% [markdown]
 # ##### Read-in the raw data
-
-fname = '/Users/kolbit01/Documents/PTB/Data/mrpro/raw/pulseq_radial_2D_402spokes_golden_angle_with_traj.h5'
-
 # %%
 from mrpro.data import KData
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 
 # Load in the Data and the trajectory from the ISMRMRD file
-kdata = KData.from_file(fname, KTrajectoryIsmrmrd())
+kdata = KData.from_file(data_file.name, KTrajectoryIsmrmrd())
 kdata.header.recon_matrix.x = 256
 kdata.header.recon_matrix.y = 256
 
@@ -91,7 +90,7 @@ img_iterative_sense = iterative_sense_reconstruction(kdata)
 # %%
 import torch
 
-# Data undersampling
+# Data undersampling, i.e. take only the first 20 radial lines
 idx_us = torch.arange(0, 20)[None, :]
 kdata_us = kdata.split_k1_into_other(idx_us, other_label='repetition')
 
@@ -101,13 +100,17 @@ iterative_sense_reconstruction = IterativeSENSEReconstruction(kdata_us, csm=csm,
 img_us_iterative_sense = iterative_sense_reconstruction(kdata_us)
 
 # %%
+# Regularised iterativ SENSE reconstruction
 from mrpro.algorithms.reconstruction import RegularizedIterativeSENSEReconstruction
 
-# Regularised iterativ SENSE reconstruction
-regularization_weight = 1
+regularization_weight = 1.0
 n_iterations = 6
 regularized_iterative_sense_reconstruction = RegularizedIterativeSENSEReconstruction(
-    kdata_us, csm=csm, n_iterations=n_iterations, regularization_data=img_iterative_sense, regularization_weight=regularization_weight
+    kdata_us,
+    csm=csm,
+    n_iterations=n_iterations,
+    regularization_data=img_iterative_sense.data,
+    regularization_weight=regularization_weight,
 )
 img_us_regularized_iterative_sense = regularized_iterative_sense_reconstruction(kdata_us)
 
@@ -128,7 +131,7 @@ for ind in range(3):
 # %% [markdown]
 # ##### Set-up the density compensation operator $W$ and acquisition model $A$
 #
-# This is the same as for the iterative SENSE reconstruction. For more detail please look at the
+# This is very similar to the iterative SENSE reconstruction. For more detail please look at the
 # iterative_sense_reconstruction notebook.
 # %%
 dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata_us.traj).as_operator()
@@ -141,7 +144,7 @@ acquisition_operator = fourier_operator @ csm_operator
 
 # %%
 right_hand_side = (
-    acquisition_operator.H(dcf_operator(kdata.data)[0])[0] + regularization_weight * img_iterative_sense.data
+    acquisition_operator.H(dcf_operator(kdata_us.data)[0])[0] + regularization_weight * img_iterative_sense.data
 )
 
 
@@ -149,7 +152,11 @@ right_hand_side = (
 # ##### Set-up the linear self-adjoint operator $H = A^H W A + l$
 
 # %%
-operator = acquisition_operator.H @ dcf_operator @ acquisition_operator + regularization_weight
+from mrpro.operators import IdentityOp
+
+operator = acquisition_operator.H @ dcf_operator @ acquisition_operator + IdentityOp() * torch.as_tensor(
+    regularization_weight
+)
 
 # %% [markdown]
 # ##### Run conjugate gradient
@@ -161,7 +168,7 @@ img_manual = mrpro.algorithms.optimizers.cg(
 
 # %%
 # Display the reconstructed image
-vis_im = [img_us_iterative_sense.rss(), img_manual.abs()]
+vis_im = [img_us_regularized_iterative_sense.rss(), img_manual.abs()[:, 0, ...]]
 vis_title = ['Regularised Iterative SENSE R=20', '"Manual" Regularized Iterative SENSE R=20']
 fig, ax = plt.subplots(1, 2, squeeze=False, figsize=(8, 4))
 for ind in range(2):
@@ -174,4 +181,13 @@ for ind in range(2):
 
 # %%
 # If the assert statement did not raise an exception, the results are equal.
-assert torch.allclose(img_us_iterative_sense.data, img_manual)
+assert torch.allclose(img_us_regularized_iterative_sense.data, img_manual)
+
+# %% [markdown]
+# ### Next steps
+# Play around with the regularization_weight to see how it effects the final image quality.
+#
+# Of course we are cheating here because we used the fully sampled image as a regularisation. In real world applications
+# we would not have that. One option is to apply a low-pass filter to the undersampled k-space data to try to reduce the
+# streaking artefacts and use that as a regularisation image. Try that and see if you can also improve the image quality
+# compared to the unregularised images.
