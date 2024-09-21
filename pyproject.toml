@@ -32,10 +32,11 @@ dependencies = [
     "torch>=2.3",
     "ismrmrd>=1.14.1",
     "einops",
-    "pydicom",
+    "pydicom>=2.3",
     "pypulseq>=1.4.2",
     "torchkbnufft>=1.4.0",
     "scipy>=1.12",
+    "ptwt>=0.1.8",
 ]
 
 [project.optional-dependencies]
@@ -63,7 +64,10 @@ notebook = [
 # PyTest section
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-filterwarnings = ["error"]
+filterwarnings = [
+    "error",
+    "ignore:'write_like_original':DeprecationWarning:pydicom:"
+]
 addopts = "-n auto"
 markers = ["cuda : Tests only to be run when cuda device is available"]
 
@@ -86,6 +90,8 @@ module = [
     "torchkbnufft",
     "pypulseq",
     "zenodo_get",
+    "ptwt.*",
+    "pywt.*"
 ]
 ignore_missing_imports = true
 
@@ -157,6 +163,8 @@ locale = "en-us"
 [tool.typos.default.extend-words]
 Reson = "Reson" # required for Proc. Intl. Soc. Mag. Reson. Med.
 iy = "iy"
+daa = 'daa'     # required for wavelet operator
+gaus = 'gaus'   # required for wavelet operator
 
 [tool.typos.files]
 extend-exclude = [

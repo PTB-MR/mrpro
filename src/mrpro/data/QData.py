@@ -59,3 +59,15 @@ class QData(Data):
         qdata = repeat(qdata, 'y x -> other coils z y x', other=1, coils=1, z=1)
         header = QHeader.from_dicom(dataset)
         return cls(data=qdata, header=header)
+
+    def __repr__(self):
+        """Representation method for QData class."""
+        try:
+            device = str(self.device)
+        except RuntimeError:
+            device = 'mixed'
+        out = (
+            f'{type(self).__name__} with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
+            f'Device: {device}\nFOV [m]: {self.header.fov!s}.'
+        )
+        return out
