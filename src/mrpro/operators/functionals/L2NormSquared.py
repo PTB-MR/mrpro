@@ -15,7 +15,8 @@ class L2NormSquared(ProximableFunctional):
     reconstruction when using a density-compensation function for k-space pre-conditioning,
     for masking of image data, or for spatially varying regularization weights.
 
-    The norm of the vector is computed along the dimensions given at initialization.
+    The norm is computed along the dimensions given at initialization, all other dimensions are
+    considered batch dimensions.
     """
 
     def forward(
