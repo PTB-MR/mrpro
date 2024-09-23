@@ -2,10 +2,10 @@
 
 import torch
 
-from mrpro.operators.Functional import ProximableFunctional
+from mrpro.operators.Functional import ElementaryProximableFunctional
 
 
-class L2NormSquared(ProximableFunctional):
+class L2NormSquared(ElementaryProximableFunctional):
     r"""Functional class for the squared L2 Norm.
 
     This implements the functional given by
