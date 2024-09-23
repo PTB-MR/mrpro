@@ -1,5 +1,7 @@
 """Base Class Functional."""
 
+from __future__ import annotations
+
 import math
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
@@ -11,6 +13,35 @@ from mrpro.operators.Operator import Operator
 
 class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """Functional Base Class."""
+
+    def _throw_if_negative_or_complex(
+        self, x: torch.Tensor | float, message: str = 'sigma must be real and contain only positive values'
+    ):
+        """Throw an exception if any element of x is negative or complex.
+
+        Raises a ValueError if x contains negative or complex values.
+
+        Parameters
+        ----------
+        x
+            input to be checked
+        message
+            error message that is raised if x contains negative or complex values
+        """
+        if (isinstance(x, float | int) and x >= 0) or (
+            isinstance(x, torch.Tensor) and not x.dtype.is_complex and (x >= 0).all()
+        ):
+            return
+        raise ValueError(message)
+
+
+class ElementaryFunctional(Functional):
+    r"""Elementary functional base class.
+
+    An elementary functional is a functional that can be written as
+    :math:`f(x) = \phi( weight ( x - target))`, returning a real value.
+    It does not require another functional for initialization.
+    """
 
     def __init__(
         self,
@@ -85,23 +116,13 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
             size = list(shape)
         return x / math.prod(size)
 
-    def _throw_if_negative_or_complex(self, x: torch.Tensor | float, name: str = 'sigma'):
-        """Throw an exception if any element of x is negative or complex.
-
-        Parameters
-        ----------
-        x
-            input to be checked
-        name
-            name used in error message
-        """
-        if isinstance(x, float) and x >= 0 or isinstance(x, torch.Tensor) and not x.dtype.is_complex and (x >= 0).all():
-            return
-        raise ValueError(f'The parameter {name} must be real and contain only positive values')
-
 
 class ProximableFunctional(Functional, ABC):
-    """ProximableFunction Base Class."""
+    r"""ProximableFunctional Base Class.
+
+    A proximable functional is a functional :math:`f(x)` that has a prox implementation,
+    i.e. a function that solves the problem :math:`\min_x f(x) + 1/(2\sigma) ||x - y||^2`.
+    """
 
     @abstractmethod
     def prox(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
@@ -144,3 +165,15 @@ class ProximableFunctional(Functional, ABC):
         self._throw_if_negative_or_complex(sigma)
         sigma[sigma < 1e-8] += 1e-6
         return (x - sigma * self.prox(x / sigma, 1 / sigma)[0],)
+
+
+class ElementaryProximableFunctional(ElementaryFunctional, ProximableFunctional):
+    r"""Elementary proximable functional base class.
+
+    An elementary functional is a functional that can be written as
+    :math:`f(x) = \phi( weight ( x - target))`, returning a real value.
+    It does not require another functional for initialization.
+
+    A proximable functional is a functional :math:`f(x)` that has a prox implementation,
+    i.e. a function that solves the problem :math:`\min_x f(x) + 1/(2\sigma) ||x - y||^2`.
+    """
