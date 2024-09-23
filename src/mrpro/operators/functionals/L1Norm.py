@@ -2,10 +2,10 @@
 
 import torch
 
-from mrpro.operators.Functional import ProximableFunctional
+from mrpro.operators.Functional import ElementaryProximableFunctional
 
 
-class L1Norm(ProximableFunctional):
+class L1Norm(ElementaryProximableFunctional):
     r"""Functional class for the L1 Norm.
 
     This implements the functional given by
