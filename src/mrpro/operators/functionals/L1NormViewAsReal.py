@@ -2,10 +2,10 @@
 
 import torch
 
-from mrpro.operators.Functional import ProximableFunctional
+from mrpro.operators.Functional import ElementaryProximableFunctional
 
 
-class L1NormViewAsReal(ProximableFunctional):
+class L1NormViewAsReal(ElementaryProximableFunctional):
     r"""Functional class for the L1 Norm, where C is identified with R^2.
 
     This implements the functional given by
