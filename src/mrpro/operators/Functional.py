@@ -3,7 +3,6 @@
 import math
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Self
 
 import torch
 
@@ -13,15 +12,10 @@ from mrpro.operators.Operator import Operator
 class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """Functional Base Class."""
 
-    target: torch.Tensor
-    weight: torch.Tensor
-    scale: torch.Tensor
-
     def __init__(
         self,
         weight: torch.Tensor | complex = 1.0,
         target: torch.Tensor | None | complex = None,
-        scale: torch.Tensor | float = 1.0,
         dim: int | Sequence[int] | None = None,
         divide_by_n: bool = False,
         keepdim: bool = False,
@@ -29,7 +23,7 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
         r"""Initialize a Functional.
 
         We assume that functionals are given in the form
-            :math:`f(x) = scale* \phi( weight ( x - target))`
+            :math:`f(x) = \phi( weight ( x - target))`
         for some functional :math:`\phi`.
 
         Parameters
@@ -38,8 +32,6 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
             weighting of the norm (see above)
         target
             element to which distance is taken - often data tensor (see above)
-        scale
-            scaling factor for the functional, must be real and non-negative
         dim
             dimension(s) over which norm is calculated.
             All other dimensions of  `weight ( x - target))` will be treated as batch dimensions.
@@ -57,10 +49,6 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
         if target is None:
             target = torch.tensor(0, dtype=torch.float32)
         self.register_buffer('target', torch.as_tensor(target))
-        self.register_buffer('scale', torch.as_tensor(scale))
-        if self.scale.dtype.is_complex or (self.scale < 0).any():
-            raise ValueError('The parameter scale must be real and should not contain negative values')
-
         if isinstance(dim, int):
             dim = (dim,)
         elif isinstance(dim, Sequence):
@@ -68,19 +56,6 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
         self.dim = dim
         self.divide_by_n = divide_by_n
         self.keepdim = keepdim
-
-    def __mul__(self, other: float | torch.Tensor) -> Self:
-        """Scale Functional."""
-        if not isinstance(other, float | torch.Tensor):
-            raise NotImplementedError
-        return self.__class__(
-            weight=self.weight,
-            target=self.target,
-            scale=self.scale * other,
-            dim=self.dim,
-            divide_by_n=self.divide_by_n,
-            keepdim=self.keepdim,
-        )
 
     def _divide_by_n(self, x: torch.Tensor, shape: None | Sequence[int]) -> torch.Tensor:
         """Apply factor for normalization.
@@ -110,40 +85,62 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
             size = list(shape)
         return x / math.prod(size)
 
+    def _throw_if_negative_or_complex(self, x: torch.Tensor | float, name: str = 'sigma'):
+        """Throw an exception if any element of x is negative or complex.
+
+        Parameters
+        ----------
+        x
+            input to be checked
+        name
+            name used in error message
+        """
+        if isinstance(x, float) and x >= 0 or isinstance(x, torch.Tensor) and not x.dtype.is_complex and (x >= 0).all():
+            return
+        raise ValueError(f'The parameter {name} must be real and contain only positive values')
+
 
 class ProximableFunctional(Functional, ABC):
     """ProximableFunction Base Class."""
 
     @abstractmethod
-    def prox(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+    def prox(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         r"""Apply proximal operator.
 
-        Applies :math:`prox_{f}(x) = argmin_{p} (f(p) + 1/2 \|x-p\|^{2}`.
+        Applies :math:`prox_{\sigma f}(x) = argmin_{p} (f(p) + 1/(2*sigma) \|x-p\|^{2}`.
         to a given `x`, i.e. finds `p`.
 
         Parameters
         ----------
         x
             input tensor
+        sigma
+            scaling factor, must be positive
 
         Returns
         -------
             Proximal operator applied to the input tensor.
         """
 
-    def prox_convex_conj(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+    def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         r"""Apply proximal of convex conjugate of functional.
 
-        Applies :math:`prox_{\sigma f*}(x) = argmin_{p} (f(p) + 1/2 \|x-p\|^{2}`,
+        Applies :math:`prox_{\sigma f*}(x) = argmin_{p} (f(p) + 1/(2*sigma) \|x-p\|^{2}`,
         where f* denotes the convex conjugate of f, to a given `x`, i.e. finds `p`.
 
         Parameters
         ----------
         x
             input tensor
+        sigma
+            scaling factor, must be positive
 
         Returns
         -------
             Proximal operator  of the convex conjugate applied to the input tensor.
         """
-        return (x - self.prox(x)[0],)
+        if not isinstance(sigma, torch.Tensor):
+            sigma = torch.as_tensor(1.0 * sigma, device=self.target.device)
+        self._throw_if_negative_or_complex(sigma)
+        sigma[sigma < 1e-8] += 1e-6
+        return (x - sigma * self.prox(x / sigma, 1 / sigma)[0],)
