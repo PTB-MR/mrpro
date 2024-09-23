@@ -2,7 +2,6 @@ import inspect
 from collections.abc import Callable, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
-from functools import partial
 from typing import Literal, TypedDict
 
 import pytest
