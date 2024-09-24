@@ -1,6 +1,6 @@
 from mrpro.operators.Operator import Operator
 from mrpro.operators.LinearOperator import LinearOperator
-from mrpro.operators.Functional import Functional, ProximableFunctional
+from mrpro.operators.Functional import Functional, ProximableFunctional, ElementaryFunctional, ElementaryProximableFunctional
 from mrpro.operators import functionals, models
 from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp
 from mrpro.operators.ConstraintsOp import ConstraintsOp
