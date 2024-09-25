@@ -39,7 +39,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
     regularization_weight: torch.Tensor
     """Strength of the regularization :math:`L`."""
 
-    linear_op: LinearOperator | None
+    regularization_op: LinearOperator
     """Linear operator :math:`B` applied to the current estimate in the regularization term."""
 
     def __init__(
@@ -53,7 +53,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         n_iterations: int = 5,
         regularization_data: float | torch.Tensor = 0.0,
         regularization_weight: float | torch.Tensor,
-        linear_op: LinearOperator | None = None,
+        regularization_op: LinearOperator | None = None,
     ) -> None:
         """Initialize RegularizedIterativeSENSEReconstruction.
 
@@ -80,7 +80,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
             Regularisation data, e.g. a reference image (:math:`x_0`).
         regularization_weight
             Strength of the regularization (:math:`L`).
-        linear_op
+        regularization_op
             Linear operator :math:`B` applied to the current estimate in the regularization term. If None, nothing is
             applied to the current estimate.
 
@@ -94,53 +94,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         self.n_iterations = n_iterations
         self.regularization_data = torch.as_tensor(regularization_data)
         self.regularization_weight = torch.as_tensor(regularization_weight)
-        self.linear_op = linear_op
-
-    def _self_adjoint_operator(self) -> LinearOperator:
-        """Create the self-adjoint operator.
-
-        Create the acquisition model as :math:`A = F S` if the CSM :math:`S` is defined otherwise :math:`A = F` with
-        the Fourier operator :math:`F`.
-
-        Create the self-adjoint operator as :math:`H = A^H W A` if the DCF is not None otherwise as :math:`H = A^H A`.
-        """
-        operator = self.fourier_op @ self.csm.as_operator() if self.csm is not None else self.fourier_op
-
-        if self.dcf is not None:
-            dcf_operator = self.dcf.as_operator()
-            # Create H = A^H W A
-            operator = operator.H @ dcf_operator @ operator
-        else:
-            # Create H = A^H A
-            operator = operator.H @ operator
-
-        return operator
-
-    def _right_hand_side(self, kdata: KData) -> torch.Tensor:
-        """Calculate the right-hand-side of the normal equation.
-
-        Create the acquisition model as :math:`A = F S` if the CSM :math:`S` is defined otherwise :math:`A = F` with
-        the Fourier operator :math:`F`.
-
-        Calculate the right-hand-side as :math:`b = A^H W y` if the DCF is not None otherwise as :math:`b = A^H y`.
-
-        Parameters
-        ----------
-        kdata
-            k-space data to reconstruct.
-        """
-        device = kdata.data.device
-        operator = self.fourier_op @ self.csm.as_operator() if self.csm is not None else self.fourier_op
-
-        if self.dcf is not None:
-            dcf_operator = self.dcf.as_operator()
-            # Calculate b = A^H W y
-            (right_hand_side,) = operator.to(device).H(dcf_operator(kdata.data)[0])
-        else:
-            # Calculate b = A^H y
-            (right_hand_side,) = operator.to(device).H(kdata.data)
-
-        return right_hand_side
+        self.regularization_op = regularization_op if regularization_op is not None else IdentityOp()
 
     def forward(self, kdata: KData) -> IData:
         """Apply the reconstruction.
@@ -154,23 +108,25 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         -------
             the reconstruced image.
         """
-        device = kdata.data.device
         if self.noise is not None:
-            kdata = prewhiten_kspace(kdata, self.noise.to(device))
+            kdata = prewhiten_kspace(kdata, self.noise)
 
-        operator = self._self_adjoint_operator()
-        right_hand_side = self._right_hand_side(kdata)
+        # Create the normal operator as H = A^H W A if the DCF is not None otherwise as H = A^H A.
+        # The acquisition model is A = F S if the CSM S is defined otherwise A = F with the Fourier operator F
+        csm_op = self.csm.as_operator() if self.csm is not None else IdentityOp()
+        precondition_op = self.dcf.as_operator() if self.dcf is not None else IdentityOp()
+        operator = (csm_op @ self.fourier_op).H @ precondition_op @ (csm_op @ self.fourier_op)
+
+        # Calculate the right-hand-side as b = A^H W y if the DCF is not None otherwise as b = A^H y.
+        (right_hand_side,) = (csm_op @ self.fourier_op).H(precondition_op(kdata.data)[0])
 
         # Add regularization
         if not torch.all(self.regularization_weight == 0):
-            if self.linear_op is not None:
-                operator = operator + IdentityOp() @ self.regularization_weight * self.linear_op
-            else:
-                operator = operator + IdentityOp() * self.regularization_weight
+            operator = operator + IdentityOp() @ self.regularization_weight * self.regularization_op
             right_hand_side += self.regularization_weight * self.regularization_data
 
         img_tensor = cg(
-            operator.to(device),
+            operator,
             right_hand_side,
             initial_value=right_hand_side,
             max_iterations=self.n_iterations,
