@@ -9,7 +9,7 @@ from ptwt.conv_transform_2 import wavedec2
 from ptwt.conv_transform_3 import wavedec3
 
 from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test, linear_operator_isometry_test, linear_operator_unitary_test
+from tests.helper import dotproduct_adjointness_test, linear_operator_unitary_test, operator_isometry_test
 
 
 @pytest.mark.parametrize(
@@ -110,7 +110,7 @@ def test_wavelet_op_isometry(im_shape, domain_shape, dim, wavelet_name):
     random_generator = RandomGenerator(seed=0)
     img = random_generator.complex64_tensor(size=im_shape)
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name=wavelet_name, level=None)
-    linear_operator_isometry_test(wavelet_op, img)
+    operator_isometry_test(wavelet_op, img)
 
 
 @pytest.mark.parametrize('wavelet_name', ['haar', 'db4'])

@@ -1,11 +1,10 @@
 """Tests for Phase Operator."""
 
-import pytest
 import torch
 from mrpro.operators import PhaseOp
 
 from tests import RandomGenerator
-from tests.helper import autodiff_of_operator_test
+from tests.helper import autodiff_test
 
 
 def test_phase_operator_forward():
@@ -19,10 +18,9 @@ def test_phase_operator_forward():
     assert torch.allclose(phase_b, torch.angle(b))
 
 
-@pytest.mark.filterwarnings('ignore:Anomaly Detection has been enabled')
 def test_autodiff_magnitude_operator():
     """Test autodiff works for magnitude operator."""
     random_generator = RandomGenerator(seed=2)
     a = random_generator.complex64_tensor((5, 9, 8))
     b = random_generator.complex64_tensor((10, 11, 12))
-    autodiff_of_operator_test(PhaseOp(), a, b)
+    autodiff_test(PhaseOp(), a, b)

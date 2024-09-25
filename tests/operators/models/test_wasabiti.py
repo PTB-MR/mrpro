@@ -3,7 +3,7 @@
 import pytest
 import torch
 from mrpro.operators.models import WASABITI
-from tests.helper import autodiff_of_operator_test
+from tests.helper import autodiff_test
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
 
 
@@ -77,10 +77,9 @@ def test_WASABITI_shape(parameter_shape, contrast_dim_shape, signal_shape):
     assert signal.shape == signal_shape
 
 
-@pytest.mark.filterwarnings('ignore:Anomaly Detection has been enabled')
 def test_autodiff_WASABITI():
     """Test autodiff works for WASABITI model."""
     offset, b0_shift, rb1, t1 = create_data(offset_max=300, n_offsets=2)
     trec = torch.ones_like(offset) * t1
     wasabiti_model = WASABITI(offsets=offset, trec=trec)
-    autodiff_of_operator_test(wasabiti_model, b0_shift, rb1, t1)
+    autodiff_test(wasabiti_model, b0_shift, rb1, t1)
