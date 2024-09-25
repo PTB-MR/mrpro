@@ -175,3 +175,12 @@ class ElementaryProximableFunctional(ElementaryFunctional, ProximableFunctional)
     A proximable functional is a functional :math:`f(x)` that has a prox implementation,
     i.e. a function that solves the problem :math:`\min_x f(x) + 1/(2\sigma) ||x - y||^2`.
     """
+
+
+class SeparableSumFunctional(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor]]):
+    def __init__(self, *functionals: Functional):
+        self.functionals = functionals
+
+    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor]:
+        assert len(self.functionals) > 1
+        return (sum(f(xi)[0] for f, xi in zip(self.functionals, x, strict=True)),)
