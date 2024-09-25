@@ -1,6 +1,9 @@
 """MR image data header (IHeader) dataclass."""
 
+from __future__ import annotations
+
 import dataclasses
+import datetime
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Self
@@ -16,15 +19,21 @@ from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 
 MISC_TAGS = {'TimeAfterStart': 0x00191016}
+UNKNOWN = 'unknown'
 
 
 @dataclass(slots=True)
 class IHeader(MoveDataMixin):
     """MR image data header."""
 
-    # ToDo: decide which attributes to store in the header
+    b0: float | None
+    """Magnetic field strength [T]."""
+
     fov: SpatialDimension[float]
     """Field of view [m]."""
+
+    h1_freq: float | None
+    """Lamor frequency of hydrogen nuclei [Hz]."""
 
     te: torch.Tensor | None
     """Echo time [s]."""
@@ -38,6 +47,48 @@ class IHeader(MoveDataMixin):
     tr: torch.Tensor | None
     """Repetition time [s]."""
 
+    patient_table_position: SpatialDimension[torch.Tensor] | None
+    """Offset position of the patient table, in LPS coordinates [m]."""
+
+    phase_dir: SpatialDimension[torch.Tensor] | None
+    """Directional cosine of phase encoding (2D)."""
+
+    position: SpatialDimension[torch.Tensor] | None
+    """Center of the excited volume, in LPS coordinates relative to isocenter [m]."""
+
+    read_dir: SpatialDimension[torch.Tensor] | None
+    """Directional cosine of readout/frequency encoding."""
+
+    slice_dir: SpatialDimension[torch.Tensor] | None
+    """Directional cosine of slice normal, i.e. cross-product of read_dir and phase_dir."""
+
+    n_coils: int | None = None
+    """Number of receiver coils."""
+
+    datetime: datetime.datetime | None = None
+    """Date and time of acquisition."""
+
+    echo_train_length: int | None = 1
+    """Number of echoes in a multi-echo acquisition."""
+
+    seq_type: str = UNKNOWN
+    """Type of sequence."""
+
+    model: str = UNKNOWN
+    """Scanner model."""
+
+    vendor: str = UNKNOWN
+    """Scanner vendor."""
+
+    protocol_name: str = UNKNOWN
+    """Name of the acquisition protocol."""
+
+    measurement_id: str = UNKNOWN
+    """Measurement ID."""
+
+    patient_name: str = UNKNOWN
+    """Name of the patient."""
+
     misc: dict = dataclasses.field(default_factory=dict)
     """Dictionary with miscellaneous parameters."""
 
@@ -50,7 +101,29 @@ class IHeader(MoveDataMixin):
         kheader
             MR raw data header (KHeader) containing required meta data.
         """
-        return cls(fov=kheader.recon_fov, te=kheader.te, ti=kheader.ti, fa=kheader.fa, tr=kheader.tr)
+        return cls(
+            b0=kheader.b0,
+            fov=kheader.recon_fov,
+            h1_freq=kheader.h1_freq,
+            te=kheader.te,
+            ti=kheader.ti,
+            fa=kheader.fa,
+            tr=kheader.tr,
+            patient_table_position=kheader.acq_info.patient_table_position,
+            phase_dir=kheader.acq_info.phase_dir,
+            position=kheader.acq_info.position,
+            read_dir=kheader.acq_info.read_dir,
+            slice_dir=kheader.acq_info.slice_dir,
+            n_coils=kheader.n_coils,
+            datetime=kheader.datetime,
+            echo_train_length=kheader.echo_train_length,
+            seq_type=kheader.seq_type,
+            model=kheader.model,
+            vendor=kheader.vendor,
+            protocol_name=kheader.protocol_name,
+            measurement_id=kheader.measurement_id,
+            patient_name=kheader.patient_name,
+        )
 
     @classmethod
     def from_dicom_list(cls, dicom_datasets: Sequence[Dataset]) -> Self:
