@@ -115,14 +115,14 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         # The acquisition model is A = F S if the CSM S is defined otherwise A = F with the Fourier operator F
         csm_op = self.csm.as_operator() if self.csm is not None else IdentityOp()
         precondition_op = self.dcf.as_operator() if self.dcf is not None else IdentityOp()
-        operator = (csm_op @ self.fourier_op).H @ precondition_op @ (csm_op @ self.fourier_op)
+        operator = (self.fourier_op @ csm_op).H @ precondition_op @ (self.fourier_op @ csm_op)
 
         # Calculate the right-hand-side as b = A^H W y if the DCF is not None otherwise as b = A^H y.
-        (right_hand_side,) = (csm_op @ self.fourier_op).H(precondition_op(kdata.data)[0])
+        (right_hand_side,) = (self.fourier_op @ csm_op).H(precondition_op(kdata.data)[0])
 
         # Add regularization
         if not torch.all(self.regularization_weight == 0):
-            operator = operator + IdentityOp() @ self.regularization_weight * self.regularization_op
+            operator = operator + IdentityOp() @ (self.regularization_weight * self.regularization_op)
             right_hand_side += self.regularization_weight * self.regularization_data
 
         img_tensor = cg(
