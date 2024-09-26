@@ -71,17 +71,17 @@ def test_stackedfunctions_shorthand():
     mypy_test_dummy1: StackedFunctionals[torch.Tensor, torch.Tensor] = stacked  # noqa F841
     torch.testing.assert_close(stacked(x1, x2)[0], a(x1)[0] + b(x2)[0])
 
-    stacked2left = b | stacked
+    stacked2left = b | (a | b)
     mypy_test_dummy2: StackedFunctionals[torch.Tensor, torch.Tensor, torch.Tensor] = stacked2left  # noqa F841
     torch.testing.assert_close(stacked2left(x1, x2, x3)[0], b(x1)[0] + a(x2)[0] + b(x3)[0])
 
-    stacked2right = stacked | b
+    stacked2right = (a | b) | b
     mypy_test_dummy3: StackedFunctionals[torch.Tensor, torch.Tensor, torch.Tensor] = stacked2left  # noqa F841
-    torch.testing.assert_close(stacked2right(x1, x2, x3)[0], b(x1)[0] + a(x2)[0] + b(x3)[0])
+    torch.testing.assert_close(stacked2right(x1, x2, x3)[0], a(x1)[0] + b(x2)[0] + b(x3)[0])
 
-    stacked3 = stacked | stacked
+    stacked3 = (a | b) | (b | a)
     mypy_test_dummy4: StackedFunctionals[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor] = stacked3  # noqa F841
-    torch.testing.assert_close(stacked3(x1, x2, x3, x4)[0], a(x1)[0] + b(x2)[0] + a(x3)[0] + +b(x4)[0])
+    torch.testing.assert_close(stacked3(x1, x2, x3, x4)[0], a(x1)[0] + b(x2)[0] + b(x3)[0] + a(x4)[0])
 
 
 def test_stackedfunctionals_prox():
