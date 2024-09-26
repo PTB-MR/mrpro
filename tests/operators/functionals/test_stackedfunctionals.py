@@ -7,11 +7,15 @@ from tests import RandomGenerator
 
 
 class Dummy(Functional):
+    """Only for testing purposes."""
+
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         return (x.sum() + 1,)
 
 
 class ProxDummy(ProximableFunctional):
+    """Only for testing purposes."""
+
     def __init__(self, prox_scale: float = 1.0):
         super().__init__()
         self.register_buffer('dummy', torch.tensor(1.0))
@@ -83,26 +87,26 @@ def test_stackedfunctions_shorthand():
 def test_stackedfunctionals_prox():
     rng = RandomGenerator(123)
     xs = rng.float32_tensor(4)
-    stackedprox = ProxDummy(1.0) | (ProxDummy(2.0) | ProxDummy(3.0)) | ProxDummy(4.0)
+    stacked = ProxDummy(1.0) | (ProxDummy(2.0) | ProxDummy(3.0)) | ProxDummy(4.0)
     expected_prox = tuple(torch.tensor([1.0, 2.0, 3.0, 4.0]) * xs)
-    actual_prox = stackedprox.prox(*xs, sigma=1.0)
+    actual_prox = stacked.prox(*xs, sigma=1.0)
     assert expected_prox == pytest.approx(actual_prox)
     # mypy will complain about the type of the expression and the argument not matching
     # if the types hints in StackedProximableFunctionals are not correct.
-    mypy_test_dummy1: StackedProximableFunctionals[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor] = stackedprox  # noqa F841
+    mypy_test_dummy1: StackedProximableFunctionals[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor] = stacked  # noqa F841
     mypy_test_dummy2: tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor] = actual_prox  # noqa F841
 
 
 def test_stackedfunctionals_prox_convex_conj():
     rng = RandomGenerator(123)
     xs = rng.float32_tensor(4)
-    stackedprox = ProxDummy(1.0) | (ProxDummy(2.0) | ProxDummy(3.0)) | ProxDummy(4.0)
+    stacked = ProxDummy(1.0) | (ProxDummy(2.0) | ProxDummy(3.0)) | ProxDummy(4.0)
     expected_proxcc = tuple(torch.tensor([1.0, 2.0, 3.0, 4.0]) * xs)
-    actual_prox = stackedprox.prox_convex_conj(*xs, sigma=-1.0)
+    actual_prox = stacked.prox_convex_conj(*xs, sigma=-1.0)
     assert expected_proxcc == pytest.approx(actual_prox)
     # mypy will complain about the type of the expression and the argument not matching
     # if the types hints in StackedProximableFunctionals are not correct.
-    mypy_test_dummy1: StackedProximableFunctionals[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor] = stackedprox  # noqa F841
+    mypy_test_dummy1: StackedProximableFunctionals[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor] = stacked  # noqa F841
     mypy_test_dummy2: tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor] = actual_prox  # noqa F841
 
 
