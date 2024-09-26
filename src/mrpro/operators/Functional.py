@@ -1,5 +1,7 @@
 """Base Class Functional."""
 
+from __future__ import annotations
+
 import math
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
@@ -7,6 +9,7 @@ from collections.abc import Sequence
 import torch
 
 from mrpro.operators.Operator import Operator
+from mrpro.operators.StackedFunctionals import StackedFunctionals
 
 
 class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
@@ -31,6 +34,20 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
         ):
             return
         raise ValueError(message)
+
+    def __or__(self, other: Functional) -> StackedFunctionals[torch.Tensor, torch.Tensor]:
+        """Create a StackedFunctionals object from two functionals.
+
+        Parameters
+        ----------
+        other
+            second functional to be stacked
+
+        Returns
+        -------
+            StackedFunctionals object
+        """
+        return StackedFunctionals(self, other)
 
 
 class ElementaryFunctional(Functional):
@@ -175,12 +192,3 @@ class ElementaryProximableFunctional(ElementaryFunctional, ProximableFunctional)
     A proximable functional is a functional :math:`f(x)` that has a prox implementation,
     i.e. a function that solves the problem :math:`\min_x f(x) + 1/(2\sigma) ||x - y||^2`.
     """
-
-
-class SeparableSumFunctional(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor]]):
-    def __init__(self, *functionals: Functional):
-        self.functionals = functionals
-
-    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor]:
-        assert len(self.functionals) > 1
-        return (sum(f(xi)[0] for f, xi in zip(self.functionals, x, strict=True)),)
