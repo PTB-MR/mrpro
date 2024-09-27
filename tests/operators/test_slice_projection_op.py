@@ -5,9 +5,8 @@ import math
 import numpy as np
 import pytest
 import torch
-from mrpro.data import SpatialDimension
+from mrpro.data import Rotation, SpatialDimension
 from mrpro.operators import SliceProjectionOp
-from mrpro.utils import Rotation
 from mrpro.utils.slice_profiles import SliceGaussian, SliceInterpolate, SliceSmoothedRectangular
 
 from tests import RandomGenerator
