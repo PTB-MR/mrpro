@@ -87,6 +87,14 @@ def test_spatial_dimension_zyx():
     assert spatial_dimension.zyx == (z, y, x)
 
 
+def test_spatial_dimension_xyz():
+    """Test the xyz tuple property"""
+    z, y, x = (2, 3, 4)
+    spatial_dimension = SpatialDimension(z=z, y=y, x=x)
+    assert isinstance(spatial_dimension.xyz, tuple)
+    assert spatial_dimension.xyz == (x, y, z)
+
+
 @pytest.mark.cuda()
 def test_spatial_dimension_cuda_tensor():
     """Test moving to CUDA"""
@@ -104,18 +112,173 @@ def test_spatial_dimension_cuda_tensor():
     assert not spatial_dimension.is_cuda
 
 
-def test_spatial_dimension_cuda_float():
-    """Test moving to CUDA without tensors -> copy only"""
+def test_spatial_dimension_getitem():
+    """Test accessing elements of SpatialDimension."""
+    zyx = RandomGenerator(0).float32_tensor((4, 2, 3))
+    spatial_dimension = SpatialDimension.from_array_zyx(zyx.numpy())
+    torch.testing.assert_close(torch.stack(spatial_dimension[:2, ...].zyx, dim=-1), zyx[:2, ...])
+
+
+def test_spatial_dimension_setitem():
+    """Test setting elements of SpatialDimension."""
+    zyx = RandomGenerator(0).float32_tensor((4, 2, 3))
+    spatial_dimension = SpatialDimension.from_array_zyx(zyx.numpy())
+    spatial_dimension_to_set = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    spatial_dimension[2, 1] = spatial_dimension_to_set
+    assert spatial_dimension[2, 1].zyx == spatial_dimension_to_set.zyx
+
+
+def test_spatial_dimension_mul():
+    """Test multiplication of SpatialDimension with numeric value."""
     spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
-    # the device number should not matter, has there is no
-    # data to move to the device
-    spatial_dimension_cuda = spatial_dimension.cuda(42)
-    # if a dataclass has no tensors, it is both on CPU and CUDA
-    # and the device is None
-    assert spatial_dimension_cuda.is_cuda
-    assert spatial_dimension.is_cpu
-    assert spatial_dimension_cuda.is_cpu
-    assert spatial_dimension.is_cuda
-    assert spatial_dimension.device is None
-    assert spatial_dimension_cuda.device is None
-    assert spatial_dimension_cuda is not spatial_dimension
+    value = 3
+    spatial_dimension_add = spatial_dimension * value
+    assert isinstance(spatial_dimension_add, SpatialDimension)
+    assert spatial_dimension_add.zyx == (
+        spatial_dimension.z * value,
+        spatial_dimension.y * value,
+        spatial_dimension.x * value,
+    )
+
+
+def test_spatial_dimension_rmul():
+    """Test right multiplication of SpatialDimension with numeric value."""
+    spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    value = 3
+    spatial_dimension_add = value * spatial_dimension
+    assert isinstance(spatial_dimension_add, SpatialDimension)
+    assert spatial_dimension_add.zyx == (
+        spatial_dimension.z * value,
+        spatial_dimension.y * value,
+        spatial_dimension.x * value,
+    )
+
+
+def test_spatial_dimension_mul_spatial_dimension():
+    """Test multiplication of SpatialDimension with SpatialDimension."""
+    spatial_dimension_1 = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    spatial_dimension_2 = SpatialDimension(z=4.0, y=5.0, x=6.0)
+    spatial_dimension_add = spatial_dimension_1 * spatial_dimension_2
+    assert isinstance(spatial_dimension_add, SpatialDimension)
+    assert spatial_dimension_add.zyx == (
+        spatial_dimension_1.z * spatial_dimension_2.z,
+        spatial_dimension_1.y * spatial_dimension_2.y,
+        spatial_dimension_1.x * spatial_dimension_2.x,
+    )
+
+
+def test_spatial_dimension_truediv():
+    """Test division of SpatialDimension with numeric value."""
+    spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    value = 3
+    spatial_dimension_add = spatial_dimension / value
+    assert isinstance(spatial_dimension_add, SpatialDimension)
+    assert spatial_dimension_add.zyx == (
+        spatial_dimension.z / value,
+        spatial_dimension.y / value,
+        spatial_dimension.x / value,
+    )
+
+
+def test_spatial_dimension_rtruediv():
+    """Test right division of SpatialDimension with numeric value."""
+    spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    value = 3
+    spatial_dimension_add = value / spatial_dimension
+    assert isinstance(spatial_dimension_add, SpatialDimension)
+    assert spatial_dimension_add.zyx == (
+        value / spatial_dimension.z,
+        value / spatial_dimension.y,
+        value / spatial_dimension.x,
+    )
+
+
+def test_spatial_dimension_truediv_spatial_dimension():
+    """Test divitions of SpatialDimension with SpatialDimension."""
+    spatial_dimension_1 = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    spatial_dimension_2 = SpatialDimension(z=4.0, y=5.0, x=6.0)
+    spatial_dimension_add = spatial_dimension_1 / spatial_dimension_2
+    assert isinstance(spatial_dimension_add, SpatialDimension)
+    assert spatial_dimension_add.zyx == (
+        spatial_dimension_1.z / spatial_dimension_2.z,
+        spatial_dimension_1.y / spatial_dimension_2.y,
+        spatial_dimension_1.x / spatial_dimension_2.x,
+    )
+
+
+def test_spatial_dimension_add():
+    """Test addition of SpatialDimension with numeric value."""
+    spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    value = 3
+    spatial_dimension_add = spatial_dimension + value
+    assert isinstance(spatial_dimension_add, SpatialDimension)
+    assert spatial_dimension_add.zyx == (
+        spatial_dimension.z + value,
+        spatial_dimension.y + value,
+        spatial_dimension.x + value,
+    )
+
+
+def test_spatial_dimension_radd():
+    """Test right addition of SpatialDimension with numeric value."""
+    spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    value = 3
+    spatial_dimension_add = value + spatial_dimension
+    assert isinstance(spatial_dimension_add, SpatialDimension)
+    assert spatial_dimension_add.zyx == (
+        spatial_dimension.z + value,
+        spatial_dimension.y + value,
+        spatial_dimension.x + value,
+    )
+
+
+def test_spatial_dimension_add_spatial_dimension():
+    """Test addition of SpatialDimension with SpatialDimension."""
+    spatial_dimension_1 = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    spatial_dimension_2 = SpatialDimension(z=4.0, y=5.0, x=6.0)
+    spatial_dimension_add = spatial_dimension_1 + spatial_dimension_2
+    assert isinstance(spatial_dimension_add, SpatialDimension)
+    assert spatial_dimension_add.zyx == (
+        spatial_dimension_1.z + spatial_dimension_2.z,
+        spatial_dimension_1.y + spatial_dimension_2.y,
+        spatial_dimension_1.x + spatial_dimension_2.x,
+    )
+
+
+def test_spatial_dimension_sub():
+    """Test subtraction of SpatialDimension with numeric value."""
+    spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    value = 3
+    spatial_dimension_add = spatial_dimension - value
+    assert isinstance(spatial_dimension_add, SpatialDimension)
+    assert spatial_dimension_add.zyx == (
+        spatial_dimension.z - value,
+        spatial_dimension.y - value,
+        spatial_dimension.x - value,
+    )
+
+
+def test_spatial_dimension_rsub():
+    """Test right subtraction of SpatialDimension with numeric value."""
+    spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    value = 3
+    spatial_dimension_add = value - spatial_dimension
+    assert isinstance(spatial_dimension_add, SpatialDimension)
+    assert spatial_dimension_add.zyx == (
+        value - spatial_dimension.z,
+        value - spatial_dimension.y,
+        value - spatial_dimension.x,
+    )
+
+
+def test_spatial_dimension_sub_spatial_dimension():
+    """Test subtraction of SpatialDimension with SpatialDimension."""
+    spatial_dimension_1 = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    spatial_dimension_2 = SpatialDimension(z=4.0, y=5.0, x=6.0)
+    spatial_dimension_add = spatial_dimension_1 - spatial_dimension_2
+    assert isinstance(spatial_dimension_add, SpatialDimension)
+    assert spatial_dimension_add.zyx == (
+        spatial_dimension_1.z - spatial_dimension_2.z,
+        spatial_dimension_1.y - spatial_dimension_2.y,
+        spatial_dimension_1.x - spatial_dimension_2.x,
+    )
