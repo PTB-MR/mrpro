@@ -47,9 +47,6 @@ class IHeader(MoveDataMixin):
     tr: torch.Tensor | None
     """Repetition time [s]."""
 
-    patient_table_position: SpatialDimension[torch.Tensor] | None
-    """Offset position of the patient table, in LPS coordinates [m]."""
-
     phase_dir: SpatialDimension[torch.Tensor] | None
     """Directional cosine of phase encoding (2D)."""
 
@@ -61,6 +58,9 @@ class IHeader(MoveDataMixin):
 
     slice_dir: SpatialDimension[torch.Tensor] | None
     """Directional cosine of slice normal, i.e. cross-product of read_dir and phase_dir."""
+
+    patient_table_position: SpatialDimension[torch.Tensor] | None = None
+    """Offset position of the patient table, in LPS coordinates [m]."""
 
     n_coils: int | None = None
     """Number of receiver coils."""
@@ -156,6 +156,11 @@ class IHeader(MoveDataMixin):
             items = get_items_from_all_dicoms(name)
             return [float(val) if val is not None else None for val in items]
 
+        def get_tensor_items_from_all_dicoms(name: TagType):
+            """Convert items to tensors."""
+            items = get_items_from_all_dicoms(name)
+            return [torch.as_tensor(val, dtype=torch.float32) if val is not None else None for val in items]
+
         def make_unique_tensor(values: Sequence[float]) -> torch.Tensor | None:
             """If all the values are the same only return one."""
             if any(val is None for val in values):
@@ -171,6 +176,9 @@ class IHeader(MoveDataMixin):
 
         def deg_to_rad(deg: torch.Tensor | None) -> torch.Tensor | None:
             return None if deg is None else torch.deg2rad(deg)
+
+        b0 = make_unique_tensor(get_float_items_from_all_dicoms('MagneticFieldStrength'))
+        h1_freq = make_unique_tensor(get_float_items_from_all_dicoms('ImagingFrequency'))
 
         fa = deg_to_rad(make_unique_tensor(get_float_items_from_all_dicoms('FlipAngle')))
         ti = ms_to_s(make_unique_tensor(get_float_items_from_all_dicoms('InversionTime')))
@@ -189,11 +197,36 @@ class IHeader(MoveDataMixin):
         fov_z_mm = get_float_items_from_all_dicoms('SliceThickness')[0]
         fov = SpatialDimension(fov_x_mm / 1000.0, fov_y_mm / 1000.0, fov_z_mm / 1000.0)
 
+        image_orientation = torch.stack(get_tensor_items_from_all_dicoms('ImageOrientationPatient'))
+        read_dir = SpatialDimension.from_array_xyz(image_orientation[:,:3]) if image_orientation is not None else None
+        phase_dir = SpatialDimension.from_array_xyz(image_orientation[:,3:]) if image_orientation is not None else None
+        slice_dir_zyx = torch.linalg.cross(torch.stack(read_dir.zyx,dim=-1), torch.stack(phase_dir.zyx,dim=-1))
+        slice_dir = SpatialDimension.from_array_zyx(slice_dir_zyx) if read_dir is not None else None
+
+        # Image position as the upper left hand corner of the image
+        image_position_mm = torch.stack(get_tensor_items_from_all_dicoms('ImagePositionPatient'))
+        image_position_mm += (fov_x_mm/2 * image_orientation[:,:3] + fov_y_mm/2 * image_orientation[:,3:] + fov_z_mm/2*torch.fliplr(slice_dir_zyx))
+        position = SpatialDimension.from_array_xyz(image_position_mm/1000.)
+
+        acq_date = get_items_from_all_dicoms('AcquisitionDate')[0]
+        acq_time = get_items_from_all_dicoms('AcquisitionTime')[0]
+        date_time = datetime.datetime.strptime(acq_date + acq_time, '%Y%m%d%H%M%S.%f')
+        echo_train_length = make_unique_tensor(get_float_items_from_all_dicoms('EchoTrainLength'))
+        seq_type=get_items_from_all_dicoms('SequenceName')
+        #model=get_items_from_all_dicoms('ManufacturersModelName')
+        model=UNKNOWN
+        vendor=get_items_from_all_dicoms('Manufacturer')
+        protocol_name=get_items_from_all_dicoms('ProtocolName')
+        patient_name=get_items_from_all_dicoms('PatientName')
+
         # Get misc parameters
         misc = {}
         for name in MISC_TAGS:
             misc[name] = make_unique_tensor(get_float_items_from_all_dicoms(MISC_TAGS[name]))
-        return cls(fov=fov, te=te, ti=ti, fa=fa, tr=tr, misc=misc)
+        return cls(b0=b0, fov=fov, h1_freq=h1_freq, te=te, ti=ti, fa=fa, tr=tr, phase_dir=phase_dir, position=position,
+                   read_dir=read_dir, slice_dir=slice_dir, datetime=date_time, echo_train_length=echo_train_length,
+                   seq_type=seq_type, model=model, vendor=vendor, protocol_name=protocol_name,
+                   patient_name=patient_name, misc=misc)
 
     def __repr__(self):
         """Representation method for IHeader class."""
