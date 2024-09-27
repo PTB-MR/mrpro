@@ -1,0 +1,78 @@
+       # threshold = (self.weight * sigma).to(dtype)+0j
+        # threshold = self._divide_by_n(threshold, torch.broadcast_shapes(x.shape, threshold.shape))
+
+        # out_real = (
+        #     x.real
+        #     - threshold.real * torch.sign((threshold * diff).real)
+        #     - threshold.imag * torch.sign((threshold * diff).imag)
+        # )
+
+        # out_imag = (
+        #     x.imag
+        #     - threshold.real * torch.sign((threshold * diff).imag)
+        #     + threshold.imag * torch.sign((threshold * diff).real)
+        # )
+        # out = torch.complex(out_real, out_imag)
+        # if not dtype.is_complex:
+        #     out = out.real
+        # return (out,)
+
+    # prox_convex_conj is not implemented for L1NormViewAsReal, instead
+    # the moreau identity is used to compute the proximal mapping of the convex conjugate
+    # as implemented in the base class ProximableFunctional
+
+
+
+tensor_cases: TypeAlias = Literal['random', 'zero', 'complex']
+
+
+def _test_tensor(case: tensor_cases, seed: int, shape: Sequence[int] = (1, 2, 3)):
+    """Tensos for grad and nan tests."""
+    rng = RandomGenerator(seed)
+    match case:
+        case 'random':
+            x = rng.float64_tensor(shape)
+        case 'zero':
+            x = torch.zeros(shape, dtype=torch.float64)
+        case 'complex':
+            x = rng.complex128_tensor(shape)
+    return x
+
+
+@pytest.mark.parametrize('functional', FUNCTIONALS)
+@pytest.mark.parametrize('x_case', get_args(tensor_cases))
+@pytest.mark.parametrize('weight_case', get_args(tensor_cases))
+@pytest.mark.parametrize('target_case', get_args(tensor_cases))
+def test_functional_grad(
+    functional: type[Functional], x_case: tensor_cases, weight_case: tensor_cases, target_case: tensor_cases
+):
+    """Test if autograd works for functional."""
+    x = _test_tensor(x_case, 1).requires_grad_(True)
+    weight = _test_tensor(weight_case, 2)
+    target = _test_tensor(target_case, 3)
+
+    f = functional(weight=weight, target=target, dim=(-1, -2))
+
+    with pytest.warns(UserWarning, match='Anomaly Detection has been enabled'), torch.autograd.detect_anomaly():
+        (fx,) = f(x)
+        fx.sum().backward()
+
+    assert x.grad is not None
+    assert not torch.any(torch.isnan(x.grad))
+    assert not torch.any(torch.isinf(x.grad))
+    torch.autograd.gradcheck(f, x, fast_mode=True)
+
+
+@functional_test_cases
+def test_functional_finite(
+    case: FunctionalTestCase,):
+    """Basic test if functional and proximal are finite and do not return nan or inf."""
+    x = case.rand_x()
+    f = case.functional
+    (fx,) = f(x)
+    (prox,) = f.prox(x, sigma=1.)
+    (prox_convex_conj,) = f.prox_convex_conj(x, sigma=1.)
+    assert torch.all(torch.isfinite(fx))
+    assert torch.all(torch.isfinite(prox))
+    assert torch.all(torch.isfinite(prox_convex_conj))
+

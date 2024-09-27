@@ -114,53 +114,50 @@ class KTrajectory(MoveDataMixin):
     @property
     def type_along_kzyx(self) -> tuple[TrajType, TrajType, TrajType]:
         """Type of trajectory along kz-ky-kx."""
-        return self._traj_types(self.grid_detection_tolerance)[0]
+        # kz should only have flags that are enabled in all columns
+        type_zyx = tuple(TrajType(i.item()) for i in np.bitwise_and.reduce(self.type_matrix, axis=1))
+        return (type_zyx[0], type_zyx[1], type_zyx[2])  # make mypy recognize return  will always have len=3
+
 
     @property
     def type_along_k210(self) -> tuple[TrajType, TrajType, TrajType]:
         """Type of trajectory along k2-k1-k0."""
-        return self._traj_types(self.grid_detection_tolerance)[1]
+        # k2 only flags enabled in all rows, etc
+        type_210 = [TrajType(i.item()) for i in np.bitwise_and.reduce(self.type_matrix, axis=0)]
+        return (type_210[0], type_210[1], type_210[2]) # make mypy recognize return  will always have len=3
 
-    def _traj_types(
+
+    @property
+    def type_matrix(
         self,
-        tolerance: float,
-    ) -> tuple[tuple[TrajType, TrajType, TrajType], tuple[TrajType, TrajType, TrajType]]:
+    ) -> torch.Tensor:
         """Calculate the trajectory type along kzkykx and k2k1k0.
 
         Checks if the entries of the trajectory along certain dimensions
             - are of shape 1 -> TrajType.SINGLEVALUE
             - lie on a Cartesian grid -> TrajType.ONGRID
 
-        Parameters
-        ----------
-        tolerance:
-            absolute tolerance in checking if points are on integer grid positions
-
         Returns
         -------
-            ((types along kz,ky,kx),(types along k2,k1,k0))
+            Matrix describing trajectory-type [(kz, ky, kx), (k2, k1, k0)]
 
-        # TODO: consider non-integer positions that are on a grid, e.g. (0.5, 1, 1.5, ....)
         """
+        # TODO: consider non-integer positions that are on a grid, e.g. (0.5, 1, 1.5, ....)
         # Matrix describing trajectory-type [(kz, ky, kx), (k2, k1, k0)]
         # Start with everything not on a grid (arbitrary k-space locations).
         # We use the value of the enum-type to make it easier to do array operations.
         traj_type_matrix = torch.zeros(3, 3, dtype=torch.int)
         for ind, ks in enumerate((self.kz, self.ky, self.kx)):
-            values_on_grid = not ks.is_floating_point() or torch.all((ks - ks.round()).abs() <= tolerance)
+            values_on_grid = not ks.is_floating_point() or torch.all((ks - ks.round()).abs() <= self.grid_detection_tolerance)
             for dim in (-3, -2, -1):
                 if ks.shape[dim] == 1:
                     traj_type_matrix[ind, dim] |= TrajType.SINGLEVALUE.value | TrajType.ONGRID.value
                 if values_on_grid:
                     traj_type_matrix[ind, dim] |= TrajType.ONGRID.value
+        return traj_type_matrix
 
-        # kz should only have flags that are enabled in all columns
-        # k2 only flags enabled in all rows, etc
-        type_zyx = [TrajType(i.item()) for i in np.bitwise_and.reduce(traj_type_matrix, axis=1)]
-        type_210 = [TrajType(i.item()) for i in np.bitwise_and.reduce(traj_type_matrix, axis=0)]
 
-        # make mypy recognize return  will always have len=3
-        return (type_zyx[0], type_zyx[1], type_zyx[2]), (type_210[0], type_210[1], type_210[2])
+
 
     def as_tensor(self, stack_dim: int = 0) -> torch.Tensor:
         """Tensor representation of the trajectory.

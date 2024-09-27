@@ -23,9 +23,8 @@ class FourierOp(LinearOperator):
         recon_matrix: SpatialDimension[int],
         encoding_matrix: SpatialDimension[int],
         traj: KTrajectory,
-        nufft_oversampling: float = 2.0,
-        nufft_numpoints: int = 6,
-        nufft_kbwidth: float = 2.34,
+        force_nufft: bool = False,
+        nufft_factory:None=None
     ) -> None:
         """Fourier Operator class.
 
@@ -37,40 +36,40 @@ class FourierOp(LinearOperator):
             dimension of the encoded k-space
         traj
             the k-space trajectories where the frequencies are sampled
-        nufft_oversampling
-            oversampling used for interpolation in non-uniform FFTs
-        nufft_numpoints
-            number of neighbors for interpolation in non-uniform FFTs
-        nufft_kbwidth
-            size of the Kaiser-Bessel kernel interpolation in non-uniform FFTs
+        force_nufft
+            force the use of the NUFFT operator instead of the FFT operator
+            This will be slower but can be useful for testing or if gradients
+            with respect to the trajectory are needed.
+        nufft_factory
+            factory function to create the NUFFT operators. If None, a default
+            torchkbnufft will be used.
         """
         super().__init__()
 
-        def get_spatial_dims(spatial_dims: SpatialDimension, dims: Sequence[int]):
-            return [
-                s
-                for s, i in zip((spatial_dims.z, spatial_dims.y, spatial_dims.x), (-3, -2, -1), strict=True)
-                if i in dims
-            ]
 
         def get_traj(traj: KTrajectory, dims: Sequence[int]):
             return [k for k, i in zip((traj.kz, traj.ky, traj.kx), (-3, -2, -1), strict=True) if i in dims]
 
-        self._ignore_dims, self._fft_dims, self._nufft_dims = [], [], []
-        for dim, type_ in zip((-3, -2, -1), traj.type_along_kzyx, strict=True):
-            if type_ & TrajType.SINGLEVALUE:
-                # dimension which do not require any transform
-                self._ignore_dims.append(dim)
-            elif type_ & TrajType.ONGRID:
-                self._fft_dims.append(dim)
-            else:
-                self._nufft_dims.append(dim)
+        self._ignore_dims, self._fft_dims_k2k1k0, self._nufft_dims = [], [], []
+        type_matrix_zyx_210 = traj.type_matrix
 
-        if self._fft_dims:
+
+
+        for kzyx, dim_type in zip((-3, -2, -1), traj.type_along_kzyx, strict=True):
+            if dim_type & TrajType.SINGLEVALUE:
+                # dimension which do not require any transform
+                self._ignore_dims.append(kzyx)
+            elif dim_type & TrajType.ONGRID and not force_nufft:
+
+                self._fft_dims_k2k1k0.append(kzyx)
+            else:
+                self._nufft_dims.append(kzyx)
+
+        if self._fft_dims_k2k1k0:
             self._fast_fourier_op = FastFourierOp(
-                dim=tuple(self._fft_dims),
-                recon_matrix=get_spatial_dims(recon_matrix, self._fft_dims),
-                encoding_matrix=get_spatial_dims(encoding_matrix, self._fft_dims),
+                dim=tuple(self._fft_dims_k2k1k0),
+                recon_matrix=[recon_matrix.zyx[d] for d in self._fft_dims_k2k1k0],
+                encoding_matrix=[encoding_matrix.zyx[d] for d in self._fft_dims_k2k1k0],
             )
 
         # Find dimensions which require NUFFT
@@ -81,19 +80,19 @@ class FourierOp(LinearOperator):
                 if (traj.type_along_k210[dim] & TrajType.ONGRID)
                 and not (traj.type_along_k210[dim] & TrajType.SINGLEVALUE)
             ]
-            if self._fft_dims != fft_dims_k210:
+            if self._fft_dims_k2k1k0 != fft_dims_k210:
                 raise NotImplementedError(
                     'If both FFT and NUFFT dims are present, Cartesian FFT dims need to be aligned with the '
                     'k-space dimension, i.e. kx along k0, ky along k1 and kz along k2',
                 )
 
-            self._nufft_im_size = get_spatial_dims(recon_matrix, self._nufft_dims)
+            self._nufft_im_size = [recon_matrix.zyx[d] for d in self._nufft_dims]
             grid_size = [int(size * nufft_oversampling) for size in self._nufft_im_size]
             omega = [
                 k * 2 * torch.pi / ks
                 for k, ks in zip(
                     get_traj(traj, self._nufft_dims),
-                    get_spatial_dims(encoding_matrix, self._nufft_dims),
+                    [encoding_matrix.zyx[d] for d in self._nufft_dims],
                     strict=True,
                 )
             ]
@@ -146,7 +145,7 @@ class FourierOp(LinearOperator):
         -------
             coil k-space data with shape: (... coils k2 k1 k0)
         """
-        if len(self._fft_dims):
+        if len(self._fft_dims_k2k1k0):
             # FFT
             (x,) = self._fast_fourier_op.forward(x)
 
@@ -187,7 +186,7 @@ class FourierOp(LinearOperator):
         -------
             coil image data with shape: (... coils z y x)
         """
-        if self._fft_dims:
+        if self._fft_dims_k2k1k0:
             # IFFT
             (x,) = self._fast_fourier_op.adjoint(x)
 

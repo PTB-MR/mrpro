@@ -25,12 +25,12 @@ class NufftOp(LinearOperator, ABC):
 
 
     @property
-    def grid_size(self)
-        return [int(size * self.oversampling) for size in self.image_size]
+    def grid_size(self)->tuple[int,...]:
+        return tuple(int(size * self.oversampling) for size in self.image_size)
 
     def __init__(
         self,
-        omega: KTrajectory,
+        traj: KTrajectory|torch.Tensor,
         image_size: TupleOfInts,
         dim: TupleOfInts,
         oversampling: float = 2.0,
@@ -41,11 +41,8 @@ class NufftOp(LinearOperator, ABC):
 
         Parameters
         ----------
-        omega
-            prepared k-space trajectory with shape
-            (batch_trajectory batch_data 3 kspace_points) for 3D
-            (batch_trajectory batch_data 2 kspace_points) for 2D
-            (batch_trajectory batch_data 1 kspace_points) for 1D
+        trajectory
+
         image_size
             dimension of the reconstructed image
         oversampling
@@ -55,17 +52,27 @@ class NufftOp(LinearOperator, ABC):
             or the batch size might not be limited.
         """
         super().__init__()
-        if len(image_size)!=omega.shape[2]:
-            raise ValueError("The number of image dimensions and the size of omega's third dimension must match.")
-        if len(dim)!=omega.shape[2]:
-            raise ValueError("The number of dimensions and the size of omega's third dimension must match.")
+        if len(image_size)!=len(dim):
+            raise ValueError("The number of image dimensions and the number of dimensions must match.")
         self.image_size = image_size
         self.oversampling = oversampling
-        self.register_buffer('_omega', omega)
         self.max_batch_size = max_batch_size
+        self.omega = omega
+
+        def get_traj(traj: KTrajectory, dims: Sequence[int]):
+            return [(traj.kz, traj.ky, traj.kx), (-3, -2, -1), strict=True) if i in dims]
+
+        omega = [
+                k * 2 * torch.pi / ks
+                for k, ks in zip(
+                    get_traj(traj, self._nufft_dims),
+                    get_spatial_dims(encoding_matrix, self._nufft_dims),
+                    strict=True,
+                )
+            ]
 
 
-    def setup(self, data: torch.Tensor|None):
+    def _setup(self, data: torch.Tensor|None):
         """Setup the operator by creating plans etc.
 
         Should be called in both forward and adjoint methods,
@@ -101,24 +108,26 @@ class NufftOp(LinearOperator, ABC):
         """
         if not len(self.dim):
             return x,
-        keep_dims = [i%x.ndim for i in self.dim]
-        permute = [i for i in range(-x.ndim, 0) if i not in keep_dims] + keep_dims
+        fft_dims = [i%x.ndim for i in self.dim]
+        # move nufft-dimensions to the end and flatten all other dimensions
+        permute = [i for i in range(-x.ndim, 0) if i not in fft_dims] + fft_dims
         unpermute = np.argsort(permute)
 
         x = x.permute(*permute)
+        self.tra
         permuted_x_shape = x.shape
-        x = x.flatten(end_dim=-len(keep_dims) - 1)
+        x = x.flatten(end_dim=-len(fft_dims) - 1)
 
             # omega should be (... non_nufft_dims) n_nufft_dims (nufft_dims)
             # TODO: consider moving the broadcast along fft dimensions to __init__ (independent of x shape).
             omega = self._omega.permute(*permute)
-            omega = omega.broadcast_to(*permuted_x_shape[: -len(keep_dims)], *omega.shape[-len(keep_dims) :])
-            omega = omega.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
+            omega = omega.broadcast_to(*permuted_x_shape[: -len(fft_dims)], *omega.shape[-len(fft_dims) :])
+            omega = omega.flatten(end_dim=-len(fft_dims) - 1).flatten(start_dim=-len(fft_dims) + 1)
 
             x = self._fwd_nufft_op(x, omega, norm='ortho')
 
             shape_nufft_dims = [self._kshape[i] for i in self._nufft_dims]
-            x = x.reshape(*permuted_x_shape[: -len(keep_dims)], -1, *shape_nufft_dims)  # -1 is coils
+            x = x.reshape(*permuted_x_shape[: -len(fft_dims)], -1, *shape_nufft_dims)  # -1 is coils
             x = x.permute(*unpermute)
 
 
