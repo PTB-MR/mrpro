@@ -5,6 +5,7 @@ import torch
 from einops import rearrange, repeat
 from mrpro.data import KData, KTrajectory, SpatialDimension
 from mrpro.data.acq_filters import is_coil_calibration_acquisition
+from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
 from mrpro.utils import modify_acq_info, split_idx
@@ -469,3 +470,21 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader):
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
     # differences along the edges of the elliptic objects.
     assert relative_image_difference(torch.abs(img_recon), img_tensor[:, 0, ...]) <= 0.05
+
+
+def test_KData_to_file(ismrmrd_cart, tmp_path_factory):
+    """Read in data to file."""
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    # We need to make sure that the trajectory fits to the data
+    random_generator = RandomGenerator(seed=0)
+    traj = random_generator.float32_tensor(size=(3, kdata.data.shape[0], *kdata.data.shape[2:]))
+    kdata = KData(header=kdata.header, data=kdata.data, traj=KTrajectory.from_tensor(traj))
+
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_saved_from_mrpro.h5'
+    kdata.to_file(ismrmrd_filename)
+    kdata_reload = KData.from_file(ismrmrd_filename, KTrajectoryIsmrmrd())
+
+    torch.testing.assert_close(kdata.data, kdata_reload.data)
+    torch.testing.assert_close(kdata.traj.as_tensor(), kdata_reload.traj.as_tensor())
+    assert kdata.header.encoding_fov.x == kdata_reload.header.encoding_fov.x
+    assert kdata.header.encoding_limits.k1.max == kdata_reload.header.encoding_limits.k1.max

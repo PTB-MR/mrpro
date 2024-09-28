@@ -235,6 +235,47 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
 
         return cls(kheader, kdata, ktrajectory_final)
 
+    def to_file(self, filename: str | Path) -> None:
+        """Save KData as ISMRMRD dataset to file.
+
+        Parameters
+        ----------
+        filename
+            path to the ISMRMRD file
+        """
+        if self.data.ndim != 5:
+            raise ValueError('Only KData with exactly 5 dimensions (other, coil, k2, k1, k0) can be saved.')
+
+        # Open the dataset
+        dataset = ismrmrd.Dataset(filename, 'dataset', create_if_needed=True)
+
+        # Create ISMRMRD header
+        header = self.header.to_ismrmrd()
+        dataset.write_xml_header(header.toXML('utf-8'))
+
+        trajectory = self.traj.as_tensor()
+        trajectory = torch.stack(
+            [torch.broadcast_to(trajectory[i, ...], self.data[..., 0, :, :, :].shape) for i in range(3)]
+        )
+
+        # Go through data and save acquisitions
+        acq_shape = [self.data.shape[-1], self.data.shape[-4]]
+        for other in range(self.data.shape[-5]):
+            for k2 in range(self.data.shape[-3]):
+                for k1 in range(self.data.shape[-2]):
+                    acq = ismrmrd.Acquisition()
+                    acq.resize(*acq_shape, trajectory_dimensions=3)
+                    acq = self.header.acq_info.add_ismrmrd_acquisition_info(acq, other, k2, k1)
+
+                    # Rearrange, switch from zyx to xz and set trajectory.
+                    acq.traj[:] = rearrange(trajectory[:, other, k2, k1, :].numpy(), 'dim k0->k0 dim')[:, ::-1]
+
+                    # Set the data and append
+                    acq.data[:] = self.data[other, :, k2, k1, :].numpy()
+                    dataset.append_acquisition(acq)
+
+        dataset.close()
+
     def __repr__(self):
         """Representation method for KData class."""
         traj = KTrajectory(self.traj.kz, self.traj.ky, self.traj.kx)
