@@ -1,25 +1,11 @@
 """Class for Grid Sampling Operator."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import warnings
-from collections.abc import Callable
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Literal
 
 import torch
+from einops import rearrange
 
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
@@ -178,12 +164,12 @@ class GridSamplingOp(LinearOperator):
         padding_mode: Literal['zeros', 'border', 'reflection'] = 'zeros',
         align_corners: bool = False,
     ):
-        """Initialize Sampling Operator.
+        r"""Initialize Sampling Operator.
 
         Parameters
         ----------
         grid
-            sampling grid. Shape *batchdim, z,y,x,3 / *batchdim, y,x,2.
+            sampling grid. Shape \*batchdim, z,y,x,3 / \*batchdim, y,x,2.
             Values should be in [-1, 1.]
         input_shape
             Used in the adjoint. The z,y,x shape of the domain of the operator.
@@ -239,7 +225,7 @@ class GridSamplingOp(LinearOperator):
             )
 
         #   The gridsample operator only works for real data, thus we handle complex inputs as an additional channel
-        x_real = torch.view_as_real(x).moveaxis(-1, -dim - 1) if x.is_complex() else x
+        x_real = rearrange(torch.view_as_real(x), '... real_imag  -> real_imag ...') if x.is_complex() else x
         shape_grid_batch = self.grid.shape[: -dim - 1]  # the batch dimensions of grid
         n_batchdim = len(shape_grid_batch)
         shape_x_batch = x_real.shape[:n_batchdim]  # the batch dimensions of the input
@@ -267,7 +253,7 @@ class GridSamplingOp(LinearOperator):
         # .. and reshape back.
         result = sampled.reshape(*shape_batch, *shape_channels, *sampled.shape[-dim:])
         if x.is_complex():
-            result = torch.view_as_complex(result.moveaxis(-dim - 1, -1).contiguous())
+            result = torch.view_as_complex(rearrange(result, 'real_imag ... -> ... real_imag').contiguous())
         return (result,)
 
     def _forward_implementation(

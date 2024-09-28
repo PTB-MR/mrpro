@@ -1,24 +1,6 @@
 """Protocol for KData."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from __future__ import annotations
-
-from typing import Literal
-from typing import Protocol
-from typing import Self
+from typing import Literal, Protocol, Self
 
 import torch
 from mrpro.data.KHeader import KHeader
@@ -31,10 +13,11 @@ class _KDataProtocol(Protocol):
     Note that the actual KData class can have more properties and methods than those defined here.
 
     If you want to use a property or method of KData in a new KDataMixin class,
-    you must add it to this Protocol to make sure that the type hinting works.
+    you must add it to this Protocol to make sure that the type hinting works [PRO]_.
 
-    For more information about Protocols see:
-    https://typing.readthedocs.io/en/latest/spec/protocol.html#protocols
+    References
+    ----------
+    .. [PRO] Protocols https://typing.readthedocs.io/en/latest/spec/protocol.html#protocols
     """
 
     @property
