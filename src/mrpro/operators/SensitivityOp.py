@@ -29,11 +29,11 @@ class SensitivityOp(LinearOperator):
         Parameters
         ----------
         img
-            image data tensor with dimensions (other 1 z y x).
+            image data tensor with dimensions (... other 1 z y x).
 
         Returns
         -------
-            image data tensor with dimensions (other coils z y x).
+            image data tensor with dimensions (... other coils z y x).
         """
         return (self.csm_tensor * img,)
 
@@ -43,10 +43,10 @@ class SensitivityOp(LinearOperator):
         Parameters
         ----------
         img
-            image data tensor with dimensions (other coils z y x).
+            image data tensor with dimensions (... other coils z y x).
 
         Returns
         -------
-            image data tensor with dimensions (other 1 z y x).
+            image data tensor with dimensions (... other 1 z y x).
         """
         return ((self.csm_tensor.conj() * img).sum(-4, keepdim=True),)

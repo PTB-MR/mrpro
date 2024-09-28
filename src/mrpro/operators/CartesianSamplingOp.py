@@ -47,23 +47,23 @@ class CartesianSamplingOp(LinearOperator):
             kx_idx = ktraj_tensor[-1, ...].round().to(dtype=torch.int64) + sorted_grid_shape.x // 2
         else:
             sorted_grid_shape.x = ktraj_tensor.shape[-1]
-            kx_idx = repeat(torch.arange(ktraj_tensor.shape[-1]), 'k0->other k1 k2 k0', other=1, k2=1, k1=1)
+            kx_idx = repeat(torch.arange(ktraj_tensor.shape[-1]), 'k0 -> k1 k2 k0', k2=1, k1=1)
 
         if traj_type_kzyx[-2] == TrajType.ONGRID:  # ky
             ky_idx = ktraj_tensor[-2, ...].round().to(dtype=torch.int64) + sorted_grid_shape.y // 2
         else:
             sorted_grid_shape.y = ktraj_tensor.shape[-2]
-            ky_idx = repeat(torch.arange(ktraj_tensor.shape[-2]), 'k1->other k1 k2 k0', other=1, k2=1, k0=1)
+            ky_idx = repeat(torch.arange(ktraj_tensor.shape[-2]), 'k1 -> k1 k2 k0', k2=1, k0=1)
 
         if traj_type_kzyx[-3] == TrajType.ONGRID:  # kz
             kz_idx = ktraj_tensor[-3, ...].round().to(dtype=torch.int64) + sorted_grid_shape.z // 2
         else:
             sorted_grid_shape.z = ktraj_tensor.shape[-3]
-            kz_idx = repeat(torch.arange(ktraj_tensor.shape[-3]), 'k2->other k1 k2 k0', other=1, k1=1, k0=1)
+            kz_idx = repeat(torch.arange(ktraj_tensor.shape[-3]), 'k2 -> k1 k2 k0', k1=1, k0=1)
 
         # 1D indices into a flattened tensor.
         kidx = kz_idx * sorted_grid_shape.y * sorted_grid_shape.x + ky_idx * sorted_grid_shape.x + kx_idx
-        kidx = rearrange(kidx, '... kz ky kx -> ... 1 (kz ky kx)')
+        kidx = rearrange(kidx, '... k2 k1 k0 -> ... 1 (k2 k1 k0)')
         self.register_buffer('_fft_idx', kidx)
         # we can skip the indexing if the data is already sorted
         self._needs_indexing = not torch.all(torch.diff(kidx) == 1)
@@ -90,7 +90,7 @@ class CartesianSamplingOp(LinearOperator):
         if not self._needs_indexing:
             return (x,)
 
-        x_kflat = rearrange(x, '... coils k2_enc k1_enc k0_enc -> ... coils (k2_enc k1_enc k0_enc)')
+        x_kflat = rearrange(x, '... k2_enc k1_enc k0_enc -> ... (k2_enc k1_enc k0_enc)')
         # take_along_dim does broadcast, so no need for extending here
         x_indexed = torch.take_along_dim(x_kflat, self._fft_idx, dim=-1)
         # reshape to (... other coils, k2, k1, k0)
@@ -116,7 +116,7 @@ class CartesianSamplingOp(LinearOperator):
         if not self._needs_indexing:
             return (y,)
 
-        y_kflat = rearrange(y, '... coils k2 k1 k0 -> ... coils (k2 k1 k0)')
+        y_kflat = rearrange(y, '... k2 k1 k0 -> ... (k2 k1 k0)')
 
         # scatter does not broadcast, so we need to manually broadcast the indices
         broadcast_shape = torch.broadcast_shapes(self._fft_idx.shape[:-1], y_kflat.shape[:-1])

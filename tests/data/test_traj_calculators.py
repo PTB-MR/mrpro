@@ -3,7 +3,6 @@
 import numpy as np
 import pytest
 import torch
-from einops import repeat
 from mrpro.data import KData
 from mrpro.data.enums import AcqFlags
 from mrpro.data.traj_calculators import (
@@ -25,7 +24,7 @@ def valid_rad2d_kheader(monkeypatch, random_kheader):
     n_k0 = 256
     n_k1 = 10
     n_k2 = 1
-    n_other = (2,1)
+    n_other = (2, 1)
 
     # List of k1 indices in the shape (*other, 1, k1)
     idx_k1 = torch.arange(n_k1, dtype=torch.int32).repeat(*n_other, 1, 1)
@@ -49,7 +48,7 @@ def radial2D_traj_shape(valid_rad2d_kheader):
     n_k0 = valid_rad2d_kheader.acq_info.number_of_samples[0, 0, 0, 0]
     n_k1 = valid_rad2d_kheader.acq_info.idx.k1.shape[-1]
     n_k2 = 1
-    n_other = (1,1)
+    n_other = (1, 1)
     return (
         torch.Size([*n_other, 1, 1, 1]),
         torch.Size([*n_other, n_k2, n_k1, n_k0]),
@@ -74,8 +73,8 @@ def valid_rpe_kheader(monkeypatch, random_kheader):
     n_k0 = 200
     n_k1 = 20
     n_k2 = 10
-    
-    n_other= (1,1)
+
+    n_other = (1, 1)
 
     # List of k1 and k2 indices in the shape (other, k2, k1)
     k1 = torch.linspace(0, n_k1 - 1, n_k1, dtype=torch.int32)
@@ -102,7 +101,7 @@ def rpe_traj_shape(valid_rpe_kheader):
     n_k0 = valid_rpe_kheader.acq_info.number_of_samples[0, 0, 0, 0]
     n_k1 = valid_rpe_kheader.acq_info.idx.k1.shape[-1]
     n_k2 = valid_rpe_kheader.acq_info.idx.k1.shape[-2]
-    n_other = (1,1)
+    n_other = (1, 1)
     return (
         torch.Size([*n_other, n_k2, n_k1, 1]),
         torch.Size([*n_other, n_k2, n_k1, 1]),
@@ -131,11 +130,10 @@ def test_KTrajectoryRpe_uniform(valid_rpe_kheader):
         shift_between_rpe_lines=torch.tensor([0]),
     )
     trajectory2 = trajectory2_calculator(valid_rpe_kheader)
-    
-    
-    torch.testing.assert_close(trajectory1.kx[:,:, : n_rpe_lines // 2, :, :], trajectory2.kx[:,:, ::2, :, :])
-    torch.testing.assert_close(trajectory1.ky[:,:, : n_rpe_lines // 2, :, :], trajectory2.ky[:,:, ::2, :, :])
-    torch.testing.assert_close(trajectory1.kz[:,:, : n_rpe_lines // 2, :, :], trajectory2.kz[:,:, ::2, :, :])
+
+    torch.testing.assert_close(trajectory1.kx[:, :, : n_rpe_lines // 2, :, :], trajectory2.kx[:, :, ::2, :, :])
+    torch.testing.assert_close(trajectory1.ky[:, :, : n_rpe_lines // 2, :, :], trajectory2.ky[:, :, ::2, :, :])
+    torch.testing.assert_close(trajectory1.kz[:, :, : n_rpe_lines // 2, :, :], trajectory2.kz[:, :, ::2, :, :])
 
 
 def test_KTrajectoryRpe_shift(valid_rpe_kheader):
@@ -164,16 +162,15 @@ def valid_cartesian_kheader(monkeypatch, random_kheader):
     n_k0 = 200
     n_k1 = 20
     n_k2 = 10
-    n_other = (2,2)
+    n_other = (2, 2)
 
     # List of k1 and k2 indices in the shape (other, k2, k1)
     k1 = torch.linspace(0, n_k1 - 1, n_k1, dtype=torch.int32)
     k2 = torch.linspace(0, n_k2 - 1, n_k2, dtype=torch.int32)
     idx_k1, idx_k2 = torch.meshgrid(k1, k2, indexing='xy')
-    idx_k1 = idx_k1.reshape(n_k2, n_k1)).repeat(*n_other, 1, 1)
-    idx_k2 = torch.reshape(n_k2, n_k1)).repeat(*n_other, 1, 1)
-    
-  
+    idx_k1 = idx_k1.reshape(n_k2, n_k1).repeat(*n_other, 1, 1)
+    idx_k2 = idx_k2.reshape(n_k2, n_k1).repeat(*n_other, 1, 1)
+
     # Set parameters for trajectory (AcqInfo is of shape (*other k2 k1 dim=1 or 3))
     monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1)[..., None] + n_k0)
     monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1)[..., None] + n_k0 // 2)
@@ -189,10 +186,10 @@ def valid_cartesian_kheader(monkeypatch, random_kheader):
 
 def cartesian_traj_shape(valid_cartesian_kheader):
     """Expected shape of trajectory based on KHeader."""
-    n_k0 = valid_cartesian_kheader.acq_info.number_of_samples[0,0,0,0]
+    n_k0 = valid_cartesian_kheader.acq_info.number_of_samples[0, 0, 0, 0]
     n_k1 = valid_cartesian_kheader.acq_info.idx.k1.shape[-1]
     n_k2 = valid_cartesian_kheader.acq_info.idx.k1.shape[-2]
-    n_other = (1,1)  # trajectory along other is the same
+    n_other = (1, 1)  # trajectory along other is the same
     return (torch.Size([*n_other, n_k2, 1, 1]), torch.Size([*n_other, 1, n_k1, 1]), torch.Size([*n_other, 1, 1, n_k0]))
 
 
