@@ -1,4 +1,4 @@
-"""Base Class (Elemetary)(Proximable)Functional and (Proximable)SeparableSumFunctionals."""
+"""Base Class (Elemetary)(Proximable)Functional and (Proximable)StackedFunctionals."""
 
 from __future__ import annotations
 
@@ -35,21 +35,21 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
             return
         raise ValueError(message)
 
-    def __and__(self, other: Functional) -> SeparableSumFunctionals[torch.Tensor, torch.Tensor]:
-        """Create a SeparableSumFunctionals object from two functionals.
+    def __or__(self, other: Functional) -> StackedFunctionals[torch.Tensor, torch.Tensor]:
+        """Create a StackedFunctionals object from two functionals.
 
         Parameters
         ----------
         other
-            second functional to be summed
+            second functional to be stacked
 
         Returns
         -------
-            SeparableSumFunctionals object of the two functionals
+            StackedFunctionals object
         """
         if not isinstance(other, Functional):
             return NotImplemented  # type: ignore[unreachable]
-        return SeparableSumFunctionals(self, other)
+        return StackedFunctionals(self, other)
 
 
 class ElementaryFunctional(Functional):
@@ -184,31 +184,28 @@ class ProximableFunctional(Functional, ABC):
         return (x - sigma * self.prox(x / sigma, 1 / sigma)[0],)
 
     @overload
-    def __and__(self, other: ProximableFunctional) -> SeparableSumProximableFunctionals[torch.Tensor, torch.Tensor]: ...
+    def __or__(self, other: ProximableFunctional) -> StackedProximableFunctionals[torch.Tensor, torch.Tensor]: ...
     @overload
-    def __and__(self, other: Functional) -> SeparableSumFunctionals[torch.Tensor, torch.Tensor]: ...
+    def __or__(self, other: Functional) -> StackedFunctionals[torch.Tensor, torch.Tensor]: ...
 
-    def __and__(
+    def __or__(
         self, other: ProximableFunctional | Functional
-    ) -> (
-        SeparableSumProximableFunctionals[torch.Tensor, torch.Tensor]
-        | SeparableSumFunctionals[torch.Tensor, torch.Tensor]
-    ):
-        """Create a SeparableSumFunctionals object from two proximable functionals.
+    ) -> StackedProximableFunctionals[torch.Tensor, torch.Tensor] | StackedFunctionals[torch.Tensor, torch.Tensor]:
+        """Create a StackedFunctionals object from two proximable functionals.
 
         Parameters
         ----------
         other
-            second functional to be summed
+            second functional to be stacked
 
         Returns
         -------
-            SeparableSumFunctionals object of the two functionals
+            StackedFunctionals object
         """
         if isinstance(other, ProximableFunctional):
-            return SeparableSumProximableFunctionals(self, other)
+            return StackedProximableFunctionals(self, other)
         if isinstance(other, Functional):
-            return SeparableSumFunctionals(self, other)
+            return StackedFunctionals(self, other)
         else:
             return NotImplemented  # type: ignore[unreachable]
 
@@ -228,24 +225,21 @@ class ElementaryProximableFunctional(ElementaryFunctional, ProximableFunctional)
 Tp = TypeVarTuple('Tp')
 
 
-class SeparableSumFunctionals(Operator[*Tp, tuple[torch.Tensor]]):
-    """A class to sum multiple functionals together.
+class StackedFunctionals(Operator[*Tp, tuple[torch.Tensor]]):
+    """A class to stack multiple functionals together.
 
-    This is a separable sum of the functionals, i.e., the functionals are applied to the inputs
-    and the results are summed.
-
-    `SeparableSumFunctionals(f0, f1, f2, ...)(x0, x1, x2, ...) = f0(x0) + f1(x1) + f2(x2) + ...`
+    This is a separable sum of the functionals. The forward method returns the sum of the functionals.
     """
 
     @overload
-    def __init__(self: SeparableSumFunctionals[torch.Tensor], f0: Functional, /): ...
+    def __init__(self: StackedFunctionals[torch.Tensor], f0: Functional, /): ...
 
     @overload
-    def __init__(self: SeparableSumFunctionals[torch.Tensor, torch.Tensor], f0: Functional, f1: Functional, /): ...
+    def __init__(self: StackedFunctionals[torch.Tensor, torch.Tensor], f0: Functional, f1: Functional, /): ...
 
     @overload
     def __init__(
-        self: SeparableSumFunctionals[torch.Tensor, torch.Tensor, torch.Tensor],
+        self: StackedFunctionals[torch.Tensor, torch.Tensor, torch.Tensor],
         f0: Functional,
         f1: Functional,
         f2: Functional,
@@ -254,7 +248,7 @@ class SeparableSumFunctionals(Operator[*Tp, tuple[torch.Tensor]]):
 
     @overload
     def __init__(
-        self: SeparableSumFunctionals[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
+        self: StackedFunctionals[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
         f0: Functional,
         f1: Functional,
         f2: Functional,
@@ -264,7 +258,7 @@ class SeparableSumFunctionals(Operator[*Tp, tuple[torch.Tensor]]):
 
     @overload
     def __init__(
-        self: SeparableSumFunctionals[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
+        self: StackedFunctionals[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
         f0: Functional,
         f1: Functional,
         f2: Functional,
@@ -274,22 +268,22 @@ class SeparableSumFunctionals(Operator[*Tp, tuple[torch.Tensor]]):
     ): ...
 
     @overload
-    def __init__(self: SeparableSumFunctionals, *funtionals: Functional): ...
+    def __init__(self: StackedFunctionals, *funtionals: Functional): ...
 
-    def __init__(self: SeparableSumFunctionals[*Tp], *functionals: Functional) -> None:
-        """Initialize the SeparableSumFunctionals object.
+    def __init__(self: StackedFunctionals[*Tp], *functionals: Functional) -> None:
+        """Initialize the StackedFunctionals object.
 
         Parameters
         ----------
         functionals
-            The functionals to be summed.
+            The functionals to be stacked.
         """
         super().__init__()
         if not len(functionals):
             raise ValueError('At least one functional is required')
         self.functionals = functionals
 
-    def forward(self: SeparableSumFunctionals[*Tp], *x: *Tp) -> tuple[torch.Tensor,]:
+    def forward(self: StackedFunctionals[*Tp], *x: *Tp) -> tuple[torch.Tensor,]:
         """Apply the functionals to the inputs and return the sum of the results.
 
         Parameters
@@ -314,70 +308,61 @@ class SeparableSumFunctionals(Operator[*Tp, tuple[torch.Tensor]]):
         return len(self.functionals)
 
     @overload
-    def __and__(
-        self: SeparableSumFunctionals[*Tp], other: Functional
-    ) -> SeparableSumFunctionals[*Tp, torch.Tensor]: ...
+    def __or__(self: StackedFunctionals[*Tp], other: Functional) -> StackedFunctionals[*Tp, torch.Tensor]: ...
 
     @overload
-    def __and__(
-        self: SeparableSumFunctionals[*Tp], other: SeparableSumFunctionals[torch.Tensor]
-    ) -> SeparableSumFunctionals[*Tp, torch.Tensor]: ...
+    def __or__(
+        self: StackedFunctionals[*Tp], other: StackedFunctionals[torch.Tensor]
+    ) -> StackedFunctionals[*Tp, torch.Tensor]: ...
 
     @overload
-    def __and__(
-        self: SeparableSumFunctionals[*Tp], other: SeparableSumFunctionals[torch.Tensor, torch.Tensor]
-    ) -> SeparableSumFunctionals[*Tp, torch.Tensor, torch.Tensor]: ...
+    def __or__(
+        self: StackedFunctionals[*Tp], other: StackedFunctionals[torch.Tensor, torch.Tensor]
+    ) -> StackedFunctionals[*Tp, torch.Tensor, torch.Tensor]: ...
 
     @overload
-    def __and__(
-        self: SeparableSumFunctionals[*Tp], other: SeparableSumFunctionals[torch.Tensor, torch.Tensor, torch.Tensor]
-    ) -> SeparableSumFunctionals[*Tp, torch.Tensor, torch.Tensor, torch.Tensor]: ...
+    def __or__(
+        self: StackedFunctionals[*Tp], other: StackedFunctionals[torch.Tensor, torch.Tensor, torch.Tensor]
+    ) -> StackedFunctionals[*Tp, torch.Tensor, torch.Tensor, torch.Tensor]: ...
 
     @overload
-    def __and__(
-        self: SeparableSumFunctionals[*Tp],
-        other: SeparableSumFunctionals[
-            torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, *tuple[torch.Tensor, ...]
-        ],
-    ) -> SeparableSumFunctionals[*tuple[torch.Tensor, ...]]: ...
+    def __or__(
+        self: StackedFunctionals[*Tp],
+        other: StackedFunctionals[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, *tuple[torch.Tensor, ...]],
+    ) -> StackedFunctionals[*tuple[torch.Tensor, ...]]: ...
 
-    def __and__(
-        self: SeparableSumFunctionals[*Tp], other: Functional | SeparableSumFunctionals
-    ) -> SeparableSumFunctionals:
-        """Sum separable functionals."""
-        if isinstance(other, SeparableSumFunctionals):
-            return SeparableSumFunctionals(*self.functionals, *other.functionals)
+    def __or__(self: StackedFunctionals[*Tp], other: Functional | StackedFunctionals) -> StackedFunctionals:
+        """Stack functionals."""
+        if isinstance(other, StackedFunctionals):
+            return StackedFunctionals(*self.functionals, *other.functionals)
 
         elif isinstance(other, Functional):
-            return SeparableSumFunctionals(*self.functionals, other)
+            return StackedFunctionals(*self.functionals, other)
         else:
             return NotImplemented  # type: ignore[unreachable]
 
-    def __rand__(self: SeparableSumFunctionals[*Tp], other: Functional) -> SeparableSumFunctionals[torch.Tensor, *Tp]:
-        """Sum separable functionals."""
+    def __ror__(self: StackedFunctionals[*Tp], other: Functional) -> StackedFunctionals[torch.Tensor, *Tp]:
+        """Stack functionals."""
         if isinstance(other, Functional):
-            return cast(SeparableSumFunctionals[torch.Tensor, *Tp], SeparableSumFunctionals(other, *self.functionals))
+            return cast(StackedFunctionals[torch.Tensor, *Tp], StackedFunctionals(other, *self.functionals))
         else:
             return NotImplemented  # type: ignore[unreachable]
 
 
-class SeparableSumProximableFunctionals(SeparableSumFunctionals[*Tp]):
-    """Separable Sum of Proximable Functionals.
+class StackedProximableFunctionals(StackedFunctionals[*Tp]):
+    """Stacked Proximable Functionals.
 
-    This is a separable sum of the proximable functionals, i.e., the functionals are applied to the inputs
-    and the results are summed.
-
-    `SeparableSumProximableFunctionals(f0, f1, f2, ...)(x0, x1, x2, ...) = f0(x0) + f1(x1) + f2(x2) + ...`
+    This is a separable sum of the functionals. The forward method returns the sum of the functionals.
     """
 
     functionals: tuple[ProximableFunctional, ...]
 
     @overload
-    def __init__(self: SeparableSumProximableFunctionals[torch.Tensor], f0: ProximableFunctional, /): ...
+    def __init__(self: StackedProximableFunctionals[torch.Tensor], f0: ProximableFunctional, /): ...
 
     @overload
     def __init__(
-        self: SeparableSumProximableFunctionals[torch.Tensor, torch.Tensor],
+        self: StackedProximableFunctionals[torch.Tensor, torch.Tensor],
         f0: ProximableFunctional,
         f1: ProximableFunctional,
         /,
@@ -385,7 +370,7 @@ class SeparableSumProximableFunctionals(SeparableSumFunctionals[*Tp]):
 
     @overload
     def __init__(
-        self: SeparableSumProximableFunctionals[torch.Tensor, torch.Tensor, torch.Tensor],
+        self: StackedProximableFunctionals[torch.Tensor, torch.Tensor, torch.Tensor],
         f0: ProximableFunctional,
         f1: ProximableFunctional,
         f2: ProximableFunctional,
@@ -394,7 +379,7 @@ class SeparableSumProximableFunctionals(SeparableSumFunctionals[*Tp]):
 
     @overload
     def __init__(
-        self: SeparableSumProximableFunctionals[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
+        self: StackedProximableFunctionals[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
         f0: ProximableFunctional,
         f1: ProximableFunctional,
         f2: ProximableFunctional,
@@ -404,7 +389,7 @@ class SeparableSumProximableFunctionals(SeparableSumFunctionals[*Tp]):
 
     @overload
     def __init__(
-        self: SeparableSumProximableFunctionals[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
+        self: StackedProximableFunctionals[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
         f0: ProximableFunctional,
         f1: ProximableFunctional,
         f2: ProximableFunctional,
@@ -414,20 +399,20 @@ class SeparableSumProximableFunctionals(SeparableSumFunctionals[*Tp]):
     ): ...
 
     @overload
-    def __init__(self: SeparableSumProximableFunctionals, *funtionals: ProximableFunctional): ...
+    def __init__(self: StackedProximableFunctionals, *funtionals: ProximableFunctional): ...
 
-    def __init__(self: SeparableSumProximableFunctionals[*Tp], *functionals: ProximableFunctional) -> None:
-        """Initialize the SeparableSumProximableFunctionals object.
+    def __init__(self: StackedProximableFunctionals[*Tp], *functionals: ProximableFunctional) -> None:
+        """Initialize the StackedProximableFunctionals object.
 
         Parameters
         ----------
         functionals
-            The functionals to be summed.
+            The functionals to be stacked.
         """
-        super(SeparableSumFunctionals, self).__init__()
+        super(StackedFunctionals, self).__init__()
         self.functionals = functionals
 
-    def prox(self: SeparableSumProximableFunctionals[*Tp], *x: *Tp, sigma: float | torch.Tensor = 1) -> tuple[*Tp]:
+    def prox(self: StackedProximableFunctionals[*Tp], *x: *Tp, sigma: float | torch.Tensor = 1) -> tuple[*Tp]:
         """Apply the proximal operators of the functionals to the inputs.
 
         Parameters
@@ -447,7 +432,7 @@ class SeparableSumProximableFunctionals(SeparableSumFunctionals[*Tp]):
         return cast(tuple[*Tp], ret)
 
     def prox_convex_conj(
-        self: SeparableSumProximableFunctionals[*Tp], *x: *Tp, sigma: float | torch.Tensor = 1
+        self: StackedProximableFunctionals[*Tp], *x: *Tp, sigma: float | torch.Tensor = 1
     ) -> tuple[*Tp]:
         """Apply the proximal operators of the convex conjugate of the functionals to the inputs.
 
@@ -469,97 +454,91 @@ class SeparableSumProximableFunctionals(SeparableSumFunctionals[*Tp]):
         return cast(tuple[*Tp], ret)
 
     @overload  # type: ignore[override]
-    def __and__(
-        self: SeparableSumProximableFunctionals[*Tp], other: ProximableFunctional
-    ) -> SeparableSumProximableFunctionals[*Tp, torch.Tensor]: ...
+    def __or__(
+        self: StackedProximableFunctionals[*Tp], other: ProximableFunctional
+    ) -> StackedProximableFunctionals[*Tp, torch.Tensor]: ...
 
     @overload
-    def __and__(
-        self: SeparableSumProximableFunctionals[*Tp], other: SeparableSumProximableFunctionals[torch.Tensor]
-    ) -> SeparableSumProximableFunctionals[*Tp, torch.Tensor]: ...
+    def __or__(
+        self: StackedProximableFunctionals[*Tp], other: StackedProximableFunctionals[torch.Tensor]
+    ) -> StackedProximableFunctionals[*Tp, torch.Tensor]: ...
 
     @overload
-    def __and__(
-        self: SeparableSumProximableFunctionals[*Tp],
-        other: SeparableSumProximableFunctionals[torch.Tensor, torch.Tensor],
-    ) -> SeparableSumProximableFunctionals[*Tp, torch.Tensor, torch.Tensor]: ...
+    def __or__(
+        self: StackedProximableFunctionals[*Tp], other: StackedProximableFunctionals[torch.Tensor, torch.Tensor]
+    ) -> StackedProximableFunctionals[*Tp, torch.Tensor, torch.Tensor]: ...
 
     @overload
-    def __and__(
-        self: SeparableSumProximableFunctionals[*Tp],
-        other: SeparableSumProximableFunctionals[torch.Tensor, torch.Tensor, torch.Tensor],
-    ) -> SeparableSumProximableFunctionals[*Tp, torch.Tensor, torch.Tensor, torch.Tensor]: ...
+    def __or__(
+        self: StackedProximableFunctionals[*Tp],
+        other: StackedProximableFunctionals[torch.Tensor, torch.Tensor, torch.Tensor],
+    ) -> StackedProximableFunctionals[*Tp, torch.Tensor, torch.Tensor, torch.Tensor]: ...
 
     @overload
-    def __and__(
-        self: SeparableSumProximableFunctionals,
-        other: SeparableSumProximableFunctionals[
+    def __or__(
+        self: StackedProximableFunctionals,
+        other: StackedProximableFunctionals[
             torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, *tuple[torch.Tensor, ...]
         ],
-    ) -> SeparableSumProximableFunctionals[*tuple[torch.Tensor, ...]]: ...
+    ) -> StackedProximableFunctionals[*tuple[torch.Tensor, ...]]: ...
 
     @overload
-    def __and__(
-        self: SeparableSumProximableFunctionals[*Tp], other: Functional
-    ) -> SeparableSumFunctionals[*Tp, torch.Tensor]: ...
+    def __or__(self: StackedProximableFunctionals[*Tp], other: Functional) -> StackedFunctionals[*Tp, torch.Tensor]: ...
 
     @overload
-    def __and__(
-        self: SeparableSumProximableFunctionals[*Tp], other: SeparableSumFunctionals[torch.Tensor]
-    ) -> SeparableSumFunctionals[*Tp, torch.Tensor]: ...
+    def __or__(
+        self: StackedProximableFunctionals[*Tp], other: StackedFunctionals[torch.Tensor]
+    ) -> StackedFunctionals[*Tp, torch.Tensor]: ...
 
     @overload
-    def __and__(
-        self: SeparableSumProximableFunctionals[*Tp], other: SeparableSumFunctionals[torch.Tensor, torch.Tensor]
-    ) -> SeparableSumFunctionals[*Tp, torch.Tensor, torch.Tensor]: ...
+    def __or__(
+        self: StackedProximableFunctionals[*Tp], other: StackedFunctionals[torch.Tensor, torch.Tensor]
+    ) -> StackedFunctionals[*Tp, torch.Tensor, torch.Tensor]: ...
 
     @overload
-    def __and__(
-        self: SeparableSumProximableFunctionals[*Tp],
-        other: SeparableSumFunctionals[torch.Tensor, torch.Tensor, torch.Tensor],
-    ) -> SeparableSumFunctionals[*Tp, torch.Tensor, torch.Tensor, torch.Tensor]: ...
+    def __or__(
+        self: StackedProximableFunctionals[*Tp], other: StackedFunctionals[torch.Tensor, torch.Tensor, torch.Tensor]
+    ) -> StackedFunctionals[*Tp, torch.Tensor, torch.Tensor, torch.Tensor]: ...
 
     @overload
-    def __and__(
-        self: SeparableSumProximableFunctionals[*Tp],
-        other: SeparableSumFunctionals[
-            torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, *tuple[torch.Tensor, ...]
-        ],
-    ) -> SeparableSumFunctionals[*tuple[torch.Tensor, ...]]: ...
+    def __or__(
+        self: StackedProximableFunctionals[*Tp],
+        other: StackedFunctionals[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, *tuple[torch.Tensor, ...]],
+    ) -> StackedFunctionals[*tuple[torch.Tensor, ...]]: ...
 
-    def __and__(  # type: ignore[misc]
-        self: SeparableSumProximableFunctionals[*Tp],
-        other: Functional | SeparableSumFunctionals | ProximableFunctional | SeparableSumProximableFunctionals,
-    ) -> SeparableSumProximableFunctionals | SeparableSumFunctionals:
-        """Sum separable functionals."""
-        if isinstance(other, SeparableSumProximableFunctionals):
-            return SeparableSumProximableFunctionals(*self.functionals, *other.functionals)
+    def __or__(  # type: ignore[misc]
+        self: StackedProximableFunctionals[*Tp],
+        other: Functional | StackedFunctionals | ProximableFunctional | StackedProximableFunctionals,
+    ) -> StackedProximableFunctionals | StackedFunctionals:
+        """Stack functionals."""
+        if isinstance(other, StackedProximableFunctionals):
+            return StackedProximableFunctionals(*self.functionals, *other.functionals)
         if isinstance(other, ProximableFunctional):
-            return SeparableSumProximableFunctionals(*self.functionals, other)
-        if isinstance(other, SeparableSumFunctionals):
-            return SeparableSumFunctionals(*self.functionals, *other.functionals)
+            return StackedProximableFunctionals(*self.functionals, other)
+        if isinstance(other, StackedFunctionals):
+            return StackedFunctionals(*self.functionals, *other.functionals)
         if isinstance(other, Functional):
-            return SeparableSumFunctionals(*self.functionals, other)
+            return StackedFunctionals(*self.functionals, other)
 
         return NotImplemented  # type: ignore[unreachable]
 
     @overload
-    def __rand__(
-        self: SeparableSumProximableFunctionals[*Tp], other: ProximableFunctional
-    ) -> SeparableSumProximableFunctionals[torch.Tensor, *Tp]: ...
+    def __ror__(
+        self: StackedProximableFunctionals[*Tp], other: ProximableFunctional
+    ) -> StackedProximableFunctionals[torch.Tensor, *Tp]: ...
     @overload
-    def __rand__(
-        self: SeparableSumProximableFunctionals[*Tp], other: Functional
-    ) -> SeparableSumFunctionals[torch.Tensor, *Tp]: ...
-    def __rand__(
-        self: SeparableSumProximableFunctionals[*Tp], other: Functional | ProximableFunctional
-    ) -> SeparableSumProximableFunctionals[torch.Tensor, *Tp] | SeparableSumFunctionals[torch.Tensor, *Tp]:
-        """Sum separable functionals."""
+    def __ror__(
+        self: StackedProximableFunctionals[*Tp], other: Functional
+    ) -> StackedFunctionals[torch.Tensor, *Tp]: ...
+    def __ror__(
+        self: StackedProximableFunctionals[*Tp], other: Functional | ProximableFunctional
+    ) -> StackedProximableFunctionals[torch.Tensor, *Tp] | StackedFunctionals[torch.Tensor, *Tp]:
+        """Stack functionals."""
         if isinstance(other, ProximableFunctional):
-            return SeparableSumProximableFunctionals(other, *self.functionals)
+            return StackedProximableFunctionals(other, *self.functionals)
 
         if isinstance(other, Functional):
-            return SeparableSumFunctionals(other, *self.functionals)
+            return StackedFunctionals(other, *self.functionals)
         else:
             return NotImplemented  # type: ignore[unreachable]
 
