@@ -206,7 +206,7 @@ jobs:
       - run: echo '${{ github.event.number }}'
 
       - name: Update PR with link to summary
-        uses: edumserrano/find-create-or-update-comment@v2
+        uses: edumserrano/find-create-or-update-comment@v3
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body-includes: '<!-- ${{ github.event.number }} -->'
