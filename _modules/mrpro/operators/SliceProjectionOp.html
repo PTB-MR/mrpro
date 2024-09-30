@@ -97,6 +97,13 @@
 <span class="kn">from</span> <span class="nn">mrpro.utils.slice_profiles</span> <span class="kn">import</span> <span class="n">SliceSmoothedRectangular</span>
 
 
+<span class="k">class</span> <span class="nc">_MatrixMultiplicationCtx</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">FunctionCtx</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Autograd context for matrix multiplication, used for type hinting.&quot;&quot;&quot;</span>
+
+    <span class="n">x_is_complex</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">saved_tensors</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span>
+
+
 <span class="k">class</span> <span class="nc">_MatrixMultiplication</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper for matrix multiplication.</span>
 
@@ -107,9 +114,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">FunctionCtx</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">matrix</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">matrix_adjoint</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-        <span class="n">ctx</span><span class="o">.</span><span class="n">save_for_backward</span><span class="p">(</span><span class="n">matrix_adjoint</span><span class="p">)</span>
-        <span class="n">ctx</span><span class="o">.</span><span class="n">x_is_complex</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">is_complex</span><span class="p">()</span>  <span class="c1"># type: ignore[attr-defined]</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">matrix</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">matrix_adjoint</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>  <span class="c1"># noqa: ARG004</span>
         <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">is_complex</span><span class="p">()</span> <span class="o">==</span> <span class="n">matrix</span><span class="o">.</span><span class="n">is_complex</span><span class="p">():</span>
             <span class="k">return</span> <span class="n">matrix</span> <span class="o">@</span> <span class="n">x</span>
         <span class="c1"># required for sparse matrices to support mixed complex/real multiplication</span>
@@ -119,9 +124,19 @@
             <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">complex</span><span class="p">(</span><span class="n">matrix</span><span class="o">.</span><span class="n">real</span> <span class="o">@</span> <span class="n">x</span><span class="p">,</span> <span class="n">matrix</span><span class="o">.</span><span class="n">imag</span> <span class="o">@</span> <span class="n">x</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">FunctionCtx</span><span class="p">,</span> <span class="o">*</span><span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
-        <span class="p">(</span><span class="n">matrix_adjoint</span><span class="p">,)</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">saved_tensors</span>  <span class="c1"># type: ignore[attr-defined]</span>
-        <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">x_is_complex</span><span class="p">:</span>  <span class="c1"># type: ignore[attr-defined]</span>
+    <span class="k">def</span> <span class="nf">setup_context</span><span class="p">(</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">_MatrixMultiplicationCtx</span><span class="p">,</span>
+        <span class="n">inputs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span>
+        <span class="n">outputs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span>  <span class="c1"># noqa: ARG004</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">matrix_adjoint</span> <span class="o">=</span> <span class="n">inputs</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">x_is_complex</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">is_complex</span><span class="p">()</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">save_for_backward</span><span class="p">(</span><span class="n">matrix_adjoint</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">_MatrixMultiplicationCtx</span><span class="p">,</span> <span class="o">*</span><span class="n">grad_output</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="p">(</span><span class="n">matrix_adjoint</span><span class="p">,)</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">saved_tensors</span>
+        <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">x_is_complex</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">matrix_adjoint</span><span class="o">.</span><span class="n">is_complex</span><span class="p">()</span> <span class="o">==</span> <span class="n">grad_output</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">is_complex</span><span class="p">():</span>
                 <span class="n">grad_x</span> <span class="o">=</span> <span class="n">matrix_adjoint</span> <span class="o">@</span> <span class="n">grad_output</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">elif</span> <span class="n">matrix_adjoint</span><span class="o">.</span><span class="n">is_complex</span><span class="p">():</span>
@@ -306,9 +321,9 @@
 
         <span class="c1"># For the (unusual case) of batched volumes, we will apply for each element in series</span>
         <span class="n">xflat</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">einops</span><span class="o">.</span><span class="n">rearrange</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;... x y z -&gt; (...) (x y z)&#39;</span><span class="p">))</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">_MatrixMultiplication</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">matrix_adjoint</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_range_shape</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xflat</span><span class="p">],</span> <span class="o">-</span><span class="mi">4</span>
-        <span class="p">)</span>
+        <span class="n">yl</span> <span class="o">=</span> <span class="p">[</span><span class="n">_MatrixMultiplication</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">matrix_adjoint</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xflat</span><span class="p">]</span>
+
+        <span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">el</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_range_shape</span><span class="p">)</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">yl</span><span class="p">],</span> <span class="o">-</span><span class="mi">4</span><span class="p">)</span>
         <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">],</span> <span class="o">*</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">],</span> <span class="o">*</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:])</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">y</span><span class="p">,)</span></div>
 
