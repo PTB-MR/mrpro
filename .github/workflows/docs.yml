@@ -192,15 +192,13 @@ jobs:
         if: github.event_name != 'pull_request'
 
       - name: Save Documentation
+        id: save_docu
         uses: actions/upload-artifact@v4
         with:
           name: Documentation
           path: docs/build/html/
 
-      - id: exp
-        uses: pl-strflt/job-summary-url-action@v1
-      - run: echo '${{ steps.exp.outputs.job_summary_url }}'
-        shell: bash
+      - run: echo '${{ steps.save_docu.outputs.artifact-url }}'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
