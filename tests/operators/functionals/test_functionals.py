@@ -97,7 +97,7 @@ def test_functional_prox_optimality(case: FunctionalTestCase):
     def prox_criterion(p):
         diff = x - p
         l2 = torch.sum((diff * diff.conj()).real, dim=functional.dim, keepdim=functional.keepdim)
-        return (functional(p)[0] + 1 / (2 * case.sigma) * l2).sum()
+        return (case.sigma * functional(p)[0] + 1 / 2 * l2).sum()
 
     for perturbation in (0, 1e-3, 0.1):
         p = (prox + perturbation * case.rng.rand_like(prox)).requires_grad_()

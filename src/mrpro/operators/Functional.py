@@ -36,7 +36,7 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
 class ElementaryFunctional(Functional):
     r"""Elementary functional base class.
 
-    An elementary functional is a functional that can be written as
+    Here, an 'elementary' functional is a functional that can be written as
     :math:`f(x) = \phi( weight ( x - target))`, returning a real value.
     It does not require another functional for initialization.
     """
@@ -119,15 +119,15 @@ class ProximableFunctional(Functional, ABC):
     r"""ProximableFunctional Base Class.
 
     A proximable functional is a functional :math:`f(x)` that has a prox implementation,
-    i.e. a function that solves the problem :math:`\min_x f(x) + 1/(2\sigma) ||x - y||^2`.
+    i.e. a function that yields :math:`argmin_x sigma f(x) + 1/2 ||x - y||^2`
+    and a prox_convex_conjugate, yielding the prox of the convex conjugate.
     """
 
     @abstractmethod
     def prox(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         r"""Apply proximal operator.
 
-        Applies :math:`prox_{\sigma f}(x) = argmin_{p} (f(p) + 1/(2*sigma) \|x-p\|^{2}`.
-        to a given `x`, i.e. finds `p`.
+        Yields :math:`prox_{\sigma f}(x) = argmin_{p} (sigma f(p) + 1/2 \|x-p\|^{2}` given `x` and `sigma`
 
         Parameters
         ----------
@@ -142,10 +142,10 @@ class ProximableFunctional(Functional, ABC):
         """
 
     def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
-        r"""Apply proximal of convex conjugate of functional.
+        r"""Apply proximal operator of convex conjugate of functional.
 
-        Applies :math:`prox_{\sigma f*}(x) = argmin_{p} (f(p) + 1/(2*sigma) \|x-p\|^{2}`,
-        where f* denotes the convex conjugate of f, to a given `x`, i.e. finds `p`.
+        Yields :math:`prox_{\sigma f*}(x) = argmin_{p} (sigma f*(p) + 1/2 \|x-p\|^{2}`,
+        where f* denotes the convex conjugate of f, given `x` and `sigma`.
 
         Parameters
         ----------
@@ -168,10 +168,10 @@ class ProximableFunctional(Functional, ABC):
 class ElementaryProximableFunctional(ElementaryFunctional, ProximableFunctional):
     r"""Elementary proximable functional base class.
 
-    An elementary functional is a functional that can be written as
+    Here, an *elementary* functional is a functional that can be written as
     :math:`f(x) = \phi( weight ( x - target))`, returning a real value.
     It does not require another functional for initialization.
 
     A proximable functional is a functional :math:`f(x)` that has a prox implementation,
-    i.e. a function that solves the problem :math:`\min_x f(x) + 1/(2\sigma) ||x - y||^2`.
+    i.e. a function that yields :math:`argmin_x sigma f(x) + 1/2 ||x - y||^2`.
     """
