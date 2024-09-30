@@ -12,12 +12,13 @@ import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
 import torch
 
 from mrpro.data import enums
-from mrpro.data.AcqInfo import AcqInfo, mm_to_m, ms_to_s
+from mrpro.data.AcqInfo import AcqInfo
 from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.TrajectoryDescription import TrajectoryDescription
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
+from mrpro.utils.unit_conversion import mm_to_m, ms_to_s
 
 if TYPE_CHECKING:
     # avoid circular imports by importing only when type checking

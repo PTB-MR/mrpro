@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Self, TypeVar
+from typing import Self
 
 import ismrmrd
 import numpy as np
@@ -10,19 +10,7 @@ import torch
 
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
-
-# Conversion functions for units
-T = TypeVar('T', float, torch.Tensor)
-
-
-def ms_to_s(ms: T) -> T:
-    """Convert ms to s."""
-    return ms / 1000
-
-
-def mm_to_m(m: T) -> T:
-    """Convert mm to m."""
-    return m / 1000
+from mrpro.utils.unit_conversion import mm_to_m
 
 
 @dataclass(slots=True)
