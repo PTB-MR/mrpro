@@ -197,27 +197,7 @@ jobs:
           name: Documentation
           path: docs/build/html/
 
-      - name: Get link to summary
-        id: exp
-        uses: pl-strflt/job-summary-url-action@v1
-        run: |
-          echo "${{ steps.exp.outputs.job_summary_url }}"
-          echo "SUMMARY_LINK=${{ steps.exp.outputs.job_summary_url }}" >> $GITHUB_OUTPUT
 
-      - name: Check summary link+
-        run: echo ${{ steps.exp.outputs.SUMMARY_LINK }}
-
-      - name: Update PR with link to summary
-        uses: edumserrano/find-create-or-update-comment@v2
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body-includes: '<!-- 100 -->'
-          comment-author: 'github-actions[bot]'
-          body: |
-            <!-- 100 -->
-            Don't forget to check the docu here:
-            ${{ steps.exp.outputs.SUMMARY_LINK }}
-          edit-mode: replace
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
