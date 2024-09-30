@@ -197,7 +197,12 @@ jobs:
           name: Documentation
           path: docs/build/html/
 
-
+      - name: Get link to summary
+        id: exp
+        uses: pl-strflt/job-summary-url-action@v1
+        run: |
+          echo "${{ steps.exp.outputs.job_summary_url }}"
+          echo "SUMMARY_LINK=${{ steps.exp.outputs.job_summary_url }}" >> $GITHUB_OUTPUT
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
