@@ -36,6 +36,7 @@
       MoveDataMixin
       QData
       QHeader
+      Rotation
       SpatialDimension
       TrajectoryDescription
    

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>mrpro.utils.Rotation &mdash; mrpro</title>
+  <title>mrpro.data.Rotation &mdash; mrpro</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=16f952a1" />
@@ -68,7 +68,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">mrpro.utils.Rotation</li>
+      <li class="breadcrumb-item active">mrpro.data.Rotation</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -77,7 +77,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for mrpro.utils.Rotation</h1><div class="highlight"><pre>
+  <h1>Source code for mrpro.data.Rotation</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;A pytorch implementation of scipy.spatial.transform.Rotation.</span>
 
 <span class="sd">A container for Rotations, that can be created from quaternions, euler angles, rotation vectors, rotation matrices,</span>
@@ -125,7 +125,7 @@
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Self</span><span class="p">,</span> <span class="n">overload</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Self</span><span class="p">,</span> <span class="n">overload</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">torch</span>
@@ -133,17 +133,7 @@
 <span class="kn">from</span> <span class="nn">scipy.spatial.transform</span> <span class="kn">import</span> <span class="n">Rotation</span> <span class="k">as</span> <span class="n">Rotation_scipy</span>
 
 <span class="kn">from</span> <span class="nn">mrpro.data.SpatialDimension</span> <span class="kn">import</span> <span class="n">SpatialDimension</span>
-
-<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">EllipsisType</span>
-    <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">SupportsIndex</span><span class="p">,</span> <span class="n">TypeAlias</span>
-
-    <span class="kn">from</span> <span class="nn">torch._C</span> <span class="kn">import</span> <span class="n">_NestedSequence</span>
-
-    <span class="c1"># This matches the torch.Tensor indexer typehint</span>
-    <span class="n">_IndexerTypeInner</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">slice</span> <span class="o">|</span> <span class="n">EllipsisType</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
-    <span class="n">_SingleIndexerType</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">SupportsIndex</span> <span class="o">|</span> <span class="n">_IndexerTypeInner</span> <span class="o">|</span> <span class="n">_NestedSequence</span><span class="p">[</span><span class="n">_IndexerTypeInner</span><span class="p">]</span>
-    <span class="n">IndexerType</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">_SingleIndexerType</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="n">_SingleIndexerType</span>
+<span class="kn">from</span> <span class="nn">mrpro.utils.typing</span> <span class="kn">import</span> <span class="n">IndexerType</span><span class="p">,</span> <span class="n">NestedSequence</span>
 
 <span class="n">AXIS_ORDER</span> <span class="o">=</span> <span class="s1">&#39;zyx&#39;</span>  <span class="c1"># This can be modified</span>
 <span class="n">QUAT_AXIS_ORDER</span> <span class="o">=</span> <span class="n">AXIS_ORDER</span> <span class="o">+</span> <span class="s1">&#39;w&#39;</span>  <span class="c1"># Do not modify</span>
@@ -332,9 +322,13 @@
 
 
 <div class="viewcode-block" id="Rotation">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation">[docs]</a>
 <span class="k">class</span> <span class="nc">Rotation</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A pytorch implementation of scipy.spatial.transform.Rotation.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A container for Rotations.</span>
+
+<span class="sd">    A pytorch implementation of scipy.spatial.transform.Rotation.</span>
+<span class="sd">    For more information see the scipy documentation:</span>
+<span class="sd">    https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.html</span>
 
 <span class="sd">    Differences compared to scipy.spatial.transform.Rotation:</span>
 
@@ -345,8 +339,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="Rotation.__init__">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.__init__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quaternions</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">_NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">copy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quaternions</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">copy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a new Rotation.</span>
 
 <span class="sd">        Instead of calling this method, also consider the different ``from_*`` class methods to construct a Rotation.</span>
@@ -396,9 +390,9 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span>
 
 <div class="viewcode-block" id="Rotation.from_quat">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.from_quat">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.from_quat">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_quat</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">quaternions</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">_NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_quat</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">quaternions</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize from quaternions.</span>
 
 <span class="sd">        3D rotations can be represented using unit-norm quaternions [QUAa]_.</span>
@@ -426,9 +420,9 @@
 
 
 <div class="viewcode-block" id="Rotation.from_matrix">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.from_matrix">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.from_matrix">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_matrix</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">matrix</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">_NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_matrix</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">matrix</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize from rotation matrix.</span>
 
 <span class="sd">        Rotations in 3 dimensions can be represented with 3 x 3 proper</span>
@@ -467,9 +461,9 @@
 
 
 <div class="viewcode-block" id="Rotation.from_rotvec">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.from_rotvec">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.from_rotvec">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_rotvec</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">rotvec</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">_NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_rotvec</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">rotvec</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize from rotation vector.</span>
 
 <span class="sd">        A rotation vector is a 3 dimensional vector which is co-directional to the</span>
@@ -504,9 +498,9 @@
 
 
 <div class="viewcode-block" id="Rotation.from_euler">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.from_euler">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.from_euler">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_euler</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">seq</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">angles</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">_NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span><span class="p">,</span> <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_euler</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">seq</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">angles</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span><span class="p">,</span> <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize from Euler angles.</span>
 
 <span class="sd">        Rotations in 3-D can be represented by a sequence of 3</span>
@@ -584,7 +578,7 @@
 
 
 <div class="viewcode-block" id="Rotation.from_davenport">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.from_davenport">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.from_davenport">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_davenport</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">axes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">order</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">angles</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Not implemented.&quot;&quot;&quot;</span>
@@ -592,7 +586,7 @@
 
 
 <div class="viewcode-block" id="Rotation.from_mrp">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.from_mrp">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.from_mrp">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_mrp</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mrp</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Not implemented.&quot;&quot;&quot;</span>
@@ -600,7 +594,7 @@
 
 
 <div class="viewcode-block" id="Rotation.as_quat">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.as_quat">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.as_quat">[docs]</a>
     <span class="k">def</span> <span class="nf">as_quat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">canonical</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Represent as quaternions.</span>
 
@@ -637,7 +631,7 @@
 
 
 <div class="viewcode-block" id="Rotation.as_matrix">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.as_matrix">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.as_matrix">[docs]</a>
     <span class="k">def</span> <span class="nf">as_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Represent as rotation matrix.</span>
 
@@ -662,7 +656,7 @@
 
 
 <div class="viewcode-block" id="Rotation.as_rotvec">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.as_rotvec">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.as_rotvec">[docs]</a>
     <span class="k">def</span> <span class="nf">as_rotvec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Represent as rotation vectors.</span>
 
@@ -701,7 +695,7 @@
 
 
 <div class="viewcode-block" id="Rotation.as_euler">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.as_euler">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.as_euler">[docs]</a>
     <span class="k">def</span> <span class="nf">as_euler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Represent as Euler angles.</span>
 
@@ -775,21 +769,21 @@
 
 
 <div class="viewcode-block" id="Rotation.as_davenport">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.as_davenport">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.as_davenport">[docs]</a>
     <span class="k">def</span> <span class="nf">as_davenport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">order</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Not implemented.&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
 <div class="viewcode-block" id="Rotation.as_mrp">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.as_mrp">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.as_mrp">[docs]</a>
     <span class="k">def</span> <span class="nf">as_mrp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Not implemented.&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
 <div class="viewcode-block" id="Rotation.concatenate">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.concatenate">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.concatenate">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">concatenate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">rotations</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Rotation</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Concatenate a sequence of `Rotation` objects into a single object.</span>
@@ -812,10 +806,10 @@
 
 
 <div class="viewcode-block" id="Rotation.forward">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.forward">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.forward">[docs]</a>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">vectors</span><span class="p">:</span> <span class="n">_NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">|</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+        <span class="n">vectors</span><span class="p">:</span> <span class="n">NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">|</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
         <span class="n">inverse</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply this rotation to a set of vectors.</span>
@@ -896,7 +890,7 @@
 
 
 <div class="viewcode-block" id="Rotation.random">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.random">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.random">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">random</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
@@ -1039,7 +1033,7 @@
             <span class="k">return</span> <span class="n">Rotation</span><span class="o">.</span><span class="n">from_rotvec</span><span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_rotvec</span><span class="p">())</span>
 
 <div class="viewcode-block" id="Rotation.inv">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.inv">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.inv">[docs]</a>
     <span class="k">def</span> <span class="nf">inv</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Invert this rotation.</span>
 
@@ -1058,7 +1052,7 @@
 
 
 <div class="viewcode-block" id="Rotation.magnitude">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.magnitude">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.magnitude">[docs]</a>
     <span class="k">def</span> <span class="nf">magnitude</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the magnitude(s) of the rotation(s).</span>
 
@@ -1076,7 +1070,7 @@
 
 
 <div class="viewcode-block" id="Rotation.approx_equal">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.approx_equal">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.approx_equal">[docs]</a>
     <span class="k">def</span> <span class="nf">approx_equal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Rotation</span><span class="p">,</span> <span class="n">atol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Determine if another rotation is approximately equal to this one.</span>
 
@@ -1218,7 +1212,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">[</span><span class="n">_indexer</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">as_quat</span><span class="p">()</span>
 
 <div class="viewcode-block" id="Rotation.identity">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.identity">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.identity">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">identity</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get identity rotation(s).</span>
@@ -1270,7 +1264,7 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Rotation</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span> <span class="o">...</span>
 
 <div class="viewcode-block" id="Rotation.align_vectors">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.align_vectors">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.align_vectors">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">align_vectors</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
@@ -1347,10 +1341,10 @@
             <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s1">-Batched Rotation()&#39;</span>
 
 <div class="viewcode-block" id="Rotation.mean">
-<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.Rotation.html#mrpro.utils.Rotation.mean">[docs]</a>
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.mean">[docs]</a>
     <span class="k">def</span> <span class="nf">mean</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">weights</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">_NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">weights</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">dim</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">keepdim</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>

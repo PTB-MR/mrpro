@@ -601,6 +601,8 @@
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span>  <span class="c1"># respect to subclasses</span>
 
 
+<div class="viewcode-block" id="Any">
+<a class="viewcode-back" href="../_autosummary/mrpro.utils.typing.Any.html#mrpro.operators.EndomorphOperator.Any">[docs]</a>
 <span class="k">class</span> <span class="nc">Any</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_AnyMeta</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Special type indicating an unconstrained type.</span>
 
@@ -616,7 +618,8 @@
     <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="n">Any</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Any cannot be instantiated&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span></div>
+
 
 
 <span class="nd">@_SpecialForm</span>

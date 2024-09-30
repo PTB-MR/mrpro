@@ -80,12 +80,16 @@
   <h1>Source code for mrpro.utils.modify_acq_info</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Modify AcqInfo.&quot;&quot;&quot;</span>
 
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
 <span class="kn">import</span> <span class="nn">dataclasses</span>
 <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 
-<span class="kn">from</span> <span class="nn">mrpro.data.AcqInfo</span> <span class="kn">import</span> <span class="n">AcqInfo</span>
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">mrpro.data.AcqInfo</span> <span class="kn">import</span> <span class="n">AcqInfo</span>
 
 
 <div class="viewcode-block" id="modify_acq_info">

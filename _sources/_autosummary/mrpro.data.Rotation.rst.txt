@@ -1,7 +1,7 @@
-mrpro.utils.Rotation
-====================
+mrpro.data.Rotation
+===================
 
-.. currentmodule:: mrpro.utils
+.. currentmodule:: mrpro.data
 
 .. autoclass:: Rotation
    :members:

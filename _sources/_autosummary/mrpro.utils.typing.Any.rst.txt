@@ -1,0 +1,25 @@
+mrpro.utils.typing.Any
+======================
+
+.. currentmodule:: mrpro.utils.typing
+
+.. autoclass:: Any
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Any.__init__
+   
+   
+
+   
+   
+   

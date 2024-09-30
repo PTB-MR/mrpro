@@ -24,14 +24,6 @@
 
    
    
-   .. rubric:: Classes
-
-   .. autosummary::
-      :toctree:
-      :template: class_template.rst
-   
-      Rotation
-   
    
 
    
@@ -51,4 +43,5 @@
    slice_profiles
    sliding_window
    summarize_tensorvalues
+   typing
 

@@ -1,0 +1,33 @@
+mrpro.utils.typing
+==================
+
+.. automodule:: mrpro.utils.typing
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class_template.rst
+   
+      Any
+      IndexerType
+      NestedSequence
+   
+   
+
+   
+   
+   
+
+
+
