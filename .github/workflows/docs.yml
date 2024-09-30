@@ -200,6 +200,19 @@ jobs:
 
       - run: echo '${{ steps.save_docu.outputs.artifact-url }}'
 
+      - name: Update PR with link to summary
+        uses: edumserrano/find-create-or-update-comment@v2
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: '<!-- 100 -->'
+          comment-author: 'github-actions[bot]'
+          body: |
+            <!-- 100 -->
+            Don't forget to check the docu here:
+            ${{ steps.save_docu.outputs.artifact-url }}
+          edit-mode: replace
+
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
