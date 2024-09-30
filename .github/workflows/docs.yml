@@ -9,9 +9,6 @@ on:
 permissions:
   contents: write
 
-env:
-  PR_NUMBER: ${{ github.event.number }}
-
 defaults:
   run:
     shell: bash
