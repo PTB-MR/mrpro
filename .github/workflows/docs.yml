@@ -213,8 +213,9 @@ jobs:
           comment-author: 'github-actions[bot]'
           body: |
             <!-- ${{ github.event.number }} -->
-            Don't forget to check the docu here:
-            https://zimf.de/zipserve/${{ steps.save_docu.outputs.artifact-url }}/
+            :exclamation: Don't forget to check the docu.
+            Download: ${{ steps.save_docu.outputs.artifact-url }}
+            View directly: https://zimf.de/zipserve/${{ steps.save_docu.outputs.artifact-url }}/
           edit-mode: replace
 
 
