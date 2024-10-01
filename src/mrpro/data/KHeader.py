@@ -12,12 +12,12 @@ import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
 import torch
 
 from mrpro.data import enums
-from mrpro.data.AcqInfo import AcqInfo, m_to_mm, mm_to_m, ms_to_s, s_to_ms
+from mrpro.data.AcqInfo import AcqInfo
 from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.data.TrajectoryDescription import TrajectoryDescription
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
+from mrpro.utils.unit_conversion import m_to_mm, mm_to_m, ms_to_s, s_to_ms
 
 if TYPE_CHECKING:
     # avoid circular imports by importing only when type checking
@@ -39,9 +39,6 @@ class KHeader(MoveDataMixin):
     trajectory: KTrajectoryCalculator
     """Function to calculate the k-space trajectory."""
 
-    b0: float
-    """Magnetic field strength [T]."""
-
     encoding_limits: EncodingLimits
     """K-space encoding limits."""
 
@@ -60,11 +57,8 @@ class KHeader(MoveDataMixin):
     acq_info: AcqInfo
     """Information of the acquisitions (i.e. readout lines)."""
 
-    h1_freq: float
+    lamor_frequency_proton: float
     """Lamor frequency of hydrogen nuclei [Hz]."""
-
-    n_coils: int | None = None
-    """Number of receiver coils."""
 
     datetime: datetime.datetime | None = None
     """Date and time of acquisition."""
@@ -87,7 +81,7 @@ class KHeader(MoveDataMixin):
     echo_train_length: int = 1
     """Number of echoes in a multi-echo acquisition."""
 
-    seq_type: str = UNKNOWN
+    sequence_type: str = UNKNOWN
     """Type of sequence."""
 
     model: str = UNKNOWN
@@ -99,16 +93,13 @@ class KHeader(MoveDataMixin):
     protocol_name: str = UNKNOWN
     """Name of the acquisition protocol."""
 
-    misc: dict = dataclasses.field(default_factory=dict)  # do not use {} here!
-    """Dictionary with miscellaneous parameters."""
-
     calibration_mode: enums.CalibrationMode = enums.CalibrationMode.OTHER
     """Mode of how calibration data is acquired. """
 
     interleave_dim: enums.InterleavingDimension = enums.InterleavingDimension.OTHER
     """Interleaving dimension."""
 
-    traj_type: enums.TrajectoryType = enums.TrajectoryType.OTHER
+    trajectory_type: enums.TrajectoryType = enums.TrajectoryType.OTHER
     """Type of trajectory."""
 
     measurement_id: str = UNKNOWN
@@ -117,8 +108,8 @@ class KHeader(MoveDataMixin):
     patient_name: str = UNKNOWN
     """Name of the patient."""
 
-    trajectory_description: TrajectoryDescription = dataclasses.field(default_factory=TrajectoryDescription)
-    """Description of the trajectory."""
+    _misc: dict = dataclasses.field(default_factory=dict)  # do not use {} here!
+    """Dictionary with miscellaneous parameters."""
 
     @property
     def fa_degree(self) -> torch.Tensor | None:
@@ -159,16 +150,13 @@ class KHeader(MoveDataMixin):
         enc: ismrmrdschema.encodingType = header.encoding[encoding_number]
 
         # These are guaranteed to exist
-        parameters = {'h1_freq': header.experimentalConditions.H1resonanceFrequency_Hz, 'acq_info': acq_info}
+        parameters = {
+            'lamor_frequency_proton': header.experimentalConditions.H1resonanceFrequency_Hz,
+            'acq_info': acq_info,
+        }
 
         if defaults is not None:
             parameters.update(defaults)
-
-        if (
-            header.acquisitionSystemInformation is not None
-            and header.acquisitionSystemInformation.receiverChannels is not None
-        ):
-            parameters['n_coils'] = header.acquisitionSystemInformation.receiverChannels
 
         if header.sequenceParameters is not None:
             if any(header.sequenceParameters.TR):
@@ -183,7 +171,7 @@ class KHeader(MoveDataMixin):
                 parameters['echo_spacing'] = ms_to_s(torch.as_tensor(header.sequenceParameters.echo_spacing))
 
             if header.sequenceParameters.sequence_type is not None:
-                parameters['seq_type'] = header.sequenceParameters.sequence_type
+                parameters['sequence_type'] = header.sequenceParameters.sequence_type
 
         if enc.reconSpace is not None:
             parameters['recon_fov'] = SpatialDimension[float].from_xyz(enc.reconSpace.fieldOfView_mm, mm_to_m)
@@ -209,9 +197,7 @@ class KHeader(MoveDataMixin):
                 )
 
         if enc.trajectory is not None:
-            parameters['traj_type'] = enums.TrajectoryType(enc.trajectory.value)
-        if enc.trajectoryDescription is not None:
-            parameters['trajectory_description'] = TrajectoryDescription.from_ismrmrd(enc.trajectoryDescription)
+            parameters['trajectory_type'] = enums.TrajectoryType(enc.trajectory.value)
 
         # Either use the series or study time if available
         if header.measurementInformation is not None and header.measurementInformation.seriesTime is not None:
@@ -244,17 +230,8 @@ class KHeader(MoveDataMixin):
             if header.acquisitionSystemInformation.systemModel is not None:
                 parameters['model'] = header.acquisitionSystemInformation.systemModel
 
-            if header.acquisitionSystemInformation.systemFieldStrength_T is not None:
-                parameters['b0'] = header.acquisitionSystemInformation.systemFieldStrength_T
-
-        # estimate b0 from h1_freq if not given
-        if 'b0' not in parameters:
-            parameters['b0'] = parameters['h1_freq'] / 4258e4
-
         # Dump everything into misc
-        parameters['misc'] = dataclasses.asdict(header)
-        # Remember encoding number
-        parameters['misc']['encoding_number'] = encoding_number
+        parameters['_misc'] = dataclasses.asdict(header)
 
         if overwrite is not None:
             parameters.update(overwrite)
@@ -286,42 +263,19 @@ class KHeader(MoveDataMixin):
             ISMRMRD header
         """
         header = ismrmrdschema.ismrmrdHeader()
-        header.version = self.misc['version']
-
-        def create_from_misc_dictionary(xsd_type, misc_dictionary_entry: dict):  # noqa: ANN001
-            return xsd_type(**misc_dictionary_entry) if misc_dictionary_entry is not None else xsd_type()
-
-        # Study information
-        if self.misc['studyInformation'] is not None:
-            study = ismrmrdschema.studyInformationType(**self.misc['studyInformation'])
-            header.studyInformation = study
 
         # Experimental conditions
-        exp = create_from_misc_dictionary(ismrmrdschema.experimentalConditionsType, self.misc['experimentalConditions'])
-        exp.H1resonanceFrequency_Hz = self.h1_freq
+        exp = ismrmrdschema.experimentalConditionsType()
+        exp.H1resonanceFrequency_Hz = self.lamor_frequency_proton
         header.experimentalConditions = exp
 
         # Subject information
-        subj = create_from_misc_dictionary(ismrmrdschema.subjectInformationType, self.misc['subjectInformation'])
+        subj = ismrmrdschema.subjectInformationType()
         subj.patientName = self.patient_name
         header.subjectInformation = subj
 
         # Measurement information
-        meas = create_from_misc_dictionary(
-            ismrmrdschema.measurementInformationType, self.misc['measurementInformation']
-        )
-        if self.misc['measurementInformation'] is not None:
-            if self.misc['measurementInformation']['measurementDependency'] is not None:
-                meas.measurementDependency = [
-                    ismrmrdschema.measurementDependencyType(**meas_dependency)
-                    for meas_dependency in self.misc['measurementInformation']['measurementDependency']
-                ]
-            if self.misc['measurementInformation']['referencedImageSequence'] is not None:
-                meas.referencedImageSequence = [
-                    ismrmrdschema.measurementDependencyType(**ref_image_sequence)
-                    for ref_image_sequence in self.misc['measurementInformation']['referencedImageSequence']
-                ]
-
+        meas = ismrmrdschema.measurementInformationType()
         meas.protocolName = self.protocol_name
         meas.measurementID = self.measurement_id
         if self.datetime is not None:
@@ -330,37 +284,13 @@ class KHeader(MoveDataMixin):
         header.measurementInformation = meas
 
         # Acquisition system information
-        sys = create_from_misc_dictionary(
-            ismrmrdschema.acquisitionSystemInformationType, self.misc['acquisitionSystemInformation']
-        )
-        if (
-            self.misc['acquisitionSystemInformation'] is not None
-            and self.misc['acquisitionSystemInformation']['coilLabel'] is not None
-        ):
-            sys.coilLabel = [
-                ismrmrdschema.coilLabelType(**coil_label)
-                for coil_label in self.misc['acquisitionSystemInformation']['coilLabel']
-            ]
-        if self.n_coils is not None:
-            sys.receiverChannels = self.n_coils
-        sys.systemFieldStrength_T = self.b0
+        sys = ismrmrdschema.acquisitionSystemInformationType()
         sys.systemModel = self.model
         sys.systemVendor = self.vendor
         header.acquisitionSystemInformation = sys
 
         # Sequence information
-        seq = create_from_misc_dictionary(ismrmrdschema.sequenceParametersType, self.misc['sequenceParameters'])
-        if self.misc['sequenceParameters'] is not None:
-            if self.misc['sequenceParameters']['diffusionDimension'] is not None:
-                seq.diffusion = ismrmrdschema.diffusionDimensionType(
-                    **self.misc['sequenceParameters']['diffusionDimension']
-                )
-            if self.misc['sequenceParameters']['diffusion'] is not None:
-                seq.diffusion = [
-                    ismrmrdschema.diffusionTypeType(**diffusion)
-                    for diffusion in self.misc['sequenceParameters']['diffusion']
-                ]
-
+        seq = ismrmrdschema.sequenceParametersType()
         if isinstance(self.tr, torch.Tensor):
             seq.TR = s_to_ms(self.tr).tolist()
         if isinstance(self.te, torch.Tensor):
@@ -371,32 +301,16 @@ class KHeader(MoveDataMixin):
             seq.flipAngle_deg = torch.rad2deg(self.fa).tolist()
         if isinstance(self.echo_spacing, torch.Tensor):
             seq.echo_spacing = s_to_ms(self.echo_spacing).tolist()
-        seq.sequence_type = self.seq_type
+        seq.sequence_type = self.sequence_type
         header.sequenceParameters = seq
 
-        # Waveform information
-        wave = ismrmrdschema.waveformInformationType()
-        if len(self.misc['waveformInformation']):
-            wave = [ismrmrdschema.waveformInformationType(**wave) for wave in self.misc['waveformInformation']]
-        header.waveformInformation = wave
-
         # Encoding
-        encoding_number = self.misc['encoding_number']
-        encoding = create_from_misc_dictionary(ismrmrdschema.encodingType, self.misc['encoding'][encoding_number])
-        encoding.echoTrainLength = self.echo_train_length
-        par_imaging = create_from_misc_dictionary(
-            ismrmrdschema.parallelImagingType, self.misc['encoding'][encoding_number]['parallelImaging']
-        )
-        if self.misc['encoding'][encoding_number]['parallelImaging']:
-            par_imaging.accelerationFactor = create_from_misc_dictionary(
-                ismrmrdschema.accelerationFactorType,
-                self.misc['encoding'][encoding_number]['parallelImaging']['accelerationFactor'],
-            )
+        encoding = ismrmrdschema.encodingType()
+        par_imaging = ismrmrdschema.parallelImagingType()
         par_imaging.calibrationMode = self.calibration_mode
         par_imaging.interleavingDimension = self.interleave_dim
         encoding.parallelImaging = par_imaging
-        encoding.trajectory = self.traj_type
-        # encoding.trajectoryDescription = self.trajectory_description.to_ismrmrd()
+        encoding.trajectory = self.trajectory_type
 
         # Encoded space
         encoding_space = ismrmrdschema.encodingSpaceType()
@@ -425,26 +339,6 @@ class KHeader(MoveDataMixin):
         # Encoding limits
         encoding.encodingLimits = self.encoding_limits.to_ismrmrd_encoding_limits_type()
         header.encoding.append(encoding)
-
-        # User parameters
-        if self.misc['userParameters']:
-            user = ismrmrdschema.userParametersType()
-            user.userParameterLong = [
-                ismrmrdschema.userParameterLongType(**par) for par in self.misc['userParameters']['userParameterLong']
-            ]
-            user.userParameterDouble = [
-                ismrmrdschema.userParameterDoubleType(**par)
-                for par in self.misc['userParameters']['userParameterDouble']
-            ]
-            user.userParameterString = [
-                ismrmrdschema.userParameterStringType(**par)
-                for par in self.misc['userParameters']['userParameterString']
-            ]
-            user.userParameterBase64 = [
-                ismrmrdschema.userParameterBase64Type(**par)
-                for par in self.misc['userParameters']['userParameterBase64']
-            ]
-            header.userParameters = user
 
         return header
 

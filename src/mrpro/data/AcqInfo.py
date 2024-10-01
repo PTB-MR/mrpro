@@ -2,37 +2,16 @@
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Self, TypeVar
+from typing import Self
 
 import ismrmrd
 import numpy as np
 import torch
 
 from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
-
-# Conversion functions for units
-T = TypeVar('T', float, torch.Tensor)
-
-
-def ms_to_s(ms: T) -> T:
-    """Convert ms to s."""
-    return ms / 1000
-
-
-def mm_to_m(m: T) -> T:
-    """Convert mm to m."""
-    return m / 1000
-
-
-def s_to_ms(ms: T) -> T:
-    """Convert s to ms."""
-    return ms * 1000
-
-
-def m_to_mm(m: T) -> T:
-    """Convert m to mm."""
-    return m * 1000
+from mrpro.utils.unit_conversion import m_to_mm, mm_to_m
 
 
 @dataclass(slots=True)
@@ -131,11 +110,11 @@ class AcqInfo(MoveDataMixin):
     number_of_samples: torch.Tensor
     """Number of sample points per readout (readouts may have different number of sample points)."""
 
+    orientation: Rotation
+    """Rotation describing the orientation of the readout, phase and slice encoding direction."""
+
     patient_table_position: SpatialDimension[torch.Tensor]
     """Offset position of the patient table, in LPS coordinates [m]."""
-
-    phase_dir: SpatialDimension[torch.Tensor]
-    """Directional cosine of phase encoding (2D)."""
 
     physiology_time_stamp: torch.Tensor
     """Time stamps relative to physiological triggering, e.g. ECG. Not in s but in vendor-specific time units"""
@@ -143,17 +122,11 @@ class AcqInfo(MoveDataMixin):
     position: SpatialDimension[torch.Tensor]
     """Center of the excited volume, in LPS coordinates relative to isocenter [m]."""
 
-    read_dir: SpatialDimension[torch.Tensor]
-    """Directional cosine of readout/frequency encoding."""
-
     sample_time_us: torch.Tensor
     """Readout bandwidth, as time between samples [us]."""
 
     scan_counter: torch.Tensor
     """Zero-indexed incrementing counter for readouts."""
-
-    slice_dir: SpatialDimension[torch.Tensor]
-    """Directional cosine of slice normal, i.e. cross-product of read_dir and phase_dir."""
 
     trajectory_dimensions: torch.Tensor  # =3. We only support 3D Trajectories: kz always exists.
     """Dimensionality of the k-space trajectory vector."""
@@ -246,6 +219,23 @@ class AcqInfo(MoveDataMixin):
             user7=tensor(idx['user'][:, 7]),
         )
 
+        # Calculate orientation as rotation matrix from directional cosines
+        def orientation_from_directional_cosine(
+            slice_dir: SpatialDimension[torch.Tensor],
+            phase_dir: SpatialDimension[torch.Tensor],
+            read_dir: SpatialDimension[torch.Tensor],
+        ) -> Rotation:
+            return Rotation.from_matrix(
+                torch.stack(
+                    (
+                        torch.stack((slice_dir.z, slice_dir.y, slice_dir.x), dim=-1),
+                        torch.stack((phase_dir.z, phase_dir.y, phase_dir.x), dim=-1),
+                        torch.stack((read_dir.z, read_dir.y, read_dir.x), dim=-1),
+                    ),
+                    dim=-2,
+                )
+            )
+
         acq_info = cls(
             idx=acq_idx,
             acquisition_time_stamp=tensor_2d(headers['acquisition_time_stamp']),
@@ -259,14 +249,16 @@ class AcqInfo(MoveDataMixin):
             flags=tensor_2d(headers['flags']),
             measurement_uid=tensor_2d(headers['measurement_uid']),
             number_of_samples=tensor_2d(headers['number_of_samples']),
+            orientation=orientation_from_directional_cosine(
+                spatialdimension_2d(headers['slice_dir']),
+                spatialdimension_2d(headers['phase_dir']),
+                spatialdimension_2d(headers['read_dir']),
+            ),
             patient_table_position=spatialdimension_2d(headers['patient_table_position'], mm_to_m),
-            phase_dir=spatialdimension_2d(headers['phase_dir']),
             physiology_time_stamp=tensor_2d(headers['physiology_time_stamp']),
             position=spatialdimension_2d(headers['position'], mm_to_m),
-            read_dir=spatialdimension_2d(headers['read_dir']),
             sample_time_us=tensor_2d(headers['sample_time_us']),
             scan_counter=tensor_2d(headers['scan_counter']),
-            slice_dir=spatialdimension_2d(headers['slice_dir']),
             trajectory_dimensions=tensor_2d(headers['trajectory_dimensions']).fill_(3),  # see above
             user_float=tensor_2d(headers['user_float']),
             user_int=tensor_2d(headers['user_int']),
@@ -274,7 +266,7 @@ class AcqInfo(MoveDataMixin):
         )
         return acq_info
 
-    def add_ismrmrd_acquisition_info(
+    def add_to_ismrmrd_acquisition(
         self, acquisition: ismrmrd.Acquisition, other: int, k2: int, k1: int
     ) -> ismrmrd.Acquisition:
         """ISMRMRD acquisition information for single acquisition."""
@@ -307,18 +299,22 @@ class AcqInfo(MoveDataMixin):
         acquisition.discard_pre = self.discard_pre[other, k2, k1, 0]
         acquisition.encoding_space_ref = self.encoding_space_ref[other, k2, k1, 0]
         acquisition.measurement_uid = self.measurement_uid[other, k2, k1, 0]
-        acquisition.patient_table_position = tuple(
-            [m_to_mm(getattr(self.patient_table_position, label)[other, k2, k1, 0]) for label in ['x', 'y', 'z']]
+        acquisition.patient_table_position = (
+            m_to_mm(self.patient_table_position.x[other, k2, k1, 0]),
+            m_to_mm(self.patient_table_position.y[other, k2, k1, 0]),
+            m_to_mm(self.patient_table_position.z[other, k2, k1, 0]),
         )
-        acquisition.phase_dir = tuple([getattr(self.phase_dir, label)[other, k2, k1, 0] for label in ['x', 'y', 'z']])
+        acquisition.phase_dir = tuple(self.orientation.as_matrix()[other, k2, k1, 1, :])
         acquisition.physiology_time_stamp = tuple(self.physiology_time_stamp[other, k2, k1, :])
-        acquisition.position = tuple(
-            [m_to_mm(getattr(self.position, label)[other, k2, k1, 0]) for label in ['x', 'y', 'z']]
+        acquisition.position = (
+            m_to_mm(self.position.x[other, k2, k1, 0]),
+            m_to_mm(self.position.y[other, k2, k1, 0]),
+            m_to_mm(self.position.z[other, k2, k1, 0]),
         )
-        acquisition.read_dir = tuple([getattr(self.read_dir, label)[other, k2, k1, 0] for label in ['x', 'y', 'z']])
+        acquisition.read_dir = tuple(self.orientation.as_matrix()[other, k2, k1, 2, :])
         acquisition.sample_time_us = self.sample_time_us[other, k2, k1, 0]
         acquisition.scan_counter = self.scan_counter[other, k2, k1, 0]
-        acquisition.slice_dir = tuple([getattr(self.slice_dir, label)[other, k2, k1, 0] for label in ['x', 'y', 'z']])
+        acquisition.slice_dir = tuple(self.orientation.as_matrix()[other, k2, k1, 0, :])
         acquisition.user_float = tuple(self.user_float[other, k2, k1, :])
         acquisition.user_int = tuple(self.user_int[other, k2, k1, :])
         acquisition.version = self.version[other, k2, k1, 0]
