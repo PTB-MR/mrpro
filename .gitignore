@@ -6,6 +6,13 @@ __pycache__/
 # C extensions
 *.so
 
+# Usual suspects regarding large file size
+*.h5
+*.mrd
+*.npy
+*.npz
+*.pt
+
 # Distribution / packaging
 .Python
 build/
