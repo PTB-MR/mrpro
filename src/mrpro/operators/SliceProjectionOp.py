@@ -11,9 +11,9 @@ import torch
 from numpy._typing import _NestedSequence as NestedSequence
 from torch import Tensor
 
+from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
-from mrpro.utils.Rotation import Rotation
 from mrpro.utils.slice_profiles import SliceSmoothedRectangular
 
 
