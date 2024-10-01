@@ -20,6 +20,12 @@ __pycache__/
 *.pdf
 *.png
 *.gif
+*.nii
+*.dcm
+*.IMA
+*.tar
+*.zip
+*.gz
 
 # Distribution / packaging
 .Python
