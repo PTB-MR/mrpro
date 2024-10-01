@@ -209,13 +209,13 @@ jobs:
         uses: edumserrano/find-create-or-update-comment@v3
         with:
           issue-number: ${{ github.event.pull_request.number }}
-          body-includes: '<!-- ${{ github.event.number }} -->'
+          body-includes: '<!-- documentation build ${{ github.event.number }} -->'
           comment-author: 'github-actions[bot]'
           body: |
-            <!-- ${{ github.event.number }} -->
-            :exclamation: Don't forget to check the docu.
-            Download: ${{ steps.save_docu.outputs.artifact-url }}
-            View directly: https://zimf.de/zipserve/${{ steps.save_docu.outputs.artifact-url }}/
+            <!-- documentation build ${{ github.event.number }} -->
+            ### :books: Documentation
+            :file_folder: [Download as zip](${{ steps.save_docu.outputs.artifact-url }})
+            :mag: [View online](https://zimf.de/zipserve/${{ steps.save_docu.outputs.artifact-url }}/)
           edit-mode: replace
 
 
