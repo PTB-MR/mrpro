@@ -68,10 +68,10 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
     """Header information for k-space data"""
 
     data: torch.Tensor
-    """K-space data. Shape (...other coils k2 k1 k0)"""
+    """K-space data. Shape (... other coils k2 k1 k0)"""
 
     traj: KTrajectory
-    """K-space trajectory along kz, ky and kx. Shape (...other k2 k1 k0)"""
+    """K-space trajectory along kz, ky and kx. Shape (... other k2 k1 k0)"""
 
     @classmethod
     def from_file(
@@ -203,7 +203,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             return rearrange(input_tensor[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=n_k1, k2=n_k2)
 
         kheader.acq_info = modify_acq_info(sort_and_reshape_tensor_fields, kheader.acq_info)
-        kdata = rearrange(kdata[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=n_k1, k2=n_k2)
+        kdata = rearrange(kdata[sort_idx], '... (other k2 k1) coils k0 -> ... other coils k2 k1 k0', k1=n_k1, k2=n_k2)
 
         # Calculate trajectory and check if it matches the kdata shape
         match ktrajectory:
