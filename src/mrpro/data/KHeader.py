@@ -158,12 +158,6 @@ class KHeader(MoveDataMixin):
         if defaults is not None:
             parameters.update(defaults)
 
-        if (
-            header.acquisitionSystemInformation is not None
-            and header.acquisitionSystemInformation.receiverChannels is not None
-        ):
-            parameters['n_coils'] = header.acquisitionSystemInformation.receiverChannels
-
         if header.sequenceParameters is not None:
             if header.sequenceParameters.TR:
                 parameters['tr'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TR))
