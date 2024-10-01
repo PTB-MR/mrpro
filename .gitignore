@@ -8,10 +8,18 @@ __pycache__/
 
 # Usual suspects regarding large file size
 *.h5
+*.dat
+*.mp4
 *.mrd
 *.npy
 *.npz
 *.pt
+*.ptc
+*.pwf
+*.pth
+*.pdf
+*.png
+*.gif
 
 # Distribution / packaging
 .Python
