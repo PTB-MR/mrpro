@@ -214,7 +214,7 @@ jobs:
           body: |
             <!-- ${{ github.event.number }} -->
             Don't forget to check the docu here:
-            ${{ steps.save_docu.outputs.artifact-url }}
+            https://zimf.de/zipserve/${{ steps.save_docu.outputs.artifact-url }}/
           edit-mode: replace
 
 
