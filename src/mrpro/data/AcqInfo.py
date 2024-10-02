@@ -285,7 +285,6 @@ class AcqInfo(MoveDataMixin):
         )
         return acq_info
 
-<<<<<<< HEAD
     def add_to_ismrmrd_acquisition(
         self, acquisition: ismrmrd.Acquisition, other: int, k2: int, k1: int
     ) -> ismrmrd.Acquisition:
@@ -324,22 +323,22 @@ class AcqInfo(MoveDataMixin):
             m_to_mm(self.patient_table_position.y[other, k2, k1, 0]),
             m_to_mm(self.patient_table_position.z[other, k2, k1, 0]),
         )
-        acquisition.phase_dir = tuple(self.orientation.as_matrix()[other, k2, k1, 1, :])
+        acquisition.phase_dir = tuple(self.orientation.as_matrix()[other, k2, k1, 0, 1, :])[::-1] # zyx -> xyz
         acquisition.physiology_time_stamp = tuple(self.physiology_time_stamp[other, k2, k1, :])
         acquisition.position = (
             m_to_mm(self.position.x[other, k2, k1, 0]),
             m_to_mm(self.position.y[other, k2, k1, 0]),
             m_to_mm(self.position.z[other, k2, k1, 0]),
         )
-        acquisition.read_dir = tuple(self.orientation.as_matrix()[other, k2, k1, 2, :])
+        acquisition.read_dir = tuple(self.orientation.as_matrix()[other, k2, k1, 0, 2, :])[::-1] # zyx -> xyz
         acquisition.sample_time_us = self.sample_time_us[other, k2, k1, 0]
         acquisition.scan_counter = self.scan_counter[other, k2, k1, 0]
-        acquisition.slice_dir = tuple(self.orientation.as_matrix()[other, k2, k1, 0, :])
+        acquisition.slice_dir = tuple(self.orientation.as_matrix()[other, k2, k1, 0, 0, :])[::-1] # zyx -> xyz
         acquisition.user_float = tuple(self.user_float[other, k2, k1, :])
         acquisition.user_int = tuple(self.user_int[other, k2, k1, :])
         acquisition.version = self.version[other, k2, k1, 0]
         return acquisition
-=======
+
     def _apply_(self, modify_acq_info_field: Callable) -> None:
         """Go through all fields of AcqInfo object and apply function in-place.
 
@@ -357,4 +356,3 @@ class AcqInfo(MoveDataMixin):
             else:
                 setattr(self, field.name, modify_acq_info_field(current))
         return None
->>>>>>> unit_conversion_utils

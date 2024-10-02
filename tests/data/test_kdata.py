@@ -5,11 +5,8 @@ import torch
 from einops import repeat
 from mrpro.data import KData, KTrajectory, SpatialDimension
 from mrpro.data.acq_filters import is_coil_calibration_acquisition
-<<<<<<< HEAD
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
-=======
 from mrpro.data.AcqInfo import rearrange_acq_info_fields
->>>>>>> unit_conversion_utils
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
 from mrpro.utils import split_idx
