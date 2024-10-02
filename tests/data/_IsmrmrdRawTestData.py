@@ -67,6 +67,7 @@ class IsmrmrdRawTestData:
         trajectory_type: Literal['cartesian', 'radial'] = 'cartesian',
         sampling_order: Literal['linear', 'low_high', 'high_low', 'random'] = 'linear',
         phantom: EllipsePhantom | None = None,
+        add_bodycoil_acquisitions: bool = False,
         n_separate_calibration_lines: int = 0,
     ):
         if not phantom:
@@ -236,9 +237,19 @@ class IsmrmrdRawTestData:
             dataset.append_acquisition(acq)
             counter += 1  # increment the scan counter
 
+        # Add acquisitions obtained with a 2-element body coil (e.g. used for adjustment scans)
+        if add_bodycoil_acquisitions:
+            acq.resize(n_freq_encoding, 2, trajectory_dimensions=2)
+            for _ in range(8):
+                acq.scan_counter = counter
+                acq.clearAllFlags()
+                acq.data[:] = torch.randn(2, n_freq_encoding, dtype=torch.complex64)
+                dataset.append_acquisition(acq)
+                counter += 1  # increment the scan counter
+            acq.resize(n_freq_encoding, self.n_coils, trajectory_dimensions=2)
+
         # Calibration lines
         if n_separate_calibration_lines > 0:
-            # we take calibration lines around the k-space center
             traj_ky_calibration, traj_kx_calibration, kpe_calibration = self._cartesian_trajectory(
                 n_separate_calibration_lines,
                 n_freq_encoding,
