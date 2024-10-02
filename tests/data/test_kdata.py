@@ -5,8 +5,8 @@ import torch
 from einops import repeat
 from mrpro.data import KData, KTrajectory, SpatialDimension
 from mrpro.data.acq_filters import is_coil_calibration_acquisition
-from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.data.AcqInfo import rearrange_acq_info_fields
+from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
 from mrpro.utils import split_idx
@@ -473,6 +473,7 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader):
     # differences along the edges of the elliptic objects.
     assert relative_image_difference(torch.abs(img_recon), img_tensor[:, 0, ...]) <= 0.05
 
+
 def test_modify_acq_info(random_kheader_shape):
     """Test the modification of the acquisition info."""
     # Create random header where AcqInfo fields are of shape [n_k1*n_k2] and reshape to [n_other, n_k2, n_k1]
@@ -490,6 +491,7 @@ def test_modify_acq_info(random_kheader_shape):
     assert kheader.acq_info.orientation.shape == (n_other, n_k2, n_k1, 1)
     assert kheader.acq_info.position.z.shape == (n_other, n_k2, n_k1, 1)
 
+
 def test_KData_to_file(ismrmrd_cart, tmp_path_factory):
     """Read in data to file."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
@@ -506,4 +508,3 @@ def test_KData_to_file(ismrmrd_cart, tmp_path_factory):
     torch.testing.assert_close(kdata.traj.as_tensor(), kdata_reload.traj.as_tensor())
     assert kdata.header.encoding_fov.x == kdata_reload.header.encoding_fov.x
     assert kdata.header.encoding_limits.k1.max == kdata_reload.header.encoding_limits.k1.max
-

@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import warnings
 from collections.abc import Callable
+from itertools import product
 from pathlib import Path
 from typing import Self
 
@@ -243,9 +244,6 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         filename
             path to the ISMRMRD file
         """
-        if self.data.ndim != 5:
-            raise ValueError('Only KData with exactly 5 dimensions (other, coil, k2, k1, k0) can be saved.')
-
         # Open the dataset
         dataset = ismrmrd.Dataset(filename, 'dataset', create_if_needed=True)
 
@@ -263,17 +261,17 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         acq_shape = [self.data.shape[-1], self.data.shape[-4]]
         acq = ismrmrd.Acquisition()
         acq.resize(*acq_shape, trajectory_dimensions=3)
-        for other in range(self.data.shape[-5]):
+        for other in product(*[range(shape) for shape in self.data.shape[:-4]]):
             for k2 in range(self.data.shape[-3]):
                 for k1 in range(self.data.shape[-2]):
                     acq.clear_all_flags()
                     acq = self.header.acq_info.add_to_ismrmrd_acquisition(acq, other, k2, k1)
 
-                    # Rearrange, switch from zyx to xz and set trajectory.
-                    acq.traj[:] = rearrange(trajectory[:, other, k2, k1, :].numpy(), 'dim k0->k0 dim')[:, ::-1]
+                    # Rearrange, switch from zyx to xyz and set trajectory.
+                    acq.traj[:] = rearrange(trajectory[:, *other, k2, k1, :].numpy(), 'dim k0->k0 dim')[:, ::-1]
 
                     # Set the data and append
-                    acq.data[:] = self.data[other, :, k2, k1, :].numpy()
+                    acq.data[:] = self.data[*other, :, k2, k1, :].numpy()
                     dataset.append_acquisition(acq)
 
         dataset.close()

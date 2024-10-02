@@ -3,7 +3,7 @@
 import dataclasses
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Self, TypeVar
+from typing import Any, Self, TypeVar
 
 import ismrmrd
 import numpy as np
@@ -286,57 +286,57 @@ class AcqInfo(MoveDataMixin):
         return acq_info
 
     def add_to_ismrmrd_acquisition(
-        self, acquisition: ismrmrd.Acquisition, other: int, k2: int, k1: int
+        self, acquisition: ismrmrd.Acquisition, other: Any, k2: int, k1: int
     ) -> ismrmrd.Acquisition:
         """ISMRMRD acquisition information for single acquisition."""
-        acquisition.idx.kspace_encode_step_1 = self.idx.k1[other, k2, k1]
-        acquisition.idx.kspace_encode_step_2 = self.idx.k2[other, k2, k1]
-        acquisition.idx.average = self.idx.average[other, k2, k1]
-        acquisition.idx.slice = self.idx.slice[other, k2, k1]
-        acquisition.idx.contrast = self.idx.contrast[other, k2, k1]
-        acquisition.idx.phase = self.idx.phase[other, k2, k1]
-        acquisition.idx.repetition = self.idx.repetition[other, k2, k1]
-        acquisition.idx.set = self.idx.set[other, k2, k1]
-        acquisition.idx.segment = self.idx.segment[other, k2, k1]
+        acquisition.idx.kspace_encode_step_1 = self.idx.k1[*other, k2, k1]
+        acquisition.idx.kspace_encode_step_2 = self.idx.k2[*other, k2, k1]
+        acquisition.idx.average = self.idx.average[*other, k2, k1]
+        acquisition.idx.slice = self.idx.slice[*other, k2, k1]
+        acquisition.idx.contrast = self.idx.contrast[*other, k2, k1]
+        acquisition.idx.phase = self.idx.phase[*other, k2, k1]
+        acquisition.idx.repetition = self.idx.repetition[*other, k2, k1]
+        acquisition.idx.set = self.idx.set[*other, k2, k1]
+        acquisition.idx.segment = self.idx.segment[*other, k2, k1]
         acquisition.idx.user = (
-            self.idx.user0[other, k2, k1],
-            self.idx.user1[other, k2, k1],
-            self.idx.user2[other, k2, k1],
-            self.idx.user3[other, k2, k1],
-            self.idx.user4[other, k2, k1],
-            self.idx.user5[other, k2, k1],
-            self.idx.user6[other, k2, k1],
-            self.idx.user7[other, k2, k1],
+            self.idx.user0[*other, k2, k1],
+            self.idx.user1[*other, k2, k1],
+            self.idx.user2[*other, k2, k1],
+            self.idx.user3[*other, k2, k1],
+            self.idx.user4[*other, k2, k1],
+            self.idx.user5[*other, k2, k1],
+            self.idx.user6[*other, k2, k1],
+            self.idx.user7[*other, k2, k1],
         )
 
         # active_channesl, number_of_samples and trajectory_dimensions are read-only and cannot be set
-        acquisition.acquisition_time_stamp = self.acquisition_time_stamp[other, k2, k1, 0]
-        acquisition.available_channels = self.available_channels[other, k2, k1, 0]
-        acquisition.center_sample = self.center_sample[other, k2, k1, 0]
-        acquisition.channel_mask = tuple(self.channel_mask[other, k2, k1, :])
-        acquisition.discard_post = self.discard_post[other, k2, k1, 0]
-        acquisition.discard_pre = self.discard_pre[other, k2, k1, 0]
-        acquisition.encoding_space_ref = self.encoding_space_ref[other, k2, k1, 0]
-        acquisition.measurement_uid = self.measurement_uid[other, k2, k1, 0]
+        acquisition.acquisition_time_stamp = self.acquisition_time_stamp[*other, k2, k1, 0]
+        acquisition.available_channels = self.available_channels[*other, k2, k1, 0]
+        acquisition.center_sample = self.center_sample[*other, k2, k1, 0]
+        acquisition.channel_mask = tuple(self.channel_mask[*other, k2, k1, :])
+        acquisition.discard_post = self.discard_post[*other, k2, k1, 0]
+        acquisition.discard_pre = self.discard_pre[*other, k2, k1, 0]
+        acquisition.encoding_space_ref = self.encoding_space_ref[*other, k2, k1, 0]
+        acquisition.measurement_uid = self.measurement_uid[*other, k2, k1, 0]
         acquisition.patient_table_position = (
-            m_to_mm(self.patient_table_position.x[other, k2, k1, 0]),
-            m_to_mm(self.patient_table_position.y[other, k2, k1, 0]),
-            m_to_mm(self.patient_table_position.z[other, k2, k1, 0]),
+            m_to_mm(self.patient_table_position.x[*other, k2, k1, 0]),
+            m_to_mm(self.patient_table_position.y[*other, k2, k1, 0]),
+            m_to_mm(self.patient_table_position.z[*other, k2, k1, 0]),
         )
-        acquisition.phase_dir = tuple(self.orientation.as_matrix()[other, k2, k1, 0, 1, :])[::-1] # zyx -> xyz
-        acquisition.physiology_time_stamp = tuple(self.physiology_time_stamp[other, k2, k1, :])
+        acquisition.phase_dir = tuple(self.orientation.as_matrix()[*other, k2, k1, 0, 1, :])[::-1]  # zyx -> xyz
+        acquisition.physiology_time_stamp = tuple(self.physiology_time_stamp[*other, k2, k1, :])
         acquisition.position = (
-            m_to_mm(self.position.x[other, k2, k1, 0]),
-            m_to_mm(self.position.y[other, k2, k1, 0]),
-            m_to_mm(self.position.z[other, k2, k1, 0]),
+            m_to_mm(self.position.x[*other, k2, k1, 0]),
+            m_to_mm(self.position.y[*other, k2, k1, 0]),
+            m_to_mm(self.position.z[*other, k2, k1, 0]),
         )
-        acquisition.read_dir = tuple(self.orientation.as_matrix()[other, k2, k1, 0, 2, :])[::-1] # zyx -> xyz
-        acquisition.sample_time_us = self.sample_time_us[other, k2, k1, 0]
-        acquisition.scan_counter = self.scan_counter[other, k2, k1, 0]
-        acquisition.slice_dir = tuple(self.orientation.as_matrix()[other, k2, k1, 0, 0, :])[::-1] # zyx -> xyz
-        acquisition.user_float = tuple(self.user_float[other, k2, k1, :])
-        acquisition.user_int = tuple(self.user_int[other, k2, k1, :])
-        acquisition.version = self.version[other, k2, k1, 0]
+        acquisition.read_dir = tuple(self.orientation.as_matrix()[*other, k2, k1, 0, 2, :])[::-1]  # zyx -> xyz
+        acquisition.sample_time_us = self.sample_time_us[*other, k2, k1, 0]
+        acquisition.scan_counter = self.scan_counter[*other, k2, k1, 0]
+        acquisition.slice_dir = tuple(self.orientation.as_matrix()[*other, k2, k1, 0, 0, :])[::-1]  # zyx -> xyz
+        acquisition.user_float = tuple(self.user_float[*other, k2, k1, :])
+        acquisition.user_int = tuple(self.user_int[*other, k2, k1, :])
+        acquisition.version = self.version[*other, k2, k1, 0]
         return acquisition
 
     def _apply_(self, modify_acq_info_field: Callable) -> None:
