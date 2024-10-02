@@ -1,4 +1,4 @@
-"""Iterative Walsh method for coil sensitivity map calculation."""
+"""(Iterative) Walsh method for coil sensitivity map calculation."""
 
 import torch
 
@@ -6,10 +6,9 @@ from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.filters import uniform_filter
 
 
-def iterative_walsh(
+def walsh(
     coil_images: torch.Tensor,
-    smoothing_width: SpatialDimension[int] | int,
-    power_iterations: int,
+    smoothing_width: SpatialDimension[int] | int
 ) -> torch.Tensor:
     """Calculate a coil sensitivity map (csm) using an iterative version of the Walsh method.
 
@@ -26,13 +25,14 @@ def iterative_walsh(
         images for each coil element
     smoothing_width
         width of the smoothing filter
-    power_iterations
-        number of iterations used to determine dominant eigenvector
 
     References
     ----------
     .. [WAL2000] Walsh DO, Gmitro AF, Marcellin MW (2000) Adaptive reconstruction of phased array MR imagery. MRM 43
     """
+    # After 10 power iterations we will have a very good estimate of the singular vector
+    n_power_iterations = 10
+
     if isinstance(smoothing_width, int):
         smoothing_width = SpatialDimension(smoothing_width, smoothing_width, smoothing_width)
     # Compute the pointwise covariance between coils
@@ -44,7 +44,7 @@ def iterative_walsh(
     # At each point in the image, find the dominant eigenvector
     # of the signal covariance matrix using the power method
     v = coil_covariance.sum(dim=0)
-    for _ in range(power_iterations):
+    for _ in range(n_power_iterations):
         v /= v.norm(dim=0)
         v = torch.einsum('abzyx,bzyx->azyx', coil_covariance, v)
     csm = v / v.norm(dim=0)
