@@ -1,17 +1,36 @@
 """Acquisition information dataclass."""
 
+import dataclasses
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Self
+from typing import Self, TypeVar
 
 import ismrmrd
 import numpy as np
 import torch
+from einops import rearrange
 
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.unit_conversion import mm_to_m
+
+T = TypeVar('T', torch.Tensor, Rotation, SpatialDimension)
+
+
+def rearrange_acq_info_fields(field: T, pattern: str, additional_info: dict[str, int] | None = None) -> T:
+    """Change the shape of the fields in AcqInfo."""
+    axes_lengths = {} if additional_info is None else additional_info
+    if isinstance(field, Rotation):
+        return Rotation.from_matrix(rearrange(field.as_matrix(), pattern, **axes_lengths))
+    elif isinstance(field, SpatialDimension):
+        return SpatialDimension(
+            z=rearrange(field.z, pattern, **axes_lengths),
+            y=rearrange(field.y, pattern, **axes_lengths),
+            x=rearrange(field.x, pattern, **axes_lengths),
+        )
+    else:
+        return rearrange(field, pattern, **axes_lengths)
 
 
 @dataclass(slots=True)
@@ -265,3 +284,21 @@ class AcqInfo(MoveDataMixin):
             version=tensor_2d(headers['version']),
         )
         return acq_info
+
+    def _apply_(self, modify_acq_info_field: Callable) -> None:
+        """Go through all fields of AcqInfo object and apply function in-place.
+
+        Parameters
+        ----------
+        modify_acq_info_field
+            Function which takes AcqInfo fields as input and returns modified AcqInfo field
+        """
+        for field in dataclasses.fields(self):
+            current = getattr(self, field.name)
+            if dataclasses.is_dataclass(current):
+                for subfield in dataclasses.fields(current):
+                    subcurrent = getattr(current, subfield.name)
+                    setattr(current, subfield.name, modify_acq_info_field(subcurrent))
+            else:
+                setattr(self, field.name, modify_acq_info_field(current))
+        return None

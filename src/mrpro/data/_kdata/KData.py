@@ -23,9 +23,9 @@ from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
 from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.Rotation import Rotation
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
-from mrpro.utils import modify_acq_info
 
 KDIM_SORT_LABELS = (
     'k1',
@@ -199,10 +199,10 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         sort_idx = np.lexsort(acq_indices)  # torch does not have lexsort as of pytorch 2.2 (March 2024)
 
         # Finally, reshape and sort the tensors in acqinfo and acqinfo.idx, and kdata.
-        def sort_and_reshape_tensor_fields(input_tensor: torch.Tensor):
+        def sort_and_reshape_tensor_fields(input_tensor: torch.Tensor | Rotation):
             return rearrange(input_tensor[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=n_k1, k2=n_k2)
 
-        kheader.acq_info = modify_acq_info(sort_and_reshape_tensor_fields, kheader.acq_info)
+        kheader.acq_info._apply_(sort_and_reshape_tensor_fields)
         kdata = rearrange(kdata[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=n_k1, k2=n_k2)
 
         # Calculate trajectory and check if it matches the kdata shape
