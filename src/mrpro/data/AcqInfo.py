@@ -248,8 +248,8 @@ class AcqInfo(MoveDataMixin):
                 torch.stack(
                     (
                         torch.stack((slice_dir.z, slice_dir.y, slice_dir.x), dim=-1),
-                        torch.stack((phase_dir.z, phase_dir.y, phase_dir.x), dim=-1),
                         torch.stack((read_dir.z, read_dir.y, read_dir.x), dim=-1),
+                        torch.stack((phase_dir.z, phase_dir.y, phase_dir.x), dim=-1),
                     ),
                     dim=-2,
                 )
@@ -323,14 +323,14 @@ class AcqInfo(MoveDataMixin):
             m_to_mm(self.patient_table_position.y[*other, k2, k1, 0]),
             m_to_mm(self.patient_table_position.z[*other, k2, k1, 0]),
         )
-        acquisition.phase_dir = tuple(self.orientation.as_matrix()[*other, k2, k1, 0, 1, :])[::-1]  # zyx -> xyz
+        acquisition.phase_dir = tuple(self.orientation.as_matrix()[*other, k2, k1, 0, 2, :])[::-1]  # zyx -> xyz
         acquisition.physiology_time_stamp = tuple(self.physiology_time_stamp[*other, k2, k1, :])
         acquisition.position = (
             m_to_mm(self.position.x[*other, k2, k1, 0]),
             m_to_mm(self.position.y[*other, k2, k1, 0]),
             m_to_mm(self.position.z[*other, k2, k1, 0]),
         )
-        acquisition.read_dir = tuple(self.orientation.as_matrix()[*other, k2, k1, 0, 2, :])[::-1]  # zyx -> xyz
+        acquisition.read_dir = tuple(self.orientation.as_matrix()[*other, k2, k1, 0, 1, :])[::-1]  # zyx -> xyz
         acquisition.sample_time_us = self.sample_time_us[*other, k2, k1, 0]
         acquisition.scan_counter = self.scan_counter[*other, k2, k1, 0]
         acquisition.slice_dir = tuple(self.orientation.as_matrix()[*other, k2, k1, 0, 0, :])[::-1]  # zyx -> xyz
