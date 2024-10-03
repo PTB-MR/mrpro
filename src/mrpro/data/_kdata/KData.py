@@ -200,7 +200,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         # Finally, reshape and sort the tensors in acqinfo and acqinfo.idx, and kdata.
         kheader.acq_info._apply_(
             lambda field: rearrange_acq_info_fields(
-                field, '(other k2 k1) ... -> other k2 k1 ...', {'k1': n_k1, 'k2': n_k2}
+                field[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', {'k1': n_k1, 'k2': n_k2}
             )
         )
         kdata = rearrange(kdata[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=n_k1, k2=n_k2)
