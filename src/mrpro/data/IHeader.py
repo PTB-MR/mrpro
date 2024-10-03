@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import dataclasses
 import datetime
-from collections.abc import Sequence, Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Self, overload
+from typing import Self, TypeVar
 
 import numpy as np
 import torch
@@ -15,9 +15,10 @@ from pydicom.tag import Tag, TagType
 
 from mrpro.data.KHeader import KHeader
 from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
-from mrpro.data.AcqInfo import AcqInfo, mm_to_m, ms_to_s
+from mrpro.utils.unit_conversion import mm_to_m, ms_to_s
 
 MISC_TAGS = {'TimeAfterStart': 0x00191016}
 UNKNOWN = 'unknown'
@@ -27,13 +28,10 @@ UNKNOWN = 'unknown'
 class IHeader(MoveDataMixin):
     """MR image data header."""
 
-    b0: float | None
-    """Magnetic field strength [T]."""
-
     fov: SpatialDimension[float]
     """Field of view [m]."""
 
-    h1_freq: float | None
+    lamor_frequency_proton: float | None
     """Lamor frequency of hydrogen nuclei [Hz]."""
 
     te: torch.Tensor | None
@@ -48,23 +46,14 @@ class IHeader(MoveDataMixin):
     tr: torch.Tensor | None
     """Repetition time [s]."""
 
-    phase_dir: SpatialDimension[torch.Tensor] | None
-    """Directional cosine of phase encoding (2D)."""
-
     position: SpatialDimension[torch.Tensor] | None
     """Center of the excited volume, in LPS coordinates relative to isocenter [m]."""
 
-    read_dir: SpatialDimension[torch.Tensor] | None
-    """Directional cosine of readout/frequency encoding."""
-
-    slice_dir: SpatialDimension[torch.Tensor] | None
-    """Directional cosine of slice normal, i.e. cross-product of read_dir and phase_dir."""
+    orientation: Rotation | None
+    """Rotation describing the orientation of the readout, phase and slice encoding direction."""
 
     patient_table_position: SpatialDimension[torch.Tensor] | None = None
     """Offset position of the patient table, in LPS coordinates [m]."""
-
-    n_coils: int | None = None
-    """Number of receiver coils."""
 
     datetime: datetime.datetime | None = None
     """Date and time of acquisition."""
@@ -72,7 +61,7 @@ class IHeader(MoveDataMixin):
     echo_train_length: int | None = 1
     """Number of echoes in a multi-echo acquisition."""
 
-    seq_type: str = UNKNOWN
+    sequence_type: str = UNKNOWN
     """Type of sequence."""
 
     model: str = UNKNOWN
@@ -103,22 +92,18 @@ class IHeader(MoveDataMixin):
             MR raw data header (KHeader) containing required meta data.
         """
         return cls(
-            b0=kheader.b0,
             fov=kheader.recon_fov,
-            h1_freq=kheader.h1_freq,
+            lamor_frequency_proton=kheader.lamor_frequency_proton,
             te=kheader.te,
             ti=kheader.ti,
             fa=kheader.fa,
             tr=kheader.tr,
             patient_table_position=kheader.acq_info.patient_table_position,
-            phase_dir=kheader.acq_info.phase_dir,
             position=kheader.acq_info.position,
-            read_dir=kheader.acq_info.read_dir,
-            slice_dir=kheader.acq_info.slice_dir,
-            n_coils=kheader.n_coils,
+            orientation=kheader.acq_info.orientation,
             datetime=kheader.datetime,
             echo_train_length=kheader.echo_train_length,
-            seq_type=kheader.seq_type,
+            sequence_type=kheader.sequence_type,
             model=kheader.model,
             vendor=kheader.vendor,
             protocol_name=kheader.protocol_name,
@@ -162,45 +147,47 @@ class IHeader(MoveDataMixin):
             else:
                 return torch.as_tensor(values)
 
-        def ensure_unique_string(values: Sequence[str], dicom_tag: TagType) -> str:
-            """Ensure there is only one unique string."""
-            if any(val is None for val in values):
-                return UNKNOWN
-            elif len(set(values)) == 1:
-                return values[0]
-            else:
-                raise ValueError(f'Inconsistent entries for {dicom_tag} found.')
+        T = TypeVar('T')
 
-        @overload
-        def ensure_unique_number(values: Sequence[int], dicom_tag: TagType) -> int: ...
-
-        @overload
-        def ensure_unique_number(values: Sequence[float], dicom_tag: TagType) -> float: ...
-
-        def ensure_unique_number(values: Sequence[float | int], dicom_tag: TagType) -> float | int:
-            """Ensure there is only one unique number."""
+        def ensure_unique_entry(values: Sequence[T], dicom_tag: TagType) -> T:
+            """Ensure there is only one unique entry."""
             if len(set(values)) == 1:
                 return values[0]
             else:
                 raise ValueError(f'Inconsistent entries for {dicom_tag} found.')
 
+        def ensure_unique_string(values: Sequence[str], dicom_tag: TagType) -> str:
+            """Ensure there is only one unique string."""
+            if any(val is None for val in values):
+                return UNKNOWN
+            else:
+                return ensure_unique_entry(values, dicom_tag)
 
         # Parameters which have to be the same for all entries in the dicom dataset
-        b0 = ensure_unique_number(get_items_as_list('MagneticFieldStrength', lambda item: item), 'MagneticFieldStrength')
-        h1_freq = ensure_unique_number(get_items_as_list('ImagingFrequency', lambda item: item), 'ImagingFrequency')
-        rows_x = ensure_unique_number(get_items_as_list('Rows', lambda item: float(item)), 'Rows')
-        columns_y = ensure_unique_number(get_items_as_list('Columns', lambda item: float(item)), 'Columns')
-        resolution_x = ensure_unique_number(get_items_as_list('PixelSpacing', lambda item: mm_to_m(item[0])), 'PixelSpacing')
-        resolution_y = ensure_unique_number(get_items_as_list('PixelSpacing', lambda item: mm_to_m(item[1])), 'PixelSpacing')
-        resolution_z = ensure_unique_number(get_items_as_list('SliceThickness', lambda item: mm_to_m(item)), 'SliceThickness')
-        echo_train_length = ensure_unique_number(get_items_as_list('EchoTrainLength', lambda item: int(item)), 'EchoTrainLength')
+        lamor_frequency_proton = ensure_unique_entry(
+            get_items_as_list('ImagingFrequency', lambda item: item), 'ImagingFrequency'
+        )
+        rows_x = ensure_unique_entry(get_items_as_list('Rows', lambda item: float(item)), 'Rows')
+        columns_y = ensure_unique_entry(get_items_as_list('Columns', lambda item: float(item)), 'Columns')
+        resolution_x = ensure_unique_entry(
+            get_items_as_list('PixelSpacing', lambda item: mm_to_m(item[0])), 'PixelSpacing'
+        )
+        resolution_y = ensure_unique_entry(
+            get_items_as_list('PixelSpacing', lambda item: mm_to_m(item[1])), 'PixelSpacing'
+        )
+        resolution_z = ensure_unique_entry(
+            get_items_as_list('SliceThickness', lambda item: mm_to_m(item)), 'SliceThickness'
+        )
+        echo_train_length = ensure_unique_entry(
+            get_items_as_list('EchoTrainLength', lambda item: int(item)), 'EchoTrainLength'
+        )
 
         fov = SpatialDimension(resolution_z, resolution_y * columns_y, resolution_x * rows_x)
 
-        seq_type = ensure_unique_string(get_items_as_list('SequenceName'), 'SequenceName')
-        model=ensure_unique_string(get_items_as_list(0x00081090), 'ManufacturersModelName')
+        sequence_type = ensure_unique_string(get_items_as_list('SequenceName'), 'SequenceName')
+        model = ensure_unique_string(get_items_as_list(0x00081090), 'ManufacturersModelName')
         vendor = ensure_unique_string(get_items_as_list('Manufacturer'), 'Manufacturer')
-        protocol_name =ensure_unique_string(get_items_as_list('ProtocolName'), 'ProtocolName')
+        protocol_name = ensure_unique_string(get_items_as_list('ProtocolName'), 'ProtocolName')
         patient_name = ensure_unique_string(get_items_as_list('PatientName'), 'PatientName')
 
         # Parameters which can vary between the entries of the dicom dataset
@@ -216,39 +203,74 @@ class IHeader(MoveDataMixin):
 
         # Image orientation and position has to be defined for all images or we set it to None
         image_orientation = get_items_as_list('ImageOrientationPatient', lambda item: torch.as_tensor(item))
-        image_orientation_available = all([ori is not None for ori in image_orientation])
-        read_dir = SpatialDimension.from_array_xyz(torch.stack(image_orientation)[:,:3]) if image_orientation_available else None
-        phase_dir = SpatialDimension.from_array_xyz(torch.stack(image_orientation)[:,3:]) if image_orientation_available else None
-        slice_dir = SpatialDimension.from_array_zyx(torch.linalg.cross(torch.stack(read_dir.zyx,dim=-1), torch.stack(phase_dir.zyx,dim=-1))) if read_dir is not None and phase_dir is not None else None
+        image_orientation_available = all(ori is not None for ori in image_orientation)
+        read_dir = torch.stack(image_orientation)[:, :3] if image_orientation_available else None
+        phase_dir = torch.stack(image_orientation)[:, 3:] if image_orientation_available else None
+        slice_dir = torch.linalg.cross(read_dir, phase_dir) if read_dir is not None and phase_dir is not None else None
+        orientation = (
+            Rotation.from_matrix(torch.stack((slice_dir, phase_dir, read_dir), dim=-2))
+            if read_dir is not None and phase_dir is not None and slice_dir is not None
+            else None
+        )
 
         # For dicom the image position is defined as the position of the top left voxel. In MRpro it is the centre of
         # the image. In order to calculate the MRpro position we need to to know the orientation
-        def calc_position_from_dicom(position_xyz, fov, image_orientation):
+        def calc_position_from_dicom(
+            position_xyz: list[float], fov: SpatialDimension, image_orientation: list[torch.Tensor]
+        ):
             """Calculate the position as the centre of the image."""
-            position_xyz = mm_to_m(torch.as_tensor(position_xyz))
-            position_xyz += (fov.x/2 * torch.stack(image_orientation)[:,:3] + fov.y/2 * torch.stack(image_orientation)[:,3:])
-            return position_xyz
+            position_xyz_tensor = mm_to_m(torch.as_tensor(position_xyz))
+            position_xyz_tensor += (
+                fov.x / 2 * torch.stack(image_orientation)[:, :3] + fov.y / 2 * torch.stack(image_orientation)[:, 3:]
+            )
+            return position_xyz_tensor
 
         image_position = get_items_as_list('ImagePositionPatient')
-        image_position_available = all([pos is not None for pos in image_position]) and image_orientation_available
-        position = SpatialDimension.from_array_xyz(calc_position_from_dicom(image_position, fov, image_orientation)) if image_position_available is not None else None
+        image_position_available = all(pos is not None for pos in image_position) and image_orientation_available
+        position = (
+            SpatialDimension.from_array_xyz(calc_position_from_dicom(image_position, fov, image_orientation))
+            if image_position_available is not None
+            else None
+        )
 
         # Get the earliest date as the start of the entire data acquisition
         acq_date = get_items_as_list('AcquisitionDate')
         acq_time = get_items_as_list('AcquisitionTime')
-        acq_date_time_available = all(date is not None for date in acq_date) and all(time is not None for time in acq_time)
-        date_time = [datetime.datetime.strptime(date + time, '%Y%m%d%H%M%S.%f') for date, time in zip(acq_date, acq_time, strict=True)] if acq_date_time_available else None
-        date_time.sort()
-        date_time = date_time[0]
+        acq_date_time_available = all(date is not None for date in acq_date) and all(
+            time is not None for time in acq_time
+        )
+        date_time_list = (
+            [
+                datetime.datetime.strptime(date + time, '%Y%m%d%H%M%S.%f')
+                for date, time in zip(acq_date, acq_time, strict=True)
+            ]
+            if acq_date_time_available
+            else None
+        )
+        date_time = sorted(date_time_list)[0] if date_time_list is not None else None
 
         # Get misc parameters
         misc = {}
         for name in MISC_TAGS:
             misc[name] = make_unique_tensor(get_items_as_list(MISC_TAGS[name], lambda item: float(item)))
-        return cls(b0=b0, fov=fov, h1_freq=h1_freq, te=te, ti=ti, fa=fa, tr=tr, phase_dir=phase_dir, position=position,
-                   read_dir=read_dir, slice_dir=slice_dir, datetime=date_time, echo_train_length=echo_train_length,
-                   seq_type=seq_type, model=model, vendor=vendor, protocol_name=protocol_name,
-                   patient_name=patient_name, misc=misc)
+        return cls(
+            fov=fov,
+            lamor_frequency_proton=lamor_frequency_proton,
+            te=te,
+            ti=ti,
+            fa=fa,
+            tr=tr,
+            position=position,
+            orientation=orientation,
+            datetime=date_time,
+            echo_train_length=echo_train_length,
+            sequence_type=sequence_type,
+            model=model,
+            vendor=vendor,
+            protocol_name=protocol_name,
+            patient_name=patient_name,
+            misc=misc,
+        )
 
     def __repr__(self):
         """Representation method for IHeader class."""
