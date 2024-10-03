@@ -248,8 +248,8 @@ class AcqInfo(MoveDataMixin):
                 torch.stack(
                     (
                         torch.stack((slice_dir.z, slice_dir.y, slice_dir.x), dim=-1),
-                        torch.stack((phase_dir.z, phase_dir.y, phase_dir.x), dim=-1),
                         torch.stack((read_dir.z, read_dir.y, read_dir.x), dim=-1),
+                        torch.stack((phase_dir.z, phase_dir.y, phase_dir.x), dim=-1),
                     ),
                     dim=-2,
                 )
