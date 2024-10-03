@@ -12,12 +12,12 @@ import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
 import torch
 
 from mrpro.data import enums
-from mrpro.data.AcqInfo import AcqInfo, mm_to_m, ms_to_s
+from mrpro.data.AcqInfo import AcqInfo
 from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.data.TrajectoryDescription import TrajectoryDescription
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
+from mrpro.utils.unit_conversion import mm_to_m, ms_to_s
 
 if TYPE_CHECKING:
     # avoid circular imports by importing only when type checking
@@ -39,9 +39,6 @@ class KHeader(MoveDataMixin):
     trajectory: KTrajectoryCalculator
     """Function to calculate the k-space trajectory."""
 
-    b0: float
-    """Magnetic field strength [T]."""
-
     encoding_limits: EncodingLimits
     """K-space encoding limits."""
 
@@ -60,11 +57,8 @@ class KHeader(MoveDataMixin):
     acq_info: AcqInfo
     """Information of the acquisitions (i.e. readout lines)."""
 
-    h1_freq: float
+    lamor_frequency_proton: float
     """Lamor frequency of hydrogen nuclei [Hz]."""
-
-    n_coils: int | None = None
-    """Number of receiver coils."""
 
     datetime: datetime.datetime | None = None
     """Date and time of acquisition."""
@@ -87,7 +81,7 @@ class KHeader(MoveDataMixin):
     echo_train_length: int = 1
     """Number of echoes in a multi-echo acquisition."""
 
-    seq_type: str = UNKNOWN
+    sequence_type: str = UNKNOWN
     """Type of sequence."""
 
     model: str = UNKNOWN
@@ -99,16 +93,13 @@ class KHeader(MoveDataMixin):
     protocol_name: str = UNKNOWN
     """Name of the acquisition protocol."""
 
-    misc: dict = dataclasses.field(default_factory=dict)  # do not use {} here!
-    """Dictionary with miscellaneous parameters."""
-
     calibration_mode: enums.CalibrationMode = enums.CalibrationMode.OTHER
     """Mode of how calibration data is acquired. """
 
     interleave_dim: enums.InterleavingDimension = enums.InterleavingDimension.OTHER
     """Interleaving dimension."""
 
-    traj_type: enums.TrajectoryType = enums.TrajectoryType.OTHER
+    trajectory_type: enums.TrajectoryType = enums.TrajectoryType.OTHER
     """Type of trajectory."""
 
     measurement_id: str = UNKNOWN
@@ -117,8 +108,8 @@ class KHeader(MoveDataMixin):
     patient_name: str = UNKNOWN
     """Name of the patient."""
 
-    trajectory_description: TrajectoryDescription = dataclasses.field(default_factory=TrajectoryDescription)
-    """Description of the trajectory."""
+    _misc: dict = dataclasses.field(default_factory=dict)  # do not use {} here!
+    """Dictionary with miscellaneous parameters."""
 
     @property
     def fa_degree(self) -> torch.Tensor | None:
@@ -159,16 +150,13 @@ class KHeader(MoveDataMixin):
         enc: ismrmrdschema.encodingType = header.encoding[encoding_number]
 
         # These are guaranteed to exist
-        parameters = {'h1_freq': header.experimentalConditions.H1resonanceFrequency_Hz, 'acq_info': acq_info}
+        parameters = {
+            'lamor_frequency_proton': header.experimentalConditions.H1resonanceFrequency_Hz,
+            'acq_info': acq_info,
+        }
 
         if defaults is not None:
             parameters.update(defaults)
-
-        if (
-            header.acquisitionSystemInformation is not None
-            and header.acquisitionSystemInformation.receiverChannels is not None
-        ):
-            parameters['n_coils'] = header.acquisitionSystemInformation.receiverChannels
 
         if header.sequenceParameters is not None:
             if header.sequenceParameters.TR:
@@ -183,7 +171,7 @@ class KHeader(MoveDataMixin):
                 parameters['echo_spacing'] = ms_to_s(torch.as_tensor(header.sequenceParameters.echo_spacing))
 
             if header.sequenceParameters.sequence_type is not None:
-                parameters['seq_type'] = header.sequenceParameters.sequence_type
+                parameters['sequence_type'] = header.sequenceParameters.sequence_type
 
         if enc.reconSpace is not None:
             parameters['recon_fov'] = SpatialDimension[float].from_xyz(enc.reconSpace.fieldOfView_mm, mm_to_m)
@@ -209,7 +197,7 @@ class KHeader(MoveDataMixin):
                 )
 
         if enc.trajectory is not None:
-            parameters['traj_type'] = enums.TrajectoryType(enc.trajectory.value)
+            parameters['trajectory_type'] = enums.TrajectoryType(enc.trajectory.value)
 
         # Either use the series or study time if available
         if header.measurementInformation is not None and header.measurementInformation.seriesTime is not None:
@@ -242,15 +230,8 @@ class KHeader(MoveDataMixin):
             if header.acquisitionSystemInformation.systemModel is not None:
                 parameters['model'] = header.acquisitionSystemInformation.systemModel
 
-            if header.acquisitionSystemInformation.systemFieldStrength_T is not None:
-                parameters['b0'] = header.acquisitionSystemInformation.systemFieldStrength_T
-
-        # estimate b0 from h1_freq if not given
-        if 'b0' not in parameters:
-            parameters['b0'] = parameters['h1_freq'] / 4258e4
-
         # Dump everything into misc
-        parameters['misc'] = dataclasses.asdict(header)
+        parameters['_misc'] = dataclasses.asdict(header)
 
         if overwrite is not None:
             parameters.update(overwrite)

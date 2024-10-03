@@ -137,6 +137,9 @@ jobs:
     container:
       image: ghcr.io/ptb-mr/mrpro_py311:latest
       options: --user runner
+    permissions:
+      pull-requests: write
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -192,10 +195,29 @@ jobs:
         if: github.event_name != 'pull_request'
 
       - name: Save Documentation
+        id: save_docu
         uses: actions/upload-artifact@v4
         with:
           name: Documentation
           path: docs/build/html/
+
+      - run: echo '${{ steps.save_docu.outputs.artifact-url }}'
+
+      - run: echo '${{ github.event.number }}'
+
+      - name: Update PR with link to summary
+        uses: edumserrano/find-create-or-update-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: '<!-- documentation build ${{ github.event.number }} -->'
+          comment-author: 'github-actions[bot]'
+          body: |
+            <!-- documentation build ${{ github.event.number }} -->
+            ### :books: Documentation
+            :file_folder: [Download as zip](${{ steps.save_docu.outputs.artifact-url }})
+            :mag: [View online](https://zimf.de/zipserve/${{ steps.save_docu.outputs.artifact-url }}/)
+          edit-mode: replace
+
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
