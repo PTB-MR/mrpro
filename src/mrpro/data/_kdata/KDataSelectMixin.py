@@ -1,11 +1,14 @@
 """Select subset along other dimensions of KData."""
 
 import copy
-from typing import Literal, Self
+from typing import Literal, Self, TypeVar
 
 import torch
 from mrpro.data._kdata.KDataProtocol import _KDataProtocol
-from mrpro.utils import modify_acq_info
+from mrpro.data.Rotation import Rotation
+from mrpro.data.SpatialDimension import SpatialDimension
+
+T = TypeVar('T', torch.Tensor, Rotation, SpatialDimension)
 
 
 class KDataSelectMixin(_KDataProtocol):
@@ -49,10 +52,13 @@ class KDataSelectMixin(_KDataProtocol):
         other_idx = torch.cat([torch.where(idx == label_idx[:, 0, 0])[0] for idx in subset_idx], dim=0)
 
         # Adapt header
-        def select_acq_info(info: torch.Tensor):
-            return info[other_idx, ...]
+        def select_acq_info(field: T) -> T:
+            if isinstance(field, SpatialDimension):
+                return SpatialDimension(z=field.z[other_idx, ...], y=field.y[other_idx, ...], x=field.x[other_idx, ...])
+            else:
+                return field[other_idx, ...]
 
-        kheader.acq_info = modify_acq_info(select_acq_info, kheader.acq_info)
+        kheader.acq_info._apply_(select_acq_info)
 
         # Select data
         kdat = self.data[other_idx, ...]
