@@ -85,6 +85,8 @@ T = TypeVar('T', bound=Operator, covariant=True)
 
 
 class _OperatorHStack(Operator, Generic[T]):
+    """A generalization of horizontal stacking of operators."""
+
     def __init__(self, *operators: T):
         super().__init__()
         self.operators = torch.nn.ModuleList(operators)
@@ -93,12 +95,34 @@ class _OperatorHStack(Operator, Generic[T]):
         ys = [op(xi) for op, xi in zip(self.operators, x, strict=False)]
         return tuple(sum(el) for el in zip(*ys, strict=False))
 
+    def __len__(self):
+        return len(self.operators)
+
+    def __iter__(self):
+        return iter(self.operators)
+
+
+class _OperatorVStack(Operator, Generic[T]):
+    def __init__(self, *operators: T):
+        super().__init__()
+        self.operators = torch.nn.ModuleList(operators)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply the operator to the tensor."""
+        return sum((op(x) for op in self.operators), start=())
+
+
+LinearOperatorOrHStack = TypeVar('LinearOperatorOrHStack', LinearOperator, '_LinearOperatorHStack')
+LinearOperatorOrVStack = TypeVar('LinearOperatorOrVStack', LinearOperator, '_LinearOperatorVStack')
+
+
+class _LinearOperatorHStack(_OperatorHStack[LinearOperatorOrVStack]):
     @overload
-    def H(self: _OperatorHStack[LinearOperator]) -> _OperatorVStack[LinearOperator]: ...
+    def H(self: _LinearOperatorHStack[LinearOperator]) -> _LinearOperatorVStack[LinearOperator]: ...
     @overload
     def H(
-        self: _OperatorHStack[_OperatorVStack[LinearOperator]],
-    ) -> _OperatorVStack[_OperatorHStack[LinearOperator]]: ...
+        self: _LinearOperatorHStack[_OperatorVStack[LinearOperator]],
+    ) -> _LinearOperatorVStack[_LinearOperatorHStack[LinearOperator]]: ...
 
     @property
     def H(  # noqa: N802
@@ -108,7 +132,7 @@ class _OperatorHStack(Operator, Generic[T]):
         return _OperatorVStack(*(op.H for op in self.operators))
 
     def operator_norm(
-        self: _OperatorHStack[LinearOperator | _OperatorVStack[LinearOperator]],
+        self,
         initial_values: Sequence[torch.Tensor],
         **kwargs,
     ) -> torch.Tensor:
@@ -123,35 +147,27 @@ class _OperatorHStack(Operator, Generic[T]):
         )
         return norm
 
-    def __len__(self):
-        return len(self.operators)
 
-    def __iter__(self):
-        return iter(self.operators)
-
-    def prox(self: _OperatorHStack[ProximableFunctional], *x: torch.Tensor, sigma: float) -> tuple[torch.Tensor, ...]:
+class _ProximalFunctionalSeparableSum(_OperatorHStack[ProximableFunctional]):
+    def prox(self, *x: torch.Tensor, sigma: float) -> tuple[torch.Tensor, ...]:
         """Apply the proximal operator to the tensor."""
         return tuple(f.prox(xi, sigma)[0] for f, xi in zip(self.operators, x, strict=False))
 
-    def prox_convex_conj(
-        self: _OperatorHStack[ProximableFunctional], *x: torch.Tensor, sigma: float
-    ) -> tuple[torch.Tensor, ...]:
+    def prox_convex_conj(self, *x: torch.Tensor, sigma: float) -> tuple[torch.Tensor, ...]:
         """Apply the proximal operator of the convex conjugate of the functional to a tensor."""
         return tuple(f.prox_convex_conj(xi, sigma)[0] for f, xi in zip(self.operators, x, strict=False))
 
 
-class _OperatorVStack(Operator, Generic[T]):
-    def __init__(self, *operators: T):
-        super().__init__()
-        self.operators = torch.nn.ModuleList(operators)
-
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, ...]:
-        """Apply the operator to the tensor."""
-        return sum((op(x) for op in self.operators), start=())
-
+class _LinearOperatorVStack(_OperatorVStack[LinearOperatorOrHStack]):
+    @overload
+    def H(self: _LinearOperatorVStack[LinearOperator]) -> _LinearOperatorHStack[LinearOperator]: ...
+    @overload
+    def H(
+        self: _LinearOperatorVStack[_OperatorHStack[LinearOperator]],
+    ) -> _LinearOperatorHStack[_LinearOperatorVStack[LinearOperator]]: ...
     @property
     def H(  # noqa: N802
-        self: _OperatorVStack[LinearOperator | _OperatorHStack[LinearOperator]],
+        self,
     ) -> _OperatorHStack[LinearOperator | _OperatorVStack[LinearOperator]]:
         """Return the adjoint of the operator."""
         return _OperatorHStack(*(op.H for op in self.operators))
@@ -184,6 +200,25 @@ class _OperatorVStack(Operator, Generic[T]):
 
     def __iter__(self):
         return iter(self.operators)
+
+
+class _LinearOperatorMatrix(_LinearOperatorVStack[_LinearOperatorHStack[LinearOperator]]):
+    def __init__(self, operators: Sequence[Sequence[LinearOperator]]):
+        super().__init__()
+        self._op = _LinearOperatorVStack(*(_LinearOperatorHStack(*row) for row in operators))
+
+    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        return self._op(*x)
+
+    @property
+    def H(self) -> _LinearOperatorMatrix:
+        return _LinearOperatorMatrix(*self._op.H)
+
+    def operator_norm(self, initial_values: Sequence[torch.Tensor], **kwargs) -> torch.Tensor:
+        return self._op.operator_norm(initial_values, **kwargs)
+
+    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        return self.H(x)
 
 
 def pdhg(
@@ -269,8 +304,8 @@ def pdhg(
 
     f_ = _OperatorHStack(*((ZeroFunctional(),) * rows if f is None else f))
     g_ = _OperatorHStack(*((ZeroFunctional(),) * cols if g is None else g))
-    operator_ = _OperatorVStack(
-        *[_OperatorHStack(*row) for row in (((IdentityOp(),) * cols,) * rows if operator is None else operator)]
+    operator_ = _LinearOperatorVStack(
+        *[_LinearOperatorHStack(*row) for row in (((IdentityOp(),) * cols,) * rows if operator is None else operator)]
     )
 
     if primal_stepsize is None or dual_stepsize is None:
