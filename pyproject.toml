@@ -28,14 +28,15 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
-    "numpy>=1.23,<2.0",
-    "torch>=2.3,<3.0",
-    "ismrmrd>=1.14.1,<2.0",
+    "numpy>=1.23, <2.0",
+    "torch>=2.3",
+    "ismrmrd>=1.14.1",
     "einops",
-    "pydicom",
-    "pypulseq@git+https://github.com/imr-framework/pypulseq",
+    "pydicom>=2.3",
+    "pypulseq>=1.4.2",
     "torchkbnufft>=1.4.0",
     "scipy>=1.12",
+    "ptwt>=0.1.8",
 ]
 
 [project.optional-dependencies]
@@ -47,7 +48,6 @@ test = [
     "pytest-cov",
     "pytest-xdist",
 ]
-lint = ["mypy", "flake8", "isort", "pre-commit", "autopep8", "pydocstyle"]
 docs = ["sphinx", "sphinx_rtd_theme", "sphinx-pyproject"]
 notebook = [
     "zenodo_get",
@@ -64,8 +64,11 @@ notebook = [
 # PyTest section
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-filterwarnings = ["error"]
-# addopts = "-n auto" # TODO: debug vscode missing tests if enabled
+filterwarnings = [
+    "error",
+    "ignore:'write_like_original':DeprecationWarning:pydicom:"
+]
+addopts = "-n auto"
 markers = ["cuda : Tests only to be run when cuda device is available"]
 
 # MyPy section
@@ -87,6 +90,8 @@ module = [
     "torchkbnufft",
     "pypulseq",
     "zenodo_get",
+    "ptwt.*",
+    "pywt.*"
 ]
 ignore_missing_imports = true
 
@@ -138,7 +143,8 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-force-single-line = true
+force-single-line = false
+split-on-trailing-comma = false
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
@@ -157,6 +163,8 @@ locale = "en-us"
 [tool.typos.default.extend-words]
 Reson = "Reson" # required for Proc. Intl. Soc. Mag. Reson. Med.
 iy = "iy"
+daa = 'daa'     # required for wavelet operator
+gaus = 'gaus'   # required for wavelet operator
 
 [tool.typos.files]
 extend-exclude = [
