@@ -5,6 +5,8 @@ from typing import cast
 import pytest
 import torch
 from mrpro.operators import LinearOperator, Operator
+from mrpro.operators.LinearOperator import LinearOperatorSum
+from mrpro.operators.Operator import OperatorSum
 
 from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test
@@ -90,6 +92,17 @@ def test_sum_operator():
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator), 'Operator + Operator should be an Operator'
     assert not isinstance(c, LinearOperator), 'Operator + Operator should not be a LinearOperator'
+
+
+def test_sum_operator_multiple():
+    a = DummyOperator(torch.tensor(2.0))
+    b = DummyOperator(torch.tensor(3.0))
+    c = DummyOperator(torch.tensor(4.0))
+    d = OperatorSum(a, b, c)
+    x = RandomGenerator(0).complex64_tensor(10)
+    (y1,) = d(x)
+    y2 = a(x)[0] + b(x)[0] + c(x)[0] + d(x)[0]
+    torch.testing.assert_close(y1, y2)
 
 
 def test_sum_linearoperator():
@@ -310,4 +323,15 @@ def test_adjoint_tensor_sum():
     u = rng.complex64_tensor(3)
     v = rng.complex64_tensor(3)
     linear_op_sum = a + b
+    dotproduct_adjointness_test(linear_op_sum, u, v)
+
+
+def test_adjoint_sum_multiple():
+    rng = RandomGenerator(3)
+    a = DummyLinearOperator(rng.complex64_tensor((3, 10)))
+    b = DummyLinearOperator(rng.complex64_tensor((3, 10)))
+    c = DummyLinearOperator(rng.complex64_tensor((3, 10)))
+    u = rng.complex64_tensor(10)
+    v = rng.complex64_tensor(3)
+    linear_op_sum = LinearOperatorSum(a, b, c)
     dotproduct_adjointness_test(linear_op_sum, u, v)

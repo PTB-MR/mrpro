@@ -205,6 +205,9 @@ class LinearOperatorComposition(LinearOperator, OperatorComposition[torch.Tensor
     Performs operator1(operator2(x))
     """
 
+    _operator1: LinearOperator
+    _operator2: LinearOperator
+
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the operator composition."""
         # (AB)^T = B^T A^T
@@ -226,10 +229,14 @@ class LinearOperatorTensorSum(LinearOperator, OperatorTensorSum[torch.Tensor, tu
 class LinearOperatorSum(LinearOperator, OperatorSum[torch.Tensor, tuple[torch.Tensor,]]):
     """Operator addition."""
 
+    _operators: tuple[LinearOperator, ...]
+
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the operator addition."""
         # (A+B)^H = A^H + B^H
-        return (self._operator1.adjoint(x)[0] + self._operator2.adjoint(x)[0],)
+        results = [op.adjoint(x)[0] for op in self._operators]
+        result = sum(results[1:], start=results[0])
+        return (result,)
 
 
 class LinearOperatorElementwiseProductRight(
@@ -239,6 +246,8 @@ class LinearOperatorElementwiseProductRight(
 
     Peforms Tensor*LinearOperator(x)
     """
+
+    _operator: LinearOperator
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint Operator elementwise multiplication with a tensor."""
@@ -252,6 +261,8 @@ class LinearOperatorElementwiseProductLeft(
 
     Peforms LinearOperator(Tensor*x)
     """
+
+    _operator: LinearOperator
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint Operator elementwise multiplication with a tensor."""

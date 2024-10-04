@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import re
 import warnings
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Generic, TypeVar, overload
+from typing import Any, Generic, Self, TypeVar, overload
 
+import numpy as np
 import torch
 
 from mrpro.algorithms.optimizers import OptimizerStatus
@@ -24,6 +26,51 @@ class PDHGStatus(OptimizerStatus):
     duals: Sequence[torch.Tensor]
     x_relaxed: Sequence[torch.Tensor]
 
+class LinearOperatorMatrix(Operator):
+    """A matrix of linear operators."""
+
+    def __init__(self, operators: Sequence[Sequence[LinearOperator]]):
+        super().__init__()
+        try:
+            self._operators = np.array(operators)
+        except ValueError as e:
+            raise ValueError('operators must be a 2D array') from e
+        if self._operators.ndim != 2:
+            raise ValueError('operators must be a 2D array')
+        if not all(isinstance(op, LinearOperator) for op in self._operators.flat):
+            raise ValueError('all elements of operators must be LinearOperators')
+
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        return self._operators.shape
+
+    @property
+    def __getitem__(self, idx:Any) -> LinearOperator:
+        new_ops = self._operators[idx]
+        return Self(new_ops)
+
+    def __len__(self) -> int:
+        return self.shape[0]
+
+    def __iter__(self):
+        return iter(self._rows)
+
+
+    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        if len(x) != self.shape[1]
+            raise ValueError('number of input tensors must match number of columns in operator')
+        ret = (sum(op(xi)[0] for op, xi in zip(row, x, strict=True)) for row in self._rows)
+
+    @property
+    def H(self) -> LinearOperatorMatrix:
+        return LinearOperatorMatrix(*self._op.H)
+
+    def operator_norm(self, initial_values: Sequence[torch.Tensor], **kwargs) -> torch.Tensor:
+        return self._op.operator_norm(initial_values, **kwargs)
+
+    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        return self.H(x)
 
 class ZeroFunctional(ProximableFunctional):
     """The constant zero functional."""
