@@ -2,6 +2,7 @@ from mrpro.data import enums, traj_calculators, acq_filters
 from mrpro.data.AcqInfo import AcqIdx, AcqInfo
 from mrpro.data.CsmData import CsmData
 from mrpro.data.Data import Data
+from mrpro.data.Header import Header
 from mrpro.data.DcfData import DcfData
 from mrpro.data.EncodingLimits import EncodingLimits, Limits
 from mrpro.data.IData import IData
