@@ -1,4 +1,6 @@
-"""Base Class Functional."""
+"""Base Class (Elementary)(Proximable)Functional."""
+
+from __future__ import annotations
 
 import math
 from abc import ABC, abstractmethod
@@ -6,6 +8,7 @@ from collections.abc import Sequence
 
 import torch
 
+import mrpro.operators  # avoid circular import with ProximableFunctionalSeparableSum
 from mrpro.operators.Operator import Operator
 
 
@@ -164,6 +167,22 @@ class ProximableFunctional(Functional, ABC):
         sigma[sigma < 1e-8] += 1e-6
         return (x - sigma * self.prox(x / sigma, 1 / sigma)[0],)
 
+    def __or__(self, other: ProximableFunctional) -> mrpro.operators.ProximableFunctionalSeparableSum:
+        """Create a ProximableFunctionalSeparableSum object from two proximable functionals.
+
+        Parameters
+        ----------
+        other
+            second functional to be summed
+
+        Returns
+        -------
+            ProximableFunctionalSeparableSum object
+        """
+        if isinstance(other, ProximableFunctional):
+            return mrpro.operators.ProximableFunctionalSeparableSum(self, other)
+        return NotImplemented  # type: ignore[unreachable]
+
 
 class ElementaryProximableFunctional(ElementaryFunctional, ProximableFunctional):
     r"""Elementary proximable functional base class.
@@ -173,5 +192,5 @@ class ElementaryProximableFunctional(ElementaryFunctional, ProximableFunctional)
     It does not require another functional for initialization.
 
     A proximable functional is a functional :math:`f(x)` that has a prox implementation,
-    i.e. a function that yields :math:`argmin_x sigma f(x) + 1/2 ||x - y||^2`.
+    i.e. a function that yields :math:`argmin_x \sigma f(x) + 1/2 ||x - y||^2`.
     """
