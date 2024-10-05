@@ -1,11 +1,11 @@
 """Optimizer Status base class."""
 
-from typing import TypedDict
+import typing
 
 import torch
 
 
-class OptimizerStatus(TypedDict):
+class OptimizerStatus(typing.TypedDict):
     """Base class for OptimizerStatus."""
 
     solution: tuple[torch.Tensor, ...]

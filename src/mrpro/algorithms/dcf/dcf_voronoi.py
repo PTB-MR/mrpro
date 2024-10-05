@@ -1,18 +1,18 @@
 """1D, 2D and 3D density compensation function calculation with voronoi method."""
 
-from concurrent.futures import ProcessPoolExecutor
-from itertools import product
+import concurrent.futures
+import itertools
 
 import numpy as np
+import numpy.typing
+import scipy.spatial
 import torch
-from numpy.typing import ArrayLike
-from scipy.spatial import ConvexHull, Voronoi
 
 UNIQUE_ROUNDING_DECIMALS = 15
 
 
-def _volume(v: ArrayLike):
-    return ConvexHull(v).volume
+def _volume(v: numpy.typing.ArrayLike):
+    return scipy.spatial.ConvexHull(v).volume
 
 
 def dcf_1d(traj: torch.Tensor) -> torch.Tensor:
@@ -85,11 +85,11 @@ def dcf_2d3d_voronoi(traj: torch.Tensor) -> torch.Tensor:
     # the corner points of a cube bounding box are added here. The bounding box is chosen very large to ensure these
     # edge points of the trajectory can still be accurately detected in the outlier detection further down.
     furthest_corner = np.max(np.abs(traj_unique))
-    corner_points = np.array(list(product([-1, 1], repeat=dim))) * furthest_corner * 10
+    corner_points = np.array(list(itertools.product([-1, 1], repeat=dim))) * furthest_corner * 10
     traj_extendend = np.concatenate((traj_unique, corner_points.transpose()), axis=1)
 
     # Carry out voronoi tessellation
-    vdiagram = Voronoi(traj_extendend.transpose())
+    vdiagram = scipy.spatial.Voronoi(traj_extendend.transpose())
     regions = [vdiagram.regions[r] for r in vdiagram.point_region[: -len(corner_points)]]  # Ignore corner points
     vertices = [vdiagram.vertices[region] for region in regions]
 
@@ -101,7 +101,9 @@ def dcf_2d3d_voronoi(traj: torch.Tensor) -> torch.Tensor:
         # Calculate volume/area of voronoi cells using processes, as this is a very time-consuming operation
         # and ConvexHull is singlethreaded and does not seem to drop the GIL
         # TODO: this could maybe be made faster as the polyhedrons are known to be convex
-        future = ProcessPoolExecutor(max_workers=torch.get_num_threads()).map(_volume, vertices, chunksize=100)
+        future = concurrent.futures.ProcessPoolExecutor(max_workers=torch.get_num_threads()).map(
+            _volume, vertices, chunksize=100
+        )
         dcf = np.array(list(future))
 
     # Get outliers (i.e. voronoi cell which are unbound) and set them to a reasonable value

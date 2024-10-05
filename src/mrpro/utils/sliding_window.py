@@ -1,16 +1,16 @@
 """Sliding window view."""
 
+import collections.abc
 import warnings
-from collections.abc import Sequence
 
 import torch
 
 
 def sliding_window(
     x: torch.Tensor,
-    window_shape: int | Sequence[int],
-    axis: int | Sequence[int] | None = None,
-    strides: int | Sequence[int] = 1,
+    window_shape: int | collections.abc.Sequence[int],
+    axis: int | collections.abc.Sequence[int] | None = None,
+    strides: int | collections.abc.Sequence[int] = 1,
 ) -> torch.Tensor:
     """Sliding window view into the tensor x.
 
@@ -39,8 +39,10 @@ def sliding_window(
         if len(set(axis)) != len(axis):
             raise ValueError('duplicate values in axis are not allowed')
 
-    window_shape = tuple(window_shape) if isinstance(window_shape, Sequence) else (window_shape,) * len(axis)
-    strides = tuple(strides) if isinstance(strides, Sequence) else (strides,) * len(axis)
+    window_shape = (
+        tuple(window_shape) if isinstance(window_shape, collections.abc.Sequence) else (window_shape,) * len(axis)
+    )
+    strides = tuple(strides) if isinstance(strides, collections.abc.Sequence) else (strides,) * len(axis)
     # we want to use fancy indexing, so we need these as tensors
     window_shape_tensor = torch.tensor(window_shape)
     strides_tensor = torch.tensor(strides)

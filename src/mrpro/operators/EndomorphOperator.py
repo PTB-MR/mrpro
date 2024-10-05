@@ -1,21 +1,21 @@
 """Endomorph Operators."""
 
-from abc import abstractmethod
-from collections.abc import Callable
-from typing import ParamSpec, Protocol, TypeAlias, TypeVar, TypeVarTuple, cast, overload
+import abc
+import collections.abc
+import typing
 
 import torch
 
 from mrpro.operators.Operator import Operator
 
-Tin = TypeVarTuple('Tin')
-Tout = TypeVar('Tout', bound=tuple[torch.Tensor, ...], covariant=True)
-P = ParamSpec('P')
-Wrapped: TypeAlias = Callable[P, Tout]
-F = TypeVar('F', bound=Wrapped)
+Tin = typing.TypeVarTuple('Tin')
+Tout = typing.TypeVar('Tout', bound=tuple[torch.Tensor, ...], covariant=True)
+P = typing.ParamSpec('P')
+Wrapped: typing.TypeAlias = collections.abc.Callable[P, Tout]
+F = typing.TypeVar('F', bound=Wrapped)
 
 
-class _EndomorphCallable(Protocol):
+class _EndomorphCallable(typing.Protocol):
     """A callable with the same number of tensor inputs and outputs.
 
     This is a protocol for a callable that takes a variadic number of tensor inputs
@@ -27,30 +27,30 @@ class _EndomorphCallable(Protocol):
     This Protocol is used to decorate functions with the `endomorph` decorator.
     """
 
-    @overload
+    @typing.overload
     def __call__(self, /) -> tuple[()]: ...
-    @overload
+    @typing.overload
     def __call__(self, x1: torch.Tensor, /) -> tuple[torch.Tensor]: ...
 
-    @overload
+    @typing.overload
     def __call__(self, x1: torch.Tensor, x2: torch.Tensor, /) -> tuple[torch.Tensor, torch.Tensor]: ...
 
-    @overload
+    @typing.overload
     def __call__(
         self, x1: torch.Tensor, x2: torch.Tensor, x3: torch.Tensor, /
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]: ...
 
-    @overload
+    @typing.overload
     def __call__(
         self, x1: torch.Tensor, x2: torch.Tensor, x3: torch.Tensor, x4: torch.Tensor, /
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: ...
 
-    @overload
+    @typing.overload
     def __call__(
         self, x1: torch.Tensor, x2: torch.Tensor, x3: torch.Tensor, x4: torch.Tensor, x5: torch.Tensor, /
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: ...
 
-    @overload
+    @typing.overload
     def __call__(
         self,
         x1: torch.Tensor,
@@ -62,7 +62,7 @@ class _EndomorphCallable(Protocol):
         /,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: ...
 
-    @overload
+    @typing.overload
     def __call__(
         self,
         x1: torch.Tensor,
@@ -75,7 +75,7 @@ class _EndomorphCallable(Protocol):
         /,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: ...
 
-    @overload
+    @typing.overload
     def __call__(
         self,
         x1: torch.Tensor,
@@ -91,7 +91,7 @@ class _EndomorphCallable(Protocol):
         torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor
     ]: ...
 
-    @overload
+    @typing.overload
     def __call__(
         self,
         x1: torch.Tensor,
@@ -116,7 +116,7 @@ class _EndomorphCallable(Protocol):
         torch.Tensor,
     ]: ...
 
-    @overload
+    @typing.overload
     def __call__(
         self,
         x1: torch.Tensor,
@@ -143,7 +143,7 @@ class _EndomorphCallable(Protocol):
         torch.Tensor,
     ]: ...
 
-    @overload
+    @typing.overload
     def __call__(
         self,
         x1: torch.Tensor,
@@ -172,7 +172,7 @@ class _EndomorphCallable(Protocol):
         *tuple[torch.Tensor, ...],
     ]: ...
 
-    @overload
+    @typing.overload
     def __call__(self, /, *args: torch.Tensor) -> tuple[torch.Tensor, ...]: ...
 
     def __call__(self, /, *args: torch.Tensor) -> tuple[torch.Tensor, ...]: ...
@@ -199,15 +199,15 @@ class EndomorphOperator(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, 
         # This function only overwrites the type hints of the base operator class
         return super().__call__(*x)
 
-    @abstractmethod
+    @abc.abstractmethod
     @endomorph
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Apply the EndomorphOperator."""
 
     def __matmul__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]:
         """Operator composition."""
-        return cast(Operator[*Tin, Tout], super().__matmul__(other))
+        return typing.cast(Operator[*Tin, Tout], super().__matmul__(other))
 
     def __rmatmul__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]:
         """Operator composition."""
-        return other.__matmul__(cast(Operator[*Tin, tuple[*Tin]], self))
+        return other.__matmul__(typing.cast(Operator[*Tin, tuple[*Tin]], self))

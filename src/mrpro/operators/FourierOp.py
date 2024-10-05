@@ -140,11 +140,11 @@ class FourierOp(LinearOperator):
         Parameters
         ----------
         x
-            coil image data with shape: (... coils z y x)
+            coil image data with shape (... coils z y x)
 
         Returns
         -------
-            coil k-space data with shape: (... coils k2 k1 k0)
+            coil k-space data with shape (... coils k2 k1 k0)
         """
         if len(self._fft_dims):
             # FFT
@@ -181,11 +181,11 @@ class FourierOp(LinearOperator):
         Parameters
         ----------
         x
-            coil k-space data with shape: (... coils k2 k1 k0)
+            coil k-space data with shape (... coils k2 k1 k0)
 
         Returns
         -------
-            coil image data with shape: (... coils z y x)
+            coil image data with shape (... coils z y x)
         """
         if self._fft_dims:
             # IFFT

@@ -1,15 +1,15 @@
 """Numerical coil simulations."""
 
+import einops
 import numpy as np
 import torch
-from einops import repeat
 
-from mrpro.data.SpatialDimension import SpatialDimension
+import mrpro.data.SpatialDimension
 
 
 def birdcage_2d(
     number_of_coils: int,
-    image_dimensions: SpatialDimension[int],
+    image_dimensions: mrpro.data.SpatialDimension[int],
     relative_radius: float = 1.5,
     normalize_with_rss: bool = True,
 ) -> torch.Tensor:
@@ -41,10 +41,10 @@ def birdcage_2d(
         indexing='xy',
     )
 
-    x_co = repeat(x_co, 'y x -> coils y x', coils=1)
-    y_co = repeat(y_co, 'y x -> coils y x', coils=1)
+    x_co = einops.repeat(x_co, 'y x -> coils y x', coils=1)
+    y_co = einops.repeat(y_co, 'y x -> coils y x', coils=1)
 
-    c = repeat(torch.linspace(0, dim[0] - 1, dim[0]), 'coils -> coils y x', y=1, x=1)
+    c = einops.repeat(torch.linspace(0, dim[0] - 1, dim[0]), 'coils -> coils y x', y=1, x=1)
     coil_center_x = dim[2] * relative_radius * np.cos(c * (2 * torch.pi / dim[0]))
     coil_center_y = dim[1] * relative_radius * np.sin(c * (2 * torch.pi / dim[0]))
     coil_phase = -c * (2 * torch.pi / dim[0])
@@ -58,7 +58,7 @@ def birdcage_2d(
         # Normalize only where rss is > 0
         sensitivities[:, rss > 0] /= rss[None, rss > 0]
 
-    return repeat(sensitivities, 'coils y x->other coils z y x', other=1, z=1)
+    return einops.repeat(sensitivities, 'coils y x->other coils z y x', other=1, z=1)
 
 
 # License information from https://github.com/ismrmrd/ismrmrd-python-tools

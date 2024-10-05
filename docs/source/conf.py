@@ -19,10 +19,9 @@ sys.path.insert(0, os.path.abspath('../../src'))  # Source code dir relative to 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = name
+project = 'MRpro'
 copyright = '2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin'
-author = author
-version = version
+version = '0.1'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -42,29 +41,11 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 source_suffix = {'.rst': 'restructuredtext', '.txt': 'restructuredtext', '.md': 'markdown'}
 
-
-# -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
 html_theme = 'sphinx_rtd_theme'
-html_title = name
+html_title = 'MRpro'
 html_show_sphinx = False
+html_logo = '_static/mrpro_logo.png'
 html_static_path = ['_static']
 html_css_files = ['custom.css']
 html_sidebars = {'**': ['search-field', 'sidebar-nav-bs']}
-html_theme_options = {
-    'logo': {'text': name},
-    'pygment_light_style': 'default',
-    'pygment_dark_style': 'github-dark',
-    'show_toc_level': 3,
-    'icon_links': [
-        {
-            # Label for this link
-            'name': 'GitHub',
-            # URL where the link will redirect
-            'url': 'https://github.com/PTB-MR/mrpro',
-            # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
-            'icon': 'fa-brands fa-github',
-        },
-    ],
-}
+

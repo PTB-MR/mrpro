@@ -4,7 +4,8 @@
 
 .. autoclass:: {{ objname }}
    :members:
-   :inherited-members: Module, MoveDataMixin, LinearOperator
+   :inherited-members: Module
+   :show-inheritance:
 
    {% block methods %}
    .. automethod:: __init__
