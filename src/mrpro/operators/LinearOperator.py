@@ -44,7 +44,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         max_iterations: int = 20,
         relative_tolerance: float = 1e-4,
         absolute_tolerance: float = 1e-5,
-        callback: Callable | None = None,
+        callback: Callable[[torch.Tensor], None] | None = None,
     ) -> torch.Tensor:
         """Power iteration for computing the operator norm of the linear operator.
 
@@ -205,9 +205,6 @@ class LinearOperatorComposition(LinearOperator, OperatorComposition[torch.Tensor
     Performs operator1(operator2(x))
     """
 
-    _operator1: LinearOperator
-    _operator2: LinearOperator
-
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the operator composition."""
         # (AB)^T = B^T A^T
@@ -244,10 +241,8 @@ class LinearOperatorElementwiseProductRight(
 ):
     """Operator elementwise right multiplication with a tensor.
 
-    Peforms Tensor*LinearOperator(x)
+    Performs Tensor*LinearOperator(x)
     """
-
-    _operator: LinearOperator
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint Operator elementwise multiplication with a tensor."""
@@ -259,10 +254,8 @@ class LinearOperatorElementwiseProductLeft(
 ):
     """Operator elementwise left multiplication with a tensor.
 
-    Peforms LinearOperator(Tensor*x)
+    Performs LinearOperator(Tensor*x)
     """
-
-    _operator: LinearOperator
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint Operator elementwise multiplication with a tensor."""

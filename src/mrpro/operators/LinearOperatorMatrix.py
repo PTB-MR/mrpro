@@ -1,30 +1,18 @@
-from collections.abc import Sequence
+"""Linear Operator Matrix class."""
+
+from collections.abc import Callable, Sequence
 from types import EllipsisType
 from typing import Self, TypeVar
 
 import torch
 
-from mrpro.operators import LinearOperator, Operator
-from mrpro.operators.LinearOperator import LinearOperatorSum
+from mrpro.operators import Operator
+from mrpro.operators.LinearOperator import LinearOperator, LinearOperatorSum
 
 _SingleIdxType = int | slice | EllipsisType | Sequence[int]
 _IdxType = _SingleIdxType | tuple[_SingleIdxType, _SingleIdxType]
 
 T = TypeVar('T', bound=Operator)
-
-
-class ZeroOp(LinearOperator):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        return (torch.zeros_like(x),)
-
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        return (torch.zeros_like(x),)
-
-    def __add__(self, other: T) -> T:
-        return other
 
 
 class LinearOperatorMatrix(Operator):
@@ -105,6 +93,7 @@ class LinearOperatorMatrix(Operator):
 
     # Note: The type ignores are needed because we currently cannot do arithmetic operations with non-linear operators.
     def __add__(self, other: Self | LinearOperator | torch.Tensor | complex) -> Self:  # type: ignore[override]
+        """Addition."""
         operators: list[list[LinearOperator]] = []
         if isinstance(other, LinearOperatorMatrix):
             if self.shape != other.shape:
@@ -121,6 +110,7 @@ class LinearOperatorMatrix(Operator):
         return self.__class__(operators)
 
     def __radd__(self, other: Self | LinearOperator | torch.Tensor | complex) -> Self:  # type: ignore[override]
+        """Right addition."""
         return self.__add__(other)
 
     def __mul__(self, other: torch.Tensor | Sequence[torch.Tensor]) -> Self:  # type: ignore[override]
@@ -154,10 +144,8 @@ class LinearOperatorMatrix(Operator):
                 raise ValueError('OperatorMatrix shapes do not match.')
             new_operators = []
             for row in self._operators:
-                row: list[LinearOperator]
                 new_row = []
                 for other_col in zip(*other._operators, strict=True):
-                    other_col: list[LinearOperator]
                     elements = [s @ o for s, o in zip(row, other_col, strict=True)]
                     new_row.append(LinearOperatorSum(*elements))
                 new_operators.append(new_row)
@@ -165,12 +153,26 @@ class LinearOperatorMatrix(Operator):
         return NotImplemented  # type: ignore[unreachable]
 
     @property
-    def H(self) -> Self:
+    def H(self) -> Self:  # noqa N802
         """Adjoints of the operators."""
         return self.__class__([[op.H for op in row] for row in zip(*self._operators, strict=True)])
 
+    def adjoint(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply the adjoint of the operator to the input.
+
+        Parameters
+        ----------
+        x
+            Input tensors. Requires the same number of tensors as the operator has rows.
+
+        Returns
+        -------
+            Output tensors. The same number of tensors as the operator has columns.
+        """
+        return self.H(*x)
+
     @classmethod
-    def from_diagonal(cls, operators: Sequence[LinearOperator]):
+    def from_diagonal(cls, *operators: LinearOperator):
         """Create a diagonal Operator Matrix.
 
         Parameters
@@ -182,3 +184,55 @@ class LinearOperatorMatrix(Operator):
             [op if i == j else ZeroOp() for j in range(len(operators))] for i, op in enumerate(operators)
         ]
         return cls(operator_matrix)
+
+    def operator_norm(
+        self,
+        *initial_value: torch.Tensor,
+        dim: Sequence[int] | None = None,
+        max_iterations: int = 20,
+        relative_tolerance: float = 1e-4,
+        absolute_tolerance: float = 1e-5,
+        callback: Callable[[torch.Tensor], None] | None = None,
+    ) -> torch.Tensor:
+        """Operator norm of the Operator Matrix.
+
+        Parameters
+        ----------
+        initial_value
+            Initial value(s) for the power iteration, length should match the number of columns
+            of the operator matrix.
+        dim
+            Dimensions to calculate the operator norm over. Other dimensions are assumed to be
+            batch dimensions. None means all dimensions.
+        max_iterations
+            Maximum number of iterations used in the power iteration.
+        relative_tolerance
+            Relative tolerance for convergence.
+        absolute_tolerance
+            Absolute tolerance for convergence.
+        callback
+            Callback function to be called with the current estimate of the operator norm.
+
+
+        Returns
+        -------
+        Estimated operator norm upper bound.
+        """
+
+        def _singlenorm(op: LinearOperator, initial_value: torch.Tensor):
+            return op.operator_norm(
+                initial_value,
+                dim=dim,
+                max_iterations=max_iterations,
+                relative_tolerance=relative_tolerance,
+                absolute_tolerance=absolute_tolerance,
+                callback=callback,
+            )
+
+        if len(initial_value) != self.shape[1]:
+            raise ValueError('Initial value should have the same length as the operator has columns.')
+        norms = torch.tensor(
+            [[_singlenorm(op, iv) for op, iv in zip(row, initial_value, strict=True)] for row in self._operators]
+        )
+        norm = norms.sum(dim=1).square().sum(0).sqrt().unsqueeze(-1)
+        return norm
