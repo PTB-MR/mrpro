@@ -45,7 +45,7 @@ from __future__ import annotations
 import re
 import warnings
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Literal, Self, overload
+from typing import Literal, Self, overload
 
 import numpy as np
 import torch
@@ -53,17 +53,7 @@ from scipy._lib._util import check_random_state
 from scipy.spatial.transform import Rotation as Rotation_scipy
 
 from mrpro.data.SpatialDimension import SpatialDimension
-
-if TYPE_CHECKING:
-    from types import EllipsisType
-    from typing import TYPE_CHECKING, SupportsIndex, TypeAlias
-
-    from torch._C import _NestedSequence
-
-    # This matches the torch.Tensor indexer typehint
-    _IndexerTypeInner: TypeAlias = None | bool | int | slice | EllipsisType | torch.Tensor
-    _SingleIndexerType: TypeAlias = SupportsIndex | _IndexerTypeInner | _NestedSequence[_IndexerTypeInner]
-    IndexerType: TypeAlias = tuple[_SingleIndexerType, ...] | _SingleIndexerType
+from mrpro.utils.typing import IndexerType, NestedSequence
 
 AXIS_ORDER = 'zyx'  # This can be modified
 QUAT_AXIS_ORDER = AXIS_ORDER + 'w'  # Do not modify
@@ -252,7 +242,11 @@ def _quaternion_to_euler(quaternion: torch.Tensor, seq: str, extrinsic: bool):
 
 
 class Rotation(torch.nn.Module):
-    """A pytorch implementation of scipy.spatial.transform.Rotation.
+    """A container for Rotations.
+
+    A pytorch implementation of scipy.spatial.transform.Rotation.
+    For more information see the scipy documentation:
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.html
 
     Differences compared to scipy.spatial.transform.Rotation:
 
@@ -262,7 +256,7 @@ class Rotation(torch.nn.Module):
     - arbitrary number of batching dimensions
     """
 
-    def __init__(self, quaternions: torch.Tensor | _NestedSequence[float], normalize: bool = True, copy: bool = True):
+    def __init__(self, quaternions: torch.Tensor | NestedSequence[float], normalize: bool = True, copy: bool = True):
         """Initialize a new Rotation.
 
         Instead of calling this method, also consider the different ``from_*`` class methods to construct a Rotation.
@@ -311,7 +305,7 @@ class Rotation(torch.nn.Module):
         return self._single
 
     @classmethod
-    def from_quat(cls, quaternions: torch.Tensor | _NestedSequence[float]) -> Self:
+    def from_quat(cls, quaternions: torch.Tensor | NestedSequence[float]) -> Self:
         """Initialize from quaternions.
 
         3D rotations can be represented using unit-norm quaternions [QUAa]_.
@@ -338,7 +332,7 @@ class Rotation(torch.nn.Module):
         return cls(quaternions, normalize=True)
 
     @classmethod
-    def from_matrix(cls, matrix: torch.Tensor | _NestedSequence[float]) -> Self:
+    def from_matrix(cls, matrix: torch.Tensor | NestedSequence[float]) -> Self:
         """Initialize from rotation matrix.
 
         Rotations in 3 dimensions can be represented with 3 x 3 proper
@@ -376,7 +370,7 @@ class Rotation(torch.nn.Module):
         return cls(quaternions, normalize=True, copy=False)
 
     @classmethod
-    def from_rotvec(cls, rotvec: torch.Tensor | _NestedSequence[float], degrees: bool = False) -> Self:
+    def from_rotvec(cls, rotvec: torch.Tensor | NestedSequence[float], degrees: bool = False) -> Self:
         """Initialize from rotation vector.
 
         A rotation vector is a 3 dimensional vector which is co-directional to the
@@ -410,7 +404,7 @@ class Rotation(torch.nn.Module):
         return cls(quaternions, normalize=False, copy=False)
 
     @classmethod
-    def from_euler(cls, seq: str, angles: torch.Tensor | _NestedSequence[float] | float, degrees: bool = False) -> Self:
+    def from_euler(cls, seq: str, angles: torch.Tensor | NestedSequence[float] | float, degrees: bool = False) -> Self:
         """Initialize from Euler angles.
 
         Rotations in 3-D can be represented by a sequence of 3
@@ -689,7 +683,7 @@ class Rotation(torch.nn.Module):
 
     def forward(
         self,
-        vectors: _NestedSequence[float] | torch.Tensor | SpatialDimension[torch.Tensor] | SpatialDimension[float],
+        vectors: NestedSequence[float] | torch.Tensor | SpatialDimension[torch.Tensor] | SpatialDimension[float],
         inverse: bool = False,
     ) -> torch.Tensor | SpatialDimension[torch.Tensor]:
         """Apply this rotation to a set of vectors.
@@ -1203,7 +1197,7 @@ class Rotation(torch.nn.Module):
 
     def mean(
         self,
-        weights: torch.Tensor | _NestedSequence[float] | None = None,
+        weights: torch.Tensor | NestedSequence[float] | None = None,
         dim: None | int | Sequence[int] = None,
         keepdim: bool = False,
     ) -> Self:
