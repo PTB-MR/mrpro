@@ -132,7 +132,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
         return op_norm
 
-    @overload  # type: ignore[override]
+    @overload
     def __matmul__(self, other: LinearOperator) -> LinearOperator: ...
 
     @overload
@@ -179,7 +179,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         """
         return LinearOperatorElementwiseProductLeft(self, other)
 
-    def __rmul__(self, other: torch.Tensor) -> LinearOperator:  # type: ignore[misc]
+    def __rmul__(self, other: torch.Tensor) -> LinearOperator:
         """Operator elementwise right multiplication with tensor.
 
         Returns lambda x: other*self(x)
@@ -213,7 +213,7 @@ class LinearOperatorElementwiseProductRight(
 ):
     """Operator elementwise right multiplication with a tensor.
 
-    Peforms Tensor*LinearOperator(x)
+    Performs Tensor*LinearOperator(x)
     """
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
@@ -226,7 +226,7 @@ class LinearOperatorElementwiseProductLeft(
 ):
     """Operator elementwise left multiplication with a tensor.
 
-    Peforms LinearOperator(Tensor*x)
+    Performs LinearOperator(Tensor*x)
     """
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:

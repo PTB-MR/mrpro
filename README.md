@@ -22,7 +22,7 @@ MR image reconstruction and processing package specifically developed for PyTorc
 - **Cartesian and non-Cartesian trajectories** MRpro can reconstruct data obtained with Cartesian and non-Cartesian (e.g. radial, spiral...) sapling schemes. MRpro automatically detects if FFT or nuFFT is required to reconstruction the k-space data.
 - **Pulseq support** If the data acquisition was carried out using a [pulseq-based](http://pulseq.github.io/) sequence, the seq-file can be provided to MRpro and the used trajectory is automatically calculated.
 - **Signal models** A range of different MR signal models are implemented (e.g. T1 recovery, WASABI).
-- **Regularised image reconstruction** Regularised image reconstruction algorithms including Wavelet-based compressed sensing or total variation regularised image reconstruction are available.
+- **Regularized image reconstruction** Regularized image reconstruction algorithms including Wavelet-based compressed sensing or total variation regularized image reconstruction are available.
 
 ## Examples
 
@@ -46,7 +46,7 @@ Full example: <https://github.com/PTB-MR/mrpro/blob/main/examples/direct_reconst
 
 ### Estimate quantitative parameters
 
-Quantitative parameter maps can be obtained by creating a functional to be minimised and calling a non-linear solver such as ADAM.
+Quantitative parameter maps can be obtained by creating a functional to be minimized and calling a non-linear solver such as ADAM.
 
 ```python
 # Define signal model
