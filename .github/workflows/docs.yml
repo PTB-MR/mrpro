@@ -178,10 +178,10 @@ jobs:
             notebook_description=$(grep '<h1 id=' ./_notebooks/$nb | sed 's/.*">\(.*\)<a class=.*/\1/')
             echo $notebook_description
             echo $notebook_description > "notebook_${nb/.html/.rst}"
-            echo {#notebook_description}
+            echo ${#notebook_description}
             for i in {1..90}; do echo -n "*"; done
-            for i in {1..{#notebook_description}}; do echo -n "+"; done
-            echo "========" >> "notebook_${nb/.html/.rst}"
+            for i in {1..${#notebook_description}}; do echo -n "+"; done
+            for i in {1..${#notebook_description}}; do echo -n "="; done >> "notebook_${nb/.html/.rst}"
             echo ".. raw:: html" >> "notebook_${nb/.html/.rst}"
             echo "   :file: ./_notebooks/$nb" >> "notebook_${nb/.html/.rst}"
           done
