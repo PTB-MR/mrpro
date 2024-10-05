@@ -179,6 +179,8 @@ jobs:
             echo $notebook_description
             echo $notebook_description > "notebook_${nb/.html/.rst}"
             del="="; for i in {2..${#notebook_description}}; do del="$del="; done
+            echo ${#notebook_description}
+            echo $del
             echo $del >> "notebook_${nb/.html/.rst}"
             echo ".. raw:: html" >> "notebook_${nb/.html/.rst}"
             echo "   :file: ./_notebooks/$nb" >> "notebook_${nb/.html/.rst}"
