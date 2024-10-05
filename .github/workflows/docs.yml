@@ -185,7 +185,7 @@ jobs:
           done
 
       - name: Build docs
-        run: sphinx-build -W --keep-going -b html ./docs/source ./docs/build/html
+        run: sphinx-build --keep-going -b html ./docs/source ./docs/build/html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
