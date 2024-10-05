@@ -13,6 +13,7 @@ from mrpro.operators.GridSamplingOp import GridSamplingOp
 from mrpro.operators.IdentityOp import IdentityOp
 from mrpro.operators.MagnitudeOp import MagnitudeOp
 from mrpro.operators.PhaseOp import PhaseOp
+from mrpro.operators.ProximableFunctionalSeparableSum import ProximableFunctionalSeparableSum
 from mrpro.operators.SensitivityOp import SensitivityOp
 from mrpro.operators.SignalModel import SignalModel
 from mrpro.operators.SliceProjectionOp import SliceProjectionOp
