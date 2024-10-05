@@ -2,10 +2,10 @@
 
 import torch
 
-from mrpro.operators import ProximableFunctional
+from mrpro.operators import ElementaryProximableFunctional
 
 
-class ZeroFunctional(ProximableFunctional):
+class ZeroFunctional(ElementaryProximableFunctional):
     """The constant zero functional."""
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
@@ -22,18 +22,10 @@ class ZeroFunctional(ProximableFunctional):
         -------
         Result of the functional applied to x.
         """
-        if self.dim is None:
-            dim = list(range(x.dim()))
-        else:
-            dim = [d % x.dim() for d in self.dim]
-        if self.keepdim:
-            shape = [1 if d in dim else s for d, s in enumerate(x.shape)]
-        else:
-            shape = [s for d, s in enumerate(x.shape) if d not in dim]
-        dtype = torch.promote_types(torch.promote_types(self.target.dtype, self.weight.dtype), x.dtype)
-        return (torch.zeros(shape, dtype=dtype, device=self.weight.device),)
+        dtype = torch.promote_types(torch.promote_types(x.dtype, self.weight.dtype), self.target.dtype)
+        return (torch.zeros_like(x, dtype=dtype).sum(dim=self.dim, keepdim=self.keepdim),)
 
-    def prox(self, x: torch.Tensor, sigma: float | torch.Tensor = 1.0) -> tuple[torch.Tensor,]:  # noqa ARG002
+    def prox(self, x: torch.Tensor, sigma: float | torch.Tensor = 1.0) -> tuple[torch.Tensor,]:
         """Apply the proximal operator to a tensor.
 
         Always returns x.
@@ -49,9 +41,11 @@ class ZeroFunctional(ProximableFunctional):
         -------
             Result of the proximal operator applied to x
         """
-        return (x,)
+        self._throw_if_negative_or_complex(sigma)
+        dtype = torch.promote_types(torch.promote_types(x.dtype, self.weight.dtype), self.target.dtype)
+        return (x.to(dtype=dtype),)
 
-    def prox_convex_conj(self, x: torch.Tensor, sigma: float | torch.Tensor = 1.0) -> tuple[torch.Tensor,]:  # noqa ARG002
+    def prox_convex_conj(self, x: torch.Tensor, sigma: float | torch.Tensor = 1.0) -> tuple[torch.Tensor,]:
         """Apply the proximal operator of the convex conjugate of the functional to a tensor.
 
         Always returns x.
@@ -67,4 +61,6 @@ class ZeroFunctional(ProximableFunctional):
         -------
             Result of the proximal operator of the convex conjugate applied to x
         """
-        return (x,)
+        self._throw_if_negative_or_complex(sigma)
+        dtype = torch.promote_types(torch.promote_types(x.dtype, self.weight.dtype), self.target.dtype)
+        return (torch.zeros_like(x, dtype=dtype),)
