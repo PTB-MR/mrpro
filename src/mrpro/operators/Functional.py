@@ -97,8 +97,8 @@ class ElementaryFunctional(Functional):
         x
             input to be scaled.
         shape
-            input will be divided by the product these numbers.
-            If None, it divides by the number of elements of the input.
+            input will be divided by the product of these numbers.
+            If None, it will be divided by the number of elements of the input.
 
         Returns
         -------
