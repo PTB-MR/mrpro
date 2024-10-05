@@ -226,8 +226,6 @@ class LinearOperatorTensorSum(LinearOperator, OperatorTensorSum[torch.Tensor, tu
 class LinearOperatorSum(LinearOperator, OperatorSum[torch.Tensor, tuple[torch.Tensor,]]):
     """Operator addition."""
 
-    _operators: tuple[LinearOperator, ...]
-
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the operator addition."""
         # (A+B)^H = A^H + B^H

@@ -2,6 +2,8 @@
 
 import torch
 
+from mrpro.operators import ProximableFunctional
+
 
 class ZeroFunctional(ProximableFunctional):
     """The constant zero functional."""

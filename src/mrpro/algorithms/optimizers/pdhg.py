@@ -9,7 +9,14 @@ from dataclasses import dataclass
 import torch
 
 from mrpro.algorithms.optimizers import OptimizerStatus
-from mrpro.operators import IdentityOp, LinearOperator, LinearOperatorMatrix, ProximableFunctional
+from mrpro.operators import (
+    IdentityOp,
+    LinearOperator,
+    LinearOperatorMatrix,
+    ProximableFunctional,
+    ProximableFunctionalSeparableSum,
+)
+from mrpro.operators.functionals import ZeroFunctional
 
 
 @dataclass
@@ -26,9 +33,9 @@ class PDHGStatus(OptimizerStatus):
 
 def pdhg(
     initial_values: Sequence[torch.Tensor],
-    f: Sequence[ProximableFunctional] | None = None,
-    g: Sequence[ProximableFunctional] | None = None,
-    operator: Sequence[Sequence[LinearOperator]] | None = None,
+    f: ProximableFunctionalSeparableSum | ProximableFunctional | None = None,
+    g: ProximableFunctionalSeparableSum | ProximableFunctional | None = None,
+    operator: LinearOperator | LinearOperatorMatrix | None = None,
     n_iterations: int = 10,
     primal_stepsize: float | None = None,
     dual_stepsize: float | None = None,
@@ -93,17 +100,29 @@ def pdhg(
             raise ValueError('If operator is None, the number of elements in f and g should be the same')
         operator_matrix = LinearOperatorMatrix.from_diagonal(*((IdentityOp(),) * rows))
     else:
-        operator_matrix = LinearOperatorMatrix(operator)
+        if isinstance(operator, LinearOperator):
+            operator_matrix = LinearOperatorMatrix.from_diagonal(operator)
+        else:
+            operator_matrix = operator
         rows, cols = operator_matrix.shape
         if f is not None and len(f) != rows:
             raise ValueError('Number of rows in operator does not match number of functionals in f')
         if g is not None and len(g) != cols:
             raise ValueError('Number of columns in operator does not match number of functionals in g')
 
-    f_ = (ZeroFunctional(),) * rows if f is None else f
-    g_ = (ZeroFunctional(),) * cols if g is None else g
-    f_sum = ProximableFunctionalSeparableSum(*f_)
-    g_sum = ProximableFunctionalSeparableSum(*g_)
+    if f is None:
+        f_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * rows)
+    elif isinstance(f, ProximableFunctional):
+        f_sum = ProximableFunctionalSeparableSum(f)
+    else:
+        f_sum = f
+
+    if g is None:
+        g_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * cols)
+    elif isinstance(g, ProximableFunctional):
+        g_sum = ProximableFunctionalSeparableSum(g)
+    else:
+        g_sum = g
 
     if primal_stepsize is None or dual_stepsize is None:
         # choose primal and dual step size such that their product is 1/|operator|**2

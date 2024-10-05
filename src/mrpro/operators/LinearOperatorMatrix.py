@@ -6,8 +6,9 @@ from typing import Self, TypeVar
 
 import torch
 
-from mrpro.operators import Operator
 from mrpro.operators.LinearOperator import LinearOperator, LinearOperatorSum
+from mrpro.operators.Operator import Operator
+from mrpro.operators.ZeroOp import ZeroOp
 
 _SingleIdxType = int | slice | EllipsisType | Sequence[int]
 _IdxType = _SingleIdxType | tuple[_SingleIdxType, _SingleIdxType]
@@ -106,14 +107,14 @@ class LinearOperatorMatrix(Operator):
             for i, self_row in enumerate(self._operators):
                 operators.append([op + other if i == j else op for j, op in enumerate(self_row)])
         else:
-            return NotImplemented
+            return NotImplemented  # type: ignore[unreachable]
         return self.__class__(operators)
 
-    def __radd__(self, other: Self | LinearOperator | torch.Tensor | complex) -> Self:  # type: ignore[override]
+    def __radd__(self, other: Self | LinearOperator | torch.Tensor | complex) -> Self:
         """Right addition."""
         return self.__add__(other)
 
-    def __mul__(self, other: torch.Tensor | Sequence[torch.Tensor]) -> Self:  # type: ignore[override]
+    def __mul__(self, other: torch.Tensor | Sequence[torch.Tensor]) -> Self:
         """LinearOperatorMatrix*Tensor multiplication."""
         if isinstance(other, torch.Tensor):
             other = (other,) * self.shape[1]
@@ -124,7 +125,7 @@ class LinearOperatorMatrix(Operator):
             operators.append([op * o for op, o in zip(row, other, strict=True)])
         return self.__class__(operators)
 
-    def __rmul__(self, other: torch.Tensor | Sequence[torch.Tensor]) -> Self:  # type: ignore[override]
+    def __rmul__(self, other: torch.Tensor | Sequence[torch.Tensor]) -> Self:
         """Tensor*LinearOperatorMatrix multiplication."""
         if isinstance(other, torch.Tensor):
             other = (other,) * self.shape[0]
@@ -180,7 +181,7 @@ class LinearOperatorMatrix(Operator):
         operators
             Sequence of Linear Operators to be placed on the diagonal.
         """
-        operator_matrix = [
+        operator_matrix: list[list[LinearOperator]] = [
             [op if i == j else ZeroOp() for j in range(len(operators))] for i, op in enumerate(operators)
         ]
         return cls(operator_matrix)

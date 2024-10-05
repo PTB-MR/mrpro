@@ -4,7 +4,8 @@ from typing import overload
 
 import torch
 
-from mrpro.operators import IdentityOp, LinearOperator
+from mrpro.operators.IdentityOp import IdentityOp
+from mrpro.operators.LinearOperator import LinearOperator
 from mrpro.operators.Operator import Operator
 
 
