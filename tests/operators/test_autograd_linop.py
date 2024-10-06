@@ -9,54 +9,54 @@ from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test
 
 
-class NonDiffentiableOperator(LinearOperator, adjoint_as_backward=False):
+class NonDifferentiableOperator(LinearOperator, adjoint_as_backward=False):
     """Dummy operator for testing purposes."""
 
     def forward(self, x):
-        python_float = x.item()
-        tensor = torch.tensor([2 * python_float], dtype=x.dtype)  # breaks the autograd
+        python_float = x.item()  # breaks autograd as floats do not track gradients
+        tensor = torch.tensor([2 * python_float], dtype=x.dtype)
         return (tensor,)
 
     def adjoint(self, x):
-        python_float = x.item()
-        tensor = torch.tensor([2 * python_float], dtype=x.dtype)  # breaks the autograd
+        python_float = x.item()  # breaks autograd as floats do not track gradients
+        tensor = torch.tensor([2 * python_float], dtype=x.dtype)
         return (tensor,)
 
 
-class DiffentiableOperator(LinearOperator, adjoint_as_backward=True):
+class DifferentiableOperator(LinearOperator, adjoint_as_backward=True):
     """Dummy operator for testing purposes. Should be differentiable due to adjoint_as_backward=True."""
 
     def forward(self, x):
-        python_float = x.item()
+        python_float = x.item()  # would break autograd as floats do not track gradients
         tensor = torch.tensor([2 * python_float], dtype=x.dtype)  # breaks the autograd
         return (tensor,)
 
     def adjoint(self, x):
-        python_float = x.item()
-        tensor = torch.tensor([2 * python_float], dtype=x.dtype)  # breaks the autograd
+        python_float = x.item()  # would break autograd as floats do not track gradients
+        tensor = torch.tensor([2 * python_float], dtype=x.dtype)
         return (tensor,)
 
 
 def test_linop_autograd_dummy_operator():
     """Ensure correct dummy operator."""
     rng = RandomGenerator(seed=0)
-    nondiff = NonDiffentiableOperator()
-    diff = DiffentiableOperator()
+    nondiff = NonDifferentiableOperator()
+    diff = DifferentiableOperator()
 
     u = rng.float32_tensor((1,))
     v = rng.float32_tensor((1,))
 
     # Differentiable operator and non differentiable operator should be the same
-    torch.testing.assert_close(nondiff.adjoint(u), nondiff.adjoint(u))
-    torch.testing.assert_close(diff.adjoint(u), diff.adjoint(u))
+    torch.testing.assert_close(nondiff.adjoint(u), diff.adjoint(u))
+    torch.testing.assert_close(nondiff(v), diff(v))
 
-    # and the adjoin should be correct
+    # and the adjoint should be correct
     dotproduct_adjointness_test(nondiff, u, v)
 
 
 def test_linop_autograd_nondifferentiable():
-    """Test the forward of the non differentiable operator."""
-    nondiff = NonDiffentiableOperator()
+    """Test gradient of the forward of the non differentiable operator."""
+    nondiff = NonDifferentiableOperator()
     # The non differentiable operator should raise an error,
     # because the forward is non differentiable (python float)
     x = torch.tensor(1.0, requires_grad=True, dtype=torch.float64)
@@ -65,8 +65,8 @@ def test_linop_autograd_nondifferentiable():
 
 
 def test_linop_autograd_differentiable_forward():
-    """Test the backward of the forward of the differentiable operator."""
-    diff = DiffentiableOperator()
+    """Test the gradient of the forward of the differentiable operator."""
+    diff = DifferentiableOperator()
     # The differentiable operator should work, as
     # the adjoint can be used as backward.
     x = torch.tensor(1.0, requires_grad=True, dtype=torch.float64)
@@ -74,8 +74,8 @@ def test_linop_autograd_differentiable_forward():
 
 
 def test_linop_autograd_differentiable_adjoint():
-    """Test the backward of the adjoint of the differentiable operator."""
-    diff = DiffentiableOperator()
+    """Test the gradient of the adjoint of the differentiable operator."""
+    diff = DifferentiableOperator()
     # Should work, as the forward will be used as the backward
     # of the adjoint.
     x = torch.tensor(1.0, requires_grad=True, dtype=torch.float64)
@@ -84,8 +84,8 @@ def test_linop_autograd_differentiable_adjoint():
 
 def test_linop_autograd_differentiable_gradgrad():
     """Test the gradgrad of the differentiable operator."""
-    diff = DiffentiableOperator()
-    # The backward of the backward should be the working
+    diff = DifferentiableOperator()
+    # backward of backward should be the working
     # as it should be using the forward
     x = torch.tensor(1.0, requires_grad=True, dtype=torch.float64)
     torch.autograd.gradgradcheck(diff, x)
