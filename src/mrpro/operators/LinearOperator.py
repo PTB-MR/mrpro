@@ -8,6 +8,7 @@ from typing import overload
 
 import torch
 
+import mrpro.operators
 from mrpro.operators.Operator import (
     Operator,
     OperatorComposition,
@@ -151,8 +152,15 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         else:
             return OperatorComposition(self, other)
 
-    @overload
-    def __add__(self, other: LinearOperator) -> LinearOperator: ...
+    def __radd__(self, other: torch.Tensor) -> LinearOperator:
+        """Operator addition.
+
+        Returns lambda self(x) + other*x
+        """
+        return self + other
+
+    @overload  # type: ignore[override]
+    def __add__(self, other: LinearOperator | torch.Tensor) -> LinearOperator: ...
 
     @overload
     def __add__(
@@ -160,12 +168,16 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     ) -> Operator[torch.Tensor, tuple[torch.Tensor,]]: ...
 
     def __add__(
-        self, other: Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator
+        self, other: Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator | torch.Tensor
     ) -> Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator:
         """Operator addition.
 
-        Returns lambda x: self(x) + other(x)
+        Returns lambda x: self(x) + other(x) if other is a operator,
+        lambda x: self(x) + other if other is a tensor
         """
+        if isinstance(other, torch.Tensor):
+            # tensor addition
+            return LinearOperatorSum(self, mrpro.operators.IdentityOp() * other)
         if not isinstance(other, LinearOperator):
             # general case
             return OperatorSum(self, other)  # other + cast(Operator[torch.Tensor, tuple[torch.Tensor,]], self)
@@ -204,7 +216,7 @@ class LinearOperatorSum(LinearOperator, OperatorSum[torch.Tensor, tuple[torch.Te
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the operator addition."""
-        # (A+B)^T = A^T + B^T
+        # (A+B)^H = A^H + B^H
         return (self._operator1.adjoint(x)[0] + self._operator2.adjoint(x)[0],)
 
 

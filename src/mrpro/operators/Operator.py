@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar, TypeVarTuple, cast
+from typing import Generic, TypeVar, TypeVarTuple, cast, overload
 
 import torch
+
+import mrpro.operators
 
 Tin = TypeVarTuple('Tin')  # TODO: bind to torch.Tensors
 Tin2 = TypeVarTuple('Tin2')  # TODO: bind to torch.Tensors
@@ -31,11 +33,28 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
         """
         return OperatorComposition(self, other)
 
-    def __add__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]:
+    def __radd__(self: Operator[*Tin, tuple[*Tin]], other: torch.Tensor) -> Operator[*Tin, tuple[*Tin]]:
+        """Operator right addition.
+
+        Returns lambda x: other*x + self(x)
+        """
+        return self + other
+
+    @overload
+    def __add__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]: ...
+    @overload
+    def __add__(self: Operator[*Tin, tuple[*Tin]], other: torch.Tensor) -> Operator[*Tin, tuple[*Tin]]: ...
+
+    def __add__(self, other: Operator[*Tin, Tout] | torch.Tensor) -> Operator[*Tin, Tout] | Operator[*Tin, tuple[*Tin]]:
         """Operator addition.
 
-        Returns lambda x: self(x) + other(x)
+        Returns lambda x: self(x) + other(x) if other is a operator,
+        lambda x: self(x) + other*x if other is a tensor
         """
+        if isinstance(other, torch.Tensor):
+            s = cast(Operator[*Tin, tuple[*Tin]], self)
+            o = cast(Operator[*Tin, tuple[*Tin]], mrpro.operators.MultiIdentityOp() * other)
+            return OperatorSum(s, o)
         return OperatorSum(self, other)
 
     def __mul__(self, other: torch.Tensor) -> Operator[*Tin, Tout]:
