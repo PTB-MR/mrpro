@@ -1,7 +1,7 @@
 """Tests for Identity Linear Operator."""
 
 import torch
-from mrpro.operators import IdentityOp
+from mrpro.operators import IdentityOp, MultiIdentityOp
 
 from tests import RandomGenerator
 
@@ -34,3 +34,11 @@ def test_identity_op_operatorsyntax():
     expected = tensor * alpha + tensor * beta.conj()
     (actual,) = composition(tensor)
     torch.testing.assert_close(actual, expected)
+
+
+def test_multi_identity_op():
+    """Test forward multi identity."""
+    generator = RandomGenerator(seed=0)
+    tensor = generator.complex64_tensor(2, 3, 4)
+    operator = MultiIdentityOp()
+    torch.testing.assert_close(tuple(tensor), operator(*tensor))
