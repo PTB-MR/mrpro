@@ -2,6 +2,7 @@
 
 import torch
 from mrpro.operators import IdentityOp, MultiIdentityOp
+from mrpro.operators.LinearOperator import LinearOperator
 
 from tests import RandomGenerator
 
@@ -42,3 +43,17 @@ def test_multi_identity_op():
     tensor = generator.complex64_tensor(2, 3, 4)
     operator = MultiIdentityOp()
     torch.testing.assert_close(tuple(tensor), operator(*tensor))
+
+
+def test_identity_is_neutral():
+    class DummyLinearOperator(LinearOperator):
+        def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+            return (x,)
+
+        def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+            return (x,)
+
+    op = DummyLinearOperator()
+    identity = IdentityOp()
+    assert op @ identity is op
+    assert identity @ op is op

@@ -170,3 +170,7 @@ cython_debug/
 *~
 *.swp
 *.swo
+
+*.seq
+*.bak
+*.h5

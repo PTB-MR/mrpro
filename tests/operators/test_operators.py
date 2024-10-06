@@ -311,3 +311,23 @@ def test_adjoint_tensor_sum():
     v = rng.complex64_tensor(3)
     linear_op_sum = a + b
     dotproduct_adjointness_test(linear_op_sum, u, v)
+
+
+def test_sum_operator_multiple():
+    a = DummyOperator(torch.tensor(2.0))
+    op_sum = a + (a + a) + (a + a) + a
+    assert len(op_sum._operators) == 6
+    x = RandomGenerator(0).complex64_tensor(10)
+    (actual,) = op_sum(x)
+    expected = 6 * a(x)[0]
+    torch.testing.assert_close(actual, expected)
+
+
+def test_sum_operator_multiple_adjoint():
+    rng = RandomGenerator(7)
+    a = DummyLinearOperator(rng.complex64_tensor((3, 10)))
+    linear_op_sum = a + (a + a) + (a + a) + a
+    assert len(linear_op_sum._operators) == 6
+    u = rng.complex64_tensor(10)
+    v = rng.complex64_tensor(3)
+    dotproduct_adjointness_test(linear_op_sum, u, v)

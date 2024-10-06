@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import operator
 from abc import abstractmethod
 from collections.abc import Callable, Sequence
-from typing import overload
+from functools import reduce
+from typing import cast, overload
 
 import torch
 
@@ -133,7 +135,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
         return op_norm
 
-    @overload  # type: ignore[override]
+    @overload
     def __matmul__(self, other: LinearOperator) -> LinearOperator: ...
 
     @overload
@@ -146,11 +148,16 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
         Returns lambda x: self(other(x))
         """
-        if isinstance(other, LinearOperator):
+        if isinstance(other, mrpro.operators.IdentityOp):
+            # neutral element of composition
+            return self
+        elif isinstance(other, LinearOperator):
             # LinearOperator@LinearOperator is linear
             return LinearOperatorComposition(self, other)
-        else:
-            return OperatorComposition(self, other)
+        elif isinstance(other, Operator):
+            # cast due to https://github.com/python/mypy/issues/16335
+            return OperatorComposition(self, cast(Operator[*Tin2, tuple[torch.Tensor,]], other))
+        return NotImplemented  # type: ignore[unreachable]
 
     def __radd__(self, other: torch.Tensor) -> LinearOperator:
         """Operator addition.
@@ -178,25 +185,51 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         if isinstance(other, torch.Tensor):
             # tensor addition
             return LinearOperatorSum(self, mrpro.operators.IdentityOp() * other)
-        if not isinstance(other, LinearOperator):
-            # general case
-            return OperatorSum(self, other)  # other + cast(Operator[torch.Tensor, tuple[torch.Tensor,]], self)
-        # Sum of linear operators is a linear operator
-        return LinearOperatorSum(self, other)
+        elif isinstance(other, mrpro.operators.ZeroOp):
+            # neutral element of addition
+            return self
+        elif isinstance(other, LinearOperator):
+            # sum of LinearOperators is linear
+            return LinearOperatorSum(self, other)
+        elif isinstance(other, Operator):
+            # for general operators
+            return OperatorSum(self, other)
+        else:
+            return NotImplemented  # type: ignore[unreachable]
 
-    def __mul__(self, other: torch.Tensor) -> LinearOperator:
+    def __mul__(self, other: torch.Tensor | complex) -> LinearOperator:
         """Operator elementwise left multiplication with tensor.
 
         Returns lambda x: self(other*x)
         """
-        return LinearOperatorElementwiseProductLeft(self, other)
+        if isinstance(other, complex | float | int):
+            if other == 0:
+                return mrpro.operators.ZeroOp()
+            if other == 1:
+                return self
+            else:
+                return LinearOperatorElementwiseProductLeft(self, other)
+        elif isinstance(other, torch.Tensor):
+            return LinearOperatorElementwiseProductLeft(self, other)
+        else:
+            return NotImplemented  # type: ignore[unreachable]
 
-    def __rmul__(self, other: torch.Tensor) -> LinearOperator:  # type: ignore[misc]
+    def __rmul__(self, other: torch.Tensor | complex) -> LinearOperator:
         """Operator elementwise right multiplication with tensor.
 
         Returns lambda x: other*self(x)
         """
-        return LinearOperatorElementwiseProductRight(self, other)
+        if isinstance(other, complex | float | int):
+            if other == 0:
+                return mrpro.operators.ZeroOp()
+            if other == 1:
+                return self
+            else:
+                return LinearOperatorElementwiseProductRight(self, other)
+        elif isinstance(other, torch.Tensor):
+            return LinearOperatorElementwiseProductRight(self, other)
+        else:
+            return NotImplemented  # type: ignore[unreachable]
 
 
 class LinearOperatorComposition(LinearOperator, OperatorComposition[torch.Tensor, tuple[torch.Tensor,]]):
@@ -217,7 +250,7 @@ class LinearOperatorSum(LinearOperator, OperatorSum[torch.Tensor, tuple[torch.Te
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the operator addition."""
         # (A+B)^H = A^H + B^H
-        return (self._operator1.adjoint(x)[0] + self._operator2.adjoint(x)[0],)
+        return reduce(operator.add, (op.adjoint(x) for op in self._operators))
 
 
 class LinearOperatorElementwiseProductRight(
@@ -230,7 +263,12 @@ class LinearOperatorElementwiseProductRight(
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint Operator elementwise multiplication with a tensor."""
-        return self._operator.adjoint(x * self._tensor.conj())
+        conj: complex | torch.Tensor
+        if isinstance(self._scalar, torch.Tensor):
+            conj = self._scalar.conj()
+        else:
+            conj = self._scalar.conjugate()
+        return self._operator.adjoint(x * conj)
 
 
 class LinearOperatorElementwiseProductLeft(
@@ -243,7 +281,13 @@ class LinearOperatorElementwiseProductLeft(
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint Operator elementwise multiplication with a tensor."""
-        return (self._operator.adjoint(x)[0] * self._tensor.conj(),)
+        conj: complex | torch.Tensor
+        if isinstance(self._scalar, torch.Tensor):
+            conj = self._scalar.conj()
+        else:
+            conj = self._scalar.conjugate()
+
+        return (self._operator.adjoint(x)[0] * conj,)
 
 
 class AdjointLinearOperator(LinearOperator):
