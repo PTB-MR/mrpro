@@ -152,7 +152,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         else:
             return OperatorComposition(self, other)
 
-    def __radd__(self, other: torch.Tensor) -> LinearOperator:
+    def __radd__(self, other: torch.Tensor) -> LinearOperator:  # type: ignore[misc]
         """Operator addition.
 
         Returns lambda self(x) + other*x
