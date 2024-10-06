@@ -99,15 +99,15 @@ class OperatorComposition(Operator[*Tin2, Tout]):
 class OperatorSum(Operator[*Tin, Tout]):
     """Operator addition."""
 
-    def __init__(self, operator1: Operator[*Tin, Tout], operator2: Operator[*Tin, Tout]):
+    def __init__(self, operator1: Operator[*Tin, Tout], /, *other_operators: Operator[*Tin, Tout]):
         """Operator addition initialization."""
         super().__init__()
-        self._operator1 = operator1
-        self._operator2 = operator2
+        self._operators = torch.nn.ModuleList((operator1, *other_operators))
 
     def forward(self, *args: *Tin) -> Tout:
         """Operator addition."""
-        return cast(Tout, tuple(a + b for a, b in zip(self._operator1(*args), self._operator2(*args), strict=True)))
+        result = [sum(r, start=r0) for r0, *r in zip(*(op(*args) for op in self._operators), strict=True)]
+        return cast(Tout, result)
 
 
 class OperatorElementwiseProductRight(Operator[*Tin, Tout]):
