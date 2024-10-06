@@ -12,7 +12,7 @@ from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.GridSamplingOp import GridSamplingOp
 from mrpro.operators.IdentityOp import IdentityOp
 from mrpro.operators.MagnitudeOp import MagnitudeOp
-from mrpro.operators.IdentityOp import MultiIdentityOp
+from mrpro.operators.MultiIdentityOp import MultiIdentityOp
 from mrpro.operators.PhaseOp import PhaseOp
 from mrpro.operators.SensitivityOp import SensitivityOp
 from mrpro.operators.SignalModel import SignalModel

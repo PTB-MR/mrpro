@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import operator
 from abc import ABC, abstractmethod
 from functools import reduce
 from typing import Generic, TypeVar, TypeVarTuple, cast, overload
@@ -43,7 +42,7 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
         return self + other
 
     @overload
-    def __add__(self, other: Operator[*Tin, Tout] | mrpro.operators.ZeroOp) -> Operator[*Tin, Tout]: ...
+    def __add__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]: ...
     @overload
     def __add__(self: Operator[*Tin, tuple[*Tin]], other: torch.Tensor) -> Operator[*Tin, tuple[*Tin]]: ...
 
@@ -109,22 +108,27 @@ class OperatorComposition(Operator[*Tin2, Tout]):
 class OperatorSum(Operator[*Tin, Tout]):
     """Operator addition."""
 
-    _operators: list[Operator[*Tin, Tout]]
+    _operators: list[Operator[*Tin, Tout]]  # actually a torch.nn.ModuleList
 
     def __init__(self, operator1: Operator[*Tin, Tout], /, *other_operators: Operator[*Tin, Tout]):
         """Operator addition initialization."""
-        ops = []
+        super().__init__()
+        ops: list[Operator[*Tin, Tout]] = []
         for op in (operator1, *other_operators):
             if isinstance(op, OperatorSum):
                 ops.extend(op._operators)
             else:
                 ops.append(op)
-        self.__operators = torch.nn.ModuleList(ops)
+        self._operators = cast(list[Operator[*Tin, Tout]], torch.nn.ModuleList(ops))
 
     def forward(self, *args: *Tin) -> Tout:
         """Operator addition."""
-        result = reduce(operator.add, (op(*args) for op in self._operators))
-        return cast(Tout, result)
+
+        def _add(a: tuple[torch.Tensor, ...], b: tuple[torch.Tensor, ...]) -> Tout:
+            return cast(Tout, tuple(a_ + b_ for a_, b_ in zip(a, b, strict=True)))
+
+        result = reduce(_add, (op(*args) for op in self._operators))
+        return result
 
 
 class OperatorElementwiseProductRight(Operator[*Tin, Tout]):

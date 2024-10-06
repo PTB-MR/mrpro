@@ -1,6 +1,6 @@
 """Tests for the operators module."""
 
-from typing import cast
+from typing import assert_type, cast
 
 import pytest
 import torch
@@ -104,6 +104,7 @@ def test_sum_linearoperator():
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator), 'LinearOperator + LinearOperator should be an Operator'
     assert isinstance(c, LinearOperator), 'LinearOperator + LinearOperator should be a LinearOperator'
+    assert_type(c, LinearOperator)
 
 
 def test_sum_linearoperator_operator():
@@ -118,6 +119,7 @@ def test_sum_linearoperator_operator():
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator), 'LinearOperator + Operator should be an Operator'
     assert not isinstance(c, LinearOperator), 'LinearOperator + Operator should not be a LinearOperator'
+    assert_type(c, Operator[torch.Tensor, tuple[torch.Tensor]])
 
 
 def test_sum_operator_linearoperator():
@@ -132,6 +134,7 @@ def test_sum_operator_linearoperator():
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator), 'Operator + LinearOperator should be an Operator'
     assert not isinstance(c, LinearOperator), 'Operator + LinearOperator should not be a LinearOperator'
+    assert_type(c, Operator[torch.Tensor, tuple[torch.Tensor]])
 
 
 def test_sum_operator_tensor():
@@ -146,13 +149,14 @@ def test_sum_operator_tensor():
     torch.testing.assert_close(y1, y2)
     assert isinstance(c, Operator), 'Operator + tensor should be an Operator'
     assert not isinstance(c, LinearOperator), 'Operator + tensor should not be a LinearOperator'
+    assert_type(c, Operator[torch.Tensor, tuple[torch.Tensor]])
 
 
 def test_rsum_operator_tensor():
     rng = RandomGenerator(0)
     a = DummyOperator(torch.tensor(3.0))
     b = rng.complex64_tensor((3, 10))
-    c = b + a
+    c = cast(Operator, b + a)  # required due to https://github.com/pytorch/pytorch/issues/124015
     x = rng.complex64_tensor(10)
     (y1,) = c(x)
     y2 = a(x)[0] + b * x
@@ -180,7 +184,7 @@ def test_rsum_linearoperator_tensor():
     rng = RandomGenerator(0)
     a = DummyLinearOperator(rng.complex64_tensor((3, 3)))
     b = rng.complex64_tensor((3,))
-    c = b + a
+    c = cast(LinearOperator, b + a)  # required due to https://github.com/pytorch/pytorch/issues/124015
     x = rng.complex64_tensor(3)
     (y1,) = c(x)
     y2 = a(x)[0] + b * x
@@ -289,7 +293,7 @@ def test_adjoint_product_right():
     b = rng.float32_tensor(3)
     u = rng.complex64_tensor(10)
     v = rng.complex64_tensor(3)
-    linear_op_product = b * a
+    linear_op_product = cast(LinearOperator, b * a)  # required due to https://github.com/pytorch/pytorch/issues/124015
     dotproduct_adjointness_test(linear_op_product, u, v)
 
 

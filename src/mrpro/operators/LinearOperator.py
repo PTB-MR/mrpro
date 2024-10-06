@@ -151,6 +151,8 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         if isinstance(other, mrpro.operators.IdentityOp):
             # neutral element of composition
             return self
+        if isinstance(self, mrpro.operators.IdentityOp):
+            return other
         elif isinstance(other, LinearOperator):
             # LinearOperator@LinearOperator is linear
             return LinearOperatorComposition(self, other)
@@ -185,6 +187,9 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         if isinstance(other, torch.Tensor):
             # tensor addition
             return LinearOperatorSum(self, mrpro.operators.IdentityOp() * other)
+        elif isinstance(self, mrpro.operators.ZeroOp):
+            # neutral element of addition
+            return other
         elif isinstance(other, mrpro.operators.ZeroOp):
             # neutral element of addition
             return self
@@ -250,7 +255,7 @@ class LinearOperatorSum(LinearOperator, OperatorSum[torch.Tensor, tuple[torch.Te
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the operator addition."""
         # (A+B)^H = A^H + B^H
-        return reduce(operator.add, (op.adjoint(x) for op in self._operators))
+        return (reduce(operator.add, (op.adjoint(x)[0] for op in self._operators)),)
 
 
 class LinearOperatorElementwiseProductRight(

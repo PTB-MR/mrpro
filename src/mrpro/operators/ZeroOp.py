@@ -1,12 +1,8 @@
 """Zero Operator."""
 
-from typing import overload
-
 import torch
 
-from mrpro.operators.IdentityOp import IdentityOp
 from mrpro.operators.LinearOperator import LinearOperator
-from mrpro.operators.Operator import Operator
 
 
 class ZeroOp(LinearOperator):
@@ -47,26 +43,3 @@ class ZeroOp(LinearOperator):
         zeros_like(x)
         """
         return (torch.zeros_like(x),)
-
-    @overload  # type: ignore[override]
-    def __add__(self, other: torch.Tensor) -> IdentityOp: ...
-    @overload
-    def __add__(self, other: LinearOperator) -> LinearOperator: ...
-
-    @overload
-    def __add__(
-        self, other: Operator[torch.Tensor, tuple[torch.Tensor]]
-    ) -> Operator[torch.Tensor, tuple[torch.Tensor]]: ...
-
-    @overload
-    def __add__(self, other: Operator) -> Operator: ...
-
-    def __add__(self, other: Operator | LinearOperator | torch.Tensor) -> Operator | LinearOperator:
-        """Addition.
-
-        Addition with a LinearOperator returns the other operator, not a LinearOperatorSum.
-        """
-        if isinstance(other, torch.Tensor):
-            return IdentityOp().__mul__(other)
-        else:
-            return other

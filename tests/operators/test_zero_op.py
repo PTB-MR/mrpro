@@ -1,5 +1,7 @@
+from typing import assert_type
+
 import torch
-from mrpro.operators import IdentityOp, MagnitudeOp, ZeroOp
+from mrpro.operators import IdentityOp, LinearOperator, MagnitudeOp, Operator, ZeroOp
 
 from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test
@@ -20,8 +22,12 @@ def test_zero_op_neutral_linop():
     op = IdentityOp()
     zero = ZeroOp()
 
-    assert op + zero is op
-    assert zero + op is op
+    rsum = op + zero
+    lsum = zero + op
+    assert rsum is op
+    assert lsum is op
+    assert_type(lsum, LinearOperator)
+    assert_type(rsum, LinearOperator)
 
     assert zero + zero is zero
 
@@ -31,11 +37,14 @@ def test_zero_op_neutral_linop():
 
 def test_zero_op_neutral_op():
     """Test that the zero operator is neutral for addition."""
-    op = MagnitudeOp()
+    op = MagnitudeOp() @ IdentityOp()
     zero = ZeroOp()
-
-    assert op + zero is op
-    assert zero + op is op
+    rsum = op + zero
+    lsum = zero + op
+    assert rsum is op
+    assert lsum is op
+    assert_type(rsum, Operator[torch.Tensor, tuple[torch.Tensor]])
+    assert_type(lsum, Operator[torch.Tensor, tuple[torch.Tensor]])
 
 
 def test_zero_op_adjoint():
