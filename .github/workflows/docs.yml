@@ -201,14 +201,16 @@ jobs:
           name: Documentation
           path: docs/build/html/
 
-      - run: echo '${{ steps.save_docu.outputs.artifact-url }}'
+      - run: echo 'Artifact url ${{ steps.save_docu.outputs.artifact-url }}'
 
-      - run: echo '${{ github.event.number }}'
+      - run: echo 'Event number ${{ github.event.number }}'
 
-      - run: echo '${{github.event_name}}'
+      - run: echo 'Event name ${{github.event_name}}'
+
+      - run: echo 'Pull request merged ${{github.event.pull_request.merged}}'
 
       - name: Update PR with link to summary
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
         uses: edumserrano/find-create-or-update-comment@v3
         with:
           issue-number: ${{ github.event.pull_request.number }}
