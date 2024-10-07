@@ -210,7 +210,7 @@ jobs:
       - run: echo 'Pull request merged ${{github.event.pull_request.merged}}'
 
       - name: Update PR with link to summary
-        if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
+        if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
         uses: edumserrano/find-create-or-update-comment@v3
         with:
           issue-number: ${{ github.event.pull_request.number }}
