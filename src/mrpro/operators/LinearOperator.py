@@ -46,7 +46,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         max_iterations: int = 20,
         relative_tolerance: float = 1e-4,
         absolute_tolerance: float = 1e-5,
-        callback: Callable | None = None,
+        callback: Callable[[torch.Tensor], None] | None = None,
     ) -> torch.Tensor:
         """Power iteration for computing the operator norm of the linear operator.
 
