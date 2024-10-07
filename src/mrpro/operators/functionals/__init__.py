@@ -1,1 +1,2 @@
 from mrpro.operators.functionals.MSEDataDiscrepancy import MSEDataDiscrepancy
+from mrpro.operators.functionals.ZeroFunctional import ZeroFunctional
