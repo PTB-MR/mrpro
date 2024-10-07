@@ -2,8 +2,6 @@ name: Sphinx Docs
 
 on:
   push:
-    branches:
-      - main
   pull_request:
 
 permissions:
