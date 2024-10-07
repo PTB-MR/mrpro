@@ -184,14 +184,6 @@ jobs:
       - name: Build docs
         run: sphinx-build -b html ./docs/source ./docs/build/html
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          publish_branch: github-pages
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/build/html
-        if: github.event_name != 'pull_request'
-
       - name: Save Documentation
         id: save_docu
         uses: actions/upload-artifact@v4
