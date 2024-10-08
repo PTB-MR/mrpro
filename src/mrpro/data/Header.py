@@ -13,6 +13,7 @@ import torch
 from pydicom.dataset import Dataset
 from pydicom.tag import Tag, TagType
 
+from mrpro.data.DataInfo import DataInfo
 from mrpro.data.KHeader import KHeader
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.Rotation import Rotation
@@ -34,14 +35,8 @@ class Header(MoveDataMixin, ABC):
     lamor_frequency_proton: float | None
     """Lamor frequency of hydrogen nuclei [Hz]."""
 
-    position: SpatialDimension[torch.Tensor] | None
-    """Center of the excited volume, in LPS coordinates relative to isocenter [m]."""
-
-    orientation: Rotation | None
-    """Rotation describing the orientation of the readout, phase and slice encoding direction."""
-
-    patient_table_position: SpatialDimension[torch.Tensor] | None
-    """Offset position of the patient table, in LPS coordinates [m]."""
+    data_info: DataInfo
+    """Information of the data (e.g. different image slices)."""
 
     datetime: datetime.datetime | None
     """Date and time of acquisition."""
