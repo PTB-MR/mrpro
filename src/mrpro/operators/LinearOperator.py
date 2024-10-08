@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import operator
 from abc import abstractmethod
 from collections.abc import Callable, Sequence
-from typing import overload
+from functools import reduce
+from typing import cast, overload
 
 import torch
 
+import mrpro.operators
 from mrpro.operators.Operator import (
     Operator,
     OperatorComposition,
@@ -43,7 +46,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         max_iterations: int = 20,
         relative_tolerance: float = 1e-4,
         absolute_tolerance: float = 1e-5,
-        callback: Callable | None = None,
+        callback: Callable[[torch.Tensor], None] | None = None,
     ) -> torch.Tensor:
         """Power iteration for computing the operator norm of the linear operator.
 
@@ -132,7 +135,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
         return op_norm
 
-    @overload  # type: ignore[override]
+    @overload
     def __matmul__(self, other: LinearOperator) -> LinearOperator: ...
 
     @overload
@@ -145,14 +148,28 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
         Returns lambda x: self(other(x))
         """
-        if isinstance(other, LinearOperator):
+        if isinstance(other, mrpro.operators.IdentityOp):
+            # neutral element of composition
+            return self
+        if isinstance(self, mrpro.operators.IdentityOp):
+            return other
+        elif isinstance(other, LinearOperator):
             # LinearOperator@LinearOperator is linear
             return LinearOperatorComposition(self, other)
-        else:
-            return OperatorComposition(self, other)
+        elif isinstance(other, Operator):
+            # cast due to https://github.com/python/mypy/issues/16335
+            return OperatorComposition(self, cast(Operator[*Tin2, tuple[torch.Tensor,]], other))
+        return NotImplemented  # type: ignore[unreachable]
 
-    @overload
-    def __add__(self, other: LinearOperator) -> LinearOperator: ...
+    def __radd__(self, other: torch.Tensor) -> LinearOperator:
+        """Operator addition.
+
+        Returns lambda self(x) + other*x
+        """
+        return self + other
+
+    @overload  # type: ignore[override]
+    def __add__(self, other: LinearOperator | torch.Tensor) -> LinearOperator: ...
 
     @overload
     def __add__(
@@ -160,31 +177,78 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     ) -> Operator[torch.Tensor, tuple[torch.Tensor,]]: ...
 
     def __add__(
-        self, other: Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator
+        self, other: Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator | torch.Tensor
     ) -> Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator:
         """Operator addition.
 
-        Returns lambda x: self(x) + other(x)
+        Returns lambda x: self(x) + other(x) if other is a operator,
+        lambda x: self(x) + other if other is a tensor
         """
-        if not isinstance(other, LinearOperator):
-            # general case
-            return OperatorSum(self, other)  # other + cast(Operator[torch.Tensor, tuple[torch.Tensor,]], self)
-        # Sum of linear operators is a linear operator
-        return LinearOperatorSum(self, other)
+        if isinstance(other, torch.Tensor):
+            # tensor addition
+            return LinearOperatorSum(self, mrpro.operators.IdentityOp() * other)
+        elif isinstance(self, mrpro.operators.ZeroOp):
+            # neutral element of addition
+            return other
+        elif isinstance(other, mrpro.operators.ZeroOp):
+            # neutral element of addition
+            return self
+        elif isinstance(other, LinearOperator):
+            # sum of LinearOperators is linear
+            return LinearOperatorSum(self, other)
+        elif isinstance(other, Operator):
+            # for general operators
+            return OperatorSum(self, other)
+        else:
+            return NotImplemented  # type: ignore[unreachable]
 
-    def __mul__(self, other: torch.Tensor) -> LinearOperator:
+    def __mul__(self, other: torch.Tensor | complex) -> LinearOperator:
         """Operator elementwise left multiplication with tensor.
 
         Returns lambda x: self(other*x)
         """
-        return LinearOperatorElementwiseProductLeft(self, other)
+        if isinstance(other, complex | float | int):
+            if other == 0:
+                return mrpro.operators.ZeroOp()
+            if other == 1:
+                return self
+            else:
+                return LinearOperatorElementwiseProductLeft(self, other)
+        elif isinstance(other, torch.Tensor):
+            return LinearOperatorElementwiseProductLeft(self, other)
+        else:
+            return NotImplemented  # type: ignore[unreachable]
 
-    def __rmul__(self, other: torch.Tensor) -> LinearOperator:  # type: ignore[misc]
+    def __rmul__(self, other: torch.Tensor | complex) -> LinearOperator:
         """Operator elementwise right multiplication with tensor.
 
         Returns lambda x: other*self(x)
         """
-        return LinearOperatorElementwiseProductRight(self, other)
+        if isinstance(other, complex | float | int):
+            if other == 0:
+                return mrpro.operators.ZeroOp()
+            if other == 1:
+                return self
+            else:
+                return LinearOperatorElementwiseProductRight(self, other)
+        elif isinstance(other, torch.Tensor):
+            return LinearOperatorElementwiseProductRight(self, other)
+        else:
+            return NotImplemented  # type: ignore[unreachable]
+
+    def __and__(self, other: LinearOperator) -> mrpro.operators.LinearOperatorMatrix:
+        """Vertical stacking of two LinearOperators."""
+        if not isinstance(other, LinearOperator):
+            return NotImplemented  # type: ignore[unreachable]
+        operators = [[self], [other]]
+        return mrpro.operators.LinearOperatorMatrix(operators)
+
+    def __or__(self, other: LinearOperator) -> mrpro.operators.LinearOperatorMatrix:
+        """Horizontal stacking of two LinearOperators."""
+        if not isinstance(other, LinearOperator):
+            return NotImplemented  # type: ignore[unreachable]
+        operators = [[self, other]]
+        return mrpro.operators.LinearOperatorMatrix(operators)
 
 
 class LinearOperatorComposition(LinearOperator, OperatorComposition[torch.Tensor, tuple[torch.Tensor,]]):
@@ -204,8 +268,8 @@ class LinearOperatorSum(LinearOperator, OperatorSum[torch.Tensor, tuple[torch.Te
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the operator addition."""
-        # (A+B)^T = A^T + B^T
-        return (self._operator1.adjoint(x)[0] + self._operator2.adjoint(x)[0],)
+        # (A+B)^H = A^H + B^H
+        return (reduce(operator.add, (op.adjoint(x)[0] for op in self._operators)),)
 
 
 class LinearOperatorElementwiseProductRight(
@@ -218,7 +282,12 @@ class LinearOperatorElementwiseProductRight(
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint Operator elementwise multiplication with a tensor."""
-        return self._operator.adjoint(x * self._tensor.conj())
+        conj: complex | torch.Tensor
+        if isinstance(self._scalar, torch.Tensor):
+            conj = self._scalar.conj()
+        else:
+            conj = self._scalar.conjugate()
+        return self._operator.adjoint(x * conj)
 
 
 class LinearOperatorElementwiseProductLeft(
@@ -231,7 +300,13 @@ class LinearOperatorElementwiseProductLeft(
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint Operator elementwise multiplication with a tensor."""
-        return (self._operator.adjoint(x)[0] * self._tensor.conj(),)
+        conj: complex | torch.Tensor
+        if isinstance(self._scalar, torch.Tensor):
+            conj = self._scalar.conj()
+        else:
+            conj = self._scalar.conjugate()
+
+        return (self._operator.adjoint(x)[0] * conj,)
 
 
 class AdjointLinearOperator(LinearOperator):
