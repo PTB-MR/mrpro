@@ -6,10 +6,7 @@ from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.filters import uniform_filter
 
 
-def walsh(
-    coil_images: torch.Tensor,
-    smoothing_width: SpatialDimension[int] | int
-) -> torch.Tensor:
+def walsh(coil_images: torch.Tensor, smoothing_width: SpatialDimension[int] | int) -> torch.Tensor:
     """Calculate a coil sensitivity map (csm) using an iterative version of the Walsh method.
 
     This is for a single set of coil images. The input should be a tensor with dimensions

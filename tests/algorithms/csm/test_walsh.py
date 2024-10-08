@@ -7,7 +7,7 @@ from tests.algorithms.csm.conftest import multi_coil_image
 from tests.helper import relative_image_difference
 
 
-def test_Walsh(ellipse_phantom, random_kheader):
+def test_walsh(ellipse_phantom, random_kheader):
     """Test the Walsh method."""
     idata, csm_ref = multi_coil_image(n_coils=4, ph_ellipse=ellipse_phantom, random_kheader=random_kheader)
 
