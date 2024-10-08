@@ -14,7 +14,7 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
     def _throw_if_negative_or_complex(
         self, x: torch.Tensor | float, message: str = 'sigma must be real and contain only positive values'
-    ):
+    ) -> None:
         """Throw an ValueError if any element of x is negative or complex.
 
         Parameters
@@ -50,7 +50,7 @@ class ElementaryFunctional(Functional):
         r"""Initialize a Functional.
 
         We assume that functionals are given in the form
-            :math:`f(x) = \phi ( weight ( x - target))`
+        :math:`f(x) = \phi ( weight ( x - target))`
         for some functional :math:`\phi`.
 
         Parameters
@@ -63,7 +63,7 @@ class ElementaryFunctional(Functional):
             dimension(s) over which functional is reduced.
             All other dimensions of  `weight ( x - target))` will be treated as batch dimensions.
         divide_by_n
-            if True, the result is scaled by the number of elements of the dimensions index by `dim` in
+            if true, the result is scaled by the number of elements of the dimensions index by `dim` in
             the tensor `weight ( x - target))`. If true, the functional is thus calculated as the mean,
             else the sum.
         keepdim
@@ -117,7 +117,7 @@ class ProximableFunctional(Functional, ABC):
     r"""ProximableFunctional Base Class.
 
     A proximable functional is a functional :math:`f(x)` that has a prox implementation,
-    i.e. a function that yields :math:`argmin_x sigma f(x) + 1/2 ||x - y||^2`
+    i.e. a function that yields :math:`argmin_x \sigma f(x) + 1/2 ||x - y||^2`
     and a prox_convex_conjugate, yielding the prox of the convex conjugate.
     """
 
