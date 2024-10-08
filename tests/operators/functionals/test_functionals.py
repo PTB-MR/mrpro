@@ -4,6 +4,7 @@ from typing import Literal, TypedDict
 import pytest
 import torch
 from mrpro.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
+from mrpro.operators.functionals import ZeroFunctional
 
 from tests import RandomGenerator
 from tests.operators.functionals.conftest import (
@@ -182,6 +183,7 @@ def test_functional_prox_zero_sigma(
     p = getattr(functional(), function)
     x = torch.tensor([-1.0, 0.0, 1.0])
     (prox,) = p(x, sigma=0.0)
+
     assert not torch.any(torch.isnan(prox))
     assert not torch.any(torch.isinf(prox))
     assert torch.allclose(prox, x)
@@ -239,6 +241,16 @@ class NumericCase(TypedDict):
 
 # This is more readable than using pytest.mark.parametrize directly
 NUMERICCASES: dict[str, NumericCase] = {  # Name: Case
+    'ZeroFunctional with complex weight': {
+        'functional': ZeroFunctional,
+        'x': torch.tensor([1.0, 2.0, 3.0]),
+        'weight': 1j,
+        'target': torch.tensor([[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]),
+        'sigma': 0.5,
+        'fx_expected': torch.tensor(0.0),
+        'prox_expected': torch.tensor([1.0 + 0j, 2.0 + 0j, 3.0 + 0j]),
+        'prox_convex_conj_expected': torch.tensor([0j, 0j, 0j]),
+    },
 }
 
 
