@@ -1,7 +1,9 @@
 """Linear Operator Matrix class."""
 
+from __future__ import annotations
+
 import operator
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from functools import reduce
 from types import EllipsisType
 from typing import Self, TypeVar, cast
@@ -18,7 +20,7 @@ _IdxType = _SingleIdxType | tuple[_SingleIdxType, _SingleIdxType]
 T = TypeVar('T', bound=Operator)
 
 
-class LinearOperatorMatrix(Operator):
+class LinearOperatorMatrix(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]]):
     r"""Matrix of Linear Operators.
 
     A matrix of Linear Operators, where each element is a Linear Operator.
@@ -51,7 +53,7 @@ class LinearOperatorMatrix(Operator):
             A sequence of rows, which are sequences of Linear Operators.
         """
         if not all(isinstance(op, LinearOperator) for row in operators for op in row):
-            raise ValueError('All elements should be Linear Operators.')
+            raise ValueError('All elements should be LinearOperators.')
         if not all(len(row) == len(operators[0]) for row in operators):
             raise ValueError('All rows should have the same length.')
         super().__init__()
@@ -100,14 +102,22 @@ class LinearOperatorMatrix(Operator):
             raise IndexError('Too many indices for LinearOperatorMatrix')
 
         def _to_numeric_index(idx: slice | int | Sequence[int] | EllipsisType, length: int) -> Sequence[int]:
-            """Convert index to a sequence of integers."""
+            """Convert index to a sequence of integers or raise an error."""
             if isinstance(idx, slice):
+                if (idx.start is not None and (idx.start < -length or idx.start >= length)) or (
+                    idx.stop is not None and (idx.stop < -length or idx.stop > length)
+                ):
+                    raise IndexError('Index out of range')
                 return range(*idx.indices(length))
             if isinstance(idx, int):
+                if idx < -length or idx >= length:
+                    raise IndexError('Index out of range')
                 return (idx,)
             if idx is Ellipsis:
                 return range(length)
             if isinstance(idx, Sequence):
+                if min(idx) < -length or max(idx) >= length:
+                    raise IndexError('Index out of range')
                 return idx
             else:
                 raise IndexError('Invalid index type')
@@ -116,12 +126,19 @@ class LinearOperatorMatrix(Operator):
         col_numbers = _to_numeric_index(idxs[1], self._shape[1])
 
         sliced_operators = [
-            [row[col] for col in col_numbers] for i, row in enumerate(self._operators) if i in row_numbers
+            [row[col_number] for col_number in col_numbers]
+            for row in [self._operators[row_number] for row_number in row_numbers]
         ]
+
+        # Return a single operator if only one row and column is selected
         if len(row_numbers) == 1 and len(col_numbers) == 1:
             return sliced_operators[0][0]
         else:
             return self.__class__(sliced_operators)
+
+    def __iter__(self) -> Iterator[Sequence[LinearOperator]]:
+        """Iterate over the rows of the Operator Matrix."""
+        return iter(self._operators)
 
     def __repr__(self):
         """Representation of the Operator Matrix."""
@@ -165,7 +182,7 @@ class LinearOperatorMatrix(Operator):
     def __rmul__(self, other: torch.Tensor | Sequence[torch.Tensor] | complex) -> Self:
         """Tensor*LinearOperatorMatrix multiplication."""
         if isinstance(other, torch.Tensor | complex | float | int):
-            other_: Sequence[torch.Tensor | complex] = (other,) * self.shape[1]
+            other_: Sequence[torch.Tensor | complex] = (other,) * self.shape[0]
         elif len(other) != self.shape[0]:
             raise ValueError('Other should have the same length as the operator has rows.')
         else:
@@ -281,3 +298,57 @@ class LinearOperatorMatrix(Operator):
         )
         norm = norms.sum(dim=1).square().sum(0).sqrt().unsqueeze(-1)
         return norm
+
+    def __or__(self, other: LinearOperator | LinearOperatorMatrix) -> Self:
+        """Vertical stacking."""
+        if isinstance(other, LinearOperator):
+            if rows := self.shape[0] > 1:
+                raise ValueError(
+                    f'Shape mismatch in vertical stacking : cannot stack LinearOperator and matrix with {rows} rows.'
+                )
+            operators = [[*self._operators[0], other]]
+            return self.__class__(operators)
+        else:
+            if (rows_self := self.shape[0]) != (rows_other := other.shape[0]):
+                raise ValueError(
+                    f'Shape mismatch in vertical stacking: cannot stack matrices with {rows_self} and {rows_other}.'
+                )
+            operators = [[*self_row, *other_row] for self_row, other_row in zip(self, other, strict=True)]
+            return self.__class__(operators)
+
+    def __ror__(self, other: LinearOperator) -> Self:
+        """Vertical stacking."""
+        if rows := self.shape[0] > 1:
+            raise ValueError(
+                f'Shape mismatch in vertical stacking: cannot stack LinearOperator and matrix with {rows} rows.'
+            )
+        operators = [[other, *self._operators[0]]]
+        return self.__class__(operators)
+
+    def __and__(self, other: LinearOperator | LinearOperatorMatrix) -> Self:
+        """Horizontal stacking."""
+        if isinstance(other, LinearOperator):
+            if cols := self.shape[1] > 1:
+                raise ValueError(
+                    'Shape mismatch in horizontal stacking:'
+                    f'cannot stack LinearOperator and matrix with {cols} columns.'
+                )
+            operators = [*self._operators, [other]]
+            return self.__class__(operators)
+        else:
+            if (cols_self := self.shape[1]) != (cols_other := other.shape[1]):
+                raise ValueError(
+                    'Shape mismatch in horizontal stacking:'
+                    f'cannot stack matrices with {cols_self} and {cols_other} columns.'
+                )
+            operators = [*self._operators, *other]
+            return self.__class__(operators)
+
+    def __rand__(self, other: LinearOperator) -> Self:
+        """Horizontal stacking."""
+        if cols := self.shape[1] > 1:
+            raise ValueError(
+                f'Shape mismatch in horizontal stacking: cannot stack LinearOperator and matrix with {cols} columns.'
+            )
+        operators = [[other], *self._operators]
+        return self.__class__(operators)

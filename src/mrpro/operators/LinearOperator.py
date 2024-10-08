@@ -236,6 +236,20 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         else:
             return NotImplemented  # type: ignore[unreachable]
 
+    def __and__(self, other: LinearOperator) -> mrpro.operators.LinearOperatorMatrix:
+        """Vertical stacking of two LinearOperators."""
+        if not isinstance(other, LinearOperator):
+            return NotImplemented  # type: ignore[unreachable]
+        operators = [[self], [other]]
+        return mrpro.operators.LinearOperatorMatrix(operators)
+
+    def __or__(self, other: LinearOperator) -> mrpro.operators.LinearOperatorMatrix:
+        """Horizontal stacking of two LinearOperators."""
+        if not isinstance(other, LinearOperator):
+            return NotImplemented  # type: ignore[unreachable]
+        operators = [[self, other]]
+        return mrpro.operators.LinearOperatorMatrix(operators)
+
 
 class LinearOperatorComposition(LinearOperator, OperatorComposition[torch.Tensor, tuple[torch.Tensor,]]):
     """LinearOperator composition.
