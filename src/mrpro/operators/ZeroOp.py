@@ -28,7 +28,7 @@ class ZeroOp(LinearOperator):
         -------
         zeros_like(x)
         """
-        return (torch.zeros_like(x),)
+        return (torch.tensor(0, dtype=x.dtype),)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the adjoint of the operator to the input.
@@ -42,4 +42,4 @@ class ZeroOp(LinearOperator):
         -------
         zeros_like(x)
         """
-        return (torch.zeros_like(x),)
+        return (torch.tensor(0, dtype=x.dtype),)
