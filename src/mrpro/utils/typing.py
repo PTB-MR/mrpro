@@ -1,8 +1,8 @@
 """Some type hints that are used in multiple places in the codebase but not part of mrpro's public API."""
 
-from typing import TYPE_CHECKING, Any, TypeAlias
+import typing
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     from types import EllipsisType
     from typing import SupportsIndex, TypeAlias
 
@@ -14,5 +14,5 @@ if TYPE_CHECKING:
     _SingleIndexerType: TypeAlias = SupportsIndex | _IndexerTypeInner | NestedSequence[_IndexerTypeInner]
     IndexerType: TypeAlias = tuple[_SingleIndexerType, ...] | _SingleIndexerType
 else:
-    IndexerType: TypeAlias = Any
-    NestedSequence: TypeAlias = Any
+    IndexerType: typing.TypeAlias = typing.Any
+    NestedSequence: typing.TypeAlias = typing.Any

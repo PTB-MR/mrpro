@@ -1,26 +1,27 @@
 """Spatial and temporal filters."""
 
+import collections.abc
+import functools
+import math
 import warnings
-from collections.abc import Sequence
-from functools import reduce
-from math import ceil
 from typing import Literal
 
+import einops
 import numpy as np
 import torch
-from einops import repeat
 
 
 def filter_separable(
     x: torch.Tensor,
-    kernels: Sequence[torch.Tensor],
-    dim: Sequence[int],
+    kernels: collections.abc.Sequence[torch.Tensor],
+    dim: collections.abc.Sequence[int],
     pad_mode: Literal['constant', 'reflect', 'replicate', 'circular', 'none'] = 'constant',
     pad_value: float = 0.0,
 ) -> torch.Tensor:
     """Apply the separable filter kernels to the tensor x along the axes dim.
 
-    Does padding to keep the output the same size as the input.
+    Does padding to keep the output the same size as the input. The filtered tensor has then the same shape as the input
+    unless pad_mode is 'none'. The dtype is the promoted dtype of the input and the kernels.
 
     Parameters
     ----------
@@ -37,8 +38,7 @@ def filter_separable(
 
     Returns
     -------
-    The filtered tensor, with the same shape as the input unless pad_mode is 'none' and
-    and promoted dtype of the input and the kernels.
+    the filtered tensor
     """
     if len(dim) != len(kernels):
         raise ValueError('Must provide matching length kernels and dim arguments.')
@@ -56,7 +56,7 @@ def filter_separable(
         padding_conv = 'valid'
 
     # output will be of the promoted type of the input and the kernels
-    target_dtype = reduce(torch.promote_types, [k.dtype for k in kernels], x.dtype)
+    target_dtype = functools.reduce(torch.promote_types, [k.dtype for k in kernels], x.dtype)
     x = x.to(target_dtype)
 
     for kernel, d in zip(kernels, dim, strict=False):
@@ -74,8 +74,8 @@ def filter_separable(
             right_pad = (len(kernel) - 1) - left_pad
             x_flat = torch.nn.functional.pad(x_flat, pad=(left_pad, right_pad), mode=pad_mode, value=pad_value)
         x = torch.nn.functional.conv1d(
-            repeat(x_flat, 'batch x -> batch channels x', channels=1),
-            repeat(kernel, 'x -> batch channels x', batch=1, channels=1),
+            einops.repeat(x_flat, 'batch x -> batch channels x', channels=1),
+            einops.repeat(kernel, 'x -> batch channels x', batch=1, channels=1),
             padding=padding_conv,
         ).reshape(*x.shape[:-1], -1)
         # for a single permutation, this undoes the permutation
@@ -85,8 +85,8 @@ def filter_separable(
 
 def gaussian_filter(
     x: torch.Tensor,
-    sigmas: float | Sequence[float] | torch.Tensor,
-    dim: int | Sequence[int] | None = None,
+    sigmas: float | collections.abc.Sequence[float] | torch.Tensor,
+    dim: int | collections.abc.Sequence[int] | None = None,
     truncate: int = 3,
     pad_mode: Literal['constant', 'reflect', 'replicate', 'circular'] = 'constant',
     pad_value: float = 0.0,
@@ -107,6 +107,10 @@ def gaussian_filter(
         Padding mode
     pad_value
         Padding value for pad_mode = constant
+
+    Returns
+    -------
+    the filtered tensor
     """
     if dim is None:
         dim = tuple(range(x.ndim))
@@ -121,7 +125,7 @@ def gaussian_filter(
 
     kernels = tuple(
         [
-            torch.exp(-0.5 * (torch.arange(-ceil(truncate * sigma), ceil(truncate * sigma) + 1) / sigma) ** 2)
+            torch.exp(-0.5 * (torch.arange(-math.ceil(truncate * sigma), math.ceil(truncate * sigma) + 1) / sigma) ** 2)
             for sigma in sigmas
         ]
     )
@@ -132,8 +136,8 @@ def gaussian_filter(
 
 def uniform_filter(
     x: torch.Tensor,
-    width: int | Sequence[int] | torch.Tensor,
-    dim: int | Sequence[int] | None = None,
+    width: int | collections.abc.Sequence[int] | torch.Tensor,
+    dim: int | collections.abc.Sequence[int] | None = None,
     pad_mode: Literal['constant', 'reflect', 'replicate', 'circular'] = 'constant',
     pad_value: float = 0.0,
 ) -> torch.Tensor:
@@ -151,6 +155,10 @@ def uniform_filter(
         Padding mode
     pad_value
         Padding value for pad_mode = constant
+
+    Returns
+    -------
+    the filtered tensor
     """
     if dim is None:
         dim = tuple(range(x.ndim))

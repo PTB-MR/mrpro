@@ -6,6 +6,15 @@ import torch
 def split_idx(idx: torch.Tensor, np_per_block: int, np_overlap: int = 0, cyclic: bool = False) -> torch.Tensor:
     """Split a tensor of indices into different blocks.
 
+    Example:
+    idx = [1,2,3,4,5,6,7,8,9], np_per_block = 5, np_overlap = 3, cycle = True
+
+    | idx:.....1 2 3 4 5 6 7 8 9
+    | block 0: 0 0 0 0 0........
+    | block 1: ....1 1 1 1 1....
+    | block 2: ........2 2 2 2 2
+    | block 3: 3 3.........3 3 3
+
     Parameters
     ----------
     idx
@@ -16,16 +25,6 @@ def split_idx(idx: torch.Tensor, np_per_block: int, np_overlap: int = 0, cyclic:
         Number of points overlapping between blocks, default of 0 means no overlap between blocks
     cyclic
         Last block is filled up with points from the first block, e.g. due to cyclic cardiac motion
-
-
-    Example:
-    # idx = [1,2,3,4,5,6,7,8,9], np_per_block = 5, np_overlap = 3, cycle = True
-    #
-    # idx:     1 2 3 4 5 6 7 8 9
-    # block 0: 0 0 0 0 0
-    # block 1:     1 1 1 1 1
-    # block 2:         2 2 2 2 2
-    # block 3: 3 3         3 3 3
 
     Returns
     -------
