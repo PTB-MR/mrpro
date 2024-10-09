@@ -2,11 +2,8 @@ name: Publish to PyPI
 
 on:
   push:
-    branches:
-      - main
-      - cd_pipeline
-    paths:
-      - VERSION # Only trigger if the VERSION file changes
+    # paths:
+    #   - src/mrpro/VERSION # Only trigger if the VERSION file changes
 
 jobs:
   build-testpypi-package:
@@ -57,6 +54,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
+          verbose: true
 
   test-install-from-testpypi:
     name: Test installation from TestPyPI
@@ -78,6 +76,7 @@ jobs:
     needs:
       - test-install-from-testpypi
     runs-on: ubuntu-latest
+    # if: github.ref == 'refs/heads/main'
 
     environment:
       name: pypi
