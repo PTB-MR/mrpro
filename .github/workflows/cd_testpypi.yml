@@ -21,18 +21,9 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Read the current version
-        id: get_version
-        run: echo "version=$(cat VERSION)" >> $GITHUB_ENV
-
-      - name: Append current time to the version
+      - name: Build package with current timestamp
         run: |
-          current_time=$(date +"%H%M%S")
-          new_version="${{ env.version }}.$current_time"
-          echo "$new_version" > VERSION
-
-      - name: Build the package with updated version
-        run: |
+          echo "MRPROVERSIONSUFFIX=+$(date +%s)" >> $GITHUB_ENV
           python -m pip install --upgrade build
           python -m build
 

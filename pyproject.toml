@@ -1,16 +1,14 @@
 [build-system]
 requires = ["setuptools>=42", "wheel", "setuptools-git-versioning>=2.0,<3"]
-build-backend = "setuptools.build_meta"
+build-backend = "setuptools.build_meta:__legacy__"
 
 [tool.setuptools-git-versioning]
+count_commits_from_version_file = true
 enabled = true
 version_file = "VERSION"
-template = "{tag}"
+template = "{tag}{env:MRPROVERSIONSUFFIX:default ''}"
 dev_template = "{tag}-{branch}{sha}"
-dirty_template = "{tag}-dirty{sha}"
-
-[tool.setuptools.dynamic]
-version = { file = "VERSION" }
+dirty_template = "{tag}+dirty{sha}"
 
 [project]
 name = "mrpro"
