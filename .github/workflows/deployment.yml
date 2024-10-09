@@ -20,7 +20,7 @@ jobs:
 
       - name: Set MRPROVERSIONSUFFIX
         id: set_version_suffix
-        run: echo "MRPROVERSIONSUFFIX=.$(date +%s)" >> $GITHUB_ENV
+        run: echo "MRPROVERSIONSUFFIX=.pre$(date +%s)" >> $GITHUB_ENV
 
       - name: Build package with current timestamp
         run: |
