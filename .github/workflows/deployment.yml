@@ -5,9 +5,6 @@ on:
     # paths:
     #   - src/mrpro/VERSION # Only trigger if the VERSION file changes
 
-env:
-  MRPROVERSIONSUFFIX: +$(date +%s)
-
 jobs:
   build-testpypi-package:
     name: Modify version and build package for TestPyPI
@@ -20,6 +17,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
+
+      - name: Set MRPROVERSIONSUFFIX
+        id: set_version_suffix
+        run: echo "MRPROVERSIONSUFFIX=+$(date +%s)" >> $GITHUB_ENV
 
       - name: Build package with current timestamp
         run: |
