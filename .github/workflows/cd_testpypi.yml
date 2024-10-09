@@ -59,7 +59,7 @@ jobs:
       - name: Download the TestPyPi distribution package
         uses: actions/download-artifact@v4
         with:
-          name: ptestpypi-package-distribution
+          name: testpypi-package-distribution
           path: dist/
 
       - name: Publish to TestPyPI
@@ -69,6 +69,8 @@ jobs:
 
   test-install-from-testpypi:
     name: Test installation from TestPyPI
+    needs:
+      - testpypi-deployment
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python
