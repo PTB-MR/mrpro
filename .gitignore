@@ -6,6 +6,27 @@ __pycache__/
 # C extensions
 *.so
 
+# Usual suspects regarding large file size
+*.h5
+*.dat
+*.mp4
+*.mrd
+*.npy
+*.npz
+*.pt
+*.ptc
+*.pwf
+*.pth
+*.pdf
+*.png
+*.gif
+*.nii
+*.dcm
+*.IMA
+*.tar
+*.zip
+*.gz
+
 # Distribution / packaging
 .Python
 build/

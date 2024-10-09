@@ -11,10 +11,17 @@ import torch
 from numpy._typing import _NestedSequence as NestedSequence
 from torch import Tensor
 
+from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
-from mrpro.utils.Rotation import Rotation
 from mrpro.utils.slice_profiles import SliceSmoothedRectangular
+
+
+class _MatrixMultiplicationCtx(torch.autograd.function.FunctionCtx):
+    """Autograd context for matrix multiplication, used for type hinting."""
+
+    x_is_complex: bool
+    saved_tensors: tuple[Tensor]
 
 
 class _MatrixMultiplication(torch.autograd.Function):
@@ -27,9 +34,7 @@ class _MatrixMultiplication(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx: torch.autograd.function.FunctionCtx, x: Tensor, matrix: Tensor, matrix_adjoint: Tensor) -> Tensor:
-        ctx.save_for_backward(matrix_adjoint)
-        ctx.x_is_complex = x.is_complex()  # type: ignore[attr-defined]
+    def forward(x: Tensor, matrix: Tensor, matrix_adjoint: Tensor) -> Tensor:  # noqa: ARG004
         if x.is_complex() == matrix.is_complex():
             return matrix @ x
         # required for sparse matrices to support mixed complex/real multiplication
@@ -39,9 +44,19 @@ class _MatrixMultiplication(torch.autograd.Function):
             return torch.complex(matrix.real @ x, matrix.imag @ x)
 
     @staticmethod
-    def backward(ctx: torch.autograd.function.FunctionCtx, *grad_output: Tensor) -> tuple[Tensor, None, None]:
-        (matrix_adjoint,) = ctx.saved_tensors  # type: ignore[attr-defined]
-        if ctx.x_is_complex:  # type: ignore[attr-defined]
+    def setup_context(
+        ctx: _MatrixMultiplicationCtx,
+        inputs: tuple[Tensor, Tensor, Tensor],
+        outputs: tuple[Tensor],  # noqa: ARG004
+    ) -> None:
+        x, _, matrix_adjoint = inputs
+        ctx.x_is_complex = x.is_complex()
+        ctx.save_for_backward(matrix_adjoint)
+
+    @staticmethod
+    def backward(ctx: _MatrixMultiplicationCtx, *grad_output: Tensor) -> tuple[Tensor, None, None]:
+        (matrix_adjoint,) = ctx.saved_tensors
+        if ctx.x_is_complex:
             if matrix_adjoint.is_complex() == grad_output[0].is_complex():
                 grad_x = matrix_adjoint @ grad_output[0]
             elif matrix_adjoint.is_complex():
@@ -219,9 +234,9 @@ class SliceProjectionOp(LinearOperator):
 
         # For the (unusual case) of batched volumes, we will apply for each element in series
         xflat = torch.atleast_2d(einops.rearrange(x, '... x y z -> (...) (x y z)'))
-        y = torch.stack(
-            [_MatrixMultiplication.apply(x, matrix, matrix_adjoint).reshape(self._range_shape) for x in xflat], -4
-        )
+        yl = [_MatrixMultiplication.apply(x, matrix, matrix_adjoint) for x in xflat]
+
+        y = torch.stack([el.reshape(self._range_shape) for el in yl], -4)
         y = y.reshape(*y.shape[:-4], *x.shape[:-3], *y.shape[-3:])
         return (y,)
 
