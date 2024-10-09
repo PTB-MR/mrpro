@@ -6,7 +6,7 @@ on:
     #   - src/mrpro/VERSION # Only trigger if the VERSION file changes
 
 env:
-  MRPROVERSIONSUFFIX: test123
+  MRPROVERSIONSUFFIX: +$(date +%s)
 
 jobs:
   build-testpypi-package:
