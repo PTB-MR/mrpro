@@ -1,8 +1,8 @@
 """A pytorch implementation of scipy.spatial.transform.Rotation.
 
-A container for Rotations, that can be created from quaternions, euler angles, rotation vectors, rotation matrices,
-etc, can be applied to torch.Tensors and SpatialDimensions, multiplied, and can be converted to quaternions,
-euler angles, etc.
+A container for proper and improper Rotations, that can be created from quaternions, euler angles, rotation vectors,
+rotation matrices, etc, can be applied to torch.Tensors and SpatialDimensions, multiplied, and can be converted
+to quaternions, euler angles, etc.
 
 see also https://github.com/scipy/scipy/blob/main/scipy/spatial/transform/_rotation.pyx
 """
@@ -42,9 +42,10 @@ see also https://github.com/scipy/scipy/blob/main/scipy/spatial/transform/_rotat
 
 from __future__ import annotations
 
+import math
 import re
 import warnings
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Literal, Self, overload
 
 import numpy as np
@@ -251,12 +252,19 @@ class Rotation(torch.nn.Module):
     Differences compared to scipy.spatial.transform.Rotation:
 
     - torch.nn.Module based, the quaternions are a Parameter
-    - .apply is replaced by call/forward.
     - not all features are implemented. Notably, mrp, davenport, and reduce are missing.
     - arbitrary number of batching dimensions
+    - support for improper rotations (rotoreflections), i.e., rotations with reflection
+        about a plane perpendicular to the rotation axis.
     """
 
-    def __init__(self, quaternions: torch.Tensor | NestedSequence[float], normalize: bool = True, copy: bool = True):
+    def __init__(
+        self,
+        quaternions: torch.Tensor | NestedSequence[float],
+        reflections: torch.Tensor | NestedSequence[bool] | bool = False,
+        normalize: bool = True,
+        copy: bool = True,
+    ) -> None:
         """Initialize a new Rotation.
 
         Instead of calling this method, also consider the different ``from_*`` class methods to construct a Rotation.
@@ -265,8 +273,13 @@ class Rotation(torch.nn.Module):
         ----------
         quaternions
             Rotatation quaternions. If these requires_grad, the resulting Rotation will require gradients
+        reflections
+            If the rotation is improper, i.e. contains a reflection about a plane perpendicular to the rotation axis.
+            The operation is not differentiable with respect to this parameter
         normalize
-            If the quaternions should be normalized. Only disable if you are sure the quaternions are already normalized
+            If the quaternions should be normalized. Only disable if you are sure the quaternions are already
+            normalized.
+            Will keep a possible negative w to represent improper rotations.
         copy
             Always ensure that a copy of the quaternions is created. If both normalize and copy are False,
             the quaternions Parameter of this instance will be a view if the quaternions passed in.
@@ -281,9 +294,13 @@ class Rotation(torch.nn.Module):
         if quaternions_.shape[-1] != 4:
             raise ValueError('Expected `quaternions` to have shape (..., 4), ' f'got {quaternions_.shape}.')
 
+        reflections_ = torch.as_tensor(reflections, dtype=torch.bool, device=quaternions_.device)
+        quaternions_, reflections_ = torch.broadcast_tensors(quaternions_, reflections_)
+
         # If a single quaternion is given, convert it to a 2D 1 x 4 matrix but
         # set self._single to True so that we can return appropriate objects
         # in the `to_...` methods
+
         if quaternions_.shape == (4,):
             quaternions_ = quaternions_[None, :]
             self._single = True
@@ -296,19 +313,46 @@ class Rotation(torch.nn.Module):
                 raise ValueError('Found zero norm quaternion in `quaternions`.')
             quaternions_ = quaternions_ / norms
         elif copy:
+            # no need to clone if we are normalizing
             quaternions_ = quaternions_.clone()
+        if copy and reflections_ is reflections_:
+            reflections_ = reflections_.clone()
+
+        if reflections_.requires_grad:
+            warnings.warn('Rotation is not differentiable in the reflections parameter.', stacklevel=2)
+
         self._quaternions = torch.nn.Parameter(quaternions_, quaternions_.requires_grad)
+        self._reflections = torch.nn.Parameter(reflections_, False)
 
     @property
     def single(self) -> bool:
         """Returns true if this a single rotation."""
         return self._single
 
+    @property
+    def reflection(self) -> torch.Tensor:
+        """Returns a true boolean tensor if the rotation is improper."""
+        return self._reflections
+
+    @property
+    def det(self) -> torch.Tensor:
+        """Returns the determinant of the rotation matrix.
+
+        Will be 1. for proper rotations and -1. for improper rotations.
+        """
+        return self._reflections.float() * -2 + 1
+
     @classmethod
-    def from_quat(cls, quaternions: torch.Tensor | NestedSequence[float]) -> Self:
+    def from_quat(
+        cls,
+        quaternions: torch.Tensor | NestedSequence[float],
+        reflections: torch.Tensor | NestedSequence[bool] | bool = False,
+    ) -> Self:
         """Initialize from quaternions.
 
         3D rotations can be represented using unit-norm quaternions [QUAa]_.
+        As an extension to the standard, this class also supports improper rotations,
+        i.e. rotations with reflection with respect to the plane perpendicular to the rotation axis.
 
         Parameters
         ----------
@@ -317,6 +361,10 @@ class Rotation(torch.nn.Module):
             Each row is a (possibly non-unit norm) quaternion representing an
             active rotation, in scalar-last (x, y, z, w) format. Each
             quaternion will be normalized to unit norm.
+        reflections
+            If the rotation is improper, i.e. containing a reflection
+            with respect to the plane perpendicular to the rotation axis.
+            The operation is not differentiable with respect to this parameter.
 
         Returns
         -------
@@ -327,9 +375,7 @@ class Rotation(torch.nn.Module):
         ----------
         .. [QUAa] Quaternions and spatial rotation https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
         """
-        if not isinstance(quaternions, torch.Tensor):
-            quaternions = torch.as_tensor(quaternions)
-        return cls(quaternions, normalize=True)
+        return cls(quaternions, reflections, normalize=True, copy=True)
 
     @classmethod
     def from_matrix(cls, matrix: torch.Tensor | NestedSequence[float]) -> Self:
@@ -338,6 +384,9 @@ class Rotation(torch.nn.Module):
         Rotations in 3 dimensions can be represented with 3 x 3 proper
         orthogonal matrices [ROTa]_. If the input is not proper orthogonal,
         an approximation is created using the method described in [MAR2008]_.
+        If the input matrix has a negative determinant, the rotation is considered
+        as improper, i.e. containing a reflection. The resulting rotation
+        will include this reflection [ROTb]_.
 
         Parameters
         ----------
@@ -353,6 +402,7 @@ class Rotation(torch.nn.Module):
         References
         ----------
         .. [ROTa] Rotation matrix https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
+        .. [ROTb] Rotation matrix https://en.wikipedia.org/wiki/Improper_rotation
         .. [MAR2008] Landis Markley F (2008) Unit Quaternion from Rotation Matrix, Journal of guidance, control, and
            dynamics 31(2),440-442.
         """
@@ -365,12 +415,20 @@ class Rotation(torch.nn.Module):
         if not torch.is_floating_point(matrix):
             # integer or boolean dtypes
             matrix = matrix.float()
+        det = torch.linalg.det(matrix)
+        matrix = matrix * torch.sign(det).unsqueeze(-1).unsqueeze(-1)
+        reflections = det < 0
         quaternions = _matrix_to_quaternion(matrix)
 
-        return cls(quaternions, normalize=True, copy=False)
+        return cls(quaternions, reflections, normalize=True, copy=False)
 
     @classmethod
-    def from_rotvec(cls, rotvec: torch.Tensor | NestedSequence[float], degrees: bool = False) -> Self:
+    def from_rotvec(
+        cls,
+        rotvec: torch.Tensor | NestedSequence[float],
+        reflections: torch.Tensor | NestedSequence[bool] | bool = False,
+        degrees: bool = False,
+    ) -> Self:
         """Initialize from rotation vector.
 
         A rotation vector is a 3 dimensional vector which is co-directional to the
@@ -383,6 +441,9 @@ class Rotation(torch.nn.Module):
         degrees
             If True, then the given angles are assumed to be in degrees,
             otherwise radians.
+        reflections
+            If True, the rotation is considered as improper, i.e. containing a reflection
+            about a plane perpendicular to the rotation axis.
 
         """
         if not isinstance(rotvec, torch.Tensor):
@@ -401,10 +462,18 @@ class Rotation(torch.nn.Module):
         angles = torch.linalg.vector_norm(rotvec, dim=-1, keepdim=True)
         scales = torch.special.sinc(angles / (2 * torch.pi)) / 2
         quaternions = torch.cat((scales * rotvec, torch.cos(angles / 2)), -1)
-        return cls(quaternions, normalize=False, copy=False)
+        if isinstance(reflections, torch.Tensor):
+            reflections = reflections.clone()
+        return cls(quaternions, reflections, normalize=False, copy=False)
 
     @classmethod
-    def from_euler(cls, seq: str, angles: torch.Tensor | NestedSequence[float] | float, degrees: bool = False) -> Self:
+    def from_euler(
+        cls,
+        seq: str,
+        angles: torch.Tensor | NestedSequence[float] | float,
+        reflections: torch.Tensor | NestedSequence[bool] | bool = False,
+        degrees: bool = False,
+    ) -> Self:
         """Initialize from Euler angles.
 
         Rotations in 3-D can be represented by a sequence of 3
@@ -430,6 +499,10 @@ class Rotation(torch.nn.Module):
         degrees
             If True, then the given angles are assumed to be in degrees.
             Otherwise they are assumed to be in radians
+        reflections
+            If True, the rotation is considered as improper, i.e. containing a reflection
+            about a plane perpendicular to the rotation axis.
+
 
         Returns
         -------
@@ -475,10 +548,13 @@ class Rotation(torch.nn.Module):
             else:
                 quaternions = _compose_quaternions(_make_elementary_quat(axis, angle), quaternions)
 
+        if isinstance(reflections, torch.Tensor):
+            reflections = reflections.clone()
+
         if is_single:
-            return cls(quaternions[0], normalize=False, copy=False)
+            return cls(quaternions[0], reflections, normalize=False, copy=False)
         else:
-            return cls(quaternions, normalize=False, copy=False)
+            return cls(quaternions, reflections, normalize=False, copy=False)
 
     @classmethod
     def from_davenport(cls, axes: torch.Tensor, order: str, angles: torch.Tensor, degrees: bool = False):
@@ -490,7 +566,16 @@ class Rotation(torch.nn.Module):
         """Not implemented."""
         raise NotImplementedError
 
-    def as_quat(self, canonical: bool = False) -> torch.Tensor:
+    @overload
+    def as_quat(self, canonical: bool = ..., *, return_reflections: Literal[False] | None = None) -> torch.Tensor: ...
+    @overload
+    def as_quat(
+        self, canonical: bool = ..., *, return_reflections: Literal[True]
+    ) -> tuple[torch.Tensor, torch.Tensor]: ...
+
+    def as_quat(
+        self, canonical: bool = False, *, return_reflections: bool | None = None
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
         """Represent as quaternions.
 
         Active rotations in 3 dimensions can be represented using unit norm
@@ -507,22 +592,41 @@ class Rotation(torch.nn.Module):
             chosen from {q, -q} such that the w term is positive. If the w term
             is 0, then the quaternion is chosen such that the first nonzero
             term of the x, y, and z terms is positive.
+        return_reflections
+            If True, a tensor of booleans is returned as well, indicating if the
+            rotation is improper, i.e. containing a reflection about a plane
+            perpendicular to the rotation axis. If None, a warning is raised if
+            the rotation contains reflections and the reflections are discarded.
 
         Returns
         -------
         quaternions
             shape (..., 4,), depends on shape of inputs used for initialization.
+        reflections (if return_reflection is True)
+            boolean tensor of shape (...,), indicating if the rotation is improper.
 
         References
         ----------
         .. [QUAb] Quaternions https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
         """
         quaternions: torch.Tensor = self._quaternions
+        reflections: torch.Tensor = self._reflections
         if canonical:
             quaternions = _canonical_quaternion(quaternions)
         if self.single:
             quaternions = quaternions[0]
-        return quaternions
+            reflections = reflections[0]
+        if return_reflections is None and self._reflections.any():
+            warnings.warn(
+                'Rotation contains reflections. Set `return_reflections=True` to get reflection as well or set '
+                '`return_reflections=False` to avoid this warning while discarding the reflection information',
+                stacklevel=2,
+            )
+            return quaternions
+        elif return_reflections:
+            return quaternions, reflections
+        else:
+            return quaternions
 
     def as_matrix(self) -> torch.Tensor:
         """Represent as rotation matrix.
@@ -540,13 +644,22 @@ class Rotation(torch.nn.Module):
         .. [ROTb] Rotation matrix https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
         """
         quaternions = self._quaternions
-        matrix = _quaternion_to_matrix(quaternions)
+        matrix = _quaternion_to_matrix(quaternions) * self.det[..., None, None]
         if self._single:
             return matrix[0]
         else:
             return matrix
 
-    def as_rotvec(self, degrees: bool = False) -> torch.Tensor:
+    @overload
+    def as_rotvec(self, degrees: bool = ..., *, return_reflections: Literal[False] | None = None) -> torch.Tensor: ...
+    @overload
+    def as_rotvec(
+        self, degrees: bool = ..., *, return_reflections: Literal[True]
+    ) -> tuple[torch.Tensor, torch.Tensor]: ...
+
+    def as_rotvec(
+        self, degrees: bool = False, return_reflections: bool | None = None
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
         """Represent as rotation vectors.
 
         A rotation vector is a 3 dimensional vector which is co-directional to
@@ -556,11 +669,18 @@ class Rotation(torch.nn.Module):
         ----------
         degrees
             Returned magnitudes are in degrees if this flag is True, else they are in radians
+        return_reflections
+            If True, a tensor of booleans is returned as well, indicating if the
+            rotation is improper, i.e. containing a reflection about a plane
+            perpendicular to the rotation axis. If None, the reflection information
+            is discarded but a warning is raised if the rotation contains reflections.
 
         Returns
         -------
         rotvec
             Shape (..., 3), depends on shape of inputs used for initialization.
+        reflections (if return_reflections is True)
+            boolean tensor of shape (...,), indicating if the rotation is improper
 
         References
         ----------
@@ -579,10 +699,27 @@ class Rotation(torch.nn.Module):
 
         if self._single:
             rotvec = rotvec[0]
-
+        if return_reflections:
+            return rotvec, self._reflections.clone()
+        elif return_reflections is None and self._reflections.any():
+            warnings.warn(
+                'Rotation contains reflections. Set `return_reflections=True` to get reflection as well or set '
+                '`return_reflections=False` to avoid this warning while discarding the reflection information',
+                stacklevel=2,
+            )
         return rotvec
 
-    def as_euler(self, seq: str, degrees: bool = False) -> torch.Tensor:
+    @overload
+    def as_euler(
+        self, seq: str, degrees: bool = ..., *, return_reflections: Literal[False] | None = None
+    ) -> torch.Tensor: ...
+    @overload
+    def as_euler(
+        self, seq: str, degrees: bool = ..., *, return_reflections: Literal[True]
+    ) -> tuple[torch.Tensor, torch.Tensor]: ...
+    def as_euler(
+        self, seq: str, degrees: bool = False, *, return_reflections: bool | None = None
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
         """Represent as Euler angles.
 
         Any orientation can be expressed as a composition of 3 elementary
@@ -609,6 +746,12 @@ class Rotation(torch.nn.Module):
         degrees
             Returned angles are in degrees if this flag is True, else they are
             in radians
+        return_reflections
+            If True, a tensor of booleans is returned as well, indicating if the
+            rotation is improper, i.e. containing a reflection about a plane
+            perpendicular to the rotation axis.
+            If None, the reflection information is discarded, but a warning
+            is raised if the rotation contains reflections
 
         Returns
         -------
@@ -651,6 +794,14 @@ class Rotation(torch.nn.Module):
         if degrees:
             angles = torch.rad2deg(angles)
 
+        if return_reflections:
+            return angles[0] if self._single else angles, self._reflections.clone()
+        elif return_reflections is None and self._reflections.any():
+            warnings.warn(
+                'Rotation contains reflections. Set `return_reflections=True` to get reflection as well or set '
+                '`return_reflections=False` to avoid this warning while discarding the reflection information',
+                stacklevel=2,
+            )
         return angles[0] if self._single else angles
 
     def as_davenport(self, axes: torch.Tensor, order: str, degrees: bool = False) -> torch.Tensor:
@@ -679,7 +830,60 @@ class Rotation(torch.nn.Module):
             raise TypeError('input must contain Rotation objects only')
 
         quats = torch.cat([torch.atleast_2d(x.as_quat()) for x in rotations])
-        return cls(quats, normalize=False)
+        reflections = torch.cat([torch.atleast_1d(x.reflection) for x in rotations])
+        return cls(quats, reflections, normalize=False)
+
+    @overload
+    def apply(self, fn: NestedSequence[float] | torch.Tensor, inverse: bool) -> torch.Tensor: ...
+
+    @overload
+    def apply(
+        self, fn: SpatialDimension[torch.Tensor] | SpatialDimension[float], inverse: bool
+    ) -> SpatialDimension[torch.Tensor]: ...
+
+    @overload
+    def apply(self, fn: Callable[[torch.nn.Module], None]) -> Self: ...
+
+    def apply(
+        self,
+        fn: NestedSequence[float]
+        | torch.Tensor
+        | SpatialDimension[torch.Tensor]
+        | SpatialDimension[float]
+        | Callable[[torch.nn.Module], None],
+        inverse: bool = False,
+    ) -> torch.Tensor | SpatialDimension[torch.Tensor] | Self:
+        """Either apply a function to the Rotation module or apply the rotation to a vector.
+
+        This is a hybrid method that matches the signature of both `torch.nn.Module.apply` and
+        `scipy.spatial.transform.Rotation.apply`.
+        If a callable is passed, it is assumed to be a function that will be applied to the Rotation module.
+        For applying the rotation to a vector, consider using `Rotation(vector)` instead of `Rotation.apply(vector)`.
+        """
+        if callable(fn):
+            # torch.nn.Module.apply
+            return super().apply(fn)
+        else:
+            # scipy.spatial.transform.Rotation.apply
+            warnings.warn('Consider using Rotation(vector) instead of Rotation.apply(vector).', stacklevel=2)
+            return self(fn, inverse)
+
+    @overload
+    def __call__(self, vectors: NestedSequence[float] | torch.Tensor, inverse: bool = False) -> torch.Tensor: ...
+
+    @overload
+    def __call__(
+        self, vectors: SpatialDimension[torch.Tensor] | SpatialDimension[float], inverse: bool = False
+    ) -> SpatialDimension[torch.Tensor]: ...
+
+    def __call__(
+        self,
+        vectors: NestedSequence[float] | torch.Tensor | SpatialDimension[torch.Tensor] | SpatialDimension[float],
+        inverse: bool = False,
+    ) -> torch.Tensor | SpatialDimension[torch.Tensor]:
+        """Apply this rotation to a set of vectors."""
+        # Only for type hinting
+        return super().__call__(vectors, inverse)
 
     def forward(
         self,
@@ -767,6 +971,7 @@ class Rotation(torch.nn.Module):
         cls,
         num: int | Sequence[int] | None = None,
         random_state: int | np.random.RandomState | np.random.Generator | None = None,
+        improper: bool | Literal['random'] = False,
     ):
         """Generate uniformly distributed rotations.
 
@@ -782,6 +987,9 @@ class Rotation(torch.nn.Module):
             seeded with `random_state`.
             If `random_state` is already a ``Generator`` or ``RandomState`` instance
             then that instance is used.
+        improper
+            if True, only improper rotations are generated. If False, only proper rotations are generated.
+            if "random", then a random mix of proper and improper rotations are generated.
 
         Returns
         -------
@@ -797,8 +1005,15 @@ class Rotation(torch.nn.Module):
             random_sample = torch.as_tensor(generator.normal(size=(num, 4)), dtype=torch.float32)
         else:
             random_sample = torch.as_tensor(generator.normal(size=(*num, 4)), dtype=torch.float32)
-
-        return cls(random_sample)
+        if improper == 'random':
+            reflections: torch.Tensor | bool = torch.as_tensor(
+                generator.choice([True, False], size=random_sample.shape[:-1]), dtype=torch.bool
+            )
+        elif isinstance(improper, bool):
+            reflections = improper
+        else:
+            raise ValueError('improper should be a boolean or "random"')
+        return cls(random_sample, reflections)
 
     def __mul__(self, other: Rotation) -> Self:
         """For compatibility with sp.spatial.transform.Rotation."""
@@ -841,7 +1056,8 @@ class Rotation(torch.nn.Module):
         result = _compose_quaternions(p, q)
         if self._single and other._single:
             result = result[0]
-        return self.__class__(result, normalize=True, copy=False)
+        reflections = self._reflections ^ other._reflections
+        return self.__class__(result, reflections, normalize=True, copy=False)
 
     def __pow__(self, n: float, modulus: None = None):
         """Compose this rotation with itself `n` times.
@@ -878,6 +1094,13 @@ class Rotation(torch.nn.Module):
         then the identity rotation is returned, and if ``n == -1`` then
         ``p.inv()`` is returned.
 
+        For improper rotations, the power of a rotation with a reflection is
+        equivalent to the power of the rotation without the reflection, followed
+        by an reflection if the power is integer and odd. If the power is
+        non-integer, the reflection is never applied.
+        This means that, for example a 0.5 power of a rotation with a reflection
+        applied twice will result in a rotation without a reflection.
+
         Note that fractional powers ``n`` which effectively take a root of
         rotation, do so using the shortest path smallest representation of that
         angle (the principal root). This means that powers of ``n`` and ``1/n``
@@ -896,11 +1119,17 @@ class Rotation(torch.nn.Module):
             return self.inv()
         elif n == 1:
             if self._single:
-                return self.__class__(self._quaternions[0], copy=True)
+                return self.__class__(self._quaternions[0], self._reflections[0], copy=True)
             else:
-                return self.__class__(self._quaternions, copy=True)
-        else:  # general scaling of rotation angle
-            return Rotation.from_rotvec(n * self.as_rotvec())
+                return self.__class__(self._quaternions, self._reflections[0], copy=True)
+        elif math.isclose(round(n), n):
+            if round(n) % 2:
+                reflections: torch.Tensor | bool = ~self._reflections
+            else:
+                reflections = self._reflections
+        else:
+            reflections = False
+        return Rotation.from_rotvec(n * self.as_rotvec(), reflections)
 
     def inv(self) -> Self:
         """Invert this rotation.
@@ -916,7 +1145,22 @@ class Rotation(torch.nn.Module):
         quaternions = self._quaternions * torch.tensor([-1, -1, -1, 1])
         if self._single:
             quaternions = quaternions[0]
-        return self.__class__(quaternions, copy=False)
+        reflections = self._reflections.clone()
+        return self.__class__(quaternions, reflections, copy=False)
+
+    def reflect(self) -> Self:
+        """Reflect this rotation.
+
+        Converts a proper rotation to an improper one, or vice versa.
+
+        Returns
+        -------
+        reflected
+            Object containing the reflected rotations.
+        """
+        quaternions = self._quaternions.clone()
+        reflections = ~self._reflections
+        return self.__class(quaternions, reflections, copy=False)
 
     def magnitude(self) -> torch.Tensor:
         """Get the magnitude(s) of the rotation(s).
@@ -984,10 +1228,10 @@ class Rotation(torch.nn.Module):
         if self._single:
             raise TypeError('Single rotation is not subscriptable.')
         if isinstance(indexer, tuple):
-            _indexer = (*indexer, slice(None))
+            indexer_quat = (*indexer, slice(None))
         else:
-            _indexer = (indexer, slice(None))
-        return self.__class__(self._quaternions[_indexer], normalize=False)
+            indexer_quat = (indexer, slice(None))
+        return self.__class__(self._quaternions[indexer_quat], self._rotations[indexer], normalize=False)
 
     @property
     def quaternion_x(self) -> torch.Tensor:
@@ -1066,11 +1310,12 @@ class Rotation(torch.nn.Module):
             raise TypeError('value must be a Rotation object')
 
         if isinstance(indexer, tuple):
-            _indexer = (*indexer, slice(None))
+            indexer_quat = (*indexer, slice(None))
         else:
-            _indexer = (indexer, slice(None))
-
-        self._quaternions[_indexer] = value.as_quat()
+            indexer_quat = (indexer, slice(None))
+        quat, reflection = value.as_quat(True)
+        self._quaternions[indexer_quat] = quat
+        self._reflections[indexer] = reflection
 
     @classmethod
     def identity(cls, shape: int | None | tuple[int, ...] = None) -> Self:
@@ -1191,9 +1436,13 @@ class Rotation(torch.nn.Module):
     def __repr__(self):
         """Return String Representation of the Rotation."""
         if self._single:
-            return f'Rotation({self._quaternions.tolist()})'
+            return f'Rotation({self._quaternions.tolist()}, reflections={self._reflections.item()})'
+        elif self._reflections.all():
+            return f'{tuple(self.shape)}-batched improper Rotation()'
+        elif self._reflections.any():
+            return f'{tuple(self.shape)}-batched (mixed proper/improper) Rotation()'
         else:
-            return f'{tuple(self.shape)}-Batched Rotation()'
+            return f'{tuple(self.shape)}-batched proper Rotation()'
 
     def mean(
         self,
@@ -1213,6 +1462,11 @@ class Rotation(torch.nn.Module):
 
         Optionally, if A is a set of Rotation matrices with multiple batch dimensions,
         the dimensions to reduce over can be specified.
+
+        If the rotations contains reflections, the mean will be computed without
+        considering the reflections and the result will contain a reflection if
+        the weighted majority of the rotations over which the mean is taken
+        have reflections.
 
         Parameters
         ----------
@@ -1251,7 +1505,7 @@ class Rotation(torch.nn.Module):
         if dim is None:
             quaternions = quaternions.reshape(-1, 4)
             weights = weights.reshape(-1)
-            dim = range(len(self.shape))
+            dim = list(range(len(self.shape)))
         else:
             dim = (
                 [d % (quaternions.ndim - 1) for d in dim]
@@ -1269,4 +1523,7 @@ class Rotation(torch.nn.Module):
             # unsqueeze the dimensions we removed in the reshape and product
             for d in sorted(dim):
                 mean_quaternions = mean_quaternions.unsqueeze(d)
-        return self.__class__(mean_quaternions, normalize=False)
+        mean_reflections = (weights * self._reflections).sum(dim=dim, keepdim=keepdim) > 0.5 * weights.sum(
+            dim=dim, keepdim=keepdim
+        )
+        return self.__class__(mean_quaternions, mean_reflections, normalize=False)
