@@ -5,6 +5,9 @@ on:
     # paths:
     #   - src/mrpro/VERSION # Only trigger if the VERSION file changes
 
+env:
+  MRPROVERSIONSUFFIX: test123
+
 jobs:
   build-testpypi-package:
     name: Modify version and build package for TestPyPI
@@ -19,10 +22,8 @@ jobs:
           python-version: "3.x"
 
       - name: Build package with current timestamp
-        env:
-          MRPROVERSIONSUFFIX: ${{ date +%s }}
         run: |
-          echo "$MRPROVERSIONSUFFIX=+$(date +%s)" >> $GITHUB_ENV
+          echo $MRPROVERSIONSUFFIX
           python -m pip install --upgrade build
           python -m build
 
