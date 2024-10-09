@@ -27,7 +27,7 @@ jobs:
 
       - name: Append current time to the version
         run: |
-          current_time=$(date +"%H:%M:%S")
+          current_time=$(date +"%H%M%S")
           new_version="${{ env.version }}.$current_time"
           echo "$new_version" > VERSION
 
