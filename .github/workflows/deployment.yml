@@ -19,6 +19,8 @@ jobs:
           python-version: "3.x"
 
       - name: Build package with current timestamp
+        env:
+          MRPROVERSIONSUFFIX: ${{ date +%s }}
         run: |
           echo "$MRPROVERSIONSUFFIX=+$(date +%s)" >> $GITHUB_ENV
           python -m pip install --upgrade build
