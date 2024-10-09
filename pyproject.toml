@@ -5,10 +5,16 @@ build-backend = "setuptools.build_meta:__legacy__"
 [tool.setuptools-git-versioning]
 count_commits_from_version_file = true
 enabled = true
-version_file = "VERSION"
+version_file = "src/mrpro/VERSION"
 template = "{tag}{env:MRPROVERSIONSUFFIX:default ''}"
 dev_template = "{tag}+{branch}{sha}"
 dirty_template = "{tag}+dirty{sha}"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"mrpro" = ["VERSION"]
 
 [project]
 name = "mrpro"
