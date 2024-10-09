@@ -20,7 +20,7 @@ jobs:
 
       - name: Build package with current timestamp
         run: |
-          echo "MRPROVERSIONSUFFIX=+$(date +%s)" >> $GITHUB_ENV
+          echo "$MRPROVERSIONSUFFIX=+$(date +%s)" >> $GITHUB_ENV
           python -m pip install --upgrade build
           python -m build
 
