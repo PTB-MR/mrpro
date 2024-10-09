@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta:__legacy__"
 count_commits_from_version_file = true
 enabled = true
 version_file = "src/mrpro/VERSION"
-template = "{tag}{env:MRPROVERSIONSUFFIX:default ''}"
+template = "{tag}{env:MRPROVERSIONSUFFIX:''}"
 dev_template = "{tag}+{branch}{sha}"
 dirty_template = "{tag}+dirty{sha}"
 
