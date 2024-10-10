@@ -102,6 +102,7 @@ jobs:
     name: Deploy to PyPI
     needs:
       - test-install-from-testpypi
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     environment:
@@ -120,7 +121,6 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        if: github.ref == 'refs/heads/main'
         with:
           repository-url: https://test.pypi.org/legacy/
           verbose: true
