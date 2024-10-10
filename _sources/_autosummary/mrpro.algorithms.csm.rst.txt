@@ -15,7 +15,7 @@ mrpro.algorithms.csm
       :toctree:
    
       inati
-      iterative_walsh
+      walsh
    
    
 

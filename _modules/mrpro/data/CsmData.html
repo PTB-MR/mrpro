@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>mrpro.data.CsmData &mdash; mrpro</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=7ab3649f" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=16f952a1" />
 
   
@@ -101,7 +101,6 @@
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">idata</span><span class="p">:</span> <span class="n">IData</span><span class="p">,</span>
         <span class="n">smoothing_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
-        <span class="n">power_iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
         <span class="n">chunk_size_otherdim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create csm object from image data using iterative Walsh method.</span>
@@ -112,20 +111,18 @@
 <span class="sd">            IData object containing the images for each coil element.</span>
 <span class="sd">        smoothing_width</span>
 <span class="sd">            width of smoothing filter.</span>
-<span class="sd">        power_iterations</span>
-<span class="sd">            number of iterations used to determine dominant eigenvector</span>
 <span class="sd">        chunk_size_otherdim:</span>
 <span class="sd">            How many elements of the other dimensions should be processed at once.</span>
 <span class="sd">            Default is None, which means that all elements are processed at once.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">mrpro.algorithms.csm.iterative_walsh</span> <span class="kn">import</span> <span class="n">iterative_walsh</span>
+        <span class="kn">from</span> <span class="nn">mrpro.algorithms.csm.walsh</span> <span class="kn">import</span> <span class="n">walsh</span>
 
         <span class="c1"># convert smoothing_width to SpatialDimension if int</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">smoothing_width</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">smoothing_width</span> <span class="o">=</span> <span class="n">SpatialDimension</span><span class="p">(</span><span class="n">smoothing_width</span><span class="p">,</span> <span class="n">smoothing_width</span><span class="p">,</span> <span class="n">smoothing_width</span><span class="p">)</span>
 
         <span class="n">csm_fun</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span>
-            <span class="k">lambda</span> <span class="n">img</span><span class="p">:</span> <span class="n">iterative_walsh</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">smoothing_width</span><span class="p">,</span> <span class="n">power_iterations</span><span class="p">),</span>
+            <span class="k">lambda</span> <span class="n">img</span><span class="p">:</span> <span class="n">walsh</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">smoothing_width</span><span class="p">),</span>
             <span class="n">chunk_size</span><span class="o">=</span><span class="n">chunk_size_otherdim</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">csm_tensor</span> <span class="o">=</span> <span class="n">csm_fun</span><span class="p">(</span><span class="n">idata</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>

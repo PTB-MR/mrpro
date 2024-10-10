@@ -1,6 +1,0 @@
-mrpro.algorithms.csm.iterative\_walsh
-=====================================
-
-.. currentmodule:: mrpro.algorithms.csm
-
-.. autofunction:: iterative_walsh
