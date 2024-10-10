@@ -6,7 +6,7 @@ from einops import repeat
 from mrpro.utils.filters import filter_separable, gaussian_filter, uniform_filter
 
 
-@pytest.fixture()
+@pytest.fixture
 def data():
     """Create a simple 3D tensor with a single voxel set to 1.0."""
     data = torch.zeros(1, 1, 5, 5, 5)

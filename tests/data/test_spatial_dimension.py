@@ -87,7 +87,7 @@ def test_spatial_dimension_zyx():
     assert spatial_dimension.zyx == (z, y, x)
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 def test_spatial_dimension_cuda_tensor():
     """Test moving to CUDA"""
     spatial_dimension = SpatialDimension(z=torch.ones(1), y=torch.ones(1), x=torch.ones(1))

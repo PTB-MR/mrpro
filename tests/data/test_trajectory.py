@@ -106,7 +106,7 @@ def test_trajectory_floating_dtype(dtype):
         assert traj.kx.dtype == torch.float32
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 def test_trajectory_cuda(cartesian_grid):
     """Move KTrajectory object to CUDA memory."""
     n_k0 = 10
@@ -131,7 +131,7 @@ def test_trajectory_cuda(cartesian_grid):
     assert not trajectory.is_cuda
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 def test_trajectory_cpu(cartesian_grid):
     """Move KTrajectory object to CUDA memory and back to CPU memory."""
     n_k0 = 10

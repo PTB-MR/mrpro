@@ -4,6 +4,7 @@ from copy import deepcopy
 from typing import Self
 
 import torch
+
 from mrpro.data._kdata.KDataProtocol import _KDataProtocol
 from mrpro.data.KTrajectory import KTrajectory
 
