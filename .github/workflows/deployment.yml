@@ -2,8 +2,8 @@ name: Publish to PyPI
 
 on:
   push:
-    # paths:
-    #   - src/mrpro/VERSION # Only trigger if the VERSION file changes
+    paths:
+      - src/mrpro/VERSION # only trigger if VERSION file changed
 
 jobs:
   build-testpypi-package:
@@ -124,6 +124,3 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
           verbose: true
-
-      - name: Success message
-        run: echo "reached end of the script"
