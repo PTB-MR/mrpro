@@ -1337,7 +1337,8 @@ def test_mean_invalid_weights():
 def test_repr():
     """Test string representation"""
     assert repr(Rotation.identity(None)) == 'Rotation([[0.0, 0.0, 0.0, 1.0]])'
-    assert repr(Rotation.identity(1)) == '(1,)-Batched Rotation()'
+    assert repr(Rotation.identity(1)) == '(1,)-batched Rotation()'
+    assert repr(Rotation.identity(1).reflect()) == '(1,)-batched improper Rotation()'
 
 
 def test_quaternion_properties_single():
