@@ -19,18 +19,18 @@ MR image reconstruction and processing package specifically developed for PyTorc
 
 - **ISMRMRD support** MRpro supports [ismrmrd-format](https://ismrmrd.readthedocs.io/en/latest/) for MR raw data.
 - **PyTorch** All data containers utilize PyTorch tensors to ensure easy integration in PyTorch-based network schemes.
-- **Cartesian and non-Cartesian trajectories** MRpro can reconstruct data obtained with Cartesian and non-Cartesian (e.g. radial, spiral...) sapling schemes. MRpro automatically detects if FFT or nuFFT is required to reconstruction the k-space data.
+- **Cartesian and non-Cartesian trajectories** MRpro can reconstruct data obtained with Cartesian and non-Cartesian (e.g. radial, spiral...) sapling schemes. MRpro automatically detects if FFT or nuFFT is required to reconstruct the k-space data.
 - **Pulseq support** If the data acquisition was carried out using a [pulseq-based](http://pulseq.github.io/) sequence, the seq-file can be provided to MRpro and the used trajectory is automatically calculated.
 - **Signal models** A range of different MR signal models are implemented (e.g. T1 recovery, WASABI).
 - **Regularized image reconstruction** Regularized image reconstruction algorithms including Wavelet-based compressed sensing or total variation regularized image reconstruction are available.
 
 ## Examples
 
-In the following we show some code snippets to highlight the use of MRpro. Each code snippet only shows the main steps. A complete working notebook can be found in the provided link.
+In the following, we show some code snippets to highlight the use of MRpro. Each code snippet only shows the main steps. A complete working notebook can be found in the provided link.
 
 ### Simple reconstruction
 
-Read in the data and trajectoy and reconstruct an image by applying a density compensation function and then the adjoint of the Fourier operator and the adjoint of the coil sensitivity operator.
+Read the data and trajectory and reconstruct an image by applying a density compensation function and then the adjoint of the Fourier operator and the adjoint of the coil sensitivity operator.
 
 ```python
 # Read the trajectory from the ISMRMRD file
@@ -87,4 +87,4 @@ We recommend to use [Microsoft Visual Studio Code](https://code.visualstudio.com
 
 ### Style
 
-Please have a look at our [contributor guide](https://ptb-mr.github.io/mrpro/contributor_guide.html) for more information on the structure of the repository, naming conventions and other useful information.
+Please look at our [contributor guide](https://ptb-mr.github.io/mrpro/contributor_guide.html) for more information on the repository structure, naming conventions, and other useful information.
