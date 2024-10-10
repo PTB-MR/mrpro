@@ -13,7 +13,8 @@ import os
 import sys
 from sphinx_pyproject import SphinxConfig
 
-config = SphinxConfig('../../pyproject.toml', globalns=globals())
+from mrpro  import __version__ as project_version
+config = SphinxConfig("../../pyproject.toml", globalns=globals(), config_overrides = {"version": project_version})
 sys.path.insert(0, os.path.abspath('../../src'))  # Source code dir relative to this file
 
 # -- Project information -----------------------------------------------------
