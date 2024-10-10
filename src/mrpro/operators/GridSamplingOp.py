@@ -11,6 +11,19 @@ from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
 
 
+class _AdjointGridSampleCtx(torch.autograd.function.FunctionCtx):
+    """Context for Adjoint Grid Sample, used for type hinting."""
+
+    shape: Sequence[int]
+    interpolation_mode: int
+    padding_mode: int
+    align_corners: bool
+    xshape: Sequence[int]
+    backward_2d_or_3d: Callable
+    saved_tensors: Sequence[torch.Tensor]
+    needs_input_grad: Sequence[bool]
+
+
 class AdjointGridSample(torch.autograd.Function):
     """Autograd Function for Adjoint Grid Sample.
 
@@ -20,14 +33,13 @@ class AdjointGridSample(torch.autograd.Function):
 
     @staticmethod
     def forward(
-        ctx: torch.autograd.function.FunctionCtx,
         y: torch.Tensor,
         grid: torch.Tensor,
         xshape: Sequence[int],
         interpolation_mode: Literal['bilinear', 'nearest', 'bicubic'] = 'bilinear',
         padding_mode: Literal['zeros', 'border', 'reflection'] = 'zeros',
         align_corners: bool = True,
-    ) -> torch.Tensor:
+    ) -> tuple[torch.Tensor, tuple[int, int, Callable]]:
         """Adjoint of the linear operator x->gridsample(x,grid).
 
         Parameters
@@ -84,18 +96,6 @@ class AdjointGridSample(torch.autograd.Function):
             raise ValueError(f'xshape and y must have same number of channels, got {xshape[1]} and {y.shape[1]}.')
         if len(xshape) - 2 != dim:
             raise ValueError(f'len(xshape) and dim must either both bei 2 or 3, got {len(xshape)} and {dim}')
-
-        # These are required in the backward.
-        ctx.xshape = xshape  # type: ignore[attr-defined]
-        ctx.interpolation_mode = mode_enum  # type: ignore[attr-defined]
-        ctx.padding_mode = padding_mode_enum  # type: ignore[attr-defined]
-        ctx.align_corners = align_corners  # type: ignore[attr-defined]
-        ctx.backward_2d_or_3d = backward_2d_or_3d  # type: ignore[attr-defined]
-        if grid.requires_grad:
-            # only if we need to calculate the gradient for grid we need y
-            ctx.save_for_backward(grid, y)
-        else:
-            ctx.save_for_backward(grid)
         dummy = torch.empty(1, dtype=y.dtype, device=y.device).broadcast_to(xshape)
         x = backward_2d_or_3d(
             y,
@@ -106,15 +106,37 @@ class AdjointGridSample(torch.autograd.Function):
             align_corners=align_corners,
             output_mask=[True, False],
         )[0]
-        return x
+
+        return x, (mode_enum, padding_mode_enum, backward_2d_or_3d)
+
+    @staticmethod
+    def setup_context(
+        ctx: _AdjointGridSampleCtx,
+        inputs: tuple[torch.Tensor, torch.Tensor, Sequence[int], str, str, bool],
+        outputs: tuple[torch.Tensor, tuple[int, int, Callable]],
+    ) -> None:
+        """Save information for backward pass."""
+        y, grid, xshape, _, _, align_corners = inputs
+        _, (mode_enum, padding_mode_enum, backward_2d_or_3d) = outputs
+        ctx.xshape = xshape
+        ctx.interpolation_mode = mode_enum
+        ctx.padding_mode = padding_mode_enum
+        ctx.align_corners = align_corners
+        ctx.backward_2d_or_3d = backward_2d_or_3d
+
+        if ctx.needs_input_grad[1]:
+            # only if we need to calculate the gradient for grid we need y
+            ctx.save_for_backward(grid, y)
+        else:
+            ctx.save_for_backward(grid)
 
     @staticmethod
     def backward(
-        ctx: torch.autograd.function.FunctionCtx, *grad_output: torch.Tensor
+        ctx: _AdjointGridSampleCtx, *grad_output: torch.Tensor
     ) -> tuple[torch.Tensor | None, torch.Tensor | None, None, None, None, None]:
         """Backward of the Adjoint Gridsample Operator."""
-        need_y_grad, need_grid_grad, *_ = ctx.needs_input_grad  # type: ignore[attr-defined]
-        grid = ctx.saved_tensors[0]  # type: ignore[attr-defined]
+        need_y_grad, need_grid_grad, *_ = ctx.needs_input_grad
+        grid = ctx.saved_tensors[0]
 
         if need_y_grad:
             # torch.grid_sampler has the same signature as the backward
@@ -122,22 +144,22 @@ class AdjointGridSample(torch.autograd.Function):
             grad_y = torch.grid_sampler(
                 grad_output[0],
                 grid,
-                ctx.interpolation_mode,  # type: ignore[attr-defined]
-                ctx.padding_mode,  # type: ignore[attr-defined]
-                ctx.align_corners,  # type: ignore[attr-defined]
+                ctx.interpolation_mode,
+                ctx.padding_mode,
+                ctx.align_corners,
             )
         else:
             grad_y = None
 
         if need_grid_grad:
-            y = ctx.saved_tensors[1]  # type: ignore[attr-defined]
-            grad_grid = ctx.backward_2d_or_3d(  # type: ignore[attr-defined]
+            y = ctx.saved_tensors[1]
+            grad_grid = ctx.backward_2d_or_3d(
                 y,
                 grad_output[0],
                 grid,
-                interpolation_mode=ctx.interpolation_mode,  # type: ignore[attr-defined]
-                padding_mode=ctx.padding_mode,  # type: ignore[attr-defined]
-                align_corners=ctx.align_corners,  # type: ignore[attr-defined]
+                interpolation_mode=ctx.interpolation_mode,
+                padding_mode=ctx.padding_mode,
+                align_corners=ctx.align_corners,
                 output_mask=[False, True],
             )[1]
         else:
@@ -299,7 +321,7 @@ class GridSamplingOp(LinearOperator):
             self.interpolation_mode,
             self.padding_mode,
             self.align_corners,
-        )
+        )[0]
         return sampled
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
