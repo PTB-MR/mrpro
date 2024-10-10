@@ -49,6 +49,6 @@ ci:
     autofix_prs: false
     autoupdate_branch: ''
     autoupdate_commit_msg: '[pre-commit] pre-commit autoupdate'
-    autoupdate_schedule: montly
+    autoupdate_schedule: monthly
     skip: []
     submodules: false
