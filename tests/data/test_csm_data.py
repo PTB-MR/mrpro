@@ -6,7 +6,7 @@ import pytest
 import torch
 from mrpro.data import CsmData, SpatialDimension
 
-from tests.algorithms.csm.test_iterative_walsh import multi_coil_image
+from tests.algorithms.csm.test_walsh import multi_coil_image
 from tests.helper import relative_image_difference
 
 
