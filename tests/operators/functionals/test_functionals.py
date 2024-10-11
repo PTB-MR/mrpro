@@ -274,7 +274,7 @@ def test_functional_has_testcase(functional):
     assert len(cases), f'No test case found for {functional.__name__}!'
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 @pytest.mark.parametrize('functional', FUNCTIONALS)
 @pytest.mark.parametrize('parameters', ['scalar', 'none', 'tensor'])
 def test_functional_cuda_forward(
@@ -294,7 +294,7 @@ def test_functional_cuda_forward(
     assert fx.is_cuda
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 @pytest.mark.parametrize('parameters', ['scalar', 'none', 'tensor'])
 @pytest.mark.parametrize('functional', PROXIMABLE_FUNCTIONALS)
 def test_functional_cuda_prox(
