@@ -89,6 +89,10 @@ jobs:
         with:
           python-version: "3.x"
 
+      - name: Install setuptools_git_versioning
+        run: |
+          python -m pip install setuptools-git-versioning
+
       - name: Get current version
         id: get_version
         run: |
