@@ -5,6 +5,7 @@ from typing import Literal, Self
 
 import torch
 from einops import rearrange, repeat
+
 from mrpro.data._kdata.KDataProtocol import _KDataProtocol
 from mrpro.data.EncodingLimits import Limits
 from mrpro.utils import modify_acq_info
