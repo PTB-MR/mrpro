@@ -11,10 +11,17 @@ import torch
 from numpy._typing import _NestedSequence as NestedSequence
 from torch import Tensor
 
+from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
-from mrpro.utils.Rotation import Rotation
 from mrpro.utils.slice_profiles import SliceSmoothedRectangular
+
+
+class _MatrixMultiplicationCtx(torch.autograd.function.FunctionCtx):
+    """Autograd context for matrix multiplication, used for type hinting."""
+
+    x_is_complex: bool
+    saved_tensors: tuple[Tensor]
 
 
 class _MatrixMultiplication(torch.autograd.Function):
@@ -27,9 +34,7 @@ class _MatrixMultiplication(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx: torch.autograd.function.FunctionCtx, x: Tensor, matrix: Tensor, matrix_adjoint: Tensor) -> Tensor:
-        ctx.save_for_backward(matrix_adjoint)
-        ctx.x_is_complex = x.is_complex()  # type: ignore[attr-defined]
+    def forward(x: Tensor, matrix: Tensor, matrix_adjoint: Tensor) -> Tensor:  # noqa: ARG004
         if x.is_complex() == matrix.is_complex():
             return matrix @ x
         # required for sparse matrices to support mixed complex/real multiplication
@@ -39,9 +44,19 @@ class _MatrixMultiplication(torch.autograd.Function):
             return torch.complex(matrix.real @ x, matrix.imag @ x)
 
     @staticmethod
-    def backward(ctx: torch.autograd.function.FunctionCtx, *grad_output: Tensor) -> tuple[Tensor, None, None]:
-        (matrix_adjoint,) = ctx.saved_tensors  # type: ignore[attr-defined]
-        if ctx.x_is_complex:  # type: ignore[attr-defined]
+    def setup_context(
+        ctx: _MatrixMultiplicationCtx,
+        inputs: tuple[Tensor, Tensor, Tensor],
+        outputs: tuple[Tensor],  # noqa: ARG004
+    ) -> None:
+        x, _, matrix_adjoint = inputs
+        ctx.x_is_complex = x.is_complex()
+        ctx.save_for_backward(matrix_adjoint)
+
+    @staticmethod
+    def backward(ctx: _MatrixMultiplicationCtx, *grad_output: Tensor) -> tuple[Tensor, None, None]:
+        (matrix_adjoint,) = ctx.saved_tensors
+        if ctx.x_is_complex:
             if matrix_adjoint.is_complex() == grad_output[0].is_complex():
                 grad_x = matrix_adjoint @ grad_output[0]
             elif matrix_adjoint.is_complex():
@@ -219,9 +234,9 @@ class SliceProjectionOp(LinearOperator):
 
         # For the (unusual case) of batched volumes, we will apply for each element in series
         xflat = torch.atleast_2d(einops.rearrange(x, '... x y z -> (...) (x y z)'))
-        y = torch.stack(
-            [_MatrixMultiplication.apply(x, matrix, matrix_adjoint).reshape(self._range_shape) for x in xflat], -4
-        )
+        yl = [_MatrixMultiplication.apply(x, matrix, matrix_adjoint) for x in xflat]
+
+        y = torch.stack([el.reshape(self._range_shape) for el in yl], -4)
         y = y.reshape(*y.shape[:-4], *x.shape[:-3], *y.shape[-3:])
         return (y,)
 
@@ -381,12 +396,12 @@ class SliceProjectionOp(LinearOperator):
         # by adding all possible combinations of 0 and 1 to the point and flooring
         offsets = torch.tensor(list(itertools.product([0, 1], repeat=3)))
         # all points that influence a pixel
-        # x,y,8-neighbours,(2*w+1)-raylength,3-dimensions input_shape.xinput_shape.yinput_shape.z)
+        # x,y,8-neighbors,(2*w+1)-raylength,3-dimensions input_shape.xinput_shape.yinput_shape.z)
         points_influencing_pixel = (
             einops.rearrange(pixel_rotated_y_x_zyx, '   y x zyxdim -> y x 1          1   zyxdim')
             + einops.rearrange(ray, '                   ray zyxdim -> 1 1 1          ray zyxdim')
-            + einops.rearrange(offsets, '        neighbours zyxdim -> 1 1 neighbours 1   zyxdim')
-        ).floor()  # y x neighbours ray zyx
+            + einops.rearrange(offsets, '        neighbors zyxdim -> 1 1 neighbors 1   zyxdim')
+        ).floor()  # y x neighbors ray zyx
         # directional distance in source volume coordinate system
         distance = pixel_rotated_y_x_zyx[:, :, None, None, :] - points_influencing_pixel
         # Inverse rotation projects this back to the original coordinate system, i.e
@@ -400,7 +415,7 @@ class SliceProjectionOp(LinearOperator):
 
         source = einops.rearrange(
             points_influencing_pixel,
-            'y x neighbours raylength zyxdim -> (y x) (neighbours raylength) zyxdim',
+            'y x neighbors raylength zyxdim -> (y x) (neighbors raylength) zyxdim',
         ).int()
 
         # mask of only potential source points inside the source volume

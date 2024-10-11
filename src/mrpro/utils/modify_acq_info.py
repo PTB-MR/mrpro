@@ -1,11 +1,15 @@
 """Modify AcqInfo."""
 
+from __future__ import annotations
+
 import dataclasses
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import torch
 
-from mrpro.data.AcqInfo import AcqInfo
+if TYPE_CHECKING:
+    from mrpro.data.AcqInfo import AcqInfo
 
 
 def modify_acq_info(fun_modify: Callable, acq_info: AcqInfo) -> AcqInfo:
