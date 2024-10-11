@@ -21,7 +21,6 @@ name = "mrpro"
 description = "MR image reconstruction and processing package specifically developed for PyTorch."
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
-license = { file = "LICENSE" }
 dynamic = ["version"]
 keywords = ["MRI, reconstruction, processing, PyTorch"]
 authors = [
@@ -36,6 +35,7 @@ authors = [
     { name = "Andreas Kofler", email = "andreas.kofler@ptb.de" },
 ]
 classifiers = [
+    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -73,7 +73,7 @@ notebook = [
 ]
 
 [project.urls]
-"repository" = "https://github.com/PTB-MR/mrpro"
+"Documentation" = "https://ptb-mr.github.io/mrpro/"
 
 # PyTest section
 [tool.pytest.ini_options]
