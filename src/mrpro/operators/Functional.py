@@ -61,10 +61,10 @@ class ElementaryFunctional(Functional):
             target element - often data tensor (see above)
         dim
             dimension(s) over which functional is reduced.
-            All other dimensions of  `weight ( x - target))` will be treated as batch dimensions.
+            All other dimensions of  `weight ( x - target)` will be treated as batch dimensions.
         divide_by_n
             if true, the result is scaled by the number of elements of the dimensions index by `dim` in
-            the tensor `weight ( x - target))`. If true, the functional is thus calculated as the mean,
+            the tensor `weight ( x - target)`. If true, the functional is thus calculated as the mean,
             else the sum.
         keepdim
             if true, the dimension(s) of the input indexed by dim are maintained and collapsed to singeltons,
@@ -125,7 +125,7 @@ class ProximableFunctional(Functional, ABC):
     def prox(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         r"""Apply proximal operator.
 
-        Yields :math:`prox_{\sigma f}(x) = argmin_{p} (\sigma f(p) + 1/2 \|x-p\|^{2}` given `x` and `\sigma`
+        Yields :math:`prox_{\sigma f}(x) = argmin_{p} (\sigma f(p) + 1/2 \|x-p\|^{2}` given :math:`x` and :math:`\sigma`
 
         Parameters
         ----------
@@ -142,8 +142,8 @@ class ProximableFunctional(Functional, ABC):
     def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         r"""Apply proximal operator of convex conjugate of functional.
 
-        Yields :math:`prox_{\sigma f*}(x) = argmin_{p} (sigma f*(p) + 1/2 \|x-p\|^{2}`,
-        where f* denotes the convex conjugate of f, given `x` and `sigma`.
+        Yields :math:`prox_{\sigma f^*}(x) = argmin_{p} (\sigma f^*(p) + 1/2 \|x-p\|^{2}`,
+        where :math:`f^*` denotes the convex conjugate of :math:`f`, given :math:`x` and :math:`\sigma`.
 
         Parameters
         ----------
