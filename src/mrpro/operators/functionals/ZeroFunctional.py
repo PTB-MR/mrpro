@@ -64,7 +64,8 @@ class ZeroFunctional(ElementaryProximableFunctional):
     def prox_convex_conj(self, x: torch.Tensor, sigma: float | torch.Tensor = 1.0) -> tuple[torch.Tensor,]:
         """Apply the proximal operator of the convex conjugate of the functional to a tensor.
 
-        Returns x if sigma is exactly 0, otherwise returns 0.
+        The convex conjugate of the zero functional is the indicator function over the set {0}. If sigma>0,
+        the proximal operator of the scaled convex conjugate is constant zero, otherwise it is the identity.
 
         Parameters
         ----------
