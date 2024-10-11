@@ -28,7 +28,7 @@ class DifferentiableOperator(LinearOperator, adjoint_as_backward=True):
 
     def forward(self, x):
         python_float = x.item()  # would break autograd as floats do not track gradients
-        tensor = torch.tensor([2 * python_float], dtype=x.dtype)  # breaks the autograd
+        tensor = torch.tensor([2 * python_float], dtype=x.dtype)
         return (tensor,)
 
     def adjoint(self, x):
