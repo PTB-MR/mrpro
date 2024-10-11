@@ -1,5 +1,7 @@
 """Tests the Spatial class."""
 
+from typing import assert_type
+
 import pytest
 import torch
 from mrpro.data import SpatialDimension
@@ -60,23 +62,50 @@ def test_spatial_dimension_from_array_wrongshape():
         _ = SpatialDimension.from_array_xyz(tensor_wrongshape)
 
 
-def test_spatial_dimension_from_array_conversion():
-    """Test conversion argument"""
+def test_spatial_dimension_apply_():
+    """Test apply_ (inplace)"""
 
     def conversion(x: torch.Tensor) -> torch.Tensor:
         assert isinstance(x, torch.Tensor), 'The argument to the conversion function should be a tensor'
         return x.swapaxes(0, 1).square()
 
     xyz = RandomGenerator(0).float32_tensor((1, 2, 3))
-    spatial_dimension_xyz = SpatialDimension.from_array_xyz(xyz.numpy(), conversion=conversion)
-    assert isinstance(spatial_dimension_xyz.x, torch.Tensor)
-    assert isinstance(spatial_dimension_xyz.y, torch.Tensor)
-    assert isinstance(spatial_dimension_xyz.z, torch.Tensor)
+    spatial_dimension = SpatialDimension.from_array_xyz(xyz.numpy())
+    spatial_dimension_inplace = spatial_dimension.apply_().apply_(conversion)
+
+    assert spatial_dimension_inplace is spatial_dimension
+
+    assert isinstance(spatial_dimension_inplace.x, torch.Tensor)
+    assert isinstance(spatial_dimension_inplace.y, torch.Tensor)
+    assert isinstance(spatial_dimension_inplace.z, torch.Tensor)
 
     x, y, z = conversion(xyz).unbind(-1)
-    assert torch.equal(spatial_dimension_xyz.x, x)
-    assert torch.equal(spatial_dimension_xyz.y, y)
-    assert torch.equal(spatial_dimension_xyz.z, z)
+    assert torch.equal(spatial_dimension_inplace.x, x)
+    assert torch.equal(spatial_dimension_inplace.y, y)
+    assert torch.equal(spatial_dimension_inplace.z, z)
+
+
+def test_spatial_dimension_apply():
+    """Test apply (out of place)"""
+
+    def conversion(x: torch.Tensor) -> torch.Tensor:
+        assert isinstance(x, torch.Tensor), 'The argument to the conversion function should be a tensor'
+        return x.swapaxes(0, 1).square()
+
+    xyz = RandomGenerator(0).float32_tensor((1, 2, 3))
+    spatial_dimension = SpatialDimension.from_array_xyz(xyz.numpy())
+    spatial_dimension_outofplace = spatial_dimension.apply().apply(conversion)
+
+    assert spatial_dimension_outofplace is not spatial_dimension
+
+    assert isinstance(spatial_dimension_outofplace.x, torch.Tensor)
+    assert isinstance(spatial_dimension_outofplace.y, torch.Tensor)
+    assert isinstance(spatial_dimension_outofplace.z, torch.Tensor)
+
+    x, y, z = conversion(xyz).unbind(-1)
+    assert torch.equal(spatial_dimension_outofplace.x, x)
+    assert torch.equal(spatial_dimension_outofplace.y, y)
+    assert torch.equal(spatial_dimension_outofplace.z, z)
 
 
 def test_spatial_dimension_zyx():
@@ -104,7 +133,7 @@ def test_spatial_dimension_cuda_tensor():
     assert not spatial_dimension.is_cuda
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 def test_spatial_dimension_cuda_float():
     """Test moving to CUDA without tensors -> copy only"""
     spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
@@ -142,9 +171,9 @@ def test_spatial_dimension_mul():
     """Test multiplication of SpatialDimension with numeric value."""
     spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
     value = 3
-    spatial_dimension_add = spatial_dimension * value
-    assert isinstance(spatial_dimension_add, SpatialDimension)
-    assert spatial_dimension_add.zyx == (
+    spatial_dimension_mul = spatial_dimension * value
+    assert isinstance(spatial_dimension_mul, SpatialDimension)
+    assert spatial_dimension_mul.zyx == (
         spatial_dimension.z * value,
         spatial_dimension.y * value,
         spatial_dimension.x * value,
@@ -155,9 +184,9 @@ def test_spatial_dimension_rmul():
     """Test right multiplication of SpatialDimension with numeric value."""
     spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
     value = 3
-    spatial_dimension_add = value * spatial_dimension
-    assert isinstance(spatial_dimension_add, SpatialDimension)
-    assert spatial_dimension_add.zyx == (
+    spatial_dimension_mul = value * spatial_dimension
+    assert isinstance(spatial_dimension_mul, SpatialDimension)
+    assert spatial_dimension_mul.zyx == (
         spatial_dimension.z * value,
         spatial_dimension.y * value,
         spatial_dimension.x * value,
@@ -168,9 +197,9 @@ def test_spatial_dimension_mul_spatial_dimension():
     """Test multiplication of SpatialDimension with SpatialDimension."""
     spatial_dimension_1 = SpatialDimension(z=1.0, y=2.0, x=3.0)
     spatial_dimension_2 = SpatialDimension(z=4.0, y=5.0, x=6.0)
-    spatial_dimension_add = spatial_dimension_1 * spatial_dimension_2
-    assert isinstance(spatial_dimension_add, SpatialDimension)
-    assert spatial_dimension_add.zyx == (
+    spatial_dimension_mul = spatial_dimension_1 * spatial_dimension_2
+    assert isinstance(spatial_dimension_mul, SpatialDimension)
+    assert spatial_dimension_mul.zyx == (
         spatial_dimension_1.z * spatial_dimension_2.z,
         spatial_dimension_1.y * spatial_dimension_2.y,
         spatial_dimension_1.x * spatial_dimension_2.x,
@@ -181,9 +210,9 @@ def test_spatial_dimension_truediv():
     """Test division of SpatialDimension with numeric value."""
     spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
     value = 3
-    spatial_dimension_add = spatial_dimension / value
-    assert isinstance(spatial_dimension_add, SpatialDimension)
-    assert spatial_dimension_add.zyx == (
+    spatial_dimension_div = spatial_dimension / value
+    assert isinstance(spatial_dimension_div, SpatialDimension)
+    assert spatial_dimension_div.zyx == (
         spatial_dimension.z / value,
         spatial_dimension.y / value,
         spatial_dimension.x / value,
@@ -194,9 +223,9 @@ def test_spatial_dimension_rtruediv():
     """Test right division of SpatialDimension with numeric value."""
     spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
     value = 3
-    spatial_dimension_add = value / spatial_dimension
-    assert isinstance(spatial_dimension_add, SpatialDimension)
-    assert spatial_dimension_add.zyx == (
+    spatial_dimension_div = value / spatial_dimension
+    assert isinstance(spatial_dimension_div, SpatialDimension)
+    assert spatial_dimension_div.zyx == (
         value / spatial_dimension.z,
         value / spatial_dimension.y,
         value / spatial_dimension.x,
@@ -207,9 +236,9 @@ def test_spatial_dimension_truediv_spatial_dimension():
     """Test divitions of SpatialDimension with SpatialDimension."""
     spatial_dimension_1 = SpatialDimension(z=1.0, y=2.0, x=3.0)
     spatial_dimension_2 = SpatialDimension(z=4.0, y=5.0, x=6.0)
-    spatial_dimension_add = spatial_dimension_1 / spatial_dimension_2
-    assert isinstance(spatial_dimension_add, SpatialDimension)
-    assert spatial_dimension_add.zyx == (
+    spatial_dimension_div = spatial_dimension_1 / spatial_dimension_2
+    assert isinstance(spatial_dimension_div, SpatialDimension)
+    assert spatial_dimension_div.zyx == (
         spatial_dimension_1.z / spatial_dimension_2.z,
         spatial_dimension_1.y / spatial_dimension_2.y,
         spatial_dimension_1.x / spatial_dimension_2.x,
@@ -259,9 +288,9 @@ def test_spatial_dimension_sub():
     """Test subtraction of SpatialDimension with numeric value."""
     spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
     value = 3
-    spatial_dimension_add = spatial_dimension - value
-    assert isinstance(spatial_dimension_add, SpatialDimension)
-    assert spatial_dimension_add.zyx == (
+    spatial_dimension_sub = spatial_dimension - value
+    assert isinstance(spatial_dimension_sub, SpatialDimension)
+    assert spatial_dimension_sub.zyx == (
         spatial_dimension.z - value,
         spatial_dimension.y - value,
         spatial_dimension.x - value,
@@ -272,9 +301,9 @@ def test_spatial_dimension_rsub():
     """Test right subtraction of SpatialDimension with numeric value."""
     spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
     value = 3
-    spatial_dimension_add = value - spatial_dimension
-    assert isinstance(spatial_dimension_add, SpatialDimension)
-    assert spatial_dimension_add.zyx == (
+    spatial_dimension_sub = value - spatial_dimension
+    assert isinstance(spatial_dimension_sub, SpatialDimension)
+    assert spatial_dimension_sub.zyx == (
         value - spatial_dimension.z,
         value - spatial_dimension.y,
         value - spatial_dimension.x,
@@ -285,10 +314,293 @@ def test_spatial_dimension_sub_spatial_dimension():
     """Test subtraction of SpatialDimension with SpatialDimension."""
     spatial_dimension_1 = SpatialDimension(z=1.0, y=2.0, x=3.0)
     spatial_dimension_2 = SpatialDimension(z=4.0, y=5.0, x=6.0)
-    spatial_dimension_add = spatial_dimension_1 - spatial_dimension_2
-    assert isinstance(spatial_dimension_add, SpatialDimension)
-    assert spatial_dimension_add.zyx == (
+    spatial_dimension_sub = spatial_dimension_1 - spatial_dimension_2
+    assert isinstance(spatial_dimension_sub, SpatialDimension)
+    assert spatial_dimension_sub.zyx == (
         spatial_dimension_1.z - spatial_dimension_2.z,
         spatial_dimension_1.y - spatial_dimension_2.y,
         spatial_dimension_1.x - spatial_dimension_2.x,
     )
+
+
+def test_spatial_dimension_eq_float():
+    """Test equality of SpatialDimension."""
+    spatial_dimension_1 = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    spatial_dimension_2 = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    assert spatial_dimension_1 == spatial_dimension_2
+
+
+def test_spatial_dimension_eq_tensor():
+    """Test equality of SpatialDimension with tensors."""
+    spatial_dimension_1 = SpatialDimension(z=torch.ones(2), y=torch.ones(2), x=torch.ones(2))
+    spatial_dimension_2 = SpatialDimension(z=torch.ones(2), y=torch.ones(2), x=torch.ones(2))
+    assert spatial_dimension_1 == spatial_dimension_2
+
+
+def test_spatial_dimension_comp_scalar():
+    """Test equality of SpatialDimension."""
+    assert SpatialDimension(1, 2, 3) > SpatialDimension(0, 0, 0)
+    assert SpatialDimension(1, 2, 3) >= SpatialDimension(1, 0, 0)
+    assert not SpatialDimension(1, 2, 3) > SpatialDimension(1, 0, 0)
+
+    assert SpatialDimension(1, 2, 3) < SpatialDimension(10, 10, 10)
+    assert SpatialDimension(1, 2, 3) <= SpatialDimension(10, 10, 3)
+    assert not SpatialDimension(1, 2, 3) < SpatialDimension(10, 10, 3)
+
+
+def test_spatial_dimension_comp_tensor():
+    """Test equality of SpatialDimension."""
+    t = torch.ones(2)
+    assert SpatialDimension(1 * t, 2 * t, 3 * t) > SpatialDimension(0 * t, 0 * t, 0 * t)
+    assert SpatialDimension(1 * t, 2 * t, 3 * t) >= SpatialDimension(1 * t, 0 * t, 0 * t)
+    assert not SpatialDimension(1 * t, 2 * t, 3 * t) > SpatialDimension(1 * t, 0 * t, 0 * t)
+
+    assert SpatialDimension(1 * t, 2 * t, 3 * t) < SpatialDimension(10 * t, 10 * t, 10 * t)
+    assert SpatialDimension(1 * t, 2 * t, 3 * t) <= SpatialDimension(10 * t, 10 * t, 3 * t)
+    assert not SpatialDimension(1 * t, 2 * t, 3 * t) < SpatialDimension(10 * t, 10 * t, 3 * t)
+
+
+def test_spatial_dimension_neg():
+    """Test negation of SpatialDimension."""
+    spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    spatial_dimension_neg = -spatial_dimension
+    assert isinstance(spatial_dimension_neg, SpatialDimension)
+    assert spatial_dimension_neg.zyx == (-spatial_dimension.z, -spatial_dimension.y, -spatial_dimension.x)
+
+
+def mypy_test_spatial_dimension_typing_add():
+    """Test typing of SpatialDimension operations (mypy)
+
+    This test checks that the typing of the operations is correct.
+    It will be used by pytest, but mypy will complain if any of the
+    types are wrong.
+    """
+    spatial_dimension_float = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    spatial_dimension_int = SpatialDimension(z=1, y=2, x=3)
+
+    spatial_dimension_tensor = SpatialDimension(z=torch.ones(1), y=torch.ones(1), x=torch.ones(1))
+    scalar_float = 1.0
+    scalar_int = 1
+    scalar_tensor = torch.ones(1)
+
+    # int
+    assert_type(spatial_dimension_int + spatial_dimension_int, SpatialDimension[int])
+    assert_type(spatial_dimension_int + scalar_int, SpatialDimension[int])
+    assert_type(scalar_int + spatial_dimension_int, SpatialDimension[int])
+
+    # tensor
+    assert_type(spatial_dimension_tensor + spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor + scalar_tensor, SpatialDimension[torch.Tensor])
+    # assert_type(scalar_tensor + spatial_dimension_tensor, SpatialDimension[torch.Tensor]) # FIXME torch typing issue # noqa
+
+    # float
+    assert_type(spatial_dimension_float + spatial_dimension_float, SpatialDimension[float])
+    assert_type(spatial_dimension_float + scalar_float, SpatialDimension[float])
+    assert_type(scalar_float + spatial_dimension_float, SpatialDimension[float])
+
+    # int gets promoted to float
+    assert_type(spatial_dimension_int + spatial_dimension_float, SpatialDimension[float])
+    assert_type(spatial_dimension_float + spatial_dimension_int, SpatialDimension[float])
+    assert_type(spatial_dimension_int + scalar_float, SpatialDimension[float])
+    assert_type(scalar_float + spatial_dimension_int, SpatialDimension[float])
+
+    # int or float gets promoted to tensor
+    assert_type(spatial_dimension_int + spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor + spatial_dimension_int, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_float + spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor + spatial_dimension_float, SpatialDimension[torch.Tensor])
+
+    assert_type(scalar_int + spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor + scalar_int, SpatialDimension[torch.Tensor])
+    assert_type(scalar_float + spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor + scalar_float, SpatialDimension[torch.Tensor])
+
+
+def mypy_test_spatial_dimension_typing_sub():
+    """Test typing of SpatialDimension operations (mypy)
+
+    This test checks that the typing of the operations is correct.
+    It will be used by pytest, but mypy will complain if any of the
+    types are wrong.
+    """
+    spatial_dimension_float = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    spatial_dimension_int = SpatialDimension(z=1, y=2, x=3)
+
+    spatial_dimension_tensor = SpatialDimension(z=torch.ones(1), y=torch.ones(1), x=torch.ones(1))
+    scalar_float = 1.0
+    scalar_int = 1
+    scalar_tensor = torch.ones(1)
+
+    # int
+    assert_type(spatial_dimension_int - spatial_dimension_int, SpatialDimension[int])
+    assert_type(spatial_dimension_int - scalar_int, SpatialDimension[int])
+    assert_type(scalar_int - spatial_dimension_int, SpatialDimension[int])
+
+    # tensor
+    assert_type(spatial_dimension_tensor - spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor - scalar_tensor, SpatialDimension[torch.Tensor])
+    # assert_type(scalar_tensor - spatial_dimension_tensor, SpatialDimension[torch.Tensor]) # FIXME torch typing issue # noqa
+
+    # float
+    assert_type(spatial_dimension_float - spatial_dimension_float, SpatialDimension[float])
+    assert_type(spatial_dimension_float - scalar_float, SpatialDimension[float])
+    assert_type(scalar_float - spatial_dimension_float, SpatialDimension[float])
+
+    # int gets promoted to float
+    assert_type(spatial_dimension_int - spatial_dimension_float, SpatialDimension[float])
+    assert_type(spatial_dimension_float - spatial_dimension_int, SpatialDimension[float])
+    assert_type(spatial_dimension_int - scalar_float, SpatialDimension[float])
+    assert_type(scalar_float - spatial_dimension_int, SpatialDimension[float])
+
+    # int or float gets promoted to tensor
+    assert_type(spatial_dimension_int - spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor - spatial_dimension_int, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_float - spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor - spatial_dimension_float, SpatialDimension[torch.Tensor])
+
+    assert_type(scalar_int - spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor - scalar_int, SpatialDimension[torch.Tensor])
+    assert_type(scalar_float - spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor - scalar_float, SpatialDimension[torch.Tensor])
+
+
+def mypy_test_spatial_dimension_typing_floordiv():
+    """Test typing of SpatialDimension operations (mypy)
+
+    This test checks that the typing of the operations is correct.
+    It will be used by pytest, but mypy will complain if any of the
+    types are wrong.
+    """
+    spatial_dimension_float = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    spatial_dimension_int = SpatialDimension(z=1, y=2, x=3)
+
+    spatial_dimension_tensor = SpatialDimension(z=torch.ones(1), y=torch.ones(1), x=torch.ones(1))
+    scalar_float = 1.0
+    scalar_int = 1
+    scalar_tensor = torch.ones(1)
+
+    # int
+    assert_type(spatial_dimension_int // spatial_dimension_int, SpatialDimension[int])
+    assert_type(spatial_dimension_int // scalar_int, SpatialDimension[int])
+    assert_type(scalar_int // spatial_dimension_int, SpatialDimension[int])
+
+    # tensor
+    assert_type(spatial_dimension_tensor // spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor // scalar_tensor, SpatialDimension[torch.Tensor])
+    # assert_type(scalar_tensor // spatial_dimension_tensor, SpatialDimension[torch.Tensor]) # FIXME torch typing issue # noqa
+
+    # float
+    assert_type(spatial_dimension_float // spatial_dimension_float, SpatialDimension[float])
+    assert_type(spatial_dimension_float // scalar_float, SpatialDimension[float])
+    assert_type(scalar_float // spatial_dimension_float, SpatialDimension[float])
+
+    # int gets promoted to float
+    assert_type(spatial_dimension_int // spatial_dimension_float, SpatialDimension[float])
+    assert_type(spatial_dimension_float // spatial_dimension_int, SpatialDimension[float])
+    assert_type(spatial_dimension_int // scalar_float, SpatialDimension[float])
+    assert_type(scalar_float // spatial_dimension_int, SpatialDimension[float])
+
+    # int or float gets promoted to tensor
+    assert_type(spatial_dimension_int // spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor // spatial_dimension_int, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_float // spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor // spatial_dimension_float, SpatialDimension[torch.Tensor])
+
+    assert_type(scalar_int // spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor // scalar_int, SpatialDimension[torch.Tensor])
+    assert_type(scalar_float // spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor // scalar_float, SpatialDimension[torch.Tensor])
+
+
+def mypy_test_spatial_dimension_typing_mul():
+    """Test typing of SpatialDimension operations (mypy)
+
+    This test checks that the typing of the operations is correct.
+    It will be used by pytest, but mypy will complain if any of the
+    types are wrong.
+    """
+    spatial_dimension_float = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    spatial_dimension_int = SpatialDimension(z=1, y=2, x=3)
+
+    spatial_dimension_tensor = SpatialDimension(z=torch.ones(1), y=torch.ones(1), x=torch.ones(1))
+    scalar_float = 1.0
+    scalar_int = 1
+    scalar_tensor = torch.ones(1)
+
+    # int
+    assert_type(spatial_dimension_int * spatial_dimension_int, SpatialDimension[int])
+    assert_type(spatial_dimension_int * scalar_int, SpatialDimension[int])
+    assert_type(scalar_int * spatial_dimension_int, SpatialDimension[int])
+
+    # tensor
+    assert_type(spatial_dimension_tensor * spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor * scalar_tensor, SpatialDimension[torch.Tensor])
+    # assert_type(scalar_tensor * spatial_dimension_tensor, SpatialDimension[torch.Tensor]) # FIXME torch typing issue # noqa
+
+    # float
+    assert_type(spatial_dimension_float * spatial_dimension_float, SpatialDimension[float])
+    assert_type(spatial_dimension_float * scalar_float, SpatialDimension[float])
+    assert_type(scalar_float * spatial_dimension_float, SpatialDimension[float])
+
+    # int gets promoted to float
+    assert_type(spatial_dimension_int * spatial_dimension_float, SpatialDimension[float])
+    assert_type(spatial_dimension_float * spatial_dimension_int, SpatialDimension[float])
+    assert_type(spatial_dimension_int * scalar_float, SpatialDimension[float])
+    assert_type(scalar_float * spatial_dimension_int, SpatialDimension[float])
+
+    # int or float gets promoted to tensor
+    assert_type(spatial_dimension_int * spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor * spatial_dimension_int, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_float * spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor * spatial_dimension_float, SpatialDimension[torch.Tensor])
+
+    assert_type(scalar_int * spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor * scalar_int, SpatialDimension[torch.Tensor])
+    assert_type(scalar_float * spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor * scalar_float, SpatialDimension[torch.Tensor])
+
+
+def mypy_test_spatial_dimension_typing_truediv():
+    """Test typing of SpatialDimension operations (mypy)
+
+    This test checks that the typing of the operations is correct.
+    It will be used by pytest, but mypy will complain if any of the
+    types are wrong.
+    """
+    spatial_dimension_float = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    spatial_dimension_int = SpatialDimension(z=1, y=2, x=3)
+
+    spatial_dimension_tensor = SpatialDimension(z=torch.ones(1), y=torch.ones(1), x=torch.ones(1))
+    scalar_float = 1.0
+    scalar_int = 1
+    scalar_tensor = torch.ones(1)
+
+    # tensor
+    assert_type(spatial_dimension_tensor / spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor / scalar_tensor, SpatialDimension[torch.Tensor])
+    # assert_type(scalar_tensor / spatial_dimension_tensor, SpatialDimension[torch.Tensor]) # FIXME torch typing issue # noqa
+
+    # float
+    assert_type(spatial_dimension_float / spatial_dimension_float, SpatialDimension[float])
+    assert_type(spatial_dimension_float / scalar_float, SpatialDimension[float])
+    assert_type(scalar_float / spatial_dimension_float, SpatialDimension[float])
+
+    # int gets promoted to float
+    assert_type(spatial_dimension_int / spatial_dimension_int, SpatialDimension[float])
+    assert_type(spatial_dimension_int / scalar_int, SpatialDimension[float])
+    assert_type(scalar_int / spatial_dimension_int, SpatialDimension[float])
+    assert_type(spatial_dimension_int / spatial_dimension_float, SpatialDimension[float])
+    assert_type(spatial_dimension_float / spatial_dimension_int, SpatialDimension[float])
+    assert_type(spatial_dimension_int / scalar_float, SpatialDimension[float])
+    assert_type(scalar_float / spatial_dimension_int, SpatialDimension[float])
+
+    # int or float gets promoted to tensor
+    assert_type(spatial_dimension_int / spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor / spatial_dimension_int, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_float / spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor / spatial_dimension_float, SpatialDimension[torch.Tensor])
+
+    assert_type(scalar_int / spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor / scalar_int, SpatialDimension[torch.Tensor])
+    assert_type(scalar_float / spatial_dimension_tensor, SpatialDimension[torch.Tensor])
+    assert_type(spatial_dimension_tensor / scalar_float, SpatialDimension[torch.Tensor])
