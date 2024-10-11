@@ -9,11 +9,11 @@ class L1NormViewAsReal(ElementaryProximableFunctional):
     r"""Functional class for the L1 Norm, where C is identified with R^2.
 
     This implements the functional given by
-        :math:`f: C^N --> [0, \infty), x ->  \|Wr.*Re(x-b) )\|_1 + \|( Wi.*Im(x-b) )\|_1`
-    where Wr and Wi are a either scalars or tensors and .* denotes element-wise multiplication.
+        :math:`f: C^N -> [0, \infty), x ->  \|W_r * Re(x-b) )\|_1 + \|( W_i * Im(x-b) )\|_1`
+    where :math:`W_r` and :math:`W_i` are a either scalars or tensors and `*` denotes element-wise multiplication.
 
-    If the parameter `weight` is real-valued, `Wr` and `Wi` are both set to `weight`.
-    If it is complex-valued, Wr and Wi are set to the real and imaginary part, respectively.
+    If the parameter `weight` is real-valued, :math:`W_r` and :math:`W_i` are both set to `weight`.
+    If it is complex-valued, :math:`W_r` and :math:`W_I` are set to the real and imaginary part, respectively.
 
     The norm of the vector is computed along the dimensions set at initialization.
     """
