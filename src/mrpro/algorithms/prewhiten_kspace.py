@@ -21,7 +21,7 @@ def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float | torch.T
 
     More information can be found in [ISMa]_ [HAN2014]_ [ROE1990]_.
 
-    If the the data has more samples in the 'other'-dimensions (batch/slice/...),
+    If the data has more samples in the 'other'-dimensions (batch/slice/...),
     the noise covariance matrix is calculated jointly over all samples.
     Thus, if the noise is not stationary, the noise covariance matrix is not accurate.
     In this case, the function should be called for each sample separately.
