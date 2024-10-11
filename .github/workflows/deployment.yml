@@ -152,11 +152,11 @@ jobs:
             github.rest.repos.createRelease({
               draft: false,
               generate_release_notes: true,
-              name: v${{ needs.build-pypi-package.outputs.version }},
+              name: "v${{ needs.build-pypi-package.outputs.version }}",
               owner: context.repo.owner,
               prerelease: false,
               repo: context.repo.repo,
-              tag_name: v${{ needs.build-pypi-package.outputs.version }},
+              tag_name: "v${{ needs.build-pypi-package.outputs.version }}",
             });
 
       - name: Publish to PyPI
