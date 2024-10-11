@@ -79,7 +79,7 @@ jobs:
     needs:
       - test-install-from-testpypi
     outputs:
-      version: ${{ steps.get_version.outputs.version }} # Declare the version output
+      version: ${{ steps.get_version.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -97,8 +97,7 @@ jobs:
         id: get_version
         run: |
           VERSION=$(python -m setuptools_git_versioning)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "::set-output name=version::$VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Build package
         run: |
@@ -161,7 +160,13 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        if: github.ref == 'refs/heads/main'
+        # if: github.ref == 'refs/heads/main'
         with:
           repository-url: https://upload.pypi.org/legacy/
           verbose: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+
+  # Cancel in-progress runs when a new workflow with the same group name is triggered
+  cancel-in-progress: true
