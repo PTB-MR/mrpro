@@ -97,7 +97,7 @@ def test_functional_prox_optimality(case: FunctionalTestCase):
     def prox_criterion(p):
         diff = x - p
         l2 = torch.sum((diff * diff.conj()).real, dim=functional.dim, keepdim=functional.keepdim)
-        return (functional(p)[0] + 1 / (2 * case.sigma) * l2).sum()
+        return (case.sigma * functional(p)[0] + 1 / 2 * l2).sum()
 
     for perturbation in (0, 1e-3, 0.1):
         p = (prox + perturbation * case.rng.rand_like(prox)).requires_grad_()
@@ -274,7 +274,7 @@ def test_functional_has_testcase(functional):
     assert len(cases), f'No test case found for {functional.__name__}!'
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 @pytest.mark.parametrize('functional', FUNCTIONALS)
 @pytest.mark.parametrize('parameters', ['scalar', 'none', 'tensor'])
 def test_functional_cuda_forward(
@@ -294,7 +294,7 @@ def test_functional_cuda_forward(
     assert fx.is_cuda
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 @pytest.mark.parametrize('parameters', ['scalar', 'none', 'tensor'])
 @pytest.mark.parametrize('functional', PROXIMABLE_FUNCTIONALS)
 def test_functional_cuda_prox(
