@@ -26,7 +26,7 @@ data_file.flush()
 #
 # $ y = Ax + n $
 #
-# where $n$ describes complex Gaussian noise. The image $x$ can be obtained by minimising the functionl $F$
+# where $n$ describes complex Gaussian noise. The image $x$ can be obtained by minimizing the functional $F$
 #
 # $ F(x) = ||W^{\frac{1}{2}}(Ax - y)||_2^2 $
 #

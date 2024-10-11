@@ -9,7 +9,7 @@ class L1Norm(ElementaryProximableFunctional):
     r"""Functional class for the L1 Norm.
 
     This implements the functional given by
-        :math:`f: C^N --> [0, \infty), x ->  \| W*(x-b)\|_1`,
+    :math:`f: C^N -> [0, \infty), x ->  \| W (x-b)\|_1`,
     where W is a either a scalar or tensor that corresponds to a (block-) diagonal operator
     that is applied to the input.
 
