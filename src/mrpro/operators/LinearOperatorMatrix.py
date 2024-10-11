@@ -240,7 +240,7 @@ class LinearOperatorMatrix(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tenso
             Sequence of Linear Operators to be placed on the diagonal.
         """
         operator_matrix: list[list[LinearOperator]] = [
-            [op if i == j else ZeroOp() for j in range(len(operators))] for i, op in enumerate(operators)
+            [op if i == j else ZeroOp(False) for j in range(len(operators))] for i, op in enumerate(operators)
         ]
         return cls(operator_matrix)
 
