@@ -4,6 +4,7 @@ import copy
 from typing import Literal, Self
 
 import torch
+
 from mrpro.data._kdata.KDataProtocol import _KDataProtocol
 from mrpro.utils import modify_acq_info
 
