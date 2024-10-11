@@ -4,6 +4,7 @@ import copy
 from typing import Self
 
 from einops import rearrange
+
 from mrpro.data._kdata.KDataProtocol import _KDataProtocol
 from mrpro.data.AcqInfo import AcqInfo
 from mrpro.utils import modify_acq_info

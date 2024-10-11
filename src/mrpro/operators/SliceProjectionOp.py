@@ -396,12 +396,12 @@ class SliceProjectionOp(LinearOperator):
         # by adding all possible combinations of 0 and 1 to the point and flooring
         offsets = torch.tensor(list(itertools.product([0, 1], repeat=3)))
         # all points that influence a pixel
-        # x,y,8-neighbours,(2*w+1)-raylength,3-dimensions input_shape.xinput_shape.yinput_shape.z)
+        # x,y,8-neighbors,(2*w+1)-raylength,3-dimensions input_shape.xinput_shape.yinput_shape.z)
         points_influencing_pixel = (
             einops.rearrange(pixel_rotated_y_x_zyx, '   y x zyxdim -> y x 1          1   zyxdim')
             + einops.rearrange(ray, '                   ray zyxdim -> 1 1 1          ray zyxdim')
-            + einops.rearrange(offsets, '        neighbours zyxdim -> 1 1 neighbours 1   zyxdim')
-        ).floor()  # y x neighbours ray zyx
+            + einops.rearrange(offsets, '        neighbors zyxdim -> 1 1 neighbors 1   zyxdim')
+        ).floor()  # y x neighbors ray zyx
         # directional distance in source volume coordinate system
         distance = pixel_rotated_y_x_zyx[:, :, None, None, :] - points_influencing_pixel
         # Inverse rotation projects this back to the original coordinate system, i.e
@@ -415,7 +415,7 @@ class SliceProjectionOp(LinearOperator):
 
         source = einops.rearrange(
             points_influencing_pixel,
-            'y x neighbours raylength zyxdim -> (y x) (neighbours raylength) zyxdim',
+            'y x neighbors raylength zyxdim -> (y x) (neighbors raylength) zyxdim',
         ).int()
 
         # mask of only potential source points inside the source volume

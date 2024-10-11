@@ -58,7 +58,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         dim
             the dimensions of the tensors on which the operator operates.
             For example, for a matrix-vector multiplication example, a batched matrix tensor with shape (4,30,80,160),
-            input tensors of shape (4,30,160) to be multiplied, and dim = None, it is understood that the the
+            input tensors of shape (4,30,160) to be multiplied, and dim = None, it is understood that the
             matrix representation of the operator corresponds to a block diagonal operator (with 4*30 matrices)
             and thus the algorithm returns a tensor of shape (1,1,1) containing one single value.
             In contrast, if for example, dim=(-1,), the algorithm computes a batched operator
@@ -263,7 +263,7 @@ class LinearOperatorElementwiseProductRight(
 ):
     """Operator elementwise right multiplication with a tensor.
 
-    Peforms Tensor*LinearOperator(x)
+    Performs Tensor*LinearOperator(x)
     """
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
@@ -281,7 +281,7 @@ class LinearOperatorElementwiseProductLeft(
 ):
     """Operator elementwise left multiplication with a tensor.
 
-    Peforms LinearOperator(Tensor*x)
+    Performs LinearOperator(Tensor*x)
     """
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:

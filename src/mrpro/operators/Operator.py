@@ -134,7 +134,7 @@ class OperatorSum(Operator[*Tin, Tout]):
 class OperatorElementwiseProductRight(Operator[*Tin, Tout]):
     """Operator elementwise right multiplication with a tensor.
 
-    Peforms Tensor*Operator(x)
+    Performs Tensor*Operator(x)
     """
 
     def __init__(self, operator: Operator[*Tin, Tout], scalar: torch.Tensor | complex):
