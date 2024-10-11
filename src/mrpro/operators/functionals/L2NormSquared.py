@@ -9,8 +9,8 @@ class L2NormSquared(ElementaryProximableFunctional):
     r"""Functional class for the squared L2 Norm.
 
     This implements the functional given by
-        :math:`f: C^N --> [0, \infty), x \rightarrow \| W*(x-b)\|_2^2`,
-    where :math:`W` is a either a scalar or tensor that corresponds to a (block-) diagonal operator
+    :math:`f: C^N -> [0, \infty), x -> \| W (x-b)\|_2^2`,
+    where :math:`W` is either a scalar or tensor that corresponds to a (block-) diagonal operator
     that is applied to the input. This is, for example, useful for non-Cartesian MRI
     reconstruction when using a density-compensation function for k-space pre-conditioning,
     for masking of image data, or for spatially varying regularization weights.
@@ -25,7 +25,7 @@ class L2NormSquared(ElementaryProximableFunctional):
     ) -> tuple[torch.Tensor]:
         """Forward method.
 
-        Compute the squared l2-norm of the input.
+        Compute the squared L2-norm of the input.
 
         Parameters
         ----------
@@ -50,7 +50,7 @@ class L2NormSquared(ElementaryProximableFunctional):
     ) -> tuple[torch.Tensor]:
         """Proximal Mapping of the squared L2 Norm.
 
-        Apply the proximal mapping of the squared l2-norm.
+        Apply the proximal mapping of the squared L2-norm.
 
         Parameters
         ----------
@@ -79,7 +79,7 @@ class L2NormSquared(ElementaryProximableFunctional):
     ) -> tuple[torch.Tensor]:
         """Convex conjugate of squared L2 Norm.
 
-        Apply the proximal mapping of the convex conjugate of the squared l2-norm.
+        Apply the proximal mapping of the convex conjugate of the squared L2-norm.
 
         Parameters
         ----------
