@@ -37,7 +37,7 @@ class EinsumOp(LinearOperator):
       of :math:`N` vectors :math:`x1, x2, ..., xN`. Then, the operation defined by
       :math:`A @ x: = diag(A1, A2,..., AN) * [x1, x2, ..., xN]^T`
       can be implemented by the einsum rule ``"... i j, ... j -> ... i"``.
-      This is the default behaviour of the operator.
+      This is the default behavior of the operator.
     """
 
     def __init__(self, matrix: torch.Tensor, einsum_rule: str = '... i j, ... j -> ... i') -> None:
