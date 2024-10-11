@@ -24,8 +24,8 @@ class RearrangeOp(LinearOperator):
             Also see einops.rearrange for more information.
             Example: "... h w -> ... (w h)"
         additional_info
-            Additional information passed the the rearrange function,
-            describing the the size of certain dimensions.
+            Additional information passed to the rearrange function,
+            describing the size of certain dimensions.
             Might be required for the adjoint rule.
             Example: {'h': 2, 'w': 2}
         """
@@ -34,8 +34,8 @@ class RearrangeOp(LinearOperator):
             raise ValueError(f'pattern should match (.+)->(.+) but got {pattern}.')
         input_pattern, output_pattern = match.groups()
         # swapping the input and output gets the adjoint rule
-        self._adjoint_rule = f'{output_pattern}->{input_pattern}'
-        self._forward_rule = pattern
+        self._adjoint_pattern = f'{output_pattern}->{input_pattern}'
+        self._forward_pattern = pattern
         self.additional_info = {} if additional_info is None else additional_info
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
@@ -52,7 +52,7 @@ class RearrangeOp(LinearOperator):
         -------
             rearranged tensor
         """
-        y = rearrange(x, self._forward_rule, **self.additional_info)
+        y = rearrange(x, self._forward_pattern, **self.additional_info)
         return (y,)
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor]:
@@ -67,5 +67,5 @@ class RearrangeOp(LinearOperator):
         -------
             rearranged tensor
         """
-        x = rearrange(y, self._adjoint_rule, **self.additional_info)
+        x = rearrange(y, self._adjoint_pattern, **self.additional_info)
         return (x,)
