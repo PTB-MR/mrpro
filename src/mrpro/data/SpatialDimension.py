@@ -176,9 +176,7 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
     # The right-handed ops have a type ignore because of the type hinting in torch.Tensor being wrong.
 
     @overload
-    def __rmul__(self: SpatialDimension[torch.Tensor], other: torch.Tensor) -> SpatialDimension[torch.Tensor]: ...  # type: ignore[misc]
-    @overload
-    def __rmul__(self: SpatialDimension[T_co], other: T_co) -> SpatialDimension[T_co]: ...
+    def __rmul__(self: SpatialDimension[T_co], other: T_co) -> SpatialDimension[T_co]: ...  # type: ignore[misc]
     @overload
     def __rmul__(self: SpatialDimension[int], other: float) -> SpatialDimension[float]: ...
 
@@ -209,8 +207,6 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
             return SpatialDimension(self.z / other.z, self.y / other.y, self.x / other.x)
         return SpatialDimension(self.z / other, self.y / other, self.x / other)
 
-    @overload
-    def __rtruediv__(self: SpatialDimension[torch.Tensor], other: torch.Tensor) -> SpatialDimension[torch.Tensor]: ...  # type: ignore[misc]
     @overload
     def __rtruediv__(self: SpatialDimension[int], other: float) -> SpatialDimension[float]: ...
     @overload
@@ -244,9 +240,7 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         return SpatialDimension(self.z + other, self.y + other, self.x + other)
 
     @overload
-    def __radd__(self: SpatialDimension[torch.Tensor], other: torch.Tensor) -> SpatialDimension[torch.Tensor]: ...  # type: ignore[misc]
-    @overload
-    def __radd__(self: SpatialDimension[T_co], other: T_co) -> SpatialDimension[T_co]: ...
+    def __radd__(self: SpatialDimension[T_co], other: T_co) -> SpatialDimension[T_co]: ...  # type: ignore[misc]
 
     @overload
     def __radd__(self: SpatialDimension[int], other: float) -> SpatialDimension[float]: ...
@@ -281,7 +275,7 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         return SpatialDimension(self.z // other, self.y // other, self.x // other)
 
     @overload
-    def __rfloordiv__(self: SpatialDimension[T_co], other: T_co) -> SpatialDimension[T_co]: ...
+    def __rfloordiv__(self: SpatialDimension[T_co], other: T_co) -> SpatialDimension[T_co]: ...  # type: ignore[misc]
 
     @overload
     def __rfloordiv__(self: SpatialDimension[int], other: float) -> SpatialDimension[float]: ...
@@ -289,7 +283,7 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
     @overload
     def __rfloordiv__(self: SpatialDimension[T_co_float], other: float) -> SpatialDimension[T_co_float]: ...
 
-    def __rfloordiv__(self: SpatialDimension[T_co], other: float | T_co) -> SpatialDimension:
+    def __rfloordiv__(self: SpatialDimension[T_co], other: float | T_co) -> SpatialDimension:  # type: ignore[misc]
         """Floor divide other by SpatialDimension."""
         if isinstance(other, SpatialDimension):
             return SpatialDimension(other.z // self.z, other.y // self.y, other.x // self.x)
@@ -314,9 +308,6 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         if isinstance(other, SpatialDimension):
             return SpatialDimension(self.z - other.z, self.y - other.y, self.x - other.x)
         return SpatialDimension(self.z - other, self.y - other, self.x - other)
-
-    @overload
-    def __rsub__(self: SpatialDimension[torch.Tensor], other: torch.Tensor) -> SpatialDimension[torch.Tensor]: ...  # type: ignore[misc]
 
     @overload
     def __rsub__(self: SpatialDimension[T_co], other: T_co) -> SpatialDimension[T_co]: ...  # type: ignore[misc]
