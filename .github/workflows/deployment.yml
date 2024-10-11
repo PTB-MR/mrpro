@@ -2,8 +2,8 @@ name: Publish to PyPI
 
 on:
   push:
-    # paths:
-    #   # - src/mrpro/VERSION # only trigger if VERSION file changed
+    paths:
+      - src/mrpro/VERSION
 
 jobs:
   build-testpypi-package:
@@ -114,7 +114,7 @@ jobs:
     name: Deploy to PyPI
     needs:
       - build-pypi-package
-    # if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     environment:
@@ -160,7 +160,6 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        # if: github.ref == 'refs/heads/main'
         with:
           repository-url: https://upload.pypi.org/legacy/
           verbose: true
