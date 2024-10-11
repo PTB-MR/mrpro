@@ -44,7 +44,7 @@ class ZeroFunctional(ElementaryProximableFunctional):
     def prox(self, x: torch.Tensor, sigma: float | torch.Tensor = 1.0) -> tuple[torch.Tensor,]:
         """Apply the proximal operator to a tensor.
 
-        Always returns x.
+        Always returns x, as the proximal operator of a constant functional is the identity.
 
         Parameters
         ----------
