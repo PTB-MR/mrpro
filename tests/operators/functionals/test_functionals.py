@@ -4,7 +4,6 @@ from typing import Literal, TypedDict
 import pytest
 import torch
 from mrpro.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
-from mrpro.operators.functionals import ZeroFunctional
 
 from tests import RandomGenerator
 from tests.operators.functionals.conftest import (
@@ -240,16 +239,6 @@ class NumericCase(TypedDict):
 
 # This is more readable than using pytest.mark.parametrize directly
 NUMERICCASES: dict[str, NumericCase] = {  # Name: Case
-    'ZeroFunctional with complex weight': {
-        'functional': ZeroFunctional,
-        'x': torch.tensor([1.0, 2.0, 3.0]),
-        'weight': 1j,
-        'target': torch.tensor([[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]),
-        'sigma': 0.5,
-        'fx_expected': torch.tensor(0.0j),
-        'prox_expected': torch.tensor([1.0 + 0j, 2.0 + 0j, 3.0 + 0j]),
-        'prox_convex_conj_expected': torch.tensor([0j, 0j, 0j]),
-    },
 }
 
 
@@ -285,7 +274,7 @@ def test_functional_has_testcase(functional):
     assert len(cases), f'No test case found for {functional.__name__}!'
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 @pytest.mark.parametrize('functional', FUNCTIONALS)
 @pytest.mark.parametrize('parameters', ['scalar', 'none', 'tensor'])
 def test_functional_cuda_forward(
@@ -305,7 +294,7 @@ def test_functional_cuda_forward(
     assert fx.is_cuda
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 @pytest.mark.parametrize('parameters', ['scalar', 'none', 'tensor'])
 @pytest.mark.parametrize('functional', PROXIMABLE_FUNCTIONALS)
 def test_functional_cuda_prox(

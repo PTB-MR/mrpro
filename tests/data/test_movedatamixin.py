@@ -156,7 +156,7 @@ def test_movedatamixin_convert(copy: bool, dtype: torch.dtype, attribute: str):
     assert new.module.module1.weight is new.module.module1.weight, 'shared module parameters should remain shared'
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 @pytest.mark.parametrize('already_moved', [True, False])
 @pytest.mark.parametrize('copy', [True, False])
 def test_movedatamixin_cuda(already_moved: bool, copy: bool):

@@ -44,7 +44,7 @@ def test_prewhiten_kspace_cpu(random_kheader):
     _test_prewhiten_kspace(random_kheader, 'cpu')
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 def test_prewhiten_kspace_cuda(random_kheader):
     """Prewhitening of k-space data on GPU."""
     _test_prewhiten_kspace(random_kheader, 'cuda')

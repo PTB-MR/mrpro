@@ -18,7 +18,7 @@ from mrpro.data.traj_calculators import (
 from tests.data import IsmrmrdRawTestData, PulseqRadialTestSeq
 
 
-@pytest.fixture()
+@pytest.fixture
 def valid_rad2d_kheader(monkeypatch, random_kheader):
     """KHeader with all necessary parameters for radial 2D trajectories."""
     # K-space dimensions
@@ -66,7 +66,7 @@ def test_KTrajectoryRadial2D_golden(valid_rad2d_kheader):
     assert trajectory.kz.shape == valid_shape[0]
 
 
-@pytest.fixture()
+@pytest.fixture
 def valid_rpe_kheader(monkeypatch, random_kheader):
     """KHeader with all necessary parameters for RPE trajectories."""
     # K-space dimensions
@@ -151,7 +151,7 @@ def test_KTrajectorySunflowerGoldenRpe(valid_rpe_kheader):
     assert trajectory.broadcasted_shape == np.broadcast_shapes(*rpe_traj_shape(valid_rpe_kheader))
 
 
-@pytest.fixture()
+@pytest.fixture
 def valid_cartesian_kheader(monkeypatch, random_kheader):
     """KHeader with all necessary parameters for Cartesian trajectories."""
     # K-space dimensions
@@ -199,7 +199,7 @@ def test_KTrajectoryCartesian(valid_cartesian_kheader):
     assert trajectory.kx.shape == valid_shape[2]
 
 
-@pytest.fixture()
+@pytest.fixture
 def valid_cartesian_kheader_bipolar(monkeypatch, valid_cartesian_kheader):
     """Set readout of other==1 to reversed."""
     acq_info_flags = valid_cartesian_kheader.acq_info.flags

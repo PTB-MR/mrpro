@@ -3,6 +3,7 @@
 from typing import Literal, Protocol, Self
 
 import torch
+
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
 
