@@ -60,5 +60,5 @@ class QHeader(MoveDataMixin):
         fov_x_mm = float(get_items('Rows')[0]) * get_items('PixelSpacing')[0][0]
         fov_y_mm = float(get_items('Columns')[0]) * get_items('PixelSpacing')[0][1]
         fov_z_mm = float(get_items('SliceThickness')[0])
-        fov = SpatialDimension(fov_x_mm / 1000.0, fov_y_mm / 1000.0, fov_z_mm / 1000.0)
+        fov = SpatialDimension(fov_x_mm, fov_y_mm, fov_z_mm) / 1000  # convert to m
         return cls(fov=fov)
