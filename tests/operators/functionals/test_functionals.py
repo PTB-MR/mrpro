@@ -4,7 +4,7 @@ from typing import Literal, TypedDict
 import pytest
 import torch
 from mrpro.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
-from mrpro.operators.functionals import L1NormViewAsReal
+from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared
 
 from tests import RandomGenerator
 from tests.operators.functionals.conftest import (
@@ -261,6 +261,19 @@ NUMERICCASES: dict[str, NumericCase] = {  # Name: Case
         'fx_expected': torch.tensor(22.480),
         'prox_expected': torch.tensor([-2.0 + 0.230j, -1.0 + 0.0j, 0.0 + 1.0j]),
         'prox_convex_conj_expected': torch.tensor([-2.0 - 0.115j, -2.0 + 1.560j, -1.115 + 2.0j]),
+    },
+    'L2NormSquared real odl': {
+        # Generated with ODL
+        'functional': L2NormSquared,
+        'x': torch.tensor([[[-3.0, -2.0, -1.0], [0.0, 1.0, 2.0]]]),
+        'weight': 2.0,
+        'target': torch.tensor([[[0.340, 0.130, 0.230], [0.230, -1.120, -0.190]]]),
+        'sigma': 0.5,
+        'fx_expected': torch.tensor(106.195198),
+        'prox_expected': torch.tensor([[[-0.328, -0.296, -0.016], [0.184, -0.696, 0.248]]]),
+        'prox_convex_conj_expected': torch.tensor(
+            [[[-2.983529, -1.943529, -1.049412], [-0.108235, 1.468235, 1.971765]]]
+        ),
     },
 }
 
