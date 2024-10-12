@@ -14,7 +14,7 @@ from mrpro.operators.Operator import Operator
 class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """Functional Base Class."""
 
-    def __rmul__(self, scalar: torch.Tensor | float) -> Functional:  # type: ignore[misc]
+    def __rmul__(self, scalar: torch.Tensor | float) -> Functional:
         """Multiply functional with scalar."""
         if not isinstance(scalar, complex | int | float | torch.Tensor):
             raise NotImplementedError
@@ -22,10 +22,8 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
     def _throw_if_negative_or_complex(
         self, x: torch.Tensor | float, message: str = 'sigma must be real and contain only positive values'
-    ):
-        """Throw an exception if any element of x is negative or complex.
-
-        Raises a ValueError if x contains negative or complex values.
+    ) -> None:
+        """Throw an ValueError if any element of x is negative or complex.
 
         Parameters
         ----------
@@ -44,8 +42,8 @@ class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
 class ElementaryFunctional(Functional):
     r"""Elementary functional base class.
 
-    An elementary functional is a functional that can be written as
-    :math:`f(x) = \phi( weight ( x - target))`, returning a real value.
+    Here, an 'elementary' functional is a functional that can be written as
+    :math:`f(x) = \phi ( weight ( x - target))`, returning a real value.
     It does not require another functional for initialization.
     """
 
@@ -60,24 +58,24 @@ class ElementaryFunctional(Functional):
         r"""Initialize a Functional.
 
         We assume that functionals are given in the form
-            :math:`f(x) = \phi( weight ( x - target))`
+        :math:`f(x) = \phi ( weight ( x - target))`
         for some functional :math:`\phi`.
 
         Parameters
         ----------
         weight
-            weighting of the norm (see above)
+            weight parameter (see above)
         target
-            element to which distance is taken - often data tensor (see above)
+            target element - often data tensor (see above)
         dim
-            dimension(s) over which norm is calculated.
-            All other dimensions of  `weight ( x - target))` will be treated as batch dimensions.
+            dimension(s) over which functional is reduced.
+            All other dimensions of  `weight ( x - target)` will be treated as batch dimensions.
         divide_by_n
-            if True, the result is scaled by the number of elements of the dimensions index by `dim` in
-            the tensor `weight ( x - target))`. If true, the norm is thus calculated as the mean,
+            if true, the result is scaled by the number of elements of the dimensions index by `dim` in
+            the tensor `weight ( x - target)`. If true, the functional is thus calculated as the mean,
             else the sum.
         keepdim
-            if true, the dimension(s) of the input indexed by dim are mainted and collapsed to singeltons,
+            if true, the dimension(s) of the input indexed by dim are maintained and collapsed to singeltons,
             else they are removed from the result.
 
         """
@@ -98,15 +96,15 @@ class ElementaryFunctional(Functional):
         """Apply factor for normalization.
 
         Input is scaled by the number of elements of either the input
-        or optional shape.
+        or product of the optional shape entries
 
         Parameters
         ----------
         x
             input to be scaled.
         shape
-            input will be divided by the product these numbers.
-            If None, it divides by the number of elements of the input.
+            input will be divided by the product of these numbers.
+            If None, it will be divided by the number of elements of the input.
 
         Returns
         -------
@@ -127,15 +125,15 @@ class ProximableFunctional(Functional, ABC):
     r"""ProximableFunctional Base Class.
 
     A proximable functional is a functional :math:`f(x)` that has a prox implementation,
-    i.e. a function that solves the problem :math:`\min_x f(x) + 1/(2\sigma) ||x - y||^2`.
+    i.e. a function that yields :math:`argmin_x \sigma f(x) + 1/2 ||x - y||^2`
+    and a prox_convex_conjugate, yielding the prox of the convex conjugate.
     """
 
     @abstractmethod
     def prox(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         r"""Apply proximal operator.
 
-        Applies :math:`prox_{\sigma f}(x) = argmin_{p} (f(p) + 1/(2*sigma) \|x-p\|^{2}`.
-        to a given `x`, i.e. finds `p`.
+        Yields :math:`prox_{\sigma f}(x) = argmin_{p} (\sigma f(p) + 1/2 \|x-p\|^{2}` given :math:`x` and :math:`\sigma`
 
         Parameters
         ----------
@@ -146,14 +144,14 @@ class ProximableFunctional(Functional, ABC):
 
         Returns
         -------
-            Proximal operator applied to the input tensor.
+            Proximal operator applied to the input tensor
         """
 
     def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
-        r"""Apply proximal of convex conjugate of functional.
+        r"""Apply proximal operator of convex conjugate of functional.
 
-        Applies :math:`prox_{\sigma f*}(x) = argmin_{p} (f(p) + 1/(2*sigma) \|x-p\|^{2}`,
-        where f* denotes the convex conjugate of f, to a given `x`, i.e. finds `p`.
+        Yields :math:`prox_{\sigma f^*}(x) = argmin_{p} (\sigma f^*(p) + 1/2 \|x-p\|^{2}`,
+        where :math:`f^*` denotes the convex conjugate of :math:`f`, given :math:`x` and :math:`\sigma`.
 
         Parameters
         ----------
@@ -164,7 +162,7 @@ class ProximableFunctional(Functional, ABC):
 
         Returns
         -------
-            Proximal operator  of the convex conjugate applied to the input tensor.
+            Proximal operator  of the convex conjugate applied to the input tensor
         """
         if not isinstance(sigma, torch.Tensor):
             sigma = torch.as_tensor(1.0 * sigma, device=self.target.device)
@@ -172,7 +170,7 @@ class ProximableFunctional(Functional, ABC):
         sigma[sigma < 1e-8] += 1e-6
         return (x - sigma * self.prox(x / sigma, 1 / sigma)[0],)
 
-    def __rmul__(self, scalar: torch.Tensor | complex) -> ProximableFunctional:  # type: ignore[misc]
+    def __rmul__(self, scalar: torch.Tensor | complex) -> ProximableFunctional:
         """Multiply functional with scalar."""
         if not isinstance(scalar, complex | int | float | torch.Tensor):
             raise NotImplementedError
@@ -182,11 +180,12 @@ class ProximableFunctional(Functional, ABC):
 class ElementaryProximableFunctional(ElementaryFunctional, ProximableFunctional):
     r"""Elementary proximable functional base class.
 
-    An elementary functional is a functional that can be written as
-    :math:`f(x) = \phi( weight ( x - target))`, returning a real value.
+    Here, an *elementary* functional is a functional that can be written as
+    :math:`f(x) = \phi ( weight ( x - target))`, returning a real value.
     It does not require another functional for initialization.
+
     A proximable functional is a functional :math:`f(x)` that has a prox implementation,
-    i.e. a function that solves the problem :math:`\min_x f(x) + 1/(2\sigma) ||x - y||^2`.
+    i.e. a function that yields :math:`argmin_x \sigma f(x) + 1/2 \|x - y\|^2`.
     """
 
 

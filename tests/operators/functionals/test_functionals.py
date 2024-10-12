@@ -4,6 +4,7 @@ from typing import Literal, TypedDict
 import pytest
 import torch
 from mrpro.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
+from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared
 
 from tests import RandomGenerator
 from tests.operators.functionals.conftest import (
@@ -97,7 +98,7 @@ def test_functional_prox_optimality(case: FunctionalTestCase):
     def prox_criterion(p):
         diff = x - p
         l2 = torch.sum((diff * diff.conj()).real, dim=functional.dim, keepdim=functional.keepdim)
-        return (functional(p)[0] + 1 / (2 * case.sigma) * l2).sum()
+        return (case.sigma * functional(p)[0] + 1 / 2 * l2).sum()
 
     for perturbation in (0, 1e-3, 0.1):
         p = (prox + perturbation * case.rng.rand_like(prox)).requires_grad_()
@@ -239,6 +240,41 @@ class NumericCase(TypedDict):
 
 # This is more readable than using pytest.mark.parametrize directly
 NUMERICCASES: dict[str, NumericCase] = {  # Name: Case
+    'L1NormViewAsReal real': {
+        # The same as the L1Norm case
+        'functional': L1NormViewAsReal,
+        'x': torch.tensor([[[-3.0, -2.0, -1.0], [0.0, 1.0, 2.0]]]),
+        'weight': 2.0,
+        'target': torch.tensor([[[0.340, 0.130, 0.230], [0.230, -1.120, -0.190]]]),
+        'sigma': 0.5,
+        'fx_expected': torch.tensor(22.480),
+        'prox_expected': torch.tensor([[[-2.0, -1.0, 0.0], [0.230, 0.0, 1.0]]]),
+        'prox_convex_conj_expected': torch.tensor([[[-2.0, -2.0, -1.115], [-0.115, 1.560, 2.0]]]),
+    },
+    'L1NormViewAsReal complex': {
+        # The same as the real case, weight, target and x are complex
+        'functional': L1NormViewAsReal,
+        'x': torch.tensor([-3.0 + 0j, -2.0 + 1.0j, -1.0 + 2.0j]),
+        'weight': 2.0 + 2.0j,
+        'target': torch.tensor([0.340 + 0.230j, 0.130 - 1.120j, 0.230 - 0.190j]),
+        'sigma': 0.5,
+        'fx_expected': torch.tensor(22.480),
+        'prox_expected': torch.tensor([-2.0 + 0.230j, -1.0 + 0.0j, 0.0 + 1.0j]),
+        'prox_convex_conj_expected': torch.tensor([-2.0 - 0.115j, -2.0 + 1.560j, -1.115 + 2.0j]),
+    },
+    'L2NormSquared real odl': {
+        # Generated with ODL
+        'functional': L2NormSquared,
+        'x': torch.tensor([[[-3.0, -2.0, -1.0], [0.0, 1.0, 2.0]]]),
+        'weight': 2.0,
+        'target': torch.tensor([[[0.340, 0.130, 0.230], [0.230, -1.120, -0.190]]]),
+        'sigma': 0.5,
+        'fx_expected': torch.tensor(106.195198),
+        'prox_expected': torch.tensor([[[-0.328, -0.296, -0.016], [0.184, -0.696, 0.248]]]),
+        'prox_convex_conj_expected': torch.tensor(
+            [[[-2.983529, -1.943529, -1.049412], [-0.108235, 1.468235, 1.971765]]]
+        ),
+    },
 }
 
 
@@ -274,7 +310,7 @@ def test_functional_has_testcase(functional):
     assert len(cases), f'No test case found for {functional.__name__}!'
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 @pytest.mark.parametrize('functional', FUNCTIONALS)
 @pytest.mark.parametrize('parameters', ['scalar', 'none', 'tensor'])
 def test_functional_cuda_forward(
@@ -294,7 +330,7 @@ def test_functional_cuda_forward(
     assert fx.is_cuda
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 @pytest.mark.parametrize('parameters', ['scalar', 'none', 'tensor'])
 @pytest.mark.parametrize('functional', PROXIMABLE_FUNCTIONALS)
 def test_functional_cuda_prox(
