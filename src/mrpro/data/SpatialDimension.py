@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import operator
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
@@ -19,6 +18,7 @@ T = TypeVar('T', int, float, np.ndarray, torch.Tensor)
 T_co = TypeVar('T_co', int, float, np.ndarray, torch.Tensor, covariant=True)
 T_co_float = TypeVar('T_co_float', float, np.ndarray, torch.Tensor, covariant=True)
 T_co_vector = TypeVar('T_co_vector', np.ndarray, torch.Tensor, covariant=True)
+T_co_scalar = TypeVar('T_co_scalar', int, float, covariant=True)
 
 
 class XYZ(Protocol[T]):
@@ -328,39 +328,68 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         """Negate SpatialDimension."""
         return SpatialDimension(-self.z, -self.y, -self.x)
 
-    def __compare__(
-        self: SpatialDimension[T_co],
-        other: SpatialDimension[T_co],
-        op: Callable[[T_co, T_co], bool | torch.Tensor | np.ndarray],
-    ) -> bool:
-        """Perform comparison operation on SpatialDimension."""
-        x = op(self.x, other.x)
-        y = op(self.y, other.y)
-        z = op(self.z, other.z)
-        xx = x if isinstance(x, bool) else bool(x.all())
-        yy = y if isinstance(y, bool) else bool(y.all())
-        zz = z if isinstance(z, bool) else bool(z.all())
-        return xx and yy and zz
+    @overload
+    def __eq__(self: SpatialDimension[T_co_scalar], other: object) -> bool: ...
+    @overload
+    def __eq__(self: SpatialDimension[T_co_vector], other: SpatialDimension[T_co_vector]) -> T_co_vector: ...
 
-    def __eq__(self: SpatialDimension[T_co], other: object) -> bool:
+    def __eq__(
+        self: SpatialDimension[T_co_scalar] | SpatialDimension[T_co_vector],
+        other: object | SpatialDimension[T_co_vector],
+    ) -> bool | T_co_vector:
         """Check if self is equal to other."""
         if not isinstance(other, SpatialDimension):
             return NotImplemented
-        else:
-            return self.__compare__(other, operator.eq)
+        return (self.z == other.z) & (self.y == other.y) & (self.x == other.x)
 
-    def __lt__(self: SpatialDimension[T_co], other: SpatialDimension[T_co]) -> bool:
+    @overload
+    def __lt__(self: SpatialDimension[T_co_vector], other: SpatialDimension[T_co_vector]) -> T_co_vector: ...
+    @overload
+    def __lt__(self: SpatialDimension[T_co_scalar], other: SpatialDimension[T_co_scalar]) -> bool: ...
+    def __lt__(
+        self: SpatialDimension[T_co_scalar] | SpatialDimension[T_co_vector],
+        other: SpatialDimension[T_co_scalar] | SpatialDimension[T_co_vector],
+    ) -> bool | T_co_vector:
         """Check if self is less than other."""
-        return self.__compare__(other, operator.lt)
+        if not isinstance(other, SpatialDimension):
+            return NotImplemented
+        return (self.x < other.x) & (self.y < other.y) & (self.z < other.z)
 
-    def __le__(self: SpatialDimension[T_co], other: SpatialDimension[T_co]) -> bool:
-        """Check if sel is less of equal than other."""
-        return self.__compare__(other, operator.le)
+    @overload
+    def __le__(self: SpatialDimension[T_co_vector], other: SpatialDimension[T_co_vector]) -> T_co_vector: ...
+    @overload
+    def __le__(self: SpatialDimension[T_co_scalar], other: SpatialDimension[T_co_scalar]) -> bool: ...
+    def __le__(
+        self: SpatialDimension[T_co_scalar] | SpatialDimension[T_co_vector],
+        other: SpatialDimension[T_co_scalar] | SpatialDimension[T_co_vector],
+    ) -> bool | T_co_vector:
+        """Check if self is less than or equal to other."""
+        if not isinstance(other, SpatialDimension):
+            return NotImplemented
+        return (self.x <= other.x) & (self.y <= other.y) & (self.z <= other.z)
 
-    def __gt__(self: SpatialDimension[T_co], other: SpatialDimension[T_co]) -> bool:
+    @overload
+    def __gt__(self: SpatialDimension[T_co_vector], other: SpatialDimension[T_co_vector]) -> T_co_vector: ...
+    @overload
+    def __gt__(self: SpatialDimension[T_co_scalar], other: SpatialDimension[T_co_scalar]) -> bool: ...
+    def __gt__(
+        self: SpatialDimension[T_co_scalar] | SpatialDimension[T_co_vector],
+        other: SpatialDimension[T_co_scalar] | SpatialDimension[T_co_vector],
+    ) -> bool | T_co_vector:
         """Check if self is greater than other."""
-        return self.__compare__(other, operator.gt)
+        if not isinstance(other, SpatialDimension):
+            return NotImplemented
+        return (self.x > other.x) & (self.y > other.y) & (self.z > other.z)
 
-    def __ge__(self: SpatialDimension[T_co], other: SpatialDimension[T_co]) -> bool:
-        """Check if self is greater or equal than other."""
-        return self.__compare__(other, operator.ge)
+    @overload
+    def __ge__(self: SpatialDimension[T_co_vector], other: SpatialDimension[T_co_vector]) -> T_co_vector: ...
+    @overload
+    def __ge__(self: SpatialDimension[T_co_scalar], other: SpatialDimension[T_co_scalar]) -> bool: ...
+    def __ge__(
+        self: SpatialDimension[T_co_scalar] | SpatialDimension[T_co_vector],
+        other: SpatialDimension[T_co_scalar] | SpatialDimension[T_co_vector],
+    ) -> bool | T_co_vector:
+        """Check if self is greater than or equal to other."""
+        if not isinstance(other, SpatialDimension):
+            return NotImplemented
+        return (self.x >= other.x) & (self.y >= other.y) & (self.z >= other.z)
