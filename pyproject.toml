@@ -24,6 +24,7 @@ requires-python = ">=3.11,<3.14"
 dynamic = ["version"]
 keywords = ["MRI, reconstruction, processing, PyTorch"]
 authors = [
+    { name = "MRpro Team", email = "info@emerpro.de" },
     { name = "Christoph Kolbitsch", email = "christoph.kolbitsch@ptb.de" },
     { name = "Patrick Schuenke", email = "patrick.schuenke@ptb.de" },
     { name = "Felix Zimmermann", email = "felix.zimmermann89@ptb.de" },
