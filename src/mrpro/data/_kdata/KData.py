@@ -12,7 +12,6 @@ import ismrmrd
 import numpy as np
 import torch
 from einops import rearrange
-
 from mrpro.data._kdata.KDataRearrangeMixin import KDataRearrangeMixin
 from mrpro.data._kdata.KDataRemoveOsMixin import KDataRemoveOsMixin
 from mrpro.data._kdata.KDataSelectMixin import KDataSelectMixin
@@ -140,7 +139,6 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             # Select acquisition with n_coils receiver coils
             acquisitions = [acq for acq in acquisitions if has_n_coils(n_coils, acq)]
 
-        # Make sure there are any acquisitions left
         if len(acquisitions) == 0:
             raise ValueError('No acquisitions meeting the given filter criteria were found.')
 
