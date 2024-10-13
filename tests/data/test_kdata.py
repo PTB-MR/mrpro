@@ -238,7 +238,7 @@ def test_KData_to_float64tensor(ismrmrd_cart):
     torch.testing.assert_close(kdata_float64.data.to(dtype=torch.complex64), kdata.data)
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 def test_KData_to_cudatensor(ismrmrd_cart):
     """Move KData to cuda  using other-tensor overload."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
@@ -292,7 +292,7 @@ def test_KData_to_complex128_header(ismrmrd_cart):
     assert kdata_complex128.header.acq_info.user_int.dtype == torch.int32
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 def test_KData_to_cuda(ismrmrd_cart):
     """Test KData.to to move data to CUDA memory."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
@@ -304,7 +304,7 @@ def test_KData_to_cuda(ismrmrd_cart):
     assert kdata_cuda.traj.kx.is_cuda
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 def test_KData_cuda(ismrmrd_cart):
     """Move KData object to CUDA memory."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
@@ -320,7 +320,7 @@ def test_KData_cuda(ismrmrd_cart):
     assert not kdata_cuda.is_cpu
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 def test_KData_cpu(ismrmrd_cart):
     """Move KData object to CUDA memory and back to CPU memory."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
@@ -342,7 +342,7 @@ def test_Kdata_device_cpu(ismrmrd_cart):
     assert kdata.is_cpu
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 def test_KData_inconsistentdevice(ismrmrd_cart):
     """Inconsistent device raises exception."""
     kdata_cpu = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
