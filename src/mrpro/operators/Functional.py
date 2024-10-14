@@ -1,4 +1,3 @@
-
 """Base Class Functional."""
 
 from __future__ import annotations
