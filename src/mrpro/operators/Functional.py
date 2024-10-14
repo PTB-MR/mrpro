@@ -246,7 +246,7 @@ class ScaledProximableFunctional(ScaledFunctional, ProximableFunctional):
         )
         return (self.functional.prox(x, sigma * self.scale)[0],)
 
-    def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
+    def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor | complex = 1.0) -> tuple[torch.Tensor]:
         """Proximal Mapping of the convex conjugate.
 
         Parameters
