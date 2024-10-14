@@ -47,9 +47,8 @@ def test_functional_negative_scale(
 
     def case(scale):
         x = torch.zeros(2)
-        f = getattr(scale * functional(keepdim=True), function)
         with pytest.raises((ValueError, TypeError)):
-            f(x)
+            getattr(scale * functional(keepdim=True), function)(x)
 
     # all these cases should throw an exception:
     case(scale=-1)  # negative
