@@ -14,7 +14,7 @@ from mrpro.operators.Operator import Operator
 class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """Functional Base Class."""
 
-    def __rmul__(self, scalar: torch.Tensor | float) -> Functional:
+    def __rmul__(self, scalar: torch.Tensor | complex) -> Functional:
         """Multiply functional with scalar."""
         if not isinstance(scalar, complex | int | float | torch.Tensor):
             raise NotImplementedError
