@@ -45,23 +45,3 @@ class IdentityOp(LinearOperator):
         return (x,)
 
 
-class MultiIdentityOp(EndomorphOperator):
-    r"""The Identity Operator.
-
-    An endomorph Operator that returns multiple inputs unchanged.
-    """
-
-    @endomorph
-    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
-        """Identity of input.
-
-        Parameters
-        ----------
-        x
-            input tensor
-
-        Returns
-        -------
-            the input tensor
-        """
-        return x
