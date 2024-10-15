@@ -4,8 +4,8 @@
 
 .. autoclass:: {{ objname }}
    :members:
+   :inherited-members: Module
    :show-inheritance:
-   :inherited-members:
 
    {% block methods %}
    .. automethod:: __init__
