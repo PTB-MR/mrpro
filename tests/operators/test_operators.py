@@ -248,7 +248,7 @@ def test_adjoint_sum():
 
 
 def test_gram_shortcuts():
-    """Test that .gram for composition and sclalar multiplication results in shortcuts."""
+    """Test that .gram for composition and scalar multiplication results in shortcuts."""
 
     class GramOnlyOperator(LinearOperator):
         """Operator-Wrapper that only has a working .gram property."""
