@@ -1,4 +1,4 @@
-"""Sampling from the nd von Mises-Fisher distribution."""
+"""Sampling from von Mises-Fisher distribution."""
 
 # based on: https://github.com/jasonlaska/spherecluster/blob/701b0b1909088a56e353b363b2672580d4fe9d93/spherecluster/util.py
 # http://stats.stackexchange.com/questions/156729/sampling-from-von-mises-fisher-distribution-in-python
@@ -6,6 +6,7 @@
 # http://www.stat.pitt.edu/sungkyu/software/randvonMisesFisher3.pdf
 
 from math import log, sqrt
+
 import torch
 
 
@@ -42,15 +43,15 @@ def sample_vmf(mu: torch.Tensor, kappa: float, n_samples: int) -> torch.Tensor:
     uniform_dist = torch.distributions.Uniform(0, 1)
     normal_dist = torch.distributions.Normal(0, 1)
 
-    weights = []
-    while sum(len(w) for w in weights) < n_samples:
+    ws: list[torch.Tensor] = []
+    while sum(len(w) for w in ws) < n_samples:
         # rejection sampling
-        z = beta_dist.sample((n_samples,))
+        z = beta_dist.sample(torch.Size((n_samples,)))
         w = (1.0 - (1.0 + b) * z) / (1.0 - (1.0 - b) * z)
-        u = uniform_dist.sample((n_samples,))
+        u = uniform_dist.sample(torch.Size((n_samples,)))
         accepted = kappa * w + (dim - 1) * torch.log(1.0 - x * w) - c >= torch.log(u)
-        weights.append(w[accepted])
-    weights = torch.cat(weights)[:n_samples]
+        ws.append(w[accepted])
+    weights = torch.cat(ws)[:n_samples]
 
     v = normal_dist.sample(mu.shape)
     orthogonal_vectors = v - (mu * v).sum(-1, keepdim=True) * mu / mu.norm(dim=-1, keepdim=True)

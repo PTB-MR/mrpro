@@ -46,12 +46,12 @@ import math
 import re
 import warnings
 from collections.abc import Callable, Sequence
-from typing import Literal, Self, overload
+from typing import Literal, Self, cast, overload
 
 import numpy as np
 import torch
+import torch.nn.functional as F  # noqa: N812
 from scipy._lib._util import check_random_state
-from scipy.spatial.transform import Rotation as Rotation_scipy
 
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.typing import IndexerType, NestedSequence
@@ -303,6 +303,126 @@ def _quaternion_to_euler(quaternion: torch.Tensor, seq: str, extrinsic: bool):
     angles += (angles < -torch.pi) * 2 * torch.pi
     angles -= (angles > torch.pi) * 2 * torch.pi
     return angles
+
+
+def _align_vectors(
+    a: torch.Tensor,
+    b: torch.Tensor,
+    weights: torch.Tensor,
+    return_sensitivity: bool = False,
+    allow_improper: bool = False,
+):
+    """Estimate a rotation to optimally align two sets of vectors."""
+    n_vecs = a.shape[0]
+
+    if a.shape != b.shape:
+        raise ValueError(f'Expected inputs to have same shapes, got {a.shape} and {b.shape}')
+
+    if weights.shape != (n_vecs,) or (weights < 0).any():
+        raise ValueError(f'Invalid weights: expected shape ({n_vecs},) with non-negative values')
+
+    dtype = torch.result_type(a, b)
+
+    # we require double precision for the calculations to match scipy results
+    weights = weights.double()
+    a = a.double()
+    b = b.double()
+
+    inf_mask = torch.isinf(weights)
+    if inf_mask.sum() > 1:
+        raise ValueError('Only one infinite weight is allowed')
+    if inf_mask.any() or n_vecs == 1:
+        # special case for one vector pair or one infinite weight
+        if return_sensitivity:
+            raise ValueError('Cannot return sensitivity matrix with an infinite weight or one vector pair')
+
+        a_primary, b_primary = (a[0], b[0]) if n_vecs == 1 else (a[inf_mask][0], b[inf_mask][0])
+
+        a_primary, b_primary = F.normalize(a_primary, dim=0), F.normalize(b_primary, dim=0)
+
+        # Cross product and angle between the primary vectors
+        cross = torch.linalg.cross(b_primary, a_primary, dim=0)
+        angle = torch.atan2(torch.norm(cross), torch.dot(a_primary, b_primary))
+
+        rot_primary = _rodrigues_rotation(cross, angle)
+
+        if n_vecs == 1:
+            return rot_primary.to(dtype), torch.tensor(0.0, device=a.device, dtype=dtype)
+
+        a_secondary, b_secondary = a[~inf_mask], b[~inf_mask]
+        sec_w = weights[~inf_mask]
+
+        rot_sec_b = (rot_primary @ b_secondary.T).T
+
+        sin_term = torch.einsum('ij,j->i', torch.linalg.cross(rot_sec_b, a_secondary, dim=1), a_primary)
+        cos_term = torch.einsum('ij,ij->i', rot_sec_b, a_secondary) - torch.einsum(
+            'ij,j->i', rot_sec_b, a_primary
+        ) * torch.einsum('ij,j->i', a_secondary, a_primary)
+
+        phi = torch.atan2((sec_w * sin_term).sum(), (sec_w * cos_term).sum())
+
+        rot_secondary = _rodrigues_rotation(a_primary, phi)
+        rot_optimal = rot_secondary @ rot_primary
+
+        rssd_w = weights.clone()
+        rssd_w[inf_mask] = 0
+        est_a = (rot_optimal @ b.T).T
+        rssd = torch.sqrt(torch.sum(rssd_w * torch.sum((a - est_a) ** 2, dim=1)))
+
+        return rot_optimal.to(dtype), rssd.to(dtype)
+    weights = weights.double()
+    a = a.double()
+    b = b.double()
+    # weights = F.normalize(weights, dim=0)
+
+    corr_mat = torch.einsum('i j, i k, i -> j k', a, b, weights)
+
+    u, s, vt = cast(tuple[torch.Tensor, torch.Tensor, torch.Tensor], torch.linalg.svd(corr_mat))
+
+    if (u @ vt).det() < 0 and not allow_improper:
+        u[:, -1] *= -1
+
+    rot_optimal = (u @ vt).to(dtype)
+
+    if s[1] + s[2] < 1e-16 * s[0]:
+        warnings.warn('Optimal rotation is not uniquely or poorly defined for the given sets of vectors.', stacklevel=2)
+
+    rssd = ((weights * (b**2 + a**2).sum(dim=1)).sum() - 2 * s.sum()).clamp_min(0.0).sqrt().to(dtype)
+
+    if return_sensitivity:
+        zeta = (s[0] + s[1]) * (s[1] + s[2]) * (s[2] + s[0])
+        kappa = s[0] * s[1] + s[1] * s[2] + s[2] * s[0]
+        sensitivity = (
+            weights.mean() / zeta * (kappa * torch.eye(3, device=a.device, dtype=torch.float64) + corr_mat @ corr_mat.T)
+        ).to(dtype)
+        return rot_optimal, rssd, sensitivity
+
+    return rot_optimal, rssd
+
+
+def _rodrigues_rotation(axis: torch.Tensor, angle: torch.Tensor) -> torch.Tensor:
+    """Compute a rotation matrix using Rodrigues' rotation formula."""
+    axis = F.normalize(axis, dim=0)
+    rotation_matrix = torch.eye(3, device=axis.device) + torch.tensor(
+        [[0, -axis[2], axis[1]], [axis[2], 0, -axis[0]], [-axis[1], axis[0], 0]], device=axis.device
+    ) / torch.sinc(angle / torch.pi)
+    return rotation_matrix
+    # c, s = torch.cos(angle), torch.sin(angle)
+    # t = 1 - c
+    # x, y, z = axis
+    # return torch.stack(
+    #     [
+    #         t * x * x + c,
+    #         t * x * y - z * s,
+    #         t * x * z + y * s,
+    #         t * x * y + z * s,
+    #         t * y * y + c,
+    #         t * y * z - x * s,
+    #         t * x * z - y * s,
+    #         t * y * z + x * s,
+    #         t * z * z + c,
+    #     ]
+    # ).reshape(3, 3)
 
 
 class Rotation(torch.nn.Module):
@@ -1586,6 +1706,7 @@ class Rotation(torch.nn.Module):
         weights: torch.Tensor | Sequence[float] | Sequence[Sequence[float]] | None = None,
         *,
         return_sensitivity: Literal[False] = False,
+        allow_improper: bool = ...,
     ) -> tuple[Rotation, float]: ...
 
     @overload
@@ -1597,6 +1718,7 @@ class Rotation(torch.nn.Module):
         weights: torch.Tensor | Sequence[float] | Sequence[Sequence[float]] | None = None,
         *,
         return_sensitivity: Literal[True],
+        allow_improper: bool = ...,
     ) -> tuple[Rotation, float, torch.Tensor]: ...
 
     @classmethod
@@ -1607,43 +1729,101 @@ class Rotation(torch.nn.Module):
         weights: torch.Tensor | Sequence[float] | Sequence[Sequence[float]] | None = None,
         *,
         return_sensitivity: bool = False,
+        allow_improper: bool = False,
     ) -> tuple[Rotation, float] | tuple[Rotation, float, torch.Tensor]:
-        """Estimate a rotation to optimally align two sets of vectors.
+        R"""Estimate a rotation to optimally align two sets of vectors.
 
-        For more information, see `scipy.spatial.transform.Rotation.align_vectors`.
-        This will move to cpu, invoke scipy, convert to tensor, move back to device of a.
+        Find a rotation between frames A and B which best aligns a set of
+        vectors `a` and `b` observed in these frames. The following loss
+        function is minimized to solve for the rotation matrix :math:`R`:
+
+        .. math::
+
+            L(R) = \\frac{1}{2} \\sum_{i = 1}^{n} w_i \\lVert \\mathbf{a}_i -
+            R \\mathbf{b}_i \\rVert^2 ,
+
+        where :math:`w_i`'s are the `weights` corresponding to each vector.
+
+        The rotation is estimated with Kabsch algorithm [1]_, and solves what
+        is known as the "pointing problem", or "Wahba's problem" [2]_.
+
+        There are two special cases. The first is if a single vector is given
+        for `a` and `b`, in which the shortest distance rotation that aligns
+        `b` to `a` is returned. The second is when one of the weights is infinity.
+        In this case, the shortest distance rotation between the primary infinite weight
+        vectors is calculated as above. Then, the rotation about the aligned primary
+        vectors is calculated such that the secondary vectors are optimally
+        aligned per the above loss function. The result is the composition
+        of these two rotations. The result via this process is the same as the
+        Kabsch algorithm as the corresponding weight approaches infinity in
+        the limit. For a single secondary vector this is known as the
+        "align-constrain" algorithm [3]_.
+
+        For both special cases (single vectors or an infinite weight), the
+        sensitivity matrix does not have physical meaning and an error will be
+        raised if it is requested. For an infinite weight, the primary vectors
+        act as a constraint with perfect alignment, so their contribution to
+        `rssd` will be forced to 0 even if they are of different lengths.
+
+        Parameters
+        ----------
+        a
+            Vector components observed in initial frame A. Each row of `a`
+            denotes a vector.
+        b
+            Vector components observed in another frame B. Each row of `b`
+            denotes a vector.
+        weights
+            Weights describing the relative importance of the vector
+            observations. If None (default), then all values in `weights` are
+            assumed to be 1. One and only one weight may be infinity, and
+            weights must be positive.
+        return_sensitivity
+            Whether to return the sensitivity matrix.
+        allow_improper
+            If True, allow improper rotations to be returned. If False (default),
+            then the rotation is restricted to be proper.
+
+        Returns
+        -------
+        rotation
+            Best estimate of the rotation that transforms `b` to `a`.
+        rssd
+            Square root of the weighted sum of the squared distances between the given sets of
+            vectors
+            after alignment.
+        sensitivity_matrix
+            Sensitivity matrix of the estimated rotation estimate as explained
+            in Notes.
+
+        References
+        ----------
+        .. [1] https://en.wikipedia.org/wiki/Kabsch_algorithm
+        .. [2] https://en.wikipedia.org/wiki/Wahba%27s_problem
+        .. [3] Magner, Robert,
+                "Extending target tracking capabilities through trajectory and
+                momentum setpoint optimization." Small Satellite Conference,
+                2018.
         """
         a_tensor = torch.stack([torch.as_tensor(el) for el in a]) if isinstance(a, Sequence) else torch.as_tensor(a)
-        a_np = a_tensor.numpy(force=True)
-
         b_tensor = torch.stack([torch.as_tensor(el) for el in b]) if isinstance(b, Sequence) else torch.as_tensor(b)
-        b_np = b_tensor.numpy(force=True)
-
         dtype = torch.promote_types(a_tensor.dtype, b_tensor.dtype)
         if not dtype.is_floating_point:
             # boolean or integer inputs will result in float32
             dtype = torch.float32
-
+        a_tensor = torch.atleast_2d(a_tensor).to(dtype=dtype)
+        b_tensor = torch.atleast_2d(b_tensor).to(dtype=dtype)
         if weights is None:
-            weights_np = None
-        elif isinstance(weights, torch.Tensor):
-            weights_np = weights.numpy(force=True)
+            weights_tensor = a_tensor.new_ones(a_tensor.shape[:-1], dtype=dtype)
         else:
-            weights_np = np.asarray(weights)
+            weights_tensor = torch.atleast_1d(torch.as_tensor(weights, dtype=dtype))
 
         if return_sensitivity:
-            rotation_sp, rssd, sensitivity_np = Rotation_scipy.align_vectors(a_np, b_np, weights_np, True)
-            sensitivity = torch.as_tensor(sensitivity_np, dtype=dtype)
+            rot_matrix, rssd, sensitivity = _align_vectors(a_tensor, b_tensor, weights_tensor, True, allow_improper)
+            return cls.from_matrix(rot_matrix), rssd, sensitivity
         else:
-            rotation_sp, rssd = Rotation_scipy.align_vectors(a_np, b_np, weights_np, False)
-
-        quat_np = rotation_sp.as_quat()
-        quat = torch.as_tensor(quat_np, device=a_tensor.device, dtype=dtype)
-
-        if return_sensitivity:
-            return (cls(quat), float(rssd), sensitivity)
-        else:
-            return (cls(quat), float(rssd))
+            rot_matrix, rssd = _align_vectors(a_tensor, b_tensor, weights_tensor, False, allow_improper)
+            return cls.from_matrix(rot_matrix), rssd
 
     @property
     def shape(self) -> torch.Size:
