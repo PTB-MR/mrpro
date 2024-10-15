@@ -20,9 +20,9 @@ class DataOperator(torch.nn.Module):
 
         Parameters
         ----------
-        Operator
-            The operator to apply
-        returntype
+        operator
+            The operator to wrap
+        return_type
             The type of the Data object to return. If None, the same type as the input is returned.
             Each field of the return type will we set to the value of the field with the same name in the input.
         """
