@@ -227,19 +227,30 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         # Sum of linear operators is a linear operator
         return LinearOperatorSum(self, other)
 
-    def __mul__(self, other: torch.Tensor) -> LinearOperator:
+    def __mul__(self, other: torch.Tensor | complex) -> LinearOperator:
         """Operator elementwise left multiplication with tensor.
 
         Returns lambda x: self(other*x)
         """
         return LinearOperatorElementwiseProductLeft(self, other)
 
-    def __rmul__(self, other: torch.Tensor) -> LinearOperator:
+    def __rmul__(self, other: torch.Tensor | complex) -> LinearOperator:
         """Operator elementwise right multiplication with tensor.
 
         Returns lambda x: other*self(x)
         """
         return LinearOperatorElementwiseProductRight(self, other)
+
+    @property
+    def gram(self) -> LinearOperator:
+        """Gram operator.
+
+        For a LinearOperator :math:`A`, the self-adjoint Gram operator is defined as :math:`A^H A`.
+
+        Note: This is a default implementation that can be overwritten by subclasses for more efficient
+        implementations.
+        """
+        return self.H @ self
 
 
 class LinearOperatorComposition(
@@ -253,8 +264,14 @@ class LinearOperatorComposition(
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the operator composition."""
-        # (AB)^T = B^T A^T
+        # (AB)^H = B^H A^H
         return self._operator2.adjoint(*self._operator1.adjoint(x))
+
+    @property
+    def gram(self) -> LinearOperator:
+        """Gram operator."""
+        # (AB)^H(AB) = B^H (A^H A) B
+        return self._operator2.H @ self._operator1.gram @ self._operator2
 
 
 class LinearOperatorSum(LinearOperator, OperatorSum[torch.Tensor, tuple[torch.Tensor,]]):
@@ -262,7 +279,7 @@ class LinearOperatorSum(LinearOperator, OperatorSum[torch.Tensor, tuple[torch.Te
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the operator addition."""
-        # (A+B)^T = A^T + B^T
+        # (A+B)^H = A^H + B^H
         return (self._operator1.adjoint(x)[0] + self._operator2.adjoint(x)[0],)
 
 
@@ -276,7 +293,24 @@ class LinearOperatorElementwiseProductRight(
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint Operator elementwise multiplication with a tensor."""
-        return self._operator.adjoint(x * self._tensor.conj())
+        if isinstance(self._tensor, torch.Tensor):
+            conj: torch.Tensor | complex = self._tensor.conj()
+        else:
+            conj = self._tensor.conjugate()
+
+        return self._operator.adjoint(x * conj)
+
+    @property
+    def gram(self) -> LinearOperator:
+        """Gram Operator."""
+        if isinstance(self._tensor, torch.Tensor):
+            factor: torch.Tensor | complex = self._tensor.conj() * self._tensor
+            if self._tensor.numel() > 1:
+                # only scalars can be moved outside the linear operator
+                return self._operator.H @ (factor * self._operator)
+        else:
+            factor = self._tensor.conjugate() * self._tensor
+        return factor * self._operator.gram
 
 
 class LinearOperatorElementwiseProductLeft(
@@ -289,7 +323,21 @@ class LinearOperatorElementwiseProductLeft(
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint Operator elementwise multiplication with a tensor."""
-        return (self._operator.adjoint(x)[0] * self._tensor.conj(),)
+        if isinstance(self._tensor, torch.Tensor):
+            conj: torch.Tensor | complex = self._tensor.conj()
+        else:
+            conj = self._tensor.conjugate()
+        return (self._operator.adjoint(x)[0] * conj,)
+
+    @property
+    def gram(self) -> LinearOperator:
+        """Gram Operator."""
+        if isinstance(self._tensor, torch.Tensor):
+            conj: torch.Tensor | complex = self._tensor.conj()
+        else:
+            conj = self._tensor.conjugate()
+
+        return conj * self._operator.gram * self._tensor
 
 
 class AdjointLinearOperator(LinearOperator):
@@ -312,3 +360,8 @@ class AdjointLinearOperator(LinearOperator):
     def H(self) -> LinearOperator:  # noqa: N802
         """Adjoint of adjoint operator, i.e. original LinearOperator."""
         return self.operator
+
+    @property
+    def gram(self) -> LinearOperator:
+        """Gram operator."""
+        return self._operator.gram.H
