@@ -48,7 +48,9 @@ import warnings
 from collections.abc import Callable, Sequence
 from typing import Literal, Self, cast, overload
 
+from einops import rearrange
 import numpy as np
+from sympy import Matrix
 import torch
 import torch.nn.functional as F  # noqa: N812
 from scipy._lib._util import check_random_state
@@ -344,7 +346,7 @@ def _align_vectors(
         cross = torch.linalg.cross(b_primary, a_primary, dim=0)
         angle = torch.atan2(torch.norm(cross), torch.dot(a_primary, b_primary))
 
-        rot_primary = _rodrigues_rotation(cross, angle)
+        rot_primary = _axisangle_to_matrix(cross, angle)
 
         if n_vecs == 1:
             return rot_primary.to(dtype), torch.tensor(0.0, device=a.device, dtype=dtype)
@@ -361,7 +363,7 @@ def _align_vectors(
 
         phi = torch.atan2((sec_w * sin_term).sum(), (sec_w * cos_term).sum())
 
-        rot_secondary = _rodrigues_rotation(a_primary, phi)
+        rot_secondary = _axisangle_to_matrix(a_primary, phi)
         rot_optimal = rot_secondary @ rot_primary
 
         rssd_w = weights.clone()
@@ -400,29 +402,31 @@ def _align_vectors(
     return rot_optimal, rssd
 
 
-def _rodrigues_rotation(axis: torch.Tensor, angle: torch.Tensor) -> torch.Tensor:
+def _axisangle_to_matrix(axis: torch.Tensor, angle: torch.Tensor) -> torch.Tensor:
     """Compute a rotation matrix using Rodrigues' rotation formula."""
-    axis = F.normalize(axis, dim=0)
-    rotation_matrix = torch.eye(3, device=axis.device) + torch.tensor(
-        [[0, -axis[2], axis[1]], [axis[2], 0, -axis[0]], [-axis[1], axis[0], 0]], device=axis.device
-    ) / torch.sinc(angle / torch.pi)
-    return rotation_matrix
-    # c, s = torch.cos(angle), torch.sin(angle)
-    # t = 1 - c
-    # x, y, z = axis
-    # return torch.stack(
-    #     [
-    #         t * x * x + c,
-    #         t * x * y - z * s,
-    #         t * x * z + y * s,
-    #         t * x * y + z * s,
-    #         t * y * y + c,
-    #         t * y * z - x * s,
-    #         t * x * z - y * s,
-    #         t * y * z + x * s,
-    #         t * z * z + c,
-    #     ]
-    # ).reshape(3, 3)
+    axis = F.normalize(axis, dim=-1, eps=1e-6)
+    cos, sin = torch.cos(angle), torch.sin(angle)
+    t = 1 - cos
+    q, r, s = axis.unbind(-1)
+    matrix = rearrange(
+        torch.stack(
+            [
+                t * q * q + cos,
+                t * q * r - s * sin,
+                t * q * s + r * sin,
+                t * q * r + s * sin,
+                t * r * r + cos,
+                t * r * s - q * sin,
+                t * q * s - r * sin,
+                t * r * s + q * sin,
+                t * s * s + cos,
+            ],
+            axis=-1,
+        ),
+        '... (row col) -> ... row col',
+        row=3,
+    )
+    return matrix
 
 
 class Rotation(torch.nn.Module):
