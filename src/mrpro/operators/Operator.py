@@ -64,7 +64,7 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
         """
         return OperatorElementwiseProductLeft(self, other)
 
-    def __rmul__(self, other: torch.Tensor) -> Operator[*Tin, Tout]:  # type: ignore[misc]
+    def __rmul__(self, other: torch.Tensor) -> Operator[*Tin, Tout]:
         """Operator multiplication with tensor.
 
         Returns lambda x: other*self(x)
@@ -113,7 +113,7 @@ class OperatorSum(Operator[*Tin, Tout]):
 class OperatorElementwiseProductRight(Operator[*Tin, Tout]):
     """Operator elementwise right multiplication with a tensor.
 
-    Peforms Tensor*Operator(x)
+    Performs Tensor*Operator(x)
     """
 
     def __init__(self, operator: Operator[*Tin, Tout], tensor: torch.Tensor):

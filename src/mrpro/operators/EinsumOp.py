@@ -37,7 +37,7 @@ class EinsumOp(LinearOperator):
       of :math:`N` vectors :math:`x1, x2, ..., xN`. Then, the operation defined by
       :math:`A @ x: = diag(A1, A2,..., AN) * [x1, x2, ..., xN]^T`
       can be implemented by the einsum rule ``"... i j, ... j -> ... i"``.
-      This is the default behaviour of the operator.
+      This is the default behavior of the operator.
     """
 
     def __init__(self, matrix: torch.Tensor, einsum_rule: str = '... i j, ... j -> ... i') -> None:
@@ -57,8 +57,8 @@ class EinsumOp(LinearOperator):
             raise ValueError(f'Einsum pattern should match (.+),(.+)->(.+) but got {einsum_rule}.')
         indices_matrix, indices_input, indices_output = match.groups()
         # swapping the input and output indices gets the adjoint rule
-        self._adjoint_rule = f'{indices_matrix},{indices_output}->{indices_input}'
-        self._forward_rule = einsum_rule
+        self._adjoint_pattern = f'{indices_matrix},{indices_output}->{indices_input}'
+        self._forward_pattern = einsum_rule
         self.matrix = torch.nn.Parameter(matrix, matrix.requires_grad)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
@@ -75,7 +75,7 @@ class EinsumOp(LinearOperator):
         -------
             result of matrix-vector multiplication
         """
-        y = einsum(self.matrix, x, self._forward_rule)
+        y = einsum(self.matrix, x, self._forward_pattern)
         return (y,)
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor]:
@@ -90,5 +90,5 @@ class EinsumOp(LinearOperator):
         -------
             result of adjoint sum product
         """
-        x = einsum(self.matrix.conj(), y, self._adjoint_rule)
+        x = einsum(self.matrix.conj(), y, self._adjoint_pattern)
         return (x,)
