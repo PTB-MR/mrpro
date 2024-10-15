@@ -2,7 +2,6 @@
 
 import torch
 
-from mrpro.operators.EndomorphOperator import EndomorphOperator, endomorph
 from mrpro.operators.LinearOperator import LinearOperator
 
 
@@ -43,5 +42,3 @@ class IdentityOp(LinearOperator):
             the input tensor
         """
         return (x,)
-
-
