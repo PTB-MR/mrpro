@@ -18,7 +18,7 @@ class CoilCompression(LinearOperator):
             Data to used to find the principal components.
         n_components
             Number of principal components to keep.
-        separate_dim, optional
+        separate_dims
             tuple of dimensions to construct separate compression matrices for.
             None means one global compression matrix for all (but the coil) dimensions.
         """
