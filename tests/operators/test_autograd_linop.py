@@ -85,7 +85,7 @@ def test_linop_autograd_differentiable_adjoint():
 def test_linop_autograd_differentiable_gradgrad():
     """Test the gradgrad of the differentiable operator."""
     diff = DifferentiableOperator()
-    # backward of backward should be the working
+    # backward of backward should be working
     # as it should be using the forward
     x = torch.tensor(1.0, requires_grad=True, dtype=torch.float64)
     torch.autograd.gradgradcheck(diff, x)
