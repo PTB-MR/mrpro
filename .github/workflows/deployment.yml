@@ -10,6 +10,7 @@ jobs:
     name: Modify version and build package for TestPyPI
     runs-on: ubuntu-latest
     outputs:
+      version: ${{ steps.set_suffix.outputs.version }}
       suffix: ${{ steps.set_suffix.outputs.suffix }}
     steps:
       - name: Checkout code
@@ -23,9 +24,11 @@ jobs:
       - name: Set environment variable for version suffix
         id: set_suffix
         run: |
+          VERSION=$(cat src/mrpro/VERSION)
           SUFFIX=rc$(date +%s)
           echo "MRPROVERSIONSUFFIX=$SUFFIX" >> $GITHUB_ENV
           echo "suffix=$SUFFIX" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Build package with version suffix
         run: |
@@ -78,7 +81,7 @@ jobs:
 
       - name: Install MRpro from TestPyPI
         run: |
-          VERSION=$(cat src/mrpro/VERSION)
+          VERSION=${{ needs.build-testpypi-package.outputs.version }}
           SUFFIX=${{ needs.build-testpypi-package.outputs.suffix }}
           python -m pip install mrpro==$VERSION$SUFFIX --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/
 
