@@ -203,7 +203,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
             return NotImplemented  # type: ignore[unreachable]
 
     def __mul__(self, other: torch.Tensor | complex) -> LinearOperator:
-        """Operator elementwise left multiplication with tensor.
+        """Operator elementwise left multiplication with tensor/scalar.
 
         Returns lambda x: self(x*other)
         """
