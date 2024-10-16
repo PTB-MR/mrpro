@@ -175,7 +175,8 @@ class _EndomorphCallable(Protocol):
     @overload
     def __call__(self, /, *args: torch.Tensor) -> tuple[torch.Tensor, ...]: ...
 
-    def __call__(self, /, *args: torch.Tensor) -> tuple[torch.Tensor, ...]: ...
+    def __call__(self, /, *args: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply the Operator."""
 
 
 def endomorph(f: F, /) -> _EndomorphCallable:
