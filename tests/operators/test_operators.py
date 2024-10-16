@@ -336,6 +336,7 @@ def test_sum_operator_multiple_adjoint():
     v = rng.complex64_tensor(3)
     dotproduct_adjointness_test(linear_op_sum, u, v)
 
+
 def test_gram_shortcuts():
     """Test that .gram for composition and scalar multiplication results in shortcuts."""
 

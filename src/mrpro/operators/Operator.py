@@ -66,7 +66,6 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
             )  # cast due to https://github.com/python/mypy/issues/16335
         return NotImplemented  # type: ignore[unreachable]
 
-
     def __mul__(self, other: torch.Tensor | complex) -> Operator[*Tin, Tout]:
         """Operator multiplication with tensor.
 
@@ -155,7 +154,6 @@ class OperatorElementwiseProductLeft(Operator[*Tin, Tout]):
 
     Performs Operator(x*Tensor)
     """
-
 
     def __init__(self, operator: Operator[*Tin, Tout], scalar: torch.Tensor | complex):
         """Operator elementwise left multiplication initialization."""

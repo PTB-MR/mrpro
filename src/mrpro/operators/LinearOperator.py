@@ -259,7 +259,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
     def __mul__(self, other: torch.Tensor | complex) -> LinearOperator:
         """Operator elementwise left multiplication with tensor/scalar.
-        
+
         Returns lambda x: self(x*other)
         """
         if isinstance(other, complex | float | int):
@@ -372,7 +372,6 @@ class LinearOperatorElementwiseProductLeft(
         conj = self._scalar.conj() if isinstance(self._scalar, torch.Tensor) else self._scalar.conjugate()
         return (self._operator.adjoint(x)[0] * conj,)
 
-    
     @property
     def gram(self) -> LinearOperator:
         """Gram Operator."""
