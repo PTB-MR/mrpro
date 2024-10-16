@@ -216,7 +216,7 @@ class EndomorphOperator(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, 
         """Operator composition."""
         if isinstance(other, mrpro.operators.MultiIdentityOp):
             return self
-        if isinstance(self, mrpro.operators.MultiIdentityOp):
+        elif isinstance(self, mrpro.operators.MultiIdentityOp):
             return other
 
         res = super().__matmul__(cast(Any, other))  # avoid mypy 1.11 crash

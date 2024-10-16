@@ -39,7 +39,7 @@ class ZeroOp(LinearOperator):
 
         Returns
         -------
-        zeros_like(x)
+        zeros_like(x) or scalar 0
         """
         if self.keep_shape:
             return (torch.zeros_like(x),)

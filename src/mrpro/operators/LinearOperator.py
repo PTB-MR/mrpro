@@ -151,7 +151,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         if isinstance(other, mrpro.operators.IdentityOp):
             # neutral element of composition
             return self
-        if isinstance(self, mrpro.operators.IdentityOp):
+        elif isinstance(self, mrpro.operators.IdentityOp):
             return other
         elif isinstance(other, LinearOperator):
             # LinearOperator@LinearOperator is linear
@@ -205,7 +205,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     def __mul__(self, other: torch.Tensor | complex) -> LinearOperator:
         """Operator elementwise left multiplication with tensor.
 
-        Returns lambda x: self(other*x)
+        Returns lambda x: self(x*other)
         """
         if isinstance(other, complex | float | int):
             if other == 0:
