@@ -4,7 +4,7 @@ from typing import Literal, TypedDict
 import pytest
 import torch
 from mrpro.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
-from mrpro.operators.functionals import L1NormViewAsReal, L1Norm, L2NormSquared, ZeroFunctional
+from mrpro.operators.functionals import L1Norm, L1NormViewAsReal, L2NormSquared, ZeroFunctional
 
 from tests import RandomGenerator
 from tests.operators.functionals.conftest import (
