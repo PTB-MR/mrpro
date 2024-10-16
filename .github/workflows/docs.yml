@@ -222,6 +222,7 @@ jobs:
         if: github.event_name != 'pull_request'
 
   deploy:
+    if: github.ref == 'refs/heads/main'
     permissions:
         pages: write   
         id-token: write
