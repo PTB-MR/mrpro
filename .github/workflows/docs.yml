@@ -219,10 +219,10 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs/build/html/
-        if: github.event_name != 'pull_request'
+        #if: github.event_name != 'pull_request'
 
   deploy:
-    if: github.ref == 'refs/heads/main'
+    #if: github.ref == 'refs/heads/main'
     permissions:
         pages: write   
         id-token: write
