@@ -2,8 +2,8 @@ name: Publish to PyPI
 
 on:
   push:
-    # paths:
-    #   - src/mrpro/VERSION
+    paths:
+      - src/mrpro/VERSION
 
 jobs:
   build-testpypi-package:
