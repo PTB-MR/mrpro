@@ -22,8 +22,8 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """General Linear Operator.
 
     LinearOperators have exactly one input and one output,
-    and fulfill f(a*x + b*y) = a*f(x) + b*f(y)
-    with a,b scalars and x,y tensors.
+    and fulfill :math:`f(a*x + b*y) = a*f(x) + b*f(y)`
+    with :math:`a` and :math:`b` scalars and :math:`x` and :math:`y` tensors.
     """
 
     @abstractmethod

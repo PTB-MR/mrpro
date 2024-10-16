@@ -1,23 +1,22 @@
 """Slice Profiles."""
 
 import abc
-from collections.abc import Sequence
-from math import log
+import collections.abc
+import math
 
 import numpy as np
 import torch
-from torch import Tensor
 
 
 class SliceProfileBase(abc.ABC, torch.nn.Module):
     """Base class for slice profiles."""
 
     @abc.abstractmethod
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Evaluate the slice profile at a position x."""
         raise NotImplementedError
 
-    def random_sample(self, size: Sequence[int]) -> Tensor:
+    def random_sample(self, size: collections.abc.Sequence[int]) -> torch.Tensor:
         """Sample n random positions from the profile.
 
         Use the profile as a probability density function to sample positions.
@@ -37,7 +36,7 @@ class SliceProfileBase(abc.ABC, torch.nn.Module):
 class SliceGaussian(SliceProfileBase):
     """Gaussian Slice Profile."""
 
-    def __init__(self, fwhm: float | Tensor):
+    def __init__(self, fwhm: float | torch.Tensor):
         """Initialize the Gaussian Slice Profile.
 
         Parameters
@@ -48,7 +47,7 @@ class SliceGaussian(SliceProfileBase):
         super().__init__()
         self.register_buffer('fwhm', torch.as_tensor(fwhm))
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Evaluate the Gaussian Slice Profile at a position.
 
         Parameters
@@ -70,7 +69,7 @@ class SliceSmoothedRectangular(SliceProfileBase):
     with a Gaussian.
     """
 
-    def __init__(self, fwhm_rect: float | Tensor, fwhm_gauss: float | Tensor):
+    def __init__(self, fwhm_rect: float | torch.Tensor, fwhm_gauss: float | torch.Tensor):
         """Initialize the Rectangular Slice Profile.
 
         Parameters
@@ -89,7 +88,7 @@ class SliceSmoothedRectangular(SliceProfileBase):
         self.register_buffer('fwhm_rect', torch.as_tensor(fwhm_rect))
         self.register_buffer('fwhm_gauss', torch.as_tensor(fwhm_gauss))
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Evaluate the Gaussian Slice Profile at a position.
 
         Parameters
@@ -103,13 +102,13 @@ class SliceSmoothedRectangular(SliceProfileBase):
         """
         scaled = x * 2 / self.fwhm_rect
         if self.fwhm_gauss > 0 and self.fwhm_rect > 0:
-            n = (log(2) ** 0.5) * self.fwhm_rect / self.fwhm_gauss
+            n = (math.log(2) ** 0.5) * self.fwhm_rect / self.fwhm_gauss
             norm = 1 / (2 * torch.erf(n))
             return (torch.erf(n * (1 - scaled)) + torch.erf(n * (1 + scaled))) * norm
         elif self.fwhm_rect > 0:
             return (scaled.abs() <= 1).float()
         elif self.fwhm_gauss > 0:
-            return torch.exp(-4 * log(2) * (x / self.fwhm_gauss) ** 2)
+            return torch.exp(-4 * math.log(2) * (x / self.fwhm_gauss) ** 2)
         else:
             raise ValueError('At least one of the widths has to be greater zero.')
 
@@ -117,7 +116,7 @@ class SliceSmoothedRectangular(SliceProfileBase):
 class SliceInterpolate(SliceProfileBase):
     """Slice Profile based on Interpolation of Measured Profile."""
 
-    def __init__(self, positions: Tensor, values: Tensor):
+    def __init__(self, positions: torch.Tensor, values: torch.Tensor):
         """Initialize the Interpolated Slice Profile.
 
         Parameters
@@ -131,7 +130,7 @@ class SliceInterpolate(SliceProfileBase):
         self._xs = positions.detach().cpu().float().numpy()
         self._weights = values.detach().cpu().float().numpy()
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Evaluate the Interpolated Slice Profile at a position.
 
         Parameters

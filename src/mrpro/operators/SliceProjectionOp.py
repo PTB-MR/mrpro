@@ -246,13 +246,11 @@ class SliceProjectionOp(LinearOperator):
         Parameters
         ----------
         x
-            2D Slice with shape (..., 1, max(z, y, x), (max(z, y, x)))
-            with z, y, x matching the input_shape
+            2D Slice with shape (..., 1, max(z, y, x), (max(z, y, x))) with z, y, x matching the input_shape
 
         Returns
         -------
-        A 3D Volume with shape (..., z, y, x)
-           with z, y, x matching the input_shape
+        A 3D Volume with shape (..., z, y, x) with z, y, x matching the input_shape
         """
         match (self.matrix, self.matrix_adjoint):
             # selection based on the optimize_for setting

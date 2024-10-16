@@ -1,9 +1,9 @@
 """Building blocks for numerical phantoms."""
 
-from dataclasses import dataclass
+import dataclasses
 
 
-@dataclass(slots=True)
+@dataclasses.dataclass(slots=True)
 class EllipseParameters:
     """Parameters of ellipse."""
 
