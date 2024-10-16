@@ -281,7 +281,7 @@ class LinearOperatorElementwiseProductLeft(
     """
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Adjoint Operator elementwise multiplication with a tensor."""
+        """Adjoint Operator elementwise multiplication with a tensor/scalar."""
         conj = self._scalar.conj() if isinstance(self._scalar, torch.Tensor) else self._scalar.conjugate()
         return (self._operator.adjoint(x)[0] * conj,)
 
