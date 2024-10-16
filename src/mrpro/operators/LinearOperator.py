@@ -220,7 +220,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
             return NotImplemented  # type: ignore[unreachable]
 
     def __rmul__(self, other: torch.Tensor | complex) -> LinearOperator:
-        """Operator elementwise right multiplication with tensor.
+        """Operator elementwise right multiplication with tensor/scalar.
 
         Returns lambda x: other*self(x)
         """
