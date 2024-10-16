@@ -335,3 +335,51 @@ def test_sum_operator_multiple_adjoint():
     u = rng.complex64_tensor(10)
     v = rng.complex64_tensor(3)
     dotproduct_adjointness_test(linear_op_sum, u, v)
+
+def test_gram_shortcuts():
+    """Test that .gram for composition and scalar multiplication results in shortcuts."""
+
+    class GramOnlyOperator(LinearOperator):
+        """Operator-Wrapper that only has a working .gram property."""
+
+        def __init__(self, op: LinearOperator):
+            super().__init__()
+            self.op = op
+
+        def forward(self, _: torch.Tensor):
+            raise RuntimeError('This operator should not be called')
+
+        def adjoint(self, _: torch.Tensor):
+            raise RuntimeError('This operator should not be called')
+
+        @property
+        def gram(self):
+            return self.op.H @ self.op
+
+    rng = RandomGenerator(2)
+    a = DummyLinearOperator(rng.complex64_tensor((3, 10)))
+    b = DummyLinearOperator(rng.complex64_tensor((10, 10)))
+    a_gram_only = GramOnlyOperator(a)
+    # ignore required due to https://github.com/pytorch/pytorch/issues/124015
+    op: LinearOperator = torch.tensor(1) * ((3 + 4j) * a_gram_only @ b) * (1 + 2j)  # type: ignore[assignment]
+    gram = op.gram
+
+    u = rng.complex64_tensor(10)
+    v = rng.complex64_tensor(10)
+
+    # Next line would raise an error if forward or adjoint were called on a_gram_only,
+    # but if all shortcuts are taken, it should work as only .gram is called
+    dotproduct_adjointness_test(gram, u, v)
+
+
+def test_gram_correctness():
+    """Test that the gram property is numerically correct."""
+    rng = RandomGenerator(2)
+    a = DummyLinearOperator(rng.complex64_tensor((3, 10)))
+    b = DummyLinearOperator(rng.complex64_tensor((10, 10)))
+    op = rng.complex64_tensor(3) * ((3 + 4j) * a @ b) * (1 + 2j) * rng.complex64_tensor(10)
+    gram = op.gram
+    u = rng.complex64_tensor(10)
+    actual = gram(u)[0]
+    expected = op.H(*op(u))[0]
+    torch.testing.assert_close(actual, expected)
