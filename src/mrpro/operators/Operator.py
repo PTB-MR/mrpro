@@ -21,7 +21,7 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
         ...
 
     def __call__(self, *args: *Tin) -> Tout:
-        """Operator call."""
+        """Apply the forward operator."""
         return super().__call__(*args)
 
     def __matmul__(self: Operator[*Tin, Tout], other: Operator[*Tin2, tuple[*Tin]]) -> Operator[*Tin2, Tout]:
