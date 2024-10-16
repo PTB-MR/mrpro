@@ -10,8 +10,7 @@ from mrpro.utils.filters import filter_separable
 
 
 class FiniteDifferenceOp(LinearOperator):
-    """Finite Difference Operator.
-    """
+    """Finite Difference Operator."""
 
     @staticmethod
     def finite_difference_kernel(mode: str) -> torch.Tensor:
