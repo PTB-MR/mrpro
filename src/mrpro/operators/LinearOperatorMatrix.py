@@ -80,7 +80,7 @@ class LinearOperatorMatrix(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tenso
             Output tensors. The same number of tensors as the operator has rows.
         """
         if len(x) != self.shape[1]:
-            raise ValueError('Input should have the same length as the operator has columns.')
+            raise ValueError('Input should be the same number of tensors as the LinearOperatorMatrix has columns.')
         return tuple(
             reduce(operator.add, (op(xi)[0] for op, xi in zip(row, x, strict=True))) for row in self._operators
         )
@@ -232,7 +232,8 @@ class LinearOperatorMatrix(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tenso
     def from_diagonal(cls, *operators: LinearOperator):
         """Create a diagonal LinearOperatorMatrix.
 
-        Create a square LinearOperatorMatrix with the given Linear Operators on the diagonal.
+        Create a square LinearOperatorMatrix with the given Linear Operators on the diagonal,
+        resulting in a block-diagonal linear operator.
 
         Parameters
         ----------
@@ -255,7 +256,7 @@ class LinearOperatorMatrix(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tenso
     ) -> torch.Tensor:
         """Upper bound of operator norm of the Matrix.
 
-        Uses the bounds :math:`||[A, B}^T|||<=sqrt(||A||^2 + ||B||^2)` and :math:`||[A, B]|||<=||A||+||B||`
+        Uses the bounds :math:`||[A, B]^T|||<=sqrt(||A||^2 + ||B||^2)` and :math:`||[A, B]|||<=max(||A||,||B||)`
         to estimate the operator norm of the matrix by calling operator_norm on each element of the matrix.
 
         Parameters
@@ -296,7 +297,7 @@ class LinearOperatorMatrix(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tenso
         norms = torch.tensor(
             [[_singlenorm(op, iv) for op, iv in zip(row, initial_value, strict=True)] for row in self._operators]
         )
-        norm = norms.sum(dim=1).square().sum(0).sqrt().unsqueeze(-1)
+        norm = norms.square().sum(-2).sqrt().amax(-1).unsqueeze(-1)  
         return norm
 
     def __or__(self, other: LinearOperator | LinearOperatorMatrix) -> Self:

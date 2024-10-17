@@ -200,7 +200,7 @@ def test_linearoperatormatrix_norm_cols():
     matrix = random_linearoperatormatrix((1, 3), (3, 10), rng)
     vector = rng.complex64_tensor((3, 10))
     result = matrix.operator_norm(*vector)
-    expected = sum(op.operator_norm(v, dim=None) for op, v in zip(matrix._operators[0], vector, strict=False))
+    expected = max(op.operator_norm(v, dim=None) for op, v in zip(matrix._operators[0], vector, strict=False))
     torch.testing.assert_close(result, expected)
 
 
