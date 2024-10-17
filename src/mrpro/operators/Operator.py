@@ -69,7 +69,7 @@ class Operator(Generic[*Tin, Tout], ABC, torch.nn.Module):
     def __mul__(self, other: torch.Tensor | complex) -> Operator[*Tin, Tout]:
         """Operator multiplication with tensor.
 
-        Returns lambda x: self(other*x)
+        Returns lambda x: self(x*other)
         """
         return OperatorElementwiseProductLeft(self, other)
 

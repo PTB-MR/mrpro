@@ -19,7 +19,7 @@ def test_zero_op_keepshape():
 
 
 def test_zero_op_scalar():
-    """Test that the zero operator returns zeros."""
+    """Test that the zero operator returns single zero."""
     generator = RandomGenerator(seed=0)
     x = generator.complex64_tensor(2, 3, 4)
     operator = ZeroOp(keep_shape=False)

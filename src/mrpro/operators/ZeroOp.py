@@ -12,7 +12,7 @@ class ZeroOp(LinearOperator):
     It is the neutral element of the addition of operators.
     """
 
-    def __init__(self, keep_shape: bool = True):
+    def __init__(self, keep_shape: bool = False):
         """Initialize the Zero Operator.
 
         Returns a constant zero, either as a scalar or as a tensor of the same shape as the input,
@@ -39,7 +39,7 @@ class ZeroOp(LinearOperator):
 
         Returns
         -------
-        zeros_like(x)
+        zeros_like(x) or scalar 0
         """
         if self.keep_shape:
             return (torch.zeros_like(x),)
