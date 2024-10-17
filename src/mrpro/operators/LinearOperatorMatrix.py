@@ -260,7 +260,7 @@ class LinearOperatorMatrix(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tenso
         to estimate the operator norm of the matrix. 
         First,  operator_norm is called on each element of the matrix.
         Next, the norm is estimated for each column using the first bound.
-        Finally the norm of the full matrix of linear operators is calulated by using the second bound.
+        Finally, the norm of the full matrix of linear operators is calulated using the second bound.
 
         Parameters
         ----------
