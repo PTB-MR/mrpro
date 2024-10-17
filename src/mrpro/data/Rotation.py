@@ -48,11 +48,10 @@ import warnings
 from collections.abc import Callable, Sequence
 from typing import Literal, Self, cast, overload
 
-from einops import rearrange
 import numpy as np
-from sympy import Matrix
 import torch
 import torch.nn.functional as F  # noqa: N812
+from einops import rearrange
 from scipy._lib._util import check_random_state
 
 from mrpro.data.SpatialDimension import SpatialDimension
@@ -316,15 +315,11 @@ def _align_vectors(
 ):
     """Estimate a rotation to optimally align two sets of vectors."""
     n_vecs = a.shape[0]
-
     if a.shape != b.shape:
         raise ValueError(f'Expected inputs to have same shapes, got {a.shape} and {b.shape}')
-
     if weights.shape != (n_vecs,) or (weights < 0).any():
         raise ValueError(f'Invalid weights: expected shape ({n_vecs},) with non-negative values')
-
     dtype = torch.result_type(a, b)
-
     # we require double precision for the calculations to match scipy results
     weights = weights.double()
     a = a.double()
@@ -333,19 +328,17 @@ def _align_vectors(
     inf_mask = torch.isinf(weights)
     if inf_mask.sum() > 1:
         raise ValueError('Only one infinite weight is allowed')
+
     if inf_mask.any() or n_vecs == 1:
         # special case for one vector pair or one infinite weight
+
         if return_sensitivity:
             raise ValueError('Cannot return sensitivity matrix with an infinite weight or one vector pair')
 
         a_primary, b_primary = (a[0], b[0]) if n_vecs == 1 else (a[inf_mask][0], b[inf_mask][0])
-
         a_primary, b_primary = F.normalize(a_primary, dim=0), F.normalize(b_primary, dim=0)
-
-        # Cross product and angle between the primary vectors
         cross = torch.linalg.cross(b_primary, a_primary, dim=0)
         angle = torch.atan2(torch.norm(cross), torch.dot(a_primary, b_primary))
-
         rot_primary = _axisangle_to_matrix(cross, angle)
 
         if n_vecs == 1:
@@ -353,42 +346,30 @@ def _align_vectors(
 
         a_secondary, b_secondary = a[~inf_mask], b[~inf_mask]
         sec_w = weights[~inf_mask]
-
         rot_sec_b = (rot_primary @ b_secondary.T).T
-
         sin_term = torch.einsum('ij,j->i', torch.linalg.cross(rot_sec_b, a_secondary, dim=1), a_primary)
         cos_term = torch.einsum('ij,ij->i', rot_sec_b, a_secondary) - torch.einsum(
             'ij,j->i', rot_sec_b, a_primary
         ) * torch.einsum('ij,j->i', a_secondary, a_primary)
 
         phi = torch.atan2((sec_w * sin_term).sum(), (sec_w * cos_term).sum())
-
         rot_secondary = _axisangle_to_matrix(a_primary, phi)
         rot_optimal = rot_secondary @ rot_primary
-
         rssd_w = weights.clone()
         rssd_w[inf_mask] = 0
         est_a = (rot_optimal @ b.T).T
         rssd = torch.sqrt(torch.sum(rssd_w * torch.sum((a - est_a) ** 2, dim=1)))
-
         return rot_optimal.to(dtype), rssd.to(dtype)
-    weights = weights.double()
-    a = a.double()
-    b = b.double()
-    # weights = F.normalize(weights, dim=0)
 
     corr_mat = torch.einsum('i j, i k, i -> j k', a, b, weights)
-
     u, s, vt = cast(tuple[torch.Tensor, torch.Tensor, torch.Tensor], torch.linalg.svd(corr_mat))
+    if s[1] + s[2] < 1e-16 * s[0]:
+        warnings.warn('Optimal rotation is not uniquely or poorly defined for the given sets of vectors.', stacklevel=2)
 
     if (u @ vt).det() < 0 and not allow_improper:
         u[:, -1] *= -1
 
     rot_optimal = (u @ vt).to(dtype)
-
-    if s[1] + s[2] < 1e-16 * s[0]:
-        warnings.warn('Optimal rotation is not uniquely or poorly defined for the given sets of vectors.', stacklevel=2)
-
     rssd = ((weights * (b**2 + a**2).sum(dim=1)).sum() - 2 * s.sum()).clamp_min(0.0).sqrt().to(dtype)
 
     if return_sensitivity:
@@ -421,7 +402,7 @@ def _axisangle_to_matrix(axis: torch.Tensor, angle: torch.Tensor) -> torch.Tenso
                 t * r * s + q * sin,
                 t * s * s + cos,
             ],
-            axis=-1,
+            dim=-1,
         ),
         '... (row col) -> ... row col',
         row=3,
@@ -595,7 +576,7 @@ class Rotation(torch.nn.Module):
         return cls(quaternions, normalize=True, copy=True, inversion=inversion, reflection=reflection)
 
     @classmethod
-    def from_matrix(cls, matrix: torch.Tensor | NestedSequence[float]|tuple[SpatialDimension,SpatialDimension,SpatialDimension], allow_improper: bool = True) -> Self:
+    def from_matrix(cls, matrix: torch.Tensor | NestedSequence[float], allow_improper: bool = True) -> Self:
         """Initialize from rotation matrix.
 
         Rotations in 3 dimensions can be represented with 3 x 3 proper
@@ -626,7 +607,6 @@ class Rotation(torch.nn.Module):
         .. [MAR2008] Landis Markley F (2008) Unit Quaternion from Rotation Matrix, Journal of guidance, control, and
            dynamics 31(2),440-442.
         """
-        if isinstance(matrix,
         matrix_ = torch.as_tensor(matrix)
         if matrix_.shape[-2:] != (3, 3):
             raise ValueError(f'Expected `matrix` to have shape (..., 3, 3), got {matrix_.shape}')
@@ -644,10 +624,6 @@ class Rotation(torch.nn.Module):
                     'Found negative determinant in `matrix`. '
                     'This would result in an improper rotation, but allow_improper is False.'
                 )
-            # improper_matrix = matrix[improper, ...]
-            # axis = _matrix_to_axis(improper_matrix)
-            # projection = (improper_matrix @ axis.unsqueeze(-1)) * axis.unsqueeze(-1)
-            # matrix[improper] = improper_matrix - 2 * projection * improper.unsqueeze(-1).unsqueeze(-1)
             matrix_ = matrix_ * det.unsqueeze(-1).unsqueeze(-1).sign()
 
         quaternions = _matrix_to_quaternion(matrix_)
@@ -655,6 +631,55 @@ class Rotation(torch.nn.Module):
         return cls(quaternions, normalize=True, copy=False, inversion=improper, reflection=False)
 
     @classmethod
+    def from_directions(
+        cls, *basis: *tuple[SpatialDimension, SpatialDimension, SpatialDimension], allow_improper: bool = True
+    ):
+        """Initialize from basis vectors as SpatialDimensions.
+
+        Parameters
+        ----------
+        *basis
+            3 Basis vectors of the new coordinate system, i.e. the columns of the rotation matrix
+        allow_improper
+            If true, the rotation is considered as improper if the determinant of the matrix is negative
+            snd the sign will be preserved. If false, an ValueError is raised if the determinant is negative.
+
+
+        Returns
+        -------
+        rotation
+            Object containing the rotations represented by the basis vectors.
+        """
+        b1, b2, b3 = (torch.stack([torch.as_tensor(getattr(v_, axis)) for axis in AXIS_ORDER], -1) for v_ in basis)
+        matrix = torch.stack((b1, b2, b3), -1)
+        det = torch.linalg.det(matrix)
+        if not allow_improper and (det < 0).any():
+            raise ValueError('The given basis vectors do not form a proper rotation matrix.')
+        if ((1 - det.abs()) > 0.1).any():
+            raise ValueError('The given basis vectors do not form a rotation matrix.')
+
+        return cls.from_matrix(matrix, allow_improper=allow_improper)
+
+    def as_directions(
+        self,
+    ) -> tuple[SpatialDimension[torch.Tensor], SpatialDimension[torch.Tensor], SpatialDimension[torch.Tensor]]:
+        """Represent as the basis vectors of the new coordinate system as SpatialDimensions.
+
+        Returns the three basis vectors of the new coordinate system after rotation,
+        i.e. the columns of the rotation matrix, as SpatialDimensions.
+
+        Returns
+        -------
+        basis
+            The basis vectors of the new coordinate system.
+        """
+        matrix = self.as_matrix()
+        ret = (
+            SpatialDimension(**dict(zip(AXIS_ORDER, matrix[..., 0].unbind(-1), strict=True))),
+            SpatialDimension(**dict(zip(AXIS_ORDER, matrix[..., 1].unbind(-1), strict=True))),
+            SpatialDimension(**dict(zip(AXIS_ORDER, matrix[..., 2].unbind(-1), strict=True))),
+        )
+        return ret
 
     @classmethod
     def from_rotvec(
@@ -924,11 +949,6 @@ class Rotation(torch.nn.Module):
         matrix = _quaternion_to_matrix(quaternions)
         if self._is_improper.any():
             matrix = matrix * self.det.unsqueeze(-1).unsqueeze(-1)
-        # if self._is_improper.any():
-        #     # reflection about a plane perpendicular to the rotation axis
-        #     axis = quaternions[..., :3]
-        #     projection = matrix @ axis.unsqueeze(-1) * axis.unsqueeze(-1)
-        #     matrix = matrix - 2 * projection * self._is_improper.unsqueeze(-1).unsqueeze(-1)
 
         if self._single:
             return matrix[0]
