@@ -1,0 +1,70 @@
+mrpro.data.KHeader
+==================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: KHeader
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~KHeader.__init__
+      ~KHeader.clone
+      ~KHeader.cpu
+      ~KHeader.cuda
+      ~KHeader.double
+      ~KHeader.from_ismrmrd
+      ~KHeader.half
+      ~KHeader.single
+      ~KHeader.to
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~KHeader.trajectory
+      ~KHeader.b0
+      ~KHeader.encoding_limits
+      ~KHeader.recon_matrix
+      ~KHeader.recon_fov
+      ~KHeader.encoding_matrix
+      ~KHeader.encoding_fov
+      ~KHeader.acq_info
+      ~KHeader.h1_freq
+      ~KHeader.n_coils
+      ~KHeader.datetime
+      ~KHeader.te
+      ~KHeader.ti
+      ~KHeader.fa
+      ~KHeader.tr
+      ~KHeader.echo_spacing
+      ~KHeader.echo_train_length
+      ~KHeader.seq_type
+      ~KHeader.model
+      ~KHeader.vendor
+      ~KHeader.protocol_name
+      ~KHeader.misc
+      ~KHeader.calibration_mode
+      ~KHeader.interleave_dim
+      ~KHeader.traj_type
+      ~KHeader.measurement_id
+      ~KHeader.patient_name
+      ~KHeader.trajectory_description
+      ~KHeader.device
+      ~KHeader.fa_degree
+      ~KHeader.is_cpu
+      ~KHeader.is_cuda
+   
+   

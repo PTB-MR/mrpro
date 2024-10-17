@@ -1,0 +1,6 @@
+mrpro.operators.RearrangeOp.rearrange
+=====================================
+
+.. currentmodule:: mrpro.operators.RearrangeOp
+
+.. autofunction:: rearrange

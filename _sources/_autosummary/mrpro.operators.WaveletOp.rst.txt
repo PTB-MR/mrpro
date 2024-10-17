@@ -1,0 +1,84 @@
+mrpro.operators.WaveletOp
+=========================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: WaveletOp
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~WaveletOp.__init__
+      ~WaveletOp.add_module
+      ~WaveletOp.adjoint
+      ~WaveletOp.apply
+      ~WaveletOp.bfloat16
+      ~WaveletOp.buffers
+      ~WaveletOp.children
+      ~WaveletOp.compile
+      ~WaveletOp.cpu
+      ~WaveletOp.cuda
+      ~WaveletOp.double
+      ~WaveletOp.eval
+      ~WaveletOp.extra_repr
+      ~WaveletOp.float
+      ~WaveletOp.forward
+      ~WaveletOp.get_buffer
+      ~WaveletOp.get_extra_state
+      ~WaveletOp.get_parameter
+      ~WaveletOp.get_submodule
+      ~WaveletOp.half
+      ~WaveletOp.ipu
+      ~WaveletOp.load_state_dict
+      ~WaveletOp.modules
+      ~WaveletOp.named_buffers
+      ~WaveletOp.named_children
+      ~WaveletOp.named_modules
+      ~WaveletOp.named_parameters
+      ~WaveletOp.operator_norm
+      ~WaveletOp.parameters
+      ~WaveletOp.register_backward_hook
+      ~WaveletOp.register_buffer
+      ~WaveletOp.register_forward_hook
+      ~WaveletOp.register_forward_pre_hook
+      ~WaveletOp.register_full_backward_hook
+      ~WaveletOp.register_full_backward_pre_hook
+      ~WaveletOp.register_load_state_dict_post_hook
+      ~WaveletOp.register_module
+      ~WaveletOp.register_parameter
+      ~WaveletOp.register_state_dict_pre_hook
+      ~WaveletOp.requires_grad_
+      ~WaveletOp.set_extra_state
+      ~WaveletOp.share_memory
+      ~WaveletOp.state_dict
+      ~WaveletOp.to
+      ~WaveletOp.to_empty
+      ~WaveletOp.train
+      ~WaveletOp.type
+      ~WaveletOp.xpu
+      ~WaveletOp.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~WaveletOp.H
+      ~WaveletOp.T_destination
+      ~WaveletOp.call_super_init
+      ~WaveletOp.dump_patches
+      ~WaveletOp.gram
+      ~WaveletOp.training
+   
+   

@@ -1,0 +1,84 @@
+mrpro.operators.RearrangeOp.RearrangeOp
+=======================================
+
+.. currentmodule:: mrpro.operators.RearrangeOp
+
+.. autoclass:: RearrangeOp
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~RearrangeOp.__init__
+      ~RearrangeOp.add_module
+      ~RearrangeOp.adjoint
+      ~RearrangeOp.apply
+      ~RearrangeOp.bfloat16
+      ~RearrangeOp.buffers
+      ~RearrangeOp.children
+      ~RearrangeOp.compile
+      ~RearrangeOp.cpu
+      ~RearrangeOp.cuda
+      ~RearrangeOp.double
+      ~RearrangeOp.eval
+      ~RearrangeOp.extra_repr
+      ~RearrangeOp.float
+      ~RearrangeOp.forward
+      ~RearrangeOp.get_buffer
+      ~RearrangeOp.get_extra_state
+      ~RearrangeOp.get_parameter
+      ~RearrangeOp.get_submodule
+      ~RearrangeOp.half
+      ~RearrangeOp.ipu
+      ~RearrangeOp.load_state_dict
+      ~RearrangeOp.modules
+      ~RearrangeOp.named_buffers
+      ~RearrangeOp.named_children
+      ~RearrangeOp.named_modules
+      ~RearrangeOp.named_parameters
+      ~RearrangeOp.operator_norm
+      ~RearrangeOp.parameters
+      ~RearrangeOp.register_backward_hook
+      ~RearrangeOp.register_buffer
+      ~RearrangeOp.register_forward_hook
+      ~RearrangeOp.register_forward_pre_hook
+      ~RearrangeOp.register_full_backward_hook
+      ~RearrangeOp.register_full_backward_pre_hook
+      ~RearrangeOp.register_load_state_dict_post_hook
+      ~RearrangeOp.register_module
+      ~RearrangeOp.register_parameter
+      ~RearrangeOp.register_state_dict_pre_hook
+      ~RearrangeOp.requires_grad_
+      ~RearrangeOp.set_extra_state
+      ~RearrangeOp.share_memory
+      ~RearrangeOp.state_dict
+      ~RearrangeOp.to
+      ~RearrangeOp.to_empty
+      ~RearrangeOp.train
+      ~RearrangeOp.type
+      ~RearrangeOp.xpu
+      ~RearrangeOp.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~RearrangeOp.H
+      ~RearrangeOp.T_destination
+      ~RearrangeOp.call_super_init
+      ~RearrangeOp.dump_patches
+      ~RearrangeOp.gram
+      ~RearrangeOp.training
+   
+   

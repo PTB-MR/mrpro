@@ -1,0 +1,6 @@
+mrpro.utils.modify\_acq\_info
+=============================
+
+.. currentmodule:: mrpro.utils
+
+.. autofunction:: modify_acq_info

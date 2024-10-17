@@ -1,0 +1,84 @@
+mrpro.operators.DensityCompensationOp
+=====================================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: DensityCompensationOp
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DensityCompensationOp.__init__
+      ~DensityCompensationOp.add_module
+      ~DensityCompensationOp.adjoint
+      ~DensityCompensationOp.apply
+      ~DensityCompensationOp.bfloat16
+      ~DensityCompensationOp.buffers
+      ~DensityCompensationOp.children
+      ~DensityCompensationOp.compile
+      ~DensityCompensationOp.cpu
+      ~DensityCompensationOp.cuda
+      ~DensityCompensationOp.double
+      ~DensityCompensationOp.eval
+      ~DensityCompensationOp.extra_repr
+      ~DensityCompensationOp.float
+      ~DensityCompensationOp.forward
+      ~DensityCompensationOp.get_buffer
+      ~DensityCompensationOp.get_extra_state
+      ~DensityCompensationOp.get_parameter
+      ~DensityCompensationOp.get_submodule
+      ~DensityCompensationOp.half
+      ~DensityCompensationOp.ipu
+      ~DensityCompensationOp.load_state_dict
+      ~DensityCompensationOp.modules
+      ~DensityCompensationOp.named_buffers
+      ~DensityCompensationOp.named_children
+      ~DensityCompensationOp.named_modules
+      ~DensityCompensationOp.named_parameters
+      ~DensityCompensationOp.operator_norm
+      ~DensityCompensationOp.parameters
+      ~DensityCompensationOp.register_backward_hook
+      ~DensityCompensationOp.register_buffer
+      ~DensityCompensationOp.register_forward_hook
+      ~DensityCompensationOp.register_forward_pre_hook
+      ~DensityCompensationOp.register_full_backward_hook
+      ~DensityCompensationOp.register_full_backward_pre_hook
+      ~DensityCompensationOp.register_load_state_dict_post_hook
+      ~DensityCompensationOp.register_module
+      ~DensityCompensationOp.register_parameter
+      ~DensityCompensationOp.register_state_dict_pre_hook
+      ~DensityCompensationOp.requires_grad_
+      ~DensityCompensationOp.set_extra_state
+      ~DensityCompensationOp.share_memory
+      ~DensityCompensationOp.state_dict
+      ~DensityCompensationOp.to
+      ~DensityCompensationOp.to_empty
+      ~DensityCompensationOp.train
+      ~DensityCompensationOp.type
+      ~DensityCompensationOp.xpu
+      ~DensityCompensationOp.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~DensityCompensationOp.H
+      ~DensityCompensationOp.T_destination
+      ~DensityCompensationOp.call_super_init
+      ~DensityCompensationOp.dump_patches
+      ~DensityCompensationOp.gram
+      ~DensityCompensationOp.training
+   
+   

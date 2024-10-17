@@ -1,0 +1,517 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.data.KData &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mrpro.data.KHeader" href="mrpro.data.KHeader.html" />
+    <link rel="prev" title="mrpro.data.IHeader" href="mrpro.data.IHeader.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-algorithms">MRpro Algorithms</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../api.html#mrpro-data">MRpro Data</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="mrpro.data.html">mrpro.data</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.AcqIdx.html">mrpro.data.AcqIdx</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.AcqInfo.html">mrpro.data.AcqInfo</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.CsmData.html">mrpro.data.CsmData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.Data.html">mrpro.data.Data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.DcfData.html">mrpro.data.DcfData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.EncodingLimits.html">mrpro.data.EncodingLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.IData.html">mrpro.data.IData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.IHeader.html">mrpro.data.IHeader</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">mrpro.data.KData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KHeader.html">mrpro.data.KHeader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KNoise.html">mrpro.data.KNoise</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KTrajectory.html">mrpro.data.KTrajectory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KTrajectoryRawShape.html">mrpro.data.KTrajectoryRawShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.Limits.html">mrpro.data.Limits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.MoveDataMixin.html">mrpro.data.MoveDataMixin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.QData.html">mrpro.data.QData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.QHeader.html">mrpro.data.QHeader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.Rotation.html">mrpro.data.Rotation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.SpatialDimension.html">mrpro.data.SpatialDimension</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.TrajectoryDescription.html">mrpro.data.TrajectoryDescription</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.acq_filters.html">mrpro.data.acq_filters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.enums.html">mrpro.data.enums</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.traj_calculators.html">mrpro.data.traj_calculators</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-operators">MRpro Operators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-phantoms">MRpro Phantoms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-utilities">MRpro Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../api.html">API</a></li>
+          <li class="breadcrumb-item"><a href="mrpro.data.html">mrpro.data</a></li>
+      <li class="breadcrumb-item active">mrpro.data.KData</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/_autosummary/mrpro.data.KData.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="mrpro-data-kdata">
+<h1>mrpro.data.KData<a class="headerlink" href="#mrpro-data-kdata" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="mrpro.data.KData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.</span></span><span class="sig-name descname"><span class="pre">KData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">header:</span> <span class="pre">~mrpro.data.KHeader.KHeader</span> <span class="pre">=</span> <span class="pre">&lt;property</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data:</span> <span class="pre">~torch.Tensor</span> <span class="pre">=</span> <span class="pre">&lt;property</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">traj:</span> <span class="pre">~mrpro.data.KTrajectory.KTrajectory</span> <span class="pre">=</span> <span class="pre">&lt;property</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/_kdata/KData.html#KData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KData" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">KDataSplitMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">KDataRearrangeMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">KDataSelectMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">KDataRemoveOsMixin</span></code>, <a class="reference internal" href="mrpro.data.MoveDataMixin.html#mrpro.data.MoveDataMixin" title="mrpro.data.MoveDataMixin.MoveDataMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">MoveDataMixin</span></code></a></p>
+<p>MR raw data / k-space data class.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KData.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">header:</span> <span class="pre">~mrpro.data.KHeader.KHeader</span> <span class="pre">=</span> <span class="pre">&lt;property</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data:</span> <span class="pre">~torch.Tensor</span> <span class="pre">=</span> <span class="pre">&lt;property</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">traj:</span> <span class="pre">~mrpro.data.KTrajectory.KTrajectory</span> <span class="pre">=</span> <span class="pre">&lt;property</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.data.KData.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.__init__" title="mrpro.data.KData.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([header, data, traj])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KData.clone" title="mrpro.data.KData.clone"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clone</span></code></a>()</p></td>
+<td><p>Return a deep copy of the object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.cpu" title="mrpro.data.KData.cpu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cpu</span></code></a>(*[, memory_format, copy])</p></td>
+<td><p>Put in CPU memory.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KData.cuda" title="mrpro.data.KData.cuda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cuda</span></code></a>([device, non_blocking, memory_format, copy])</p></td>
+<td><p>Put object in CUDA memory.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.double" title="mrpro.data.KData.double"><code class="xref py py-obj docutils literal notranslate"><span class="pre">double</span></code></a>(*[, memory_format, copy])</p></td>
+<td><p>Convert all float tensors to double precision.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KData.from_file" title="mrpro.data.KData.from_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_file</span></code></a>(filename, ktrajectory[, ...])</p></td>
+<td><p>Load k-space data from an ISMRMRD file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.half" title="mrpro.data.KData.half"><code class="xref py py-obj docutils literal notranslate"><span class="pre">half</span></code></a>(*[, memory_format, copy])</p></td>
+<td><p>Convert all float tensors to half precision.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KData.rearrange_k2_k1_into_k1" title="mrpro.data.KData.rearrange_k2_k1_into_k1"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rearrange_k2_k1_into_k1</span></code></a>()</p></td>
+<td><p>Rearrange kdata from (.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.remove_readout_os" title="mrpro.data.KData.remove_readout_os"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_readout_os</span></code></a>()</p></td>
+<td><p>Remove any oversampling along the readout (k0) direction <a class="reference internal" href="#gad" id="id1"><span>[GAD]</span></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KData.select_other_subset" title="mrpro.data.KData.select_other_subset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">select_other_subset</span></code></a>(subset_idx, subset_label)</p></td>
+<td><p>Select a subset from the other dimension of KData.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.single" title="mrpro.data.KData.single"><code class="xref py py-obj docutils literal notranslate"><span class="pre">single</span></code></a>(*[, memory_format, copy])</p></td>
+<td><p>Convert all float tensors to single precision.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KData.split_k1_into_other" title="mrpro.data.KData.split_k1_into_other"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_k1_into_other</span></code></a>(split_idx, other_label)</p></td>
+<td><p>Based on an index tensor, split the data in e.g. phases.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.split_k2_into_other" title="mrpro.data.KData.split_k2_into_other"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_k2_into_other</span></code></a>(split_idx, other_label)</p></td>
+<td><p>Based on an index tensor, split the data in e.g. phases.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KData.to" title="mrpro.data.KData.to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Perform dtype and/or device conversion of data.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.header" title="mrpro.data.KData.header"><code class="xref py py-obj docutils literal notranslate"><span class="pre">header</span></code></a></p></td>
+<td><p>Header information for k-space data</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KData.data" title="mrpro.data.KData.data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code></a></p></td>
+<td><p>K-space data.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.traj" title="mrpro.data.KData.traj"><code class="xref py py-obj docutils literal notranslate"><span class="pre">traj</span></code></a></p></td>
+<td><p>K-space trajectory along kz, ky and kx.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KData.device" title="mrpro.data.KData.device"><code class="xref py py-obj docutils literal notranslate"><span class="pre">device</span></code></a></p></td>
+<td><p>Return the device of the tensors.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.data.KData.is_cpu" title="mrpro.data.KData.is_cpu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_cpu</span></code></a></p></td>
+<td><p>Return True if all tensors are on the CPU.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.data.KData.is_cuda" title="mrpro.data.KData.is_cuda"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_cuda</span></code></a></p></td>
+<td><p>Return True if all tensors are on a single CUDA device.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KData.clone">
+<span class="sig-name descname"><span class="pre">clone</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KData.clone" title="Link to this definition"></a></dt>
+<dd><p>Return a deep copy of the object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KData.cpu">
+<span class="sig-name descname"><span class="pre">cpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KData.cpu" title="Link to this definition"></a></dt>
+<dd><p>Put in CPU memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KData.cuda">
+<span class="sig-name descname"><span class="pre">cuda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">non_blocking</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KData.cuda" title="Link to this definition"></a></dt>
+<dd><p>Put object in CUDA memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>device</strong> – The destination GPU device. Defaults to the current CUDA device.</p></li>
+<li><p><strong>non_blocking</strong> – If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
+Otherwise, the argument has no effect.</p></li>
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KData.data">
+<span class="sig-name descname"><span class="pre">data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.KData.data" title="Link to this definition"></a></dt>
+<dd><p>K-space data. Shape (…other coils k2 k1 k0)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mrpro.data.KData.device">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">device</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#mrpro.data.KData.device" title="Link to this definition"></a></dt>
+<dd><p>Return the device of the tensors.</p>
+<p>Looks at each field of a dataclass implementing a device attribute,
+such as torch.Tensors or MoveDataMixin instances. If the devices
+of the fields differ, an InconsistentDeviceError is raised, otherwise
+the device is returned. If no field implements a device attribute,
+None is returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>InconsistentDeviceError:</strong> – If the devices of different fields differ.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>The device of the fields or None if no field implements a device attribute.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KData.double">
+<span class="sig-name descname"><span class="pre">double</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KData.double" title="Link to this definition"></a></dt>
+<dd><p>Convert all float tensors to double precision.</p>
+<p>converts float to float64 and complex to complex128</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KData.from_file">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">~pathlib.Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ktrajectory:</span> <span class="pre">~mrpro.data.traj_calculators.KTrajectoryCalculator.KTrajectoryCalculator</span> <span class="pre">|</span> <span class="pre">~mrpro.data.KTrajectory.KTrajectory</span> <span class="pre">|</span> <span class="pre">~mrpro.data.traj_calculators.KTrajectoryIsmrmrd.KTrajectoryIsmrmrd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">header_overwrites:</span> <span class="pre">dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object]</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_idx:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acquisition_filter_criterion:</span> <span class="pre">~collections.abc.Callable</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">is_image_acquisition&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="../_modules/mrpro/data/_kdata/KData.html#KData.from_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KData.from_file" title="Link to this definition"></a></dt>
+<dd><p>Load k-space data from an ISMRMRD file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> – path to the ISMRMRD file</p></li>
+<li><p><strong>ktrajectory</strong> – KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory</p></li>
+<li><p><strong>header_overwrites</strong> – dictionary of key-value pairs to overwrite the header</p></li>
+<li><p><strong>dataset_idx</strong> – index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, …)</p></li>
+<li><p><strong>acquisition_filter_criterion</strong> – function which returns True if an acquisition should be included in KData</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KData.half">
+<span class="sig-name descname"><span class="pre">half</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KData.half" title="Link to this definition"></a></dt>
+<dd><p>Convert all float tensors to half precision.</p>
+<p>converts float to float16 and complex to complex32</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KData.header">
+<span class="sig-name descname"><span class="pre">header</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.KHeader.html#mrpro.data.KHeader" title="mrpro.data.KHeader.KHeader"><span class="pre">KHeader</span></a></em><a class="headerlink" href="#mrpro.data.KData.header" title="Link to this definition"></a></dt>
+<dd><p>Header information for k-space data</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mrpro.data.KData.is_cpu">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_cpu</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#mrpro.data.KData.is_cpu" title="Link to this definition"></a></dt>
+<dd><p>Return True if all tensors are on the CPU.</p>
+<p>Checks all tensor attributes of the dataclass for their device,
+(recursively if an attribute is a MoveDataMixin)</p>
+<p>Returns False if not all tensors are on cpu or if the device is inconsistent,
+returns True if the data class has no tensors as attributes.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mrpro.data.KData.is_cuda">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_cuda</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#mrpro.data.KData.is_cuda" title="Link to this definition"></a></dt>
+<dd><p>Return True if all tensors are on a single CUDA device.</p>
+<p>Checks all tensor attributes of the dataclass for their device,
+(recursively if an attribute is a MoveDataMixin)</p>
+<p>Returns False if not all tensors are on the same CUDA devices, or if the device is inconsistent,
+returns True if the data class has no tensors as attributes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KData.rearrange_k2_k1_into_k1">
+<span class="sig-name descname"><span class="pre">rearrange_k2_k1_into_k1</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KData.rearrange_k2_k1_into_k1" title="Link to this definition"></a></dt>
+<dd><p>Rearrange kdata from (… k2 k1 …) to (… 1 (k2 k1) …).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kdata</strong> – K-space data (other coils k2 k1 k0)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>K-space data (other coils 1 (k2 k1) k0)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KData.remove_readout_os">
+<span class="sig-name descname"><span class="pre">remove_readout_os</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KData.remove_readout_os" title="Link to this definition"></a></dt>
+<dd><p>Remove any oversampling along the readout (k0) direction <a class="reference internal" href="#gad" id="id2"><span>[GAD]</span></a>.</p>
+<p>Returns a copy of the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kdata</strong> – K-space data</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Copy of K-space data with oversampling removed.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the recon matrix along x is larger than the encoding matrix along x.</p>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<div role="list" class="citation-list">
+<div class="citation" id="gad" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>GAD<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id1">1</a>,<a role="doc-backlink" href="#id2">2</a>)</span>
+<p>Gadgetron <a class="reference external" href="https://github.com/gadgetron/gadgetron-python">https://github.com/gadgetron/gadgetron-python</a></p>
+</div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KData.select_other_subset">
+<span class="sig-name descname"><span class="pre">select_other_subset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subset_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'average'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'slice'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'contrast'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'phase'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'repetition'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'set'</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KData.select_other_subset" title="Link to this definition"></a></dt>
+<dd><p>Select a subset from the other dimension of KData.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kdata</strong> – K-space data (other coils k2 k1 k0)</p></li>
+<li><p><strong>subset_idx</strong> – Index which elements of the other subset to use, e.g. phase 0,1,2 and 5</p></li>
+<li><p><strong>subset_label</strong> – Name of the other label, e.g. phase</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>K-space data (other_subset coils k2 k1 k0)</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the subset indices are not available in the data</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KData.single">
+<span class="sig-name descname"><span class="pre">single</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KData.single" title="Link to this definition"></a></dt>
+<dd><p>Convert all float tensors to single precision.</p>
+<p>converts float to float32 and complex to complex64</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KData.split_k1_into_other">
+<span class="sig-name descname"><span class="pre">split_k1_into_other</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">split_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">other_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'average'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'slice'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'contrast'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'phase'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'repetition'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'set'</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KData.split_k1_into_other" title="Link to this definition"></a></dt>
+<dd><p>Based on an index tensor, split the data in e.g. phases.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kdata</strong> – K-space data (other coils k2 k1 k0)</p></li>
+<li><p><strong>split_idx</strong> – 2D index describing the k1 points in each block to be moved to other dimension  (other_split, k1_per_split)</p></li>
+<li><p><strong>other_label</strong> – Label of other dimension, e.g. repetition, phase</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>K-space data with new shape ((other other_split) coils k2 k1_per_split k0)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KData.split_k2_into_other">
+<span class="sig-name descname"><span class="pre">split_k2_into_other</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">split_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">other_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'average'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'slice'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'contrast'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'phase'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'repetition'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'set'</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KData.split_k2_into_other" title="Link to this definition"></a></dt>
+<dd><p>Based on an index tensor, split the data in e.g. phases.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kdata</strong> – K-space data (other coils k2 k1 k0)</p></li>
+<li><p><strong>split_idx</strong> – 2D index describing the k2 points in each block to be moved to other dimension  (other_split, k2_per_split)</p></li>
+<li><p><strong>other_label</strong> – Label of other dimension, e.g. repetition, phase</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>K-space data with new shape ((other other_split) coils k2_per_split k1 k0)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KData.to">
+<span class="sig-name descname"><span class="pre">to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KData.to" title="Link to this definition"></a></dt>
+<dd><p>Perform dtype and/or device conversion of data.</p>
+<p>A torch.dtype and torch.device are inferred from the arguments
+args and kwargs. Please have a look at the
+documentation of torch.Tensor.to() for more details.</p>
+<p>A new instance of the dataclass will be returned.</p>
+<p>The conversion will be applied to all Tensor- or Module
+fields of the dataclass, and to all fields that implement
+the MoveDataMixin.</p>
+<p>The dtype-type, i.e. float or complex will always be preserved,
+but the precision of floating point dtypes might be changed.</p>
+<p>Example:
+If called with dtype=torch.float32 OR dtype=torch.complex64:</p>
+<ul class="simple">
+<li><p>A complex128 tensor will be converted to complex64</p></li>
+<li><p>A float64 tensor will be converted to float32</p></li>
+<li><p>A bool tensor will remain bool</p></li>
+<li><p>An int64 tensor will remain int64</p></li>
+</ul>
+<p>If other conversions are desired, please use the torch.Tensor.to() method of
+the fields directly.</p>
+<p>If the copy argument is set to True (default), a deep copy will be returned
+even if no conversion is necessary.
+If two fields are views of the same data before, in the result they will be independent
+copies if copy is set to True or a conversion is necessary.
+If set to False, some Tensors might be shared between the original and the new object.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KData.traj">
+<span class="sig-name descname"><span class="pre">traj</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.KTrajectory.html#mrpro.data.KTrajectory" title="mrpro.data.KTrajectory.KTrajectory"><span class="pre">KTrajectory</span></a></em><a class="headerlink" href="#mrpro.data.KData.traj" title="Link to this definition"></a></dt>
+<dd><p>K-space trajectory along kz, ky and kx. Shape (…other k2 k1 k0)</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="mrpro.data.IHeader.html" class="btn btn-neutral float-left" title="mrpro.data.IHeader" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mrpro.data.KHeader.html" class="btn btn-neutral float-right" title="mrpro.data.KHeader" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

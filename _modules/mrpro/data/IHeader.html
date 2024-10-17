@@ -1,0 +1,242 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.data.IHeader &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mrpro.data.IHeader</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mrpro.data.IHeader</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;MR image data header (IHeader) dataclass.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">dataclasses</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Self</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">pydicom.dataset</span> <span class="kn">import</span> <span class="n">Dataset</span>
+<span class="kn">from</span> <span class="nn">pydicom.tag</span> <span class="kn">import</span> <span class="n">Tag</span><span class="p">,</span> <span class="n">TagType</span>
+
+<span class="kn">from</span> <span class="nn">mrpro.data.KHeader</span> <span class="kn">import</span> <span class="n">KHeader</span>
+<span class="kn">from</span> <span class="nn">mrpro.data.MoveDataMixin</span> <span class="kn">import</span> <span class="n">MoveDataMixin</span>
+<span class="kn">from</span> <span class="nn">mrpro.data.SpatialDimension</span> <span class="kn">import</span> <span class="n">SpatialDimension</span>
+<span class="kn">from</span> <span class="nn">mrpro.utils.summarize_tensorvalues</span> <span class="kn">import</span> <span class="n">summarize_tensorvalues</span>
+
+<span class="n">MISC_TAGS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;TimeAfterStart&#39;</span><span class="p">:</span> <span class="mh">0x00191016</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="IHeader">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.IHeader.html#mrpro.data.IHeader">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">IHeader</span><span class="p">(</span><span class="n">MoveDataMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;MR image data header.&quot;&quot;&quot;</span>
+
+    <span class="c1"># ToDo: decide which attributes to store in the header</span>
+    <span class="n">fov</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Field of view [m].&quot;&quot;&quot;</span>
+
+    <span class="n">te</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Echo time [s].&quot;&quot;&quot;</span>
+
+    <span class="n">ti</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inversion time [s].&quot;&quot;&quot;</span>
+
+    <span class="n">fa</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Flip angle [rad].&quot;&quot;&quot;</span>
+
+    <span class="n">tr</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Repetition time [s].&quot;&quot;&quot;</span>
+
+    <span class="n">misc</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dictionary with miscellaneous parameters.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="IHeader.from_kheader">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.IHeader.html#mrpro.data.IHeader.from_kheader">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_kheader</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create IHeader object from KHeader object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        kheader</span>
+<span class="sd">            MR raw data header (KHeader) containing required meta data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">fov</span><span class="o">=</span><span class="n">kheader</span><span class="o">.</span><span class="n">recon_fov</span><span class="p">,</span> <span class="n">te</span><span class="o">=</span><span class="n">kheader</span><span class="o">.</span><span class="n">te</span><span class="p">,</span> <span class="n">ti</span><span class="o">=</span><span class="n">kheader</span><span class="o">.</span><span class="n">ti</span><span class="p">,</span> <span class="n">fa</span><span class="o">=</span><span class="n">kheader</span><span class="o">.</span><span class="n">fa</span><span class="p">,</span> <span class="n">tr</span><span class="o">=</span><span class="n">kheader</span><span class="o">.</span><span class="n">tr</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="IHeader.from_dicom_list">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.IHeader.html#mrpro.data.IHeader.from_dicom_list">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_dicom_list</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dicom_datasets</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Dataset</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read DICOM files and return IHeader object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dicom_datasets</span>
+<span class="sd">            list of dataset objects containing the DICOM file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">get_item</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">TagType</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Get item with a given name or Tag from a pydicom dataset.&quot;&quot;&quot;</span>
+            <span class="c1"># iterall is recursive, so it will find all items with the given name</span>
+            <span class="n">found_item</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">iterall</span><span class="p">()</span> <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">tag</span> <span class="o">==</span> <span class="n">Tag</span><span class="p">(</span><span class="n">name</span><span class="p">)]</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">found_item</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">found_item</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">found_item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Item </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1"> found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">found_item</span><span class="p">)</span><span class="si">}</span><span class="s1"> times.&#39;</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">get_items_from_all_dicoms</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="n">TagType</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Get list of items for all dataset objects in the list.&quot;&quot;&quot;</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">get_item</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">dicom_datasets</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="n">TagType</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Convert items to float.&quot;&quot;&quot;</span>
+            <span class="n">items</span> <span class="o">=</span> <span class="n">get_items_from_all_dicoms</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">items</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">make_unique_tensor</span><span class="p">(</span><span class="n">values</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;If all the values are the same only return one.&quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">values</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">values</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">([</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+
+        <span class="c1"># Conversion functions for units</span>
+        <span class="k">def</span> <span class="nf">ms_to_s</span><span class="p">(</span><span class="n">ms</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">ms</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">ms</span> <span class="o">/</span> <span class="mi">1000</span>
+
+        <span class="k">def</span> <span class="nf">deg_to_rad</span><span class="p">(</span><span class="n">deg</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">deg</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">deg</span><span class="p">)</span>
+
+        <span class="n">fa</span> <span class="o">=</span> <span class="n">deg_to_rad</span><span class="p">(</span><span class="n">make_unique_tensor</span><span class="p">(</span><span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;FlipAngle&#39;</span><span class="p">)))</span>
+        <span class="n">ti</span> <span class="o">=</span> <span class="n">ms_to_s</span><span class="p">(</span><span class="n">make_unique_tensor</span><span class="p">(</span><span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;InversionTime&#39;</span><span class="p">)))</span>
+        <span class="n">tr</span> <span class="o">=</span> <span class="n">ms_to_s</span><span class="p">(</span><span class="n">make_unique_tensor</span><span class="p">(</span><span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;RepetitionTime&#39;</span><span class="p">)))</span>
+
+        <span class="c1"># get echo time(s). Some scanners use &#39;EchoTime&#39;, some use &#39;EffectiveEchoTime&#39;</span>
+        <span class="n">te_list</span> <span class="o">=</span> <span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;EchoTime&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">te_list</span><span class="p">):</span>  <span class="c1"># check if all entries are None</span>
+            <span class="n">te_list</span> <span class="o">=</span> <span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;EffectiveEchoTime&#39;</span><span class="p">)</span>
+        <span class="n">te</span> <span class="o">=</span> <span class="n">ms_to_s</span><span class="p">(</span><span class="n">make_unique_tensor</span><span class="p">(</span><span class="n">te_list</span><span class="p">))</span>
+
+        <span class="n">fov_x_mm</span> <span class="o">=</span> <span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;Rows&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">get_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;PixelSpacing&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">fov_y_mm</span> <span class="o">=</span> <span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;Columns&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span>
+            <span class="n">get_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;PixelSpacing&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">fov_z_mm</span> <span class="o">=</span> <span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="s1">&#39;SliceThickness&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">fov</span> <span class="o">=</span> <span class="n">SpatialDimension</span><span class="p">(</span><span class="n">fov_x_mm</span> <span class="o">/</span> <span class="mf">1000.0</span><span class="p">,</span> <span class="n">fov_y_mm</span> <span class="o">/</span> <span class="mf">1000.0</span><span class="p">,</span> <span class="n">fov_z_mm</span> <span class="o">/</span> <span class="mf">1000.0</span><span class="p">)</span>
+
+        <span class="c1"># Get misc parameters</span>
+        <span class="n">misc</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">MISC_TAGS</span><span class="p">:</span>
+            <span class="n">misc</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">make_unique_tensor</span><span class="p">(</span><span class="n">get_float_items_from_all_dicoms</span><span class="p">(</span><span class="n">MISC_TAGS</span><span class="p">[</span><span class="n">name</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">fov</span><span class="o">=</span><span class="n">fov</span><span class="p">,</span> <span class="n">te</span><span class="o">=</span><span class="n">te</span><span class="p">,</span> <span class="n">ti</span><span class="o">=</span><span class="n">ti</span><span class="p">,</span> <span class="n">fa</span><span class="o">=</span><span class="n">fa</span><span class="p">,</span> <span class="n">tr</span><span class="o">=</span><span class="n">tr</span><span class="p">,</span> <span class="n">misc</span><span class="o">=</span><span class="n">misc</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Representation method for IHeader class.&quot;&quot;&quot;</span>
+        <span class="n">te</span> <span class="o">=</span> <span class="n">summarize_tensorvalues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">te</span><span class="p">)</span>
+        <span class="n">ti</span> <span class="o">=</span> <span class="n">summarize_tensorvalues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ti</span><span class="p">)</span>
+        <span class="n">fa</span> <span class="o">=</span> <span class="n">summarize_tensorvalues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fa</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;FOV [m]: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fov</span><span class="si">!s}</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="sa">f</span><span class="s1">&#39;TE [s]: </span><span class="si">{</span><span class="n">te</span><span class="si">}</span><span class="se">\n</span><span class="s1">TI [s]: </span><span class="si">{</span><span class="n">ti</span><span class="si">}</span><span class="se">\n</span><span class="s1">Flip angle [rad]: </span><span class="si">{</span><span class="n">fa</span><span class="si">}</span><span class="s1">.&#39;</span>
+        <span class="k">return</span> <span class="n">out</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

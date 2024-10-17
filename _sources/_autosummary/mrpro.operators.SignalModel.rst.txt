@@ -1,0 +1,81 @@
+mrpro.operators.SignalModel
+===========================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: SignalModel
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SignalModel.__init__
+      ~SignalModel.add_module
+      ~SignalModel.apply
+      ~SignalModel.bfloat16
+      ~SignalModel.buffers
+      ~SignalModel.children
+      ~SignalModel.compile
+      ~SignalModel.cpu
+      ~SignalModel.cuda
+      ~SignalModel.double
+      ~SignalModel.eval
+      ~SignalModel.expand_tensor_dim
+      ~SignalModel.extra_repr
+      ~SignalModel.float
+      ~SignalModel.forward
+      ~SignalModel.get_buffer
+      ~SignalModel.get_extra_state
+      ~SignalModel.get_parameter
+      ~SignalModel.get_submodule
+      ~SignalModel.half
+      ~SignalModel.ipu
+      ~SignalModel.load_state_dict
+      ~SignalModel.modules
+      ~SignalModel.named_buffers
+      ~SignalModel.named_children
+      ~SignalModel.named_modules
+      ~SignalModel.named_parameters
+      ~SignalModel.parameters
+      ~SignalModel.register_backward_hook
+      ~SignalModel.register_buffer
+      ~SignalModel.register_forward_hook
+      ~SignalModel.register_forward_pre_hook
+      ~SignalModel.register_full_backward_hook
+      ~SignalModel.register_full_backward_pre_hook
+      ~SignalModel.register_load_state_dict_post_hook
+      ~SignalModel.register_module
+      ~SignalModel.register_parameter
+      ~SignalModel.register_state_dict_pre_hook
+      ~SignalModel.requires_grad_
+      ~SignalModel.set_extra_state
+      ~SignalModel.share_memory
+      ~SignalModel.state_dict
+      ~SignalModel.to
+      ~SignalModel.to_empty
+      ~SignalModel.train
+      ~SignalModel.type
+      ~SignalModel.xpu
+      ~SignalModel.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SignalModel.T_destination
+      ~SignalModel.call_super_init
+      ~SignalModel.dump_patches
+      ~SignalModel.training
+   
+   

@@ -1,0 +1,46 @@
+mrpro.data.CsmData
+==================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: CsmData
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~CsmData.__init__
+      ~CsmData.as_operator
+      ~CsmData.clone
+      ~CsmData.cpu
+      ~CsmData.cuda
+      ~CsmData.double
+      ~CsmData.from_idata_inati
+      ~CsmData.from_idata_walsh
+      ~CsmData.from_single_dicom
+      ~CsmData.half
+      ~CsmData.single
+      ~CsmData.to
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~CsmData.data
+      ~CsmData.device
+      ~CsmData.header
+      ~CsmData.is_cpu
+      ~CsmData.is_cuda
+   
+   

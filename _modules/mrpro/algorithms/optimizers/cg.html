@@ -1,0 +1,227 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.algorithms.optimizers.cg &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mrpro.algorithms.optimizers.cg</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mrpro.algorithms.optimizers.cg</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Conjugate Gradient for linear systems with self-adjoint linear operator.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="kn">from</span> <span class="nn">mrpro.algorithms.optimizers.OptimizerStatus</span> <span class="kn">import</span> <span class="n">OptimizerStatus</span>
+<span class="kn">from</span> <span class="nn">mrpro.operators.LinearOperator</span> <span class="kn">import</span> <span class="n">LinearOperator</span>
+
+
+<span class="k">class</span> <span class="nc">CGStatus</span><span class="p">(</span><span class="n">OptimizerStatus</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Conjugate gradient callback base class.&quot;&quot;&quot;</span>
+
+    <span class="n">residual</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Residual of the current estimate.&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="cg">
+<a class="viewcode-back" href="../../../../_autosummary/mrpro.algorithms.optimizers.cg.html#mrpro.algorithms.optimizers.cg">[docs]</a>
+<span class="k">def</span> <span class="nf">cg</span><span class="p">(</span>
+    <span class="n">operator</span><span class="p">:</span> <span class="n">LinearOperator</span><span class="p">,</span>
+    <span class="n">right_hand_side</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">initial_value</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
+    <span class="n">tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-4</span><span class="p">,</span>
+    <span class="n">callback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">CGStatus</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;CG for solving a linear system :math:`Hx=b`.</span>
+
+<span class="sd">    Thereby, :math:`H` is a linear self-adjoint operator, :math:`b` is the right-hand-side</span>
+<span class="sd">    of the system and :math:`x` is the sought solution.</span>
+
+<span class="sd">    Note that this implementation allows for simultaneously solving a batch of :math:`N` problems</span>
+<span class="sd">    of the form :math:`H_i x_i = b_i` with :math:`i=1,...,N`.</span>
+
+<span class="sd">    Thereby, the underlying assumption is that the considered problem is :math:`Hx=b` with</span>
+<span class="sd">    :math:`H:= diag(H_1, ..., H_N)` and  :math:`b:= [b_1, ..., b_N]^T`.</span>
+
+<span class="sd">    Thus, if all :math:`H_i` are self-adjoint, so is :math:`H` and the CG can be applied.</span>
+<span class="sd">    Note however, that the accuracy of the obtained solutions might vary among the different</span>
+<span class="sd">    problems.</span>
+<span class="sd">    Note also that we don&#39;t test if the input operator is self-adjoint or not.</span>
+
+<span class="sd">    Further, note that if the condition of :math:`H` is very large, a small residual does not necessarily</span>
+<span class="sd">    imply that the solution is accurate.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    operator</span>
+<span class="sd">        self-adjoint operator (named H above)</span>
+<span class="sd">    right_hand_side</span>
+<span class="sd">        right-hand-side of the system (named b above)</span>
+<span class="sd">    initial_value</span>
+<span class="sd">        initial value of the algorithm; if None, it will be set to right_hand_side</span>
+<span class="sd">    max_iterations</span>
+<span class="sd">        maximal number of iterations</span>
+<span class="sd">    tolerance</span>
+<span class="sd">        tolerance for the residual; if set to zero, the maximal number of iterations</span>
+<span class="sd">        is the only stopping criterion used to stop the cg</span>
+<span class="sd">    callback</span>
+<span class="sd">        function to be called at each iteration</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        an approximate solution of the linear system Hx=b</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">initial_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="n">initial_value</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">right_hand_side</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s1">&#39;Shapes of starting_value and right_hand_side must match,&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;got </span><span class="si">{</span><span class="n">initial_value</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="w"> </span><span class="n">right_hand_side</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># initial residual</span>
+    <span class="n">residual</span> <span class="o">=</span> <span class="n">right_hand_side</span> <span class="o">-</span> <span class="n">operator</span><span class="p">(</span><span class="n">initial_value</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">initial_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">right_hand_side</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+
+    <span class="c1"># initialize conjugate vector</span>
+    <span class="n">conjugate_vector</span> <span class="o">=</span> <span class="n">residual</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+
+    <span class="c1"># assign starting value to the solution</span>
+    <span class="n">solution</span> <span class="o">=</span> <span class="n">initial_value</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">if</span> <span class="n">initial_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">right_hand_side</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+
+    <span class="c1"># for the case where the residual is exactly zero</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">vdot</span><span class="p">(</span><span class="n">residual</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">residual</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">solution</span>
+
+    <span class="c1"># squared tolerance;</span>
+    <span class="c1"># (we will check ||residual||^2 &lt; tolerance^2 instead of ||residual|| &lt; tol</span>
+    <span class="c1"># to avoid the computation of the root for the norm)</span>
+    <span class="n">tolerance_squared</span> <span class="o">=</span> <span class="n">tolerance</span><span class="o">**</span><span class="mi">2</span>
+
+    <span class="c1"># dummy value. new value will be set in loop before first usage</span>
+    <span class="n">residual_norm_squared_previous</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_iterations</span><span class="p">):</span>
+        <span class="c1"># calculate the square norm of the residual</span>
+        <span class="n">residual_flat</span> <span class="o">=</span> <span class="n">residual</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="n">residual_norm_squared</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">vdot</span><span class="p">(</span><span class="n">residual_flat</span><span class="p">,</span> <span class="n">residual_flat</span><span class="p">)</span><span class="o">.</span><span class="n">real</span>
+
+        <span class="c1"># check if the solution is already accurate enough</span>
+        <span class="k">if</span> <span class="n">tolerance</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="p">(</span><span class="n">residual_norm_squared</span> <span class="o">&lt;</span> <span class="n">tolerance_squared</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">solution</span>
+
+        <span class="k">if</span> <span class="n">iteration</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">beta</span> <span class="o">=</span> <span class="n">residual_norm_squared</span> <span class="o">/</span> <span class="n">residual_norm_squared_previous</span>
+            <span class="n">conjugate_vector</span> <span class="o">=</span> <span class="n">residual</span> <span class="o">+</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">conjugate_vector</span>
+
+        <span class="c1"># update estimates of the solution and the residual</span>
+        <span class="p">(</span><span class="n">operator_conjugate_vector</span><span class="p">,)</span> <span class="o">=</span> <span class="n">operator</span><span class="p">(</span><span class="n">conjugate_vector</span><span class="p">)</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">residual_norm_squared</span> <span class="o">/</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">vdot</span><span class="p">(</span><span class="n">conjugate_vector</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">operator_conjugate_vector</span><span class="o">.</span><span class="n">flatten</span><span class="p">()))</span>
+        <span class="n">solution</span> <span class="o">+=</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">conjugate_vector</span>
+        <span class="n">residual</span> <span class="o">-=</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">operator_conjugate_vector</span>
+
+        <span class="n">residual_norm_squared_previous</span> <span class="o">=</span> <span class="n">residual_norm_squared</span>
+
+        <span class="k">if</span> <span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">callback</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s1">&#39;solution&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">solution</span><span class="p">,),</span>
+                    <span class="s1">&#39;iteration_number&#39;</span><span class="p">:</span> <span class="n">iteration</span><span class="p">,</span>
+                    <span class="s1">&#39;residual&#39;</span><span class="p">:</span> <span class="n">residual</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">solution</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

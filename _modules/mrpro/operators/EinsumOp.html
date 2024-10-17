@@ -1,0 +1,208 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.operators.EinsumOp &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mrpro.operators.EinsumOp</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mrpro.operators.EinsumOp</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Generalized Sum Multiplication Operator.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">einsum</span>
+
+<span class="kn">from</span> <span class="nn">mrpro.operators.LinearOperator</span> <span class="kn">import</span> <span class="n">LinearOperator</span>
+
+
+<div class="viewcode-block" id="EinsumOp">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.operators.EinsumOp.html#mrpro.operators.EinsumOp">[docs]</a>
+<span class="k">class</span> <span class="nc">EinsumOp</span><span class="p">(</span><span class="n">LinearOperator</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;A Linear Operator that implements sum products in Einstein notation.</span>
+
+<span class="sd">    Implements :math:`A_{indices_A}*x^{indices_x} = y_{indices_y}`</span>
+<span class="sd">    with Einstein summation rules over the indices, see torch.einsum or einops.einsum</span>
+<span class="sd">    for more information. Note, that the indices must be space separated (einops convention).</span>
+
+
+<span class="sd">    It can be used to implement tensor contractions, such as for example, different versions of</span>
+<span class="sd">    matrix-vector or matrix-matrix products of the form :math:`A @ x`, depending on the chosen einsum rules and</span>
+<span class="sd">    shapes of :math:`A` and :math:`x`.</span>
+
+<span class="sd">    Examples are:</span>
+
+<span class="sd">    - matrix-vector multiplication of :math:`A` and the batched vector :math:`x = [x1,...,xN]` consisting</span>
+<span class="sd">      of :math:`N` vectors :math:`x1, x2, ..., xN`. Then, the operation defined by</span>
+<span class="sd">      :math:`A @ x := diag(A, A, ..., A) * [x1, x2, ..., xN]^T = [A*x1, A*x2, ..., A*xN]^T`</span>
+<span class="sd">      can be implemented by the einsum rule ``&quot;i j, ... j -&gt; ... i&quot;``.</span>
+
+<span class="sd">    - matrix-vector multiplication of a matrix :math:`A` consisting of :math:`N` different matrices</span>
+<span class="sd">      :math:`A1, A2, ... AN` with one vector :math:`x`. Then, the operation defined by</span>
+<span class="sd">      :math:`A @ x: = diag(A1, A2,..., AN) * [x, x, ..., x]^T`</span>
+<span class="sd">      can be implemented by the einsum rule ``&quot;... i j, j -&gt; ... i&quot;``.</span>
+
+<span class="sd">    - matrix-vector multiplication of a matrix :math:`A` consisting of :math:`N` different matrices</span>
+<span class="sd">      :math:`A1, A2, ... AN` with a vector :math:`x = [x1,...,xN]` consisting</span>
+<span class="sd">      of :math:`N` vectors :math:`x1, x2, ..., xN`. Then, the operation defined by</span>
+<span class="sd">      :math:`A @ x: = diag(A1, A2,..., AN) * [x1, x2, ..., xN]^T`</span>
+<span class="sd">      can be implemented by the einsum rule ``&quot;... i j, ... j -&gt; ... i&quot;``.</span>
+<span class="sd">      This is the default behavior of the operator.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="EinsumOp.__init__">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.operators.EinsumOp.html#mrpro.operators.EinsumOp.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matrix</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">einsum_rule</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;... i j, ... j -&gt; ... i&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize Einsum Operator.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        matrix</span>
+<span class="sd">            &#39;Matrix&#39; :math:`A` to be used as first factor in the sum product :math:`A*x`</span>
+
+<span class="sd">        einsum_rule</span>
+<span class="sd">            Einstein summation rule describing the forward of the operator.</span>
+<span class="sd">            Also see torch.einsum for more information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">match</span> <span class="o">:=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;(.+),(.+)-&gt;(.+)&#39;</span><span class="p">,</span> <span class="n">einsum_rule</span><span class="p">))</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Einsum pattern should match (.+),(.+)-&gt;(.+) but got </span><span class="si">{</span><span class="n">einsum_rule</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="n">indices_matrix</span><span class="p">,</span> <span class="n">indices_input</span><span class="p">,</span> <span class="n">indices_output</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+        <span class="c1"># swapping the input and output indices gets the adjoint rule</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_adjoint_pattern</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">indices_matrix</span><span class="si">}</span><span class="s1">,</span><span class="si">{</span><span class="n">indices_output</span><span class="si">}</span><span class="s1">-&gt;</span><span class="si">{</span><span class="n">indices_input</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_forward_pattern</span> <span class="o">=</span> <span class="n">einsum_rule</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">matrix</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">matrix</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EinsumOp.forward">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.operators.EinsumOp.html#mrpro.operators.EinsumOp.forward">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sum-Multiplication of input `x` with `A`.</span>
+
+<span class="sd">        `A` and the rule used to perform the sum-product is set at initialization.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x</span>
+<span class="sd">            input tensor to be multiplied with the &#39;matrix&#39; A</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            result of matrix-vector multiplication</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">einsum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward_pattern</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">y</span><span class="p">,)</span></div>
+
+
+<div class="viewcode-block" id="EinsumOp.adjoint">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.operators.EinsumOp.html#mrpro.operators.EinsumOp.adjoint">[docs]</a>
+    <span class="k">def</span> <span class="nf">adjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Multiplication of input with the adjoint of `A`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        y</span>
+<span class="sd">            tensor to be multiplied with hermitian/adjoint &#39;matrix&#39; A</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            result of adjoint sum product</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">einsum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matrix</span><span class="o">.</span><span class="n">conj</span><span class="p">(),</span> <span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adjoint_pattern</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

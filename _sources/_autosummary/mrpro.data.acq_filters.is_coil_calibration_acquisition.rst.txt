@@ -1,0 +1,6 @@
+mrpro.data.acq\_filters.is\_coil\_calibration\_acquisition
+==========================================================
+
+.. currentmodule:: mrpro.data.acq_filters
+
+.. autofunction:: is_coil_calibration_acquisition

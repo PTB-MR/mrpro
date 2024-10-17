@@ -1,0 +1,47 @@
+mrpro.data.IData
+================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: IData
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~IData.__init__
+      ~IData.clone
+      ~IData.cpu
+      ~IData.cuda
+      ~IData.double
+      ~IData.from_dicom_files
+      ~IData.from_dicom_folder
+      ~IData.from_single_dicom
+      ~IData.from_tensor_and_kheader
+      ~IData.half
+      ~IData.rss
+      ~IData.single
+      ~IData.to
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~IData.data
+      ~IData.device
+      ~IData.header
+      ~IData.is_cpu
+      ~IData.is_cuda
+   
+   

@@ -1,0 +1,82 @@
+mrpro.operators.functionals.L1NormViewAsReal
+============================================
+
+.. currentmodule:: mrpro.operators.functionals
+
+.. autoclass:: L1NormViewAsReal
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~L1NormViewAsReal.__init__
+      ~L1NormViewAsReal.add_module
+      ~L1NormViewAsReal.apply
+      ~L1NormViewAsReal.bfloat16
+      ~L1NormViewAsReal.buffers
+      ~L1NormViewAsReal.children
+      ~L1NormViewAsReal.compile
+      ~L1NormViewAsReal.cpu
+      ~L1NormViewAsReal.cuda
+      ~L1NormViewAsReal.double
+      ~L1NormViewAsReal.eval
+      ~L1NormViewAsReal.extra_repr
+      ~L1NormViewAsReal.float
+      ~L1NormViewAsReal.forward
+      ~L1NormViewAsReal.get_buffer
+      ~L1NormViewAsReal.get_extra_state
+      ~L1NormViewAsReal.get_parameter
+      ~L1NormViewAsReal.get_submodule
+      ~L1NormViewAsReal.half
+      ~L1NormViewAsReal.ipu
+      ~L1NormViewAsReal.load_state_dict
+      ~L1NormViewAsReal.modules
+      ~L1NormViewAsReal.named_buffers
+      ~L1NormViewAsReal.named_children
+      ~L1NormViewAsReal.named_modules
+      ~L1NormViewAsReal.named_parameters
+      ~L1NormViewAsReal.parameters
+      ~L1NormViewAsReal.prox
+      ~L1NormViewAsReal.prox_convex_conj
+      ~L1NormViewAsReal.register_backward_hook
+      ~L1NormViewAsReal.register_buffer
+      ~L1NormViewAsReal.register_forward_hook
+      ~L1NormViewAsReal.register_forward_pre_hook
+      ~L1NormViewAsReal.register_full_backward_hook
+      ~L1NormViewAsReal.register_full_backward_pre_hook
+      ~L1NormViewAsReal.register_load_state_dict_post_hook
+      ~L1NormViewAsReal.register_module
+      ~L1NormViewAsReal.register_parameter
+      ~L1NormViewAsReal.register_state_dict_pre_hook
+      ~L1NormViewAsReal.requires_grad_
+      ~L1NormViewAsReal.set_extra_state
+      ~L1NormViewAsReal.share_memory
+      ~L1NormViewAsReal.state_dict
+      ~L1NormViewAsReal.to
+      ~L1NormViewAsReal.to_empty
+      ~L1NormViewAsReal.train
+      ~L1NormViewAsReal.type
+      ~L1NormViewAsReal.xpu
+      ~L1NormViewAsReal.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~L1NormViewAsReal.T_destination
+      ~L1NormViewAsReal.call_super_init
+      ~L1NormViewAsReal.dump_patches
+      ~L1NormViewAsReal.training
+   
+   

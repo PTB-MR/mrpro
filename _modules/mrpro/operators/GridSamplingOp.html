@@ -1,0 +1,443 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.operators.GridSamplingOp &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mrpro.operators.GridSamplingOp</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mrpro.operators.GridSamplingOp</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Class for Grid Sampling Operator.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">rearrange</span>
+
+<span class="kn">from</span> <span class="nn">mrpro.data.SpatialDimension</span> <span class="kn">import</span> <span class="n">SpatialDimension</span>
+<span class="kn">from</span> <span class="nn">mrpro.operators.LinearOperator</span> <span class="kn">import</span> <span class="n">LinearOperator</span>
+
+
+<span class="k">class</span> <span class="nc">_AdjointGridSampleCtx</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">FunctionCtx</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Context for Adjoint Grid Sample, used for type hinting.&quot;&quot;&quot;</span>
+
+    <span class="n">shape</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">interpolation_mode</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">padding_mode</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">align_corners</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">xshape</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="n">backward_2d_or_3d</span><span class="p">:</span> <span class="n">Callable</span>
+    <span class="n">saved_tensors</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
+    <span class="n">needs_input_grad</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">AdjointGridSample</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Autograd Function for Adjoint Grid Sample.</span>
+
+<span class="sd">    Ensures that the Adjoint Operation is differentiable.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+        <span class="n">y</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">grid</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">xshape</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">interpolation_mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;bilinear&#39;</span><span class="p">,</span> <span class="s1">&#39;nearest&#39;</span><span class="p">,</span> <span class="s1">&#39;bicubic&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;bilinear&#39;</span><span class="p">,</span>
+        <span class="n">padding_mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;zeros&#39;</span><span class="p">,</span> <span class="s1">&#39;border&#39;</span><span class="p">,</span> <span class="s1">&#39;reflection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;zeros&#39;</span><span class="p">,</span>
+        <span class="n">align_corners</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adjoint of the linear operator x-&gt;gridsample(x,grid).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ctx</span>
+<span class="sd">            Context</span>
+<span class="sd">        y</span>
+<span class="sd">            tensor in the range of gridsample(x,grid). Should not include batch or channel dimension.</span>
+<span class="sd">        grid</span>
+<span class="sd">            grid in the shape (*y.shape, 2/3)</span>
+<span class="sd">        xshape</span>
+<span class="sd">            shape of the domain of gridsample(x,grid), i.e. the shape of x</span>
+<span class="sd">        interpolation_mode</span>
+<span class="sd">            the kind of interpolation used</span>
+<span class="sd">        padding_mode</span>
+<span class="sd">            how to pad the input</span>
+<span class="sd">        align_corners</span>
+<span class="sd">             if True, the corner pixels of the input and output tensors are aligned,</span>
+<span class="sd">             and thus preserving the values at those pixels</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># grid_sampler_and_backward uses integer values instead of strings for the modes</span>
+        <span class="k">match</span> <span class="n">interpolation_mode</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s1">&#39;bilinear&#39;</span><span class="p">:</span>
+                <span class="n">mode_enum</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">case</span> <span class="s1">&#39;nearest&#39;</span><span class="p">:</span>
+                <span class="n">mode_enum</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">case</span> <span class="s1">&#39;bicubic&#39;</span><span class="p">:</span>
+                <span class="n">mode_enum</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Interpolation mode </span><span class="si">{</span><span class="n">interpolation_mode</span><span class="si">}</span><span class="s1"> not supported&#39;</span><span class="p">)</span>
+
+        <span class="k">match</span> <span class="n">padding_mode</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s1">&#39;zeros&#39;</span><span class="p">:</span>
+                <span class="n">padding_mode_enum</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">case</span> <span class="s1">&#39;border&#39;</span><span class="p">:</span>
+                <span class="n">padding_mode_enum</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">case</span> <span class="s1">&#39;reflection&#39;</span><span class="p">:</span>
+                <span class="n">padding_mode_enum</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Padding mode </span><span class="si">{</span><span class="n">padding_mode</span><span class="si">}</span><span class="s1"> not supported&#39;</span><span class="p">)</span>
+
+        <span class="k">match</span> <span class="n">dim</span> <span class="o">:=</span> <span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">case</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">backward_2d_or_3d</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">aten</span><span class="o">.</span><span class="n">grid_sampler_3d_backward</span>
+            <span class="k">case</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">backward_2d_or_3d</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">aten</span><span class="o">.</span><span class="n">grid_sampler_2d_backward</span>
+            <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;only 2d and 3d supported, not </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;y and grid must have same batch size, got </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="si">=}</span><span class="s1">, </span><span class="si">{</span><span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="si">=}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">xshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;xshape and y must have same number of channels, got </span><span class="si">{</span><span class="n">xshape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1"> and </span><span class="si">{</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">xshape</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">!=</span> <span class="n">dim</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;len(xshape) and dim must either both bei 2 or 3, got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">xshape</span><span class="p">)</span><span class="si">}</span><span class="s1"> and </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">dummy</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">y</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">y</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">xshape</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">backward_2d_or_3d</span><span class="p">(</span>
+            <span class="n">y</span><span class="p">,</span>
+            <span class="n">dummy</span><span class="p">,</span>  <span class="c1"># only the shape, device and dtype are relevant</span>
+            <span class="n">grid</span><span class="p">,</span>
+            <span class="n">interpolation_mode</span><span class="o">=</span><span class="n">mode_enum</span><span class="p">,</span>
+            <span class="n">padding_mode</span><span class="o">=</span><span class="n">padding_mode_enum</span><span class="p">,</span>
+            <span class="n">align_corners</span><span class="o">=</span><span class="n">align_corners</span><span class="p">,</span>
+            <span class="n">output_mask</span><span class="o">=</span><span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">],</span>
+        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">mode_enum</span><span class="p">,</span> <span class="n">padding_mode_enum</span><span class="p">,</span> <span class="n">backward_2d_or_3d</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">setup_context</span><span class="p">(</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">_AdjointGridSampleCtx</span><span class="p">,</span>
+        <span class="n">inputs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">],</span>
+        <span class="n">outputs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save information for backward pass.&quot;&quot;&quot;</span>
+        <span class="n">y</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">xshape</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">align_corners</span> <span class="o">=</span> <span class="n">inputs</span>
+        <span class="n">_</span><span class="p">,</span> <span class="p">(</span><span class="n">mode_enum</span><span class="p">,</span> <span class="n">padding_mode_enum</span><span class="p">,</span> <span class="n">backward_2d_or_3d</span><span class="p">)</span> <span class="o">=</span> <span class="n">outputs</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">xshape</span> <span class="o">=</span> <span class="n">xshape</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">interpolation_mode</span> <span class="o">=</span> <span class="n">mode_enum</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">padding_mode</span> <span class="o">=</span> <span class="n">padding_mode_enum</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">align_corners</span> <span class="o">=</span> <span class="n">align_corners</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">backward_2d_or_3d</span> <span class="o">=</span> <span class="n">backward_2d_or_3d</span>
+
+        <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">needs_input_grad</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="c1"># only if we need to calculate the gradient for grid we need y</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="n">save_for_backward</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="n">save_for_backward</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">_AdjointGridSampleCtx</span><span class="p">,</span> <span class="o">*</span><span class="n">grad_output</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Backward of the Adjoint Gridsample Operator.&quot;&quot;&quot;</span>
+        <span class="n">need_y_grad</span><span class="p">,</span> <span class="n">need_grid_grad</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">needs_input_grad</span>
+        <span class="n">grid</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">saved_tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">need_y_grad</span><span class="p">:</span>
+            <span class="c1"># torch.grid_sampler has the same signature as the backward</span>
+            <span class="c1"># (and is used inside F.grid_sample)</span>
+            <span class="n">grad_y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">grid_sampler</span><span class="p">(</span>
+                <span class="n">grad_output</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">grid</span><span class="p">,</span>
+                <span class="n">ctx</span><span class="o">.</span><span class="n">interpolation_mode</span><span class="p">,</span>
+                <span class="n">ctx</span><span class="o">.</span><span class="n">padding_mode</span><span class="p">,</span>
+                <span class="n">ctx</span><span class="o">.</span><span class="n">align_corners</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">grad_y</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">need_grid_grad</span><span class="p">:</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">saved_tensors</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">grad_grid</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">backward_2d_or_3d</span><span class="p">(</span>
+                <span class="n">y</span><span class="p">,</span>
+                <span class="n">grad_output</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">grid</span><span class="p">,</span>
+                <span class="n">interpolation_mode</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">interpolation_mode</span><span class="p">,</span>
+                <span class="n">padding_mode</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">padding_mode</span><span class="p">,</span>
+                <span class="n">align_corners</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">align_corners</span><span class="p">,</span>
+                <span class="n">output_mask</span><span class="o">=</span><span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">],</span>
+            <span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">grad_grid</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="n">grad_y</span><span class="p">,</span> <span class="n">grad_grid</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="GridSamplingOp">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.operators.GridSamplingOp.html#mrpro.operators.GridSamplingOp">[docs]</a>
+<span class="k">class</span> <span class="nc">GridSamplingOp</span><span class="p">(</span><span class="n">LinearOperator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Grid Sampling Operator.</span>
+
+<span class="sd">    Given an &quot;input&quot; tensor and a &quot;grid&quot;, computes the output by taking the input values at the locations</span>
+<span class="sd">    determined by grid with interpolation. Thus, the output size will be determined by the grid size.</span>
+<span class="sd">    For the adjoint to be defined, the grid and the shape of the &quot;input&quot; has to be known.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">grid</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+
+<div class="viewcode-block" id="GridSamplingOp.__init__">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.operators.GridSamplingOp.html#mrpro.operators.GridSamplingOp.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">grid</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">input_shape</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">,</span>
+        <span class="n">interpolation_mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;bilinear&#39;</span><span class="p">,</span> <span class="s1">&#39;nearest&#39;</span><span class="p">,</span> <span class="s1">&#39;bicubic&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;bilinear&#39;</span><span class="p">,</span>
+        <span class="n">padding_mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;zeros&#39;</span><span class="p">,</span> <span class="s1">&#39;border&#39;</span><span class="p">,</span> <span class="s1">&#39;reflection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;zeros&#39;</span><span class="p">,</span>
+        <span class="n">align_corners</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initialize Sampling Operator.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        grid</span>
+<span class="sd">            sampling grid. Shape \*batchdim, z,y,x,3 / \*batchdim, y,x,2.</span>
+<span class="sd">            Values should be in [-1, 1.]</span>
+<span class="sd">        input_shape</span>
+<span class="sd">            Used in the adjoint. The z,y,x shape of the domain of the operator.</span>
+<span class="sd">            If grid has 2 as the last dimension, only y and x will be used.</span>
+<span class="sd">        interpolation_mode</span>
+<span class="sd">            mode used for interpolation. bilinear is trilinear in 3D, bicubic is only supported in 2D.</span>
+<span class="sd">        padding_mode</span>
+<span class="sd">            how the input of the forward is padded.</span>
+<span class="sd">        align_corners</span>
+<span class="sd">            if True, the corner pixels of the input and output tensors are aligned,</span>
+<span class="sd">            and thus preserving the values at those pixels</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="k">match</span> <span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">case</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># 2D</span>
+                <span class="k">if</span> <span class="n">grid</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s1">&#39;For a 2D gridding (determined by last dimension of grid), grid should have at least&#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39; 4 dimensions: batch y x 2. Got shape </span><span class="si">{</span><span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">.&#39;</span>
+                    <span class="p">)</span>
+            <span class="k">case</span> <span class="mi">3</span><span class="p">:</span>  <span class="c1"># 3D</span>
+                <span class="k">if</span> <span class="n">grid</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s1">&#39;For a 3D gridding (determined by last dimension of grid), grid should have at least&#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39; 5 dimensions: batch z y x 3. Got shape </span><span class="si">{</span><span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">.&#39;</span>
+                    <span class="p">)</span>
+                <span class="k">if</span> <span class="n">interpolation_mode</span> <span class="o">==</span> <span class="s1">&#39;bicubic&#39;</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Bicubic only implemented for 2D&#39;</span><span class="p">)</span>
+            <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Grid should have 2 or 3 as last dimension for 2D or 3D sampling&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">grid</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Grid should be a real floating dtype, got </span><span class="si">{</span><span class="n">grid</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">grid</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">1.0</span> <span class="ow">or</span> <span class="n">grid</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Grid has values outside range [-1,1].&#39;</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">interpolation_mode</span> <span class="o">=</span> <span class="n">interpolation_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">padding_mode</span> <span class="o">=</span> <span class="n">padding_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s1">&#39;grid&#39;</span><span class="p">,</span> <span class="n">grid</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_shape</span> <span class="o">=</span> <span class="n">input_shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">align_corners</span> <span class="o">=</span> <span class="n">align_corners</span></div>
+
+
+    <span class="k">def</span> <span class="nf">__reshape_wrapper</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">inner</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Do all the reshaping pre- and post- sampling.&quot;&quot;&quot;</span>
+        <span class="c1"># First, we need to do a lot of reshaping ..</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="n">dim</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;For a </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s1">D sampling operation, x should have at least have </span><span class="si">{</span><span class="n">dim</span><span class="o">+</span><span class="mi">2</span><span class="si">}</span><span class="s1"> dimensions:&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39; batch channel </span><span class="si">{</span><span class="s2">&quot;z y x&quot;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">dim</span><span class="o">==</span><span class="mi">3</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s2">&quot;y x&quot;</span><span class="si">}</span><span class="s1">.&#39;</span>
+            <span class="p">)</span>
+
+        <span class="c1">#   The gridsample operator only works for real data, thus we handle complex inputs as an additional channel</span>
+        <span class="n">x_real</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">view_as_real</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="s1">&#39;... real_imag  -&gt; real_imag ...&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">is_complex</span><span class="p">()</span> <span class="k">else</span> <span class="n">x</span>
+        <span class="n">shape_grid_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span> <span class="o">-</span><span class="n">dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># the batch dimensions of grid</span>
+        <span class="n">n_batchdim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape_grid_batch</span><span class="p">)</span>
+        <span class="n">shape_x_batch</span> <span class="o">=</span> <span class="n">x_real</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="n">n_batchdim</span><span class="p">]</span>  <span class="c1"># the batch dimensions of the input</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">shape_batch</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">broadcast_shapes</span><span class="p">(</span><span class="n">shape_x_batch</span><span class="p">,</span> <span class="n">shape_grid_batch</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Batch dimensions in x and grid are not broadcastable.&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39; Got batch dimensions x: </span><span class="si">{</span><span class="n">shape_x_batch</span><span class="si">}</span><span class="s1"> and grid: </span><span class="si">{</span><span class="n">shape_grid_batch</span><span class="si">}</span><span class="s1">,&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39; (shapes are x: </span><span class="si">{</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">, grid: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">).&#39;</span>
+            <span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+
+        <span class="n">shape_channels</span> <span class="o">=</span> <span class="n">x_real</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">n_batchdim</span><span class="p">:</span><span class="o">-</span><span class="n">dim</span><span class="p">]</span>
+        <span class="c1">#   reshape to 3D: (*batch_dim) z y x 3 or 2D: (*batch_dim) y x 2</span>
+        <span class="n">grid_flatbatch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="o">*</span><span class="n">shape_batch</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">n_batchdim</span><span class="p">:])</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span>
+            <span class="n">end_dim</span><span class="o">=</span><span class="n">n_batchdim</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="n">x_flatbatch</span> <span class="o">=</span> <span class="n">x_real</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="o">*</span><span class="n">shape_batch</span><span class="p">,</span> <span class="o">*</span><span class="n">x_real</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">n_batchdim</span><span class="p">:])</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">end_dim</span><span class="o">=</span><span class="n">n_batchdim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="c1">#   reshape to 3D: (*batch_dim) (*channel_dim) z y x or 2D: (*batch_dim) (*channel_dim) y x</span>
+        <span class="n">x_flatbatch_flatchannel</span> <span class="o">=</span> <span class="n">x_flatbatch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">end_dim</span><span class="o">=-</span><span class="n">dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># .. now we can perform the actual sampling implementation..</span>
+        <span class="n">sampled</span> <span class="o">=</span> <span class="n">inner</span><span class="p">(</span><span class="n">x_flatbatch_flatchannel</span><span class="p">,</span> <span class="n">grid_flatbatch</span><span class="p">)</span>
+
+        <span class="c1"># .. and reshape back.</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">sampled</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">shape_batch</span><span class="p">,</span> <span class="o">*</span><span class="n">shape_channels</span><span class="p">,</span> <span class="o">*</span><span class="n">sampled</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="n">dim</span><span class="p">:])</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">is_complex</span><span class="p">():</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">view_as_complex</span><span class="p">(</span><span class="n">rearrange</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s1">&#39;real_imag ... -&gt; ... real_imag&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">())</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">result</span><span class="p">,)</span>
+
+    <span class="k">def</span> <span class="nf">_forward_implementation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">x_flatbatch_flatchannel</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">grid_flatbatch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply the actual forward after reshaping.&quot;&quot;&quot;</span>
+        <span class="n">sampled</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">grid_sample</span><span class="p">(</span>
+            <span class="n">x_flatbatch_flatchannel</span><span class="p">,</span>
+            <span class="n">grid_flatbatch</span><span class="p">,</span>
+            <span class="n">mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation_mode</span><span class="p">,</span>
+            <span class="n">padding_mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_mode</span><span class="p">,</span>
+            <span class="n">align_corners</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">align_corners</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">sampled</span>
+
+<div class="viewcode-block" id="GridSamplingOp.forward">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.operators.GridSamplingOp.html#mrpro.operators.GridSamplingOp.forward">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply the GridSampleOperator.</span>
+
+<span class="sd">        Samples at the location determine by the grid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_shape</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_shape</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_shape</span><span class="o">.</span><span class="n">z</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s1">&#39;Mismatch between x.shape and input shape. Adjoint on the result will return the wrong shape.&#39;</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reshape_wrapper</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward_implementation</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_adjoint_implementation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">x_flatbatch_flatchannel</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">grid_flatbatch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply the actual adjoint after reshaping.&quot;&quot;&quot;</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">x_flatbatch_flatchannel</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="n">dim</span><span class="p">],</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">input_shape</span><span class="o">.</span><span class="n">zyx</span><span class="p">[</span><span class="o">-</span><span class="n">dim</span><span class="p">:])</span>
+        <span class="n">sampled</span> <span class="o">=</span> <span class="n">AdjointGridSample</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+            <span class="n">x_flatbatch_flatchannel</span><span class="p">,</span>
+            <span class="n">grid_flatbatch</span><span class="p">,</span>
+            <span class="n">shape</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">interpolation_mode</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">padding_mode</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">align_corners</span><span class="p">,</span>
+        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">sampled</span>
+
+<div class="viewcode-block" id="GridSamplingOp.adjoint">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.operators.GridSamplingOp.html#mrpro.operators.GridSamplingOp.adjoint">[docs]</a>
+    <span class="k">def</span> <span class="nf">adjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply the adjoint of the GridSampleOperator.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reshape_wrapper</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adjoint_implementation</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

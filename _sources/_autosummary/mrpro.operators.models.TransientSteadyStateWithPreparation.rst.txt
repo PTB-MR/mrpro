@@ -1,0 +1,81 @@
+mrpro.operators.models.TransientSteadyStateWithPreparation
+==========================================================
+
+.. currentmodule:: mrpro.operators.models
+
+.. autoclass:: TransientSteadyStateWithPreparation
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~TransientSteadyStateWithPreparation.__init__
+      ~TransientSteadyStateWithPreparation.add_module
+      ~TransientSteadyStateWithPreparation.apply
+      ~TransientSteadyStateWithPreparation.bfloat16
+      ~TransientSteadyStateWithPreparation.buffers
+      ~TransientSteadyStateWithPreparation.children
+      ~TransientSteadyStateWithPreparation.compile
+      ~TransientSteadyStateWithPreparation.cpu
+      ~TransientSteadyStateWithPreparation.cuda
+      ~TransientSteadyStateWithPreparation.double
+      ~TransientSteadyStateWithPreparation.eval
+      ~TransientSteadyStateWithPreparation.expand_tensor_dim
+      ~TransientSteadyStateWithPreparation.extra_repr
+      ~TransientSteadyStateWithPreparation.float
+      ~TransientSteadyStateWithPreparation.forward
+      ~TransientSteadyStateWithPreparation.get_buffer
+      ~TransientSteadyStateWithPreparation.get_extra_state
+      ~TransientSteadyStateWithPreparation.get_parameter
+      ~TransientSteadyStateWithPreparation.get_submodule
+      ~TransientSteadyStateWithPreparation.half
+      ~TransientSteadyStateWithPreparation.ipu
+      ~TransientSteadyStateWithPreparation.load_state_dict
+      ~TransientSteadyStateWithPreparation.modules
+      ~TransientSteadyStateWithPreparation.named_buffers
+      ~TransientSteadyStateWithPreparation.named_children
+      ~TransientSteadyStateWithPreparation.named_modules
+      ~TransientSteadyStateWithPreparation.named_parameters
+      ~TransientSteadyStateWithPreparation.parameters
+      ~TransientSteadyStateWithPreparation.register_backward_hook
+      ~TransientSteadyStateWithPreparation.register_buffer
+      ~TransientSteadyStateWithPreparation.register_forward_hook
+      ~TransientSteadyStateWithPreparation.register_forward_pre_hook
+      ~TransientSteadyStateWithPreparation.register_full_backward_hook
+      ~TransientSteadyStateWithPreparation.register_full_backward_pre_hook
+      ~TransientSteadyStateWithPreparation.register_load_state_dict_post_hook
+      ~TransientSteadyStateWithPreparation.register_module
+      ~TransientSteadyStateWithPreparation.register_parameter
+      ~TransientSteadyStateWithPreparation.register_state_dict_pre_hook
+      ~TransientSteadyStateWithPreparation.requires_grad_
+      ~TransientSteadyStateWithPreparation.set_extra_state
+      ~TransientSteadyStateWithPreparation.share_memory
+      ~TransientSteadyStateWithPreparation.state_dict
+      ~TransientSteadyStateWithPreparation.to
+      ~TransientSteadyStateWithPreparation.to_empty
+      ~TransientSteadyStateWithPreparation.train
+      ~TransientSteadyStateWithPreparation.type
+      ~TransientSteadyStateWithPreparation.xpu
+      ~TransientSteadyStateWithPreparation.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~TransientSteadyStateWithPreparation.T_destination
+      ~TransientSteadyStateWithPreparation.call_super_init
+      ~TransientSteadyStateWithPreparation.dump_patches
+      ~TransientSteadyStateWithPreparation.training
+   
+   

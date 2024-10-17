@@ -1,0 +1,47 @@
+mrpro.data.SpatialDimension
+===========================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: SpatialDimension
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SpatialDimension.__init__
+      ~SpatialDimension.clone
+      ~SpatialDimension.cpu
+      ~SpatialDimension.cuda
+      ~SpatialDimension.double
+      ~SpatialDimension.from_array_xyz
+      ~SpatialDimension.from_array_zyx
+      ~SpatialDimension.from_xyz
+      ~SpatialDimension.half
+      ~SpatialDimension.single
+      ~SpatialDimension.to
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SpatialDimension.z
+      ~SpatialDimension.y
+      ~SpatialDimension.x
+      ~SpatialDimension.device
+      ~SpatialDimension.is_cpu
+      ~SpatialDimension.is_cuda
+      ~SpatialDimension.zyx
+   
+   

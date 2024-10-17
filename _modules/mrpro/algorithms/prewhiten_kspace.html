@@ -1,0 +1,178 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.algorithms.prewhiten_kspace &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mrpro.algorithms.prewhiten_kspace</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mrpro.algorithms.prewhiten_kspace</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Prewhiten k-space data.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">einsum</span><span class="p">,</span> <span class="n">parse_shape</span><span class="p">,</span> <span class="n">rearrange</span>
+
+<span class="kn">from</span> <span class="nn">mrpro.data._kdata.KData</span> <span class="kn">import</span> <span class="n">KData</span>
+<span class="kn">from</span> <span class="nn">mrpro.data.KNoise</span> <span class="kn">import</span> <span class="n">KNoise</span>
+
+
+<div class="viewcode-block" id="prewhiten_kspace">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.algorithms.prewhiten_kspace.html#mrpro.algorithms.prewhiten_kspace">[docs]</a>
+<span class="k">def</span> <span class="nf">prewhiten_kspace</span><span class="p">(</span><span class="n">kdata</span><span class="p">:</span> <span class="n">KData</span><span class="p">,</span> <span class="n">knoise</span><span class="p">:</span> <span class="n">KNoise</span><span class="p">,</span> <span class="n">scale_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KData</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate noise prewhitening matrix and decorrelate coils.</span>
+
+<span class="sd">    Steps:</span>
+
+<span class="sd">    - Calculate noise correlation matrix N</span>
+<span class="sd">    - Carry out Cholesky decomposition L L^H = N</span>
+<span class="sd">    - Estimate noise decorrelation matrix D = inv(L)</span>
+<span class="sd">    - Apply D to k-space data</span>
+
+<span class="sd">    More information can be found in [ISMa]_ [HAN2014]_ [ROE1990]_.</span>
+
+<span class="sd">    If the data has more samples in the &#39;other&#39;-dimensions (batch/slice/...),</span>
+<span class="sd">    the noise covariance matrix is calculated jointly over all samples.</span>
+<span class="sd">    Thus, if the noise is not stationary, the noise covariance matrix is not accurate.</span>
+<span class="sd">    In this case, the function should be called for each sample separately.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    kdata</span>
+<span class="sd">        K-space data.</span>
+<span class="sd">    knoise</span>
+<span class="sd">        Noise measurements.</span>
+<span class="sd">    scale_factor</span>
+<span class="sd">        Square root is applied on the noise covariance matrix. Used to adjust for effective noise bandwidth</span>
+<span class="sd">        and difference in sampling rate between noise calibration and actual measurement:</span>
+<span class="sd">        scale_factor = (T_acq_dwell/T_noise_dwell)*NoiseReceiverBandwidthRatio</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">        Prewhitened copy of k-space data</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [ISMa] ISMRMRD Python tools https://github.com/ismrmrd/ismrmrd-python-tools</span>
+<span class="sd">    .. [HAN2014] Hansen M, Kellman P (2014) Image reconstruction: An overview for clinicians. JMRI 41(3)</span>
+<span class="sd">            https://doi.org/10.1002/jmri.24687</span>
+<span class="sd">    .. [ROE1990] Roemer P, Mueller O (1990) The NMR phased array. MRM 16(2)</span>
+<span class="sd">            https://doi.org/10.1002/mrm.1910160203</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Reshape noise to (coil, everything else)</span>
+    <span class="n">noise</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">knoise</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="s1">&#39;... coils k2 k1 k0-&gt;coils (... k2 k1 k0)&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Calculate noise covariance matrix and Cholesky decomposition</span>
+    <span class="n">noise_cov</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">noise</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span> <span class="o">*</span> <span class="n">einsum</span><span class="p">(</span>
+        <span class="n">noise</span><span class="p">,</span> <span class="n">noise</span><span class="o">.</span><span class="n">conj</span><span class="p">(),</span> <span class="s1">&#39;coil1 everythingelse, coil2 everythingelse -&gt; coil1 coil2&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">cholsky</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">noise_cov</span><span class="p">)</span>
+
+    <span class="c1"># solve_triangular is numerically more stable than inverting the matrix</span>
+    <span class="c1"># but requires a single batch dimension</span>
+    <span class="n">kdata_flat</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="s1">&#39;... coil k2 k1 k0 -&gt; (... k2 k1 k0) coil 1&#39;</span><span class="p">)</span>
+    <span class="n">whitened_flat</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve_triangular</span><span class="p">(</span><span class="n">cholsky</span><span class="p">,</span> <span class="n">kdata_flat</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">whitened_flatother</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span>
+        <span class="n">whitened_flat</span><span class="p">,</span> <span class="s1">&#39;(other k2 k1 k0) coil 1-&gt; other coil k2 k1 k0&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">parse_shape</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="s1">&#39;... k2 k1 k0&#39;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">whitened_data</span> <span class="o">=</span> <span class="n">whitened_flatother</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">scale_factor</span><span class="p">)</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span>
+    <span class="n">header</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">header</span><span class="p">)</span>
+    <span class="n">traj</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">kdata</span><span class="o">.</span><span class="n">traj</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">KData</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="n">whitened_data</span><span class="p">,</span> <span class="n">traj</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

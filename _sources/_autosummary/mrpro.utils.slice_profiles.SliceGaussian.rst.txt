@@ -1,0 +1,81 @@
+mrpro.utils.slice\_profiles.SliceGaussian
+=========================================
+
+.. currentmodule:: mrpro.utils.slice_profiles
+
+.. autoclass:: SliceGaussian
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SliceGaussian.__init__
+      ~SliceGaussian.add_module
+      ~SliceGaussian.apply
+      ~SliceGaussian.bfloat16
+      ~SliceGaussian.buffers
+      ~SliceGaussian.children
+      ~SliceGaussian.compile
+      ~SliceGaussian.cpu
+      ~SliceGaussian.cuda
+      ~SliceGaussian.double
+      ~SliceGaussian.eval
+      ~SliceGaussian.extra_repr
+      ~SliceGaussian.float
+      ~SliceGaussian.forward
+      ~SliceGaussian.get_buffer
+      ~SliceGaussian.get_extra_state
+      ~SliceGaussian.get_parameter
+      ~SliceGaussian.get_submodule
+      ~SliceGaussian.half
+      ~SliceGaussian.ipu
+      ~SliceGaussian.load_state_dict
+      ~SliceGaussian.modules
+      ~SliceGaussian.named_buffers
+      ~SliceGaussian.named_children
+      ~SliceGaussian.named_modules
+      ~SliceGaussian.named_parameters
+      ~SliceGaussian.parameters
+      ~SliceGaussian.random_sample
+      ~SliceGaussian.register_backward_hook
+      ~SliceGaussian.register_buffer
+      ~SliceGaussian.register_forward_hook
+      ~SliceGaussian.register_forward_pre_hook
+      ~SliceGaussian.register_full_backward_hook
+      ~SliceGaussian.register_full_backward_pre_hook
+      ~SliceGaussian.register_load_state_dict_post_hook
+      ~SliceGaussian.register_module
+      ~SliceGaussian.register_parameter
+      ~SliceGaussian.register_state_dict_pre_hook
+      ~SliceGaussian.requires_grad_
+      ~SliceGaussian.set_extra_state
+      ~SliceGaussian.share_memory
+      ~SliceGaussian.state_dict
+      ~SliceGaussian.to
+      ~SliceGaussian.to_empty
+      ~SliceGaussian.train
+      ~SliceGaussian.type
+      ~SliceGaussian.xpu
+      ~SliceGaussian.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SliceGaussian.T_destination
+      ~SliceGaussian.call_super_init
+      ~SliceGaussian.dump_patches
+      ~SliceGaussian.training
+   
+   

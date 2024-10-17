@@ -1,0 +1,351 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.data.EncodingLimits &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mrpro.data.IData" href="mrpro.data.IData.html" />
+    <link rel="prev" title="mrpro.data.DcfData" href="mrpro.data.DcfData.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-algorithms">MRpro Algorithms</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../api.html#mrpro-data">MRpro Data</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="mrpro.data.html">mrpro.data</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.AcqIdx.html">mrpro.data.AcqIdx</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.AcqInfo.html">mrpro.data.AcqInfo</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.CsmData.html">mrpro.data.CsmData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.Data.html">mrpro.data.Data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.DcfData.html">mrpro.data.DcfData</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">mrpro.data.EncodingLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.IData.html">mrpro.data.IData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.IHeader.html">mrpro.data.IHeader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KData.html">mrpro.data.KData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KHeader.html">mrpro.data.KHeader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KNoise.html">mrpro.data.KNoise</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KTrajectory.html">mrpro.data.KTrajectory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KTrajectoryRawShape.html">mrpro.data.KTrajectoryRawShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.Limits.html">mrpro.data.Limits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.MoveDataMixin.html">mrpro.data.MoveDataMixin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.QData.html">mrpro.data.QData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.QHeader.html">mrpro.data.QHeader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.Rotation.html">mrpro.data.Rotation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.SpatialDimension.html">mrpro.data.SpatialDimension</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.TrajectoryDescription.html">mrpro.data.TrajectoryDescription</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.acq_filters.html">mrpro.data.acq_filters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.enums.html">mrpro.data.enums</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.traj_calculators.html">mrpro.data.traj_calculators</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-operators">MRpro Operators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-phantoms">MRpro Phantoms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-utilities">MRpro Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../api.html">API</a></li>
+          <li class="breadcrumb-item"><a href="mrpro.data.html">mrpro.data</a></li>
+      <li class="breadcrumb-item active">mrpro.data.EncodingLimits</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/_autosummary/mrpro.data.EncodingLimits.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="mrpro-data-encodinglimits">
+<h1>mrpro.data.EncodingLimits<a class="headerlink" href="#mrpro-data-encodinglimits" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.</span></span><span class="sig-name descname"><span class="pre">EncodingLimits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k0:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k1:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k2:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">average:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slice:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contrast:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repetition:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segment:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_0:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_1:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_2:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_3:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_4:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_5:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_6:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_7:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/EncodingLimits.html#EncodingLimits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.EncodingLimits" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Encoding limits dataclass with limits for each attribute <a class="reference internal" href="#ina2016" id="id1"><span>[INA2016]</span></a>.</p>
+<p class="rubric">References</p>
+<div role="list" class="citation-list">
+<div class="citation" id="ina2016" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">INA2016</a><span class="fn-bracket">]</span></span>
+<p>Inati S, Hansen M (2016) ISMRM Raw data format: A proposed standard for MRI raw datasets. MRM 77(1)
+<a class="reference external" href="https://doi.org/10.1002/mrm.26089">https://doi.org/10.1002/mrm.26089</a></p>
+</div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k0:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k1:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k2:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">average:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slice:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contrast:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phase:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repetition:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">set:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segment:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_0:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_1:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_2:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_3:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_4:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_5:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_6:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_7:</span> <span class="pre">~mrpro.data.EncodingLimits.Limits</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.data.EncodingLimits.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code>([k0, k1, k2, average, slice, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_ismrmrd_encoding_limits_type</span></code>(...)</p></td>
+<td><p>Generate EncodingLimits from ismrmrd.encodingLimitsType.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">k0</span></code></p></td>
+<td><p>First k-space encoding.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">k1</span></code></p></td>
+<td><p>Second k-space encoding.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">k2</span></code></p></td>
+<td><p>Third k-space encoding.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">average</span></code></p></td>
+<td><p>Signal average.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">slice</span></code></p></td>
+<td><p>Slice number (multi-slice 2D).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">contrast</span></code></p></td>
+<td><p>Echo number in multi-echo.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">phase</span></code></p></td>
+<td><p>Cardiac phase.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">repetition</span></code></p></td>
+<td><p>Repeated/dynamic acquisitions.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">set</span></code></p></td>
+<td><p>Sets of different preparation.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">segment</span></code></p></td>
+<td><p>Segments of segmented acquisition.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">user_0</span></code></p></td>
+<td><p>User index 0.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">user_1</span></code></p></td>
+<td><p>User index 1.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">user_2</span></code></p></td>
+<td><p>User index 2.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">user_3</span></code></p></td>
+<td><p>User index 3.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">user_4</span></code></p></td>
+<td><p>User index 4.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">user_5</span></code></p></td>
+<td><p>User index 5.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">user_6</span></code></p></td>
+<td><p>User index 6.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">user_7</span></code></p></td>
+<td><p>User index 7.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.average">
+<span class="sig-name descname"><span class="pre">average</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.EncodingLimits.Limits"><span class="pre">Limits</span></a></em><a class="headerlink" href="#mrpro.data.EncodingLimits.average" title="Link to this definition"></a></dt>
+<dd><p>Signal average.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.contrast">
+<span class="sig-name descname"><span class="pre">contrast</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.EncodingLimits.Limits"><span class="pre">Limits</span></a></em><a class="headerlink" href="#mrpro.data.EncodingLimits.contrast" title="Link to this definition"></a></dt>
+<dd><p>Echo number in multi-echo.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.from_ismrmrd_encoding_limits_type">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_ismrmrd_encoding_limits_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">encoding_limits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">encodingLimitsType</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/EncodingLimits.html#EncodingLimits.from_ismrmrd_encoding_limits_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.EncodingLimits.from_ismrmrd_encoding_limits_type" title="Link to this definition"></a></dt>
+<dd><p>Generate EncodingLimits from ismrmrd.encodingLimitsType.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.k0">
+<span class="sig-name descname"><span class="pre">k0</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.EncodingLimits.Limits"><span class="pre">Limits</span></a></em><a class="headerlink" href="#mrpro.data.EncodingLimits.k0" title="Link to this definition"></a></dt>
+<dd><p>First k-space encoding.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.k1">
+<span class="sig-name descname"><span class="pre">k1</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.EncodingLimits.Limits"><span class="pre">Limits</span></a></em><a class="headerlink" href="#mrpro.data.EncodingLimits.k1" title="Link to this definition"></a></dt>
+<dd><p>Second k-space encoding.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.k2">
+<span class="sig-name descname"><span class="pre">k2</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.EncodingLimits.Limits"><span class="pre">Limits</span></a></em><a class="headerlink" href="#mrpro.data.EncodingLimits.k2" title="Link to this definition"></a></dt>
+<dd><p>Third k-space encoding.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.phase">
+<span class="sig-name descname"><span class="pre">phase</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.EncodingLimits.Limits"><span class="pre">Limits</span></a></em><a class="headerlink" href="#mrpro.data.EncodingLimits.phase" title="Link to this definition"></a></dt>
+<dd><p>Cardiac phase.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.repetition">
+<span class="sig-name descname"><span class="pre">repetition</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.EncodingLimits.Limits"><span class="pre">Limits</span></a></em><a class="headerlink" href="#mrpro.data.EncodingLimits.repetition" title="Link to this definition"></a></dt>
+<dd><p>Repeated/dynamic acquisitions.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.segment">
+<span class="sig-name descname"><span class="pre">segment</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.EncodingLimits.Limits"><span class="pre">Limits</span></a></em><a class="headerlink" href="#mrpro.data.EncodingLimits.segment" title="Link to this definition"></a></dt>
+<dd><p>Segments of segmented acquisition.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.set">
+<span class="sig-name descname"><span class="pre">set</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.EncodingLimits.Limits"><span class="pre">Limits</span></a></em><a class="headerlink" href="#mrpro.data.EncodingLimits.set" title="Link to this definition"></a></dt>
+<dd><p>Sets of different preparation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.slice">
+<span class="sig-name descname"><span class="pre">slice</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.EncodingLimits.Limits"><span class="pre">Limits</span></a></em><a class="headerlink" href="#mrpro.data.EncodingLimits.slice" title="Link to this definition"></a></dt>
+<dd><p>Slice number (multi-slice 2D).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.user_0">
+<span class="sig-name descname"><span class="pre">user_0</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.EncodingLimits.Limits"><span class="pre">Limits</span></a></em><a class="headerlink" href="#mrpro.data.EncodingLimits.user_0" title="Link to this definition"></a></dt>
+<dd><p>User index 0.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.user_1">
+<span class="sig-name descname"><span class="pre">user_1</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.EncodingLimits.Limits"><span class="pre">Limits</span></a></em><a class="headerlink" href="#mrpro.data.EncodingLimits.user_1" title="Link to this definition"></a></dt>
+<dd><p>User index 1.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.user_2">
+<span class="sig-name descname"><span class="pre">user_2</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.EncodingLimits.Limits"><span class="pre">Limits</span></a></em><a class="headerlink" href="#mrpro.data.EncodingLimits.user_2" title="Link to this definition"></a></dt>
+<dd><p>User index 2.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.user_3">
+<span class="sig-name descname"><span class="pre">user_3</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.EncodingLimits.Limits"><span class="pre">Limits</span></a></em><a class="headerlink" href="#mrpro.data.EncodingLimits.user_3" title="Link to this definition"></a></dt>
+<dd><p>User index 3.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.user_4">
+<span class="sig-name descname"><span class="pre">user_4</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.EncodingLimits.Limits"><span class="pre">Limits</span></a></em><a class="headerlink" href="#mrpro.data.EncodingLimits.user_4" title="Link to this definition"></a></dt>
+<dd><p>User index 4.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.user_5">
+<span class="sig-name descname"><span class="pre">user_5</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.EncodingLimits.Limits"><span class="pre">Limits</span></a></em><a class="headerlink" href="#mrpro.data.EncodingLimits.user_5" title="Link to this definition"></a></dt>
+<dd><p>User index 5.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.user_6">
+<span class="sig-name descname"><span class="pre">user_6</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.EncodingLimits.Limits"><span class="pre">Limits</span></a></em><a class="headerlink" href="#mrpro.data.EncodingLimits.user_6" title="Link to this definition"></a></dt>
+<dd><p>User index 6.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.EncodingLimits.user_7">
+<span class="sig-name descname"><span class="pre">user_7</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.Limits.html#mrpro.data.Limits" title="mrpro.data.EncodingLimits.Limits"><span class="pre">Limits</span></a></em><a class="headerlink" href="#mrpro.data.EncodingLimits.user_7" title="Link to this definition"></a></dt>
+<dd><p>User index 7.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="mrpro.data.DcfData.html" class="btn btn-neutral float-left" title="mrpro.data.DcfData" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mrpro.data.IData.html" class="btn btn-neutral float-right" title="mrpro.data.IData" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

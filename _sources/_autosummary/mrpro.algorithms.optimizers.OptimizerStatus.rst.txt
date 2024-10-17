@@ -1,0 +1,43 @@
+mrpro.algorithms.optimizers.OptimizerStatus
+===========================================
+
+.. currentmodule:: mrpro.algorithms.optimizers
+
+.. autoclass:: OptimizerStatus
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~OptimizerStatus.__init__
+      ~OptimizerStatus.clear
+      ~OptimizerStatus.copy
+      ~OptimizerStatus.fromkeys
+      ~OptimizerStatus.get
+      ~OptimizerStatus.items
+      ~OptimizerStatus.keys
+      ~OptimizerStatus.pop
+      ~OptimizerStatus.popitem
+      ~OptimizerStatus.setdefault
+      ~OptimizerStatus.update
+      ~OptimizerStatus.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~OptimizerStatus.solution
+      ~OptimizerStatus.iteration_number
+   
+   

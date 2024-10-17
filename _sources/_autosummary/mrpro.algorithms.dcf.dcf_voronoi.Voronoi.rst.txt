@@ -1,0 +1,34 @@
+mrpro.algorithms.dcf.dcf\_voronoi.Voronoi
+=========================================
+
+.. currentmodule:: mrpro.algorithms.dcf.dcf_voronoi
+
+.. autoclass:: Voronoi
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Voronoi.__init__
+      ~Voronoi.add_points
+      ~Voronoi.close
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Voronoi.points
+      ~Voronoi.ridge_dict
+   
+   

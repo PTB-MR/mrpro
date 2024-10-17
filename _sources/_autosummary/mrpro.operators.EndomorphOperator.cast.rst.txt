@@ -1,0 +1,6 @@
+mrpro.operators.EndomorphOperator.cast
+======================================
+
+.. currentmodule:: mrpro.operators.EndomorphOperator
+
+.. autofunction:: cast

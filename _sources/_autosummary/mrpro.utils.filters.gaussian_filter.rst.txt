@@ -1,0 +1,6 @@
+mrpro.utils.filters.gaussian\_filter
+====================================
+
+.. currentmodule:: mrpro.utils.filters
+
+.. autofunction:: gaussian_filter

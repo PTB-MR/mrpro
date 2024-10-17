@@ -1,0 +1,6 @@
+mrpro.operators.EndomorphOperator.endomorph
+===========================================
+
+.. currentmodule:: mrpro.operators.EndomorphOperator
+
+.. autofunction:: endomorph

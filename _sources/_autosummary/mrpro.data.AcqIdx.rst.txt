@@ -1,0 +1,57 @@
+mrpro.data.AcqIdx
+=================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: AcqIdx
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~AcqIdx.__init__
+      ~AcqIdx.clone
+      ~AcqIdx.cpu
+      ~AcqIdx.cuda
+      ~AcqIdx.double
+      ~AcqIdx.half
+      ~AcqIdx.single
+      ~AcqIdx.to
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~AcqIdx.k1
+      ~AcqIdx.k2
+      ~AcqIdx.average
+      ~AcqIdx.slice
+      ~AcqIdx.contrast
+      ~AcqIdx.phase
+      ~AcqIdx.repetition
+      ~AcqIdx.set
+      ~AcqIdx.segment
+      ~AcqIdx.user0
+      ~AcqIdx.user1
+      ~AcqIdx.user2
+      ~AcqIdx.user3
+      ~AcqIdx.user4
+      ~AcqIdx.user5
+      ~AcqIdx.user6
+      ~AcqIdx.user7
+      ~AcqIdx.device
+      ~AcqIdx.is_cpu
+      ~AcqIdx.is_cuda
+   
+   

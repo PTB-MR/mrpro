@@ -1,0 +1,42 @@
+mrpro.data.Data
+===============
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: Data
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Data.__init__
+      ~Data.clone
+      ~Data.cpu
+      ~Data.cuda
+      ~Data.double
+      ~Data.half
+      ~Data.single
+      ~Data.to
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Data.data
+      ~Data.header
+      ~Data.device
+      ~Data.is_cpu
+      ~Data.is_cuda
+   
+   

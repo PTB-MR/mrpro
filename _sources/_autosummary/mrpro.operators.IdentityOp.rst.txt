@@ -1,0 +1,84 @@
+mrpro.operators.IdentityOp
+==========================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: IdentityOp
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~IdentityOp.__init__
+      ~IdentityOp.add_module
+      ~IdentityOp.adjoint
+      ~IdentityOp.apply
+      ~IdentityOp.bfloat16
+      ~IdentityOp.buffers
+      ~IdentityOp.children
+      ~IdentityOp.compile
+      ~IdentityOp.cpu
+      ~IdentityOp.cuda
+      ~IdentityOp.double
+      ~IdentityOp.eval
+      ~IdentityOp.extra_repr
+      ~IdentityOp.float
+      ~IdentityOp.forward
+      ~IdentityOp.get_buffer
+      ~IdentityOp.get_extra_state
+      ~IdentityOp.get_parameter
+      ~IdentityOp.get_submodule
+      ~IdentityOp.half
+      ~IdentityOp.ipu
+      ~IdentityOp.load_state_dict
+      ~IdentityOp.modules
+      ~IdentityOp.named_buffers
+      ~IdentityOp.named_children
+      ~IdentityOp.named_modules
+      ~IdentityOp.named_parameters
+      ~IdentityOp.operator_norm
+      ~IdentityOp.parameters
+      ~IdentityOp.register_backward_hook
+      ~IdentityOp.register_buffer
+      ~IdentityOp.register_forward_hook
+      ~IdentityOp.register_forward_pre_hook
+      ~IdentityOp.register_full_backward_hook
+      ~IdentityOp.register_full_backward_pre_hook
+      ~IdentityOp.register_load_state_dict_post_hook
+      ~IdentityOp.register_module
+      ~IdentityOp.register_parameter
+      ~IdentityOp.register_state_dict_pre_hook
+      ~IdentityOp.requires_grad_
+      ~IdentityOp.set_extra_state
+      ~IdentityOp.share_memory
+      ~IdentityOp.state_dict
+      ~IdentityOp.to
+      ~IdentityOp.to_empty
+      ~IdentityOp.train
+      ~IdentityOp.type
+      ~IdentityOp.xpu
+      ~IdentityOp.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~IdentityOp.H
+      ~IdentityOp.T_destination
+      ~IdentityOp.call_super_init
+      ~IdentityOp.dump_patches
+      ~IdentityOp.gram
+      ~IdentityOp.training
+   
+   

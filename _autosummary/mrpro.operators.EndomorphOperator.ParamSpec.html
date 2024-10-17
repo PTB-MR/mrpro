@@ -1,0 +1,217 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.operators.EndomorphOperator.ParamSpec &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mrpro.operators.EndomorphOperator.Protocol" href="mrpro.operators.EndomorphOperator.Protocol.html" />
+    <link rel="prev" title="mrpro.operators.EndomorphOperator.Operator" href="mrpro.operators.EndomorphOperator.Operator.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-algorithms">MRpro Algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-data">MRpro Data</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../api.html#mrpro-operators">MRpro Operators</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="mrpro.operators.html">mrpro.operators</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.CartesianSamplingOp.html">mrpro.operators.CartesianSamplingOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.ConstraintsOp.html">mrpro.operators.ConstraintsOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.DensityCompensationOp.html">mrpro.operators.DensityCompensationOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.EinsumOp.html">mrpro.operators.EinsumOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.ElementaryFunctional.html">mrpro.operators.ElementaryFunctional</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.ElementaryProximableFunctional.html">mrpro.operators.ElementaryProximableFunctional</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.FastFourierOp.html">mrpro.operators.FastFourierOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.FiniteDifferenceOp.html">mrpro.operators.FiniteDifferenceOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.FourierOp.html">mrpro.operators.FourierOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.Functional.html">mrpro.operators.Functional</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.GridSamplingOp.html">mrpro.operators.GridSamplingOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.IdentityOp.html">mrpro.operators.IdentityOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.LinearOperator.html">mrpro.operators.LinearOperator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.MagnitudeOp.html">mrpro.operators.MagnitudeOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.MultiIdentityOp.html">mrpro.operators.MultiIdentityOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.Operator.html">mrpro.operators.Operator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.PhaseOp.html">mrpro.operators.PhaseOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.ProximableFunctional.html">mrpro.operators.ProximableFunctional</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.SensitivityOp.html">mrpro.operators.SensitivityOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.SignalModel.html">mrpro.operators.SignalModel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.SliceProjectionOp.html">mrpro.operators.SliceProjectionOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.WaveletOp.html">mrpro.operators.WaveletOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.ZeroOp.html">mrpro.operators.ZeroOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.ZeroPadOp.html">mrpro.operators.ZeroPadOp</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="mrpro.operators.EndomorphOperator.html">mrpro.operators.EndomorphOperator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.RearrangeOp.html">mrpro.operators.RearrangeOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.functionals.html">mrpro.operators.functionals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.models.html">mrpro.operators.models</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-phantoms">MRpro Phantoms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-utilities">MRpro Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../api.html">API</a></li>
+          <li class="breadcrumb-item"><a href="mrpro.operators.html">mrpro.operators</a></li>
+          <li class="breadcrumb-item"><a href="mrpro.operators.EndomorphOperator.html">mrpro.operators.EndomorphOperator</a></li>
+      <li class="breadcrumb-item active">mrpro.operators.EndomorphOperator.ParamSpec</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/_autosummary/mrpro.operators.EndomorphOperator.ParamSpec.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="mrpro-operators-endomorphoperator-paramspec">
+<h1>mrpro.operators.EndomorphOperator.ParamSpec<a class="headerlink" href="#mrpro-operators-endomorphoperator-paramspec" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="mrpro.operators.EndomorphOperator.ParamSpec">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.operators.EndomorphOperator.</span></span><span class="sig-name descname"><span class="pre">ParamSpec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bound</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">covariant</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contravariant</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/typing.html#ParamSpec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.operators.EndomorphOperator.ParamSpec" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_Final</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">_Immutable</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">_BoundVarianceMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">_PickleUsingNameMixin</span></code></p>
+<p>Parameter specification variable.</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">P</span> <span class="o">=</span> <span class="n">ParamSpec</span><span class="p">(</span><span class="s1">&#39;P&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Parameter specification variables exist primarily for the benefit of static
+type checkers.  They are used to forward the parameter types of one
+callable to another callable, a pattern commonly found in higher order
+functions and decorators.  They are only valid when used in <code class="docutils literal notranslate"><span class="pre">Concatenate</span></code>,
+or as the first argument to <code class="docutils literal notranslate"><span class="pre">Callable</span></code>, or as parameters for user-defined
+Generics.  See class Generic for more information on generic types.  An
+example for annotating a decorator:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>
+<span class="n">P</span> <span class="o">=</span> <span class="n">ParamSpec</span><span class="p">(</span><span class="s1">&#39;P&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">add_logging</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="n">P</span><span class="p">,</span> <span class="n">T</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;A type-safe decorator to add logging to a function.&#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">inner</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">P</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">P</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1"> was called&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">inner</span>
+
+<span class="nd">@add_logging</span>
+<span class="k">def</span> <span class="nf">add_two</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;Add two numbers together.&#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+</pre></div>
+</div>
+<p>Parameter specification variables can be introspected. e.g.:</p>
+<blockquote>
+<div><p>P.__name__ == ‘P’</p>
+</div></blockquote>
+<p>Note that only parameter specification variables defined in global scope can
+be pickled.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.operators.EndomorphOperator.ParamSpec.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bound</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">covariant</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contravariant</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/typing.html#ParamSpec.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.operators.EndomorphOperator.ParamSpec.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.operators.EndomorphOperator.ParamSpec.__init__" title="mrpro.operators.EndomorphOperator.ParamSpec.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(name, *[, bound, covariant, ...])</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">args</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">kwargs</span></code></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="mrpro.operators.EndomorphOperator.Operator.html" class="btn btn-neutral float-left" title="mrpro.operators.EndomorphOperator.Operator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mrpro.operators.EndomorphOperator.Protocol.html" class="btn btn-neutral float-right" title="mrpro.operators.EndomorphOperator.Protocol" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

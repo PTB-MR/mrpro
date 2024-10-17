@@ -1,0 +1,82 @@
+mrpro.operators.functionals.L2NormSquared
+=========================================
+
+.. currentmodule:: mrpro.operators.functionals
+
+.. autoclass:: L2NormSquared
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~L2NormSquared.__init__
+      ~L2NormSquared.add_module
+      ~L2NormSquared.apply
+      ~L2NormSquared.bfloat16
+      ~L2NormSquared.buffers
+      ~L2NormSquared.children
+      ~L2NormSquared.compile
+      ~L2NormSquared.cpu
+      ~L2NormSquared.cuda
+      ~L2NormSquared.double
+      ~L2NormSquared.eval
+      ~L2NormSquared.extra_repr
+      ~L2NormSquared.float
+      ~L2NormSquared.forward
+      ~L2NormSquared.get_buffer
+      ~L2NormSquared.get_extra_state
+      ~L2NormSquared.get_parameter
+      ~L2NormSquared.get_submodule
+      ~L2NormSquared.half
+      ~L2NormSquared.ipu
+      ~L2NormSquared.load_state_dict
+      ~L2NormSquared.modules
+      ~L2NormSquared.named_buffers
+      ~L2NormSquared.named_children
+      ~L2NormSquared.named_modules
+      ~L2NormSquared.named_parameters
+      ~L2NormSquared.parameters
+      ~L2NormSquared.prox
+      ~L2NormSquared.prox_convex_conj
+      ~L2NormSquared.register_backward_hook
+      ~L2NormSquared.register_buffer
+      ~L2NormSquared.register_forward_hook
+      ~L2NormSquared.register_forward_pre_hook
+      ~L2NormSquared.register_full_backward_hook
+      ~L2NormSquared.register_full_backward_pre_hook
+      ~L2NormSquared.register_load_state_dict_post_hook
+      ~L2NormSquared.register_module
+      ~L2NormSquared.register_parameter
+      ~L2NormSquared.register_state_dict_pre_hook
+      ~L2NormSquared.requires_grad_
+      ~L2NormSquared.set_extra_state
+      ~L2NormSquared.share_memory
+      ~L2NormSquared.state_dict
+      ~L2NormSquared.to
+      ~L2NormSquared.to_empty
+      ~L2NormSquared.train
+      ~L2NormSquared.type
+      ~L2NormSquared.xpu
+      ~L2NormSquared.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~L2NormSquared.T_destination
+      ~L2NormSquared.call_super_init
+      ~L2NormSquared.dump_patches
+      ~L2NormSquared.training
+   
+   

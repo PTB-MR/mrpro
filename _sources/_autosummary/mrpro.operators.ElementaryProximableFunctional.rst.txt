@@ -1,0 +1,82 @@
+mrpro.operators.ElementaryProximableFunctional
+==============================================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: ElementaryProximableFunctional
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ElementaryProximableFunctional.__init__
+      ~ElementaryProximableFunctional.add_module
+      ~ElementaryProximableFunctional.apply
+      ~ElementaryProximableFunctional.bfloat16
+      ~ElementaryProximableFunctional.buffers
+      ~ElementaryProximableFunctional.children
+      ~ElementaryProximableFunctional.compile
+      ~ElementaryProximableFunctional.cpu
+      ~ElementaryProximableFunctional.cuda
+      ~ElementaryProximableFunctional.double
+      ~ElementaryProximableFunctional.eval
+      ~ElementaryProximableFunctional.extra_repr
+      ~ElementaryProximableFunctional.float
+      ~ElementaryProximableFunctional.forward
+      ~ElementaryProximableFunctional.get_buffer
+      ~ElementaryProximableFunctional.get_extra_state
+      ~ElementaryProximableFunctional.get_parameter
+      ~ElementaryProximableFunctional.get_submodule
+      ~ElementaryProximableFunctional.half
+      ~ElementaryProximableFunctional.ipu
+      ~ElementaryProximableFunctional.load_state_dict
+      ~ElementaryProximableFunctional.modules
+      ~ElementaryProximableFunctional.named_buffers
+      ~ElementaryProximableFunctional.named_children
+      ~ElementaryProximableFunctional.named_modules
+      ~ElementaryProximableFunctional.named_parameters
+      ~ElementaryProximableFunctional.parameters
+      ~ElementaryProximableFunctional.prox
+      ~ElementaryProximableFunctional.prox_convex_conj
+      ~ElementaryProximableFunctional.register_backward_hook
+      ~ElementaryProximableFunctional.register_buffer
+      ~ElementaryProximableFunctional.register_forward_hook
+      ~ElementaryProximableFunctional.register_forward_pre_hook
+      ~ElementaryProximableFunctional.register_full_backward_hook
+      ~ElementaryProximableFunctional.register_full_backward_pre_hook
+      ~ElementaryProximableFunctional.register_load_state_dict_post_hook
+      ~ElementaryProximableFunctional.register_module
+      ~ElementaryProximableFunctional.register_parameter
+      ~ElementaryProximableFunctional.register_state_dict_pre_hook
+      ~ElementaryProximableFunctional.requires_grad_
+      ~ElementaryProximableFunctional.set_extra_state
+      ~ElementaryProximableFunctional.share_memory
+      ~ElementaryProximableFunctional.state_dict
+      ~ElementaryProximableFunctional.to
+      ~ElementaryProximableFunctional.to_empty
+      ~ElementaryProximableFunctional.train
+      ~ElementaryProximableFunctional.type
+      ~ElementaryProximableFunctional.xpu
+      ~ElementaryProximableFunctional.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ElementaryProximableFunctional.T_destination
+      ~ElementaryProximableFunctional.call_super_init
+      ~ElementaryProximableFunctional.dump_patches
+      ~ElementaryProximableFunctional.training
+   
+   

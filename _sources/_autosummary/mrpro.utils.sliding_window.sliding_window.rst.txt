@@ -1,0 +1,6 @@
+mrpro.utils.sliding\_window.sliding\_window
+===========================================
+
+.. currentmodule:: mrpro.utils.sliding_window
+
+.. autofunction:: sliding_window

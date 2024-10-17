@@ -1,0 +1,37 @@
+mrpro.operators.models
+======================
+
+.. automodule:: mrpro.operators.models
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class_template.rst
+   
+      InversionRecovery
+      MOLLI
+      MonoExponentialDecay
+      SaturationRecovery
+      TransientSteadyStateWithPreparation
+      WASABI
+      WASABITI
+   
+   
+
+   
+   
+   
+
+
+

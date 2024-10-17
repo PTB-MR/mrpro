@@ -1,0 +1,48 @@
+mrpro.data.IHeader
+==================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: IHeader
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~IHeader.__init__
+      ~IHeader.clone
+      ~IHeader.cpu
+      ~IHeader.cuda
+      ~IHeader.double
+      ~IHeader.from_dicom_list
+      ~IHeader.from_kheader
+      ~IHeader.half
+      ~IHeader.single
+      ~IHeader.to
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~IHeader.fov
+      ~IHeader.te
+      ~IHeader.ti
+      ~IHeader.fa
+      ~IHeader.tr
+      ~IHeader.misc
+      ~IHeader.device
+      ~IHeader.is_cpu
+      ~IHeader.is_cuda
+   
+   

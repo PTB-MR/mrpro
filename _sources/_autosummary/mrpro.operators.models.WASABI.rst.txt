@@ -1,0 +1,81 @@
+mrpro.operators.models.WASABI
+=============================
+
+.. currentmodule:: mrpro.operators.models
+
+.. autoclass:: WASABI
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~WASABI.__init__
+      ~WASABI.add_module
+      ~WASABI.apply
+      ~WASABI.bfloat16
+      ~WASABI.buffers
+      ~WASABI.children
+      ~WASABI.compile
+      ~WASABI.cpu
+      ~WASABI.cuda
+      ~WASABI.double
+      ~WASABI.eval
+      ~WASABI.expand_tensor_dim
+      ~WASABI.extra_repr
+      ~WASABI.float
+      ~WASABI.forward
+      ~WASABI.get_buffer
+      ~WASABI.get_extra_state
+      ~WASABI.get_parameter
+      ~WASABI.get_submodule
+      ~WASABI.half
+      ~WASABI.ipu
+      ~WASABI.load_state_dict
+      ~WASABI.modules
+      ~WASABI.named_buffers
+      ~WASABI.named_children
+      ~WASABI.named_modules
+      ~WASABI.named_parameters
+      ~WASABI.parameters
+      ~WASABI.register_backward_hook
+      ~WASABI.register_buffer
+      ~WASABI.register_forward_hook
+      ~WASABI.register_forward_pre_hook
+      ~WASABI.register_full_backward_hook
+      ~WASABI.register_full_backward_pre_hook
+      ~WASABI.register_load_state_dict_post_hook
+      ~WASABI.register_module
+      ~WASABI.register_parameter
+      ~WASABI.register_state_dict_pre_hook
+      ~WASABI.requires_grad_
+      ~WASABI.set_extra_state
+      ~WASABI.share_memory
+      ~WASABI.state_dict
+      ~WASABI.to
+      ~WASABI.to_empty
+      ~WASABI.train
+      ~WASABI.type
+      ~WASABI.xpu
+      ~WASABI.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~WASABI.T_destination
+      ~WASABI.call_super_init
+      ~WASABI.dump_patches
+      ~WASABI.training
+   
+   

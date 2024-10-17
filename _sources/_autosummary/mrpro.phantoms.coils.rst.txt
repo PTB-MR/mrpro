@@ -1,0 +1,39 @@
+mrpro.phantoms.coils
+====================
+
+.. automodule:: mrpro.phantoms.coils
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+   
+      birdcage_2d
+      repeat
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class_template.rst
+   
+      SpatialDimension
+   
+   
+
+   
+   
+   
+
+
+

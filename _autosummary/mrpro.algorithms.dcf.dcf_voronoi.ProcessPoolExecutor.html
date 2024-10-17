@@ -1,0 +1,246 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mrpro.algorithms.dcf.dcf_voronoi.Voronoi" href="mrpro.algorithms.dcf.dcf_voronoi.Voronoi.html" />
+    <link rel="prev" title="mrpro.algorithms.dcf.dcf_voronoi.ConvexHull" href="mrpro.algorithms.dcf.dcf_voronoi.ConvexHull.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../api.html#mrpro-algorithms">MRpro Algorithms</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="mrpro.algorithms.html">mrpro.algorithms</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="mrpro.algorithms.prewhiten_kspace.html">mrpro.algorithms.prewhiten_kspace</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.algorithms.csm.html">mrpro.algorithms.csm</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="mrpro.algorithms.dcf.html">mrpro.algorithms.dcf</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.algorithms.optimizers.html">mrpro.algorithms.optimizers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.algorithms.reconstruction.html">mrpro.algorithms.reconstruction</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-data">MRpro Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-operators">MRpro Operators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-phantoms">MRpro Phantoms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-utilities">MRpro Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../api.html">API</a></li>
+          <li class="breadcrumb-item"><a href="mrpro.algorithms.html">mrpro.algorithms</a></li>
+          <li class="breadcrumb-item"><a href="mrpro.algorithms.dcf.html">mrpro.algorithms.dcf</a></li>
+          <li class="breadcrumb-item"><a href="mrpro.algorithms.dcf.dcf_voronoi.html">mrpro.algorithms.dcf.dcf_voronoi</a></li>
+      <li class="breadcrumb-item active">mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/_autosummary/mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="mrpro-algorithms-dcf-dcf-voronoi-processpoolexecutor">
+<h1>mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor<a class="headerlink" href="#mrpro-algorithms-dcf-dcf-voronoi-processpoolexecutor" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.algorithms.dcf.dcf_voronoi.</span></span><span class="sig-name descname"><span class="pre">ProcessPoolExecutor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mp_context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initializer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_tasks_per_child</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/concurrent/futures/process.html#ProcessPoolExecutor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Executor</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mp_context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initializer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_tasks_per_child</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/concurrent/futures/process.html#ProcessPoolExecutor.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initializes a new ProcessPoolExecutor instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>max_workers</strong> – The maximum number of processes that can be used to
+execute the given calls. If None or not given then as many
+worker processes will be created as the machine has processors.</p></li>
+<li><p><strong>mp_context</strong> – A multiprocessing context to launch the workers. This
+object should provide SimpleQueue, Queue and Process. Useful
+to allow specific multiprocessing start methods.</p></li>
+<li><p><strong>initializer</strong> – A callable used to initialize worker processes.</p></li>
+<li><p><strong>initargs</strong> – A tuple of arguments to pass to the initializer.</p></li>
+<li><p><strong>max_tasks_per_child</strong> – The maximum number of tasks a worker process
+can complete before it will exit and be replaced with a fresh
+worker process. The default of None means worker process will
+live as long as the executor. Requires a non-‘fork’ mp_context
+start method. When given, we default to using ‘spawn’ if no
+mp_context is supplied.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor.__init__" title="mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([max_workers, mp_context, ...])</p></td>
+<td><p>Initializes a new ProcessPoolExecutor instance.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor.map" title="mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor.map"><code class="xref py py-obj docutils literal notranslate"><span class="pre">map</span></code></a>(fn, *iterables[, timeout, chunksize])</p></td>
+<td><p>Returns an iterator equivalent to map(fn, iter).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor.shutdown" title="mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor.shutdown"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shutdown</span></code></a>([wait, cancel_futures])</p></td>
+<td><p>Clean-up the resources associated with the Executor.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor.submit" title="mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor.submit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">submit</span></code></a>(fn, /, *args, **kwargs)</p></td>
+<td><p>Submits a callable to be executed with the given arguments.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor.map">
+<span class="sig-name descname"><span class="pre">map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">iterables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunksize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/concurrent/futures/process.html#ProcessPoolExecutor.map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor.map" title="Link to this definition"></a></dt>
+<dd><p>Returns an iterator equivalent to map(fn, iter).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fn</strong> – A callable that will take as many arguments as there are
+passed iterables.</p></li>
+<li><p><strong>timeout</strong> – The maximum number of seconds to wait. If None, then there
+is no limit on the wait time.</p></li>
+<li><p><strong>chunksize</strong> – If greater than one, the iterables will be chopped into
+chunks of size chunksize and submitted to the process pool.
+If set to one, the items in the list will be sent one at a time.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>map(func, <a href="#id1"><span class="problematic" id="id2">*</span></a>iterables) but the calls may
+be evaluated out-of-order.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>An iterator equivalent to</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TimeoutError</strong> – If the entire result iterator could not be generated
+    before the given timeout.</p></li>
+<li><p><strong>Exception</strong> – If fn(<a href="#id3"><span class="problematic" id="id4">*</span></a>args) raises for any values.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor.shutdown">
+<span class="sig-name descname"><span class="pre">shutdown</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wait</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancel_futures</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/concurrent/futures/process.html#ProcessPoolExecutor.shutdown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor.shutdown" title="Link to this definition"></a></dt>
+<dd><p>Clean-up the resources associated with the Executor.</p>
+<p>It is safe to call this method several times. Otherwise, no other
+methods can be called after this one.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>wait</strong> – If True then shutdown will not return until all running
+futures have finished executing and the resources used by the
+executor have been reclaimed.</p></li>
+<li><p><strong>cancel_futures</strong> – If True then shutdown will cancel all pending
+futures. Futures that are completed or running will not be
+cancelled.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor.submit">
+<span class="sig-name descname"><span class="pre">submit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/concurrent/futures/process.html#ProcessPoolExecutor.submit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor.submit" title="Link to this definition"></a></dt>
+<dd><p>Submits a callable to be executed with the given arguments.</p>
+<p>Schedules the callable to be executed as fn(<a href="#id5"><span class="problematic" id="id6">*</span></a>args, <a href="#id7"><span class="problematic" id="id8">**</span></a>kwargs) and returns
+a Future instance representing the execution of the callable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A Future representing the given call.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="mrpro.algorithms.dcf.dcf_voronoi.ConvexHull.html" class="btn btn-neutral float-left" title="mrpro.algorithms.dcf.dcf_voronoi.ConvexHull" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mrpro.algorithms.dcf.dcf_voronoi.Voronoi.html" class="btn btn-neutral float-right" title="mrpro.algorithms.dcf.dcf_voronoi.Voronoi" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,394 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.data.KHeader &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mrpro.data.KHeader</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mrpro.data.KHeader</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;MR raw data / k-space data header dataclass.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">dataclasses</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Self</span>
+
+<span class="kn">import</span> <span class="nn">ismrmrd.xsd.ismrmrdschema.ismrmrd</span> <span class="k">as</span> <span class="nn">ismrmrdschema</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="kn">from</span> <span class="nn">mrpro.data</span> <span class="kn">import</span> <span class="n">enums</span>
+<span class="kn">from</span> <span class="nn">mrpro.data.AcqInfo</span> <span class="kn">import</span> <span class="n">AcqInfo</span><span class="p">,</span> <span class="n">mm_to_m</span><span class="p">,</span> <span class="n">ms_to_s</span>
+<span class="kn">from</span> <span class="nn">mrpro.data.EncodingLimits</span> <span class="kn">import</span> <span class="n">EncodingLimits</span>
+<span class="kn">from</span> <span class="nn">mrpro.data.MoveDataMixin</span> <span class="kn">import</span> <span class="n">MoveDataMixin</span>
+<span class="kn">from</span> <span class="nn">mrpro.data.SpatialDimension</span> <span class="kn">import</span> <span class="n">SpatialDimension</span>
+<span class="kn">from</span> <span class="nn">mrpro.data.TrajectoryDescription</span> <span class="kn">import</span> <span class="n">TrajectoryDescription</span>
+<span class="kn">from</span> <span class="nn">mrpro.utils.summarize_tensorvalues</span> <span class="kn">import</span> <span class="n">summarize_tensorvalues</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="c1"># avoid circular imports by importing only when type checking</span>
+    <span class="kn">from</span> <span class="nn">mrpro.data.traj_calculators.KTrajectoryCalculator</span> <span class="kn">import</span> <span class="n">KTrajectoryCalculator</span>
+
+<span class="n">UNKNOWN</span> <span class="o">=</span> <span class="s1">&#39;unknown&#39;</span>
+
+
+<div class="viewcode-block" id="KHeader">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.KHeader.html#mrpro.data.KHeader">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">KHeader</span><span class="p">(</span><span class="n">MoveDataMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;MR raw data header.</span>
+
+<span class="sd">    All information that is not covered by the dataclass is stored in</span>
+<span class="sd">    the misc dict. Our code shall not rely on this information, and it is</span>
+<span class="sd">    not guaranteed to be present. Also, the information in the misc dict</span>
+<span class="sd">    is not guaranteed to be correct or tested.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">trajectory</span><span class="p">:</span> <span class="n">KTrajectoryCalculator</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to calculate the k-space trajectory.&quot;&quot;&quot;</span>
+
+    <span class="n">b0</span><span class="p">:</span> <span class="nb">float</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Magnetic field strength [T].&quot;&quot;&quot;</span>
+
+    <span class="n">encoding_limits</span><span class="p">:</span> <span class="n">EncodingLimits</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;K-space encoding limits.&quot;&quot;&quot;</span>
+
+    <span class="n">recon_matrix</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dimensions of the reconstruction matrix.&quot;&quot;&quot;</span>
+
+    <span class="n">recon_fov</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Field-of-view of the reconstructed image [m].&quot;&quot;&quot;</span>
+
+    <span class="n">encoding_matrix</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dimensions of the encoded k-space matrix.&quot;&quot;&quot;</span>
+
+    <span class="n">encoding_fov</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Field of view of the image encoded by the k-space trajectory [m].&quot;&quot;&quot;</span>
+
+    <span class="n">acq_info</span><span class="p">:</span> <span class="n">AcqInfo</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Information of the acquisitions (i.e. readout lines).&quot;&quot;&quot;</span>
+
+    <span class="n">h1_freq</span><span class="p">:</span> <span class="nb">float</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lamor frequency of hydrogen nuclei [Hz].&quot;&quot;&quot;</span>
+
+    <span class="n">n_coils</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of receiver coils.&quot;&quot;&quot;</span>
+
+    <span class="n">datetime</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Date and time of acquisition.&quot;&quot;&quot;</span>
+
+    <span class="n">te</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Echo time [s].&quot;&quot;&quot;</span>
+
+    <span class="n">ti</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inversion time [s].&quot;&quot;&quot;</span>
+
+    <span class="n">fa</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Flip angle [rad].&quot;&quot;&quot;</span>
+
+    <span class="n">tr</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Repetition time [s].&quot;&quot;&quot;</span>
+
+    <span class="n">echo_spacing</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Echo spacing [s].&quot;&quot;&quot;</span>
+
+    <span class="n">echo_train_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of echoes in a multi-echo acquisition.&quot;&quot;&quot;</span>
+
+    <span class="n">seq_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">UNKNOWN</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Type of sequence.&quot;&quot;&quot;</span>
+
+    <span class="n">model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">UNKNOWN</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scanner model.&quot;&quot;&quot;</span>
+
+    <span class="n">vendor</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">UNKNOWN</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scanner vendor.&quot;&quot;&quot;</span>
+
+    <span class="n">protocol_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">UNKNOWN</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Name of the acquisition protocol.&quot;&quot;&quot;</span>
+
+    <span class="n">misc</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>  <span class="c1"># do not use {} here!</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dictionary with miscellaneous parameters.&quot;&quot;&quot;</span>
+
+    <span class="n">calibration_mode</span><span class="p">:</span> <span class="n">enums</span><span class="o">.</span><span class="n">CalibrationMode</span> <span class="o">=</span> <span class="n">enums</span><span class="o">.</span><span class="n">CalibrationMode</span><span class="o">.</span><span class="n">OTHER</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mode of how calibration data is acquired. &quot;&quot;&quot;</span>
+
+    <span class="n">interleave_dim</span><span class="p">:</span> <span class="n">enums</span><span class="o">.</span><span class="n">InterleavingDimension</span> <span class="o">=</span> <span class="n">enums</span><span class="o">.</span><span class="n">InterleavingDimension</span><span class="o">.</span><span class="n">OTHER</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Interleaving dimension.&quot;&quot;&quot;</span>
+
+    <span class="n">traj_type</span><span class="p">:</span> <span class="n">enums</span><span class="o">.</span><span class="n">TrajectoryType</span> <span class="o">=</span> <span class="n">enums</span><span class="o">.</span><span class="n">TrajectoryType</span><span class="o">.</span><span class="n">OTHER</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Type of trajectory.&quot;&quot;&quot;</span>
+
+    <span class="n">measurement_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">UNKNOWN</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Measurement ID.&quot;&quot;&quot;</span>
+
+    <span class="n">patient_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">UNKNOWN</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Name of the patient.&quot;&quot;&quot;</span>
+
+    <span class="n">trajectory_description</span><span class="p">:</span> <span class="n">TrajectoryDescription</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">TrajectoryDescription</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Description of the trajectory.&quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">fa_degree</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Flip angle in degree.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fa</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Flip angle is not defined.&#39;</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">rad2deg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fa</span><span class="p">)</span>
+
+<div class="viewcode-block" id="KHeader.from_ismrmrd">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.KHeader.html#mrpro.data.KHeader.from_ismrmrd">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_ismrmrd</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">header</span><span class="p">:</span> <span class="n">ismrmrdschema</span><span class="o">.</span><span class="n">ismrmrdHeader</span><span class="p">,</span>
+        <span class="n">acq_info</span><span class="p">:</span> <span class="n">AcqInfo</span><span class="p">,</span>
+        <span class="n">defaults</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">overwrite</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">encoding_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an Header from ISMRMRD Data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        header</span>
+<span class="sd">            ISMRMRD header</span>
+<span class="sd">        acq_info</span>
+<span class="sd">            acquisition information</span>
+<span class="sd">        defaults</span>
+<span class="sd">            dictionary of values to be used if information is missing in header</span>
+<span class="sd">        overwrite</span>
+<span class="sd">            dictionary of values to be used independent of header</span>
+<span class="sd">        encoding_number</span>
+<span class="sd">            as ismrmrdHeader can contain multiple encodings, selects which to consider</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">encoding_number</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">header</span><span class="o">.</span><span class="n">encoding</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;encoding_number must be between 0 and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">header</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="n">enc</span><span class="p">:</span> <span class="n">ismrmrdschema</span><span class="o">.</span><span class="n">encodingType</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="n">encoding_number</span><span class="p">]</span>
+
+        <span class="c1"># These are guaranteed to exist</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;h1_freq&#39;</span><span class="p">:</span> <span class="n">header</span><span class="o">.</span><span class="n">experimentalConditions</span><span class="o">.</span><span class="n">H1resonanceFrequency_Hz</span><span class="p">,</span> <span class="s1">&#39;acq_info&#39;</span><span class="p">:</span> <span class="n">acq_info</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">defaults</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameters</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">defaults</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">header</span><span class="o">.</span><span class="n">acquisitionSystemInformation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="n">header</span><span class="o">.</span><span class="n">acquisitionSystemInformation</span><span class="o">.</span><span class="n">receiverChannels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">):</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;n_coils&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="n">acquisitionSystemInformation</span><span class="o">.</span><span class="n">receiverChannels</span>
+
+        <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">sequenceParameters</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">sequenceParameters</span><span class="o">.</span><span class="n">TR</span><span class="p">:</span>
+                <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;tr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ms_to_s</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">header</span><span class="o">.</span><span class="n">sequenceParameters</span><span class="o">.</span><span class="n">TR</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">sequenceParameters</span><span class="o">.</span><span class="n">TE</span><span class="p">:</span>
+                <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;te&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ms_to_s</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">header</span><span class="o">.</span><span class="n">sequenceParameters</span><span class="o">.</span><span class="n">TE</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">sequenceParameters</span><span class="o">.</span><span class="n">TI</span><span class="p">:</span>
+                <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;ti&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ms_to_s</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">header</span><span class="o">.</span><span class="n">sequenceParameters</span><span class="o">.</span><span class="n">TI</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">sequenceParameters</span><span class="o">.</span><span class="n">flipAngle_deg</span><span class="p">:</span>
+                <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;fa&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">header</span><span class="o">.</span><span class="n">sequenceParameters</span><span class="o">.</span><span class="n">flipAngle_deg</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">sequenceParameters</span><span class="o">.</span><span class="n">echo_spacing</span><span class="p">:</span>
+                <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;echo_spacing&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ms_to_s</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">header</span><span class="o">.</span><span class="n">sequenceParameters</span><span class="o">.</span><span class="n">echo_spacing</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">sequenceParameters</span><span class="o">.</span><span class="n">sequence_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;seq_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="n">sequenceParameters</span><span class="o">.</span><span class="n">sequence_type</span>
+
+        <span class="k">if</span> <span class="n">enc</span><span class="o">.</span><span class="n">reconSpace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;recon_fov&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span><span class="o">.</span><span class="n">from_xyz</span><span class="p">(</span><span class="n">enc</span><span class="o">.</span><span class="n">reconSpace</span><span class="o">.</span><span class="n">fieldOfView_mm</span><span class="p">,</span> <span class="n">mm_to_m</span><span class="p">)</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;recon_matrix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">.</span><span class="n">from_xyz</span><span class="p">(</span><span class="n">enc</span><span class="o">.</span><span class="n">reconSpace</span><span class="o">.</span><span class="n">matrixSize</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">enc</span><span class="o">.</span><span class="n">encodedSpace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;encoding_fov&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span><span class="o">.</span><span class="n">from_xyz</span><span class="p">(</span><span class="n">enc</span><span class="o">.</span><span class="n">encodedSpace</span><span class="o">.</span><span class="n">fieldOfView_mm</span><span class="p">,</span> <span class="n">mm_to_m</span><span class="p">)</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;encoding_matrix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">.</span><span class="n">from_xyz</span><span class="p">(</span><span class="n">enc</span><span class="o">.</span><span class="n">encodedSpace</span><span class="o">.</span><span class="n">matrixSize</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">enc</span><span class="o">.</span><span class="n">encodingLimits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;encoding_limits&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">EncodingLimits</span><span class="o">.</span><span class="n">from_ismrmrd_encoding_limits_type</span><span class="p">(</span><span class="n">enc</span><span class="o">.</span><span class="n">encodingLimits</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">enc</span><span class="o">.</span><span class="n">echoTrainLength</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;echo_train_length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">enc</span><span class="o">.</span><span class="n">echoTrainLength</span>
+
+        <span class="k">if</span> <span class="n">enc</span><span class="o">.</span><span class="n">parallelImaging</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">enc</span><span class="o">.</span><span class="n">parallelImaging</span><span class="o">.</span><span class="n">calibrationMode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;calibration_mode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">enums</span><span class="o">.</span><span class="n">CalibrationMode</span><span class="p">(</span><span class="n">enc</span><span class="o">.</span><span class="n">parallelImaging</span><span class="o">.</span><span class="n">calibrationMode</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">enc</span><span class="o">.</span><span class="n">parallelImaging</span><span class="o">.</span><span class="n">interleavingDimension</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;interleave_dim&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">enums</span><span class="o">.</span><span class="n">InterleavingDimension</span><span class="p">(</span>
+                    <span class="n">enc</span><span class="o">.</span><span class="n">parallelImaging</span><span class="o">.</span><span class="n">interleavingDimension</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">enc</span><span class="o">.</span><span class="n">trajectory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;traj_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">enums</span><span class="o">.</span><span class="n">TrajectoryType</span><span class="p">(</span><span class="n">enc</span><span class="o">.</span><span class="n">trajectory</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># Either use the series or study time if available</span>
+        <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">measurementInformation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">header</span><span class="o">.</span><span class="n">measurementInformation</span><span class="o">.</span><span class="n">seriesTime</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">time</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="n">measurementInformation</span><span class="o">.</span><span class="n">seriesTime</span><span class="o">.</span><span class="n">to_time</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">header</span><span class="o">.</span><span class="n">studyInformation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">header</span><span class="o">.</span><span class="n">studyInformation</span><span class="o">.</span><span class="n">studyTime</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">time</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="n">studyInformation</span><span class="o">.</span><span class="n">studyTime</span><span class="o">.</span><span class="n">to_time</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># if no time is given, set to 00:00:00</span>
+            <span class="n">time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">measurementInformation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">header</span><span class="o">.</span><span class="n">measurementInformation</span><span class="o">.</span><span class="n">seriesDate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">date</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="n">measurementInformation</span><span class="o">.</span><span class="n">seriesDate</span><span class="o">.</span><span class="n">to_date</span><span class="p">()</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;datetime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">header</span><span class="o">.</span><span class="n">studyInformation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">header</span><span class="o">.</span><span class="n">studyInformation</span><span class="o">.</span><span class="n">studyDate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">date</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="n">studyInformation</span><span class="o">.</span><span class="n">studyDate</span><span class="o">.</span><span class="n">to_date</span><span class="p">()</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;datetime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">subjectInformation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">header</span><span class="o">.</span><span class="n">subjectInformation</span><span class="o">.</span><span class="n">patientName</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;patient_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="n">subjectInformation</span><span class="o">.</span><span class="n">patientName</span>
+
+        <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">measurementInformation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">measurementInformation</span><span class="o">.</span><span class="n">measurementID</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;measurement_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="n">measurementInformation</span><span class="o">.</span><span class="n">measurementID</span>
+
+            <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">measurementInformation</span><span class="o">.</span><span class="n">protocolName</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;protocol_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="n">measurementInformation</span><span class="o">.</span><span class="n">protocolName</span>
+
+        <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">acquisitionSystemInformation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">acquisitionSystemInformation</span><span class="o">.</span><span class="n">systemVendor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;vendor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="n">acquisitionSystemInformation</span><span class="o">.</span><span class="n">systemVendor</span>
+
+            <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">acquisitionSystemInformation</span><span class="o">.</span><span class="n">systemModel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="n">acquisitionSystemInformation</span><span class="o">.</span><span class="n">systemModel</span>
+
+            <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">acquisitionSystemInformation</span><span class="o">.</span><span class="n">systemFieldStrength_T</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;b0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="n">acquisitionSystemInformation</span><span class="o">.</span><span class="n">systemFieldStrength_T</span>
+
+        <span class="c1"># estimate b0 from h1_freq if not given</span>
+        <span class="k">if</span> <span class="s1">&#39;b0&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">:</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;b0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;h1_freq&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">4258e4</span>
+
+        <span class="c1"># Dump everything into misc</span>
+        <span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;misc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">asdict</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">overwrite</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameters</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">overwrite</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">instance</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="n">missing</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">name</span>
+                <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">parameters</span>
+                <span class="ow">and</span> <span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">default</span> <span class="o">==</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">MISSING</span> <span class="ow">and</span> <span class="n">f</span><span class="o">.</span><span class="n">default_factory</span> <span class="o">==</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">MISSING</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Could not create Header. Missing parameters: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
+                <span class="s1">&#39;Consider setting them via the defaults dictionary&#39;</span><span class="p">,</span>
+            <span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">instance</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Representation method for KHeader class.&quot;&quot;&quot;</span>
+        <span class="n">te</span> <span class="o">=</span> <span class="n">summarize_tensorvalues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">te</span><span class="p">)</span>
+        <span class="n">ti</span> <span class="o">=</span> <span class="n">summarize_tensorvalues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ti</span><span class="p">)</span>
+        <span class="n">fa</span> <span class="o">=</span> <span class="n">summarize_tensorvalues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fa</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;FOV [m]: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding_fov</span><span class="si">!s}</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;TE [s]: </span><span class="si">{</span><span class="n">te</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;TI [s]: </span><span class="si">{</span><span class="n">ti</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;Flip angle [rad]: </span><span class="si">{</span><span class="n">fa</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;Encoding matrix: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding_matrix</span><span class="si">!s}</span><span class="s1"> </span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;Recon matrix: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">recon_matrix</span><span class="si">!s}</span><span class="s1"> </span><span class="se">\n</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">out</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

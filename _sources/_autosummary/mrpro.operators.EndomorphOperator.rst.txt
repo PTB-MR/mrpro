@@ -1,0 +1,48 @@
+mrpro.operators.EndomorphOperator
+=================================
+
+.. automodule:: mrpro.operators.EndomorphOperator
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+   
+      abstractmethod
+      cast
+      endomorph
+      overload
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class_template.rst
+   
+      Any
+      Callable
+      EndomorphOperator
+      Operator
+      ParamSpec
+      Protocol
+      TypeVar
+      TypeVarTuple
+   
+   
+
+   
+   
+   
+
+
+

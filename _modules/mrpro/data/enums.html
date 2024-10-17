@@ -1,0 +1,257 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.data.enums &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mrpro.data.enums</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mrpro.data.enums</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;All acquisition enums.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">Flag</span><span class="p">,</span> <span class="n">auto</span>
+
+
+<div class="viewcode-block" id="AcqFlags">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.enums.AcqFlags.html#mrpro.data.acq_filters.AcqFlags">[docs]</a>
+<span class="k">class</span> <span class="nc">AcqFlags</span><span class="p">(</span><span class="n">Flag</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Acquisition flags.</span>
+
+<span class="sd">    NOTE: values in enum ISMRMRD_AcquisitionFlags start at 1 and not 0, but</span>
+<span class="sd">    1 &lt;&lt; (val-1) is used in &#39;ismrmrd_is_flag_set&#39; function to calc bitmask value [ISMb]_.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [ISMb] ISMRMRD https://github.com/ismrmrd/ismrmrd/blob/master/include/ismrmrd/ismrmrd.h</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ACQ_NO_FLAG</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">ACQ_FIRST_IN_ENCODE_STEP1</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_LAST_IN_ENCODE_STEP1</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_FIRST_IN_ENCODE_STEP2</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_LAST_IN_ENCODE_STEP2</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_FIRST_IN_AVERAGE</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_LAST_IN_AVERAGE</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_FIRST_IN_SLICE</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_LAST_IN_SLICE</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_FIRST_IN_CONTRAST</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_LAST_IN_CONTRAST</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_FIRST_IN_PHASE</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_LAST_IN_PHASE</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_FIRST_IN_REPETITION</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_LAST_IN_REPETITION</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_FIRST_IN_SET</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_LAST_IN_SET</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_FIRST_IN_SEGMENT</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_LAST_IN_SEGMENT</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_IS_NOISE_MEASUREMENT</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_IS_PARALLEL_CALIBRATION</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_IS_REVERSE</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_IS_NAVIGATION_DATA</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_IS_PHASECORR_DATA</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_LAST_IN_MEASUREMENT</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_IS_HPFEEDBACK_DATA</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_IS_DUMMYSCAN_DATA</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_IS_RTFEEDBACK_DATA</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_IS_SURFACECOILCORRECTIONSCAN_DATA</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_IS_PHASE_STABILIZATION_REFERENCE</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_IS_PHASE_STABILIZATION</span> <span class="o">=</span> <span class="mi">30</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span>
+    <span class="n">ACQ_COMPRESSION1</span> <span class="o">=</span> <span class="mi">52</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span>  <span class="c1"># 53 (on purpose!)</span>
+    <span class="n">ACQ_COMPRESSION2</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_COMPRESSION3</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_COMPRESSION4</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_USER1</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_USER2</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_USER3</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_USER4</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_USER5</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_USER6</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_USER7</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">ACQ_USER8</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="InterleavingDimension">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.enums.InterleavingDimension.html#mrpro.data.acq_filters.InterleavingDimension">[docs]</a>
+<span class="k">class</span> <span class="nc">InterleavingDimension</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Interleaving dimension.&quot;&quot;&quot;</span>
+
+    <span class="n">PHASE</span> <span class="o">=</span> <span class="s1">&#39;phase&#39;</span>
+    <span class="n">REPETITION</span> <span class="o">=</span> <span class="s1">&#39;repetition&#39;</span>
+    <span class="n">CONTRAST</span> <span class="o">=</span> <span class="s1">&#39;contrast&#39;</span>
+    <span class="n">AVERAGE</span> <span class="o">=</span> <span class="s1">&#39;average&#39;</span>
+    <span class="n">OTHER</span> <span class="o">=</span> <span class="s1">&#39;other&#39;</span></div>
+
+
+
+<div class="viewcode-block" id="MultibandCalibration">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.enums.MultibandCalibration.html#mrpro.data.acq_filters.MultibandCalibration">[docs]</a>
+<span class="k">class</span> <span class="nc">MultibandCalibration</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Multiband calibration.&quot;&quot;&quot;</span>
+
+    <span class="n">SEPARABLE2_D</span> <span class="o">=</span> <span class="s1">&#39;separable2D&#39;</span>
+    <span class="n">FULL3_D</span> <span class="o">=</span> <span class="s1">&#39;full3D&#39;</span>
+    <span class="n">OTHER</span> <span class="o">=</span> <span class="s1">&#39;other&#39;</span></div>
+
+
+
+<div class="viewcode-block" id="PatientPosition">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.enums.PatientPosition.html#mrpro.data.acq_filters.PatientPosition">[docs]</a>
+<span class="k">class</span> <span class="nc">PatientPosition</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Patient position.&quot;&quot;&quot;</span>
+
+    <span class="n">HFP</span> <span class="o">=</span> <span class="s1">&#39;HFP&#39;</span>
+    <span class="n">HFS</span> <span class="o">=</span> <span class="s1">&#39;HFS&#39;</span>
+    <span class="n">HFDR</span> <span class="o">=</span> <span class="s1">&#39;HFDR&#39;</span>
+    <span class="n">HFDL</span> <span class="o">=</span> <span class="s1">&#39;HFDL&#39;</span>
+    <span class="n">FFP</span> <span class="o">=</span> <span class="s1">&#39;FFP&#39;</span>
+    <span class="n">FFS</span> <span class="o">=</span> <span class="s1">&#39;FFS&#39;</span>
+    <span class="n">FFDR</span> <span class="o">=</span> <span class="s1">&#39;FFDR&#39;</span>
+    <span class="n">FFDL</span> <span class="o">=</span> <span class="s1">&#39;FFDL&#39;</span>
+    <span class="n">OTHER</span> <span class="o">=</span> <span class="s1">&#39;OTHER&#39;</span></div>
+
+
+
+<div class="viewcode-block" id="TrajectoryType">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.enums.TrajectoryType.html#mrpro.data.acq_filters.TrajectoryType">[docs]</a>
+<span class="k">class</span> <span class="nc">TrajectoryType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Trajectory type.&quot;&quot;&quot;</span>
+
+    <span class="n">CARTESIAN</span> <span class="o">=</span> <span class="s1">&#39;cartesian&#39;</span>
+    <span class="n">EPI</span> <span class="o">=</span> <span class="s1">&#39;epi&#39;</span>
+    <span class="n">RADIAL</span> <span class="o">=</span> <span class="s1">&#39;radial&#39;</span>
+    <span class="n">GOLDENANGLE</span> <span class="o">=</span> <span class="s1">&#39;goldenangle&#39;</span>
+    <span class="n">SPIRAL</span> <span class="o">=</span> <span class="s1">&#39;spiral&#39;</span>
+    <span class="n">OTHER</span> <span class="o">=</span> <span class="s1">&#39;other&#39;</span></div>
+
+
+
+<div class="viewcode-block" id="WaveformInformation">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.enums.WaveformInformation.html#mrpro.data.acq_filters.WaveformInformation">[docs]</a>
+<span class="k">class</span> <span class="nc">WaveformInformation</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Waveform information.&quot;&quot;&quot;</span>
+
+    <span class="n">ECG</span> <span class="o">=</span> <span class="s1">&#39;ecg&#39;</span>
+    <span class="n">PULSE</span> <span class="o">=</span> <span class="s1">&#39;pulse&#39;</span>
+    <span class="n">RESPIRATORY</span> <span class="o">=</span> <span class="s1">&#39;respiratory&#39;</span>
+    <span class="n">TRIGGER</span> <span class="o">=</span> <span class="s1">&#39;trigger&#39;</span>
+    <span class="n">GRADIENTWAVEFORM</span> <span class="o">=</span> <span class="s1">&#39;gradientwaveform&#39;</span>
+    <span class="n">OTHER</span> <span class="o">=</span> <span class="s1">&#39;other&#39;</span></div>
+
+
+
+<div class="viewcode-block" id="CalibrationMode">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.enums.CalibrationMode.html#mrpro.data.acq_filters.CalibrationMode">[docs]</a>
+<span class="k">class</span> <span class="nc">CalibrationMode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calibration mode.&quot;&quot;&quot;</span>
+
+    <span class="n">EMBEDDED</span> <span class="o">=</span> <span class="s1">&#39;embedded&#39;</span>
+    <span class="n">INTERLEAVED</span> <span class="o">=</span> <span class="s1">&#39;interleaved&#39;</span>
+    <span class="n">SEPARATE</span> <span class="o">=</span> <span class="s1">&#39;separate&#39;</span>
+    <span class="n">EXTERNAL</span> <span class="o">=</span> <span class="s1">&#39;external&#39;</span>
+    <span class="n">OTHER</span> <span class="o">=</span> <span class="s1">&#39;other&#39;</span></div>
+
+
+
+<div class="viewcode-block" id="TrajType">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.enums.TrajType.html#mrpro.data.acq_filters.TrajType">[docs]</a>
+<span class="k">class</span> <span class="nc">TrajType</span><span class="p">(</span><span class="n">Flag</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Special Properties of the Trajectory.&quot;&quot;&quot;</span>
+
+    <span class="n">SINGLEVALUE</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">ONGRID</span> <span class="o">=</span> <span class="mi">2</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

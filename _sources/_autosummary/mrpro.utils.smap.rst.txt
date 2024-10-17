@@ -1,0 +1,6 @@
+mrpro.utils.smap
+================
+
+.. currentmodule:: mrpro.utils
+
+.. autofunction:: smap

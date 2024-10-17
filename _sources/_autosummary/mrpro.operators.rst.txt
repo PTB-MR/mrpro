@@ -1,0 +1,66 @@
+﻿mrpro.operators
+===============
+
+.. automodule:: mrpro.operators
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class_template.rst
+   
+      CartesianSamplingOp
+      ConstraintsOp
+      DensityCompensationOp
+      EinsumOp
+      ElementaryFunctional
+      ElementaryProximableFunctional
+      FastFourierOp
+      FiniteDifferenceOp
+      FourierOp
+      Functional
+      GridSamplingOp
+      IdentityOp
+      LinearOperator
+      MagnitudeOp
+      MultiIdentityOp
+      Operator
+      PhaseOp
+      ProximableFunctional
+      SensitivityOp
+      SignalModel
+      SliceProjectionOp
+      WaveletOp
+      ZeroOp
+      ZeroPadOp
+   
+   
+
+   
+   
+   
+
+
+
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :template: module_template.rst
+   :recursive:
+
+   EndomorphOperator
+   RearrangeOp
+   functionals
+   models
+

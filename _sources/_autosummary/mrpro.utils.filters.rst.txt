@@ -1,0 +1,43 @@
+mrpro.utils.filters
+===================
+
+.. automodule:: mrpro.utils.filters
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+   
+      ceil
+      filter_separable
+      gaussian_filter
+      reduce
+      repeat
+      uniform_filter
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class_template.rst
+   
+      Sequence
+   
+   
+
+   
+   
+   
+
+
+

@@ -1,0 +1,4 @@
+T1 mapping from a continuous Golden radial acquisition
+========
+.. raw:: html
+   :file: ./_notebooks/t1_mapping_with_grad_acq.html

@@ -1,0 +1,31 @@
+mrpro.algorithms.csm
+====================
+
+.. automodule:: mrpro.algorithms.csm
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+   
+      inati
+      walsh
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

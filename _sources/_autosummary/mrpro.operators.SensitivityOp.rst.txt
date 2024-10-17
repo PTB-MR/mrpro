@@ -1,0 +1,84 @@
+mrpro.operators.SensitivityOp
+=============================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: SensitivityOp
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SensitivityOp.__init__
+      ~SensitivityOp.add_module
+      ~SensitivityOp.adjoint
+      ~SensitivityOp.apply
+      ~SensitivityOp.bfloat16
+      ~SensitivityOp.buffers
+      ~SensitivityOp.children
+      ~SensitivityOp.compile
+      ~SensitivityOp.cpu
+      ~SensitivityOp.cuda
+      ~SensitivityOp.double
+      ~SensitivityOp.eval
+      ~SensitivityOp.extra_repr
+      ~SensitivityOp.float
+      ~SensitivityOp.forward
+      ~SensitivityOp.get_buffer
+      ~SensitivityOp.get_extra_state
+      ~SensitivityOp.get_parameter
+      ~SensitivityOp.get_submodule
+      ~SensitivityOp.half
+      ~SensitivityOp.ipu
+      ~SensitivityOp.load_state_dict
+      ~SensitivityOp.modules
+      ~SensitivityOp.named_buffers
+      ~SensitivityOp.named_children
+      ~SensitivityOp.named_modules
+      ~SensitivityOp.named_parameters
+      ~SensitivityOp.operator_norm
+      ~SensitivityOp.parameters
+      ~SensitivityOp.register_backward_hook
+      ~SensitivityOp.register_buffer
+      ~SensitivityOp.register_forward_hook
+      ~SensitivityOp.register_forward_pre_hook
+      ~SensitivityOp.register_full_backward_hook
+      ~SensitivityOp.register_full_backward_pre_hook
+      ~SensitivityOp.register_load_state_dict_post_hook
+      ~SensitivityOp.register_module
+      ~SensitivityOp.register_parameter
+      ~SensitivityOp.register_state_dict_pre_hook
+      ~SensitivityOp.requires_grad_
+      ~SensitivityOp.set_extra_state
+      ~SensitivityOp.share_memory
+      ~SensitivityOp.state_dict
+      ~SensitivityOp.to
+      ~SensitivityOp.to_empty
+      ~SensitivityOp.train
+      ~SensitivityOp.type
+      ~SensitivityOp.xpu
+      ~SensitivityOp.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SensitivityOp.H
+      ~SensitivityOp.T_destination
+      ~SensitivityOp.call_super_init
+      ~SensitivityOp.dump_patches
+      ~SensitivityOp.gram
+      ~SensitivityOp.training
+   
+   

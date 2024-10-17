@@ -1,0 +1,40 @@
+mrpro.algorithms.optimizers
+===========================
+
+.. automodule:: mrpro.algorithms.optimizers
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+   
+      adam
+      cg
+      lbfgs
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class_template.rst
+   
+      OptimizerStatus
+   
+   
+
+   
+   
+   
+
+
+

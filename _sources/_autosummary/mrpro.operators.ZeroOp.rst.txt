@@ -1,0 +1,84 @@
+mrpro.operators.ZeroOp
+======================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: ZeroOp
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ZeroOp.__init__
+      ~ZeroOp.add_module
+      ~ZeroOp.adjoint
+      ~ZeroOp.apply
+      ~ZeroOp.bfloat16
+      ~ZeroOp.buffers
+      ~ZeroOp.children
+      ~ZeroOp.compile
+      ~ZeroOp.cpu
+      ~ZeroOp.cuda
+      ~ZeroOp.double
+      ~ZeroOp.eval
+      ~ZeroOp.extra_repr
+      ~ZeroOp.float
+      ~ZeroOp.forward
+      ~ZeroOp.get_buffer
+      ~ZeroOp.get_extra_state
+      ~ZeroOp.get_parameter
+      ~ZeroOp.get_submodule
+      ~ZeroOp.half
+      ~ZeroOp.ipu
+      ~ZeroOp.load_state_dict
+      ~ZeroOp.modules
+      ~ZeroOp.named_buffers
+      ~ZeroOp.named_children
+      ~ZeroOp.named_modules
+      ~ZeroOp.named_parameters
+      ~ZeroOp.operator_norm
+      ~ZeroOp.parameters
+      ~ZeroOp.register_backward_hook
+      ~ZeroOp.register_buffer
+      ~ZeroOp.register_forward_hook
+      ~ZeroOp.register_forward_pre_hook
+      ~ZeroOp.register_full_backward_hook
+      ~ZeroOp.register_full_backward_pre_hook
+      ~ZeroOp.register_load_state_dict_post_hook
+      ~ZeroOp.register_module
+      ~ZeroOp.register_parameter
+      ~ZeroOp.register_state_dict_pre_hook
+      ~ZeroOp.requires_grad_
+      ~ZeroOp.set_extra_state
+      ~ZeroOp.share_memory
+      ~ZeroOp.state_dict
+      ~ZeroOp.to
+      ~ZeroOp.to_empty
+      ~ZeroOp.train
+      ~ZeroOp.type
+      ~ZeroOp.xpu
+      ~ZeroOp.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ZeroOp.H
+      ~ZeroOp.T_destination
+      ~ZeroOp.call_super_init
+      ~ZeroOp.dump_patches
+      ~ZeroOp.gram
+      ~ZeroOp.training
+   
+   

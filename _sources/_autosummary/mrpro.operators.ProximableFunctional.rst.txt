@@ -1,0 +1,82 @@
+mrpro.operators.ProximableFunctional
+====================================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: ProximableFunctional
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ProximableFunctional.__init__
+      ~ProximableFunctional.add_module
+      ~ProximableFunctional.apply
+      ~ProximableFunctional.bfloat16
+      ~ProximableFunctional.buffers
+      ~ProximableFunctional.children
+      ~ProximableFunctional.compile
+      ~ProximableFunctional.cpu
+      ~ProximableFunctional.cuda
+      ~ProximableFunctional.double
+      ~ProximableFunctional.eval
+      ~ProximableFunctional.extra_repr
+      ~ProximableFunctional.float
+      ~ProximableFunctional.forward
+      ~ProximableFunctional.get_buffer
+      ~ProximableFunctional.get_extra_state
+      ~ProximableFunctional.get_parameter
+      ~ProximableFunctional.get_submodule
+      ~ProximableFunctional.half
+      ~ProximableFunctional.ipu
+      ~ProximableFunctional.load_state_dict
+      ~ProximableFunctional.modules
+      ~ProximableFunctional.named_buffers
+      ~ProximableFunctional.named_children
+      ~ProximableFunctional.named_modules
+      ~ProximableFunctional.named_parameters
+      ~ProximableFunctional.parameters
+      ~ProximableFunctional.prox
+      ~ProximableFunctional.prox_convex_conj
+      ~ProximableFunctional.register_backward_hook
+      ~ProximableFunctional.register_buffer
+      ~ProximableFunctional.register_forward_hook
+      ~ProximableFunctional.register_forward_pre_hook
+      ~ProximableFunctional.register_full_backward_hook
+      ~ProximableFunctional.register_full_backward_pre_hook
+      ~ProximableFunctional.register_load_state_dict_post_hook
+      ~ProximableFunctional.register_module
+      ~ProximableFunctional.register_parameter
+      ~ProximableFunctional.register_state_dict_pre_hook
+      ~ProximableFunctional.requires_grad_
+      ~ProximableFunctional.set_extra_state
+      ~ProximableFunctional.share_memory
+      ~ProximableFunctional.state_dict
+      ~ProximableFunctional.to
+      ~ProximableFunctional.to_empty
+      ~ProximableFunctional.train
+      ~ProximableFunctional.type
+      ~ProximableFunctional.xpu
+      ~ProximableFunctional.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ProximableFunctional.T_destination
+      ~ProximableFunctional.call_super_init
+      ~ProximableFunctional.dump_patches
+      ~ProximableFunctional.training
+   
+   

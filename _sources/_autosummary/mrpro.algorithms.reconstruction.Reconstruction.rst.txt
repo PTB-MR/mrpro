@@ -1,0 +1,87 @@
+mrpro.algorithms.reconstruction.Reconstruction
+==============================================
+
+.. currentmodule:: mrpro.algorithms.reconstruction
+
+.. autoclass:: Reconstruction
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Reconstruction.__init__
+      ~Reconstruction.add_module
+      ~Reconstruction.apply
+      ~Reconstruction.bfloat16
+      ~Reconstruction.buffers
+      ~Reconstruction.children
+      ~Reconstruction.compile
+      ~Reconstruction.cpu
+      ~Reconstruction.cuda
+      ~Reconstruction.direct_reconstruction
+      ~Reconstruction.double
+      ~Reconstruction.eval
+      ~Reconstruction.extra_repr
+      ~Reconstruction.float
+      ~Reconstruction.forward
+      ~Reconstruction.get_buffer
+      ~Reconstruction.get_extra_state
+      ~Reconstruction.get_parameter
+      ~Reconstruction.get_submodule
+      ~Reconstruction.half
+      ~Reconstruction.ipu
+      ~Reconstruction.load_state_dict
+      ~Reconstruction.modules
+      ~Reconstruction.named_buffers
+      ~Reconstruction.named_children
+      ~Reconstruction.named_modules
+      ~Reconstruction.named_parameters
+      ~Reconstruction.parameters
+      ~Reconstruction.recalculate_csm
+      ~Reconstruction.recalculate_fourierop
+      ~Reconstruction.register_backward_hook
+      ~Reconstruction.register_buffer
+      ~Reconstruction.register_forward_hook
+      ~Reconstruction.register_forward_pre_hook
+      ~Reconstruction.register_full_backward_hook
+      ~Reconstruction.register_full_backward_pre_hook
+      ~Reconstruction.register_load_state_dict_post_hook
+      ~Reconstruction.register_module
+      ~Reconstruction.register_parameter
+      ~Reconstruction.register_state_dict_pre_hook
+      ~Reconstruction.requires_grad_
+      ~Reconstruction.set_extra_state
+      ~Reconstruction.share_memory
+      ~Reconstruction.state_dict
+      ~Reconstruction.to
+      ~Reconstruction.to_empty
+      ~Reconstruction.train
+      ~Reconstruction.type
+      ~Reconstruction.xpu
+      ~Reconstruction.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Reconstruction.T_destination
+      ~Reconstruction.call_super_init
+      ~Reconstruction.dump_patches
+      ~Reconstruction.dcf
+      ~Reconstruction.csm
+      ~Reconstruction.noise
+      ~Reconstruction.fourier_op
+      ~Reconstruction.training
+   
+   

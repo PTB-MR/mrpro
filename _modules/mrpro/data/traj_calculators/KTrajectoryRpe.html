@@ -1,0 +1,243 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.data.traj_calculators.KTrajectoryRpe &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mrpro.data.traj_calculators.KTrajectoryRpe</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mrpro.data.traj_calculators.KTrajectoryRpe</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Radial phase encoding (RPE) trajectory class.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">repeat</span>
+
+<span class="kn">from</span> <span class="nn">mrpro.data.KHeader</span> <span class="kn">import</span> <span class="n">KHeader</span>
+<span class="kn">from</span> <span class="nn">mrpro.data.KTrajectory</span> <span class="kn">import</span> <span class="n">KTrajectory</span>
+<span class="kn">from</span> <span class="nn">mrpro.data.traj_calculators.KTrajectoryCalculator</span> <span class="kn">import</span> <span class="n">KTrajectoryCalculator</span>
+
+
+<div class="viewcode-block" id="KTrajectoryRpe">
+<a class="viewcode-back" href="../../../../_autosummary/mrpro.data.traj_calculators.KTrajectoryRpe.html#mrpro.data.traj_calculators.KTrajectoryRpe">[docs]</a>
+<span class="k">class</span> <span class="nc">KTrajectoryRpe</span><span class="p">(</span><span class="n">KTrajectoryCalculator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Radial phase encoding trajectory.</span>
+
+<span class="sd">    Frequency encoding along kx is carried out in a standard Cartesian way. The phase encoding points along ky and kz</span>
+<span class="sd">    are positioned along radial lines [BOU2009]_ [KOL2014]_.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [BOU2009] Boubertakh R, Schaeffter T (2009) Whole-heart imaging using undersampled radial phase encoding (RPE)</span>
+<span class="sd">        and iterative sensitivity encoding (SENSE) reconstruction. MRM 62(5) https://doi.org/10.1002/mrm.22102</span>
+
+<span class="sd">    .. [KOL2014] Kolbitsch C, Schaeffter T (2014) A 3D MR-acquisition scheme for nonrigid bulk motion correction</span>
+<span class="sd">        in simultaneous PET-MR. Medical Physics 41(8) https://doi.org/10.1118/1.4890095</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="KTrajectoryRpe.__init__">
+<a class="viewcode-back" href="../../../../_autosummary/mrpro.data.traj_calculators.KTrajectoryRpe.html#mrpro.data.traj_calculators.KTrajectoryRpe.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">shift_between_rpe_lines</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize KTrajectoryRpe.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        angle</span>
+<span class="sd">            angle in rad between two radial phase encoding lines</span>
+<span class="sd">        shift_between_rpe_lines</span>
+<span class="sd">            shift between radial phase encoding lines along the radial direction.</span>
+<span class="sd">            See _apply_shifts_between_rpe_lines() for more details</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">angle</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">angle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shift_between_rpe_lines</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">shift_between_rpe_lines</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_apply_shifts_between_rpe_lines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">krad</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">kang_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Shift radial phase encoding lines relative to each other.</span>
+
+<span class="sd">        Example: shift_between_rpe_lines = [0, 0.5, 0.25, 0.75] leads to a shift of the 0th line by 0,</span>
+<span class="sd">        the 1st line by 0.5, the 2nd line by 0.25, the 3rd line by 0.75, the 4th line by 0, the 5th line</span>
+<span class="sd">        by 0.5 and so on. Phase encoding points in k-space center are not shifted [PRI2010]_.</span>
+
+<span class="sd">        Line #          k-space points before shift             k-space points after shift</span>
+<span class="sd">        0               +    +    +    +    +    +    +         +    +    +    +    +    +    +</span>
+<span class="sd">        1               +    +    +    +    +    +    +           +    +    +  +      +    +    +</span>
+<span class="sd">        2               +    +    +    +    +    +    +          +    +    +   +     +    +    +</span>
+<span class="sd">        3               +    +    +    +    +    +    +            +    +    + +       +    +    +</span>
+<span class="sd">        4               +    +    +    +    +    +    +         +    +    +    +    +    +    +</span>
+<span class="sd">        5               +    +    +    +    +    +    +           +    +    +  +      +    +    +</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        krad</span>
+<span class="sd">            k-space positions along each phase encoding line</span>
+<span class="sd">        kang_idx</span>
+<span class="sd">            indices of angles to be used for shift calculation</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [PRI2010] Prieto C, Schaeffter T (2010) 3D undersampled golden-radial phase encoding</span>
+<span class="sd">        for DCE-MRA using inherently regularized iterative SENSE. MRM 64(2). https://doi.org/10.1002/mrm.22446</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">ind</span><span class="p">,</span> <span class="n">shift</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shift_between_rpe_lines</span><span class="p">):</span>
+            <span class="n">curr_angle_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">fmod</span><span class="p">(</span><span class="n">kang_idx</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shift_between_rpe_lines</span><span class="p">))</span> <span class="o">==</span> <span class="n">ind</span><span class="p">,</span>
+                <span class="n">as_tuple</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">curr_krad</span> <span class="o">=</span> <span class="n">krad</span><span class="p">[</span><span class="n">curr_angle_idx</span><span class="p">]</span>
+
+            <span class="c1"># Do not shift the k-space center</span>
+            <span class="n">curr_krad</span> <span class="o">+=</span> <span class="n">shift</span> <span class="o">*</span> <span class="p">(</span><span class="n">curr_krad</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+
+            <span class="n">krad</span><span class="p">[</span><span class="n">curr_angle_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">curr_krad</span>
+        <span class="k">return</span> <span class="n">krad</span>
+
+    <span class="k">def</span> <span class="nf">_kang</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the angles of the phase encoding lines.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        kheader</span>
+<span class="sd">            MR raw data header (KHeader) containing required meta data</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            angles of phase encoding lines</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">repeat</span><span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">k2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">angle</span><span class="p">,</span> <span class="s1">&#39;... k2 k1 -&gt; ... k2 k1 k0&#39;</span><span class="p">,</span> <span class="n">k0</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_krad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the k-space locations along the phase encoding lines.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        kheader</span>
+<span class="sd">            MR raw data header (KHeader) containing required meta data</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            k-space locations along the phase encoding lines</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">krad</span> <span class="o">=</span> <span class="p">(</span><span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">k1</span> <span class="o">-</span> <span class="n">kheader</span><span class="o">.</span><span class="n">encoding_limits</span><span class="o">.</span><span class="n">k1</span><span class="o">.</span><span class="n">center</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">krad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_shifts_between_rpe_lines</span><span class="p">(</span><span class="n">krad</span><span class="p">,</span> <span class="n">kheader</span><span class="o">.</span><span class="n">acq_info</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">k2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">repeat</span><span class="p">(</span><span class="n">krad</span><span class="p">,</span> <span class="s1">&#39;... k2 k1 -&gt; ... k2 k1 k0&#39;</span><span class="p">,</span> <span class="n">k0</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kheader</span><span class="p">:</span> <span class="n">KHeader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KTrajectory</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate radial phase encoding trajectory for given KHeader.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        kheader</span>
+<span class="sd">           MR raw data header (KHeader) containing required meta data</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            radial phase encoding trajectory for given KHeader</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Trajectory along readout</span>
+        <span class="n">kx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kfreq</span><span class="p">(</span><span class="n">kheader</span><span class="p">)</span>
+
+        <span class="c1"># Angles of phase encoding lines</span>
+        <span class="n">kang</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_kang</span><span class="p">(</span><span class="n">kheader</span><span class="p">)</span>
+
+        <span class="c1"># K-space locations along phase encoding lines</span>
+        <span class="n">krad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_krad</span><span class="p">(</span><span class="n">kheader</span><span class="p">)</span>
+
+        <span class="n">kz</span> <span class="o">=</span> <span class="n">krad</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">kang</span><span class="p">)</span>
+        <span class="n">ky</span> <span class="o">=</span> <span class="n">krad</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">kang</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">KTrajectory</span><span class="p">(</span><span class="n">kz</span><span class="p">,</span> <span class="n">ky</span><span class="p">,</span> <span class="n">kx</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

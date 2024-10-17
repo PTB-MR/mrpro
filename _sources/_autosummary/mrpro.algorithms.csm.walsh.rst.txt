@@ -1,0 +1,6 @@
+mrpro.algorithms.csm.walsh
+==========================
+
+.. currentmodule:: mrpro.algorithms.csm
+
+.. autofunction:: walsh

@@ -1,0 +1,27 @@
+mrpro.utils.sliding\_window.Sequence
+====================================
+
+.. currentmodule:: mrpro.utils.sliding_window
+
+.. autoclass:: Sequence
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Sequence.__init__
+      ~Sequence.count
+      ~Sequence.index
+   
+   
+
+   
+   
+   

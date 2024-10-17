@@ -1,0 +1,176 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.utils.sliding_window &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mrpro.utils.sliding_window</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mrpro.utils.sliding_window</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Sliding window view.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+
+
+<div class="viewcode-block" id="sliding_window">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.utils.sliding_window.sliding_window.html#mrpro.utils.sliding_window.sliding_window">[docs]</a>
+<span class="k">def</span> <span class="nf">sliding_window</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">window_shape</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">strides</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sliding window view into the tensor x.</span>
+
+<span class="sd">    Returns a view into the tensor x that represents a sliding window.</span>
+<span class="sd">    The window-axes will be at the end in the order of the axis argument.</span>
+<span class="sd">    Non-overlapping windows can be achieved by setting the strides to the window_shape.</span>
+<span class="sd">    Note that the stride argument is **experimental** and not fully supported.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x</span>
+<span class="sd">        Tensor to slide over</span>
+<span class="sd">    window_shape</span>
+<span class="sd">        Size of window over each axis that takes part in the sliding window.</span>
+<span class="sd">    axis</span>
+<span class="sd">        Axis or axes to slide over. If None, slides over all axes.</span>
+<span class="sd">    strides</span>
+<span class="sd">        Stride of the sliding window. **Experimental**.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">axis</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">ndim</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">axis</span> <span class="o">=</span> <span class="p">(</span><span class="n">axis</span><span class="p">,)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">axis</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">ax</span> <span class="o">%</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">axis</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">axis</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">axis</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;duplicate values in axis are not allowed&#39;</span><span class="p">)</span>
+
+    <span class="n">window_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">window_shape</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">window_shape</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="n">window_shape</span><span class="p">,)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+    <span class="n">strides</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">strides</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">strides</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="n">strides</span><span class="p">,)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+    <span class="c1"># we want to use fancy indexing, so we need these as tensors</span>
+    <span class="n">window_shape_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">window_shape</span><span class="p">)</span>
+    <span class="n">strides_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">strides</span><span class="p">)</span>
+    <span class="n">x_shape_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">strides_tensor</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;strides other than 1 are not fully supported&#39;</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">window_shape_tensor</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;window_shape cannot contain negative values&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">strides_tensor</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="c1"># this is a pytorch limitation. python api standard should allow negative strides</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;strides cannot contain negative values&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">window_shape</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">axis</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Must provide matching length window_shape and axis arguments. &#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">strides</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">axis</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Must provide matching length strides and axis arguments.&#39;</span><span class="p">)</span>
+    <span class="c1"># out_strides should be the original strides, but for sliding windows axis the stride should be increased</span>
+    <span class="c1"># and a new dimension should be added</span>
+    <span class="n">out_strides</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">stride</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">ndim</span><span class="p">)]</span> <span class="o">+</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">stride</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span> <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">axis</span><span class="p">])</span>
+    <span class="n">out_strides</span><span class="p">[</span><span class="n">axis</span><span class="p">,]</span> <span class="o">=</span> <span class="n">out_strides</span><span class="p">[</span><span class="n">axis</span><span class="p">,]</span> <span class="o">*</span> <span class="n">strides_tensor</span>
+    <span class="c1"># remove boundaries, similar to convolution with padding=&quot;valid&quot;.</span>
+    <span class="n">x_shape_tensor</span><span class="p">[</span><span class="n">axis</span><span class="p">,]</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_shape_tensor</span><span class="p">[</span><span class="n">axis</span><span class="p">,]</span> <span class="o">+</span> <span class="n">strides_tensor</span> <span class="o">-</span> <span class="n">window_shape_tensor</span><span class="p">)</span> <span class="o">//</span> <span class="n">strides_tensor</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">x_shape_tensor</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="c1"># only partial views</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;strides or windows too large&#39;</span><span class="p">)</span>
+    <span class="n">out_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">x_shape_tensor</span><span class="p">)</span> <span class="o">+</span> <span class="n">window_shape</span>
+    <span class="n">view</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">as_strided</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">out_shape</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">out_strides</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">view</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

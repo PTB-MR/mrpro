@@ -1,0 +1,246 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.operators &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mrpro.operators.CartesianSamplingOp" href="mrpro.operators.CartesianSamplingOp.html" />
+    <link rel="prev" title="mrpro.data.traj_calculators.KTrajectorySunflowerGoldenRpe" href="mrpro.data.traj_calculators.KTrajectorySunflowerGoldenRpe.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-algorithms">MRpro Algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-data">MRpro Data</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../api.html#mrpro-operators">MRpro Operators</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">mrpro.operators</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.CartesianSamplingOp.html">mrpro.operators.CartesianSamplingOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.ConstraintsOp.html">mrpro.operators.ConstraintsOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.DensityCompensationOp.html">mrpro.operators.DensityCompensationOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.EinsumOp.html">mrpro.operators.EinsumOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.ElementaryFunctional.html">mrpro.operators.ElementaryFunctional</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.ElementaryProximableFunctional.html">mrpro.operators.ElementaryProximableFunctional</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.FastFourierOp.html">mrpro.operators.FastFourierOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.FiniteDifferenceOp.html">mrpro.operators.FiniteDifferenceOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.FourierOp.html">mrpro.operators.FourierOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.Functional.html">mrpro.operators.Functional</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.GridSamplingOp.html">mrpro.operators.GridSamplingOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.IdentityOp.html">mrpro.operators.IdentityOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.LinearOperator.html">mrpro.operators.LinearOperator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.MagnitudeOp.html">mrpro.operators.MagnitudeOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.MultiIdentityOp.html">mrpro.operators.MultiIdentityOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.Operator.html">mrpro.operators.Operator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.PhaseOp.html">mrpro.operators.PhaseOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.ProximableFunctional.html">mrpro.operators.ProximableFunctional</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.SensitivityOp.html">mrpro.operators.SensitivityOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.SignalModel.html">mrpro.operators.SignalModel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.SliceProjectionOp.html">mrpro.operators.SliceProjectionOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.WaveletOp.html">mrpro.operators.WaveletOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.ZeroOp.html">mrpro.operators.ZeroOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.ZeroPadOp.html">mrpro.operators.ZeroPadOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.EndomorphOperator.html">mrpro.operators.EndomorphOperator</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.RearrangeOp.html">mrpro.operators.RearrangeOp</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.functionals.html">mrpro.operators.functionals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.operators.models.html">mrpro.operators.models</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-phantoms">MRpro Phantoms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-utilities">MRpro Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../api.html">API</a></li>
+      <li class="breadcrumb-item active">mrpro.operators</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/_autosummary/mrpro.operators.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-mrpro.operators">
+<span id="mrpro-operators"></span><h1>mrpro.operators<a class="headerlink" href="#module-mrpro.operators" title="Link to this heading"></a></h1>
+<p class="rubric">Classes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.operators.CartesianSamplingOp.html#mrpro.operators.CartesianSamplingOp" title="mrpro.operators.CartesianSamplingOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CartesianSamplingOp</span></code></a>(encoding_matrix, traj)</p></td>
+<td><p>Cartesian Sampling Operator.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.operators.ConstraintsOp.html#mrpro.operators.ConstraintsOp" title="mrpro.operators.ConstraintsOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConstraintsOp</span></code></a>(bounds[, beta_sigmoid, ...])</p></td>
+<td><p>Transformation to map real-valued tensors to certain ranges.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.operators.DensityCompensationOp.html#mrpro.operators.DensityCompensationOp" title="mrpro.operators.DensityCompensationOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DensityCompensationOp</span></code></a>(dcf)</p></td>
+<td><p>Density Compensation Operator.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.operators.EinsumOp.html#mrpro.operators.EinsumOp" title="mrpro.operators.EinsumOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EinsumOp</span></code></a>(matrix[, einsum_rule])</p></td>
+<td><p>A Linear Operator that implements sum products in Einstein notation.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.operators.ElementaryFunctional.html#mrpro.operators.ElementaryFunctional" title="mrpro.operators.ElementaryFunctional"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ElementaryFunctional</span></code></a>([weight, target, dim, ...])</p></td>
+<td><p>Elementary functional base class.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.operators.ElementaryProximableFunctional.html#mrpro.operators.ElementaryProximableFunctional" title="mrpro.operators.ElementaryProximableFunctional"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ElementaryProximableFunctional</span></code></a>([weight, ...])</p></td>
+<td><p>Elementary proximable functional base class.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.operators.FastFourierOp.html#mrpro.operators.FastFourierOp" title="mrpro.operators.FastFourierOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FastFourierOp</span></code></a>([dim, recon_matrix, ...])</p></td>
+<td><p>Fast Fourier operator class.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.operators.FiniteDifferenceOp.html#mrpro.operators.FiniteDifferenceOp" title="mrpro.operators.FiniteDifferenceOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FiniteDifferenceOp</span></code></a>(dim[, mode, pad_mode])</p></td>
+<td><p>Finite Difference Operator.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.operators.FourierOp.html#mrpro.operators.FourierOp" title="mrpro.operators.FourierOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FourierOp</span></code></a>(recon_matrix, encoding_matrix, traj)</p></td>
+<td><p>Fourier Operator class.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.operators.Functional.html#mrpro.operators.Functional" title="mrpro.operators.Functional"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Functional</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Functional Base Class.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.operators.GridSamplingOp.html#mrpro.operators.GridSamplingOp" title="mrpro.operators.GridSamplingOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GridSamplingOp</span></code></a>(grid, input_shape[, ...])</p></td>
+<td><p>Grid Sampling Operator.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.operators.IdentityOp.html#mrpro.operators.IdentityOp" title="mrpro.operators.IdentityOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityOp</span></code></a>()</p></td>
+<td><p>The Identity Operator.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.operators.LinearOperator.html#mrpro.operators.LinearOperator" title="mrpro.operators.LinearOperator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LinearOperator</span></code></a>(*args, **kwargs)</p></td>
+<td><p>General Linear Operator.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.operators.MagnitudeOp.html#mrpro.operators.MagnitudeOp" title="mrpro.operators.MagnitudeOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MagnitudeOp</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Magnitude of input tensors.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.operators.MultiIdentityOp.html#mrpro.operators.MultiIdentityOp" title="mrpro.operators.MultiIdentityOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultiIdentityOp</span></code></a>(*args, **kwargs)</p></td>
+<td><p>The Identity Operator.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.operators.Operator.html#mrpro.operators.Operator" title="mrpro.operators.Operator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Operator</span></code></a>(*args, **kwargs)</p></td>
+<td><p>The general Operator class.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.operators.PhaseOp.html#mrpro.operators.PhaseOp" title="mrpro.operators.PhaseOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PhaseOp</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Phase of input tensors.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.operators.ProximableFunctional.html#mrpro.operators.ProximableFunctional" title="mrpro.operators.ProximableFunctional"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProximableFunctional</span></code></a>(*args, **kwargs)</p></td>
+<td><p>ProximableFunctional Base Class.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.operators.SensitivityOp.html#mrpro.operators.SensitivityOp" title="mrpro.operators.SensitivityOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SensitivityOp</span></code></a>(csm)</p></td>
+<td><p>Sensitivity operator class.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.operators.SignalModel.html#mrpro.operators.SignalModel" title="mrpro.operators.SignalModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SignalModel</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Signal Model Operator.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.operators.SliceProjectionOp.html#mrpro.operators.SliceProjectionOp" title="mrpro.operators.SliceProjectionOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SliceProjectionOp</span></code></a>(input_shape[, ...])</p></td>
+<td><p>Slice Projection Operator.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.operators.WaveletOp.html#mrpro.operators.WaveletOp" title="mrpro.operators.WaveletOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WaveletOp</span></code></a>([domain_shape, dim, wavelet_name, ...])</p></td>
+<td><p>Wavelet operator class.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.operators.ZeroOp.html#mrpro.operators.ZeroOp" title="mrpro.operators.ZeroOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ZeroOp</span></code></a>([keep_shape])</p></td>
+<td><p>A constant zero operator.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.operators.ZeroPadOp.html#mrpro.operators.ZeroPadOp" title="mrpro.operators.ZeroPadOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ZeroPadOp</span></code></a>(dim, original_shape, padded_shape)</p></td>
+<td><p>Zero Pad operator class.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Modules</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.operators.EndomorphOperator.html#module-mrpro.operators.EndomorphOperator" title="mrpro.operators.EndomorphOperator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EndomorphOperator</span></code></a></p></td>
+<td><p>Endomorph Operators.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.operators.RearrangeOp.html#module-mrpro.operators.RearrangeOp" title="mrpro.operators.RearrangeOp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RearrangeOp</span></code></a></p></td>
+<td><p>Rearrange Operator.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.operators.functionals.html#module-mrpro.operators.functionals" title="mrpro.operators.functionals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">functionals</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.operators.models.html#module-mrpro.operators.models" title="mrpro.operators.models"><code class="xref py py-obj docutils literal notranslate"><span class="pre">models</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="mrpro.data.traj_calculators.KTrajectorySunflowerGoldenRpe.html" class="btn btn-neutral float-left" title="mrpro.data.traj_calculators.KTrajectorySunflowerGoldenRpe" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mrpro.operators.CartesianSamplingOp.html" class="btn btn-neutral float-right" title="mrpro.operators.CartesianSamplingOp" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

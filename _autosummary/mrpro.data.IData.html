@@ -1,0 +1,457 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.data.IData &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mrpro.data.IHeader" href="mrpro.data.IHeader.html" />
+    <link rel="prev" title="mrpro.data.EncodingLimits" href="mrpro.data.EncodingLimits.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-algorithms">MRpro Algorithms</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../api.html#mrpro-data">MRpro Data</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="mrpro.data.html">mrpro.data</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.AcqIdx.html">mrpro.data.AcqIdx</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.AcqInfo.html">mrpro.data.AcqInfo</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.CsmData.html">mrpro.data.CsmData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.Data.html">mrpro.data.Data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.DcfData.html">mrpro.data.DcfData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.EncodingLimits.html">mrpro.data.EncodingLimits</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">mrpro.data.IData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.IHeader.html">mrpro.data.IHeader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KData.html">mrpro.data.KData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KHeader.html">mrpro.data.KHeader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KNoise.html">mrpro.data.KNoise</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KTrajectory.html">mrpro.data.KTrajectory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KTrajectoryRawShape.html">mrpro.data.KTrajectoryRawShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.Limits.html">mrpro.data.Limits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.MoveDataMixin.html">mrpro.data.MoveDataMixin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.QData.html">mrpro.data.QData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.QHeader.html">mrpro.data.QHeader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.Rotation.html">mrpro.data.Rotation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.SpatialDimension.html">mrpro.data.SpatialDimension</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.TrajectoryDescription.html">mrpro.data.TrajectoryDescription</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.acq_filters.html">mrpro.data.acq_filters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.enums.html">mrpro.data.enums</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.traj_calculators.html">mrpro.data.traj_calculators</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-operators">MRpro Operators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-phantoms">MRpro Phantoms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-utilities">MRpro Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../api.html">API</a></li>
+          <li class="breadcrumb-item"><a href="mrpro.data.html">mrpro.data</a></li>
+      <li class="breadcrumb-item active">mrpro.data.IData</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/_autosummary/mrpro.data.IData.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="mrpro-data-idata">
+<h1>mrpro.data.IData<a class="headerlink" href="#mrpro-data-idata" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="mrpro.data.IData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.</span></span><span class="sig-name descname"><span class="pre">IData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">header</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.IHeader.html#mrpro.data.IHeader" title="mrpro.data.IHeader.IHeader"><span class="pre">IHeader</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/IData.html#IData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.IData" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="mrpro.data.Data.html#mrpro.data.Data" title="mrpro.data.Data.Data"><code class="xref py py-class docutils literal notranslate"><span class="pre">Data</span></code></a></p>
+<p>MR image data (IData) class.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.IData.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">header</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.IHeader.html#mrpro.data.IHeader" title="mrpro.data.IHeader.IHeader"><span class="pre">IHeader</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.data.IData.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code>(data, header)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">clone</span></code>()</p></td>
+<td><p>Return a deep copy of the object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cpu</span></code>(*[, memory_format, copy])</p></td>
+<td><p>Put in CPU memory.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cuda</span></code>([device, non_blocking, memory_format, copy])</p></td>
+<td><p>Put object in CUDA memory.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">double</span></code>(*[, memory_format, copy])</p></td>
+<td><p>Convert all float tensors to double precision.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_dicom_files</span></code>(filenames)</p></td>
+<td><p>Read multiple DICOM files and return IData object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_dicom_folder</span></code>(foldername[, suffix])</p></td>
+<td><p>Read all DICOM files from a folder and return IData object.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_single_dicom</span></code>(filename)</p></td>
+<td><p>Read single DICOM file and return IData object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_tensor_and_kheader</span></code>(data, kheader)</p></td>
+<td><p>Create IData object from a tensor and a KHeader object.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">half</span></code>(*[, memory_format, copy])</p></td>
+<td><p>Convert all float tensors to half precision.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">rss</span></code>([keepdim])</p></td>
+<td><p>Root-sum-of-squares over coils image data.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">single</span></code>(*[, memory_format, copy])</p></td>
+<td><p>Convert all float tensors to single precision.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code>(*args, **kwargs)</p></td>
+<td><p>Perform dtype and/or device conversion of data.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">data</span></code></p></td>
+<td><p>Data.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">device</span></code></p></td>
+<td><p>Return the device of the tensors.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">header</span></code></p></td>
+<td><p>Header for image data.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_cpu</span></code></p></td>
+<td><p>Return True if all tensors are on the CPU.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_cuda</span></code></p></td>
+<td><p>Return True if all tensors are on a single CUDA device.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.IData.clone">
+<span class="sig-name descname"><span class="pre">clone</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.IData.clone" title="Link to this definition"></a></dt>
+<dd><p>Return a deep copy of the object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.IData.cpu">
+<span class="sig-name descname"><span class="pre">cpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.IData.cpu" title="Link to this definition"></a></dt>
+<dd><p>Put in CPU memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.IData.cuda">
+<span class="sig-name descname"><span class="pre">cuda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">non_blocking</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.IData.cuda" title="Link to this definition"></a></dt>
+<dd><p>Put object in CUDA memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>device</strong> – The destination GPU device. Defaults to the current CUDA device.</p></li>
+<li><p><strong>non_blocking</strong> – If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
+Otherwise, the argument has no effect.</p></li>
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.IData.data">
+<span class="sig-name descname"><span class="pre">data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></em><a class="headerlink" href="#mrpro.data.IData.data" title="Link to this definition"></a></dt>
+<dd><p>Data. Shape (…other coils k2 k1 k0)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mrpro.data.IData.device">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">device</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#mrpro.data.IData.device" title="Link to this definition"></a></dt>
+<dd><p>Return the device of the tensors.</p>
+<p>Looks at each field of a dataclass implementing a device attribute,
+such as torch.Tensors or MoveDataMixin instances. If the devices
+of the fields differ, an InconsistentDeviceError is raised, otherwise
+the device is returned. If no field implements a device attribute,
+None is returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>InconsistentDeviceError:</strong> – If the devices of different fields differ.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>The device of the fields or None if no field implements a device attribute.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.IData.double">
+<span class="sig-name descname"><span class="pre">double</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.IData.double" title="Link to this definition"></a></dt>
+<dd><p>Convert all float tensors to double precision.</p>
+<p>converts float to float64 and complex to complex128</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.IData.from_dicom_files">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dicom_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filenames</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.sliding_window.Sequence.html#mrpro.utils.sliding_window.Sequence" title="collections.abc.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.sliding_window.Sequence.html#mrpro.utils.sliding_window.Sequence" title="collections.abc.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Path</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">Path</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="../_modules/mrpro/data/IData.html#IData.from_dicom_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.IData.from_dicom_files" title="Link to this definition"></a></dt>
+<dd><p>Read multiple DICOM files and return IData object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filenames</strong> – List of DICOM filenames.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.IData.from_dicom_folder">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dicom_folder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">foldername</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'dcm'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="../_modules/mrpro/data/IData.html#IData.from_dicom_folder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.IData.from_dicom_folder" title="Link to this definition"></a></dt>
+<dd><p>Read all DICOM files from a folder and return IData object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>foldername</strong> – path to folder with DICOM files.</p></li>
+<li><p><strong>suffix</strong> – file extension (without period/full stop) to identify the DICOM files.
+If None, then all files in the folder are read in.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.IData.from_single_dicom">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_single_dicom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="../_modules/mrpro/data/IData.html#IData.from_single_dicom"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.IData.from_single_dicom" title="Link to this definition"></a></dt>
+<dd><p>Read single DICOM file and return IData object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> – path to DICOM file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.IData.from_tensor_and_kheader">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_tensor_and_kheader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kheader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.KHeader.html#mrpro.data.KHeader" title="mrpro.data.KHeader.KHeader"><span class="pre">KHeader</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="../_modules/mrpro/data/IData.html#IData.from_tensor_and_kheader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.IData.from_tensor_and_kheader" title="Link to this definition"></a></dt>
+<dd><p>Create IData object from a tensor and a KHeader object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – torch.Tensor containing image data with dimensions (broadcastable to) (other, coils, z, y, x).</p></li>
+<li><p><strong>kheader</strong> – MR raw data header (KHeader) containing required meta data for the image header (IHeader).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.IData.half">
+<span class="sig-name descname"><span class="pre">half</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.IData.half" title="Link to this definition"></a></dt>
+<dd><p>Convert all float tensors to half precision.</p>
+<p>converts float to float16 and complex to complex32</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.IData.header">
+<span class="sig-name descname"><span class="pre">header</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.IHeader.html#mrpro.data.IHeader" title="mrpro.data.IHeader.IHeader"><span class="pre">IHeader</span></a></em><a class="headerlink" href="#mrpro.data.IData.header" title="Link to this definition"></a></dt>
+<dd><p>Header for image data.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mrpro.data.IData.is_cpu">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_cpu</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#mrpro.data.IData.is_cpu" title="Link to this definition"></a></dt>
+<dd><p>Return True if all tensors are on the CPU.</p>
+<p>Checks all tensor attributes of the dataclass for their device,
+(recursively if an attribute is a MoveDataMixin)</p>
+<p>Returns False if not all tensors are on cpu or if the device is inconsistent,
+returns True if the data class has no tensors as attributes.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mrpro.data.IData.is_cuda">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_cuda</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#mrpro.data.IData.is_cuda" title="Link to this definition"></a></dt>
+<dd><p>Return True if all tensors are on a single CUDA device.</p>
+<p>Checks all tensor attributes of the dataclass for their device,
+(recursively if an attribute is a MoveDataMixin)</p>
+<p>Returns False if not all tensors are on the same CUDA devices, or if the device is inconsistent,
+returns True if the data class has no tensors as attributes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.IData.rss">
+<span class="sig-name descname"><span class="pre">rss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keepdim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a></span></span><a class="reference internal" href="../_modules/mrpro/data/IData.html#IData.rss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.IData.rss" title="Link to this definition"></a></dt>
+<dd><p>Root-sum-of-squares over coils image data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>keepdim</strong> – if True, the output tensor has the same number of dimensions as the data tensor, and the coil dimension is
+kept as a singleton dimension. If False, the coil dimension is removed.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>image data tensor with shape (…, 1, z, y, x) if keepdim is True or (…, z, y, x) if keepdim is False.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.IData.single">
+<span class="sig-name descname"><span class="pre">single</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.IData.single" title="Link to this definition"></a></dt>
+<dd><p>Convert all float tensors to single precision.</p>
+<p>converts float to float32 and complex to complex64</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.IData.to">
+<span class="sig-name descname"><span class="pre">to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.IData.to" title="Link to this definition"></a></dt>
+<dd><p>Perform dtype and/or device conversion of data.</p>
+<p>A torch.dtype and torch.device are inferred from the arguments
+args and kwargs. Please have a look at the
+documentation of torch.Tensor.to() for more details.</p>
+<p>A new instance of the dataclass will be returned.</p>
+<p>The conversion will be applied to all Tensor- or Module
+fields of the dataclass, and to all fields that implement
+the MoveDataMixin.</p>
+<p>The dtype-type, i.e. float or complex will always be preserved,
+but the precision of floating point dtypes might be changed.</p>
+<p>Example:
+If called with dtype=torch.float32 OR dtype=torch.complex64:</p>
+<ul class="simple">
+<li><p>A complex128 tensor will be converted to complex64</p></li>
+<li><p>A float64 tensor will be converted to float32</p></li>
+<li><p>A bool tensor will remain bool</p></li>
+<li><p>An int64 tensor will remain int64</p></li>
+</ul>
+<p>If other conversions are desired, please use the torch.Tensor.to() method of
+the fields directly.</p>
+<p>If the copy argument is set to True (default), a deep copy will be returned
+even if no conversion is necessary.
+If two fields are views of the same data before, in the result they will be independent
+copies if copy is set to True or a conversion is necessary.
+If set to False, some Tensors might be shared between the original and the new object.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="mrpro.data.EncodingLimits.html" class="btn btn-neutral float-left" title="mrpro.data.EncodingLimits" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mrpro.data.IHeader.html" class="btn btn-neutral float-right" title="mrpro.data.IHeader" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

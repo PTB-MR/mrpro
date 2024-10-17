@@ -1,0 +1,84 @@
+mrpro.operators.LinearOperator
+==============================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: LinearOperator
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~LinearOperator.__init__
+      ~LinearOperator.add_module
+      ~LinearOperator.adjoint
+      ~LinearOperator.apply
+      ~LinearOperator.bfloat16
+      ~LinearOperator.buffers
+      ~LinearOperator.children
+      ~LinearOperator.compile
+      ~LinearOperator.cpu
+      ~LinearOperator.cuda
+      ~LinearOperator.double
+      ~LinearOperator.eval
+      ~LinearOperator.extra_repr
+      ~LinearOperator.float
+      ~LinearOperator.forward
+      ~LinearOperator.get_buffer
+      ~LinearOperator.get_extra_state
+      ~LinearOperator.get_parameter
+      ~LinearOperator.get_submodule
+      ~LinearOperator.half
+      ~LinearOperator.ipu
+      ~LinearOperator.load_state_dict
+      ~LinearOperator.modules
+      ~LinearOperator.named_buffers
+      ~LinearOperator.named_children
+      ~LinearOperator.named_modules
+      ~LinearOperator.named_parameters
+      ~LinearOperator.operator_norm
+      ~LinearOperator.parameters
+      ~LinearOperator.register_backward_hook
+      ~LinearOperator.register_buffer
+      ~LinearOperator.register_forward_hook
+      ~LinearOperator.register_forward_pre_hook
+      ~LinearOperator.register_full_backward_hook
+      ~LinearOperator.register_full_backward_pre_hook
+      ~LinearOperator.register_load_state_dict_post_hook
+      ~LinearOperator.register_module
+      ~LinearOperator.register_parameter
+      ~LinearOperator.register_state_dict_pre_hook
+      ~LinearOperator.requires_grad_
+      ~LinearOperator.set_extra_state
+      ~LinearOperator.share_memory
+      ~LinearOperator.state_dict
+      ~LinearOperator.to
+      ~LinearOperator.to_empty
+      ~LinearOperator.train
+      ~LinearOperator.type
+      ~LinearOperator.xpu
+      ~LinearOperator.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~LinearOperator.H
+      ~LinearOperator.T_destination
+      ~LinearOperator.call_super_init
+      ~LinearOperator.dump_patches
+      ~LinearOperator.gram
+      ~LinearOperator.training
+   
+   

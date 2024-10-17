@@ -1,0 +1,81 @@
+mrpro.utils.slice\_profiles.SliceProfileBase
+============================================
+
+.. currentmodule:: mrpro.utils.slice_profiles
+
+.. autoclass:: SliceProfileBase
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SliceProfileBase.__init__
+      ~SliceProfileBase.add_module
+      ~SliceProfileBase.apply
+      ~SliceProfileBase.bfloat16
+      ~SliceProfileBase.buffers
+      ~SliceProfileBase.children
+      ~SliceProfileBase.compile
+      ~SliceProfileBase.cpu
+      ~SliceProfileBase.cuda
+      ~SliceProfileBase.double
+      ~SliceProfileBase.eval
+      ~SliceProfileBase.extra_repr
+      ~SliceProfileBase.float
+      ~SliceProfileBase.forward
+      ~SliceProfileBase.get_buffer
+      ~SliceProfileBase.get_extra_state
+      ~SliceProfileBase.get_parameter
+      ~SliceProfileBase.get_submodule
+      ~SliceProfileBase.half
+      ~SliceProfileBase.ipu
+      ~SliceProfileBase.load_state_dict
+      ~SliceProfileBase.modules
+      ~SliceProfileBase.named_buffers
+      ~SliceProfileBase.named_children
+      ~SliceProfileBase.named_modules
+      ~SliceProfileBase.named_parameters
+      ~SliceProfileBase.parameters
+      ~SliceProfileBase.random_sample
+      ~SliceProfileBase.register_backward_hook
+      ~SliceProfileBase.register_buffer
+      ~SliceProfileBase.register_forward_hook
+      ~SliceProfileBase.register_forward_pre_hook
+      ~SliceProfileBase.register_full_backward_hook
+      ~SliceProfileBase.register_full_backward_pre_hook
+      ~SliceProfileBase.register_load_state_dict_post_hook
+      ~SliceProfileBase.register_module
+      ~SliceProfileBase.register_parameter
+      ~SliceProfileBase.register_state_dict_pre_hook
+      ~SliceProfileBase.requires_grad_
+      ~SliceProfileBase.set_extra_state
+      ~SliceProfileBase.share_memory
+      ~SliceProfileBase.state_dict
+      ~SliceProfileBase.to
+      ~SliceProfileBase.to_empty
+      ~SliceProfileBase.train
+      ~SliceProfileBase.type
+      ~SliceProfileBase.xpu
+      ~SliceProfileBase.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SliceProfileBase.T_destination
+      ~SliceProfileBase.call_super_init
+      ~SliceProfileBase.dump_patches
+      ~SliceProfileBase.training
+   
+   

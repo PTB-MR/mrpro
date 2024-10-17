@@ -1,0 +1,84 @@
+mrpro.operators.CartesianSamplingOp
+===================================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: CartesianSamplingOp
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~CartesianSamplingOp.__init__
+      ~CartesianSamplingOp.add_module
+      ~CartesianSamplingOp.adjoint
+      ~CartesianSamplingOp.apply
+      ~CartesianSamplingOp.bfloat16
+      ~CartesianSamplingOp.buffers
+      ~CartesianSamplingOp.children
+      ~CartesianSamplingOp.compile
+      ~CartesianSamplingOp.cpu
+      ~CartesianSamplingOp.cuda
+      ~CartesianSamplingOp.double
+      ~CartesianSamplingOp.eval
+      ~CartesianSamplingOp.extra_repr
+      ~CartesianSamplingOp.float
+      ~CartesianSamplingOp.forward
+      ~CartesianSamplingOp.get_buffer
+      ~CartesianSamplingOp.get_extra_state
+      ~CartesianSamplingOp.get_parameter
+      ~CartesianSamplingOp.get_submodule
+      ~CartesianSamplingOp.half
+      ~CartesianSamplingOp.ipu
+      ~CartesianSamplingOp.load_state_dict
+      ~CartesianSamplingOp.modules
+      ~CartesianSamplingOp.named_buffers
+      ~CartesianSamplingOp.named_children
+      ~CartesianSamplingOp.named_modules
+      ~CartesianSamplingOp.named_parameters
+      ~CartesianSamplingOp.operator_norm
+      ~CartesianSamplingOp.parameters
+      ~CartesianSamplingOp.register_backward_hook
+      ~CartesianSamplingOp.register_buffer
+      ~CartesianSamplingOp.register_forward_hook
+      ~CartesianSamplingOp.register_forward_pre_hook
+      ~CartesianSamplingOp.register_full_backward_hook
+      ~CartesianSamplingOp.register_full_backward_pre_hook
+      ~CartesianSamplingOp.register_load_state_dict_post_hook
+      ~CartesianSamplingOp.register_module
+      ~CartesianSamplingOp.register_parameter
+      ~CartesianSamplingOp.register_state_dict_pre_hook
+      ~CartesianSamplingOp.requires_grad_
+      ~CartesianSamplingOp.set_extra_state
+      ~CartesianSamplingOp.share_memory
+      ~CartesianSamplingOp.state_dict
+      ~CartesianSamplingOp.to
+      ~CartesianSamplingOp.to_empty
+      ~CartesianSamplingOp.train
+      ~CartesianSamplingOp.type
+      ~CartesianSamplingOp.xpu
+      ~CartesianSamplingOp.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~CartesianSamplingOp.H
+      ~CartesianSamplingOp.T_destination
+      ~CartesianSamplingOp.call_super_init
+      ~CartesianSamplingOp.dump_patches
+      ~CartesianSamplingOp.gram
+      ~CartesianSamplingOp.training
+   
+   

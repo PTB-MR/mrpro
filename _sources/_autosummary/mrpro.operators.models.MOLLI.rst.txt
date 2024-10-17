@@ -1,0 +1,81 @@
+mrpro.operators.models.MOLLI
+============================
+
+.. currentmodule:: mrpro.operators.models
+
+.. autoclass:: MOLLI
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MOLLI.__init__
+      ~MOLLI.add_module
+      ~MOLLI.apply
+      ~MOLLI.bfloat16
+      ~MOLLI.buffers
+      ~MOLLI.children
+      ~MOLLI.compile
+      ~MOLLI.cpu
+      ~MOLLI.cuda
+      ~MOLLI.double
+      ~MOLLI.eval
+      ~MOLLI.expand_tensor_dim
+      ~MOLLI.extra_repr
+      ~MOLLI.float
+      ~MOLLI.forward
+      ~MOLLI.get_buffer
+      ~MOLLI.get_extra_state
+      ~MOLLI.get_parameter
+      ~MOLLI.get_submodule
+      ~MOLLI.half
+      ~MOLLI.ipu
+      ~MOLLI.load_state_dict
+      ~MOLLI.modules
+      ~MOLLI.named_buffers
+      ~MOLLI.named_children
+      ~MOLLI.named_modules
+      ~MOLLI.named_parameters
+      ~MOLLI.parameters
+      ~MOLLI.register_backward_hook
+      ~MOLLI.register_buffer
+      ~MOLLI.register_forward_hook
+      ~MOLLI.register_forward_pre_hook
+      ~MOLLI.register_full_backward_hook
+      ~MOLLI.register_full_backward_pre_hook
+      ~MOLLI.register_load_state_dict_post_hook
+      ~MOLLI.register_module
+      ~MOLLI.register_parameter
+      ~MOLLI.register_state_dict_pre_hook
+      ~MOLLI.requires_grad_
+      ~MOLLI.set_extra_state
+      ~MOLLI.share_memory
+      ~MOLLI.state_dict
+      ~MOLLI.to
+      ~MOLLI.to_empty
+      ~MOLLI.train
+      ~MOLLI.type
+      ~MOLLI.xpu
+      ~MOLLI.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MOLLI.T_destination
+      ~MOLLI.call_super_init
+      ~MOLLI.dump_patches
+      ~MOLLI.training
+   
+   

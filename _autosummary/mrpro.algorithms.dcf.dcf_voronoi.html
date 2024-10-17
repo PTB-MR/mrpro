@@ -1,0 +1,159 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.algorithms.dcf.dcf_voronoi &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mrpro.algorithms.dcf.dcf_voronoi.dcf_1d" href="mrpro.algorithms.dcf.dcf_voronoi.dcf_1d.html" />
+    <link rel="prev" title="mrpro.algorithms.dcf.dcf_2d3d_voronoi" href="mrpro.algorithms.dcf.dcf_2d3d_voronoi.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../api.html#mrpro-algorithms">MRpro Algorithms</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="mrpro.algorithms.html">mrpro.algorithms</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="mrpro.algorithms.prewhiten_kspace.html">mrpro.algorithms.prewhiten_kspace</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.algorithms.csm.html">mrpro.algorithms.csm</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="mrpro.algorithms.dcf.html">mrpro.algorithms.dcf</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.algorithms.optimizers.html">mrpro.algorithms.optimizers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.algorithms.reconstruction.html">mrpro.algorithms.reconstruction</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-data">MRpro Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-operators">MRpro Operators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-phantoms">MRpro Phantoms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-utilities">MRpro Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../api.html">API</a></li>
+          <li class="breadcrumb-item"><a href="mrpro.algorithms.html">mrpro.algorithms</a></li>
+          <li class="breadcrumb-item"><a href="mrpro.algorithms.dcf.html">mrpro.algorithms.dcf</a></li>
+      <li class="breadcrumb-item active">mrpro.algorithms.dcf.dcf_voronoi</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/_autosummary/mrpro.algorithms.dcf.dcf_voronoi.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-mrpro.algorithms.dcf.dcf_voronoi">
+<span id="mrpro-algorithms-dcf-dcf-voronoi"></span><h1>mrpro.algorithms.dcf.dcf_voronoi<a class="headerlink" href="#module-mrpro.algorithms.dcf.dcf_voronoi" title="Link to this heading"></a></h1>
+<p>1D, 2D and 3D density compensation function calculation with voronoi method.</p>
+<p class="rubric">Functions</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.algorithms.dcf.dcf_voronoi.dcf_1d.html#mrpro.algorithms.dcf.dcf_voronoi.dcf_1d" title="mrpro.algorithms.dcf.dcf_voronoi.dcf_1d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dcf_1d</span></code></a>(traj)</p></td>
+<td><p>Calculate sample density compensation function for 1D trajectory.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.algorithms.dcf.dcf_voronoi.dcf_2d3d_voronoi.html#mrpro.algorithms.dcf.dcf_voronoi.dcf_2d3d_voronoi" title="mrpro.algorithms.dcf.dcf_voronoi.dcf_2d3d_voronoi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dcf_2d3d_voronoi</span></code></a>(traj)</p></td>
+<td><p>Calculate sample density compensation function using voronoi method.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Classes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.algorithms.dcf.dcf_voronoi.ConvexHull.html#mrpro.algorithms.dcf.dcf_voronoi.ConvexHull" title="mrpro.algorithms.dcf.dcf_voronoi.ConvexHull"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvexHull</span></code></a>(points[, incremental, qhull_options])</p></td>
+<td><p>Convex hulls in N dimensions.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor.html#mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor" title="mrpro.algorithms.dcf.dcf_voronoi.ProcessPoolExecutor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProcessPoolExecutor</span></code></a>([max_workers, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="mrpro.algorithms.dcf.dcf_voronoi.Voronoi.html#mrpro.algorithms.dcf.dcf_voronoi.Voronoi" title="mrpro.algorithms.dcf.dcf_voronoi.Voronoi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Voronoi</span></code></a>(points[, furthest_site, ...])</p></td>
+<td><p>Voronoi diagrams in N dimensions.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="mrpro.algorithms.dcf.dcf_voronoi.product.html#mrpro.algorithms.dcf.dcf_voronoi.product" title="mrpro.algorithms.dcf.dcf_voronoi.product"><code class="xref py py-obj docutils literal notranslate"><span class="pre">product</span></code></a></p></td>
+<td><p>product(<a href="#id1"><span class="problematic" id="id2">*</span></a>iterables, repeat=1) --&gt; product object</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="mrpro.algorithms.dcf.dcf_2d3d_voronoi.html" class="btn btn-neutral float-left" title="mrpro.algorithms.dcf.dcf_2d3d_voronoi" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mrpro.algorithms.dcf.dcf_voronoi.dcf_1d.html" class="btn btn-neutral float-right" title="mrpro.algorithms.dcf.dcf_voronoi.dcf_1d" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

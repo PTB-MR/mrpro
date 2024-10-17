@@ -1,0 +1,80 @@
+mrpro.operators.MagnitudeOp
+===========================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: MagnitudeOp
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MagnitudeOp.__init__
+      ~MagnitudeOp.add_module
+      ~MagnitudeOp.apply
+      ~MagnitudeOp.bfloat16
+      ~MagnitudeOp.buffers
+      ~MagnitudeOp.children
+      ~MagnitudeOp.compile
+      ~MagnitudeOp.cpu
+      ~MagnitudeOp.cuda
+      ~MagnitudeOp.double
+      ~MagnitudeOp.eval
+      ~MagnitudeOp.extra_repr
+      ~MagnitudeOp.float
+      ~MagnitudeOp.forward
+      ~MagnitudeOp.get_buffer
+      ~MagnitudeOp.get_extra_state
+      ~MagnitudeOp.get_parameter
+      ~MagnitudeOp.get_submodule
+      ~MagnitudeOp.half
+      ~MagnitudeOp.ipu
+      ~MagnitudeOp.load_state_dict
+      ~MagnitudeOp.modules
+      ~MagnitudeOp.named_buffers
+      ~MagnitudeOp.named_children
+      ~MagnitudeOp.named_modules
+      ~MagnitudeOp.named_parameters
+      ~MagnitudeOp.parameters
+      ~MagnitudeOp.register_backward_hook
+      ~MagnitudeOp.register_buffer
+      ~MagnitudeOp.register_forward_hook
+      ~MagnitudeOp.register_forward_pre_hook
+      ~MagnitudeOp.register_full_backward_hook
+      ~MagnitudeOp.register_full_backward_pre_hook
+      ~MagnitudeOp.register_load_state_dict_post_hook
+      ~MagnitudeOp.register_module
+      ~MagnitudeOp.register_parameter
+      ~MagnitudeOp.register_state_dict_pre_hook
+      ~MagnitudeOp.requires_grad_
+      ~MagnitudeOp.set_extra_state
+      ~MagnitudeOp.share_memory
+      ~MagnitudeOp.state_dict
+      ~MagnitudeOp.to
+      ~MagnitudeOp.to_empty
+      ~MagnitudeOp.train
+      ~MagnitudeOp.type
+      ~MagnitudeOp.xpu
+      ~MagnitudeOp.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MagnitudeOp.T_destination
+      ~MagnitudeOp.call_super_init
+      ~MagnitudeOp.dump_patches
+      ~MagnitudeOp.training
+   
+   

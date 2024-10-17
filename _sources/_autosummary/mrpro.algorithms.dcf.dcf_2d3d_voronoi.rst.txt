@@ -1,0 +1,6 @@
+mrpro.algorithms.dcf.dcf\_2d3d\_voronoi
+=======================================
+
+.. currentmodule:: mrpro.algorithms.dcf
+
+.. autofunction:: dcf_2d3d_voronoi

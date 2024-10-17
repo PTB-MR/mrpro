@@ -1,0 +1,28 @@
+mrpro.algorithms.dcf.dcf\_voronoi.ProcessPoolExecutor
+=====================================================
+
+.. currentmodule:: mrpro.algorithms.dcf.dcf_voronoi
+
+.. autoclass:: ProcessPoolExecutor
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ProcessPoolExecutor.__init__
+      ~ProcessPoolExecutor.map
+      ~ProcessPoolExecutor.shutdown
+      ~ProcessPoolExecutor.submit
+   
+   
+
+   
+   
+   

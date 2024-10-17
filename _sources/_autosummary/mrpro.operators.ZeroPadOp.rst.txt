@@ -1,0 +1,84 @@
+mrpro.operators.ZeroPadOp
+=========================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: ZeroPadOp
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ZeroPadOp.__init__
+      ~ZeroPadOp.add_module
+      ~ZeroPadOp.adjoint
+      ~ZeroPadOp.apply
+      ~ZeroPadOp.bfloat16
+      ~ZeroPadOp.buffers
+      ~ZeroPadOp.children
+      ~ZeroPadOp.compile
+      ~ZeroPadOp.cpu
+      ~ZeroPadOp.cuda
+      ~ZeroPadOp.double
+      ~ZeroPadOp.eval
+      ~ZeroPadOp.extra_repr
+      ~ZeroPadOp.float
+      ~ZeroPadOp.forward
+      ~ZeroPadOp.get_buffer
+      ~ZeroPadOp.get_extra_state
+      ~ZeroPadOp.get_parameter
+      ~ZeroPadOp.get_submodule
+      ~ZeroPadOp.half
+      ~ZeroPadOp.ipu
+      ~ZeroPadOp.load_state_dict
+      ~ZeroPadOp.modules
+      ~ZeroPadOp.named_buffers
+      ~ZeroPadOp.named_children
+      ~ZeroPadOp.named_modules
+      ~ZeroPadOp.named_parameters
+      ~ZeroPadOp.operator_norm
+      ~ZeroPadOp.parameters
+      ~ZeroPadOp.register_backward_hook
+      ~ZeroPadOp.register_buffer
+      ~ZeroPadOp.register_forward_hook
+      ~ZeroPadOp.register_forward_pre_hook
+      ~ZeroPadOp.register_full_backward_hook
+      ~ZeroPadOp.register_full_backward_pre_hook
+      ~ZeroPadOp.register_load_state_dict_post_hook
+      ~ZeroPadOp.register_module
+      ~ZeroPadOp.register_parameter
+      ~ZeroPadOp.register_state_dict_pre_hook
+      ~ZeroPadOp.requires_grad_
+      ~ZeroPadOp.set_extra_state
+      ~ZeroPadOp.share_memory
+      ~ZeroPadOp.state_dict
+      ~ZeroPadOp.to
+      ~ZeroPadOp.to_empty
+      ~ZeroPadOp.train
+      ~ZeroPadOp.type
+      ~ZeroPadOp.xpu
+      ~ZeroPadOp.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ZeroPadOp.H
+      ~ZeroPadOp.T_destination
+      ~ZeroPadOp.call_super_init
+      ~ZeroPadOp.dump_patches
+      ~ZeroPadOp.gram
+      ~ZeroPadOp.training
+   
+   

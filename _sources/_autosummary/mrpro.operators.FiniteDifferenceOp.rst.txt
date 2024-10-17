@@ -1,0 +1,85 @@
+mrpro.operators.FiniteDifferenceOp
+==================================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: FiniteDifferenceOp
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~FiniteDifferenceOp.__init__
+      ~FiniteDifferenceOp.add_module
+      ~FiniteDifferenceOp.adjoint
+      ~FiniteDifferenceOp.apply
+      ~FiniteDifferenceOp.bfloat16
+      ~FiniteDifferenceOp.buffers
+      ~FiniteDifferenceOp.children
+      ~FiniteDifferenceOp.compile
+      ~FiniteDifferenceOp.cpu
+      ~FiniteDifferenceOp.cuda
+      ~FiniteDifferenceOp.double
+      ~FiniteDifferenceOp.eval
+      ~FiniteDifferenceOp.extra_repr
+      ~FiniteDifferenceOp.finite_difference_kernel
+      ~FiniteDifferenceOp.float
+      ~FiniteDifferenceOp.forward
+      ~FiniteDifferenceOp.get_buffer
+      ~FiniteDifferenceOp.get_extra_state
+      ~FiniteDifferenceOp.get_parameter
+      ~FiniteDifferenceOp.get_submodule
+      ~FiniteDifferenceOp.half
+      ~FiniteDifferenceOp.ipu
+      ~FiniteDifferenceOp.load_state_dict
+      ~FiniteDifferenceOp.modules
+      ~FiniteDifferenceOp.named_buffers
+      ~FiniteDifferenceOp.named_children
+      ~FiniteDifferenceOp.named_modules
+      ~FiniteDifferenceOp.named_parameters
+      ~FiniteDifferenceOp.operator_norm
+      ~FiniteDifferenceOp.parameters
+      ~FiniteDifferenceOp.register_backward_hook
+      ~FiniteDifferenceOp.register_buffer
+      ~FiniteDifferenceOp.register_forward_hook
+      ~FiniteDifferenceOp.register_forward_pre_hook
+      ~FiniteDifferenceOp.register_full_backward_hook
+      ~FiniteDifferenceOp.register_full_backward_pre_hook
+      ~FiniteDifferenceOp.register_load_state_dict_post_hook
+      ~FiniteDifferenceOp.register_module
+      ~FiniteDifferenceOp.register_parameter
+      ~FiniteDifferenceOp.register_state_dict_pre_hook
+      ~FiniteDifferenceOp.requires_grad_
+      ~FiniteDifferenceOp.set_extra_state
+      ~FiniteDifferenceOp.share_memory
+      ~FiniteDifferenceOp.state_dict
+      ~FiniteDifferenceOp.to
+      ~FiniteDifferenceOp.to_empty
+      ~FiniteDifferenceOp.train
+      ~FiniteDifferenceOp.type
+      ~FiniteDifferenceOp.xpu
+      ~FiniteDifferenceOp.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~FiniteDifferenceOp.H
+      ~FiniteDifferenceOp.T_destination
+      ~FiniteDifferenceOp.call_super_init
+      ~FiniteDifferenceOp.dump_patches
+      ~FiniteDifferenceOp.gram
+      ~FiniteDifferenceOp.training
+   
+   

@@ -1,0 +1,29 @@
+mrpro.data.enums.InterleavingDimension
+======================================
+
+.. currentmodule:: mrpro.data.enums
+
+.. autoclass:: InterleavingDimension
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~InterleavingDimension.PHASE
+      ~InterleavingDimension.REPETITION
+      ~InterleavingDimension.CONTRAST
+      ~InterleavingDimension.AVERAGE
+      ~InterleavingDimension.OTHER
+   
+   

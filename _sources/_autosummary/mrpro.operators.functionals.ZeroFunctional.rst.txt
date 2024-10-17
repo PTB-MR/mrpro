@@ -1,0 +1,82 @@
+mrpro.operators.functionals.ZeroFunctional
+==========================================
+
+.. currentmodule:: mrpro.operators.functionals
+
+.. autoclass:: ZeroFunctional
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ZeroFunctional.__init__
+      ~ZeroFunctional.add_module
+      ~ZeroFunctional.apply
+      ~ZeroFunctional.bfloat16
+      ~ZeroFunctional.buffers
+      ~ZeroFunctional.children
+      ~ZeroFunctional.compile
+      ~ZeroFunctional.cpu
+      ~ZeroFunctional.cuda
+      ~ZeroFunctional.double
+      ~ZeroFunctional.eval
+      ~ZeroFunctional.extra_repr
+      ~ZeroFunctional.float
+      ~ZeroFunctional.forward
+      ~ZeroFunctional.get_buffer
+      ~ZeroFunctional.get_extra_state
+      ~ZeroFunctional.get_parameter
+      ~ZeroFunctional.get_submodule
+      ~ZeroFunctional.half
+      ~ZeroFunctional.ipu
+      ~ZeroFunctional.load_state_dict
+      ~ZeroFunctional.modules
+      ~ZeroFunctional.named_buffers
+      ~ZeroFunctional.named_children
+      ~ZeroFunctional.named_modules
+      ~ZeroFunctional.named_parameters
+      ~ZeroFunctional.parameters
+      ~ZeroFunctional.prox
+      ~ZeroFunctional.prox_convex_conj
+      ~ZeroFunctional.register_backward_hook
+      ~ZeroFunctional.register_buffer
+      ~ZeroFunctional.register_forward_hook
+      ~ZeroFunctional.register_forward_pre_hook
+      ~ZeroFunctional.register_full_backward_hook
+      ~ZeroFunctional.register_full_backward_pre_hook
+      ~ZeroFunctional.register_load_state_dict_post_hook
+      ~ZeroFunctional.register_module
+      ~ZeroFunctional.register_parameter
+      ~ZeroFunctional.register_state_dict_pre_hook
+      ~ZeroFunctional.requires_grad_
+      ~ZeroFunctional.set_extra_state
+      ~ZeroFunctional.share_memory
+      ~ZeroFunctional.state_dict
+      ~ZeroFunctional.to
+      ~ZeroFunctional.to_empty
+      ~ZeroFunctional.train
+      ~ZeroFunctional.type
+      ~ZeroFunctional.xpu
+      ~ZeroFunctional.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ZeroFunctional.T_destination
+      ~ZeroFunctional.call_super_init
+      ~ZeroFunctional.dump_patches
+      ~ZeroFunctional.training
+   
+   

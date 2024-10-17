@@ -1,0 +1,36 @@
+mrpro.data.TrajectoryDescription
+================================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: TrajectoryDescription
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~TrajectoryDescription.__init__
+      ~TrajectoryDescription.from_ismrmrd
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~TrajectoryDescription.identifier
+      ~TrajectoryDescription.user_parameter_long
+      ~TrajectoryDescription.user_parameter_double
+      ~TrajectoryDescription.user_parameter_string
+      ~TrajectoryDescription.comment
+   
+   

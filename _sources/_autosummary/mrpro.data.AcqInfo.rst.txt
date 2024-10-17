@@ -1,0 +1,65 @@
+mrpro.data.AcqInfo
+==================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: AcqInfo
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~AcqInfo.__init__
+      ~AcqInfo.clone
+      ~AcqInfo.cpu
+      ~AcqInfo.cuda
+      ~AcqInfo.double
+      ~AcqInfo.from_ismrmrd_acquisitions
+      ~AcqInfo.half
+      ~AcqInfo.single
+      ~AcqInfo.to
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~AcqInfo.idx
+      ~AcqInfo.acquisition_time_stamp
+      ~AcqInfo.active_channels
+      ~AcqInfo.available_channels
+      ~AcqInfo.center_sample
+      ~AcqInfo.channel_mask
+      ~AcqInfo.discard_post
+      ~AcqInfo.discard_pre
+      ~AcqInfo.encoding_space_ref
+      ~AcqInfo.flags
+      ~AcqInfo.measurement_uid
+      ~AcqInfo.number_of_samples
+      ~AcqInfo.patient_table_position
+      ~AcqInfo.phase_dir
+      ~AcqInfo.physiology_time_stamp
+      ~AcqInfo.position
+      ~AcqInfo.read_dir
+      ~AcqInfo.sample_time_us
+      ~AcqInfo.scan_counter
+      ~AcqInfo.slice_dir
+      ~AcqInfo.trajectory_dimensions
+      ~AcqInfo.user_float
+      ~AcqInfo.user_int
+      ~AcqInfo.version
+      ~AcqInfo.device
+      ~AcqInfo.is_cpu
+      ~AcqInfo.is_cuda
+   
+   

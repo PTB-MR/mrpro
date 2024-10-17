@@ -1,0 +1,175 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Guide &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=16f952a1" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Contributor Guide" href="contributor_guide.html" />
+    <link rel="prev" title="QMRI Challenge ISMRM 2024 - T2* mapping" href="notebook_qmri_sg_challenge_2024_t2_star.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">User Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#reading-in-raw-data">Reading in raw data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#preparation-for-reconstruction">Preparation for reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-reconstruction">Data reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#image-processing">Image processing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">User Guide</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/user_guide.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="user-guide">
+<h1>User Guide<a class="headerlink" href="#user-guide" title="Link to this heading"></a></h1>
+<p>MRpro is a MR image reconstruction and processing framework specifically developed to work well with pytorch.
+The data classes utilize torch tensors for storing data such as MR raw data or reconstructed image data.
+Where possible batch parallelisation of pytorch is utilized to speed up image reconstruction.</p>
+<p>MRpro is designed to work directly from MR raw data using the  <a class="reference external" href="https://ismrmrd.readthedocs.io/en/latest/">MRD</a> data format.</p>
+<p>A basic pipeline would contain the following steps:</p>
+<ul class="simple">
+<li><p>Reading in raw data</p></li>
+<li><p>Preparation for reconstruction</p></li>
+<li><p>Data reconstruction</p></li>
+<li><p>Image processing</p></li>
+</ul>
+<p>The following provides some basic information about these steps.
+For more detailed information please have a look at the notebooks in the <em>examples</em> folder.
+You can easily start a binder session via the badge in the <em>README</em> and give the notebooks a try without having to
+install anything.</p>
+<section id="reading-in-raw-data">
+<h2>Reading in raw data<a class="headerlink" href="#reading-in-raw-data" title="Link to this heading"></a></h2>
+<p>Reading in raw data from a MRD file works by creating a <code class="docutils literal notranslate"><span class="pre">KData</span></code> object and using the class method <code class="docutils literal notranslate"><span class="pre">from_file</span></code>.
+<code class="docutils literal notranslate"><span class="pre">KData</span></code> contains the raw k-space data, the header information obtained from the MRD file and the k-space trajectory.
+To ensure the trajectory is calculated correctly, a <code class="docutils literal notranslate"><span class="pre">KTrajectoryCalculator</span></code> needs to be provided.
+The trajectory can either be calculated based on MRpro functionality (e.g. for a 2D radial sampling scheme), read out
+from MRD or calculated from a <a class="reference external" href="http://pulseq.github.io/">pulseq</a> file.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The trajectory is expected to be defined within the space of the <code class="docutils literal notranslate"><span class="pre">encoding_matrix</span></code>, e.g. if the
+<code class="docutils literal notranslate"><span class="pre">encoding_matrix</span></code> is defined as (z=1, y=256, x=256), then a fully sampled Cartesian trajectory without partial
+echo or partial Fourier is expected to be within [-128, 127] along both readout and phase encoding.</p>
+</div>
+</section>
+<section id="preparation-for-reconstruction">
+<h2>Preparation for reconstruction<a class="headerlink" href="#preparation-for-reconstruction" title="Link to this heading"></a></h2>
+<p>MRpro provides a range of functionality to prepare the data for image reconstruction such as:</p>
+<ul class="simple">
+<li><p>Noise prewhiting</p></li>
+<li><p>Removal of oversampling along readout direction</p></li>
+<li><p>Calculation of the density compensation function</p></li>
+<li><p>Estimation of coil sensitivity maps</p></li>
+<li><p>…</p></li>
+</ul>
+</section>
+<section id="data-reconstruction">
+<h2>Data reconstruction<a class="headerlink" href="#data-reconstruction" title="Link to this heading"></a></h2>
+<p>As a first step for the reconstruction an acquisition model consisting of linear and non-linear operators needs to
+be created. A simply acquisition model could consist of a <code class="docutils literal notranslate"><span class="pre">SensitivityOp</span></code> describing the effect of different
+receiver coils and <code class="docutils literal notranslate"><span class="pre">FourierOp</span></code> describing the transform from image space to k-space taking the sampling scheme
+(trajectory) into account. Additional operators describing transformations due to physiological motion or
+MR signal models can be added.
+All operators take one or more tensors as input and return a tuple of one or more tensors as output.
+Operators can be chained using <code class="docutils literal notranslate"><span class="pre">&#64;</span></code> to form a full acquisition model.</p>
+<p>Based on the acquisition model a suitable minimization function and reconstruction algorithm needs to be selected.</p>
+<p>Depending on the choices made above the reconstruction algorithms provides images (<code class="docutils literal notranslate"><span class="pre">IData</span></code>) or quantitative
+parametric maps (<code class="docutils literal notranslate"><span class="pre">QData</span></code>).</p>
+</section>
+<section id="image-processing">
+<h2>Image processing<a class="headerlink" href="#image-processing" title="Link to this heading"></a></h2>
+<p>Further processing of the reconstructed data such as quantitative parameter estimation is available.
+The <em>examples</em> folder also contains notebooks which show how to carry out motion estimation from reconstructed dynamic
+images.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="notebook_qmri_sg_challenge_2024_t2_star.html" class="btn btn-neutral float-left" title="QMRI Challenge ISMRM 2024 - T2* mapping" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="contributor_guide.html" class="btn btn-neutral float-right" title="Contributor Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

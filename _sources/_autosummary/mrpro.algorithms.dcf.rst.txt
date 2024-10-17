@@ -1,0 +1,40 @@
+mrpro.algorithms.dcf
+====================
+
+.. automodule:: mrpro.algorithms.dcf
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+   
+      dcf_1d
+      dcf_2d3d_voronoi
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :template: module_template.rst
+   :recursive:
+
+   dcf_voronoi
+

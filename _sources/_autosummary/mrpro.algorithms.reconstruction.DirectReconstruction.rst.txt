@@ -1,0 +1,87 @@
+mrpro.algorithms.reconstruction.DirectReconstruction
+====================================================
+
+.. currentmodule:: mrpro.algorithms.reconstruction
+
+.. autoclass:: DirectReconstruction
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DirectReconstruction.__init__
+      ~DirectReconstruction.add_module
+      ~DirectReconstruction.apply
+      ~DirectReconstruction.bfloat16
+      ~DirectReconstruction.buffers
+      ~DirectReconstruction.children
+      ~DirectReconstruction.compile
+      ~DirectReconstruction.cpu
+      ~DirectReconstruction.cuda
+      ~DirectReconstruction.direct_reconstruction
+      ~DirectReconstruction.double
+      ~DirectReconstruction.eval
+      ~DirectReconstruction.extra_repr
+      ~DirectReconstruction.float
+      ~DirectReconstruction.forward
+      ~DirectReconstruction.get_buffer
+      ~DirectReconstruction.get_extra_state
+      ~DirectReconstruction.get_parameter
+      ~DirectReconstruction.get_submodule
+      ~DirectReconstruction.half
+      ~DirectReconstruction.ipu
+      ~DirectReconstruction.load_state_dict
+      ~DirectReconstruction.modules
+      ~DirectReconstruction.named_buffers
+      ~DirectReconstruction.named_children
+      ~DirectReconstruction.named_modules
+      ~DirectReconstruction.named_parameters
+      ~DirectReconstruction.parameters
+      ~DirectReconstruction.recalculate_csm
+      ~DirectReconstruction.recalculate_fourierop
+      ~DirectReconstruction.register_backward_hook
+      ~DirectReconstruction.register_buffer
+      ~DirectReconstruction.register_forward_hook
+      ~DirectReconstruction.register_forward_pre_hook
+      ~DirectReconstruction.register_full_backward_hook
+      ~DirectReconstruction.register_full_backward_pre_hook
+      ~DirectReconstruction.register_load_state_dict_post_hook
+      ~DirectReconstruction.register_module
+      ~DirectReconstruction.register_parameter
+      ~DirectReconstruction.register_state_dict_pre_hook
+      ~DirectReconstruction.requires_grad_
+      ~DirectReconstruction.set_extra_state
+      ~DirectReconstruction.share_memory
+      ~DirectReconstruction.state_dict
+      ~DirectReconstruction.to
+      ~DirectReconstruction.to_empty
+      ~DirectReconstruction.train
+      ~DirectReconstruction.type
+      ~DirectReconstruction.xpu
+      ~DirectReconstruction.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~DirectReconstruction.T_destination
+      ~DirectReconstruction.call_super_init
+      ~DirectReconstruction.dump_patches
+      ~DirectReconstruction.dcf
+      ~DirectReconstruction.csm
+      ~DirectReconstruction.noise
+      ~DirectReconstruction.fourier_op
+      ~DirectReconstruction.training
+   
+   

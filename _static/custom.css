@@ -1,0 +1,9 @@
+/* Default font size */
+html {
+    --pst-font-size-base: 15px;
+}
+
+/* Adjust the width of the content window */
+.wy-nav-content {
+    max-width: 75% !important;
+}

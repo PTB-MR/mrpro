@@ -1,0 +1,81 @@
+mrpro.operators.models.MonoExponentialDecay
+===========================================
+
+.. currentmodule:: mrpro.operators.models
+
+.. autoclass:: MonoExponentialDecay
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MonoExponentialDecay.__init__
+      ~MonoExponentialDecay.add_module
+      ~MonoExponentialDecay.apply
+      ~MonoExponentialDecay.bfloat16
+      ~MonoExponentialDecay.buffers
+      ~MonoExponentialDecay.children
+      ~MonoExponentialDecay.compile
+      ~MonoExponentialDecay.cpu
+      ~MonoExponentialDecay.cuda
+      ~MonoExponentialDecay.double
+      ~MonoExponentialDecay.eval
+      ~MonoExponentialDecay.expand_tensor_dim
+      ~MonoExponentialDecay.extra_repr
+      ~MonoExponentialDecay.float
+      ~MonoExponentialDecay.forward
+      ~MonoExponentialDecay.get_buffer
+      ~MonoExponentialDecay.get_extra_state
+      ~MonoExponentialDecay.get_parameter
+      ~MonoExponentialDecay.get_submodule
+      ~MonoExponentialDecay.half
+      ~MonoExponentialDecay.ipu
+      ~MonoExponentialDecay.load_state_dict
+      ~MonoExponentialDecay.modules
+      ~MonoExponentialDecay.named_buffers
+      ~MonoExponentialDecay.named_children
+      ~MonoExponentialDecay.named_modules
+      ~MonoExponentialDecay.named_parameters
+      ~MonoExponentialDecay.parameters
+      ~MonoExponentialDecay.register_backward_hook
+      ~MonoExponentialDecay.register_buffer
+      ~MonoExponentialDecay.register_forward_hook
+      ~MonoExponentialDecay.register_forward_pre_hook
+      ~MonoExponentialDecay.register_full_backward_hook
+      ~MonoExponentialDecay.register_full_backward_pre_hook
+      ~MonoExponentialDecay.register_load_state_dict_post_hook
+      ~MonoExponentialDecay.register_module
+      ~MonoExponentialDecay.register_parameter
+      ~MonoExponentialDecay.register_state_dict_pre_hook
+      ~MonoExponentialDecay.requires_grad_
+      ~MonoExponentialDecay.set_extra_state
+      ~MonoExponentialDecay.share_memory
+      ~MonoExponentialDecay.state_dict
+      ~MonoExponentialDecay.to
+      ~MonoExponentialDecay.to_empty
+      ~MonoExponentialDecay.train
+      ~MonoExponentialDecay.type
+      ~MonoExponentialDecay.xpu
+      ~MonoExponentialDecay.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MonoExponentialDecay.T_destination
+      ~MonoExponentialDecay.call_super_init
+      ~MonoExponentialDecay.dump_patches
+      ~MonoExponentialDecay.training
+   
+   

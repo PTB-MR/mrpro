@@ -1,0 +1,42 @@
+﻿mrpro.algorithms
+================
+
+.. automodule:: mrpro.algorithms
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+   
+      prewhiten_kspace
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :template: module_template.rst
+   :recursive:
+
+   csm
+   dcf
+   optimizers
+   reconstruction
+

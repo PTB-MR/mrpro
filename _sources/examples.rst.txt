@@ -1,0 +1,15 @@
+Examples
+========
+
+Notebooks with examples of how you can use MRpro.
+All of the notebooks can directly be run via binder or colab from the repo.
+
+.. toctree::
+   :maxdepth: 1
+
+   notebook_qmri_sg_challenge_2024_t1.rst
+   notebook_direct_reconstruction.rst
+   notebook_iterative_sense_reconstruction.rst
+   notebook_pulseq_2d_radial_golden_angle.rst
+   notebook_t1_mapping_with_grad_acq.rst
+   notebook_qmri_sg_challenge_2024_t2_star.rst

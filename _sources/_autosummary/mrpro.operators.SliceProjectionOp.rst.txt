@@ -1,0 +1,88 @@
+mrpro.operators.SliceProjectionOp
+=================================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: SliceProjectionOp
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SliceProjectionOp.__init__
+      ~SliceProjectionOp.add_module
+      ~SliceProjectionOp.adjoint
+      ~SliceProjectionOp.apply
+      ~SliceProjectionOp.bfloat16
+      ~SliceProjectionOp.buffers
+      ~SliceProjectionOp.children
+      ~SliceProjectionOp.compile
+      ~SliceProjectionOp.cpu
+      ~SliceProjectionOp.cuda
+      ~SliceProjectionOp.double
+      ~SliceProjectionOp.eval
+      ~SliceProjectionOp.extra_repr
+      ~SliceProjectionOp.float
+      ~SliceProjectionOp.forward
+      ~SliceProjectionOp.get_buffer
+      ~SliceProjectionOp.get_extra_state
+      ~SliceProjectionOp.get_parameter
+      ~SliceProjectionOp.get_submodule
+      ~SliceProjectionOp.half
+      ~SliceProjectionOp.ipu
+      ~SliceProjectionOp.join_matrices
+      ~SliceProjectionOp.load_state_dict
+      ~SliceProjectionOp.modules
+      ~SliceProjectionOp.named_buffers
+      ~SliceProjectionOp.named_children
+      ~SliceProjectionOp.named_modules
+      ~SliceProjectionOp.named_parameters
+      ~SliceProjectionOp.operator_norm
+      ~SliceProjectionOp.parameters
+      ~SliceProjectionOp.projection_matrix
+      ~SliceProjectionOp.register_backward_hook
+      ~SliceProjectionOp.register_buffer
+      ~SliceProjectionOp.register_forward_hook
+      ~SliceProjectionOp.register_forward_pre_hook
+      ~SliceProjectionOp.register_full_backward_hook
+      ~SliceProjectionOp.register_full_backward_pre_hook
+      ~SliceProjectionOp.register_load_state_dict_post_hook
+      ~SliceProjectionOp.register_module
+      ~SliceProjectionOp.register_parameter
+      ~SliceProjectionOp.register_state_dict_pre_hook
+      ~SliceProjectionOp.requires_grad_
+      ~SliceProjectionOp.set_extra_state
+      ~SliceProjectionOp.share_memory
+      ~SliceProjectionOp.state_dict
+      ~SliceProjectionOp.to
+      ~SliceProjectionOp.to_empty
+      ~SliceProjectionOp.train
+      ~SliceProjectionOp.type
+      ~SliceProjectionOp.xpu
+      ~SliceProjectionOp.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SliceProjectionOp.H
+      ~SliceProjectionOp.T_destination
+      ~SliceProjectionOp.call_super_init
+      ~SliceProjectionOp.dump_patches
+      ~SliceProjectionOp.gram
+      ~SliceProjectionOp.matrix
+      ~SliceProjectionOp.matrix_adjoint
+      ~SliceProjectionOp.training
+   
+   

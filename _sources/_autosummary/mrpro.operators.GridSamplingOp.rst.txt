@@ -1,0 +1,85 @@
+mrpro.operators.GridSamplingOp
+==============================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: GridSamplingOp
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~GridSamplingOp.__init__
+      ~GridSamplingOp.add_module
+      ~GridSamplingOp.adjoint
+      ~GridSamplingOp.apply
+      ~GridSamplingOp.bfloat16
+      ~GridSamplingOp.buffers
+      ~GridSamplingOp.children
+      ~GridSamplingOp.compile
+      ~GridSamplingOp.cpu
+      ~GridSamplingOp.cuda
+      ~GridSamplingOp.double
+      ~GridSamplingOp.eval
+      ~GridSamplingOp.extra_repr
+      ~GridSamplingOp.float
+      ~GridSamplingOp.forward
+      ~GridSamplingOp.get_buffer
+      ~GridSamplingOp.get_extra_state
+      ~GridSamplingOp.get_parameter
+      ~GridSamplingOp.get_submodule
+      ~GridSamplingOp.half
+      ~GridSamplingOp.ipu
+      ~GridSamplingOp.load_state_dict
+      ~GridSamplingOp.modules
+      ~GridSamplingOp.named_buffers
+      ~GridSamplingOp.named_children
+      ~GridSamplingOp.named_modules
+      ~GridSamplingOp.named_parameters
+      ~GridSamplingOp.operator_norm
+      ~GridSamplingOp.parameters
+      ~GridSamplingOp.register_backward_hook
+      ~GridSamplingOp.register_buffer
+      ~GridSamplingOp.register_forward_hook
+      ~GridSamplingOp.register_forward_pre_hook
+      ~GridSamplingOp.register_full_backward_hook
+      ~GridSamplingOp.register_full_backward_pre_hook
+      ~GridSamplingOp.register_load_state_dict_post_hook
+      ~GridSamplingOp.register_module
+      ~GridSamplingOp.register_parameter
+      ~GridSamplingOp.register_state_dict_pre_hook
+      ~GridSamplingOp.requires_grad_
+      ~GridSamplingOp.set_extra_state
+      ~GridSamplingOp.share_memory
+      ~GridSamplingOp.state_dict
+      ~GridSamplingOp.to
+      ~GridSamplingOp.to_empty
+      ~GridSamplingOp.train
+      ~GridSamplingOp.type
+      ~GridSamplingOp.xpu
+      ~GridSamplingOp.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~GridSamplingOp.H
+      ~GridSamplingOp.T_destination
+      ~GridSamplingOp.call_super_init
+      ~GridSamplingOp.dump_patches
+      ~GridSamplingOp.gram
+      ~GridSamplingOp.grid
+      ~GridSamplingOp.training
+   
+   

@@ -1,0 +1,39 @@
+mrpro.operators.RearrangeOp
+===========================
+
+.. automodule:: mrpro.operators.RearrangeOp
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+   
+      rearrange
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class_template.rst
+   
+      LinearOperator
+      RearrangeOp
+   
+   
+
+   
+   
+   
+
+
+

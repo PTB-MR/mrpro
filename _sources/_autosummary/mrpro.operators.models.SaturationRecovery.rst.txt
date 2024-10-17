@@ -1,0 +1,81 @@
+mrpro.operators.models.SaturationRecovery
+=========================================
+
+.. currentmodule:: mrpro.operators.models
+
+.. autoclass:: SaturationRecovery
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SaturationRecovery.__init__
+      ~SaturationRecovery.add_module
+      ~SaturationRecovery.apply
+      ~SaturationRecovery.bfloat16
+      ~SaturationRecovery.buffers
+      ~SaturationRecovery.children
+      ~SaturationRecovery.compile
+      ~SaturationRecovery.cpu
+      ~SaturationRecovery.cuda
+      ~SaturationRecovery.double
+      ~SaturationRecovery.eval
+      ~SaturationRecovery.expand_tensor_dim
+      ~SaturationRecovery.extra_repr
+      ~SaturationRecovery.float
+      ~SaturationRecovery.forward
+      ~SaturationRecovery.get_buffer
+      ~SaturationRecovery.get_extra_state
+      ~SaturationRecovery.get_parameter
+      ~SaturationRecovery.get_submodule
+      ~SaturationRecovery.half
+      ~SaturationRecovery.ipu
+      ~SaturationRecovery.load_state_dict
+      ~SaturationRecovery.modules
+      ~SaturationRecovery.named_buffers
+      ~SaturationRecovery.named_children
+      ~SaturationRecovery.named_modules
+      ~SaturationRecovery.named_parameters
+      ~SaturationRecovery.parameters
+      ~SaturationRecovery.register_backward_hook
+      ~SaturationRecovery.register_buffer
+      ~SaturationRecovery.register_forward_hook
+      ~SaturationRecovery.register_forward_pre_hook
+      ~SaturationRecovery.register_full_backward_hook
+      ~SaturationRecovery.register_full_backward_pre_hook
+      ~SaturationRecovery.register_load_state_dict_post_hook
+      ~SaturationRecovery.register_module
+      ~SaturationRecovery.register_parameter
+      ~SaturationRecovery.register_state_dict_pre_hook
+      ~SaturationRecovery.requires_grad_
+      ~SaturationRecovery.set_extra_state
+      ~SaturationRecovery.share_memory
+      ~SaturationRecovery.state_dict
+      ~SaturationRecovery.to
+      ~SaturationRecovery.to_empty
+      ~SaturationRecovery.train
+      ~SaturationRecovery.type
+      ~SaturationRecovery.xpu
+      ~SaturationRecovery.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~SaturationRecovery.T_destination
+      ~SaturationRecovery.call_super_init
+      ~SaturationRecovery.dump_patches
+      ~SaturationRecovery.training
+   
+   

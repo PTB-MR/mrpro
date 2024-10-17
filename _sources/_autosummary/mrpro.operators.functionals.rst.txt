@@ -1,0 +1,34 @@
+mrpro.operators.functionals
+===========================
+
+.. automodule:: mrpro.operators.functionals
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: class_template.rst
+   
+      L1NormViewAsReal
+      L2NormSquared
+      MSEDataDiscrepancy
+      ZeroFunctional
+   
+   
+
+   
+   
+   
+
+
+

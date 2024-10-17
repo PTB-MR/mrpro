@@ -1,0 +1,49 @@
+mrpro.data.EncodingLimits
+=========================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: EncodingLimits
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~EncodingLimits.__init__
+      ~EncodingLimits.from_ismrmrd_encoding_limits_type
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~EncodingLimits.k0
+      ~EncodingLimits.k1
+      ~EncodingLimits.k2
+      ~EncodingLimits.average
+      ~EncodingLimits.slice
+      ~EncodingLimits.contrast
+      ~EncodingLimits.phase
+      ~EncodingLimits.repetition
+      ~EncodingLimits.set
+      ~EncodingLimits.segment
+      ~EncodingLimits.user_0
+      ~EncodingLimits.user_1
+      ~EncodingLimits.user_2
+      ~EncodingLimits.user_3
+      ~EncodingLimits.user_4
+      ~EncodingLimits.user_5
+      ~EncodingLimits.user_6
+      ~EncodingLimits.user_7
+   
+   

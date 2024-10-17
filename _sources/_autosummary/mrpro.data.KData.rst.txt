@@ -1,0 +1,49 @@
+mrpro.data.KData
+================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: KData
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~KData.__init__
+      ~KData.clone
+      ~KData.cpu
+      ~KData.cuda
+      ~KData.double
+      ~KData.from_file
+      ~KData.half
+      ~KData.rearrange_k2_k1_into_k1
+      ~KData.remove_readout_os
+      ~KData.select_other_subset
+      ~KData.single
+      ~KData.split_k1_into_other
+      ~KData.split_k2_into_other
+      ~KData.to
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~KData.header
+      ~KData.data
+      ~KData.traj
+      ~KData.device
+      ~KData.is_cpu
+      ~KData.is_cuda
+   
+   

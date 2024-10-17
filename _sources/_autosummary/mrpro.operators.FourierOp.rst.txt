@@ -1,0 +1,85 @@
+mrpro.operators.FourierOp
+=========================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: FourierOp
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~FourierOp.__init__
+      ~FourierOp.add_module
+      ~FourierOp.adjoint
+      ~FourierOp.apply
+      ~FourierOp.bfloat16
+      ~FourierOp.buffers
+      ~FourierOp.children
+      ~FourierOp.compile
+      ~FourierOp.cpu
+      ~FourierOp.cuda
+      ~FourierOp.double
+      ~FourierOp.eval
+      ~FourierOp.extra_repr
+      ~FourierOp.float
+      ~FourierOp.forward
+      ~FourierOp.from_kdata
+      ~FourierOp.get_buffer
+      ~FourierOp.get_extra_state
+      ~FourierOp.get_parameter
+      ~FourierOp.get_submodule
+      ~FourierOp.half
+      ~FourierOp.ipu
+      ~FourierOp.load_state_dict
+      ~FourierOp.modules
+      ~FourierOp.named_buffers
+      ~FourierOp.named_children
+      ~FourierOp.named_modules
+      ~FourierOp.named_parameters
+      ~FourierOp.operator_norm
+      ~FourierOp.parameters
+      ~FourierOp.register_backward_hook
+      ~FourierOp.register_buffer
+      ~FourierOp.register_forward_hook
+      ~FourierOp.register_forward_pre_hook
+      ~FourierOp.register_full_backward_hook
+      ~FourierOp.register_full_backward_pre_hook
+      ~FourierOp.register_load_state_dict_post_hook
+      ~FourierOp.register_module
+      ~FourierOp.register_parameter
+      ~FourierOp.register_state_dict_pre_hook
+      ~FourierOp.requires_grad_
+      ~FourierOp.set_extra_state
+      ~FourierOp.share_memory
+      ~FourierOp.state_dict
+      ~FourierOp.to
+      ~FourierOp.to_empty
+      ~FourierOp.train
+      ~FourierOp.type
+      ~FourierOp.xpu
+      ~FourierOp.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~FourierOp.H
+      ~FourierOp.T_destination
+      ~FourierOp.call_super_init
+      ~FourierOp.dump_patches
+      ~FourierOp.gram
+      ~FourierOp.training
+   
+   

@@ -1,0 +1,81 @@
+mrpro.operators.models.InversionRecovery
+========================================
+
+.. currentmodule:: mrpro.operators.models
+
+.. autoclass:: InversionRecovery
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~InversionRecovery.__init__
+      ~InversionRecovery.add_module
+      ~InversionRecovery.apply
+      ~InversionRecovery.bfloat16
+      ~InversionRecovery.buffers
+      ~InversionRecovery.children
+      ~InversionRecovery.compile
+      ~InversionRecovery.cpu
+      ~InversionRecovery.cuda
+      ~InversionRecovery.double
+      ~InversionRecovery.eval
+      ~InversionRecovery.expand_tensor_dim
+      ~InversionRecovery.extra_repr
+      ~InversionRecovery.float
+      ~InversionRecovery.forward
+      ~InversionRecovery.get_buffer
+      ~InversionRecovery.get_extra_state
+      ~InversionRecovery.get_parameter
+      ~InversionRecovery.get_submodule
+      ~InversionRecovery.half
+      ~InversionRecovery.ipu
+      ~InversionRecovery.load_state_dict
+      ~InversionRecovery.modules
+      ~InversionRecovery.named_buffers
+      ~InversionRecovery.named_children
+      ~InversionRecovery.named_modules
+      ~InversionRecovery.named_parameters
+      ~InversionRecovery.parameters
+      ~InversionRecovery.register_backward_hook
+      ~InversionRecovery.register_buffer
+      ~InversionRecovery.register_forward_hook
+      ~InversionRecovery.register_forward_pre_hook
+      ~InversionRecovery.register_full_backward_hook
+      ~InversionRecovery.register_full_backward_pre_hook
+      ~InversionRecovery.register_load_state_dict_post_hook
+      ~InversionRecovery.register_module
+      ~InversionRecovery.register_parameter
+      ~InversionRecovery.register_state_dict_pre_hook
+      ~InversionRecovery.requires_grad_
+      ~InversionRecovery.set_extra_state
+      ~InversionRecovery.share_memory
+      ~InversionRecovery.state_dict
+      ~InversionRecovery.to
+      ~InversionRecovery.to_empty
+      ~InversionRecovery.train
+      ~InversionRecovery.type
+      ~InversionRecovery.xpu
+      ~InversionRecovery.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~InversionRecovery.T_destination
+      ~InversionRecovery.call_super_init
+      ~InversionRecovery.dump_patches
+      ~InversionRecovery.training
+   
+   

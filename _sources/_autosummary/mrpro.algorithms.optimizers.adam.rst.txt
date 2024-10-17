@@ -1,0 +1,6 @@
+mrpro.algorithms.optimizers.adam
+================================
+
+.. currentmodule:: mrpro.algorithms.optimizers
+
+.. autofunction:: adam

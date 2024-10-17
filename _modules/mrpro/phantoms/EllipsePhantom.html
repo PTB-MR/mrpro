@@ -1,0 +1,221 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.phantoms.EllipsePhantom &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mrpro.phantoms.EllipsePhantom</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mrpro.phantoms.EllipsePhantom</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Numerical phantom with ellipses.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">einops</span> <span class="kn">import</span> <span class="n">repeat</span>
+
+<span class="kn">from</span> <span class="nn">mrpro.data.SpatialDimension</span> <span class="kn">import</span> <span class="n">SpatialDimension</span>
+<span class="kn">from</span> <span class="nn">mrpro.phantoms.phantom_elements</span> <span class="kn">import</span> <span class="n">EllipseParameters</span>
+
+
+<div class="viewcode-block" id="EllipsePhantom">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.phantoms.EllipsePhantom.html#mrpro.phantoms.EllipsePhantom">[docs]</a>
+<span class="k">class</span> <span class="nc">EllipsePhantom</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Numerical phantom as the sum of different ellipses.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        ellipses</span>
+<span class="sd">            ellipses defined by their center, radii and intensity.</span>
+<span class="sd">            if None, defaults to three ellipses</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="EllipsePhantom.__init__">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.phantoms.EllipsePhantom.html#mrpro.phantoms.EllipsePhantom.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ellipses</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">EllipseParameters</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize ellipse phantom.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ellipses</span>
+<span class="sd">            Sequence of EllipseParameters defining the ellipses.</span>
+<span class="sd">            if None, defaults to three ellipses with different parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ellipses</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ellipses</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">EllipseParameters</span><span class="p">(</span><span class="n">center_x</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">center_y</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">radius_x</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">radius_y</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">intensity</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                <span class="n">EllipseParameters</span><span class="p">(</span><span class="n">center_x</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">center_y</span><span class="o">=-</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">radius_x</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">radius_y</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">intensity</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+                <span class="n">EllipseParameters</span><span class="p">(</span><span class="n">center_x</span><span class="o">=-</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">center_y</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">radius_x</span><span class="o">=</span><span class="mf">0.18</span><span class="p">,</span> <span class="n">radius_y</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">intensity</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ellipses</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ellipses</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EllipsePhantom.kspace">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.phantoms.EllipsePhantom.html#mrpro.phantoms.EllipsePhantom.kspace">[docs]</a>
+    <span class="k">def</span> <span class="nf">kspace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ky</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">kx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create 2D analytic kspace data based on given k-space locations.</span>
+
+<span class="sd">        For a corresponding image with 256 x 256 voxel, the k-space locations should be defined within [-128, 127]</span>
+
+<span class="sd">        The Fourier representation of ellipses can be analytically described by Bessel functions [KOA2007]_.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ky</span>
+<span class="sd">            k-space locations in ky</span>
+<span class="sd">        kx</span>
+<span class="sd">            k-space locations in kx (frequency encoding direction). Same shape as ky.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [KOA2007] Koay C, Sarlls J, Oezarslan E (2007) Three-dimensional analytical magnetic resonance imaging</span>
+<span class="sd">           phantom in the Fourier domain. MRM 58(2) https://doi.org/10.1002/mrm.21292</span>
+<span class="sd">        ..</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># kx and ky have to be of same shape</span>
+        <span class="k">if</span> <span class="n">kx</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">ky</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;shape mismatch between kx </span><span class="si">{</span><span class="n">kx</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1"> and ky </span><span class="si">{</span><span class="n">ky</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="n">kdata</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">kx</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ellipse</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ellipses</span><span class="p">:</span>
+            <span class="n">arg</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">ellipse</span><span class="o">.</span><span class="n">radius_x</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">kx</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">ellipse</span><span class="o">.</span><span class="n">radius_y</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">ky</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">arg</span><span class="p">[</span><span class="n">arg</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1e-6</span>  <span class="c1"># avoid zeros</span>
+
+            <span class="n">cdata</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">ellipse</span><span class="o">.</span><span class="n">radius_x</span> <span class="o">*</span> <span class="n">ellipse</span><span class="o">.</span><span class="n">radius_y</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">special</span><span class="o">.</span><span class="n">bessel_j1</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">arg</span><span class="p">)</span> <span class="o">/</span> <span class="n">arg</span>
+            <span class="n">kdata</span> <span class="o">+=</span> <span class="p">(</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="n">ellipse</span><span class="o">.</span><span class="n">center_x</span> <span class="o">*</span> <span class="n">kx</span> <span class="o">+</span> <span class="n">ellipse</span><span class="o">.</span><span class="n">center_y</span> <span class="o">*</span> <span class="n">ky</span><span class="p">))</span>
+                <span class="o">*</span> <span class="n">cdata</span>
+                <span class="o">*</span> <span class="n">ellipse</span><span class="o">.</span><span class="n">intensity</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Scale k-space data by factor sqrt(number of points) to ensure correct scaling after FFT with</span>
+        <span class="c1"># normalization &quot;ortho&quot;. See e.g. https://docs.scipy.org/doc/scipy/tutorial/fft.html</span>
+        <span class="n">kdata</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">numel</span><span class="p">(</span><span class="n">kdata</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">kdata</span></div>
+
+
+<div class="viewcode-block" id="EllipsePhantom.image_space">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.phantoms.EllipsePhantom.html#mrpro.phantoms.EllipsePhantom.image_space">[docs]</a>
+    <span class="k">def</span> <span class="nf">image_space</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_dimensions</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create image representation of phantom.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        image_dimensions</span>
+<span class="sd">            number of voxels in the image</span>
+<span class="sd">            This is a 2D simulation so the output will be (1 1 1 image_dimensions.y image_dimensions.x)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Calculate image representation of phantom</span>
+        <span class="n">ny</span><span class="p">,</span> <span class="n">nx</span> <span class="o">=</span> <span class="n">image_dimensions</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">image_dimensions</span><span class="o">.</span><span class="n">x</span>
+        <span class="n">ix</span><span class="p">,</span> <span class="n">iy</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">nx</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">nx</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">nx</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">ny</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">ny</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">ny</span><span class="p">),</span>
+            <span class="n">indexing</span><span class="o">=</span><span class="s1">&#39;xy&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">idata</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ny</span><span class="p">,</span> <span class="n">nx</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">complex64</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ellipse</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ellipses</span><span class="p">:</span>
+            <span class="n">in_ellipse</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">(</span><span class="n">ix</span> <span class="o">/</span> <span class="n">nx</span> <span class="o">-</span> <span class="n">ellipse</span><span class="o">.</span><span class="n">center_x</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">ellipse</span><span class="o">.</span><span class="n">radius_x</span><span class="o">**</span><span class="mi">2</span>
+                <span class="o">+</span> <span class="p">(</span><span class="n">iy</span> <span class="o">/</span> <span class="n">ny</span> <span class="o">-</span> <span class="n">ellipse</span><span class="o">.</span><span class="n">center_y</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">ellipse</span><span class="o">.</span><span class="n">radius_y</span><span class="o">**</span><span class="mi">2</span>
+            <span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span>
+            <span class="n">idata</span> <span class="o">+=</span> <span class="n">ellipse</span><span class="o">.</span><span class="n">intensity</span> <span class="o">*</span> <span class="n">in_ellipse</span>
+
+        <span class="k">return</span> <span class="n">repeat</span><span class="p">(</span><span class="n">idata</span><span class="p">,</span> <span class="s1">&#39;y x-&gt;other coils z y x&#39;</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">coils</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,34 @@
+mrpro.algorithms.dcf.dcf\_voronoi.ConvexHull
+============================================
+
+.. currentmodule:: mrpro.algorithms.dcf.dcf_voronoi
+
+.. autoclass:: ConvexHull
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ConvexHull.__init__
+      ~ConvexHull.add_points
+      ~ConvexHull.close
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ConvexHull.points
+      ~ConvexHull.vertices
+   
+   

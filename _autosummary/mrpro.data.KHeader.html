@@ -1,0 +1,643 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.data.KHeader &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mrpro.data.KNoise" href="mrpro.data.KNoise.html" />
+    <link rel="prev" title="mrpro.data.KData" href="mrpro.data.KData.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-algorithms">MRpro Algorithms</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../api.html#mrpro-data">MRpro Data</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="mrpro.data.html">mrpro.data</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.AcqIdx.html">mrpro.data.AcqIdx</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.AcqInfo.html">mrpro.data.AcqInfo</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.CsmData.html">mrpro.data.CsmData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.Data.html">mrpro.data.Data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.DcfData.html">mrpro.data.DcfData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.EncodingLimits.html">mrpro.data.EncodingLimits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.IData.html">mrpro.data.IData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.IHeader.html">mrpro.data.IHeader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KData.html">mrpro.data.KData</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">mrpro.data.KHeader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KNoise.html">mrpro.data.KNoise</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KTrajectory.html">mrpro.data.KTrajectory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.KTrajectoryRawShape.html">mrpro.data.KTrajectoryRawShape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.Limits.html">mrpro.data.Limits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.MoveDataMixin.html">mrpro.data.MoveDataMixin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.QData.html">mrpro.data.QData</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.QHeader.html">mrpro.data.QHeader</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.Rotation.html">mrpro.data.Rotation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.SpatialDimension.html">mrpro.data.SpatialDimension</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.TrajectoryDescription.html">mrpro.data.TrajectoryDescription</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.acq_filters.html">mrpro.data.acq_filters</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.enums.html">mrpro.data.enums</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mrpro.data.traj_calculators.html">mrpro.data.traj_calculators</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-operators">MRpro Operators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-phantoms">MRpro Phantoms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html#mrpro-utilities">MRpro Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../api.html">API</a></li>
+          <li class="breadcrumb-item"><a href="mrpro.data.html">mrpro.data</a></li>
+      <li class="breadcrumb-item active">mrpro.data.KHeader</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/_autosummary/mrpro.data.KHeader.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="mrpro-data-kheader">
+<h1>mrpro.data.KHeader<a class="headerlink" href="#mrpro-data-kheader" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="mrpro.data.KHeader">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">mrpro.data.</span></span><span class="sig-name descname"><span class="pre">KHeader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">trajectory:</span> <span class="pre">KTrajectoryCalculator,</span> <span class="pre">b0:</span> <span class="pre">float,</span> <span class="pre">encoding_limits:</span> <span class="pre">EncodingLimits,</span> <span class="pre">recon_matrix:</span> <span class="pre">SpatialDimension[int],</span> <span class="pre">recon_fov:</span> <span class="pre">SpatialDimension[float],</span> <span class="pre">encoding_matrix:</span> <span class="pre">SpatialDimension[int],</span> <span class="pre">encoding_fov:</span> <span class="pre">SpatialDimension[float],</span> <span class="pre">acq_info:</span> <span class="pre">AcqInfo,</span> <span class="pre">h1_freq:</span> <span class="pre">float,</span> <span class="pre">n_coils:</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">datetime:</span> <span class="pre">datetime.datetime</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">te:</span> <span class="pre">torch.Tensor</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">ti:</span> <span class="pre">torch.Tensor</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">fa:</span> <span class="pre">torch.Tensor</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">tr:</span> <span class="pre">torch.Tensor</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">echo_spacing:</span> <span class="pre">torch.Tensor</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">echo_train_length:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">1,</span> <span class="pre">seq_type:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'unknown',</span> <span class="pre">model:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'unknown',</span> <span class="pre">vendor:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'unknown',</span> <span class="pre">protocol_name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'unknown',</span> <span class="pre">misc:</span> <span class="pre">dict</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">calibration_mode:</span> <span class="pre">enums.CalibrationMode</span> <span class="pre">=</span> <span class="pre">CalibrationMode.OTHER,</span> <span class="pre">interleave_dim:</span> <span class="pre">enums.InterleavingDimension</span> <span class="pre">=</span> <span class="pre">InterleavingDimension.OTHER,</span> <span class="pre">traj_type:</span> <span class="pre">enums.TrajectoryType</span> <span class="pre">=</span> <span class="pre">TrajectoryType.OTHER,</span> <span class="pre">measurement_id:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'unknown',</span> <span class="pre">patient_name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'unknown',</span> <span class="pre">trajectory_description:</span> <span class="pre">TrajectoryDescription</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mrpro/data/KHeader.html#KHeader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KHeader" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="mrpro.data.MoveDataMixin.html#mrpro.data.MoveDataMixin" title="mrpro.data.MoveDataMixin.MoveDataMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">MoveDataMixin</span></code></a></p>
+<p>MR raw data header.</p>
+<p>All information that is not covered by the dataclass is stored in
+the misc dict. Our code shall not rely on this information, and it is
+not guaranteed to be present. Also, the information in the misc dict
+is not guaranteed to be correct or tested.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">trajectory:</span> <span class="pre">KTrajectoryCalculator,</span> <span class="pre">b0:</span> <span class="pre">float,</span> <span class="pre">encoding_limits:</span> <span class="pre">EncodingLimits,</span> <span class="pre">recon_matrix:</span> <span class="pre">SpatialDimension[int],</span> <span class="pre">recon_fov:</span> <span class="pre">SpatialDimension[float],</span> <span class="pre">encoding_matrix:</span> <span class="pre">SpatialDimension[int],</span> <span class="pre">encoding_fov:</span> <span class="pre">SpatialDimension[float],</span> <span class="pre">acq_info:</span> <span class="pre">AcqInfo,</span> <span class="pre">h1_freq:</span> <span class="pre">float,</span> <span class="pre">n_coils:</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">datetime:</span> <span class="pre">datetime.datetime</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">te:</span> <span class="pre">torch.Tensor</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">ti:</span> <span class="pre">torch.Tensor</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">fa:</span> <span class="pre">torch.Tensor</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">tr:</span> <span class="pre">torch.Tensor</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">echo_spacing:</span> <span class="pre">torch.Tensor</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">echo_train_length:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">1,</span> <span class="pre">seq_type:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'unknown',</span> <span class="pre">model:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'unknown',</span> <span class="pre">vendor:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'unknown',</span> <span class="pre">protocol_name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'unknown',</span> <span class="pre">misc:</span> <span class="pre">dict</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">calibration_mode:</span> <span class="pre">enums.CalibrationMode</span> <span class="pre">=</span> <span class="pre">CalibrationMode.OTHER,</span> <span class="pre">interleave_dim:</span> <span class="pre">enums.InterleavingDimension</span> <span class="pre">=</span> <span class="pre">InterleavingDimension.OTHER,</span> <span class="pre">traj_type:</span> <span class="pre">enums.TrajectoryType</span> <span class="pre">=</span> <span class="pre">TrajectoryType.OTHER,</span> <span class="pre">measurement_id:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'unknown',</span> <span class="pre">patient_name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'unknown',</span> <span class="pre">trajectory_description:</span> <span class="pre">TrajectoryDescription</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#mrpro.data.KHeader.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code>(trajectory, b0, encoding_limits, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">clone</span></code>()</p></td>
+<td><p>Return a deep copy of the object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cpu</span></code>(*[, memory_format, copy])</p></td>
+<td><p>Put in CPU memory.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cuda</span></code>([device, non_blocking, memory_format, copy])</p></td>
+<td><p>Put object in CUDA memory.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">double</span></code>(*[, memory_format, copy])</p></td>
+<td><p>Convert all float tensors to double precision.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_ismrmrd</span></code>(header, acq_info[, defaults, ...])</p></td>
+<td><p>Create an Header from ISMRMRD Data.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">half</span></code>(*[, memory_format, copy])</p></td>
+<td><p>Convert all float tensors to half precision.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">single</span></code>(*[, memory_format, copy])</p></td>
+<td><p>Convert all float tensors to single precision.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code>(*args, **kwargs)</p></td>
+<td><p>Perform dtype and/or device conversion of data.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">trajectory</span></code></p></td>
+<td><p>Function to calculate the k-space trajectory.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">b0</span></code></p></td>
+<td><p>Magnetic field strength [T].</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">encoding_limits</span></code></p></td>
+<td><p>K-space encoding limits.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recon_matrix</span></code></p></td>
+<td><p>Dimensions of the reconstruction matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">recon_fov</span></code></p></td>
+<td><p>Field-of-view of the reconstructed image [m].</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">encoding_matrix</span></code></p></td>
+<td><p>Dimensions of the encoded k-space matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">encoding_fov</span></code></p></td>
+<td><p>Field of view of the image encoded by the k-space trajectory [m].</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">acq_info</span></code></p></td>
+<td><p>Information of the acquisitions (i.e. readout lines).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">h1_freq</span></code></p></td>
+<td><p>Lamor frequency of hydrogen nuclei [Hz].</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_coils</span></code></p></td>
+<td><p>Number of receiver coils.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">datetime</span></code></p></td>
+<td><p>Date and time of acquisition.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">te</span></code></p></td>
+<td><p>Echo time [s].</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ti</span></code></p></td>
+<td><p>Inversion time [s].</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fa</span></code></p></td>
+<td><p>Flip angle [rad].</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tr</span></code></p></td>
+<td><p>Repetition time [s].</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">echo_spacing</span></code></p></td>
+<td><p>Echo spacing [s].</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">echo_train_length</span></code></p></td>
+<td><p>Number of echoes in a multi-echo acquisition.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">seq_type</span></code></p></td>
+<td><p>Type of sequence.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></p></td>
+<td><p>Scanner model.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">vendor</span></code></p></td>
+<td><p>Scanner vendor.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">protocol_name</span></code></p></td>
+<td><p>Name of the acquisition protocol.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">misc</span></code></p></td>
+<td><p>Dictionary with miscellaneous parameters.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">calibration_mode</span></code></p></td>
+<td><p>Mode of how calibration data is acquired.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">interleave_dim</span></code></p></td>
+<td><p>Interleaving dimension.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">traj_type</span></code></p></td>
+<td><p>Type of trajectory.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">measurement_id</span></code></p></td>
+<td><p>Measurement ID.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">patient_name</span></code></p></td>
+<td><p>Name of the patient.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">trajectory_description</span></code></p></td>
+<td><p>Description of the trajectory.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">device</span></code></p></td>
+<td><p>Return the device of the tensors.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fa_degree</span></code></p></td>
+<td><p>Flip angle in degree.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_cpu</span></code></p></td>
+<td><p>Return True if all tensors are on the CPU.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_cuda</span></code></p></td>
+<td><p>Return True if all tensors are on a single CUDA device.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.acq_info">
+<span class="sig-name descname"><span class="pre">acq_info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.AcqInfo.html#mrpro.data.AcqInfo" title="mrpro.data.AcqInfo"><span class="pre">AcqInfo</span></a></em><a class="headerlink" href="#mrpro.data.KHeader.acq_info" title="Link to this definition"></a></dt>
+<dd><p>Information of the acquisitions (i.e. readout lines).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.b0">
+<span class="sig-name descname"><span class="pre">b0</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#mrpro.data.KHeader.b0" title="Link to this definition"></a></dt>
+<dd><p>Magnetic field strength [T].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.calibration_mode">
+<span class="sig-name descname"><span class="pre">calibration_mode</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.enums.CalibrationMode.html#mrpro.data.enums.CalibrationMode" title="mrpro.data.enums.CalibrationMode"><span class="pre">enums.CalibrationMode</span></a></em><a class="headerlink" href="#mrpro.data.KHeader.calibration_mode" title="Link to this definition"></a></dt>
+<dd><p>Mode of how calibration data is acquired.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.clone">
+<span class="sig-name descname"><span class="pre">clone</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KHeader.clone" title="Link to this definition"></a></dt>
+<dd><p>Return a deep copy of the object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.cpu">
+<span class="sig-name descname"><span class="pre">cpu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KHeader.cpu" title="Link to this definition"></a></dt>
+<dd><p>Put in CPU memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.cuda">
+<span class="sig-name descname"><span class="pre">cuda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">non_blocking</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KHeader.cuda" title="Link to this definition"></a></dt>
+<dd><p>Put object in CUDA memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>device</strong> – The destination GPU device. Defaults to the current CUDA device.</p></li>
+<li><p><strong>non_blocking</strong> – If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
+Otherwise, the argument has no effect.</p></li>
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.datetime">
+<span class="sig-name descname"><span class="pre">datetime</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">datetime.datetime</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#mrpro.data.KHeader.datetime" title="Link to this definition"></a></dt>
+<dd><p>Date and time of acquisition.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.device">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">device</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">device</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#mrpro.data.KHeader.device" title="Link to this definition"></a></dt>
+<dd><p>Return the device of the tensors.</p>
+<p>Looks at each field of a dataclass implementing a device attribute,
+such as torch.Tensors or MoveDataMixin instances. If the devices
+of the fields differ, an InconsistentDeviceError is raised, otherwise
+the device is returned. If no field implements a device attribute,
+None is returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>InconsistentDeviceError:</strong> – If the devices of different fields differ.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>The device of the fields or None if no field implements a device attribute.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.double">
+<span class="sig-name descname"><span class="pre">double</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KHeader.double" title="Link to this definition"></a></dt>
+<dd><p>Convert all float tensors to double precision.</p>
+<p>converts float to float64 and complex to complex128</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.echo_spacing">
+<span class="sig-name descname"><span class="pre">echo_spacing</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">torch.Tensor</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#mrpro.data.KHeader.echo_spacing" title="Link to this definition"></a></dt>
+<dd><p>Echo spacing [s].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.echo_train_length">
+<span class="sig-name descname"><span class="pre">echo_train_length</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#mrpro.data.KHeader.echo_train_length" title="Link to this definition"></a></dt>
+<dd><p>Number of echoes in a multi-echo acquisition.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.encoding_fov">
+<span class="sig-name descname"><span class="pre">encoding_fov</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.SpatialDimension.html#mrpro.data.SpatialDimension" title="mrpro.data.SpatialDimension"><span class="pre">SpatialDimension</span></a><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mrpro.data.KHeader.encoding_fov" title="Link to this definition"></a></dt>
+<dd><p>Field of view of the image encoded by the k-space trajectory [m].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.encoding_limits">
+<span class="sig-name descname"><span class="pre">encoding_limits</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.EncodingLimits.html#mrpro.data.EncodingLimits" title="mrpro.data.EncodingLimits"><span class="pre">EncodingLimits</span></a></em><a class="headerlink" href="#mrpro.data.KHeader.encoding_limits" title="Link to this definition"></a></dt>
+<dd><p>K-space encoding limits.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.encoding_matrix">
+<span class="sig-name descname"><span class="pre">encoding_matrix</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.SpatialDimension.html#mrpro.data.SpatialDimension" title="mrpro.data.SpatialDimension"><span class="pre">SpatialDimension</span></a><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mrpro.data.KHeader.encoding_matrix" title="Link to this definition"></a></dt>
+<dd><p>Dimensions of the encoded k-space matrix.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.fa">
+<span class="sig-name descname"><span class="pre">fa</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">torch.Tensor</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#mrpro.data.KHeader.fa" title="Link to this definition"></a></dt>
+<dd><p>Flip angle [rad].</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.fa_degree">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fa_degree</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">Tensor</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#mrpro.data.KHeader.fa_degree" title="Link to this definition"></a></dt>
+<dd><p>Flip angle in degree.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.from_ismrmrd">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_ismrmrd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">header</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ismrmrdHeader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acq_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="mrpro.data.AcqInfo.html#mrpro.data.AcqInfo" title="mrpro.data.AcqInfo.AcqInfo"><span class="pre">AcqInfo</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaults</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoding_number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="../_modules/mrpro/data/KHeader.html#KHeader.from_ismrmrd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mrpro.data.KHeader.from_ismrmrd" title="Link to this definition"></a></dt>
+<dd><p>Create an Header from ISMRMRD Data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>header</strong> – ISMRMRD header</p></li>
+<li><p><strong>acq_info</strong> – acquisition information</p></li>
+<li><p><strong>defaults</strong> – dictionary of values to be used if information is missing in header</p></li>
+<li><p><strong>overwrite</strong> – dictionary of values to be used independent of header</p></li>
+<li><p><strong>encoding_number</strong> – as ismrmrdHeader can contain multiple encodings, selects which to consider</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.h1_freq">
+<span class="sig-name descname"><span class="pre">h1_freq</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#mrpro.data.KHeader.h1_freq" title="Link to this definition"></a></dt>
+<dd><p>Lamor frequency of hydrogen nuclei [Hz].</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.half">
+<span class="sig-name descname"><span class="pre">half</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KHeader.half" title="Link to this definition"></a></dt>
+<dd><p>Convert all float tensors to half precision.</p>
+<p>converts float to float16 and complex to complex32</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.interleave_dim">
+<span class="sig-name descname"><span class="pre">interleave_dim</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.enums.InterleavingDimension.html#mrpro.data.enums.InterleavingDimension" title="mrpro.data.enums.InterleavingDimension"><span class="pre">enums.InterleavingDimension</span></a></em><a class="headerlink" href="#mrpro.data.KHeader.interleave_dim" title="Link to this definition"></a></dt>
+<dd><p>Interleaving dimension.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.is_cpu">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_cpu</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#mrpro.data.KHeader.is_cpu" title="Link to this definition"></a></dt>
+<dd><p>Return True if all tensors are on the CPU.</p>
+<p>Checks all tensor attributes of the dataclass for their device,
+(recursively if an attribute is a MoveDataMixin)</p>
+<p>Returns False if not all tensors are on cpu or if the device is inconsistent,
+returns True if the data class has no tensors as attributes.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.is_cuda">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_cuda</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#mrpro.data.KHeader.is_cuda" title="Link to this definition"></a></dt>
+<dd><p>Return True if all tensors are on a single CUDA device.</p>
+<p>Checks all tensor attributes of the dataclass for their device,
+(recursively if an attribute is a MoveDataMixin)</p>
+<p>Returns False if not all tensors are on the same CUDA devices, or if the device is inconsistent,
+returns True if the data class has no tensors as attributes.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.measurement_id">
+<span class="sig-name descname"><span class="pre">measurement_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#mrpro.data.KHeader.measurement_id" title="Link to this definition"></a></dt>
+<dd><p>Measurement ID.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.misc">
+<span class="sig-name descname"><span class="pre">misc</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#mrpro.data.KHeader.misc" title="Link to this definition"></a></dt>
+<dd><p>Dictionary with miscellaneous parameters.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.model">
+<span class="sig-name descname"><span class="pre">model</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#mrpro.data.KHeader.model" title="Link to this definition"></a></dt>
+<dd><p>Scanner model.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.n_coils">
+<span class="sig-name descname"><span class="pre">n_coils</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#mrpro.data.KHeader.n_coils" title="Link to this definition"></a></dt>
+<dd><p>Number of receiver coils.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.patient_name">
+<span class="sig-name descname"><span class="pre">patient_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#mrpro.data.KHeader.patient_name" title="Link to this definition"></a></dt>
+<dd><p>Name of the patient.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.protocol_name">
+<span class="sig-name descname"><span class="pre">protocol_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#mrpro.data.KHeader.protocol_name" title="Link to this definition"></a></dt>
+<dd><p>Name of the acquisition protocol.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.recon_fov">
+<span class="sig-name descname"><span class="pre">recon_fov</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.SpatialDimension.html#mrpro.data.SpatialDimension" title="mrpro.data.SpatialDimension"><span class="pre">SpatialDimension</span></a><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mrpro.data.KHeader.recon_fov" title="Link to this definition"></a></dt>
+<dd><p>Field-of-view of the reconstructed image [m].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.recon_matrix">
+<span class="sig-name descname"><span class="pre">recon_matrix</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.SpatialDimension.html#mrpro.data.SpatialDimension" title="mrpro.data.SpatialDimension"><span class="pre">SpatialDimension</span></a><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#mrpro.data.KHeader.recon_matrix" title="Link to this definition"></a></dt>
+<dd><p>Dimensions of the reconstruction matrix.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.seq_type">
+<span class="sig-name descname"><span class="pre">seq_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#mrpro.data.KHeader.seq_type" title="Link to this definition"></a></dt>
+<dd><p>Type of sequence.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.single">
+<span class="sig-name descname"><span class="pre">single</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">memory_format</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">torch.preserve_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KHeader.single" title="Link to this definition"></a></dt>
+<dd><p>Convert all float tensors to single precision.</p>
+<p>converts float to float32 and complex to complex64</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory_format</strong> – The desired memory format of returned tensor.</p></li>
+<li><p><strong>copy</strong> – If True, the returned tensor will always be a copy, even if the input was already on the correct device.
+This will also create new tensors for views</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.te">
+<span class="sig-name descname"><span class="pre">te</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">torch.Tensor</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#mrpro.data.KHeader.te" title="Link to this definition"></a></dt>
+<dd><p>Echo time [s].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.ti">
+<span class="sig-name descname"><span class="pre">ti</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">torch.Tensor</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#mrpro.data.KHeader.ti" title="Link to this definition"></a></dt>
+<dd><p>Inversion time [s].</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.to">
+<span class="sig-name descname"><span class="pre">to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#mrpro.data.KHeader.to" title="Link to this definition"></a></dt>
+<dd><p>Perform dtype and/or device conversion of data.</p>
+<p>A torch.dtype and torch.device are inferred from the arguments
+args and kwargs. Please have a look at the
+documentation of torch.Tensor.to() for more details.</p>
+<p>A new instance of the dataclass will be returned.</p>
+<p>The conversion will be applied to all Tensor- or Module
+fields of the dataclass, and to all fields that implement
+the MoveDataMixin.</p>
+<p>The dtype-type, i.e. float or complex will always be preserved,
+but the precision of floating point dtypes might be changed.</p>
+<p>Example:
+If called with dtype=torch.float32 OR dtype=torch.complex64:</p>
+<ul class="simple">
+<li><p>A complex128 tensor will be converted to complex64</p></li>
+<li><p>A float64 tensor will be converted to float32</p></li>
+<li><p>A bool tensor will remain bool</p></li>
+<li><p>An int64 tensor will remain int64</p></li>
+</ul>
+<p>If other conversions are desired, please use the torch.Tensor.to() method of
+the fields directly.</p>
+<p>If the copy argument is set to True (default), a deep copy will be returned
+even if no conversion is necessary.
+If two fields are views of the same data before, in the result they will be independent
+copies if copy is set to True or a conversion is necessary.
+If set to False, some Tensors might be shared between the original and the new object.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.tr">
+<span class="sig-name descname"><span class="pre">tr</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.utils.slice_profiles.Tensor.html#mrpro.utils.slice_profiles.Tensor" title="torch.Tensor"><span class="pre">torch.Tensor</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#mrpro.data.KHeader.tr" title="Link to this definition"></a></dt>
+<dd><p>Repetition time [s].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.traj_type">
+<span class="sig-name descname"><span class="pre">traj_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.enums.TrajectoryType.html#mrpro.data.enums.TrajectoryType" title="mrpro.data.enums.TrajectoryType"><span class="pre">enums.TrajectoryType</span></a></em><a class="headerlink" href="#mrpro.data.KHeader.traj_type" title="Link to this definition"></a></dt>
+<dd><p>Type of trajectory.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.trajectory">
+<span class="sig-name descname"><span class="pre">trajectory</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.traj_calculators.KTrajectoryCalculator.html#mrpro.data.traj_calculators.KTrajectoryCalculator" title="mrpro.data.traj_calculators.KTrajectoryCalculator"><span class="pre">KTrajectoryCalculator</span></a></em><a class="headerlink" href="#mrpro.data.KHeader.trajectory" title="Link to this definition"></a></dt>
+<dd><p>Function to calculate the k-space trajectory.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.trajectory_description">
+<span class="sig-name descname"><span class="pre">trajectory_description</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="mrpro.data.TrajectoryDescription.html#mrpro.data.TrajectoryDescription" title="mrpro.data.TrajectoryDescription"><span class="pre">TrajectoryDescription</span></a></em><a class="headerlink" href="#mrpro.data.KHeader.trajectory_description" title="Link to this definition"></a></dt>
+<dd><p>Description of the trajectory.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="mrpro.data.KHeader.vendor">
+<span class="sig-name descname"><span class="pre">vendor</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#mrpro.data.KHeader.vendor" title="Link to this definition"></a></dt>
+<dd><p>Scanner vendor.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="mrpro.data.KData.html" class="btn btn-neutral float-left" title="mrpro.data.KData" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mrpro.data.KNoise.html" class="btn btn-neutral float-right" title="mrpro.data.KNoise" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

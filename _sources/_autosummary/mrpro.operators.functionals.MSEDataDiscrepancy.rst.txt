@@ -1,0 +1,80 @@
+mrpro.operators.functionals.MSEDataDiscrepancy
+==============================================
+
+.. currentmodule:: mrpro.operators.functionals
+
+.. autoclass:: MSEDataDiscrepancy
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MSEDataDiscrepancy.__init__
+      ~MSEDataDiscrepancy.add_module
+      ~MSEDataDiscrepancy.apply
+      ~MSEDataDiscrepancy.bfloat16
+      ~MSEDataDiscrepancy.buffers
+      ~MSEDataDiscrepancy.children
+      ~MSEDataDiscrepancy.compile
+      ~MSEDataDiscrepancy.cpu
+      ~MSEDataDiscrepancy.cuda
+      ~MSEDataDiscrepancy.double
+      ~MSEDataDiscrepancy.eval
+      ~MSEDataDiscrepancy.extra_repr
+      ~MSEDataDiscrepancy.float
+      ~MSEDataDiscrepancy.forward
+      ~MSEDataDiscrepancy.get_buffer
+      ~MSEDataDiscrepancy.get_extra_state
+      ~MSEDataDiscrepancy.get_parameter
+      ~MSEDataDiscrepancy.get_submodule
+      ~MSEDataDiscrepancy.half
+      ~MSEDataDiscrepancy.ipu
+      ~MSEDataDiscrepancy.load_state_dict
+      ~MSEDataDiscrepancy.modules
+      ~MSEDataDiscrepancy.named_buffers
+      ~MSEDataDiscrepancy.named_children
+      ~MSEDataDiscrepancy.named_modules
+      ~MSEDataDiscrepancy.named_parameters
+      ~MSEDataDiscrepancy.parameters
+      ~MSEDataDiscrepancy.register_backward_hook
+      ~MSEDataDiscrepancy.register_buffer
+      ~MSEDataDiscrepancy.register_forward_hook
+      ~MSEDataDiscrepancy.register_forward_pre_hook
+      ~MSEDataDiscrepancy.register_full_backward_hook
+      ~MSEDataDiscrepancy.register_full_backward_pre_hook
+      ~MSEDataDiscrepancy.register_load_state_dict_post_hook
+      ~MSEDataDiscrepancy.register_module
+      ~MSEDataDiscrepancy.register_parameter
+      ~MSEDataDiscrepancy.register_state_dict_pre_hook
+      ~MSEDataDiscrepancy.requires_grad_
+      ~MSEDataDiscrepancy.set_extra_state
+      ~MSEDataDiscrepancy.share_memory
+      ~MSEDataDiscrepancy.state_dict
+      ~MSEDataDiscrepancy.to
+      ~MSEDataDiscrepancy.to_empty
+      ~MSEDataDiscrepancy.train
+      ~MSEDataDiscrepancy.type
+      ~MSEDataDiscrepancy.xpu
+      ~MSEDataDiscrepancy.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MSEDataDiscrepancy.T_destination
+      ~MSEDataDiscrepancy.call_super_init
+      ~MSEDataDiscrepancy.dump_patches
+      ~MSEDataDiscrepancy.training
+   
+   

@@ -1,0 +1,178 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contributor Guide &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=16f952a1" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="FAQ" href="faq.html" />
+    <link rel="prev" title="User Guide" href="user_guide.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Contributor Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#repo-structure">Repo structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#src-mrpro-structure">src/mrpro structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#naming-convention">Naming convention</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Contributor Guide</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/contributor_guide.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="contributor-guide">
+<h1>Contributor Guide<a class="headerlink" href="#contributor-guide" title="Link to this heading"></a></h1>
+<section id="repo-structure">
+<h2>Repo structure<a class="headerlink" href="#repo-structure" title="Link to this heading"></a></h2>
+<p>This repository uses a <em>pyproject.toml</em> file to specify all the requirements.
+If you need a “normal” <em>requirements.txt</em> file, please have a look in <em>binder</em>. There you find a <em>requirements.txt</em>
+automatically created from <em>pyproject.toml</em> using GitHub actions.</p>
+<dl>
+<dt><strong>.github/workflows</strong></dt><dd><p>Definitions of GitHub action workflows to carry out formatting checks, run tests and automatically create this
+documentation.</p>
+</dd>
+<dt><strong>.vscode</strong></dt><dd><p>Configuration files for VS Code.</p>
+</dd>
+<dt><strong>.docs</strong></dt><dd><p>Files to create this documentation.</p>
+</dd>
+<dt><strong>binder</strong></dt><dd><p><em>environment.yml</em> to install MRpro when starting a binder session.</p>
+</dd>
+<dt><strong>examples</strong></dt><dd><p>Python scripts showcasing how MRpro can be used. Any data needed has to be available from
+an online repository (e.g. zenodo) such that it can be automatically downloaded. The scripts
+are automatically translated to jupyter notebooks using GitHub
+actions. Individual cells should be indicated with <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">%%</span></code>. For markdown cells use <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">%%</span> <span class="pre">[markdown]</span></code>.
+The translation from python script to jupyter notebook is done using
+<a class="reference external" href="https://jupytext.readthedocs.io/en/latest/">jupytext</a> . See their documentation for more details.</p>
+<p>After translating the scripts to notebooks, the notebooks are run and their output is converted to html and added
+to this documentation in the <em>Examples</em> section.</p>
+<p>We are not using notebooks directly because if contributors forget to clear all cells prior to committing then the
+content of the notebook is also version controlled with git which makes things very messy.</p>
+</dd>
+<dt><strong>mrpro/src</strong></dt><dd><p>Main code for this package</p>
+</dd>
+<dt><strong>tests</strong></dt><dd><p>Tests which are automatically run by pytest.
+The subfolder structure should follow the same structure as in <em>mrpro/src</em>.</p>
+</dd>
+</dl>
+</section>
+<section id="src-mrpro-structure">
+<h2>src/mrpro structure<a class="headerlink" href="#src-mrpro-structure" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt><strong>algorithms</strong></dt><dd><p>Everything which does something with the data, e.g. prewhiten k-space or remove oversampling.</p>
+</dd>
+<dt><strong>data</strong></dt><dd><p>All the data classes such as <code class="docutils literal notranslate"><span class="pre">KData</span></code>, <code class="docutils literal notranslate"><span class="pre">ImageData</span></code> or <code class="docutils literal notranslate"><span class="pre">CsmData</span></code>.
+As the name suggestions these should mainly contain data and meta information.
+Any functionality beyond what is absolutely required for the classes should be put as separate functions.</p>
+</dd>
+<dt><strong>operators</strong></dt><dd><p>Linear and non-linear algorithms describing e.g. the transformation from image to k-space (<code class="docutils literal notranslate"><span class="pre">FourierOp</span></code>), the
+effect of receiver coils (<code class="docutils literal notranslate"><span class="pre">SensitivityOp</span></code>) or MR signal models.</p>
+</dd>
+<dt><strong>phantoms</strong></dt><dd><p>Numerical phantoms useful to evaluate reconstruction algorithms.</p>
+</dd>
+<dt><strong>utils</strong></dt><dd><p>Utilities such as spatial filters and also more basic functionality such as applying functions serially along the
+batch dimension (<code class="docutils literal notranslate"><span class="pre">smap</span></code>).</p>
+</dd>
+</dl>
+</section>
+<section id="naming-convention">
+<h2>Naming convention<a class="headerlink" href="#naming-convention" title="Link to this heading"></a></h2>
+<p>We try to follow the [pep8](<a class="reference external" href="https://peps.python.org/pep-0008/">https://peps.python.org/pep-0008/</a>) naming convention (e.g., all lowercase variable names,
+CapWords class names). We deviate for the names of source code file names containing a single class.
+These are named as the class.</p>
+<p>We try to use descriptive variable names when applicable (e.g., <code class="docutils literal notranslate"><span class="pre">result</span></code> instead of <code class="docutils literal notranslate"><span class="pre">res</span></code>, <code class="docutils literal notranslate"><span class="pre">tolerance_squared</span></code> instead
+of <code class="docutils literal notranslate"><span class="pre">sqtol</span></code>, <code class="docutils literal notranslate"><span class="pre">batchsize</span></code> instead of <code class="docutils literal notranslate"><span class="pre">m</span></code>).</p>
+<p>A name starting with <code class="docutils literal notranslate"><span class="pre">n_</span></code> is used for variables describing a number of… (e.g., <code class="docutils literal notranslate"><span class="pre">n_coils</span></code> instead of <code class="docutils literal notranslate"><span class="pre">ncoils</span></code> or
+<code class="docutils literal notranslate"><span class="pre">num_coils</span></code>), variable names ending with <code class="docutils literal notranslate"><span class="pre">_op</span></code> for operators (e.g., <code class="docutils literal notranslate"><span class="pre">fourier_op</span></code>). We use <code class="docutils literal notranslate"><span class="pre">img</span></code> as a variable name
+for images.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="user_guide.html" class="btn btn-neutral float-left" title="User Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="faq.html" class="btn btn-neutral float-right" title="FAQ" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

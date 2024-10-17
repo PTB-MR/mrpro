@@ -1,0 +1,88 @@
+mrpro.algorithms.reconstruction.IterativeSENSEReconstruction
+============================================================
+
+.. currentmodule:: mrpro.algorithms.reconstruction
+
+.. autoclass:: IterativeSENSEReconstruction
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~IterativeSENSEReconstruction.__init__
+      ~IterativeSENSEReconstruction.add_module
+      ~IterativeSENSEReconstruction.apply
+      ~IterativeSENSEReconstruction.bfloat16
+      ~IterativeSENSEReconstruction.buffers
+      ~IterativeSENSEReconstruction.children
+      ~IterativeSENSEReconstruction.compile
+      ~IterativeSENSEReconstruction.cpu
+      ~IterativeSENSEReconstruction.cuda
+      ~IterativeSENSEReconstruction.direct_reconstruction
+      ~IterativeSENSEReconstruction.double
+      ~IterativeSENSEReconstruction.eval
+      ~IterativeSENSEReconstruction.extra_repr
+      ~IterativeSENSEReconstruction.float
+      ~IterativeSENSEReconstruction.forward
+      ~IterativeSENSEReconstruction.get_buffer
+      ~IterativeSENSEReconstruction.get_extra_state
+      ~IterativeSENSEReconstruction.get_parameter
+      ~IterativeSENSEReconstruction.get_submodule
+      ~IterativeSENSEReconstruction.half
+      ~IterativeSENSEReconstruction.ipu
+      ~IterativeSENSEReconstruction.load_state_dict
+      ~IterativeSENSEReconstruction.modules
+      ~IterativeSENSEReconstruction.named_buffers
+      ~IterativeSENSEReconstruction.named_children
+      ~IterativeSENSEReconstruction.named_modules
+      ~IterativeSENSEReconstruction.named_parameters
+      ~IterativeSENSEReconstruction.parameters
+      ~IterativeSENSEReconstruction.recalculate_csm
+      ~IterativeSENSEReconstruction.recalculate_fourierop
+      ~IterativeSENSEReconstruction.register_backward_hook
+      ~IterativeSENSEReconstruction.register_buffer
+      ~IterativeSENSEReconstruction.register_forward_hook
+      ~IterativeSENSEReconstruction.register_forward_pre_hook
+      ~IterativeSENSEReconstruction.register_full_backward_hook
+      ~IterativeSENSEReconstruction.register_full_backward_pre_hook
+      ~IterativeSENSEReconstruction.register_load_state_dict_post_hook
+      ~IterativeSENSEReconstruction.register_module
+      ~IterativeSENSEReconstruction.register_parameter
+      ~IterativeSENSEReconstruction.register_state_dict_pre_hook
+      ~IterativeSENSEReconstruction.requires_grad_
+      ~IterativeSENSEReconstruction.set_extra_state
+      ~IterativeSENSEReconstruction.share_memory
+      ~IterativeSENSEReconstruction.state_dict
+      ~IterativeSENSEReconstruction.to
+      ~IterativeSENSEReconstruction.to_empty
+      ~IterativeSENSEReconstruction.train
+      ~IterativeSENSEReconstruction.type
+      ~IterativeSENSEReconstruction.xpu
+      ~IterativeSENSEReconstruction.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~IterativeSENSEReconstruction.T_destination
+      ~IterativeSENSEReconstruction.call_super_init
+      ~IterativeSENSEReconstruction.dump_patches
+      ~IterativeSENSEReconstruction.n_iterations
+      ~IterativeSENSEReconstruction.dcf
+      ~IterativeSENSEReconstruction.csm
+      ~IterativeSENSEReconstruction.noise
+      ~IterativeSENSEReconstruction.fourier_op
+      ~IterativeSENSEReconstruction.training
+   
+   

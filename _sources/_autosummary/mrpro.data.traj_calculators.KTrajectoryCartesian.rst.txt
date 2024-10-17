@@ -1,0 +1,25 @@
+mrpro.data.traj\_calculators.KTrajectoryCartesian
+=================================================
+
+.. currentmodule:: mrpro.data.traj_calculators
+
+.. autoclass:: KTrajectoryCartesian
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~KTrajectoryCartesian.__init__
+   
+   
+
+   
+   
+   

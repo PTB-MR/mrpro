@@ -1,0 +1,6 @@
+mrpro.data.acq\_filters.is\_image\_acquisition
+==============================================
+
+.. currentmodule:: mrpro.data.acq_filters
+
+.. autofunction:: is_image_acquisition

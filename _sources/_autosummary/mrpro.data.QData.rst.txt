@@ -1,0 +1,43 @@
+mrpro.data.QData
+================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: QData
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~QData.__init__
+      ~QData.clone
+      ~QData.cpu
+      ~QData.cuda
+      ~QData.double
+      ~QData.from_single_dicom
+      ~QData.half
+      ~QData.single
+      ~QData.to
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~QData.data
+      ~QData.device
+      ~QData.header
+      ~QData.is_cpu
+      ~QData.is_cuda
+   
+   

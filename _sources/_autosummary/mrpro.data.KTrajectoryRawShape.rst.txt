@@ -1,0 +1,45 @@
+mrpro.data.KTrajectoryRawShape
+==============================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: KTrajectoryRawShape
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~KTrajectoryRawShape.__init__
+      ~KTrajectoryRawShape.clone
+      ~KTrajectoryRawShape.cpu
+      ~KTrajectoryRawShape.cuda
+      ~KTrajectoryRawShape.double
+      ~KTrajectoryRawShape.half
+      ~KTrajectoryRawShape.single
+      ~KTrajectoryRawShape.sort_and_reshape
+      ~KTrajectoryRawShape.to
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~KTrajectoryRawShape.kz
+      ~KTrajectoryRawShape.ky
+      ~KTrajectoryRawShape.kx
+      ~KTrajectoryRawShape.repeat_detection_tolerance
+      ~KTrajectoryRawShape.device
+      ~KTrajectoryRawShape.is_cpu
+      ~KTrajectoryRawShape.is_cuda
+   
+   

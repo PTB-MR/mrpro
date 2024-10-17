@@ -1,0 +1,42 @@
+mrpro.data.KNoise
+=================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: KNoise
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~KNoise.__init__
+      ~KNoise.clone
+      ~KNoise.cpu
+      ~KNoise.cuda
+      ~KNoise.double
+      ~KNoise.from_file
+      ~KNoise.half
+      ~KNoise.single
+      ~KNoise.to
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~KNoise.data
+      ~KNoise.device
+      ~KNoise.is_cpu
+      ~KNoise.is_cuda
+   
+   

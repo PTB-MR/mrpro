@@ -1,0 +1,1443 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.data.Rotation &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mrpro.data.Rotation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mrpro.data.Rotation</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;A pytorch implementation of scipy.spatial.transform.Rotation.</span>
+
+<span class="sd">A container for Rotations, that can be created from quaternions, euler angles, rotation vectors, rotation matrices,</span>
+<span class="sd">etc, can be applied to torch.Tensors and SpatialDimensions, multiplied, and can be converted to quaternions,</span>
+<span class="sd">euler angles, etc.</span>
+
+<span class="sd">see also https://github.com/scipy/scipy/blob/main/scipy/spatial/transform/_rotation.pyx</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># based on Scipy implementation, which has the following copyright:</span>
+<span class="c1"># Copyright (c) 2001-2002 Enthought, Inc. 2003-2024, SciPy Developers</span>
+
+<span class="c1"># All rights reserved.</span>
+
+<span class="c1"># Redistribution and use in source and binary forms, with or without</span>
+<span class="c1"># modification, are permitted provided that the following conditions</span>
+<span class="c1"># are met:</span>
+
+<span class="c1"># 1. Redistributions of source code must retain the above copyright</span>
+<span class="c1">#    notice, this list of conditions and the following disclaimer.</span>
+
+<span class="c1"># 2. Redistributions in binary form must reproduce the above</span>
+<span class="c1">#    copyright notice, this list of conditions and the following</span>
+<span class="c1">#    disclaimer in the documentation and/or other materials provided</span>
+<span class="c1">#    with the distribution.</span>
+
+<span class="c1"># 3. Neither the name of the copyright holder nor the names of its</span>
+<span class="c1">#    contributors may be used to endorse or promote products derived</span>
+<span class="c1">#    from this software without specific prior written permission.</span>
+
+<span class="c1"># THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1"># &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR</span>
+<span class="c1"># A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c1"># OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c1"># SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT</span>
+<span class="c1"># LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,</span>
+<span class="c1"># DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY</span>
+<span class="c1"># THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT</span>
+<span class="c1"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
+<span class="c1"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Self</span><span class="p">,</span> <span class="n">overload</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">scipy._lib._util</span> <span class="kn">import</span> <span class="n">check_random_state</span>
+<span class="kn">from</span> <span class="nn">scipy.spatial.transform</span> <span class="kn">import</span> <span class="n">Rotation</span> <span class="k">as</span> <span class="n">Rotation_scipy</span>
+
+<span class="kn">from</span> <span class="nn">mrpro.data.SpatialDimension</span> <span class="kn">import</span> <span class="n">SpatialDimension</span>
+<span class="kn">from</span> <span class="nn">mrpro.utils.typing</span> <span class="kn">import</span> <span class="n">IndexerType</span><span class="p">,</span> <span class="n">NestedSequence</span>
+
+<span class="n">AXIS_ORDER</span> <span class="o">=</span> <span class="s1">&#39;zyx&#39;</span>  <span class="c1"># This can be modified</span>
+<span class="n">QUAT_AXIS_ORDER</span> <span class="o">=</span> <span class="n">AXIS_ORDER</span> <span class="o">+</span> <span class="s1">&#39;w&#39;</span>  <span class="c1"># Do not modify</span>
+<span class="k">assert</span> <span class="n">QUAT_AXIS_ORDER</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="n">AXIS_ORDER</span><span class="p">,</span> <span class="s1">&#39;Quaternion axis order has to match axis order&#39;</span>  <span class="c1"># noqa: S101</span>
+
+
+<span class="k">def</span> <span class="nf">_compose_quaternions_single</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate p * q.&quot;&quot;&quot;</span>
+    <span class="n">cross</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">p</span><span class="p">[:</span><span class="mi">3</span><span class="p">],</span> <span class="n">q</span><span class="p">[:</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">product</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+        <span class="p">(</span>
+            <span class="n">p</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">q</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">cross</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">p</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">q</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">q</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">cross</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">p</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">q</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">q</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">p</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">cross</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+            <span class="n">p</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">q</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">q</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">p</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">q</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+        <span class="p">),</span>
+        <span class="mi">0</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">product</span>
+
+
+<span class="k">def</span> <span class="nf">_compose_quaternions</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate p * q, with p and q batched quaternions.&quot;&quot;&quot;</span>
+    <span class="n">p</span><span class="p">,</span> <span class="n">q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">broadcast_tensors</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+    <span class="n">product</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">_compose_quaternions_single</span><span class="p">)(</span><span class="n">p</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">q</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">product</span>
+
+
+<span class="k">def</span> <span class="nf">_canonical_quaternion</span><span class="p">(</span><span class="n">quaternion</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert to canonical form, i.e. positive w.&quot;&quot;&quot;</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="p">(</span><span class="n">quaternion</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">QUAT_AXIS_ORDER</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">axis</span><span class="p">)]</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="s1">&#39;xyzw&#39;</span><span class="p">)</span>
+    <span class="n">needs_inversion</span> <span class="o">=</span> <span class="p">(</span><span class="n">w</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">((</span><span class="n">w</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">((</span><span class="n">x</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">((</span><span class="n">x</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">((</span><span class="n">y</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">((</span><span class="n">y</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">z</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">))))))</span>
+    <span class="n">canonical_quaternion</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">needs_inversion</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="o">-</span><span class="n">quaternion</span><span class="p">,</span> <span class="n">quaternion</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">canonical_quaternion</span>
+
+
+<span class="k">def</span> <span class="nf">_matrix_to_quaternion</span><span class="p">(</span><span class="n">matrix</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert matrix to quaternion.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">!=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid rotation matrix shape </span><span class="si">{</span><span class="n">matrix</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+
+    <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+    <span class="c1"># matrix elements</span>
+    <span class="n">m00</span><span class="p">,</span> <span class="n">m01</span><span class="p">,</span> <span class="n">m02</span><span class="p">,</span> <span class="n">m10</span><span class="p">,</span> <span class="n">m11</span><span class="p">,</span> <span class="n">m12</span><span class="p">,</span> <span class="n">m20</span><span class="p">,</span> <span class="n">m21</span><span class="p">,</span> <span class="n">m22</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="n">matrix</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># q,r,s are some permutation of x,y,z</span>
+    <span class="n">qrsw</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="mf">1.0</span> <span class="o">+</span> <span class="n">m00</span> <span class="o">-</span> <span class="n">m11</span> <span class="o">-</span> <span class="n">m22</span><span class="p">,</span>
+                <span class="mf">1.0</span> <span class="o">-</span> <span class="n">m00</span> <span class="o">+</span> <span class="n">m11</span> <span class="o">-</span> <span class="n">m22</span><span class="p">,</span>
+                <span class="mf">1.0</span> <span class="o">-</span> <span class="n">m00</span> <span class="o">-</span> <span class="n">m11</span> <span class="o">+</span> <span class="n">m22</span><span class="p">,</span>
+                <span class="mf">1.0</span> <span class="o">+</span> <span class="n">m00</span> <span class="o">+</span> <span class="n">m11</span> <span class="o">+</span> <span class="n">m22</span><span class="p">,</span>
+            <span class="p">],</span>
+            <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">q</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">qrsw</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># all these are the same except in edge cases.</span>
+    <span class="c1"># we will choose the one that is most numerically stable.</span>
+    <span class="c1"># we calculate all choices as this is faster</span>
+    <span class="n">candidates</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+        <span class="p">(</span>
+            <span class="o">*</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">m10</span> <span class="o">+</span> <span class="n">m01</span><span class="p">,</span> <span class="n">m02</span> <span class="o">+</span> <span class="n">m20</span><span class="p">,</span> <span class="n">m21</span> <span class="o">-</span> <span class="n">m12</span><span class="p">),</span>
+            <span class="o">*</span><span class="p">(</span><span class="n">m10</span> <span class="o">+</span> <span class="n">m01</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">m12</span> <span class="o">+</span> <span class="n">m21</span><span class="p">,</span> <span class="n">m02</span> <span class="o">-</span> <span class="n">m20</span><span class="p">),</span>
+            <span class="o">*</span><span class="p">(</span><span class="n">m20</span> <span class="o">+</span> <span class="n">m02</span><span class="p">,</span> <span class="n">m21</span> <span class="o">+</span> <span class="n">m12</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">m10</span> <span class="o">-</span> <span class="n">m01</span><span class="p">),</span>
+            <span class="o">*</span><span class="p">(</span><span class="n">m21</span> <span class="o">-</span> <span class="n">m12</span><span class="p">,</span> <span class="n">m02</span> <span class="o">-</span> <span class="n">m20</span><span class="p">,</span> <span class="n">m10</span> <span class="o">-</span> <span class="n">m01</span><span class="p">,</span> <span class="n">w</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">batch_shape</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="c1"># now we make the choice.</span>
+    <span class="c1"># the choice will not influence the gradients.</span>
+    <span class="n">choice</span> <span class="o">=</span> <span class="n">qrsw</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">quaternion</span> <span class="o">=</span> <span class="n">candidates</span><span class="o">.</span><span class="n">take_along_dim</span><span class="p">(</span><span class="n">choice</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
+        <span class="n">qrsw</span><span class="o">.</span><span class="n">take_along_dim</span><span class="p">(</span><span class="n">choice</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sqrt</span><span class="p">()</span> <span class="o">*</span> <span class="mi">2</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">quaternion</span>
+
+
+<span class="k">def</span> <span class="nf">_make_elementary_quat</span><span class="p">(</span><span class="n">axis</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">angle</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Make a quaternion for the rotation around one of the axes.&quot;&quot;&quot;</span>
+    <span class="n">quat</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="o">*</span><span class="n">angle</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">angle</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">angle</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">axis_index</span> <span class="o">=</span> <span class="n">QUAT_AXIS_ORDER</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+    <span class="n">w_index</span> <span class="o">=</span> <span class="n">QUAT_AXIS_ORDER</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+    <span class="n">quat</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">w_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">quat</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">axis_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">quat</span>
+
+
+<span class="k">def</span> <span class="nf">_quaternion_to_matrix</span><span class="p">(</span><span class="n">quaternion</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert quaternion to rotation matrix.&quot;&quot;&quot;</span>
+    <span class="c1"># use same order for quaternions as for matrix. this saves two index lookups.</span>
+    <span class="c1"># we use q, r, s for a permutation of x, y, z</span>
+    <span class="c1"># as this function will be used for the application of the rotatoin matrix, it should be fast.</span>
+    <span class="n">q</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">quaternion</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">qq</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">square</span><span class="p">()</span>
+    <span class="n">rr</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">square</span><span class="p">()</span>
+    <span class="n">ss</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">square</span><span class="p">()</span>
+    <span class="n">ww</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">square</span><span class="p">()</span>
+    <span class="n">qr</span> <span class="o">=</span> <span class="n">q</span> <span class="o">*</span> <span class="n">r</span>
+    <span class="n">sw</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="n">w</span>
+    <span class="n">qs</span> <span class="o">=</span> <span class="n">q</span> <span class="o">*</span> <span class="n">s</span>
+    <span class="n">rw</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">w</span>
+    <span class="n">rs</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">s</span>
+    <span class="n">qw</span> <span class="o">=</span> <span class="n">q</span> <span class="o">*</span> <span class="n">w</span>
+
+    <span class="n">matrix</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+        <span class="p">(</span>
+            <span class="o">*</span><span class="p">(</span><span class="n">qq</span> <span class="o">-</span> <span class="n">rr</span> <span class="o">-</span> <span class="n">ss</span> <span class="o">+</span> <span class="n">ww</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">qr</span> <span class="o">-</span> <span class="n">sw</span><span class="p">),</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">qs</span> <span class="o">+</span> <span class="n">rw</span><span class="p">)),</span>
+            <span class="o">*</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">qr</span> <span class="o">+</span> <span class="n">sw</span><span class="p">),</span> <span class="o">-</span><span class="n">qq</span> <span class="o">+</span> <span class="n">rr</span> <span class="o">-</span> <span class="n">ss</span> <span class="o">+</span> <span class="n">ww</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">rs</span> <span class="o">-</span> <span class="n">qw</span><span class="p">)),</span>
+            <span class="o">*</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">qs</span> <span class="o">-</span> <span class="n">rw</span><span class="p">),</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">rs</span> <span class="o">+</span> <span class="n">qw</span><span class="p">),</span> <span class="o">-</span><span class="n">qq</span> <span class="o">-</span> <span class="n">rr</span> <span class="o">+</span> <span class="n">ss</span> <span class="o">+</span> <span class="n">ww</span><span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">quaternion</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">matrix</span>
+
+
+<span class="k">def</span> <span class="nf">_quaternion_to_euler</span><span class="p">(</span><span class="n">quaternion</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">seq</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">extrinsic</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert quaternion to euler angles.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    quaternion</span>
+<span class="sd">        The batched quaternions</span>
+<span class="sd">    seq</span>
+<span class="sd">        The axes sequence, lower case. For example &#39;xyz&#39;</span>
+<span class="sd">    extrinsic</span>
+<span class="sd">        If the rotations are extrinsic (True) or intrinsic (False)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># The algorithm assumes extrinsic frame transformations. The algorithm</span>
+    <span class="c1"># in the paper is formulated for rotation quaternions, which are stored</span>
+    <span class="c1"># directly by Rotation.</span>
+    <span class="c1"># Adapt the algorithm for our case by reversing both axis sequence and</span>
+    <span class="c1"># angles for intrinsic rotations when needed</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">extrinsic</span><span class="p">:</span>
+        <span class="n">seq</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">q</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">s</span> <span class="o">=</span> <span class="p">(</span><span class="n">QUAT_AXIS_ORDER</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">seq</span><span class="p">)</span>  <span class="c1"># one of x,y,z</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">QUAT_AXIS_ORDER</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+
+    <span class="c1"># proper angles, with first and last axis the same</span>
+    <span class="k">if</span> <span class="n">symmetric</span> <span class="o">:=</span> <span class="n">q</span> <span class="o">==</span> <span class="n">s</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">-</span> <span class="n">q</span> <span class="o">-</span> <span class="n">r</span>  <span class="c1"># get third axis</span>
+
+    <span class="c1"># Check if permutation is even (+1) or odd (-1)</span>
+    <span class="n">sign</span> <span class="o">=</span> <span class="p">(</span><span class="n">q</span> <span class="o">-</span> <span class="n">r</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="n">s</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">s</span> <span class="o">-</span> <span class="n">q</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+
+    <span class="k">if</span> <span class="n">symmetric</span><span class="p">:</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">quaternion</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">w</span><span class="p">]</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">quaternion</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">q</span><span class="p">]</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">quaternion</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">r</span><span class="p">]</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">quaternion</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span> <span class="o">*</span> <span class="n">sign</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">quaternion</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">w</span><span class="p">]</span> <span class="o">-</span> <span class="n">quaternion</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">r</span><span class="p">]</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">quaternion</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">q</span><span class="p">]</span> <span class="o">+</span> <span class="n">quaternion</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span> <span class="o">*</span> <span class="n">sign</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">quaternion</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">r</span><span class="p">]</span> <span class="o">+</span> <span class="n">quaternion</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">w</span><span class="p">]</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">quaternion</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span> <span class="o">*</span> <span class="n">sign</span> <span class="o">-</span> <span class="n">quaternion</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">q</span><span class="p">]</span>
+
+    <span class="c1"># Compute angles</span>
+    <span class="n">angles_1</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">hypot</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">hypot</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">))</span>
+    <span class="n">half_sum</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+    <span class="n">half_diff</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+    <span class="n">angles_0</span> <span class="o">=</span> <span class="n">half_sum</span> <span class="o">-</span> <span class="n">half_diff</span>
+    <span class="n">angles_2</span> <span class="o">=</span> <span class="n">half_sum</span> <span class="o">+</span> <span class="n">half_diff</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">symmetric</span><span class="p">:</span>
+        <span class="n">angles_2</span> <span class="o">*=</span> <span class="n">sign</span>
+        <span class="n">angles_1</span> <span class="o">-=</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">extrinsic</span><span class="p">:</span>
+        <span class="c1"># flip first and last rotation</span>
+        <span class="n">angles_2</span><span class="p">,</span> <span class="n">angles_0</span> <span class="o">=</span> <span class="n">angles_0</span><span class="p">,</span> <span class="n">angles_2</span>
+
+    <span class="c1"># Check if angles_1 is equal to is 0 (case=1) or pi (case=2), causing a singularity,</span>
+    <span class="c1"># i.e. a gimble lock. case=0 is the normal.</span>
+    <span class="n">case</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">*</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">angles_1</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mf">1e-7</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">angles_1</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mf">1e-7</span><span class="p">)</span>
+    <span class="c1"># if Gimbal lock, sett last angle to 0 and use 2 * half_sum / 2 * half_diff for first angle.</span>
+    <span class="n">angles_2</span> <span class="o">=</span> <span class="p">(</span><span class="n">case</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">angles_2</span>
+    <span class="n">angles_0</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">case</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">angles_0</span> <span class="o">+</span> <span class="p">(</span><span class="n">case</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">half_sum</span> <span class="o">+</span> <span class="p">(</span><span class="n">case</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">half_diff</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">extrinsic</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">angles</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">angles_0</span><span class="p">,</span> <span class="n">angles_1</span><span class="p">,</span> <span class="n">angles_2</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">angles</span> <span class="o">+=</span> <span class="p">(</span><span class="n">angles</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span>
+    <span class="n">angles</span> <span class="o">-=</span> <span class="p">(</span><span class="n">angles</span> <span class="o">&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span>
+    <span class="k">return</span> <span class="n">angles</span>
+
+
+<div class="viewcode-block" id="Rotation">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation">[docs]</a>
+<span class="k">class</span> <span class="nc">Rotation</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A container for Rotations.</span>
+
+<span class="sd">    A pytorch implementation of scipy.spatial.transform.Rotation.</span>
+<span class="sd">    For more information see the scipy documentation:</span>
+<span class="sd">    https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.html</span>
+
+<span class="sd">    Differences compared to scipy.spatial.transform.Rotation:</span>
+
+<span class="sd">    - torch.nn.Module based, the quaternions are a Parameter</span>
+<span class="sd">    - .apply is replaced by call/forward.</span>
+<span class="sd">    - not all features are implemented. Notably, mrp, davenport, and reduce are missing.</span>
+<span class="sd">    - arbitrary number of batching dimensions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Rotation.__init__">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quaternions</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">copy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize a new Rotation.</span>
+
+<span class="sd">        Instead of calling this method, also consider the different ``from_*`` class methods to construct a Rotation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        quaternions</span>
+<span class="sd">            Rotatation quaternions. If these requires_grad, the resulting Rotation will require gradients</span>
+<span class="sd">        normalize</span>
+<span class="sd">            If the quaternions should be normalized. Only disable if you are sure the quaternions are already normalized</span>
+<span class="sd">        copy</span>
+<span class="sd">            Always ensure that a copy of the quaternions is created. If both normalize and copy are False,</span>
+<span class="sd">            the quaternions Parameter of this instance will be a view if the quaternions passed in.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">quaternions_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">quaternions</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_complex</span><span class="p">(</span><span class="n">quaternions_</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;quaternions should be real numbers&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">(</span><span class="n">quaternions_</span><span class="p">):</span>
+            <span class="c1"># integer or boolean dtypes</span>
+            <span class="n">quaternions_</span> <span class="o">=</span> <span class="n">quaternions_</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">quaternions_</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected `quaternions` to have shape (..., 4), &#39;</span> <span class="sa">f</span><span class="s1">&#39;got </span><span class="si">{</span><span class="n">quaternions_</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># If a single quaternion is given, convert it to a 2D 1 x 4 matrix but</span>
+        <span class="c1"># set self._single to True so that we can return appropriate objects</span>
+        <span class="c1"># in the `to_...` methods</span>
+        <span class="k">if</span> <span class="n">quaternions_</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">4</span><span class="p">,):</span>
+            <span class="n">quaternions_</span> <span class="o">=</span> <span class="n">quaternions_</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_single</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_single</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="n">normalize</span><span class="p">:</span>
+            <span class="n">norms</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">vector_norm</span><span class="p">(</span><span class="n">quaternions_</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">norms</span><span class="o">.</span><span class="n">float</span><span class="p">(),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">))):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Found zero norm quaternion in `quaternions`.&#39;</span><span class="p">)</span>
+            <span class="n">quaternions_</span> <span class="o">=</span> <span class="n">quaternions_</span> <span class="o">/</span> <span class="n">norms</span>
+        <span class="k">elif</span> <span class="n">copy</span><span class="p">:</span>
+            <span class="n">quaternions_</span> <span class="o">=</span> <span class="n">quaternions_</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">quaternions_</span><span class="p">,</span> <span class="n">quaternions_</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">single</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns true if this a single rotation.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span>
+
+<div class="viewcode-block" id="Rotation.from_quat">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.from_quat">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_quat</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">quaternions</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize from quaternions.</span>
+
+<span class="sd">        3D rotations can be represented using unit-norm quaternions [QUAa]_.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        quaternions</span>
+<span class="sd">            shape (..., 4)</span>
+<span class="sd">            Each row is a (possibly non-unit norm) quaternion representing an</span>
+<span class="sd">            active rotation, in scalar-last (x, y, z, w) format. Each</span>
+<span class="sd">            quaternion will be normalized to unit norm.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        rotation</span>
+<span class="sd">            Object containing the rotations represented by input quaternions.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [QUAa] Quaternions and spatial rotation https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">quaternions</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="n">quaternions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">quaternions</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">quaternions</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Rotation.from_matrix">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.from_matrix">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_matrix</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">matrix</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize from rotation matrix.</span>
+
+<span class="sd">        Rotations in 3 dimensions can be represented with 3 x 3 proper</span>
+<span class="sd">        orthogonal matrices [ROTa]_. If the input is not proper orthogonal,</span>
+<span class="sd">        an approximation is created using the method described in [MAR2008]_.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        matrix</span>
+<span class="sd">            A single matrix or a stack of matrices, shape (..., 3, 3)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        rotation</span>
+<span class="sd">            Object containing the rotations represented by the rotation</span>
+<span class="sd">            matrices.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [ROTa] Rotation matrix https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions</span>
+<span class="sd">        .. [MAR2008] Landis Markley F (2008) Unit Quaternion from Rotation Matrix, Journal of guidance, control, and</span>
+<span class="sd">           dynamics 31(2),440-442.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="n">matrix</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">matrix</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="o">!=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Expected `matrix` to have shape (..., 3, 3), got </span><span class="si">{</span><span class="n">matrix</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_complex</span><span class="p">(</span><span class="n">matrix</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;matrix should be real, not complex.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">(</span><span class="n">matrix</span><span class="p">):</span>
+            <span class="c1"># integer or boolean dtypes</span>
+            <span class="n">matrix</span> <span class="o">=</span> <span class="n">matrix</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+        <span class="n">quaternions</span> <span class="o">=</span> <span class="n">_matrix_to_quaternion</span><span class="p">(</span><span class="n">matrix</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">quaternions</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Rotation.from_rotvec">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.from_rotvec">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_rotvec</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">rotvec</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize from rotation vector.</span>
+
+<span class="sd">        A rotation vector is a 3 dimensional vector which is co-directional to the</span>
+<span class="sd">        axis of rotation and whose norm gives the angle of rotation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        rotvec</span>
+<span class="sd">            shape (..., 3), the rotation vectors.</span>
+<span class="sd">        degrees</span>
+<span class="sd">            If True, then the given angles are assumed to be in degrees,</span>
+<span class="sd">            otherwise radians.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rotvec</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="n">rotvec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">rotvec</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_complex</span><span class="p">(</span><span class="n">rotvec</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;rotvec should be real numbers&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">(</span><span class="n">rotvec</span><span class="p">):</span>
+            <span class="c1"># integer or boolean dtypes</span>
+            <span class="n">rotvec</span> <span class="o">=</span> <span class="n">rotvec</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">degrees</span><span class="p">:</span>
+            <span class="n">rotvec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">rotvec</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">rotvec</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Expected `rot_vec` to have shape (..., 3), got </span><span class="si">{</span><span class="n">rotvec</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="n">angles</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">vector_norm</span><span class="p">(</span><span class="n">rotvec</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">scales</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">special</span><span class="o">.</span><span class="n">sinc</span><span class="p">(</span><span class="n">angles</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">quaternions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">scales</span> <span class="o">*</span> <span class="n">rotvec</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angles</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">quaternions</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Rotation.from_euler">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.from_euler">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_euler</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">seq</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">angles</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span><span class="p">,</span> <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize from Euler angles.</span>
+
+<span class="sd">        Rotations in 3-D can be represented by a sequence of 3</span>
+<span class="sd">        rotations around a sequence of axes. In theory, any three axes spanning</span>
+<span class="sd">        the 3-D Euclidean space are enough. In practice, the axes of rotation are</span>
+<span class="sd">        chosen to be the basis vectors.</span>
+
+<span class="sd">        The three rotations can either be in a global frame of reference</span>
+<span class="sd">        (extrinsic) or in a body centered frame of reference (intrinsic), which</span>
+<span class="sd">        is attached to, and moves with, the object under rotation [EULa]_.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        seq</span>
+<span class="sd">            Specifies sequence of axes for rotations. Up to 3 characters</span>
+<span class="sd">            belonging to the set {&#39;X&#39;, &#39;Y&#39;, &#39;Z&#39;} for intrinsic rotations, or</span>
+<span class="sd">            {&#39;x&#39;, &#39;y&#39;, &#39;z&#39;} for extrinsic rotations. Extrinsic and intrinsic</span>
+<span class="sd">            rotations cannot be mixed in one function call.</span>
+<span class="sd">        angles</span>
+<span class="sd">            (..., [1 or 2 or 3]), matching the number of axes in seq.</span>
+<span class="sd">            Euler angles specified in radians (`degrees` is False) or degrees</span>
+<span class="sd">            (`degrees` is True).</span>
+<span class="sd">        degrees</span>
+<span class="sd">            If True, then the given angles are assumed to be in degrees.</span>
+<span class="sd">            Otherwise they are assumed to be in radians</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        rotation</span>
+<span class="sd">            Object containing the rotation represented by the sequence of</span>
+<span class="sd">            rotations around given axes with given angles.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [EULa] Euler angles https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_axes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n_axes</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">n_axes</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected axis specification to be a non-empty &#39;</span> <span class="sa">f</span><span class="s1">&#39;string of upto 3 characters, got </span><span class="si">{</span><span class="n">seq</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="n">intrinsic</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^[XYZ]{1,3}$&#39;</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">extrinsic</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^[xyz]{1,3}$&#39;</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">intrinsic</span> <span class="ow">or</span> <span class="n">extrinsic</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Expected axes from `seq` to be from [&#39;x&#39;, &#39;y&#39;, &quot;</span> <span class="sa">f</span><span class="s2">&quot;&#39;z&#39;] or [&#39;X&#39;, &#39;Y&#39;, &#39;Z&#39;], got </span><span class="si">{</span><span class="n">seq</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">seq</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">seq</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_axes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected consecutive axes to be different, &#39;</span> <span class="sa">f</span><span class="s1">&#39;got </span><span class="si">{</span><span class="n">seq</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">seq</span> <span class="o">=</span> <span class="n">seq</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+        <span class="n">angles</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">angles</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">degrees</span><span class="p">:</span>
+            <span class="n">angles</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">angles</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n_axes</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">angles</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">angles</span> <span class="o">=</span> <span class="n">angles</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">is_single</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">angles</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">angles</span> <span class="o">=</span> <span class="n">angles</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">is_single</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">is_single</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">angles</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">angles</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">n_axes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected angles to have shape (..., &#39;</span> <span class="sa">f</span><span class="s1">&#39;n_axes), got </span><span class="si">{</span><span class="n">angles</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+
+        <span class="n">quaternions</span> <span class="o">=</span> <span class="n">_make_elementary_quat</span><span class="p">(</span><span class="n">seq</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">angles</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">axis</span><span class="p">,</span> <span class="n">angle</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">seq</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">angles</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">intrinsic</span><span class="p">:</span>
+                <span class="n">quaternions</span> <span class="o">=</span> <span class="n">_compose_quaternions</span><span class="p">(</span><span class="n">quaternions</span><span class="p">,</span> <span class="n">_make_elementary_quat</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">angle</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">quaternions</span> <span class="o">=</span> <span class="n">_compose_quaternions</span><span class="p">(</span><span class="n">_make_elementary_quat</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">angle</span><span class="p">),</span> <span class="n">quaternions</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">is_single</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">quaternions</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">quaternions</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Rotation.from_davenport">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.from_davenport">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_davenport</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">axes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">order</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">angles</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Not implemented.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="Rotation.from_mrp">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.from_mrp">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_mrp</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">mrp</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Not implemented.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="Rotation.as_quat">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.as_quat">[docs]</a>
+    <span class="k">def</span> <span class="nf">as_quat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">canonical</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Represent as quaternions.</span>
+
+<span class="sd">        Active rotations in 3 dimensions can be represented using unit norm</span>
+<span class="sd">        quaternions [QUAb]_. The mapping from quaternions to rotations is</span>
+<span class="sd">        two-to-one, i.e. quaternions ``q`` and ``-q``, where ``-q`` simply</span>
+<span class="sd">        reverses the sign of each component, represent the same spatial</span>
+<span class="sd">        rotation. The returned value is in scalar-last (x, y, z, w) format.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        canonical</span>
+<span class="sd">            Whether to map the redundant double cover of rotation space to a</span>
+<span class="sd">            unique &quot;canonical&quot; single cover. If True, then the quaternion is</span>
+<span class="sd">            chosen from {q, -q} such that the w term is positive. If the w term</span>
+<span class="sd">            is 0, then the quaternion is chosen such that the first nonzero</span>
+<span class="sd">            term of the x, y, and z terms is positive.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        quaternions</span>
+<span class="sd">            shape (..., 4,), depends on shape of inputs used for initialization.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [QUAb] Quaternions https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">quaternions</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span>
+        <span class="k">if</span> <span class="n">canonical</span><span class="p">:</span>
+            <span class="n">quaternions</span> <span class="o">=</span> <span class="n">_canonical_quaternion</span><span class="p">(</span><span class="n">quaternions</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">single</span><span class="p">:</span>
+            <span class="n">quaternions</span> <span class="o">=</span> <span class="n">quaternions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">quaternions</span></div>
+
+
+<div class="viewcode-block" id="Rotation.as_matrix">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.as_matrix">[docs]</a>
+    <span class="k">def</span> <span class="nf">as_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Represent as rotation matrix.</span>
+
+<span class="sd">        3D rotations can be represented using rotation matrices, which</span>
+<span class="sd">        are 3 x 3 real orthogonal matrices with determinant equal to +1 [ROTb]_.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        matrix</span>
+<span class="sd">            shape (..., 3, 3), depends on shape of inputs used for initialization.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [ROTb] Rotation matrix https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">quaternions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span>
+        <span class="n">matrix</span> <span class="o">=</span> <span class="n">_quaternion_to_matrix</span><span class="p">(</span><span class="n">quaternions</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">matrix</span></div>
+
+
+<div class="viewcode-block" id="Rotation.as_rotvec">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.as_rotvec">[docs]</a>
+    <span class="k">def</span> <span class="nf">as_rotvec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Represent as rotation vectors.</span>
+
+<span class="sd">        A rotation vector is a 3 dimensional vector which is co-directional to</span>
+<span class="sd">        the axis of rotation and whose norm gives the angle of rotation [ROTc]_.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        degrees</span>
+<span class="sd">            Returned magnitudes are in degrees if this flag is True, else they are in radians</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        rotvec</span>
+<span class="sd">            Shape (..., 3), depends on shape of inputs used for initialization.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [ROTc] Rotation vector https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation#Rotation_vector</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">quaternions</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span>
+        <span class="n">quaternions</span> <span class="o">=</span> <span class="n">_canonical_quaternion</span><span class="p">(</span><span class="n">quaternions</span><span class="p">)</span>  <span class="c1"># w &gt; 0 ensures that 0 &lt;= angle &lt;= pi</span>
+
+        <span class="n">angles</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">vector_norm</span><span class="p">(</span><span class="n">quaternions</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span> <span class="n">quaternions</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+        <span class="n">scales</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">special</span><span class="o">.</span><span class="n">sinc</span><span class="p">(</span><span class="n">angles</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span><span class="p">)))</span>
+
+        <span class="n">rotvec</span> <span class="o">=</span> <span class="n">scales</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">quaternions</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">degrees</span><span class="p">:</span>
+            <span class="n">rotvec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rad2deg</span><span class="p">(</span><span class="n">rotvec</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span><span class="p">:</span>
+            <span class="n">rotvec</span> <span class="o">=</span> <span class="n">rotvec</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">rotvec</span></div>
+
+
+<div class="viewcode-block" id="Rotation.as_euler">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.as_euler">[docs]</a>
+    <span class="k">def</span> <span class="nf">as_euler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Represent as Euler angles.</span>
+
+<span class="sd">        Any orientation can be expressed as a composition of 3 elementary</span>
+<span class="sd">        rotations. Once the axis sequence has been chosen, Euler angles define</span>
+<span class="sd">        the angle of rotation around each respective axis [EULb]_.</span>
+
+<span class="sd">        The algorithm from [BER2022]_ has been used to calculate Euler angles for the</span>
+<span class="sd">        rotation about a given sequence of axes.</span>
+
+<span class="sd">        Euler angles suffer from the problem of gimbal lock [GIM]_, where the</span>
+<span class="sd">        representation loses a degree of freedom and it is not possible to</span>
+<span class="sd">        determine the first and third angles uniquely. In this case,</span>
+<span class="sd">        a warning is raised, and the third angle is set to zero. Note however</span>
+<span class="sd">        that the returned angles still represent the correct rotation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        seq</span>
+<span class="sd">            3 characters belonging to the set {&#39;X&#39;, &#39;Y&#39;, &#39;Z&#39;} for intrinsic</span>
+<span class="sd">            rotations, or {&#39;x&#39;, &#39;y&#39;, &#39;z&#39;} for extrinsic rotations [EULb]_.</span>
+<span class="sd">            Adjacent axes cannot be the same.</span>
+<span class="sd">            Extrinsic and intrinsic rotations cannot be mixed in one function</span>
+<span class="sd">            call.</span>
+<span class="sd">        degrees</span>
+<span class="sd">            Returned angles are in degrees if this flag is True, else they are</span>
+<span class="sd">            in radians</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        angles</span>
+<span class="sd">            shape (3,) or (..., 3), depending on shape of inputs used to initialize object.</span>
+<span class="sd">            The returned angles are in the range:</span>
+
+<span class="sd">            - First angle belongs to [-180, 180] degrees (both inclusive)</span>
+<span class="sd">            - Third angle belongs to [-180, 180] degrees (both inclusive)</span>
+<span class="sd">            - Second angle belongs to:</span>
+
+<span class="sd">             + [-90, 90] degrees if all axes are different (like xyz)</span>
+<span class="sd">             + [0, 180] degrees if first and third axes are the same (like zxz)</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [EULb] Euler Angles https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations</span>
+<span class="sd">        .. [BER2022] Bernardes E, Viollet S (2022) Quaternion to Euler angles conversion: A direct, general and</span>
+<span class="sd">           computationally efficient method. PLoS ONE 17(11) https://doi.org/10.1371/journal.pone.0276302</span>
+<span class="sd">        .. [GIM] Gimbal lock https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Expected 3 axes, got </span><span class="si">{</span><span class="n">seq</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+
+        <span class="n">intrinsic</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^[XYZ]{1,3}$&#39;</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">extrinsic</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^[xyz]{1,3}$&#39;</span><span class="p">,</span> <span class="n">seq</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">intrinsic</span> <span class="ow">or</span> <span class="n">extrinsic</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected axes from `seq` to be from &#39;</span> <span class="s2">&quot;[&#39;x&#39;, &#39;y&#39;, &#39;z&#39;] or [&#39;X&#39;, &#39;Y&#39;, &#39;Z&#39;], &quot;</span> <span class="sa">f</span><span class="s1">&#39;got </span><span class="si">{</span><span class="n">seq</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">seq</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">seq</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expected consecutive axes to be different, &#39;</span> <span class="sa">f</span><span class="s1">&#39;got </span><span class="si">{</span><span class="n">seq</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="n">seq</span> <span class="o">=</span> <span class="n">seq</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+        <span class="n">quat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_quat</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">quat</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">quat</span> <span class="o">=</span> <span class="n">quat</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+
+        <span class="n">angles</span> <span class="o">=</span> <span class="n">_quaternion_to_euler</span><span class="p">(</span><span class="n">quat</span><span class="p">,</span> <span class="n">seq</span><span class="p">,</span> <span class="n">extrinsic</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">degrees</span><span class="p">:</span>
+            <span class="n">angles</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rad2deg</span><span class="p">(</span><span class="n">angles</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span> <span class="k">else</span> <span class="n">angles</span></div>
+
+
+<div class="viewcode-block" id="Rotation.as_davenport">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.as_davenport">[docs]</a>
+    <span class="k">def</span> <span class="nf">as_davenport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">order</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Not implemented.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="Rotation.as_mrp">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.as_mrp">[docs]</a>
+    <span class="k">def</span> <span class="nf">as_mrp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Not implemented.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="Rotation.concatenate">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.concatenate">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">concatenate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">rotations</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Rotation</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Concatenate a sequence of `Rotation` objects into a single object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        rotations</span>
+<span class="sd">            The rotations to concatenate.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        concatenated</span>
+<span class="sd">            The concatenated rotations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Rotation</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">rotations</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;input must contain Rotation objects only&#39;</span><span class="p">)</span>
+
+        <span class="n">quats</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">as_quat</span><span class="p">())</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">rotations</span><span class="p">])</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">quats</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Rotation.forward">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.forward">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">vectors</span><span class="p">:</span> <span class="n">NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">|</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+        <span class="n">inverse</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply this rotation to a set of vectors.</span>
+
+<span class="sd">        If the original frame rotates to the final frame by this rotation, then</span>
+<span class="sd">        its application to a vector can be seen in two ways:</span>
+
+<span class="sd">        - As a projection of vector components expressed in the final frame to the original frame.</span>
+<span class="sd">        - As the physical rotation of a vector being glued to the original frame as it rotates. In this case the vector</span>
+<span class="sd">          components are expressed in the original frame before and after the rotation.</span>
+
+<span class="sd">        In terms of rotation matrices, this application is the same as</span>
+<span class="sd">        ``self.as_matrix() @ vectors``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vectors</span>
+<span class="sd">            Shape(..., 3). Each `vectors[i]` represents a vector in 3D space.</span>
+<span class="sd">            A single vector can either be specified with shape `(3, )` or `(1, 3)`.</span>
+<span class="sd">            The number of rotations and number of vectors given must follow standard</span>
+<span class="sd">            pytorch broadcasting rules.</span>
+<span class="sd">        inverse</span>
+<span class="sd">            If True then the inverse of the rotation(s) is applied to the input</span>
+<span class="sd">            vectors.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        rotated_vectors</span>
+<span class="sd">            Result of applying rotation on input vectors.</span>
+<span class="sd">            Shape depends on the following cases:</span>
+
+<span class="sd">                - If object contains a single rotation (as opposed to a stack</span>
+<span class="sd">                  with a single rotation) and a single vector is specified with</span>
+<span class="sd">                  shape ``(3,)``, then `rotated_vectors` has shape ``(3,)``.</span>
+<span class="sd">                - In all other cases, `rotated_vectors` has shape ``(..., 3)``,</span>
+<span class="sd">                  where ``...`` is determined by broadcasting.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_matrix</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">inverse</span><span class="p">:</span>
+            <span class="n">matrix</span> <span class="o">=</span> <span class="n">matrix</span><span class="o">.</span><span class="n">mT</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span><span class="p">:</span>
+            <span class="n">matrix</span> <span class="o">=</span> <span class="n">matrix</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">input_is_spatialdimension</span> <span class="o">:=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vectors</span><span class="p">,</span> <span class="n">SpatialDimension</span><span class="p">):</span>
+            <span class="c1"># sort the axis by AXIS_ORDER</span>
+            <span class="n">vectors_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">vectors</span><span class="p">,</span> <span class="n">axis</span><span class="p">))</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">AXIS_ORDER</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vectors_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">vectors</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">vectors_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Expected input of shape (..., 3), got </span><span class="si">{</span><span class="n">vectors_tensor</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">vectors_tensor</span><span class="o">.</span><span class="n">is_complex</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Complex vectors are not supported. The coordinates to rotate should be real numbers.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">vectors_tensor</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">matrix</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
+            <span class="n">dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">promote_types</span><span class="p">(</span><span class="n">matrix</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">vectors_tensor</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">matrix</span> <span class="o">=</span> <span class="n">matrix</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">vectors_tensor</span> <span class="o">=</span> <span class="n">vectors_tensor</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">matrix</span> <span class="o">@</span> <span class="n">vectors_tensor</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;The batch-shape of the rotation, </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span><span class="si">}</span><span class="s1">, &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;is not compatible with the input batch shape </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">vectors_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span> <span class="ow">and</span> <span class="n">vectors_tensor</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,):</span>
+            <span class="c1"># a single rotation and a single vector</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">input_is_spatialdimension</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">SpatialDimension</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">AXIS_ORDER</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)],</span>
+                <span class="n">y</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">AXIS_ORDER</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">)],</span>
+                <span class="n">z</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">AXIS_ORDER</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">)],</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="Rotation.random">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.random">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">random</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">num</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">random_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate uniformly distributed rotations.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        num</span>
+<span class="sd">            Number of random rotations to generate. If None (default), then a</span>
+<span class="sd">            single rotation is generated.</span>
+<span class="sd">        random_state</span>
+<span class="sd">            If `random_state` is None, the `numpy.random.RandomState`</span>
+<span class="sd">            singleton is used.</span>
+<span class="sd">            If `random_state` is an int, a new ``RandomState`` instance is used,</span>
+<span class="sd">            seeded with `random_state`.</span>
+<span class="sd">            If `random_state` is already a ``Generator`` or ``RandomState`` instance</span>
+<span class="sd">            then that instance is used.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        random_rotation</span>
+<span class="sd">            Contains a single rotation if `num` is None. Otherwise contains a</span>
+<span class="sd">            stack of `num` rotations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">generator</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span> <span class="o">=</span> <span class="n">check_random_state</span><span class="p">(</span><span class="n">random_state</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">num</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">random_sample</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">generator</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">random_sample</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">generator</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="mi">4</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">random_sample</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">generator</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="o">*</span><span class="n">num</span><span class="p">,</span> <span class="mi">4</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">random_sample</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Rotation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;For compatibility with sp.spatial.transform.Rotation.&quot;&quot;&quot;</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s1">&#39;Using Rotation*Rotation is deprecated, consider Rotation@Rotation&#39;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span> <span class="o">@</span> <span class="n">other</span>
+
+    <span class="k">def</span> <span class="fm">__matmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Rotation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compose this rotation with the other.</span>
+
+<span class="sd">        If `p` and `q` are two rotations, then the composition of &#39;q followed</span>
+<span class="sd">        by p&#39; is equivalent to `p * q`. In terms of rotation matrices,</span>
+<span class="sd">        the composition can be expressed as</span>
+<span class="sd">        ``p.as_matrix() @ q.as_matrix()``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other</span>
+<span class="sd">            Object containing the rotations to be composed with this one. Note</span>
+<span class="sd">            that rotation compositions are not commutative, so ``p * q`` is</span>
+<span class="sd">            generally different from ``q * p``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        composition</span>
+<span class="sd">            This function supports composition of multiple rotations at a time.</span>
+<span class="sd">            The following cases are possible:</span>
+
+<span class="sd">            - Either ``p`` or ``q`` contains a single rotation. In this case</span>
+<span class="sd">              `composition` contains the result of composing each rotation in</span>
+<span class="sd">              the other object with the single rotation.</span>
+<span class="sd">            - Both ``p`` and ``q`` contain ``N`` rotations. In this case each</span>
+<span class="sd">              rotation ``p[i]`` is composed with the corresponding rotation</span>
+<span class="sd">              ``q[i]`` and `output` contains ``N`` rotations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">_quaternions</span>
+        <span class="c1"># TODO: broadcasting</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">_compose_quaternions</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span> <span class="ow">and</span> <span class="n">other</span><span class="o">.</span><span class="n">_single</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__pow__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">modulus</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compose this rotation with itself `n` times.</span>
+
+<span class="sd">        Composition of a rotation ``p`` with itself can be extended to</span>
+<span class="sd">        non-integer ``n`` by considering the power ``n`` to be a scale factor</span>
+<span class="sd">        applied to the angle of rotation about the rotation&#39;s fixed axis. The</span>
+<span class="sd">        expression ``q = p ** n`` can also be expressed as</span>
+<span class="sd">        ``q = Rotation.from_rotvec(n * p.as_rotvec())``.</span>
+
+<span class="sd">        If ``n`` is negative, then the rotation is inverted before the power</span>
+<span class="sd">        is applied. In other words, ``p ** -abs(n) == p.inv() ** abs(n)``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n</span>
+<span class="sd">            The number of times to compose the rotation with itself.</span>
+<span class="sd">        modulus</span>
+<span class="sd">            This overridden argument is not applicable to Rotations and must be</span>
+<span class="sd">            ``None``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        power : `Rotation` instance</span>
+<span class="sd">            If the input Rotation ``p`` contains ``N`` multiple rotations, then</span>
+<span class="sd">            the output will contain ``N`` rotations where the ``i`` th rotation</span>
+<span class="sd">            is equal to ``p[i] ** n``</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        For example, a power of 2 will double the angle of rotation, and a</span>
+<span class="sd">        power of 0.5 will halve the angle. There are three notable cases: if</span>
+<span class="sd">        ``n == 1`` then the original rotation is returned, if ``n == 0``</span>
+<span class="sd">        then the identity rotation is returned, and if ``n == -1`` then</span>
+<span class="sd">        ``p.inv()`` is returned.</span>
+
+<span class="sd">        Note that fractional powers ``n`` which effectively take a root of</span>
+<span class="sd">        rotation, do so using the shortest path smallest representation of that</span>
+<span class="sd">        angle (the principal root). This means that powers of ``n`` and ``1/n``</span>
+<span class="sd">        are not necessarily inverses of each other. For example, a 0.5 power of</span>
+<span class="sd">        a +240 degree rotation will be calculated as the 0.5 power of a -120</span>
+<span class="sd">        degree rotation, with the result being a rotation of -60 rather than</span>
+<span class="sd">        +120 degrees.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">modulus</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;modulus not supported&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Exact short-cuts</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Rotation</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="kc">None</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inv</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># general scaling of rotation angle</span>
+            <span class="k">return</span> <span class="n">Rotation</span><span class="o">.</span><span class="n">from_rotvec</span><span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_rotvec</span><span class="p">())</span>
+
+<div class="viewcode-block" id="Rotation.inv">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.inv">[docs]</a>
+    <span class="k">def</span> <span class="nf">inv</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Invert this rotation.</span>
+
+<span class="sd">        Composition of a rotation with its inverse results in an identity</span>
+<span class="sd">        transformation.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        inverse</span>
+<span class="sd">            Object containing inverse of the rotations in the current instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">quaternions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span><span class="p">:</span>
+            <span class="n">quaternions</span> <span class="o">=</span> <span class="n">quaternions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">quaternions</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Rotation.magnitude">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.magnitude">[docs]</a>
+    <span class="k">def</span> <span class="nf">magnitude</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the magnitude(s) of the rotation(s).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        magnitude</span>
+<span class="sd">            Angles in radians. The magnitude will always be in the range [0, pi].</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">angles</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">vector_norm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span><span class="p">:</span>
+            <span class="n">angles</span> <span class="o">=</span> <span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">angles</span></div>
+
+
+<div class="viewcode-block" id="Rotation.approx_equal">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.approx_equal">[docs]</a>
+    <span class="k">def</span> <span class="nf">approx_equal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Rotation</span><span class="p">,</span> <span class="n">atol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="n">degrees</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Determine if another rotation is approximately equal to this one.</span>
+
+<span class="sd">        Equality is measured by calculating the smallest angle between the</span>
+<span class="sd">        rotations, and checking to see if it is smaller than `atol`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other</span>
+<span class="sd">            Object containing the rotations to measure against this one.</span>
+<span class="sd">        atol</span>
+<span class="sd">            The absolute angular tolerance, below which the rotations are</span>
+<span class="sd">            considered equal.</span>
+<span class="sd">        degrees</span>
+<span class="sd">            If True and `atol` is given, then `atol` is measured in degrees. If</span>
+<span class="sd">            False (default), then atol is measured in radians.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        approx_equal :</span>
+<span class="sd">            Whether the rotations are approximately equal, bool if object</span>
+<span class="sd">            contains a single rotation and Tensor if object contains multiple</span>
+<span class="sd">            rotations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">degrees</span><span class="p">:</span>
+            <span class="n">atol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">atol</span><span class="p">)</span>
+        <span class="n">angles</span> <span class="o">=</span> <span class="p">(</span><span class="n">other</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">inv</span><span class="p">())</span><span class="o">.</span><span class="n">magnitude</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">angles</span> <span class="o">&lt;</span> <span class="n">atol</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexer</span><span class="p">:</span> <span class="n">IndexerType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract rotation(s) at given index(es) from object.</span>
+
+<span class="sd">        Create a new `Rotation` instance containing a subset of rotations</span>
+<span class="sd">        stored in this object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        indexer:</span>
+<span class="sd">            Specifies which rotation(s) to extract.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        rotation</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError if the instance was created as a single rotation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Single rotation is not subscriptable.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">indexer</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">_indexer</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">indexer</span><span class="p">,</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_indexer</span> <span class="o">=</span> <span class="p">(</span><span class="n">indexer</span><span class="p">,</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">[</span><span class="n">_indexer</span><span class="p">],</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">quaternion_x</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get x component of the quaternion.&quot;&quot;&quot;</span>
+        <span class="n">axis</span> <span class="o">=</span> <span class="n">QUAT_AXIS_ORDER</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">axis</span><span class="p">]</span>
+
+    <span class="nd">@quaternion_x</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">quaternion_x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quat_x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set x component of the quaternion.&quot;&quot;&quot;</span>
+        <span class="n">axis</span> <span class="o">=</span> <span class="n">QUAT_AXIS_ORDER</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="n">quat_x</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">quaternion_y</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get y component of the quaternion.&quot;&quot;&quot;</span>
+        <span class="n">axis</span> <span class="o">=</span> <span class="n">QUAT_AXIS_ORDER</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">axis</span><span class="p">]</span>
+
+    <span class="nd">@quaternion_y</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">quaternion_y</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quat_y</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set y component of the quaternion.&quot;&quot;&quot;</span>
+        <span class="n">axis</span> <span class="o">=</span> <span class="n">QUAT_AXIS_ORDER</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="n">quat_y</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">quaternion_z</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get z component of the quaternion.&quot;&quot;&quot;</span>
+        <span class="n">axis</span> <span class="o">=</span> <span class="n">QUAT_AXIS_ORDER</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">axis</span><span class="p">]</span>
+
+    <span class="nd">@quaternion_z</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">quaternion_z</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quat_z</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set z component of the quaternion.&quot;&quot;&quot;</span>
+        <span class="n">axis</span> <span class="o">=</span> <span class="n">QUAT_AXIS_ORDER</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="n">quat_z</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">quaternion_w</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get w component of the quaternion.&quot;&quot;&quot;</span>
+        <span class="n">axis</span> <span class="o">=</span> <span class="n">QUAT_AXIS_ORDER</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">axis</span><span class="p">]</span>
+
+    <span class="nd">@quaternion_w</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">quaternion_w</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quat_w</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set w component of the quaternion.&quot;&quot;&quot;</span>
+        <span class="n">axis</span> <span class="o">=</span> <span class="n">QUAT_AXIS_ORDER</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="n">quat_w</span>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexer</span><span class="p">:</span> <span class="n">IndexerType</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Rotation</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set rotation(s) at given index(es) from object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        indexer</span>
+<span class="sd">            Specifies which rotation(s) to replace.</span>
+<span class="sd">        value</span>
+<span class="sd">            The rotations to set.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        TypeError if the instance was created as a single rotation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Single rotation is not subscriptable.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Rotation</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;value must be a Rotation object&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">indexer</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="n">_indexer</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">indexer</span><span class="p">,</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_indexer</span> <span class="o">=</span> <span class="p">(</span><span class="n">indexer</span><span class="p">,</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">[</span><span class="n">_indexer</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">as_quat</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Rotation.identity">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.identity">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">identity</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get identity rotation(s).</span>
+
+<span class="sd">        Composition with the identity rotation has no effect.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        shape</span>
+<span class="sd">            Number of identity rotations to generate. If None (default), then a</span>
+<span class="sd">            single rotation is generated.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        identity : Rotation object</span>
+<span class="sd">            The identity rotation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">match</span> <span class="n">shape</span><span class="p">:</span>
+            <span class="k">case</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+            <span class="k">case</span> <span class="nb">int</span><span class="p">():</span>
+                <span class="n">q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+            <span class="k">case</span> <span class="nb">tuple</span><span class="p">():</span>
+                <span class="n">q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="n">q</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+    <span class="nd">@overload</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">align_vectors</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">a</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
+        <span class="n">b</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
+        <span class="n">weights</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">return_sensitivity</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Rotation</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span> <span class="o">...</span>
+
+    <span class="nd">@overload</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">align_vectors</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">a</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
+        <span class="n">b</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
+        <span class="n">weights</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">return_sensitivity</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">True</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Rotation</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span> <span class="o">...</span>
+
+<div class="viewcode-block" id="Rotation.align_vectors">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.align_vectors">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">align_vectors</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">a</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
+        <span class="n">b</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
+        <span class="n">weights</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">return_sensitivity</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Rotation</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Rotation</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Estimate a rotation to optimally align two sets of vectors.</span>
+
+<span class="sd">        For more information, see `scipy.spatial.transform.Rotation.align_vectors`.</span>
+<span class="sd">        This will move to cpu, invoke scipy, convert to tensor, move back to device of a.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">a_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">a</span><span class="p">])</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="n">a_np</span> <span class="o">=</span> <span class="n">a_tensor</span><span class="o">.</span><span class="n">numpy</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">b_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">b</span><span class="p">])</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+        <span class="n">b_np</span> <span class="o">=</span> <span class="n">b_tensor</span><span class="o">.</span><span class="n">numpy</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">promote_types</span><span class="p">(</span><span class="n">a_tensor</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">b_tensor</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dtype</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">:</span>
+            <span class="c1"># boolean or integer inputs will result in float32</span>
+            <span class="n">dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span>
+
+        <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">weights_np</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="n">weights_np</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">numpy</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">weights_np</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">return_sensitivity</span><span class="p">:</span>
+            <span class="n">rotation_sp</span><span class="p">,</span> <span class="n">rssd</span><span class="p">,</span> <span class="n">sensitivity_np</span> <span class="o">=</span> <span class="n">Rotation_scipy</span><span class="o">.</span><span class="n">align_vectors</span><span class="p">(</span><span class="n">a_np</span><span class="p">,</span> <span class="n">b_np</span><span class="p">,</span> <span class="n">weights_np</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="n">sensitivity</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">sensitivity_np</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rotation_sp</span><span class="p">,</span> <span class="n">rssd</span> <span class="o">=</span> <span class="n">Rotation_scipy</span><span class="o">.</span><span class="n">align_vectors</span><span class="p">(</span><span class="n">a_np</span><span class="p">,</span> <span class="n">b_np</span><span class="p">,</span> <span class="n">weights_np</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">quat_np</span> <span class="o">=</span> <span class="n">rotation_sp</span><span class="o">.</span><span class="n">as_quat</span><span class="p">()</span>
+        <span class="n">quat</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">quat_np</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">a_tensor</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">return_sensitivity</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">cls</span><span class="p">(</span><span class="n">quat</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">rssd</span><span class="p">),</span> <span class="n">sensitivity</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">cls</span><span class="p">(</span><span class="n">quat</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">rssd</span><span class="p">))</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the batch shape of the Rotation.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__bool__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Comply with Python convention for objects to be True.</span>
+
+<span class="sd">        Required because `Rotation.__len__()` is defined and not always</span>
+<span class="sd">        truthy.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the leading dimensions size of the batched Rotation.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Single rotation has no len().&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return String Representation of the Rotation.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;Rotation(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s1">)&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s1">-Batched Rotation()&#39;</span>
+
+<div class="viewcode-block" id="Rotation.mean">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.data.Rotation.html#mrpro.data.Rotation.mean">[docs]</a>
+    <span class="k">def</span> <span class="nf">mean</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">weights</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="n">NestedSequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dim</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">keepdim</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Get the mean of the rotations.</span>
+
+<span class="sd">        The mean used is the chordal L2 mean (also called the projected or</span>
+<span class="sd">        induced arithmetic mean) [HAR2013]_. If ``A`` is a set of rotation matrices,</span>
+<span class="sd">        then the mean ``M`` is the rotation matrix that minimizes the</span>
+<span class="sd">        following loss function:</span>
+<span class="sd">        :math:`L(M) = \sum_{i = 1}^{n} w_i \lVert \mathbf{A}_i - \mathbf{M} \rVert^2`,</span>
+
+<span class="sd">        where :math:`w_i`&#39;s are the `weights` corresponding to each matrix.</span>
+
+<span class="sd">        Optionally, if A is a set of Rotation matrices with multiple batch dimensions,</span>
+<span class="sd">        the dimensions to reduce over can be specified.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        weights</span>
+<span class="sd">            Weights describing the relative importance of the rotations. If</span>
+<span class="sd">            None (default), then all values in `weights` are assumed to be</span>
+<span class="sd">            equal.</span>
+<span class="sd">        dim</span>
+<span class="sd">            Batch Dimensions to reduce over. None will always return a single Rotation.</span>
+<span class="sd">        keepdim</span>
+<span class="sd">            Keep reduction dimensions as length-1 dimensions.</span>
+
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mean : `Rotation` instance</span>
+<span class="sd">            Object containing the mean of the rotations in the current</span>
+<span class="sd">            instance.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        .. [HAR2013] Hartley R, Li H (2013) Rotation Averaging. International Journal of Computer Vision (103)</span>
+<span class="sd">           https://link.springer.com/article/10.1007/s11263-012-0601-0</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">weights</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;`weights` must be non-negative.&#39;</span><span class="p">)</span>
+
+        <span class="n">quaternions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_quaternions</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">quaternions</span> <span class="o">=</span> <span class="n">quaternions</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">dim</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dim</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">[</span><span class="n">d</span> <span class="o">%</span> <span class="p">(</span><span class="n">quaternions</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dim</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span>
+                <span class="k">else</span> <span class="p">[</span><span class="n">dim</span> <span class="o">%</span> <span class="p">(</span><span class="n">quaternions</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
+            <span class="p">)</span>
+            <span class="n">batch_dims</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">quaternions</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dim</span><span class="p">]</span>
+            <span class="n">permute_dims</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">batch_dims</span><span class="p">,</span> <span class="o">*</span><span class="n">dim</span><span class="p">)</span>
+            <span class="n">quaternions</span> <span class="o">=</span> <span class="n">quaternions</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="o">*</span><span class="n">permute_dims</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">batch_dims</span><span class="p">),</span> <span class="n">end_dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="n">permute_dims</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">batch_dims</span><span class="p">))</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">quaternions</span><span class="o">.</span><span class="n">mT</span><span class="p">)</span> <span class="o">@</span> <span class="n">quaternions</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="n">mean_quaternions</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">keepdim</span><span class="p">:</span>
+            <span class="c1"># unsqueeze the dimensions we removed in the reshape and product</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dim</span><span class="p">):</span>
+                <span class="n">mean_quaternions</span> <span class="o">=</span> <span class="n">mean_quaternions</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">mean_quaternions</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

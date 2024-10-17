@@ -1,0 +1,50 @@
+mrpro.data.KTrajectory
+======================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: KTrajectory
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~KTrajectory.__init__
+      ~KTrajectory.as_tensor
+      ~KTrajectory.clone
+      ~KTrajectory.cpu
+      ~KTrajectory.cuda
+      ~KTrajectory.double
+      ~KTrajectory.from_tensor
+      ~KTrajectory.half
+      ~KTrajectory.single
+      ~KTrajectory.to
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~KTrajectory.kz
+      ~KTrajectory.ky
+      ~KTrajectory.kx
+      ~KTrajectory.grid_detection_tolerance
+      ~KTrajectory.repeat_detection_tolerance
+      ~KTrajectory.broadcasted_shape
+      ~KTrajectory.device
+      ~KTrajectory.is_cpu
+      ~KTrajectory.is_cuda
+      ~KTrajectory.type_along_k210
+      ~KTrajectory.type_along_kzyx
+   
+   

@@ -1,0 +1,80 @@
+mrpro.operators.EndomorphOperator.EndomorphOperator
+===================================================
+
+.. currentmodule:: mrpro.operators.EndomorphOperator
+
+.. autoclass:: EndomorphOperator
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~EndomorphOperator.__init__
+      ~EndomorphOperator.add_module
+      ~EndomorphOperator.apply
+      ~EndomorphOperator.bfloat16
+      ~EndomorphOperator.buffers
+      ~EndomorphOperator.children
+      ~EndomorphOperator.compile
+      ~EndomorphOperator.cpu
+      ~EndomorphOperator.cuda
+      ~EndomorphOperator.double
+      ~EndomorphOperator.eval
+      ~EndomorphOperator.extra_repr
+      ~EndomorphOperator.float
+      ~EndomorphOperator.forward
+      ~EndomorphOperator.get_buffer
+      ~EndomorphOperator.get_extra_state
+      ~EndomorphOperator.get_parameter
+      ~EndomorphOperator.get_submodule
+      ~EndomorphOperator.half
+      ~EndomorphOperator.ipu
+      ~EndomorphOperator.load_state_dict
+      ~EndomorphOperator.modules
+      ~EndomorphOperator.named_buffers
+      ~EndomorphOperator.named_children
+      ~EndomorphOperator.named_modules
+      ~EndomorphOperator.named_parameters
+      ~EndomorphOperator.parameters
+      ~EndomorphOperator.register_backward_hook
+      ~EndomorphOperator.register_buffer
+      ~EndomorphOperator.register_forward_hook
+      ~EndomorphOperator.register_forward_pre_hook
+      ~EndomorphOperator.register_full_backward_hook
+      ~EndomorphOperator.register_full_backward_pre_hook
+      ~EndomorphOperator.register_load_state_dict_post_hook
+      ~EndomorphOperator.register_module
+      ~EndomorphOperator.register_parameter
+      ~EndomorphOperator.register_state_dict_pre_hook
+      ~EndomorphOperator.requires_grad_
+      ~EndomorphOperator.set_extra_state
+      ~EndomorphOperator.share_memory
+      ~EndomorphOperator.state_dict
+      ~EndomorphOperator.to
+      ~EndomorphOperator.to_empty
+      ~EndomorphOperator.train
+      ~EndomorphOperator.type
+      ~EndomorphOperator.xpu
+      ~EndomorphOperator.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~EndomorphOperator.T_destination
+      ~EndomorphOperator.call_super_init
+      ~EndomorphOperator.dump_patches
+      ~EndomorphOperator.training
+   
+   

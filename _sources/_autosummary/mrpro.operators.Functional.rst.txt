@@ -1,0 +1,80 @@
+mrpro.operators.Functional
+==========================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: Functional
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Functional.__init__
+      ~Functional.add_module
+      ~Functional.apply
+      ~Functional.bfloat16
+      ~Functional.buffers
+      ~Functional.children
+      ~Functional.compile
+      ~Functional.cpu
+      ~Functional.cuda
+      ~Functional.double
+      ~Functional.eval
+      ~Functional.extra_repr
+      ~Functional.float
+      ~Functional.forward
+      ~Functional.get_buffer
+      ~Functional.get_extra_state
+      ~Functional.get_parameter
+      ~Functional.get_submodule
+      ~Functional.half
+      ~Functional.ipu
+      ~Functional.load_state_dict
+      ~Functional.modules
+      ~Functional.named_buffers
+      ~Functional.named_children
+      ~Functional.named_modules
+      ~Functional.named_parameters
+      ~Functional.parameters
+      ~Functional.register_backward_hook
+      ~Functional.register_buffer
+      ~Functional.register_forward_hook
+      ~Functional.register_forward_pre_hook
+      ~Functional.register_full_backward_hook
+      ~Functional.register_full_backward_pre_hook
+      ~Functional.register_load_state_dict_post_hook
+      ~Functional.register_module
+      ~Functional.register_parameter
+      ~Functional.register_state_dict_pre_hook
+      ~Functional.requires_grad_
+      ~Functional.set_extra_state
+      ~Functional.share_memory
+      ~Functional.state_dict
+      ~Functional.to
+      ~Functional.to_empty
+      ~Functional.train
+      ~Functional.type
+      ~Functional.xpu
+      ~Functional.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Functional.T_destination
+      ~Functional.call_super_init
+      ~Functional.dump_patches
+      ~Functional.training
+   
+   

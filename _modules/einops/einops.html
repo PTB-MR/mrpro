@@ -1,0 +1,1015 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>einops.einops &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">einops.einops</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for einops.einops</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">string</span>
+<span class="kn">import</span> <span class="nn">typing</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Any</span>
+
+<span class="k">if</span> <span class="n">typing</span><span class="o">.</span><span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="c1"># for docstrings in pycharm</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>  <span class="c1"># noqa E401</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">EinopsError</span>
+<span class="kn">from</span> <span class="nn">._backends</span> <span class="kn">import</span> <span class="n">get_backend</span>
+<span class="kn">from</span> <span class="nn">.parsing</span> <span class="kn">import</span> <span class="n">ParsedExpression</span><span class="p">,</span> <span class="n">_ellipsis</span><span class="p">,</span> <span class="n">AnonymousAxis</span>
+
+<span class="n">Tensor</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;Tensor&quot;</span><span class="p">)</span>
+<span class="n">ReductionCallable</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span> <span class="n">Tensor</span><span class="p">]</span>
+<span class="n">Reduction</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ReductionCallable</span><span class="p">]</span>
+
+<span class="n">_reductions</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">,</span> <span class="s2">&quot;sum&quot;</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;prod&quot;</span><span class="p">,</span> <span class="s2">&quot;any&quot;</span><span class="p">,</span> <span class="s2">&quot;all&quot;</span><span class="p">)</span>
+
+<span class="c1"># magic integers are required to stay within</span>
+<span class="c1"># traceable subset of language</span>
+<span class="n">_unknown_axis_length</span> <span class="o">=</span> <span class="o">-</span><span class="mi">999999</span>
+<span class="n">_expected_axis_length</span> <span class="o">=</span> <span class="o">-</span><span class="mi">99999</span>
+
+
+<span class="k">def</span> <span class="nf">_product</span><span class="p">(</span><span class="n">sequence</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;minimalistic product that works both with numbers and symbols. Supports empty lists&quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">sequence</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">*=</span> <span class="n">element</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="k">def</span> <span class="nf">_reduce_axes</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">reduction_type</span><span class="p">:</span> <span class="n">Reduction</span><span class="p">,</span> <span class="n">reduced_axes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">backend</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">reduction_type</span><span class="p">):</span>
+        <span class="c1"># custom callable</span>
+        <span class="k">return</span> <span class="n">reduction_type</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">reduced_axes</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># one of built-in operations</span>
+        <span class="k">assert</span> <span class="n">reduction_type</span> <span class="ow">in</span> <span class="n">_reductions</span>
+        <span class="k">if</span> <span class="n">reduction_type</span> <span class="o">==</span> <span class="s2">&quot;mean&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">backend</span><span class="o">.</span><span class="n">is_float_type</span><span class="p">(</span><span class="n">tensor</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;reduce_mean is not available for non-floating tensors&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">backend</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">reduction_type</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">reduced_axes</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">_optimize_transformation</span><span class="p">(</span><span class="n">init_shapes</span><span class="p">,</span> <span class="n">reduced_axes</span><span class="p">,</span> <span class="n">axes_reordering</span><span class="p">,</span> <span class="n">final_shapes</span><span class="p">):</span>
+    <span class="c1"># &#39;collapses&#39; neighboring axes if those participate in the result pattern in the same order</span>
+    <span class="c1"># TODO add support for added_axes</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">axes_reordering</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">reduced_axes</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">init_shapes</span><span class="p">)</span>
+    <span class="c1"># joining consecutive axes that will be reduced</span>
+    <span class="c1"># possibly we can skip this if all backends can optimize this (not sure)</span>
+    <span class="n">reduced_axes</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">reduced_axes</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">reduced_axes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">reduced_axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">==</span> <span class="n">reduced_axes</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
+            <span class="n">removed_axis</span> <span class="o">=</span> <span class="n">reduced_axes</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">removed_length</span> <span class="o">=</span> <span class="n">init_shapes</span><span class="p">[</span><span class="n">removed_axis</span><span class="p">]</span>
+            <span class="n">init_shapes</span> <span class="o">=</span> <span class="n">init_shapes</span><span class="p">[:</span><span class="n">removed_axis</span><span class="p">]</span> <span class="o">+</span> <span class="n">init_shapes</span><span class="p">[</span><span class="n">removed_axis</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span>
+            <span class="n">init_shapes</span><span class="p">[</span><span class="n">removed_axis</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*=</span> <span class="n">removed_length</span>
+            <span class="n">reduced_axes</span> <span class="o">=</span> <span class="n">reduced_axes</span><span class="p">[:</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">axis</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">reduced_axes</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span> <span class="p">:])</span>
+
+    <span class="c1"># removing axes that are moved together during reshape</span>
+    <span class="k">def</span> <span class="nf">build_mapping</span><span class="p">():</span>
+        <span class="n">init_to_final</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">init_shapes</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">reduced_axes</span><span class="p">:</span>
+                <span class="n">init_to_final</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">after_reduction</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">init_to_final</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+                <span class="n">init_to_final</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">axes_reordering</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">after_reduction</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">init_to_final</span>
+
+    <span class="n">init_axis_to_final_axis</span> <span class="o">=</span> <span class="n">build_mapping</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">init_axis</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">init_shapes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">init_axis_to_final_axis</span><span class="p">[</span><span class="n">init_axis</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">init_axis_to_final_axis</span><span class="p">[</span><span class="n">init_axis</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">init_axis_to_final_axis</span><span class="p">[</span><span class="n">init_axis</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">==</span> <span class="n">init_axis_to_final_axis</span><span class="p">[</span><span class="n">init_axis</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
+            <span class="n">removed_axis</span> <span class="o">=</span> <span class="n">init_axis</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">removed_length</span> <span class="o">=</span> <span class="n">init_shapes</span><span class="p">[</span><span class="n">removed_axis</span><span class="p">]</span>
+            <span class="n">removed_axis_after_reduction</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">x</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">reduced_axes</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">removed_axis</span><span class="p">))</span>
+
+            <span class="n">reduced_axes</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">axis</span> <span class="k">if</span> <span class="n">axis</span> <span class="o">&lt;</span> <span class="n">removed_axis</span> <span class="k">else</span> <span class="n">axis</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">reduced_axes</span><span class="p">)</span>
+            <span class="n">init_shapes</span> <span class="o">=</span> <span class="n">init_shapes</span><span class="p">[:</span><span class="n">removed_axis</span><span class="p">]</span> <span class="o">+</span> <span class="n">init_shapes</span><span class="p">[</span><span class="n">removed_axis</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span>
+            <span class="n">init_shapes</span><span class="p">[</span><span class="n">removed_axis</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*=</span> <span class="n">removed_length</span>
+            <span class="n">old_reordering</span> <span class="o">=</span> <span class="n">axes_reordering</span>
+            <span class="n">axes_reordering</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">old_reordering</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="n">removed_axis_after_reduction</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">elif</span> <span class="n">axis</span> <span class="o">&lt;</span> <span class="n">removed_axis_after_reduction</span><span class="p">:</span>
+                    <span class="n">axes_reordering</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">axes_reordering</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">axis</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">init_axis_to_final_axis</span> <span class="o">=</span> <span class="n">build_mapping</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">init_shapes</span><span class="p">,</span> <span class="n">reduced_axes</span><span class="p">,</span> <span class="n">axes_reordering</span><span class="p">,</span> <span class="n">final_shapes</span>
+
+
+<span class="n">CookedRecipe</span> <span class="o">=</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="nb">int</span><span class="p">]</span>
+
+<span class="c1"># Actual type is tuple[tuple[str, int], ...]</span>
+<span class="c1"># However torch.jit.script does not &quot;understand&quot; the correct type,</span>
+<span class="c1"># and torch_specific will use list version.</span>
+<span class="n">HashableAxesLengths</span> <span class="o">=</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span>
+<span class="n">FakeHashableAxesLengths</span> <span class="o">=</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span>
+
+
+<span class="k">class</span> <span class="nc">TransformRecipe</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recipe describes actual computation pathway.</span>
+<span class="sd">    Recipe can be applied to a tensor or variable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># structure is non-mutable. In future, this can be non-mutable dataclass (python 3.7+)</span>
+    <span class="c1"># update: pytorch 2.0 torch.jit.script seems to have problems with dataclasses unless they were explicitly provided</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="c1"># list of sizes (or just sizes) for elementary axes as they appear in left expression.</span>
+        <span class="c1"># this is what (after computing unknown parts) will be a shape after first transposition.</span>
+        <span class="c1"># This does not include any ellipsis dimensions.</span>
+        <span class="n">elementary_axes_lengths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="c1"># if additional axes are provided, they should be set in prev array</span>
+        <span class="c1"># This shows mapping from name to position</span>
+        <span class="n">axis_name2elementary_axis</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+        <span class="c1"># each dimension in input can help to reconstruct length of one elementary axis</span>
+        <span class="c1"># or verify one of dimensions. Each element points to element of elementary_axes_lengths.</span>
+        <span class="n">input_composition_known_unknown</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
+        <span class="c1"># permutation applied to elementary axes, if ellipsis is absent</span>
+        <span class="n">axes_permutation</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="c1"># permutation puts reduced axes in the end, we only need to know the first position.</span>
+        <span class="n">first_reduced_axis</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="c1"># at which positions which of elementary axes should appear. Axis position -&gt; axis index.</span>
+        <span class="n">added_axes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+        <span class="c1"># ids of axes as they appear in result, again pointers to elementary_axes_lengths,</span>
+        <span class="c1"># only used to infer result dimensions</span>
+        <span class="n">output_composite_axes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">elementary_axes_lengths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">elementary_axes_lengths</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axis_name2elementary_axis</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">axis_name2elementary_axis</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_composition_known_unknown</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="n">input_composition_known_unknown</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axes_permutation</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">axes_permutation</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">first_reduced_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">first_reduced_axis</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">added_axes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">added_axes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_composite_axes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="n">output_composite_axes</span>
+
+
+<span class="k">def</span> <span class="nf">_reconstruct_from_shape_uncached</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">:</span> <span class="n">TransformRecipe</span><span class="p">,</span> <span class="n">shape</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">axes_dims</span><span class="p">:</span> <span class="n">FakeHashableAxesLengths</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CookedRecipe</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reconstruct all actual parameters using shape.</span>
+<span class="sd">    Shape is a tuple that may contain integers, shape symbols (tf, theano) and UnknownSize (tf, previously mxnet)</span>
+<span class="sd">    known axes can be integers or symbols, but not Nones.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># magic number</span>
+    <span class="n">need_init_reshape</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># last axis is allocated for collapsed ellipsis</span>
+    <span class="n">axes_lengths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">elementary_axes_lengths</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">axis</span><span class="p">,</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">axes_dims</span><span class="p">:</span>
+        <span class="n">axes_lengths</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">axis_name2elementary_axis</span><span class="p">[</span><span class="n">axis</span><span class="p">]]</span> <span class="o">=</span> <span class="n">dim</span>
+
+    <span class="k">for</span> <span class="n">input_axis</span><span class="p">,</span> <span class="p">(</span><span class="n">known_axes</span><span class="p">,</span> <span class="n">unknown_axes</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_composition_known_unknown</span><span class="p">):</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="n">input_axis</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">known_axes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">unknown_axes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># shortcut for the most common case</span>
+            <span class="n">axes_lengths</span><span class="p">[</span><span class="n">unknown_axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">length</span>
+            <span class="k">continue</span>
+
+        <span class="n">known_product</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">known_axes</span><span class="p">:</span>
+            <span class="n">known_product</span> <span class="o">*=</span> <span class="n">axes_lengths</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unknown_axes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">known_product</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">length</span> <span class="o">!=</span> <span class="n">known_product</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">EinopsError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Shape mismatch, </span><span class="si">{</span><span class="n">length</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">known_product</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># assert len(unknown_axes) == 1, &#39;this is enforced when recipe is created, so commented out&#39;</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">known_product</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">length</span> <span class="o">%</span> <span class="n">known_product</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">EinopsError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Shape mismatch, can&#39;t divide axis of length </span><span class="si">{</span><span class="n">length</span><span class="si">}</span><span class="s2"> in chunks of </span><span class="si">{</span><span class="n">known_product</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="n">unknown_axis</span> <span class="o">=</span> <span class="n">unknown_axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">inferred_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">length</span> <span class="o">//</span> <span class="n">known_product</span>
+            <span class="n">axes_lengths</span><span class="p">[</span><span class="n">unknown_axis</span><span class="p">]</span> <span class="o">=</span> <span class="n">inferred_length</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">known_axes</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">unknown_axes</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">need_init_reshape</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># at this point all axes_lengths are computed (either have values or variables, but not Nones)</span>
+
+    <span class="c1"># elementary axes are ordered as they appear in input, then all added axes</span>
+    <span class="n">init_shapes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="n">axes_lengths</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">axes_permutation</span><span class="p">)]</span> <span class="k">if</span> <span class="n">need_init_reshape</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="n">need_final_reshape</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">final_shapes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">grouping</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_composite_axes</span><span class="p">:</span>
+        <span class="n">lengths</span> <span class="o">=</span> <span class="p">[</span><span class="n">axes_lengths</span><span class="p">[</span><span class="n">elementary_axis</span><span class="p">]</span> <span class="k">for</span> <span class="n">elementary_axis</span> <span class="ow">in</span> <span class="n">grouping</span><span class="p">]</span>
+        <span class="n">final_shapes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_product</span><span class="p">(</span><span class="n">lengths</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">need_final_reshape</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">added_axes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">pos</span><span class="p">:</span> <span class="n">axes_lengths</span><span class="p">[</span><span class="n">pos_in_elementary</span><span class="p">]</span> <span class="k">for</span> <span class="n">pos</span><span class="p">,</span> <span class="n">pos_in_elementary</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">added_axes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span>
+
+    <span class="c1"># this list can be empty</span>
+    <span class="n">reduced_axes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">first_reduced_axis</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">axes_permutation</span><span class="p">)))</span>
+
+    <span class="n">n_axes_after_adding_axes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">added_axes</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">axes_permutation</span><span class="p">)</span>
+
+    <span class="n">axes_reordering</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes_permutation</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes_permutation</span> <span class="o">==</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">axes_permutation</span><span class="p">))):</span>
+        <span class="n">axes_reordering</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">_final_shapes</span> <span class="o">=</span> <span class="n">final_shapes</span> <span class="k">if</span> <span class="n">need_final_reshape</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">init_shapes</span><span class="p">,</span> <span class="n">axes_reordering</span><span class="p">,</span> <span class="n">reduced_axes</span><span class="p">,</span> <span class="n">added_axes</span><span class="p">,</span> <span class="n">_final_shapes</span><span class="p">,</span> <span class="n">n_axes_after_adding_axes</span>
+
+
+<span class="n">_reconstruct_from_shape</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="mi">1024</span><span class="p">)(</span><span class="n">_reconstruct_from_shape_uncached</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_apply_recipe</span><span class="p">(</span>
+    <span class="n">backend</span><span class="p">,</span> <span class="n">recipe</span><span class="p">:</span> <span class="n">TransformRecipe</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">reduction_type</span><span class="p">:</span> <span class="n">Reduction</span><span class="p">,</span> <span class="n">axes_lengths</span><span class="p">:</span> <span class="n">HashableAxesLengths</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="c1"># this method implements actual work for all backends for 3 operations</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">init_shapes</span><span class="p">,</span> <span class="n">axes_reordering</span><span class="p">,</span> <span class="n">reduced_axes</span><span class="p">,</span> <span class="n">added_axes</span><span class="p">,</span> <span class="n">final_shapes</span><span class="p">,</span> <span class="n">n_axes_w_added</span> <span class="o">=</span> <span class="n">_reconstruct_from_shape</span><span class="p">(</span>
+            <span class="n">recipe</span><span class="p">,</span> <span class="n">backend</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">tensor</span><span class="p">),</span> <span class="n">axes_lengths</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="c1"># shape or one of passed axes lengths is not hashable (i.e. they are symbols)</span>
+        <span class="n">_result</span> <span class="o">=</span> <span class="n">_reconstruct_from_shape_uncached</span><span class="p">(</span><span class="n">recipe</span><span class="p">,</span> <span class="n">backend</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">tensor</span><span class="p">),</span> <span class="n">axes_lengths</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">init_shapes</span><span class="p">,</span> <span class="n">axes_reordering</span><span class="p">,</span> <span class="n">reduced_axes</span><span class="p">,</span> <span class="n">added_axes</span><span class="p">,</span> <span class="n">final_shapes</span><span class="p">,</span> <span class="n">n_axes_w_added</span><span class="p">)</span> <span class="o">=</span> <span class="n">_result</span>
+    <span class="k">if</span> <span class="n">init_shapes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">init_shapes</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">axes_reordering</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">axes_reordering</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">reduced_axes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="n">_reduce_axes</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">reduction_type</span><span class="o">=</span><span class="n">reduction_type</span><span class="p">,</span> <span class="n">reduced_axes</span><span class="o">=</span><span class="n">reduced_axes</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">added_axes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">add_axes</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">n_axes</span><span class="o">=</span><span class="n">n_axes_w_added</span><span class="p">,</span> <span class="n">pos2len</span><span class="o">=</span><span class="n">added_axes</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">final_shapes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">final_shapes</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tensor</span>
+
+
+<span class="k">def</span> <span class="nf">_apply_recipe_array_api</span><span class="p">(</span>
+    <span class="n">xp</span><span class="p">,</span> <span class="n">recipe</span><span class="p">:</span> <span class="n">TransformRecipe</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">reduction_type</span><span class="p">:</span> <span class="n">Reduction</span><span class="p">,</span> <span class="n">axes_lengths</span><span class="p">:</span> <span class="n">HashableAxesLengths</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="c1"># completely-inline implementation</span>
+    <span class="n">init_shapes</span><span class="p">,</span> <span class="n">axes_reordering</span><span class="p">,</span> <span class="n">reduced_axes</span><span class="p">,</span> <span class="n">added_axes</span><span class="p">,</span> <span class="n">final_shapes</span><span class="p">,</span> <span class="n">n_axes_w_added</span> <span class="o">=</span> <span class="n">_reconstruct_from_shape</span><span class="p">(</span>
+        <span class="n">recipe</span><span class="p">,</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">axes_lengths</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">init_shapes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">init_shapes</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">axes_reordering</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">permute_dims</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">axes_reordering</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">reduced_axes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">reduction_type</span><span class="p">):</span>
+            <span class="c1"># custom callable</span>
+            <span class="n">tensor</span> <span class="o">=</span> <span class="n">reduction_type</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">reduced_axes</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># one of built-in operations</span>
+            <span class="k">assert</span> <span class="n">reduction_type</span> <span class="ow">in</span> <span class="n">_reductions</span>
+            <span class="n">tensor</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">xp</span><span class="p">,</span> <span class="n">reduction_type</span><span class="p">)(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">reduced_axes</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">added_axes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># we use broadcasting</span>
+        <span class="k">for</span> <span class="n">axis_position</span><span class="p">,</span> <span class="n">axis_length</span> <span class="ow">in</span> <span class="n">added_axes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">tensor</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis_position</span><span class="p">)</span>
+
+        <span class="n">final_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">axis_position</span><span class="p">,</span> <span class="n">axis_length</span> <span class="ow">in</span> <span class="n">added_axes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">final_shape</span><span class="p">[</span><span class="n">axis_position</span><span class="p">]</span> <span class="o">=</span> <span class="n">axis_length</span>
+
+        <span class="n">tensor</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">final_shape</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">final_shapes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="n">xp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">final_shapes</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tensor</span>
+
+
+<span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_prepare_transformation_recipe</span><span class="p">(</span>
+    <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">operation</span><span class="p">:</span> <span class="n">Reduction</span><span class="p">,</span>
+    <span class="n">axes_names</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="n">ndim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TransformRecipe</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform initial parsing of pattern and provided supplementary info</span>
+<span class="sd">    axes_lengths is a tuple of tuples (axis_name, axis_length)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">left_str</span><span class="p">,</span> <span class="n">rght_str</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&gt;&quot;</span><span class="p">)</span>
+    <span class="n">left</span> <span class="o">=</span> <span class="n">ParsedExpression</span><span class="p">(</span><span class="n">left_str</span><span class="p">)</span>
+    <span class="n">rght</span> <span class="o">=</span> <span class="n">ParsedExpression</span><span class="p">(</span><span class="n">rght_str</span><span class="p">)</span>
+
+    <span class="c1"># checking that axes are in agreement - new axes appear only in repeat, while disappear only in reduction</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">left</span><span class="o">.</span><span class="n">has_ellipsis</span> <span class="ow">and</span> <span class="n">rght</span><span class="o">.</span><span class="n">has_ellipsis</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">EinopsError</span><span class="p">(</span><span class="s2">&quot;Ellipsis found in right side, but not left side of a pattern </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pattern</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">left</span><span class="o">.</span><span class="n">has_ellipsis</span> <span class="ow">and</span> <span class="n">left</span><span class="o">.</span><span class="n">has_ellipsis_parenthesized</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">EinopsError</span><span class="p">(</span><span class="s2">&quot;Ellipsis inside parenthesis in the left side is not allowed: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pattern</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">operation</span> <span class="o">==</span> <span class="s2">&quot;rearrange&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">left</span><span class="o">.</span><span class="n">has_non_unitary_anonymous_axes</span> <span class="ow">or</span> <span class="n">rght</span><span class="o">.</span><span class="n">has_non_unitary_anonymous_axes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">EinopsError</span><span class="p">(</span><span class="s2">&quot;Non-unitary anonymous axes are not supported in rearrange (exception is length 1)&quot;</span><span class="p">)</span>
+        <span class="n">difference</span> <span class="o">=</span> <span class="nb">set</span><span class="o">.</span><span class="n">symmetric_difference</span><span class="p">(</span><span class="n">left</span><span class="o">.</span><span class="n">identifiers</span><span class="p">,</span> <span class="n">rght</span><span class="o">.</span><span class="n">identifiers</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">difference</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">EinopsError</span><span class="p">(</span><span class="s2">&quot;Identifiers only on one side of expression (should be on both): </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">difference</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">operation</span> <span class="o">==</span> <span class="s2">&quot;repeat&quot;</span><span class="p">:</span>
+        <span class="n">difference</span> <span class="o">=</span> <span class="nb">set</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">left</span><span class="o">.</span><span class="n">identifiers</span><span class="p">,</span> <span class="n">rght</span><span class="o">.</span><span class="n">identifiers</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">difference</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">EinopsError</span><span class="p">(</span><span class="s2">&quot;Unexpected identifiers on the left side of repeat: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">difference</span><span class="p">))</span>
+        <span class="n">axes_without_size</span> <span class="o">=</span> <span class="nb">set</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span>
+            <span class="p">{</span><span class="n">ax</span> <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">rght</span><span class="o">.</span><span class="n">identifiers</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">AnonymousAxis</span><span class="p">)},</span>
+            <span class="p">{</span><span class="o">*</span><span class="n">left</span><span class="o">.</span><span class="n">identifiers</span><span class="p">,</span> <span class="o">*</span><span class="n">axes_names</span><span class="p">},</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">axes_without_size</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">EinopsError</span><span class="p">(</span><span class="s2">&quot;Specify sizes for new axes in repeat: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axes_without_size</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">operation</span> <span class="ow">in</span> <span class="n">_reductions</span> <span class="ow">or</span> <span class="nb">callable</span><span class="p">(</span><span class="n">operation</span><span class="p">):</span>
+        <span class="n">difference</span> <span class="o">=</span> <span class="nb">set</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">rght</span><span class="o">.</span><span class="n">identifiers</span><span class="p">,</span> <span class="n">left</span><span class="o">.</span><span class="n">identifiers</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">difference</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">EinopsError</span><span class="p">(</span><span class="s2">&quot;Unexpected identifiers on the right side of reduce </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">difference</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">EinopsError</span><span class="p">(</span><span class="s2">&quot;Unknown reduction </span><span class="si">{}</span><span class="s2">. Expect one of </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">_reductions</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">left</span><span class="o">.</span><span class="n">has_ellipsis</span><span class="p">:</span>
+        <span class="n">n_other_dims</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">left</span><span class="o">.</span><span class="n">composition</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">ndim</span> <span class="o">&lt;</span> <span class="n">n_other_dims</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">EinopsError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Wrong shape: expected &gt;=</span><span class="si">{</span><span class="n">n_other_dims</span><span class="si">}</span><span class="s2"> dims. Received </span><span class="si">{</span><span class="n">ndim</span><span class="si">}</span><span class="s2">-dim tensor.&quot;</span><span class="p">)</span>
+        <span class="n">ellipsis_ndim</span> <span class="o">=</span> <span class="n">ndim</span> <span class="o">-</span> <span class="n">n_other_dims</span>
+        <span class="n">ell_axes</span> <span class="o">=</span> <span class="p">[</span><span class="n">_ellipsis</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ellipsis_ndim</span><span class="p">)]</span>
+        <span class="n">left_composition</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">composite_axis</span> <span class="ow">in</span> <span class="n">left</span><span class="o">.</span><span class="n">composition</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">composite_axis</span> <span class="o">==</span> <span class="n">_ellipsis</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">ell_axes</span><span class="p">:</span>
+                    <span class="n">left_composition</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">axis</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">left_composition</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">composite_axis</span><span class="p">)</span>
+
+        <span class="n">rght_composition</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">composite_axis</span> <span class="ow">in</span> <span class="n">rght</span><span class="o">.</span><span class="n">composition</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">composite_axis</span> <span class="o">==</span> <span class="n">_ellipsis</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">ell_axes</span><span class="p">:</span>
+                    <span class="n">rght_composition</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">axis</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">group</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">composite_axis</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="n">_ellipsis</span><span class="p">:</span>
+                        <span class="n">group</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">ell_axes</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">group</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+                <span class="n">rght_composition</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+
+        <span class="n">left</span><span class="o">.</span><span class="n">identifiers</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">ell_axes</span><span class="p">)</span>
+        <span class="n">left</span><span class="o">.</span><span class="n">identifiers</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_ellipsis</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rght</span><span class="o">.</span><span class="n">has_ellipsis</span><span class="p">:</span>
+            <span class="n">rght</span><span class="o">.</span><span class="n">identifiers</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">ell_axes</span><span class="p">)</span>
+            <span class="n">rght</span><span class="o">.</span><span class="n">identifiers</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_ellipsis</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ndim</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">left</span><span class="o">.</span><span class="n">composition</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">EinopsError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Wrong shape: expected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">left</span><span class="o">.</span><span class="n">composition</span><span class="p">)</span><span class="si">}</span><span class="s2"> dims. Received </span><span class="si">{</span><span class="n">ndim</span><span class="si">}</span><span class="s2">-dim tensor.&quot;</span><span class="p">)</span>
+        <span class="n">left_composition</span> <span class="o">=</span> <span class="n">left</span><span class="o">.</span><span class="n">composition</span>
+        <span class="n">rght_composition</span> <span class="o">=</span> <span class="n">rght</span><span class="o">.</span><span class="n">composition</span>
+
+    <span class="c1"># parsing all dimensions to find out lengths</span>
+    <span class="n">axis_name2known_length</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AnonymousAxis</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">composite_axis</span> <span class="ow">in</span> <span class="n">left_composition</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">axis_name</span> <span class="ow">in</span> <span class="n">composite_axis</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axis_name</span><span class="p">,</span> <span class="n">AnonymousAxis</span><span class="p">):</span>
+                <span class="n">axis_name2known_length</span><span class="p">[</span><span class="n">axis_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">axis_name</span><span class="o">.</span><span class="n">value</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">axis_name2known_length</span><span class="p">[</span><span class="n">axis_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">_unknown_axis_length</span>
+
+    <span class="c1"># axis_ids_after_first_reshape = range(len(axis_name2known_length)) at this point</span>
+
+    <span class="n">repeat_axes_names</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">axis_name</span> <span class="ow">in</span> <span class="n">rght</span><span class="o">.</span><span class="n">identifiers</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">axis_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">axis_name2known_length</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axis_name</span><span class="p">,</span> <span class="n">AnonymousAxis</span><span class="p">):</span>
+                <span class="n">axis_name2known_length</span><span class="p">[</span><span class="n">axis_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">axis_name</span><span class="o">.</span><span class="n">value</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">axis_name2known_length</span><span class="p">[</span><span class="n">axis_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">_unknown_axis_length</span>
+            <span class="n">repeat_axes_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">axis_name</span><span class="p">)</span>
+
+    <span class="n">axis_name2position</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">position</span> <span class="k">for</span> <span class="n">position</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">axis_name2known_length</span><span class="p">)}</span>
+
+    <span class="c1"># axes provided as kwargs</span>
+    <span class="k">for</span> <span class="n">elementary_axis</span> <span class="ow">in</span> <span class="n">axes_names</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ParsedExpression</span><span class="o">.</span><span class="n">check_axis_name</span><span class="p">(</span><span class="n">elementary_axis</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">EinopsError</span><span class="p">(</span><span class="s2">&quot;Invalid name for an axis&quot;</span><span class="p">,</span> <span class="n">elementary_axis</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">elementary_axis</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">axis_name2known_length</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">EinopsError</span><span class="p">(</span><span class="s2">&quot;Axis </span><span class="si">{}</span><span class="s2"> is not used in transform&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">elementary_axis</span><span class="p">))</span>
+        <span class="n">axis_name2known_length</span><span class="p">[</span><span class="n">elementary_axis</span><span class="p">]</span> <span class="o">=</span> <span class="n">_expected_axis_length</span>
+
+    <span class="n">input_axes_known_unknown</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># some shapes are inferred later - all information is prepared for faster inference</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">composite_axis</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">left_composition</span><span class="p">):</span>
+        <span class="n">known</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">axis</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">composite_axis</span> <span class="k">if</span> <span class="n">axis_name2known_length</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">!=</span> <span class="n">_unknown_axis_length</span><span class="p">}</span>
+        <span class="n">unknown</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">axis</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">composite_axis</span> <span class="k">if</span> <span class="n">axis_name2known_length</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">==</span> <span class="n">_unknown_axis_length</span><span class="p">}</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">EinopsError</span><span class="p">(</span><span class="s2">&quot;Could not infer sizes for </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">unknown</span><span class="p">))</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">known</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">composite_axis</span><span class="p">)</span>
+        <span class="n">input_axes_known_unknown</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="p">([</span><span class="n">axis_name2position</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">known</span><span class="p">],</span> <span class="p">[</span><span class="n">axis_name2position</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">unknown</span><span class="p">])</span>
+        <span class="p">)</span>
+
+    <span class="n">axis_position_after_reduction</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">axis_name</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">left_composition</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">axis_name</span> <span class="ow">in</span> <span class="n">rght</span><span class="o">.</span><span class="n">identifiers</span><span class="p">:</span>
+            <span class="n">axis_position_after_reduction</span><span class="p">[</span><span class="n">axis_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">axis_position_after_reduction</span><span class="p">)</span>
+
+    <span class="n">result_axes_grouping</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">[</span><span class="n">axis_name2position</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">composite_axis</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">composite_axis</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rght_composition</span><span class="p">)</span>
+    <span class="p">]</span>
+
+    <span class="n">ordered_axis_left</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">left_composition</span><span class="p">))</span>
+    <span class="n">ordered_axis_rght</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">rght_composition</span><span class="p">))</span>
+    <span class="n">reduced_axes</span> <span class="o">=</span> <span class="p">[</span><span class="n">axis</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">ordered_axis_left</span> <span class="k">if</span> <span class="n">axis</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">rght</span><span class="o">.</span><span class="n">identifiers</span><span class="p">]</span>
+    <span class="n">order_after_transposition</span> <span class="o">=</span> <span class="p">[</span><span class="n">axis</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">ordered_axis_rght</span> <span class="k">if</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">left</span><span class="o">.</span><span class="n">identifiers</span><span class="p">]</span> <span class="o">+</span> <span class="n">reduced_axes</span>
+    <span class="n">axes_permutation</span> <span class="o">=</span> <span class="p">[</span><span class="n">ordered_axis_left</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">order_after_transposition</span><span class="p">]</span>
+    <span class="n">added_axes</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">i</span><span class="p">:</span> <span class="n">axis_name2position</span><span class="p">[</span><span class="n">axis_name</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">axis_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ordered_axis_rght</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">axis_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">left</span><span class="o">.</span><span class="n">identifiers</span>
+    <span class="p">}</span>
+
+    <span class="n">first_reduced_axis</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">order_after_transposition</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">reduced_axes</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">TransformRecipe</span><span class="p">(</span>
+        <span class="n">elementary_axes_lengths</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">axis_name2known_length</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="n">axis_name2elementary_axis</span><span class="o">=</span><span class="p">{</span><span class="n">axis</span><span class="p">:</span> <span class="n">axis_name2position</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">axes_names</span><span class="p">},</span>
+        <span class="n">input_composition_known_unknown</span><span class="o">=</span><span class="n">input_axes_known_unknown</span><span class="p">,</span>
+        <span class="n">axes_permutation</span><span class="o">=</span><span class="n">axes_permutation</span><span class="p">,</span>
+        <span class="n">first_reduced_axis</span><span class="o">=</span><span class="n">first_reduced_axis</span><span class="p">,</span>
+        <span class="n">added_axes</span><span class="o">=</span><span class="n">added_axes</span><span class="p">,</span>
+        <span class="n">output_composite_axes</span><span class="o">=</span><span class="n">result_axes_grouping</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_prepare_recipes_for_all_dims</span><span class="p">(</span>
+    <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">operation</span><span class="p">:</span> <span class="n">Reduction</span><span class="p">,</span> <span class="n">axes_names</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">TransformRecipe</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Internal function, used in layers.</span>
+<span class="sd">    Layer makes all recipe creation when it is initialized, thus to keep recipes simple we pre-compute for all dims</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">left_str</span><span class="p">,</span> <span class="n">rght_str</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&gt;&quot;</span><span class="p">)</span>
+    <span class="n">left</span> <span class="o">=</span> <span class="n">ParsedExpression</span><span class="p">(</span><span class="n">left_str</span><span class="p">)</span>
+    <span class="n">dims</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">left</span><span class="o">.</span><span class="n">composition</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="n">left</span><span class="o">.</span><span class="n">has_ellipsis</span><span class="p">:</span>
+        <span class="n">dims</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">left</span><span class="o">.</span><span class="n">composition</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">ellipsis_dims</span> <span class="k">for</span> <span class="n">ellipsis_dims</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">ndim</span><span class="p">:</span> <span class="n">_prepare_transformation_recipe</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">axes_names</span><span class="p">,</span> <span class="n">ndim</span><span class="o">=</span><span class="n">ndim</span><span class="p">)</span> <span class="k">for</span> <span class="n">ndim</span> <span class="ow">in</span> <span class="n">dims</span><span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">reduce</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]],</span> <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">reduction</span><span class="p">:</span> <span class="n">Reduction</span><span class="p">,</span> <span class="o">**</span><span class="n">axes_lengths</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    einops.reduce provides combination of reordering and reduction using reader-friendly notation.</span>
+
+<span class="sd">    Examples for reduce operation:</span>
+
+<span class="sd">    ```python</span>
+<span class="sd">    &gt;&gt;&gt; x = np.random.randn(100, 32, 64)</span>
+
+<span class="sd">    # perform max-reduction on the first axis</span>
+<span class="sd">    &gt;&gt;&gt; y = reduce(x, &#39;t b c -&gt; b c&#39;, &#39;max&#39;)</span>
+
+<span class="sd">    # same as previous, but with clearer axes meaning</span>
+<span class="sd">    &gt;&gt;&gt; y = reduce(x, &#39;time batch channel -&gt; batch channel&#39;, &#39;max&#39;)</span>
+
+<span class="sd">    &gt;&gt;&gt; x = np.random.randn(10, 20, 30, 40)</span>
+
+<span class="sd">    # 2d max-pooling with kernel size = 2 * 2 for image processing</span>
+<span class="sd">    &gt;&gt;&gt; y1 = reduce(x, &#39;b c (h1 h2) (w1 w2) -&gt; b c h1 w1&#39;, &#39;max&#39;, h2=2, w2=2)</span>
+
+<span class="sd">    # if one wants to go back to the original height and width, depth-to-space trick can be applied</span>
+<span class="sd">    &gt;&gt;&gt; y2 = rearrange(y1, &#39;b (c h2 w2) h1 w1 -&gt; b c (h1 h2) (w1 w2)&#39;, h2=2, w2=2)</span>
+<span class="sd">    &gt;&gt;&gt; assert parse_shape(x, &#39;b _ h w&#39;) == parse_shape(y2, &#39;b _ h w&#39;)</span>
+
+<span class="sd">    # Adaptive 2d max-pooling to 3 * 4 grid</span>
+<span class="sd">    &gt;&gt;&gt; reduce(x, &#39;b c (h1 h2) (w1 w2) -&gt; b c h1 w1&#39;, &#39;max&#39;, h1=3, w1=4).shape</span>
+<span class="sd">    (10, 20, 3, 4)</span>
+
+<span class="sd">    # Global average pooling</span>
+<span class="sd">    &gt;&gt;&gt; reduce(x, &#39;b c h w -&gt; b c&#39;, &#39;mean&#39;).shape</span>
+<span class="sd">    (10, 20)</span>
+
+<span class="sd">    # Subtracting mean over batch for each channel</span>
+<span class="sd">    &gt;&gt;&gt; y = x - reduce(x, &#39;b c h w -&gt; () c () ()&#39;, &#39;mean&#39;)</span>
+
+<span class="sd">    # Subtracting per-image mean for each channel</span>
+<span class="sd">    &gt;&gt;&gt; y = x - reduce(x, &#39;b c h w -&gt; b c () ()&#39;, &#39;mean&#39;)</span>
+
+<span class="sd">    ```</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        tensor: tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch).</span>
+<span class="sd">            list of tensors is also accepted, those should be of the same type and shape</span>
+<span class="sd">        pattern: string, reduction pattern</span>
+<span class="sd">        reduction: one of available reductions (&#39;min&#39;, &#39;max&#39;, &#39;sum&#39;, &#39;mean&#39;, &#39;prod&#39;), case-sensitive</span>
+<span class="sd">            alternatively, a callable f(tensor, reduced_axes) -&gt; tensor can be provided.</span>
+<span class="sd">            This allows using various reductions, examples: np.max, tf.reduce_logsumexp, torch.var, etc.</span>
+<span class="sd">        axes_lengths: any additional specifications for dimensions</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tensor of the same type as input</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Rearrange/Reduce/Repeat can&#39;t be applied to an empty list&quot;</span><span class="p">)</span>
+            <span class="n">backend</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">tensor</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">tensor</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">stack_on_zeroth_dimension</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">backend</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+
+        <span class="n">hashable_axes_lengths</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">axes_lengths</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+        <span class="n">recipe</span> <span class="o">=</span> <span class="n">_prepare_transformation_recipe</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">reduction</span><span class="p">,</span> <span class="n">axes_names</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">axes_lengths</span><span class="p">),</span> <span class="n">ndim</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">_apply_recipe</span><span class="p">(</span>
+            <span class="n">backend</span><span class="p">,</span> <span class="n">recipe</span><span class="p">,</span> <span class="n">cast</span><span class="p">(</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tensor</span><span class="p">),</span> <span class="n">reduction_type</span><span class="o">=</span><span class="n">reduction</span><span class="p">,</span> <span class="n">axes_lengths</span><span class="o">=</span><span class="n">hashable_axes_lengths</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="n">EinopsError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="s1">&#39; Error while processing </span><span class="si">{}</span><span class="s1">-reduction pattern &quot;</span><span class="si">{}</span><span class="s1">&quot;.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">reduction</span><span class="p">,</span> <span class="n">pattern</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">message</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> Input tensor shape: </span><span class="si">{}</span><span class="s2">. &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> Input is list. &quot;</span>
+        <span class="n">message</span> <span class="o">+=</span> <span class="s2">&quot;Additional info: </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axes_lengths</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">EinopsError</span><span class="p">(</span><span class="n">message</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="rearrange">
+<a class="viewcode-back" href="../../_autosummary/mrpro.operators.RearrangeOp.rearrange.html#mrpro.operators.RearrangeOp.rearrange">[docs]</a>
+<span class="k">def</span> <span class="nf">rearrange</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]],</span> <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">axes_lengths</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    einops.rearrange is a reader-friendly smart element reordering for multidimensional tensors.</span>
+<span class="sd">    This operation includes functionality of transpose (axes permutation), reshape (view), squeeze, unsqueeze,</span>
+<span class="sd">    stack, concatenate and other operations.</span>
+
+<span class="sd">    Examples for rearrange operation:</span>
+
+<span class="sd">    ```python</span>
+<span class="sd">    # suppose we have a set of 32 images in &quot;h w c&quot; format (height-width-channel)</span>
+<span class="sd">    &gt;&gt;&gt; images = [np.random.randn(30, 40, 3) for _ in range(32)]</span>
+
+<span class="sd">    # stack along first (batch) axis, output is a single array</span>
+<span class="sd">    &gt;&gt;&gt; rearrange(images, &#39;b h w c -&gt; b h w c&#39;).shape</span>
+<span class="sd">    (32, 30, 40, 3)</span>
+
+<span class="sd">    # concatenate images along height (vertical axis), 960 = 32 * 30</span>
+<span class="sd">    &gt;&gt;&gt; rearrange(images, &#39;b h w c -&gt; (b h) w c&#39;).shape</span>
+<span class="sd">    (960, 40, 3)</span>
+
+<span class="sd">    # concatenated images along horizontal axis, 1280 = 32 * 40</span>
+<span class="sd">    &gt;&gt;&gt; rearrange(images, &#39;b h w c -&gt; h (b w) c&#39;).shape</span>
+<span class="sd">    (30, 1280, 3)</span>
+
+<span class="sd">    # reordered axes to &quot;b c h w&quot; format for deep learning</span>
+<span class="sd">    &gt;&gt;&gt; rearrange(images, &#39;b h w c -&gt; b c h w&#39;).shape</span>
+<span class="sd">    (32, 3, 30, 40)</span>
+
+<span class="sd">    # flattened each image into a vector, 3600 = 30 * 40 * 3</span>
+<span class="sd">    &gt;&gt;&gt; rearrange(images, &#39;b h w c -&gt; b (c h w)&#39;).shape</span>
+<span class="sd">    (32, 3600)</span>
+
+<span class="sd">    # split each image into 4 smaller (top-left, top-right, bottom-left, bottom-right), 128 = 32 * 2 * 2</span>
+<span class="sd">    &gt;&gt;&gt; rearrange(images, &#39;b (h1 h) (w1 w) c -&gt; (b h1 w1) h w c&#39;, h1=2, w1=2).shape</span>
+<span class="sd">    (128, 15, 20, 3)</span>
+
+<span class="sd">    # space-to-depth operation</span>
+<span class="sd">    &gt;&gt;&gt; rearrange(images, &#39;b (h h1) (w w1) c -&gt; b h w (c h1 w1)&#39;, h1=2, w1=2).shape</span>
+<span class="sd">    (32, 15, 20, 12)</span>
+
+<span class="sd">    ```</span>
+
+<span class="sd">    When composing axes, C-order enumeration used (consecutive elements have different last axis)</span>
+<span class="sd">    Find more examples in einops tutorial.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch).</span>
+<span class="sd">                list of tensors is also accepted, those should be of the same type and shape</span>
+<span class="sd">        pattern: string, rearrangement pattern</span>
+<span class="sd">        axes_lengths: any additional specifications for dimensions</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tensor of the same type as input. If possible, a view to the original tensor is returned.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">reduce</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;rearrange&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">axes_lengths</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="repeat">
+<a class="viewcode-back" href="../../_autosummary/mrpro.utils.filters.repeat.html#mrpro.operators.RearrangeOp.repeat">[docs]</a>
+<span class="k">def</span> <span class="nf">repeat</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]],</span> <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">axes_lengths</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    einops.repeat allows reordering elements and repeating them in arbitrary combinations.</span>
+<span class="sd">    This operation includes functionality of repeat, tile, broadcast functions.</span>
+
+<span class="sd">    Examples for repeat operation:</span>
+
+<span class="sd">    ```python</span>
+<span class="sd">    # a grayscale image (of shape height x width)</span>
+<span class="sd">    &gt;&gt;&gt; image = np.random.randn(30, 40)</span>
+
+<span class="sd">    # change it to RGB format by repeating in each channel</span>
+<span class="sd">    &gt;&gt;&gt; repeat(image, &#39;h w -&gt; h w c&#39;, c=3).shape</span>
+<span class="sd">    (30, 40, 3)</span>
+
+<span class="sd">    # repeat image 2 times along height (vertical axis)</span>
+<span class="sd">    &gt;&gt;&gt; repeat(image, &#39;h w -&gt; (repeat h) w&#39;, repeat=2).shape</span>
+<span class="sd">    (60, 40)</span>
+
+<span class="sd">    # repeat image 2 time along height and 3 times along width</span>
+<span class="sd">    &gt;&gt;&gt; repeat(image, &#39;h w -&gt; (h2 h) (w3 w)&#39;, h2=2, w3=3).shape</span>
+<span class="sd">    (60, 120)</span>
+
+<span class="sd">    # convert each pixel to a small square 2x2. Upsample image by 2x</span>
+<span class="sd">    &gt;&gt;&gt; repeat(image, &#39;h w -&gt; (h h2) (w w2)&#39;, h2=2, w2=2).shape</span>
+<span class="sd">    (60, 80)</span>
+
+<span class="sd">    # pixelate image first by downsampling by 2x, then upsampling</span>
+<span class="sd">    &gt;&gt;&gt; downsampled = reduce(image, &#39;(h h2) (w w2) -&gt; h w&#39;, &#39;mean&#39;, h2=2, w2=2)</span>
+<span class="sd">    &gt;&gt;&gt; repeat(downsampled, &#39;h w -&gt; (h h2) (w w2)&#39;, h2=2, w2=2).shape</span>
+<span class="sd">    (30, 40)</span>
+
+<span class="sd">    ```</span>
+
+<span class="sd">    When composing axes, C-order enumeration used (consecutive elements have different last axis)</span>
+<span class="sd">    Find more examples in einops tutorial.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        tensor: tensor of any supported library (e.g. numpy.ndarray, tensorflow, pytorch).</span>
+<span class="sd">            list of tensors is also accepted, those should be of the same type and shape</span>
+<span class="sd">        pattern: string, rearrangement pattern</span>
+<span class="sd">        axes_lengths: any additional specifications for dimensions</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tensor of the same type as input. If possible, a view to the original tensor is returned.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">reduce</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;repeat&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">axes_lengths</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">parse_shape</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse a tensor shape to dictionary mapping axes names to their lengths.</span>
+
+<span class="sd">    ```python</span>
+<span class="sd">    # Use underscore to skip the dimension in parsing.</span>
+<span class="sd">    &gt;&gt;&gt; x = np.zeros([2, 3, 5, 7])</span>
+<span class="sd">    &gt;&gt;&gt; parse_shape(x, &#39;batch _ h w&#39;)</span>
+<span class="sd">    {&#39;batch&#39;: 2, &#39;h&#39;: 5, &#39;w&#39;: 7}</span>
+
+<span class="sd">    # `parse_shape` output can be used to specify axes_lengths for other operations:</span>
+<span class="sd">    &gt;&gt;&gt; y = np.zeros([700])</span>
+<span class="sd">    &gt;&gt;&gt; rearrange(y, &#39;(b c h w) -&gt; b c h w&#39;, **parse_shape(x, &#39;b _ h w&#39;)).shape</span>
+<span class="sd">    (2, 10, 5, 7)</span>
+
+<span class="sd">    ```</span>
+
+<span class="sd">    For symbolic frameworks may return symbols, not integers.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        x: tensor of any supported framework</span>
+<span class="sd">        pattern: str, space separated names for axes, underscore means skip axis</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict, maps axes names to their lengths</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">exp</span> <span class="o">=</span> <span class="n">ParsedExpression</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">allow_underscore</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">has_composed_axes</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Can&#39;t parse shape with composite axes: </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">composition</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">has_ellipsis</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">composition</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Can&#39;t parse shape with this number of dimensions: </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Can&#39;t parse shape with different number of dimensions: </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">has_ellipsis</span><span class="p">:</span>
+        <span class="n">ellipsis_idx</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">_ellipsis</span><span class="p">)</span>
+        <span class="n">composition</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">exp</span><span class="o">.</span><span class="n">composition</span><span class="p">[:</span><span class="n">ellipsis_idx</span><span class="p">]</span>
+            <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;_&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">composition</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">exp</span><span class="o">.</span><span class="n">composition</span><span class="p">[</span><span class="n">ellipsis_idx</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">composition</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">composition</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">axes</span><span class="p">,</span> <span class="n">axis_length</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">composition</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>  <span class="c1"># type: ignore</span>
+        <span class="c1"># axes either [], or [AnonymousAxis] or [&#39;axis_name&#39;]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">axes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">axis_length</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Length of axis is not 1: </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="n">axes</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">axis</span> <span class="o">!=</span> <span class="s2">&quot;_&quot;</span><span class="p">:</span>
+                    <span class="n">result</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="n">axis_length</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">axis</span><span class="o">.</span><span class="n">value</span> <span class="o">!=</span> <span class="n">axis_length</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Length of anonymous axis does not match: </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="c1"># _enumerate_directions is not exposed in the public API</span>
+<span class="k">def</span> <span class="nf">_enumerate_directions</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    For an n-dimensional tensor, returns tensors to enumerate each axis.</span>
+<span class="sd">    ```python</span>
+<span class="sd">    x = np.zeros([2, 3, 4]) # or any other tensor</span>
+<span class="sd">    i, j, k = _enumerate_directions(x)</span>
+<span class="sd">    result = i + 2*j + 3*k</span>
+<span class="sd">    ```</span>
+
+<span class="sd">    `result[i, j, k] = i + 2j + 3k`, and also has the same shape as result</span>
+<span class="sd">    Works very similarly to numpy.ogrid (open indexing grid)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">backend</span> <span class="o">=</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">axis_id</span><span class="p">,</span> <span class="n">axis_length</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">shape</span><span class="p">):</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">shape</span><span class="p">[</span><span class="n">axis_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">axis_length</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">backend</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">backend</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">axis_length</span><span class="p">),</span> <span class="n">shape</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="c1"># to avoid importing numpy</span>
+<span class="n">np_ndarray</span> <span class="o">=</span> <span class="n">Any</span>
+
+
+<span class="k">def</span> <span class="nf">asnumpy</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np_ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a tensor of an imperative framework (i.e. numpy/cupy/torch/jax/etc.) to `numpy.ndarray`</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        tensor: tensor of any known imperative framework</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        `numpy.ndarray`, converted to numpy</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_validate_einsum_axis_name</span><span class="p">(</span><span class="n">axis_name</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">axis_name</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Singleton () axes are not yet supported in einsum.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">axis_name</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Shape rearrangement is not yet supported in einsum.&quot;</span><span class="p">)</span>
+
+    <span class="n">axis_name</span> <span class="o">=</span> <span class="n">axis_name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axis_name</span><span class="p">,</span> <span class="n">AnonymousAxis</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Anonymous axes are not yet supported in einsum.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">axis_name</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Encountered empty axis name in einsum.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axis_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Axis name in einsum must be a string.&quot;</span><span class="p">)</span>
+
+
+<span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_compactify_pattern_for_einsum</span><span class="p">(</span><span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">&quot;-&gt;&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pattern</span><span class="p">:</span>
+        <span class="c1"># numpy allows this, so make sure users</span>
+        <span class="c1"># don&#39;t accidentally do something like this.</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Einsum pattern must contain &#39;-&gt;&#39;.&quot;</span><span class="p">)</span>
+    <span class="n">lefts_str</span><span class="p">,</span> <span class="n">right_str</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&gt;&quot;</span><span class="p">)</span>
+
+    <span class="n">lefts</span> <span class="o">=</span> <span class="p">[</span><span class="n">ParsedExpression</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">allow_underscore</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">allow_duplicates</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">left</span> <span class="ow">in</span> <span class="n">lefts_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span>
+
+    <span class="n">right</span> <span class="o">=</span> <span class="n">ParsedExpression</span><span class="p">(</span><span class="n">right_str</span><span class="p">,</span> <span class="n">allow_underscore</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Start from &#39;a&#39; and go up to &#39;Z&#39;</span>
+    <span class="n">output_axis_names</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">ascii_letters</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">axis_name_mapping</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">left_patterns</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">left</span> <span class="ow">in</span> <span class="n">lefts</span><span class="p">:</span>
+        <span class="n">left_pattern</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">raw_axis_name</span> <span class="ow">in</span> <span class="n">left</span><span class="o">.</span><span class="n">composition</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">raw_axis_name</span> <span class="o">==</span> <span class="n">_ellipsis</span><span class="p">:</span>
+                <span class="n">left_pattern</span> <span class="o">+=</span> <span class="s2">&quot;...&quot;</span>
+                <span class="k">continue</span>
+
+            <span class="n">_validate_einsum_axis_name</span><span class="p">(</span><span class="n">raw_axis_name</span><span class="p">)</span>
+            <span class="n">axis_name</span> <span class="o">=</span> <span class="n">raw_axis_name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">axis_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">axis_name_mapping</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_axis_names</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Too many axes in einsum.&quot;</span><span class="p">)</span>
+                <span class="n">axis_name_mapping</span><span class="p">[</span><span class="n">axis_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_axis_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">left_pattern</span> <span class="o">+=</span> <span class="n">axis_name_mapping</span><span class="p">[</span><span class="n">axis_name</span><span class="p">]</span>
+        <span class="n">left_patterns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">left_pattern</span><span class="p">)</span>
+
+    <span class="n">compact_pattern</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">left_patterns</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;-&gt;&quot;</span>
+
+    <span class="k">for</span> <span class="n">raw_axis_name</span> <span class="ow">in</span> <span class="n">right</span><span class="o">.</span><span class="n">composition</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">raw_axis_name</span> <span class="o">==</span> <span class="n">_ellipsis</span><span class="p">:</span>
+            <span class="n">compact_pattern</span> <span class="o">+=</span> <span class="s2">&quot;...&quot;</span>
+            <span class="k">continue</span>
+
+        <span class="n">_validate_einsum_axis_name</span><span class="p">(</span><span class="n">raw_axis_name</span><span class="p">)</span>
+        <span class="n">axis_name</span> <span class="o">=</span> <span class="n">raw_axis_name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">axis_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">axis_name_mapping</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">EinopsError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown axis </span><span class="si">{</span><span class="n">axis_name</span><span class="si">}</span><span class="s2"> on right side of einsum </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="n">compact_pattern</span> <span class="o">+=</span> <span class="n">axis_name_mapping</span><span class="p">[</span><span class="n">axis_name</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">compact_pattern</span>
+
+
+<span class="nd">@typing</span><span class="o">.</span><span class="n">overload</span>
+<span class="k">def</span> <span class="nf">einsum</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="nd">@typing</span><span class="o">.</span><span class="n">overload</span>
+<span class="k">def</span> <span class="nf">einsum</span><span class="p">(</span><span class="n">tensor1</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">tensor2</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="nd">@typing</span><span class="o">.</span><span class="n">overload</span>
+<span class="k">def</span> <span class="nf">einsum</span><span class="p">(</span><span class="n">tensor1</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">tensor2</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">tensor3</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="nd">@typing</span><span class="o">.</span><span class="n">overload</span>
+<span class="k">def</span> <span class="nf">einsum</span><span class="p">(</span><span class="n">tensor1</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">tensor2</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">tensor3</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">tensor4</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span> <span class="o">...</span>
+
+
+<span class="k">def</span> <span class="nf">einsum</span><span class="p">(</span><span class="o">*</span><span class="n">tensors_and_pattern</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    einops.einsum calls einsum operations with einops-style named</span>
+<span class="sd">    axes indexing, computing tensor products with an arbitrary</span>
+<span class="sd">    number of tensors. Unlike typical einsum syntax, here you must</span>
+<span class="sd">    pass tensors first, and then the pattern.</span>
+
+<span class="sd">    Also, note that rearrange operations such as `&quot;(batch chan) out&quot;`,</span>
+<span class="sd">    or singleton axes `()`, are not currently supported.</span>
+
+<span class="sd">    Examples:</span>
+
+<span class="sd">    For a given pattern such as:</span>
+<span class="sd">    ```python</span>
+<span class="sd">    &gt;&gt;&gt; x, y, z = np.random.randn(3, 20, 20, 20)</span>
+<span class="sd">    &gt;&gt;&gt; output = einsum(x, y, z, &quot;a b c, c b d, a g k -&gt; a b k&quot;)</span>
+
+<span class="sd">    ```</span>
+<span class="sd">    the following formula is computed:</span>
+<span class="sd">    ```tex</span>
+<span class="sd">    output[a, b, k] =</span>
+<span class="sd">        \sum_{c, d, g} x[a, b, c] * y[c, b, d] * z[a, g, k]</span>
+<span class="sd">    ```</span>
+<span class="sd">    where the summation over `c`, `d`, and `g` is performed</span>
+<span class="sd">    because those axes names do not appear on the right-hand side.</span>
+
+<span class="sd">    Let&#39;s see some additional examples:</span>
+<span class="sd">    ```python</span>
+<span class="sd">    # Filter a set of images:</span>
+<span class="sd">    &gt;&gt;&gt; batched_images = np.random.randn(128, 16, 16)</span>
+<span class="sd">    &gt;&gt;&gt; filters = np.random.randn(16, 16, 30)</span>
+<span class="sd">    &gt;&gt;&gt; result = einsum(batched_images, filters,</span>
+<span class="sd">    ...                 &quot;batch h w, h w channel -&gt; batch channel&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; result.shape</span>
+<span class="sd">    (128, 30)</span>
+
+<span class="sd">    # Matrix multiplication, with an unknown input shape:</span>
+<span class="sd">    &gt;&gt;&gt; batch_shape = (50, 30)</span>
+<span class="sd">    &gt;&gt;&gt; data = np.random.randn(*batch_shape, 20)</span>
+<span class="sd">    &gt;&gt;&gt; weights = np.random.randn(10, 20)</span>
+<span class="sd">    &gt;&gt;&gt; result = einsum(weights, data,</span>
+<span class="sd">    ...                 &quot;out_dim in_dim, ... in_dim -&gt; ... out_dim&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; result.shape</span>
+<span class="sd">    (50, 30, 10)</span>
+
+<span class="sd">    # Matrix trace on a single tensor:</span>
+<span class="sd">    &gt;&gt;&gt; matrix = np.random.randn(10, 10)</span>
+<span class="sd">    &gt;&gt;&gt; result = einsum(matrix, &quot;i i -&gt;&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; result.shape</span>
+<span class="sd">    ()</span>
+
+<span class="sd">    ```</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        tensors_and_pattern:</span>
+<span class="sd">            tensors: tensors of any supported library (numpy, tensorflow, pytorch, jax).</span>
+<span class="sd">            pattern: string, einsum pattern, with commas</span>
+<span class="sd">                separating specifications for each tensor.</span>
+<span class="sd">                pattern should be provided after all tensors.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tensor of the same type as input, after processing with einsum.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tensors_and_pattern</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;`einops.einsum` takes at minimum two arguments: the tensors (at least one), followed by the pattern.&quot;</span>
+        <span class="p">)</span>
+    <span class="n">pattern</span> <span class="o">=</span> <span class="n">tensors_and_pattern</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;The last argument passed to `einops.einsum` must be a string, representing the einsum pattern.&quot;</span>
+        <span class="p">)</span>
+    <span class="n">tensors</span> <span class="o">=</span> <span class="n">tensors_and_pattern</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">pattern</span> <span class="o">=</span> <span class="n">_compactify_pattern_for_einsum</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">get_backend</span><span class="p">(</span><span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="o">*</span><span class="n">tensors</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

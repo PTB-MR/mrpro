@@ -1,0 +1,331 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mrpro.operators.FourierOp &mdash; mrpro</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=16f952a1" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            mrpro
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributor_guide.html">Contributor Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faq.html">FAQ</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mrpro</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">mrpro.operators.FourierOp</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for mrpro.operators.FourierOp</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Fourier Operator.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Self</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torchkbnufft</span> <span class="kn">import</span> <span class="n">KbNufft</span><span class="p">,</span> <span class="n">KbNufftAdjoint</span>
+
+<span class="kn">from</span> <span class="nn">mrpro.data._kdata.KData</span> <span class="kn">import</span> <span class="n">KData</span>
+<span class="kn">from</span> <span class="nn">mrpro.data.enums</span> <span class="kn">import</span> <span class="n">TrajType</span>
+<span class="kn">from</span> <span class="nn">mrpro.data.KTrajectory</span> <span class="kn">import</span> <span class="n">KTrajectory</span>
+<span class="kn">from</span> <span class="nn">mrpro.data.SpatialDimension</span> <span class="kn">import</span> <span class="n">SpatialDimension</span>
+<span class="kn">from</span> <span class="nn">mrpro.operators.FastFourierOp</span> <span class="kn">import</span> <span class="n">FastFourierOp</span>
+<span class="kn">from</span> <span class="nn">mrpro.operators.LinearOperator</span> <span class="kn">import</span> <span class="n">LinearOperator</span>
+
+
+<div class="viewcode-block" id="FourierOp">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.operators.FourierOp.html#mrpro.operators.FourierOp">[docs]</a>
+<span class="k">class</span> <span class="nc">FourierOp</span><span class="p">(</span><span class="n">LinearOperator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fourier Operator class.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FourierOp.__init__">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.operators.FourierOp.html#mrpro.operators.FourierOp.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">recon_matrix</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">encoding_matrix</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">traj</span><span class="p">:</span> <span class="n">KTrajectory</span><span class="p">,</span>
+        <span class="n">nufft_oversampling</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span>
+        <span class="n">nufft_numpoints</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span>
+        <span class="n">nufft_kbwidth</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.34</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fourier Operator class.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        recon_matrix</span>
+<span class="sd">            dimension of the reconstructed image</span>
+<span class="sd">        encoding_matrix</span>
+<span class="sd">            dimension of the encoded k-space</span>
+<span class="sd">        traj</span>
+<span class="sd">            the k-space trajectories where the frequencies are sampled</span>
+<span class="sd">        nufft_oversampling</span>
+<span class="sd">            oversampling used for interpolation in non-uniform FFTs</span>
+<span class="sd">        nufft_numpoints</span>
+<span class="sd">            number of neighbors for interpolation in non-uniform FFTs</span>
+<span class="sd">        nufft_kbwidth</span>
+<span class="sd">            size of the Kaiser-Bessel kernel interpolation in non-uniform FFTs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">get_spatial_dims</span><span class="p">(</span><span class="n">spatial_dims</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">,</span> <span class="n">dims</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
+            <span class="k">return</span> <span class="p">[</span>
+                <span class="n">s</span>
+                <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">((</span><span class="n">spatial_dims</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">spatial_dims</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">spatial_dims</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">dims</span>
+            <span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">get_traj</span><span class="p">(</span><span class="n">traj</span><span class="p">:</span> <span class="n">KTrajectory</span><span class="p">,</span> <span class="n">dims</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">((</span><span class="n">traj</span><span class="o">.</span><span class="n">kz</span><span class="p">,</span> <span class="n">traj</span><span class="o">.</span><span class="n">ky</span><span class="p">,</span> <span class="n">traj</span><span class="o">.</span><span class="n">kx</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">dims</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ignore_dims</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fft_dims</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nufft_dims</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">dim</span><span class="p">,</span> <span class="n">type_</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">((</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">traj</span><span class="o">.</span><span class="n">type_along_kzyx</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">type_</span> <span class="o">&amp;</span> <span class="n">TrajType</span><span class="o">.</span><span class="n">SINGLEVALUE</span><span class="p">:</span>
+                <span class="c1"># dimension which do not require any transform</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_ignore_dims</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">type_</span> <span class="o">&amp;</span> <span class="n">TrajType</span><span class="o">.</span><span class="n">ONGRID</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_fft_dims</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_nufft_dims</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fft_dims</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fast_fourier_op</span> <span class="o">=</span> <span class="n">FastFourierOp</span><span class="p">(</span>
+                <span class="n">dim</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fft_dims</span><span class="p">),</span>
+                <span class="n">recon_matrix</span><span class="o">=</span><span class="n">get_spatial_dims</span><span class="p">(</span><span class="n">recon_matrix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fft_dims</span><span class="p">),</span>
+                <span class="n">encoding_matrix</span><span class="o">=</span><span class="n">get_spatial_dims</span><span class="p">(</span><span class="n">encoding_matrix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fft_dims</span><span class="p">),</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Find dimensions which require NUFFT</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nufft_dims</span><span class="p">:</span>
+            <span class="n">fft_dims_k210</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">dim</span>
+                <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">traj</span><span class="o">.</span><span class="n">type_along_k210</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">TrajType</span><span class="o">.</span><span class="n">ONGRID</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">traj</span><span class="o">.</span><span class="n">type_along_k210</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">TrajType</span><span class="o">.</span><span class="n">SINGLEVALUE</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fft_dims</span> <span class="o">!=</span> <span class="n">fft_dims_k210</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                    <span class="s1">&#39;If both FFT and NUFFT dims are present, Cartesian FFT dims need to be aligned with the &#39;</span>
+                    <span class="s1">&#39;k-space dimension, i.e. kx along k0, ky along k1 and kz along k2&#39;</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nufft_im_size</span> <span class="o">=</span> <span class="n">get_spatial_dims</span><span class="p">(</span><span class="n">recon_matrix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nufft_dims</span><span class="p">)</span>
+            <span class="n">grid_size</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">size</span> <span class="o">*</span> <span class="n">nufft_oversampling</span><span class="p">)</span> <span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nufft_im_size</span><span class="p">]</span>
+            <span class="n">omega</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">k</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">ks</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">ks</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                    <span class="n">get_traj</span><span class="p">(</span><span class="n">traj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nufft_dims</span><span class="p">),</span>
+                    <span class="n">get_spatial_dims</span><span class="p">(</span><span class="n">encoding_matrix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nufft_dims</span><span class="p">),</span>
+                    <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">]</span>
+
+            <span class="c1"># Broadcast shapes not always needed but also does not hurt</span>
+            <span class="n">omega</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">broadcast_shapes</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">omega</span><span class="p">]))</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">omega</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s1">&#39;_omega&#39;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">omega</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">4</span><span class="p">))</span>  <span class="c1"># use the &#39;coil&#39; dim for the direction</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fwd_nufft_op</span> <span class="o">=</span> <span class="n">KbNufft</span><span class="p">(</span>
+                <span class="n">im_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_nufft_im_size</span><span class="p">,</span>
+                <span class="n">grid_size</span><span class="o">=</span><span class="n">grid_size</span><span class="p">,</span>
+                <span class="n">numpoints</span><span class="o">=</span><span class="n">nufft_numpoints</span><span class="p">,</span>
+                <span class="n">kbwidth</span><span class="o">=</span><span class="n">nufft_kbwidth</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_adj_nufft_op</span> <span class="o">=</span> <span class="n">KbNufftAdjoint</span><span class="p">(</span>
+                <span class="n">im_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_nufft_im_size</span><span class="p">,</span>
+                <span class="n">grid_size</span><span class="o">=</span><span class="n">grid_size</span><span class="p">,</span>
+                <span class="n">numpoints</span><span class="o">=</span><span class="n">nufft_numpoints</span><span class="p">,</span>
+                <span class="n">kbwidth</span><span class="o">=</span><span class="n">nufft_kbwidth</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_kshape</span> <span class="o">=</span> <span class="n">traj</span><span class="o">.</span><span class="n">broadcasted_shape</span></div>
+
+
+<div class="viewcode-block" id="FourierOp.from_kdata">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.operators.FourierOp.html#mrpro.operators.FourierOp.from_kdata">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_kdata</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">kdata</span><span class="p">:</span> <span class="n">KData</span><span class="p">,</span> <span class="n">recon_shape</span><span class="p">:</span> <span class="n">SpatialDimension</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create an instance of FourierOp from kdata with default settings.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        kdata</span>
+<span class="sd">            k-space data</span>
+<span class="sd">        recon_shape</span>
+<span class="sd">            dimension of the reconstructed image. Defaults to KData.header.recon_matrix</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">recon_matrix</span><span class="o">=</span><span class="n">kdata</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">recon_matrix</span> <span class="k">if</span> <span class="n">recon_shape</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">recon_shape</span><span class="p">,</span>
+            <span class="n">encoding_matrix</span><span class="o">=</span><span class="n">kdata</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">encoding_matrix</span><span class="p">,</span>
+            <span class="n">traj</span><span class="o">=</span><span class="n">kdata</span><span class="o">.</span><span class="n">traj</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FourierOp.forward">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.operators.FourierOp.html#mrpro.operators.FourierOp.forward">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Forward operator mapping the coil-images to the coil k-space data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x</span>
+<span class="sd">            coil image data with shape: (... coils z y x)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            coil k-space data with shape: (... coils k2 k1 k0)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fft_dims</span><span class="p">):</span>
+            <span class="c1"># FFT</span>
+            <span class="p">(</span><span class="n">x</span><span class="p">,)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fast_fourier_op</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nufft_dims</span><span class="p">:</span>
+            <span class="c1"># we need to move the nufft-dimensions to the end and flatten all other dimensions</span>
+            <span class="c1"># so the new shape will be (... non_nufft_dims) coils nufft_dims</span>
+            <span class="c1"># we could move the permute to __init__ but then we still would need to prepend if len(other)&gt;1</span>
+            <span class="n">keep_dims</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_nufft_dims</span><span class="p">]</span>  <span class="c1"># -4 is always coil</span>
+            <span class="n">permute</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="o">.</span><span class="n">ndim</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">keep_dims</span><span class="p">]</span> <span class="o">+</span> <span class="n">keep_dims</span>
+            <span class="n">unpermute</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">permute</span><span class="p">)</span>
+
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="o">*</span><span class="n">permute</span><span class="p">)</span>
+            <span class="n">permuted_x_shape</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">end_dim</span><span class="o">=-</span><span class="nb">len</span><span class="p">(</span><span class="n">keep_dims</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="c1"># omega should be (... non_nufft_dims) n_nufft_dims (nufft_dims)</span>
+            <span class="c1"># TODO: consider moving the broadcast along fft dimensions to __init__ (independent of x shape).</span>
+            <span class="n">omega</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_omega</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="o">*</span><span class="n">permute</span><span class="p">)</span>
+            <span class="n">omega</span> <span class="o">=</span> <span class="n">omega</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="o">*</span><span class="n">permuted_x_shape</span><span class="p">[:</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">keep_dims</span><span class="p">)],</span> <span class="o">*</span><span class="n">omega</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">keep_dims</span><span class="p">)</span> <span class="p">:])</span>
+            <span class="n">omega</span> <span class="o">=</span> <span class="n">omega</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">end_dim</span><span class="o">=-</span><span class="nb">len</span><span class="p">(</span><span class="n">keep_dims</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=-</span><span class="nb">len</span><span class="p">(</span><span class="n">keep_dims</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fwd_nufft_op</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="s1">&#39;ortho&#39;</span><span class="p">)</span>
+
+            <span class="n">shape_nufft_dims</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_kshape</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nufft_dims</span><span class="p">]</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">permuted_x_shape</span><span class="p">[:</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">keep_dims</span><span class="p">)],</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">shape_nufft_dims</span><span class="p">)</span>  <span class="c1"># -1 is coils</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="o">*</span><span class="n">unpermute</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,)</span></div>
+
+
+<div class="viewcode-block" id="FourierOp.adjoint">
+<a class="viewcode-back" href="../../../_autosummary/mrpro.operators.FourierOp.html#mrpro.operators.FourierOp.adjoint">[docs]</a>
+    <span class="k">def</span> <span class="nf">adjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adjoint operator mapping the coil k-space data to the coil images.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x</span>
+<span class="sd">            coil k-space data with shape: (... coils k2 k1 k0)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            coil image data with shape: (... coils z y x)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fft_dims</span><span class="p">:</span>
+            <span class="c1"># IFFT</span>
+            <span class="p">(</span><span class="n">x</span><span class="p">,)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fast_fourier_op</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nufft_dims</span><span class="p">:</span>
+            <span class="c1"># we need to move the nufft-dimensions to the end, flatten them and flatten all other dimensions</span>
+            <span class="c1"># so the new shape will be (... non_nufft_dims) coils (nufft_dims)</span>
+            <span class="n">keep_dims</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_nufft_dims</span><span class="p">]</span>  <span class="c1"># -4 is coil</span>
+            <span class="n">permute</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="o">.</span><span class="n">ndim</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">keep_dims</span><span class="p">]</span> <span class="o">+</span> <span class="n">keep_dims</span>
+            <span class="n">unpermute</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">permute</span><span class="p">)</span>
+
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="o">*</span><span class="n">permute</span><span class="p">)</span>
+            <span class="n">permuted_x_shape</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">end_dim</span><span class="o">=-</span><span class="nb">len</span><span class="p">(</span><span class="n">keep_dims</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=-</span><span class="nb">len</span><span class="p">(</span><span class="n">keep_dims</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">omega</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_omega</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="o">*</span><span class="n">permute</span><span class="p">)</span>
+            <span class="n">omega</span> <span class="o">=</span> <span class="n">omega</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="o">*</span><span class="n">permuted_x_shape</span><span class="p">[:</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">keep_dims</span><span class="p">)],</span> <span class="o">*</span><span class="n">omega</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">keep_dims</span><span class="p">)</span> <span class="p">:])</span>
+            <span class="n">omega</span> <span class="o">=</span> <span class="n">omega</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">end_dim</span><span class="o">=-</span><span class="nb">len</span><span class="p">(</span><span class="n">keep_dims</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=-</span><span class="nb">len</span><span class="p">(</span><span class="n">keep_dims</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adj_nufft_op</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">omega</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="s1">&#39;ortho&#39;</span><span class="p">)</span>
+
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">permuted_x_shape</span><span class="p">[:</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">keep_dims</span><span class="p">)],</span> <span class="o">*</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">keep_dims</span><span class="p">)</span> <span class="p">:])</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="o">*</span><span class="n">unpermute</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.</p>
+  </div>
+
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

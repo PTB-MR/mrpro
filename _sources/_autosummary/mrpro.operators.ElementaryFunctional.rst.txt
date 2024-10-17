@@ -1,0 +1,80 @@
+mrpro.operators.ElementaryFunctional
+====================================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: ElementaryFunctional
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ElementaryFunctional.__init__
+      ~ElementaryFunctional.add_module
+      ~ElementaryFunctional.apply
+      ~ElementaryFunctional.bfloat16
+      ~ElementaryFunctional.buffers
+      ~ElementaryFunctional.children
+      ~ElementaryFunctional.compile
+      ~ElementaryFunctional.cpu
+      ~ElementaryFunctional.cuda
+      ~ElementaryFunctional.double
+      ~ElementaryFunctional.eval
+      ~ElementaryFunctional.extra_repr
+      ~ElementaryFunctional.float
+      ~ElementaryFunctional.forward
+      ~ElementaryFunctional.get_buffer
+      ~ElementaryFunctional.get_extra_state
+      ~ElementaryFunctional.get_parameter
+      ~ElementaryFunctional.get_submodule
+      ~ElementaryFunctional.half
+      ~ElementaryFunctional.ipu
+      ~ElementaryFunctional.load_state_dict
+      ~ElementaryFunctional.modules
+      ~ElementaryFunctional.named_buffers
+      ~ElementaryFunctional.named_children
+      ~ElementaryFunctional.named_modules
+      ~ElementaryFunctional.named_parameters
+      ~ElementaryFunctional.parameters
+      ~ElementaryFunctional.register_backward_hook
+      ~ElementaryFunctional.register_buffer
+      ~ElementaryFunctional.register_forward_hook
+      ~ElementaryFunctional.register_forward_pre_hook
+      ~ElementaryFunctional.register_full_backward_hook
+      ~ElementaryFunctional.register_full_backward_pre_hook
+      ~ElementaryFunctional.register_load_state_dict_post_hook
+      ~ElementaryFunctional.register_module
+      ~ElementaryFunctional.register_parameter
+      ~ElementaryFunctional.register_state_dict_pre_hook
+      ~ElementaryFunctional.requires_grad_
+      ~ElementaryFunctional.set_extra_state
+      ~ElementaryFunctional.share_memory
+      ~ElementaryFunctional.state_dict
+      ~ElementaryFunctional.to
+      ~ElementaryFunctional.to_empty
+      ~ElementaryFunctional.train
+      ~ElementaryFunctional.type
+      ~ElementaryFunctional.xpu
+      ~ElementaryFunctional.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ElementaryFunctional.T_destination
+      ~ElementaryFunctional.call_super_init
+      ~ElementaryFunctional.dump_patches
+      ~ElementaryFunctional.training
+   
+   

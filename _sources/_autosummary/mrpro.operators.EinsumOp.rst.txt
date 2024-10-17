@@ -1,0 +1,84 @@
+mrpro.operators.EinsumOp
+========================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: EinsumOp
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~EinsumOp.__init__
+      ~EinsumOp.add_module
+      ~EinsumOp.adjoint
+      ~EinsumOp.apply
+      ~EinsumOp.bfloat16
+      ~EinsumOp.buffers
+      ~EinsumOp.children
+      ~EinsumOp.compile
+      ~EinsumOp.cpu
+      ~EinsumOp.cuda
+      ~EinsumOp.double
+      ~EinsumOp.eval
+      ~EinsumOp.extra_repr
+      ~EinsumOp.float
+      ~EinsumOp.forward
+      ~EinsumOp.get_buffer
+      ~EinsumOp.get_extra_state
+      ~EinsumOp.get_parameter
+      ~EinsumOp.get_submodule
+      ~EinsumOp.half
+      ~EinsumOp.ipu
+      ~EinsumOp.load_state_dict
+      ~EinsumOp.modules
+      ~EinsumOp.named_buffers
+      ~EinsumOp.named_children
+      ~EinsumOp.named_modules
+      ~EinsumOp.named_parameters
+      ~EinsumOp.operator_norm
+      ~EinsumOp.parameters
+      ~EinsumOp.register_backward_hook
+      ~EinsumOp.register_buffer
+      ~EinsumOp.register_forward_hook
+      ~EinsumOp.register_forward_pre_hook
+      ~EinsumOp.register_full_backward_hook
+      ~EinsumOp.register_full_backward_pre_hook
+      ~EinsumOp.register_load_state_dict_post_hook
+      ~EinsumOp.register_module
+      ~EinsumOp.register_parameter
+      ~EinsumOp.register_state_dict_pre_hook
+      ~EinsumOp.requires_grad_
+      ~EinsumOp.set_extra_state
+      ~EinsumOp.share_memory
+      ~EinsumOp.state_dict
+      ~EinsumOp.to
+      ~EinsumOp.to_empty
+      ~EinsumOp.train
+      ~EinsumOp.type
+      ~EinsumOp.xpu
+      ~EinsumOp.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~EinsumOp.H
+      ~EinsumOp.T_destination
+      ~EinsumOp.call_super_init
+      ~EinsumOp.dump_patches
+      ~EinsumOp.gram
+      ~EinsumOp.training
+   
+   

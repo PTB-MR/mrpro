@@ -1,0 +1,6 @@
+mrpro.algorithms.csm.inati
+==========================
+
+.. currentmodule:: mrpro.algorithms.csm
+
+.. autofunction:: inati

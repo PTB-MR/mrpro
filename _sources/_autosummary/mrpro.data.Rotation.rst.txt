@@ -1,0 +1,106 @@
+mrpro.data.Rotation
+===================
+
+.. currentmodule:: mrpro.data
+
+.. autoclass:: Rotation
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Rotation.__init__
+      ~Rotation.add_module
+      ~Rotation.align_vectors
+      ~Rotation.apply
+      ~Rotation.approx_equal
+      ~Rotation.as_davenport
+      ~Rotation.as_euler
+      ~Rotation.as_matrix
+      ~Rotation.as_mrp
+      ~Rotation.as_quat
+      ~Rotation.as_rotvec
+      ~Rotation.bfloat16
+      ~Rotation.buffers
+      ~Rotation.children
+      ~Rotation.compile
+      ~Rotation.concatenate
+      ~Rotation.cpu
+      ~Rotation.cuda
+      ~Rotation.double
+      ~Rotation.eval
+      ~Rotation.extra_repr
+      ~Rotation.float
+      ~Rotation.forward
+      ~Rotation.from_davenport
+      ~Rotation.from_euler
+      ~Rotation.from_matrix
+      ~Rotation.from_mrp
+      ~Rotation.from_quat
+      ~Rotation.from_rotvec
+      ~Rotation.get_buffer
+      ~Rotation.get_extra_state
+      ~Rotation.get_parameter
+      ~Rotation.get_submodule
+      ~Rotation.half
+      ~Rotation.identity
+      ~Rotation.inv
+      ~Rotation.ipu
+      ~Rotation.load_state_dict
+      ~Rotation.magnitude
+      ~Rotation.mean
+      ~Rotation.modules
+      ~Rotation.named_buffers
+      ~Rotation.named_children
+      ~Rotation.named_modules
+      ~Rotation.named_parameters
+      ~Rotation.parameters
+      ~Rotation.random
+      ~Rotation.register_backward_hook
+      ~Rotation.register_buffer
+      ~Rotation.register_forward_hook
+      ~Rotation.register_forward_pre_hook
+      ~Rotation.register_full_backward_hook
+      ~Rotation.register_full_backward_pre_hook
+      ~Rotation.register_load_state_dict_post_hook
+      ~Rotation.register_module
+      ~Rotation.register_parameter
+      ~Rotation.register_state_dict_pre_hook
+      ~Rotation.requires_grad_
+      ~Rotation.set_extra_state
+      ~Rotation.share_memory
+      ~Rotation.state_dict
+      ~Rotation.to
+      ~Rotation.to_empty
+      ~Rotation.train
+      ~Rotation.type
+      ~Rotation.xpu
+      ~Rotation.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Rotation.T_destination
+      ~Rotation.call_super_init
+      ~Rotation.dump_patches
+      ~Rotation.quaternion_w
+      ~Rotation.quaternion_x
+      ~Rotation.quaternion_y
+      ~Rotation.quaternion_z
+      ~Rotation.shape
+      ~Rotation.single
+      ~Rotation.training
+   
+   

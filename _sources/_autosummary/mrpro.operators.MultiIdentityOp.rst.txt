@@ -1,0 +1,82 @@
+mrpro.operators.MultiIdentityOp
+===============================
+
+.. currentmodule:: mrpro.operators
+
+.. autoclass:: MultiIdentityOp
+   :members:
+   :show-inheritance:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MultiIdentityOp.__init__
+      ~MultiIdentityOp.add_module
+      ~MultiIdentityOp.adjoint
+      ~MultiIdentityOp.apply
+      ~MultiIdentityOp.bfloat16
+      ~MultiIdentityOp.buffers
+      ~MultiIdentityOp.children
+      ~MultiIdentityOp.compile
+      ~MultiIdentityOp.cpu
+      ~MultiIdentityOp.cuda
+      ~MultiIdentityOp.double
+      ~MultiIdentityOp.eval
+      ~MultiIdentityOp.extra_repr
+      ~MultiIdentityOp.float
+      ~MultiIdentityOp.forward
+      ~MultiIdentityOp.get_buffer
+      ~MultiIdentityOp.get_extra_state
+      ~MultiIdentityOp.get_parameter
+      ~MultiIdentityOp.get_submodule
+      ~MultiIdentityOp.half
+      ~MultiIdentityOp.ipu
+      ~MultiIdentityOp.load_state_dict
+      ~MultiIdentityOp.modules
+      ~MultiIdentityOp.named_buffers
+      ~MultiIdentityOp.named_children
+      ~MultiIdentityOp.named_modules
+      ~MultiIdentityOp.named_parameters
+      ~MultiIdentityOp.parameters
+      ~MultiIdentityOp.register_backward_hook
+      ~MultiIdentityOp.register_buffer
+      ~MultiIdentityOp.register_forward_hook
+      ~MultiIdentityOp.register_forward_pre_hook
+      ~MultiIdentityOp.register_full_backward_hook
+      ~MultiIdentityOp.register_full_backward_pre_hook
+      ~MultiIdentityOp.register_load_state_dict_post_hook
+      ~MultiIdentityOp.register_module
+      ~MultiIdentityOp.register_parameter
+      ~MultiIdentityOp.register_state_dict_pre_hook
+      ~MultiIdentityOp.requires_grad_
+      ~MultiIdentityOp.set_extra_state
+      ~MultiIdentityOp.share_memory
+      ~MultiIdentityOp.state_dict
+      ~MultiIdentityOp.to
+      ~MultiIdentityOp.to_empty
+      ~MultiIdentityOp.train
+      ~MultiIdentityOp.type
+      ~MultiIdentityOp.xpu
+      ~MultiIdentityOp.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MultiIdentityOp.H
+      ~MultiIdentityOp.T_destination
+      ~MultiIdentityOp.call_super_init
+      ~MultiIdentityOp.dump_patches
+      ~MultiIdentityOp.training
+   
+   
