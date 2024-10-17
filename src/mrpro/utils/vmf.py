@@ -10,7 +10,7 @@ from math import log, sqrt
 import torch
 
 
-def sample_vmf(mu: torch.Tensor, kappa: float, n_samples: int) -> torch.Tensor:
+def sample_vmf(mu: torch.Tensor, kappa: float, n_samples: int, seed: int | None) -> torch.Tensor:
     """
     Generate samples from the von Mises-Fisher distribution.
 

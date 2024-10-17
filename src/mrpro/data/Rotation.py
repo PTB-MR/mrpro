@@ -56,6 +56,7 @@ from scipy._lib._util import check_random_state
 
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.typing import IndexerType, NestedSequence
+from mrpro.utils.vmf import sample_vmf
 
 AXIS_ORDER = 'zyx'  # This can be modified
 QUAT_AXIS_ORDER = AXIS_ORDER + 'w'  # Do not modify
@@ -214,25 +215,6 @@ def _quaternion_to_axis_angle(quaternion: torch.Tensor, degrees: bool = False) -
     if degrees:
         angle = torch.rad2deg(angle)
     return axis, angle
-
-
-def _quaternion_to_rotvec(quaternion: torch.Tensor, degrees: bool = False) -> torch.Tensor:
-    """Convert quaternion to rotation vector.
-
-    Parameters
-    ----------
-    quaternion
-        The batched quaternions, shape (..., 4)
-    degrees
-        If True, the rotation vector is returned in degrees, otherwise in radians.
-    """
-    quaternion = _canonical_quaternion(quaternion)  # w > 0 ensures that 0 <= angle <= pi
-    angles = 2 * torch.atan2(torch.linalg.vector_norm(quaternion[..., :3], dim=-1), quaternion[..., 3])
-    scales = 2 / (torch.special.sinc(angles / (2 * torch.pi)))
-    rotvec = scales[..., None] * quaternion[..., :3]
-    if degrees:
-        rotvec = torch.rad2deg(rotvec)
-    return rotvec
 
 
 def _quaternion_to_euler(quaternion: torch.Tensor, seq: str, extrinsic: bool):
@@ -1364,6 +1346,46 @@ class Rotation(torch.nn.Module):
         else:
             raise ValueError('improper should be a boolean or "random"')
         return cls(random_sample, inversion=inversion, reflection=False, normalize=True, copy=False)
+
+    @classmethod
+    def random_vmf(
+        cls,
+        num: int | Sequence[int] | None = None,
+        mean_axis: torch.Tensor | None = None,
+        kappa: float = 0.0,
+        sigma: float = math.inf,
+    ):
+        """
+        Randomly sample rotations from a von Mises-Fisher distribution.
+
+        Generate rotations from a von Mises-Fisher distribution with a given mean axis and concentration parameter
+        and a 2pi-wrapped Gaussian distribution for the rotation angle.
+
+        Parameters
+        ----------
+        mean_axis
+            shape (..., 3,), the mean axis of the von Mises-Fisher distribution.
+        kappa
+            The concentration parameter of the von Mises-Fisher distribution.
+            small kappa results in a uniform distribution, large kappa results in a peak around the mean axis.
+            similar to the inverse of the variance of a Gaussian distribution.
+        sigma
+            Standard deviation (radians) of the 2pi-wrapped Gaussian distribution used to sample the rotation angle.
+            Use `math.inf` if a uniform distribution is desired.
+        num
+            number of samples to generate. If None, a single rotation is generated.
+
+        Returns
+        -------
+        random_rotation
+            a stack of `(num, ...)` rotations.
+
+        """
+        n = 1 if num is None else num
+        mu = torch.tensor((1.0, 0.0, 0.0)) if mean_axis is None else torch.as_tensor(mean_axis)
+        rot_axes = sample_vmf(mu=mu, kappa=kappa, num=n)
+        rot_angle = (torch.randn(n, *mu.shape[:-1], dtype=mu.dtype, device=mu.device) * sigma) % (2 * math.pi)
+        return cls.from_rotvec(rot_axes * rot_angle)
 
     def __mul__(self, other: Rotation) -> Self:
         """For compatibility with sp.spatial.transform.Rotation."""

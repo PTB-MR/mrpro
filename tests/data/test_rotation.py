@@ -1382,3 +1382,30 @@ def test_quaternion_properties_batch():
 def test_axis_order_zyx():
     """Check that the axis order is set to zyx"""
     assert AXIS_ORDER == 'zyx'
+
+
+def test_from_to_directions():
+    """Test that from_directions and as_directions are inverse operations"""
+    one = torch.ones(1, 2, 3, 4)
+
+    # must be a rotation
+    b1 = SpatialDimension(one * (0.8146), one * (0.4707), one * (-0.3388))
+    b2 = SpatialDimension(one * (-0.4432), one * (0.8820), one * (0.1599))
+    b3 = SpatialDimension(one * (-0.3741), one * (-0.0199), one * (-0.9272))
+
+    r = Rotation.from_directions(b1, b2, b3)
+    torch.testing.assert_close(b1.zyx, r.as_directions()[0].zyx, atol=1e-4, rtol=0)
+    torch.testing.assert_close(b2.zyx, r.as_directions()[1].zyx, atol=1e-4, rtol=0)
+    torch.testing.assert_close(b3.zyx, r.as_directions()[2].zyx, atol=1e-4, rtol=0)
+
+
+def test_as_directions():
+    """Test conversion to basis vectors"""
+    r = Rotation.random(10, random_state=0)
+    matrix = r.as_matrix()
+    directions = r.as_directions()
+    for col, basis in enumerate(directions):
+        for row, axis in enumerate(AXIS_ORDER):
+            expected = matrix[:, row, col]
+            actual = getattr(basis, axis)
+            torch.testing.assert_close(actual, expected, atol=1e-4, rtol=0)
