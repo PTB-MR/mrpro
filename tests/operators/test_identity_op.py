@@ -1,7 +1,10 @@
-"""Tests for Identity Linear Operator."""
+"""Tests for Identity Linear Operator and MultiIdentity Operator."""
+
+from typing import assert_type
 
 import torch
-from mrpro.operators import IdentityOp, MultiIdentityOp
+from mrpro.operators import IdentityOp, MagnitudeOp, MultiIdentityOp
+from mrpro.operators.LinearOperator import LinearOperator
 
 from tests import RandomGenerator
 
@@ -42,3 +45,27 @@ def test_multi_identity_op():
     tensor = generator.complex64_tensor(2, 3, 4)
     operator = MultiIdentityOp()
     torch.testing.assert_close(tuple(tensor), operator(*tensor))
+
+
+def test_identity_is_neutral():
+    class DummyLinearOperator(LinearOperator):
+        def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+            return (x,)
+
+        def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+            return (x,)
+
+    op = DummyLinearOperator()
+    identity = IdentityOp()
+    assert op @ identity is op
+    assert identity @ op is op
+
+
+def test_multi_identity_is_neutral():
+    """Test that MultiIdentityOp is neutral for operator composition."""
+    op = MagnitudeOp()
+    identity = MultiIdentityOp()
+    assert op @ identity is op
+    assert identity @ op is op
+    assert_type((op @ identity)(torch.ones(1), torch.ones(1)), tuple[torch.Tensor, torch.Tensor])
+    assert_type((identity @ op)(torch.ones(1), torch.ones(1)), tuple[torch.Tensor, torch.Tensor])
