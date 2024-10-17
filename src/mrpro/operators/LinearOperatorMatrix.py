@@ -256,8 +256,11 @@ class LinearOperatorMatrix(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tenso
     ) -> torch.Tensor:
         """Upper bound of operator norm of the Matrix.
 
-        Uses the bounds :math:`||[A, B]^T|||<=sqrt(||A||^2 + ||B||^2)` and :math:`||[A, B]|||<=max(||A||,||B||)`
-        to estimate the operator norm of the matrix by calling operator_norm on each element of the matrix.
+        Uses the bounds :math:`||[A, B]|||<=max(||A||,||B||)` and :math:`||[A, B]^T|||<=sqrt(||A||^2 + ||B||^2)` 
+        to estimate the operator norm of the matrix. 
+        First,  operator_norm on is called on each element of the matrix.
+        Next, the norm is estimated for each row as the maximum of the norms of the operators in each row.
+        Finally the norm of the full matrix of linear operators is calulated by using the second bound.
 
         Parameters
         ----------
