@@ -349,13 +349,13 @@ class LinearOperatorElementwiseProductRight(
     @property
     def gram(self) -> LinearOperator:
         """Gram Operator."""
-        if isinstance(self._tensor, torch.Tensor):
-            factor: torch.Tensor | complex = self._tensor.conj() * self._tensor
-            if self._tensor.numel() > 1:
+        if isinstance(self._scalar, torch.Tensor):
+            factor: torch.Tensor | complex = self._scalar.conj() * self._scalar
+            if self._scalar.numel() > 1:
                 # only scalars can be moved outside the linear operator
                 return self._operator.H @ (factor * self._operator)
         else:
-            factor = self._tensor.conjugate() * self._tensor
+            factor = self._scalar.conjugate() * self._scalar
         return factor * self._operator.gram
 
 
@@ -375,12 +375,8 @@ class LinearOperatorElementwiseProductLeft(
     @property
     def gram(self) -> LinearOperator:
         """Gram Operator."""
-        if isinstance(self._tensor, torch.Tensor):
-            conj: torch.Tensor | complex = self._tensor.conj()
-        else:
-            conj = self._tensor.conjugate()
-
-        return conj * self._operator.gram * self._tensor
+        conj = self._scalar.conj() if isinstance(self._scalar, torch.Tensor) else self._scalar.conjugate()
+        return conj * self._operator.gram * self._scalar
 
 
 class AdjointLinearOperator(LinearOperator):
