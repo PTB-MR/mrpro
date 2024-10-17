@@ -595,7 +595,7 @@ class Rotation(torch.nn.Module):
         return cls(quaternions, normalize=True, copy=True, inversion=inversion, reflection=reflection)
 
     @classmethod
-    def from_matrix(cls, matrix: torch.Tensor | NestedSequence[float], allow_improper: bool = True) -> Self:
+    def from_matrix(cls, matrix: torch.Tensor | NestedSequence[float]|tuple[SpatialDimension,SpatialDimension,SpatialDimension], allow_improper: bool = True) -> Self:
         """Initialize from rotation matrix.
 
         Rotations in 3 dimensions can be represented with 3 x 3 proper
@@ -626,6 +626,7 @@ class Rotation(torch.nn.Module):
         .. [MAR2008] Landis Markley F (2008) Unit Quaternion from Rotation Matrix, Journal of guidance, control, and
            dynamics 31(2),440-442.
         """
+        if isinstance(matrix,
         matrix_ = torch.as_tensor(matrix)
         if matrix_.shape[-2:] != (3, 3):
             raise ValueError(f'Expected `matrix` to have shape (..., 3, 3), got {matrix_.shape}')
@@ -652,6 +653,8 @@ class Rotation(torch.nn.Module):
         quaternions = _matrix_to_quaternion(matrix_)
 
         return cls(quaternions, normalize=True, copy=False, inversion=improper, reflection=False)
+
+    @classmethod
 
     @classmethod
     def from_rotvec(
