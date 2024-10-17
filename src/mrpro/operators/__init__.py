@@ -12,6 +12,7 @@ from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.GridSamplingOp import GridSamplingOp
 from mrpro.operators.IdentityOp import IdentityOp
 from mrpro.operators.MagnitudeOp import MagnitudeOp
+from mrpro.operators.MultiIdentityOp import MultiIdentityOp
 from mrpro.operators.PhaseOp import PhaseOp
 from mrpro.operators.ProximableFunctionalSeparableSum import ProximableFunctionalSeparableSum
 from mrpro.operators.SensitivityOp import SensitivityOp
@@ -19,3 +20,4 @@ from mrpro.operators.SignalModel import SignalModel
 from mrpro.operators.SliceProjectionOp import SliceProjectionOp
 from mrpro.operators.WaveletOp import WaveletOp
 from mrpro.operators.ZeroPadOp import ZeroPadOp
+from mrpro.operators.ZeroOp import ZeroOp
