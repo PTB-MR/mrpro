@@ -1,6 +1,6 @@
 """Tests for the operators module."""
 
-from typing import assert_type, cast
+from typing import Any, assert_type, cast
 
 import pytest
 import torch
@@ -378,7 +378,7 @@ def test_gram_correctness():
     rng = RandomGenerator(2)
     a = DummyLinearOperator(rng.complex64_tensor((3, 10)))
     b = DummyLinearOperator(rng.complex64_tensor((10, 10)))
-    op = rng.complex64_tensor(3) * ((3 + 4j) * a @ b) * (1 + 2j) * rng.complex64_tensor(10)
+    op: Any = rng.complex64_tensor(3) * ((3 + 4j) * a @ b) * (1 + 2j) * rng.complex64_tensor(10)
     gram = op.gram
     u = rng.complex64_tensor(10)
     actual = gram(u)[0]
