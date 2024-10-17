@@ -28,7 +28,7 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
-    "numpy>=1.23, <2.0",
+    "numpy>=1.23",
     "torch>=2.3",
     "ismrmrd>=1.14.1",
     "einops",
@@ -66,7 +66,7 @@ notebook = [
 testpaths = ["tests"]
 filterwarnings = [
     "error",
-    "ignore:'write_like_original':DeprecationWarning:pydicom:"
+    "ignore:'write_like_original':DeprecationWarning:pydicom:",
 ]
 addopts = "-n auto"
 markers = ["cuda : Tests only to be run when cuda device is available"]
@@ -91,7 +91,7 @@ module = [
     "pypulseq",
     "zenodo_get",
     "ptwt.*",
-    "pywt.*"
+    "pywt.*",
 ]
 ignore_missing_imports = true
 
