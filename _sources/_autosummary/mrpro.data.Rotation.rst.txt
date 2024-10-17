@@ -57,6 +57,7 @@ mrpro.data.Rotation
       ~Rotation.magnitude
       ~Rotation.mean
       ~Rotation.modules
+      ~Rotation.mtia
       ~Rotation.named_buffers
       ~Rotation.named_children
       ~Rotation.named_modules
@@ -70,11 +71,14 @@ mrpro.data.Rotation
       ~Rotation.register_full_backward_hook
       ~Rotation.register_full_backward_pre_hook
       ~Rotation.register_load_state_dict_post_hook
+      ~Rotation.register_load_state_dict_pre_hook
       ~Rotation.register_module
       ~Rotation.register_parameter
+      ~Rotation.register_state_dict_post_hook
       ~Rotation.register_state_dict_pre_hook
       ~Rotation.requires_grad_
       ~Rotation.set_extra_state
+      ~Rotation.set_submodule
       ~Rotation.share_memory
       ~Rotation.state_dict
       ~Rotation.to

@@ -39,6 +39,7 @@ mrpro.operators.ConstraintsOp
       ~ConstraintsOp.ipu
       ~ConstraintsOp.load_state_dict
       ~ConstraintsOp.modules
+      ~ConstraintsOp.mtia
       ~ConstraintsOp.named_buffers
       ~ConstraintsOp.named_children
       ~ConstraintsOp.named_modules
@@ -51,11 +52,14 @@ mrpro.operators.ConstraintsOp
       ~ConstraintsOp.register_full_backward_hook
       ~ConstraintsOp.register_full_backward_pre_hook
       ~ConstraintsOp.register_load_state_dict_post_hook
+      ~ConstraintsOp.register_load_state_dict_pre_hook
       ~ConstraintsOp.register_module
       ~ConstraintsOp.register_parameter
+      ~ConstraintsOp.register_state_dict_post_hook
       ~ConstraintsOp.register_state_dict_pre_hook
       ~ConstraintsOp.requires_grad_
       ~ConstraintsOp.set_extra_state
+      ~ConstraintsOp.set_submodule
       ~ConstraintsOp.share_memory
       ~ConstraintsOp.sigmoid
       ~ConstraintsOp.sigmoid_inverse

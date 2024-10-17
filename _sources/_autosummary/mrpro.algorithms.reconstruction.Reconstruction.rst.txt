@@ -39,6 +39,7 @@ mrpro.algorithms.reconstruction.Reconstruction
       ~Reconstruction.ipu
       ~Reconstruction.load_state_dict
       ~Reconstruction.modules
+      ~Reconstruction.mtia
       ~Reconstruction.named_buffers
       ~Reconstruction.named_children
       ~Reconstruction.named_modules
@@ -53,11 +54,14 @@ mrpro.algorithms.reconstruction.Reconstruction
       ~Reconstruction.register_full_backward_hook
       ~Reconstruction.register_full_backward_pre_hook
       ~Reconstruction.register_load_state_dict_post_hook
+      ~Reconstruction.register_load_state_dict_pre_hook
       ~Reconstruction.register_module
       ~Reconstruction.register_parameter
+      ~Reconstruction.register_state_dict_post_hook
       ~Reconstruction.register_state_dict_pre_hook
       ~Reconstruction.requires_grad_
       ~Reconstruction.set_extra_state
+      ~Reconstruction.set_submodule
       ~Reconstruction.share_memory
       ~Reconstruction.state_dict
       ~Reconstruction.to

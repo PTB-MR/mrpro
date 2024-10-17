@@ -39,6 +39,7 @@ mrpro.operators.GridSamplingOp
       ~GridSamplingOp.ipu
       ~GridSamplingOp.load_state_dict
       ~GridSamplingOp.modules
+      ~GridSamplingOp.mtia
       ~GridSamplingOp.named_buffers
       ~GridSamplingOp.named_children
       ~GridSamplingOp.named_modules
@@ -52,11 +53,14 @@ mrpro.operators.GridSamplingOp
       ~GridSamplingOp.register_full_backward_hook
       ~GridSamplingOp.register_full_backward_pre_hook
       ~GridSamplingOp.register_load_state_dict_post_hook
+      ~GridSamplingOp.register_load_state_dict_pre_hook
       ~GridSamplingOp.register_module
       ~GridSamplingOp.register_parameter
+      ~GridSamplingOp.register_state_dict_post_hook
       ~GridSamplingOp.register_state_dict_pre_hook
       ~GridSamplingOp.requires_grad_
       ~GridSamplingOp.set_extra_state
+      ~GridSamplingOp.set_submodule
       ~GridSamplingOp.share_memory
       ~GridSamplingOp.state_dict
       ~GridSamplingOp.to

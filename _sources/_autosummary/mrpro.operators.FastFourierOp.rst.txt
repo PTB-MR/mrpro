@@ -39,6 +39,7 @@ mrpro.operators.FastFourierOp
       ~FastFourierOp.ipu
       ~FastFourierOp.load_state_dict
       ~FastFourierOp.modules
+      ~FastFourierOp.mtia
       ~FastFourierOp.named_buffers
       ~FastFourierOp.named_children
       ~FastFourierOp.named_modules
@@ -52,11 +53,14 @@ mrpro.operators.FastFourierOp
       ~FastFourierOp.register_full_backward_hook
       ~FastFourierOp.register_full_backward_pre_hook
       ~FastFourierOp.register_load_state_dict_post_hook
+      ~FastFourierOp.register_load_state_dict_pre_hook
       ~FastFourierOp.register_module
       ~FastFourierOp.register_parameter
+      ~FastFourierOp.register_state_dict_post_hook
       ~FastFourierOp.register_state_dict_pre_hook
       ~FastFourierOp.requires_grad_
       ~FastFourierOp.set_extra_state
+      ~FastFourierOp.set_submodule
       ~FastFourierOp.share_memory
       ~FastFourierOp.state_dict
       ~FastFourierOp.to

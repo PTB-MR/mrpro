@@ -39,6 +39,7 @@ mrpro.operators.models.SaturationRecovery
       ~SaturationRecovery.ipu
       ~SaturationRecovery.load_state_dict
       ~SaturationRecovery.modules
+      ~SaturationRecovery.mtia
       ~SaturationRecovery.named_buffers
       ~SaturationRecovery.named_children
       ~SaturationRecovery.named_modules
@@ -51,11 +52,14 @@ mrpro.operators.models.SaturationRecovery
       ~SaturationRecovery.register_full_backward_hook
       ~SaturationRecovery.register_full_backward_pre_hook
       ~SaturationRecovery.register_load_state_dict_post_hook
+      ~SaturationRecovery.register_load_state_dict_pre_hook
       ~SaturationRecovery.register_module
       ~SaturationRecovery.register_parameter
+      ~SaturationRecovery.register_state_dict_post_hook
       ~SaturationRecovery.register_state_dict_pre_hook
       ~SaturationRecovery.requires_grad_
       ~SaturationRecovery.set_extra_state
+      ~SaturationRecovery.set_submodule
       ~SaturationRecovery.share_memory
       ~SaturationRecovery.state_dict
       ~SaturationRecovery.to

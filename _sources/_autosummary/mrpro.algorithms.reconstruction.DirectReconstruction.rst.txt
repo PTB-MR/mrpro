@@ -39,6 +39,7 @@ mrpro.algorithms.reconstruction.DirectReconstruction
       ~DirectReconstruction.ipu
       ~DirectReconstruction.load_state_dict
       ~DirectReconstruction.modules
+      ~DirectReconstruction.mtia
       ~DirectReconstruction.named_buffers
       ~DirectReconstruction.named_children
       ~DirectReconstruction.named_modules
@@ -53,11 +54,14 @@ mrpro.algorithms.reconstruction.DirectReconstruction
       ~DirectReconstruction.register_full_backward_hook
       ~DirectReconstruction.register_full_backward_pre_hook
       ~DirectReconstruction.register_load_state_dict_post_hook
+      ~DirectReconstruction.register_load_state_dict_pre_hook
       ~DirectReconstruction.register_module
       ~DirectReconstruction.register_parameter
+      ~DirectReconstruction.register_state_dict_post_hook
       ~DirectReconstruction.register_state_dict_pre_hook
       ~DirectReconstruction.requires_grad_
       ~DirectReconstruction.set_extra_state
+      ~DirectReconstruction.set_submodule
       ~DirectReconstruction.share_memory
       ~DirectReconstruction.state_dict
       ~DirectReconstruction.to

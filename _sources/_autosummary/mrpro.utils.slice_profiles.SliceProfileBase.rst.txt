@@ -38,6 +38,7 @@ mrpro.utils.slice\_profiles.SliceProfileBase
       ~SliceProfileBase.ipu
       ~SliceProfileBase.load_state_dict
       ~SliceProfileBase.modules
+      ~SliceProfileBase.mtia
       ~SliceProfileBase.named_buffers
       ~SliceProfileBase.named_children
       ~SliceProfileBase.named_modules
@@ -51,11 +52,14 @@ mrpro.utils.slice\_profiles.SliceProfileBase
       ~SliceProfileBase.register_full_backward_hook
       ~SliceProfileBase.register_full_backward_pre_hook
       ~SliceProfileBase.register_load_state_dict_post_hook
+      ~SliceProfileBase.register_load_state_dict_pre_hook
       ~SliceProfileBase.register_module
       ~SliceProfileBase.register_parameter
+      ~SliceProfileBase.register_state_dict_post_hook
       ~SliceProfileBase.register_state_dict_pre_hook
       ~SliceProfileBase.requires_grad_
       ~SliceProfileBase.set_extra_state
+      ~SliceProfileBase.set_submodule
       ~SliceProfileBase.share_memory
       ~SliceProfileBase.state_dict
       ~SliceProfileBase.to

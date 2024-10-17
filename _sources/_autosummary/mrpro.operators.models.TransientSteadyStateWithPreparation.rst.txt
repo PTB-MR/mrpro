@@ -39,6 +39,7 @@ mrpro.operators.models.TransientSteadyStateWithPreparation
       ~TransientSteadyStateWithPreparation.ipu
       ~TransientSteadyStateWithPreparation.load_state_dict
       ~TransientSteadyStateWithPreparation.modules
+      ~TransientSteadyStateWithPreparation.mtia
       ~TransientSteadyStateWithPreparation.named_buffers
       ~TransientSteadyStateWithPreparation.named_children
       ~TransientSteadyStateWithPreparation.named_modules
@@ -51,11 +52,14 @@ mrpro.operators.models.TransientSteadyStateWithPreparation
       ~TransientSteadyStateWithPreparation.register_full_backward_hook
       ~TransientSteadyStateWithPreparation.register_full_backward_pre_hook
       ~TransientSteadyStateWithPreparation.register_load_state_dict_post_hook
+      ~TransientSteadyStateWithPreparation.register_load_state_dict_pre_hook
       ~TransientSteadyStateWithPreparation.register_module
       ~TransientSteadyStateWithPreparation.register_parameter
+      ~TransientSteadyStateWithPreparation.register_state_dict_post_hook
       ~TransientSteadyStateWithPreparation.register_state_dict_pre_hook
       ~TransientSteadyStateWithPreparation.requires_grad_
       ~TransientSteadyStateWithPreparation.set_extra_state
+      ~TransientSteadyStateWithPreparation.set_submodule
       ~TransientSteadyStateWithPreparation.share_memory
       ~TransientSteadyStateWithPreparation.state_dict
       ~TransientSteadyStateWithPreparation.to

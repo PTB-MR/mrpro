@@ -40,6 +40,7 @@ mrpro.operators.FiniteDifferenceOp
       ~FiniteDifferenceOp.ipu
       ~FiniteDifferenceOp.load_state_dict
       ~FiniteDifferenceOp.modules
+      ~FiniteDifferenceOp.mtia
       ~FiniteDifferenceOp.named_buffers
       ~FiniteDifferenceOp.named_children
       ~FiniteDifferenceOp.named_modules
@@ -53,11 +54,14 @@ mrpro.operators.FiniteDifferenceOp
       ~FiniteDifferenceOp.register_full_backward_hook
       ~FiniteDifferenceOp.register_full_backward_pre_hook
       ~FiniteDifferenceOp.register_load_state_dict_post_hook
+      ~FiniteDifferenceOp.register_load_state_dict_pre_hook
       ~FiniteDifferenceOp.register_module
       ~FiniteDifferenceOp.register_parameter
+      ~FiniteDifferenceOp.register_state_dict_post_hook
       ~FiniteDifferenceOp.register_state_dict_pre_hook
       ~FiniteDifferenceOp.requires_grad_
       ~FiniteDifferenceOp.set_extra_state
+      ~FiniteDifferenceOp.set_submodule
       ~FiniteDifferenceOp.share_memory
       ~FiniteDifferenceOp.state_dict
       ~FiniteDifferenceOp.to

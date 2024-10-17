@@ -39,6 +39,7 @@ mrpro.operators.models.InversionRecovery
       ~InversionRecovery.ipu
       ~InversionRecovery.load_state_dict
       ~InversionRecovery.modules
+      ~InversionRecovery.mtia
       ~InversionRecovery.named_buffers
       ~InversionRecovery.named_children
       ~InversionRecovery.named_modules
@@ -51,11 +52,14 @@ mrpro.operators.models.InversionRecovery
       ~InversionRecovery.register_full_backward_hook
       ~InversionRecovery.register_full_backward_pre_hook
       ~InversionRecovery.register_load_state_dict_post_hook
+      ~InversionRecovery.register_load_state_dict_pre_hook
       ~InversionRecovery.register_module
       ~InversionRecovery.register_parameter
+      ~InversionRecovery.register_state_dict_post_hook
       ~InversionRecovery.register_state_dict_pre_hook
       ~InversionRecovery.requires_grad_
       ~InversionRecovery.set_extra_state
+      ~InversionRecovery.set_submodule
       ~InversionRecovery.share_memory
       ~InversionRecovery.state_dict
       ~InversionRecovery.to

@@ -40,6 +40,7 @@ mrpro.operators.FourierOp
       ~FourierOp.ipu
       ~FourierOp.load_state_dict
       ~FourierOp.modules
+      ~FourierOp.mtia
       ~FourierOp.named_buffers
       ~FourierOp.named_children
       ~FourierOp.named_modules
@@ -53,11 +54,14 @@ mrpro.operators.FourierOp
       ~FourierOp.register_full_backward_hook
       ~FourierOp.register_full_backward_pre_hook
       ~FourierOp.register_load_state_dict_post_hook
+      ~FourierOp.register_load_state_dict_pre_hook
       ~FourierOp.register_module
       ~FourierOp.register_parameter
+      ~FourierOp.register_state_dict_post_hook
       ~FourierOp.register_state_dict_pre_hook
       ~FourierOp.requires_grad_
       ~FourierOp.set_extra_state
+      ~FourierOp.set_submodule
       ~FourierOp.share_memory
       ~FourierOp.state_dict
       ~FourierOp.to

@@ -38,6 +38,7 @@ mrpro.operators.Functional
       ~Functional.ipu
       ~Functional.load_state_dict
       ~Functional.modules
+      ~Functional.mtia
       ~Functional.named_buffers
       ~Functional.named_children
       ~Functional.named_modules
@@ -50,11 +51,14 @@ mrpro.operators.Functional
       ~Functional.register_full_backward_hook
       ~Functional.register_full_backward_pre_hook
       ~Functional.register_load_state_dict_post_hook
+      ~Functional.register_load_state_dict_pre_hook
       ~Functional.register_module
       ~Functional.register_parameter
+      ~Functional.register_state_dict_post_hook
       ~Functional.register_state_dict_pre_hook
       ~Functional.requires_grad_
       ~Functional.set_extra_state
+      ~Functional.set_submodule
       ~Functional.share_memory
       ~Functional.state_dict
       ~Functional.to

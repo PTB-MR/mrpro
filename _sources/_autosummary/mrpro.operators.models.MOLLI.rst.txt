@@ -39,6 +39,7 @@ mrpro.operators.models.MOLLI
       ~MOLLI.ipu
       ~MOLLI.load_state_dict
       ~MOLLI.modules
+      ~MOLLI.mtia
       ~MOLLI.named_buffers
       ~MOLLI.named_children
       ~MOLLI.named_modules
@@ -51,11 +52,14 @@ mrpro.operators.models.MOLLI
       ~MOLLI.register_full_backward_hook
       ~MOLLI.register_full_backward_pre_hook
       ~MOLLI.register_load_state_dict_post_hook
+      ~MOLLI.register_load_state_dict_pre_hook
       ~MOLLI.register_module
       ~MOLLI.register_parameter
+      ~MOLLI.register_state_dict_post_hook
       ~MOLLI.register_state_dict_pre_hook
       ~MOLLI.requires_grad_
       ~MOLLI.set_extra_state
+      ~MOLLI.set_submodule
       ~MOLLI.share_memory
       ~MOLLI.state_dict
       ~MOLLI.to

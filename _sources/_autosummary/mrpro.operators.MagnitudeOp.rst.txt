@@ -38,6 +38,7 @@ mrpro.operators.MagnitudeOp
       ~MagnitudeOp.ipu
       ~MagnitudeOp.load_state_dict
       ~MagnitudeOp.modules
+      ~MagnitudeOp.mtia
       ~MagnitudeOp.named_buffers
       ~MagnitudeOp.named_children
       ~MagnitudeOp.named_modules
@@ -50,11 +51,14 @@ mrpro.operators.MagnitudeOp
       ~MagnitudeOp.register_full_backward_hook
       ~MagnitudeOp.register_full_backward_pre_hook
       ~MagnitudeOp.register_load_state_dict_post_hook
+      ~MagnitudeOp.register_load_state_dict_pre_hook
       ~MagnitudeOp.register_module
       ~MagnitudeOp.register_parameter
+      ~MagnitudeOp.register_state_dict_post_hook
       ~MagnitudeOp.register_state_dict_pre_hook
       ~MagnitudeOp.requires_grad_
       ~MagnitudeOp.set_extra_state
+      ~MagnitudeOp.set_submodule
       ~MagnitudeOp.share_memory
       ~MagnitudeOp.state_dict
       ~MagnitudeOp.to

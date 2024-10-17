@@ -38,6 +38,7 @@ mrpro.operators.PhaseOp
       ~PhaseOp.ipu
       ~PhaseOp.load_state_dict
       ~PhaseOp.modules
+      ~PhaseOp.mtia
       ~PhaseOp.named_buffers
       ~PhaseOp.named_children
       ~PhaseOp.named_modules
@@ -50,11 +51,14 @@ mrpro.operators.PhaseOp
       ~PhaseOp.register_full_backward_hook
       ~PhaseOp.register_full_backward_pre_hook
       ~PhaseOp.register_load_state_dict_post_hook
+      ~PhaseOp.register_load_state_dict_pre_hook
       ~PhaseOp.register_module
       ~PhaseOp.register_parameter
+      ~PhaseOp.register_state_dict_post_hook
       ~PhaseOp.register_state_dict_pre_hook
       ~PhaseOp.requires_grad_
       ~PhaseOp.set_extra_state
+      ~PhaseOp.set_submodule
       ~PhaseOp.share_memory
       ~PhaseOp.state_dict
       ~PhaseOp.to

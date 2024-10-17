@@ -38,6 +38,7 @@ mrpro.operators.functionals.ZeroFunctional
       ~ZeroFunctional.ipu
       ~ZeroFunctional.load_state_dict
       ~ZeroFunctional.modules
+      ~ZeroFunctional.mtia
       ~ZeroFunctional.named_buffers
       ~ZeroFunctional.named_children
       ~ZeroFunctional.named_modules
@@ -52,11 +53,14 @@ mrpro.operators.functionals.ZeroFunctional
       ~ZeroFunctional.register_full_backward_hook
       ~ZeroFunctional.register_full_backward_pre_hook
       ~ZeroFunctional.register_load_state_dict_post_hook
+      ~ZeroFunctional.register_load_state_dict_pre_hook
       ~ZeroFunctional.register_module
       ~ZeroFunctional.register_parameter
+      ~ZeroFunctional.register_state_dict_post_hook
       ~ZeroFunctional.register_state_dict_pre_hook
       ~ZeroFunctional.requires_grad_
       ~ZeroFunctional.set_extra_state
+      ~ZeroFunctional.set_submodule
       ~ZeroFunctional.share_memory
       ~ZeroFunctional.state_dict
       ~ZeroFunctional.to

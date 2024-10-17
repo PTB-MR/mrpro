@@ -39,6 +39,7 @@ mrpro.operators.models.WASABITI
       ~WASABITI.ipu
       ~WASABITI.load_state_dict
       ~WASABITI.modules
+      ~WASABITI.mtia
       ~WASABITI.named_buffers
       ~WASABITI.named_children
       ~WASABITI.named_modules
@@ -51,11 +52,14 @@ mrpro.operators.models.WASABITI
       ~WASABITI.register_full_backward_hook
       ~WASABITI.register_full_backward_pre_hook
       ~WASABITI.register_load_state_dict_post_hook
+      ~WASABITI.register_load_state_dict_pre_hook
       ~WASABITI.register_module
       ~WASABITI.register_parameter
+      ~WASABITI.register_state_dict_post_hook
       ~WASABITI.register_state_dict_pre_hook
       ~WASABITI.requires_grad_
       ~WASABITI.set_extra_state
+      ~WASABITI.set_submodule
       ~WASABITI.share_memory
       ~WASABITI.state_dict
       ~WASABITI.to

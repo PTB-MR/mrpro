@@ -38,6 +38,7 @@ mrpro.operators.functionals.L1NormViewAsReal
       ~L1NormViewAsReal.ipu
       ~L1NormViewAsReal.load_state_dict
       ~L1NormViewAsReal.modules
+      ~L1NormViewAsReal.mtia
       ~L1NormViewAsReal.named_buffers
       ~L1NormViewAsReal.named_children
       ~L1NormViewAsReal.named_modules
@@ -52,11 +53,14 @@ mrpro.operators.functionals.L1NormViewAsReal
       ~L1NormViewAsReal.register_full_backward_hook
       ~L1NormViewAsReal.register_full_backward_pre_hook
       ~L1NormViewAsReal.register_load_state_dict_post_hook
+      ~L1NormViewAsReal.register_load_state_dict_pre_hook
       ~L1NormViewAsReal.register_module
       ~L1NormViewAsReal.register_parameter
+      ~L1NormViewAsReal.register_state_dict_post_hook
       ~L1NormViewAsReal.register_state_dict_pre_hook
       ~L1NormViewAsReal.requires_grad_
       ~L1NormViewAsReal.set_extra_state
+      ~L1NormViewAsReal.set_submodule
       ~L1NormViewAsReal.share_memory
       ~L1NormViewAsReal.state_dict
       ~L1NormViewAsReal.to

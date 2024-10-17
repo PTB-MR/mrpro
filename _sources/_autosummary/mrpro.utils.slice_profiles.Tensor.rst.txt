@@ -360,6 +360,7 @@ mrpro.utils.slice\_profiles.Tensor
       ~Tensor.moveaxis
       ~Tensor.movedim
       ~Tensor.msort
+      ~Tensor.mtia
       ~Tensor.mul
       ~Tensor.mul_
       ~Tensor.multinomial

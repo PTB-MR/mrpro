@@ -38,6 +38,7 @@ mrpro.operators.functionals.MSEDataDiscrepancy
       ~MSEDataDiscrepancy.ipu
       ~MSEDataDiscrepancy.load_state_dict
       ~MSEDataDiscrepancy.modules
+      ~MSEDataDiscrepancy.mtia
       ~MSEDataDiscrepancy.named_buffers
       ~MSEDataDiscrepancy.named_children
       ~MSEDataDiscrepancy.named_modules
@@ -50,11 +51,14 @@ mrpro.operators.functionals.MSEDataDiscrepancy
       ~MSEDataDiscrepancy.register_full_backward_hook
       ~MSEDataDiscrepancy.register_full_backward_pre_hook
       ~MSEDataDiscrepancy.register_load_state_dict_post_hook
+      ~MSEDataDiscrepancy.register_load_state_dict_pre_hook
       ~MSEDataDiscrepancy.register_module
       ~MSEDataDiscrepancy.register_parameter
+      ~MSEDataDiscrepancy.register_state_dict_post_hook
       ~MSEDataDiscrepancy.register_state_dict_pre_hook
       ~MSEDataDiscrepancy.requires_grad_
       ~MSEDataDiscrepancy.set_extra_state
+      ~MSEDataDiscrepancy.set_submodule
       ~MSEDataDiscrepancy.share_memory
       ~MSEDataDiscrepancy.state_dict
       ~MSEDataDiscrepancy.to

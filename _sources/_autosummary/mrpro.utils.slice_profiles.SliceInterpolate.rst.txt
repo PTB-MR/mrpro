@@ -38,6 +38,7 @@ mrpro.utils.slice\_profiles.SliceInterpolate
       ~SliceInterpolate.ipu
       ~SliceInterpolate.load_state_dict
       ~SliceInterpolate.modules
+      ~SliceInterpolate.mtia
       ~SliceInterpolate.named_buffers
       ~SliceInterpolate.named_children
       ~SliceInterpolate.named_modules
@@ -51,11 +52,14 @@ mrpro.utils.slice\_profiles.SliceInterpolate
       ~SliceInterpolate.register_full_backward_hook
       ~SliceInterpolate.register_full_backward_pre_hook
       ~SliceInterpolate.register_load_state_dict_post_hook
+      ~SliceInterpolate.register_load_state_dict_pre_hook
       ~SliceInterpolate.register_module
       ~SliceInterpolate.register_parameter
+      ~SliceInterpolate.register_state_dict_post_hook
       ~SliceInterpolate.register_state_dict_pre_hook
       ~SliceInterpolate.requires_grad_
       ~SliceInterpolate.set_extra_state
+      ~SliceInterpolate.set_submodule
       ~SliceInterpolate.share_memory
       ~SliceInterpolate.state_dict
       ~SliceInterpolate.to

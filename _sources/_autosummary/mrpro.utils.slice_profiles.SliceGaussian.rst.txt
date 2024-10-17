@@ -38,6 +38,7 @@ mrpro.utils.slice\_profiles.SliceGaussian
       ~SliceGaussian.ipu
       ~SliceGaussian.load_state_dict
       ~SliceGaussian.modules
+      ~SliceGaussian.mtia
       ~SliceGaussian.named_buffers
       ~SliceGaussian.named_children
       ~SliceGaussian.named_modules
@@ -51,11 +52,14 @@ mrpro.utils.slice\_profiles.SliceGaussian
       ~SliceGaussian.register_full_backward_hook
       ~SliceGaussian.register_full_backward_pre_hook
       ~SliceGaussian.register_load_state_dict_post_hook
+      ~SliceGaussian.register_load_state_dict_pre_hook
       ~SliceGaussian.register_module
       ~SliceGaussian.register_parameter
+      ~SliceGaussian.register_state_dict_post_hook
       ~SliceGaussian.register_state_dict_pre_hook
       ~SliceGaussian.requires_grad_
       ~SliceGaussian.set_extra_state
+      ~SliceGaussian.set_submodule
       ~SliceGaussian.share_memory
       ~SliceGaussian.state_dict
       ~SliceGaussian.to

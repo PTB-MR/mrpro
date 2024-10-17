@@ -38,6 +38,7 @@ mrpro.operators.functionals.L2NormSquared
       ~L2NormSquared.ipu
       ~L2NormSquared.load_state_dict
       ~L2NormSquared.modules
+      ~L2NormSquared.mtia
       ~L2NormSquared.named_buffers
       ~L2NormSquared.named_children
       ~L2NormSquared.named_modules
@@ -52,11 +53,14 @@ mrpro.operators.functionals.L2NormSquared
       ~L2NormSquared.register_full_backward_hook
       ~L2NormSquared.register_full_backward_pre_hook
       ~L2NormSquared.register_load_state_dict_post_hook
+      ~L2NormSquared.register_load_state_dict_pre_hook
       ~L2NormSquared.register_module
       ~L2NormSquared.register_parameter
+      ~L2NormSquared.register_state_dict_post_hook
       ~L2NormSquared.register_state_dict_pre_hook
       ~L2NormSquared.requires_grad_
       ~L2NormSquared.set_extra_state
+      ~L2NormSquared.set_submodule
       ~L2NormSquared.share_memory
       ~L2NormSquared.state_dict
       ~L2NormSquared.to

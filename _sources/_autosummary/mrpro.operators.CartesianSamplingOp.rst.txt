@@ -39,6 +39,7 @@ mrpro.operators.CartesianSamplingOp
       ~CartesianSamplingOp.ipu
       ~CartesianSamplingOp.load_state_dict
       ~CartesianSamplingOp.modules
+      ~CartesianSamplingOp.mtia
       ~CartesianSamplingOp.named_buffers
       ~CartesianSamplingOp.named_children
       ~CartesianSamplingOp.named_modules
@@ -52,11 +53,14 @@ mrpro.operators.CartesianSamplingOp
       ~CartesianSamplingOp.register_full_backward_hook
       ~CartesianSamplingOp.register_full_backward_pre_hook
       ~CartesianSamplingOp.register_load_state_dict_post_hook
+      ~CartesianSamplingOp.register_load_state_dict_pre_hook
       ~CartesianSamplingOp.register_module
       ~CartesianSamplingOp.register_parameter
+      ~CartesianSamplingOp.register_state_dict_post_hook
       ~CartesianSamplingOp.register_state_dict_pre_hook
       ~CartesianSamplingOp.requires_grad_
       ~CartesianSamplingOp.set_extra_state
+      ~CartesianSamplingOp.set_submodule
       ~CartesianSamplingOp.share_memory
       ~CartesianSamplingOp.state_dict
       ~CartesianSamplingOp.to

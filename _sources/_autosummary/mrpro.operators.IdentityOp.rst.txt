@@ -39,6 +39,7 @@ mrpro.operators.IdentityOp
       ~IdentityOp.ipu
       ~IdentityOp.load_state_dict
       ~IdentityOp.modules
+      ~IdentityOp.mtia
       ~IdentityOp.named_buffers
       ~IdentityOp.named_children
       ~IdentityOp.named_modules
@@ -52,11 +53,14 @@ mrpro.operators.IdentityOp
       ~IdentityOp.register_full_backward_hook
       ~IdentityOp.register_full_backward_pre_hook
       ~IdentityOp.register_load_state_dict_post_hook
+      ~IdentityOp.register_load_state_dict_pre_hook
       ~IdentityOp.register_module
       ~IdentityOp.register_parameter
+      ~IdentityOp.register_state_dict_post_hook
       ~IdentityOp.register_state_dict_pre_hook
       ~IdentityOp.requires_grad_
       ~IdentityOp.set_extra_state
+      ~IdentityOp.set_submodule
       ~IdentityOp.share_memory
       ~IdentityOp.state_dict
       ~IdentityOp.to

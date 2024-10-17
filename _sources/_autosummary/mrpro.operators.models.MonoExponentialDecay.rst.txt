@@ -39,6 +39,7 @@ mrpro.operators.models.MonoExponentialDecay
       ~MonoExponentialDecay.ipu
       ~MonoExponentialDecay.load_state_dict
       ~MonoExponentialDecay.modules
+      ~MonoExponentialDecay.mtia
       ~MonoExponentialDecay.named_buffers
       ~MonoExponentialDecay.named_children
       ~MonoExponentialDecay.named_modules
@@ -51,11 +52,14 @@ mrpro.operators.models.MonoExponentialDecay
       ~MonoExponentialDecay.register_full_backward_hook
       ~MonoExponentialDecay.register_full_backward_pre_hook
       ~MonoExponentialDecay.register_load_state_dict_post_hook
+      ~MonoExponentialDecay.register_load_state_dict_pre_hook
       ~MonoExponentialDecay.register_module
       ~MonoExponentialDecay.register_parameter
+      ~MonoExponentialDecay.register_state_dict_post_hook
       ~MonoExponentialDecay.register_state_dict_pre_hook
       ~MonoExponentialDecay.requires_grad_
       ~MonoExponentialDecay.set_extra_state
+      ~MonoExponentialDecay.set_submodule
       ~MonoExponentialDecay.share_memory
       ~MonoExponentialDecay.state_dict
       ~MonoExponentialDecay.to

@@ -38,6 +38,7 @@ mrpro.operators.ElementaryProximableFunctional
       ~ElementaryProximableFunctional.ipu
       ~ElementaryProximableFunctional.load_state_dict
       ~ElementaryProximableFunctional.modules
+      ~ElementaryProximableFunctional.mtia
       ~ElementaryProximableFunctional.named_buffers
       ~ElementaryProximableFunctional.named_children
       ~ElementaryProximableFunctional.named_modules
@@ -52,11 +53,14 @@ mrpro.operators.ElementaryProximableFunctional
       ~ElementaryProximableFunctional.register_full_backward_hook
       ~ElementaryProximableFunctional.register_full_backward_pre_hook
       ~ElementaryProximableFunctional.register_load_state_dict_post_hook
+      ~ElementaryProximableFunctional.register_load_state_dict_pre_hook
       ~ElementaryProximableFunctional.register_module
       ~ElementaryProximableFunctional.register_parameter
+      ~ElementaryProximableFunctional.register_state_dict_post_hook
       ~ElementaryProximableFunctional.register_state_dict_pre_hook
       ~ElementaryProximableFunctional.requires_grad_
       ~ElementaryProximableFunctional.set_extra_state
+      ~ElementaryProximableFunctional.set_submodule
       ~ElementaryProximableFunctional.share_memory
       ~ElementaryProximableFunctional.state_dict
       ~ElementaryProximableFunctional.to

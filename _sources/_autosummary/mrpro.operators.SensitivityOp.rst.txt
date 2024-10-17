@@ -39,6 +39,7 @@ mrpro.operators.SensitivityOp
       ~SensitivityOp.ipu
       ~SensitivityOp.load_state_dict
       ~SensitivityOp.modules
+      ~SensitivityOp.mtia
       ~SensitivityOp.named_buffers
       ~SensitivityOp.named_children
       ~SensitivityOp.named_modules
@@ -52,11 +53,14 @@ mrpro.operators.SensitivityOp
       ~SensitivityOp.register_full_backward_hook
       ~SensitivityOp.register_full_backward_pre_hook
       ~SensitivityOp.register_load_state_dict_post_hook
+      ~SensitivityOp.register_load_state_dict_pre_hook
       ~SensitivityOp.register_module
       ~SensitivityOp.register_parameter
+      ~SensitivityOp.register_state_dict_post_hook
       ~SensitivityOp.register_state_dict_pre_hook
       ~SensitivityOp.requires_grad_
       ~SensitivityOp.set_extra_state
+      ~SensitivityOp.set_submodule
       ~SensitivityOp.share_memory
       ~SensitivityOp.state_dict
       ~SensitivityOp.to

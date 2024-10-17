@@ -39,6 +39,7 @@ mrpro.operators.EinsumOp
       ~EinsumOp.ipu
       ~EinsumOp.load_state_dict
       ~EinsumOp.modules
+      ~EinsumOp.mtia
       ~EinsumOp.named_buffers
       ~EinsumOp.named_children
       ~EinsumOp.named_modules
@@ -52,11 +53,14 @@ mrpro.operators.EinsumOp
       ~EinsumOp.register_full_backward_hook
       ~EinsumOp.register_full_backward_pre_hook
       ~EinsumOp.register_load_state_dict_post_hook
+      ~EinsumOp.register_load_state_dict_pre_hook
       ~EinsumOp.register_module
       ~EinsumOp.register_parameter
+      ~EinsumOp.register_state_dict_post_hook
       ~EinsumOp.register_state_dict_pre_hook
       ~EinsumOp.requires_grad_
       ~EinsumOp.set_extra_state
+      ~EinsumOp.set_submodule
       ~EinsumOp.share_memory
       ~EinsumOp.state_dict
       ~EinsumOp.to

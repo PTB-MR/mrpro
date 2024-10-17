@@ -39,6 +39,7 @@ mrpro.operators.SignalModel
       ~SignalModel.ipu
       ~SignalModel.load_state_dict
       ~SignalModel.modules
+      ~SignalModel.mtia
       ~SignalModel.named_buffers
       ~SignalModel.named_children
       ~SignalModel.named_modules
@@ -51,11 +52,14 @@ mrpro.operators.SignalModel
       ~SignalModel.register_full_backward_hook
       ~SignalModel.register_full_backward_pre_hook
       ~SignalModel.register_load_state_dict_post_hook
+      ~SignalModel.register_load_state_dict_pre_hook
       ~SignalModel.register_module
       ~SignalModel.register_parameter
+      ~SignalModel.register_state_dict_post_hook
       ~SignalModel.register_state_dict_pre_hook
       ~SignalModel.requires_grad_
       ~SignalModel.set_extra_state
+      ~SignalModel.set_submodule
       ~SignalModel.share_memory
       ~SignalModel.state_dict
       ~SignalModel.to

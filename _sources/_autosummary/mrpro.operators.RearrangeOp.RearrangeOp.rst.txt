@@ -39,6 +39,7 @@ mrpro.operators.RearrangeOp.RearrangeOp
       ~RearrangeOp.ipu
       ~RearrangeOp.load_state_dict
       ~RearrangeOp.modules
+      ~RearrangeOp.mtia
       ~RearrangeOp.named_buffers
       ~RearrangeOp.named_children
       ~RearrangeOp.named_modules
@@ -52,11 +53,14 @@ mrpro.operators.RearrangeOp.RearrangeOp
       ~RearrangeOp.register_full_backward_hook
       ~RearrangeOp.register_full_backward_pre_hook
       ~RearrangeOp.register_load_state_dict_post_hook
+      ~RearrangeOp.register_load_state_dict_pre_hook
       ~RearrangeOp.register_module
       ~RearrangeOp.register_parameter
+      ~RearrangeOp.register_state_dict_post_hook
       ~RearrangeOp.register_state_dict_pre_hook
       ~RearrangeOp.requires_grad_
       ~RearrangeOp.set_extra_state
+      ~RearrangeOp.set_submodule
       ~RearrangeOp.share_memory
       ~RearrangeOp.state_dict
       ~RearrangeOp.to

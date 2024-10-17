@@ -38,6 +38,7 @@ mrpro.operators.Operator
       ~Operator.ipu
       ~Operator.load_state_dict
       ~Operator.modules
+      ~Operator.mtia
       ~Operator.named_buffers
       ~Operator.named_children
       ~Operator.named_modules
@@ -50,11 +51,14 @@ mrpro.operators.Operator
       ~Operator.register_full_backward_hook
       ~Operator.register_full_backward_pre_hook
       ~Operator.register_load_state_dict_post_hook
+      ~Operator.register_load_state_dict_pre_hook
       ~Operator.register_module
       ~Operator.register_parameter
+      ~Operator.register_state_dict_post_hook
       ~Operator.register_state_dict_pre_hook
       ~Operator.requires_grad_
       ~Operator.set_extra_state
+      ~Operator.set_submodule
       ~Operator.share_memory
       ~Operator.state_dict
       ~Operator.to

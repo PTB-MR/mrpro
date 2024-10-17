@@ -39,6 +39,7 @@ mrpro.operators.LinearOperator
       ~LinearOperator.ipu
       ~LinearOperator.load_state_dict
       ~LinearOperator.modules
+      ~LinearOperator.mtia
       ~LinearOperator.named_buffers
       ~LinearOperator.named_children
       ~LinearOperator.named_modules
@@ -52,11 +53,14 @@ mrpro.operators.LinearOperator
       ~LinearOperator.register_full_backward_hook
       ~LinearOperator.register_full_backward_pre_hook
       ~LinearOperator.register_load_state_dict_post_hook
+      ~LinearOperator.register_load_state_dict_pre_hook
       ~LinearOperator.register_module
       ~LinearOperator.register_parameter
+      ~LinearOperator.register_state_dict_post_hook
       ~LinearOperator.register_state_dict_pre_hook
       ~LinearOperator.requires_grad_
       ~LinearOperator.set_extra_state
+      ~LinearOperator.set_submodule
       ~LinearOperator.share_memory
       ~LinearOperator.state_dict
       ~LinearOperator.to

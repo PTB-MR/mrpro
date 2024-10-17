@@ -38,6 +38,7 @@ mrpro.operators.EndomorphOperator.EndomorphOperator
       ~EndomorphOperator.ipu
       ~EndomorphOperator.load_state_dict
       ~EndomorphOperator.modules
+      ~EndomorphOperator.mtia
       ~EndomorphOperator.named_buffers
       ~EndomorphOperator.named_children
       ~EndomorphOperator.named_modules
@@ -50,11 +51,14 @@ mrpro.operators.EndomorphOperator.EndomorphOperator
       ~EndomorphOperator.register_full_backward_hook
       ~EndomorphOperator.register_full_backward_pre_hook
       ~EndomorphOperator.register_load_state_dict_post_hook
+      ~EndomorphOperator.register_load_state_dict_pre_hook
       ~EndomorphOperator.register_module
       ~EndomorphOperator.register_parameter
+      ~EndomorphOperator.register_state_dict_post_hook
       ~EndomorphOperator.register_state_dict_pre_hook
       ~EndomorphOperator.requires_grad_
       ~EndomorphOperator.set_extra_state
+      ~EndomorphOperator.set_submodule
       ~EndomorphOperator.share_memory
       ~EndomorphOperator.state_dict
       ~EndomorphOperator.to

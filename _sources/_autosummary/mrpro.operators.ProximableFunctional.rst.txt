@@ -38,6 +38,7 @@ mrpro.operators.ProximableFunctional
       ~ProximableFunctional.ipu
       ~ProximableFunctional.load_state_dict
       ~ProximableFunctional.modules
+      ~ProximableFunctional.mtia
       ~ProximableFunctional.named_buffers
       ~ProximableFunctional.named_children
       ~ProximableFunctional.named_modules
@@ -52,11 +53,14 @@ mrpro.operators.ProximableFunctional
       ~ProximableFunctional.register_full_backward_hook
       ~ProximableFunctional.register_full_backward_pre_hook
       ~ProximableFunctional.register_load_state_dict_post_hook
+      ~ProximableFunctional.register_load_state_dict_pre_hook
       ~ProximableFunctional.register_module
       ~ProximableFunctional.register_parameter
+      ~ProximableFunctional.register_state_dict_post_hook
       ~ProximableFunctional.register_state_dict_pre_hook
       ~ProximableFunctional.requires_grad_
       ~ProximableFunctional.set_extra_state
+      ~ProximableFunctional.set_submodule
       ~ProximableFunctional.share_memory
       ~ProximableFunctional.state_dict
       ~ProximableFunctional.to

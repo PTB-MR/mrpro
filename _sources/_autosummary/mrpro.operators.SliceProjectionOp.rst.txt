@@ -40,6 +40,7 @@ mrpro.operators.SliceProjectionOp
       ~SliceProjectionOp.join_matrices
       ~SliceProjectionOp.load_state_dict
       ~SliceProjectionOp.modules
+      ~SliceProjectionOp.mtia
       ~SliceProjectionOp.named_buffers
       ~SliceProjectionOp.named_children
       ~SliceProjectionOp.named_modules
@@ -54,11 +55,14 @@ mrpro.operators.SliceProjectionOp
       ~SliceProjectionOp.register_full_backward_hook
       ~SliceProjectionOp.register_full_backward_pre_hook
       ~SliceProjectionOp.register_load_state_dict_post_hook
+      ~SliceProjectionOp.register_load_state_dict_pre_hook
       ~SliceProjectionOp.register_module
       ~SliceProjectionOp.register_parameter
+      ~SliceProjectionOp.register_state_dict_post_hook
       ~SliceProjectionOp.register_state_dict_pre_hook
       ~SliceProjectionOp.requires_grad_
       ~SliceProjectionOp.set_extra_state
+      ~SliceProjectionOp.set_submodule
       ~SliceProjectionOp.share_memory
       ~SliceProjectionOp.state_dict
       ~SliceProjectionOp.to

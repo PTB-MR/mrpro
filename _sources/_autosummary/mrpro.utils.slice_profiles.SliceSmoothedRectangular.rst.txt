@@ -38,6 +38,7 @@ mrpro.utils.slice\_profiles.SliceSmoothedRectangular
       ~SliceSmoothedRectangular.ipu
       ~SliceSmoothedRectangular.load_state_dict
       ~SliceSmoothedRectangular.modules
+      ~SliceSmoothedRectangular.mtia
       ~SliceSmoothedRectangular.named_buffers
       ~SliceSmoothedRectangular.named_children
       ~SliceSmoothedRectangular.named_modules
@@ -51,11 +52,14 @@ mrpro.utils.slice\_profiles.SliceSmoothedRectangular
       ~SliceSmoothedRectangular.register_full_backward_hook
       ~SliceSmoothedRectangular.register_full_backward_pre_hook
       ~SliceSmoothedRectangular.register_load_state_dict_post_hook
+      ~SliceSmoothedRectangular.register_load_state_dict_pre_hook
       ~SliceSmoothedRectangular.register_module
       ~SliceSmoothedRectangular.register_parameter
+      ~SliceSmoothedRectangular.register_state_dict_post_hook
       ~SliceSmoothedRectangular.register_state_dict_pre_hook
       ~SliceSmoothedRectangular.requires_grad_
       ~SliceSmoothedRectangular.set_extra_state
+      ~SliceSmoothedRectangular.set_submodule
       ~SliceSmoothedRectangular.share_memory
       ~SliceSmoothedRectangular.state_dict
       ~SliceSmoothedRectangular.to

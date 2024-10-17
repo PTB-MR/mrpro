@@ -38,6 +38,7 @@ mrpro.operators.ElementaryFunctional
       ~ElementaryFunctional.ipu
       ~ElementaryFunctional.load_state_dict
       ~ElementaryFunctional.modules
+      ~ElementaryFunctional.mtia
       ~ElementaryFunctional.named_buffers
       ~ElementaryFunctional.named_children
       ~ElementaryFunctional.named_modules
@@ -50,11 +51,14 @@ mrpro.operators.ElementaryFunctional
       ~ElementaryFunctional.register_full_backward_hook
       ~ElementaryFunctional.register_full_backward_pre_hook
       ~ElementaryFunctional.register_load_state_dict_post_hook
+      ~ElementaryFunctional.register_load_state_dict_pre_hook
       ~ElementaryFunctional.register_module
       ~ElementaryFunctional.register_parameter
+      ~ElementaryFunctional.register_state_dict_post_hook
       ~ElementaryFunctional.register_state_dict_pre_hook
       ~ElementaryFunctional.requires_grad_
       ~ElementaryFunctional.set_extra_state
+      ~ElementaryFunctional.set_submodule
       ~ElementaryFunctional.share_memory
       ~ElementaryFunctional.state_dict
       ~ElementaryFunctional.to

@@ -39,6 +39,7 @@ mrpro.operators.WaveletOp
       ~WaveletOp.ipu
       ~WaveletOp.load_state_dict
       ~WaveletOp.modules
+      ~WaveletOp.mtia
       ~WaveletOp.named_buffers
       ~WaveletOp.named_children
       ~WaveletOp.named_modules
@@ -52,11 +53,14 @@ mrpro.operators.WaveletOp
       ~WaveletOp.register_full_backward_hook
       ~WaveletOp.register_full_backward_pre_hook
       ~WaveletOp.register_load_state_dict_post_hook
+      ~WaveletOp.register_load_state_dict_pre_hook
       ~WaveletOp.register_module
       ~WaveletOp.register_parameter
+      ~WaveletOp.register_state_dict_post_hook
       ~WaveletOp.register_state_dict_pre_hook
       ~WaveletOp.requires_grad_
       ~WaveletOp.set_extra_state
+      ~WaveletOp.set_submodule
       ~WaveletOp.share_memory
       ~WaveletOp.state_dict
       ~WaveletOp.to

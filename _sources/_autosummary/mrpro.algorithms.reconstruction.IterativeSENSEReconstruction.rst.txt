@@ -39,6 +39,7 @@ mrpro.algorithms.reconstruction.IterativeSENSEReconstruction
       ~IterativeSENSEReconstruction.ipu
       ~IterativeSENSEReconstruction.load_state_dict
       ~IterativeSENSEReconstruction.modules
+      ~IterativeSENSEReconstruction.mtia
       ~IterativeSENSEReconstruction.named_buffers
       ~IterativeSENSEReconstruction.named_children
       ~IterativeSENSEReconstruction.named_modules
@@ -53,11 +54,14 @@ mrpro.algorithms.reconstruction.IterativeSENSEReconstruction
       ~IterativeSENSEReconstruction.register_full_backward_hook
       ~IterativeSENSEReconstruction.register_full_backward_pre_hook
       ~IterativeSENSEReconstruction.register_load_state_dict_post_hook
+      ~IterativeSENSEReconstruction.register_load_state_dict_pre_hook
       ~IterativeSENSEReconstruction.register_module
       ~IterativeSENSEReconstruction.register_parameter
+      ~IterativeSENSEReconstruction.register_state_dict_post_hook
       ~IterativeSENSEReconstruction.register_state_dict_pre_hook
       ~IterativeSENSEReconstruction.requires_grad_
       ~IterativeSENSEReconstruction.set_extra_state
+      ~IterativeSENSEReconstruction.set_submodule
       ~IterativeSENSEReconstruction.share_memory
       ~IterativeSENSEReconstruction.state_dict
       ~IterativeSENSEReconstruction.to

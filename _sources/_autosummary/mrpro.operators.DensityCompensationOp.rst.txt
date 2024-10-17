@@ -39,6 +39,7 @@ mrpro.operators.DensityCompensationOp
       ~DensityCompensationOp.ipu
       ~DensityCompensationOp.load_state_dict
       ~DensityCompensationOp.modules
+      ~DensityCompensationOp.mtia
       ~DensityCompensationOp.named_buffers
       ~DensityCompensationOp.named_children
       ~DensityCompensationOp.named_modules
@@ -52,11 +53,14 @@ mrpro.operators.DensityCompensationOp
       ~DensityCompensationOp.register_full_backward_hook
       ~DensityCompensationOp.register_full_backward_pre_hook
       ~DensityCompensationOp.register_load_state_dict_post_hook
+      ~DensityCompensationOp.register_load_state_dict_pre_hook
       ~DensityCompensationOp.register_module
       ~DensityCompensationOp.register_parameter
+      ~DensityCompensationOp.register_state_dict_post_hook
       ~DensityCompensationOp.register_state_dict_pre_hook
       ~DensityCompensationOp.requires_grad_
       ~DensityCompensationOp.set_extra_state
+      ~DensityCompensationOp.set_submodule
       ~DensityCompensationOp.share_memory
       ~DensityCompensationOp.state_dict
       ~DensityCompensationOp.to

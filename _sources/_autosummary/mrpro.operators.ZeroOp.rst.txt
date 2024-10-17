@@ -39,6 +39,7 @@ mrpro.operators.ZeroOp
       ~ZeroOp.ipu
       ~ZeroOp.load_state_dict
       ~ZeroOp.modules
+      ~ZeroOp.mtia
       ~ZeroOp.named_buffers
       ~ZeroOp.named_children
       ~ZeroOp.named_modules
@@ -52,11 +53,14 @@ mrpro.operators.ZeroOp
       ~ZeroOp.register_full_backward_hook
       ~ZeroOp.register_full_backward_pre_hook
       ~ZeroOp.register_load_state_dict_post_hook
+      ~ZeroOp.register_load_state_dict_pre_hook
       ~ZeroOp.register_module
       ~ZeroOp.register_parameter
+      ~ZeroOp.register_state_dict_post_hook
       ~ZeroOp.register_state_dict_pre_hook
       ~ZeroOp.requires_grad_
       ~ZeroOp.set_extra_state
+      ~ZeroOp.set_submodule
       ~ZeroOp.share_memory
       ~ZeroOp.state_dict
       ~ZeroOp.to
