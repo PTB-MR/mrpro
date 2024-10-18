@@ -12,7 +12,7 @@ def epg_rf_rotation_matrix(
     flip_angle: float | torch.Tensor,
     phase: float | torch.Tensor,
     b1_scaling_factor: torch.Tensor | None = None,
-):
+) -> torch.Tensor:
     """Initialize the rotation matrix describing the RF pulse.
 
     Parameters
