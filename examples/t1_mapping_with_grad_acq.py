@@ -16,7 +16,7 @@ from mrpro.algorithms.reconstruction import DirectReconstruction
 from mrpro.data import KData
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.operators import ConstraintsOp, MagnitudeOp
-from mrpro.operators.functionals import MSEDataDiscrepancy
+from mrpro.operators.functionals import L2NormSquared
 from mrpro.operators.models import TransientSteadyStateWithPreparation
 from mrpro.utils import split_idx
 
@@ -173,17 +173,17 @@ constraints_op = ConstraintsOp(bounds=((None, None), (0.05, 3.0), (nominal_flip_
 
 # %% [markdown]
 # ### Loss function
-# As a loss function for the optimizer, we calculate the mean-squared error between the image data $x$ and our signal
+# As a loss function for the optimizer, we calculate the squared L2 norm between the image data $x$ and our signal
 # model $q$.
 # %%
-mse_loss = MSEDataDiscrepancy(img_rss_dynamic)
+l2norm_squared_loss = L2NormSquared(img_rss_dynamic, divide_by_n=True)
 
 # %% [markdown]
 # Now we can simply combine the loss function, the signal model and the constraints to solve
 #
 # $$ \min_{M_0, T_1, \alpha} || |q(M_0, T_1, \alpha)| - x||_2^2$$
 # %%
-functional = mse_loss @ magnitude_model_op @ constraints_op
+functional = l2norm_squared_loss @ magnitude_model_op @ constraints_op
 
 # %% [markdown]
 # ### Carry out fit
