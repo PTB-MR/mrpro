@@ -924,12 +924,12 @@ def test_align_vectors_no_noise():
 
 def test_align_vectors_improper_rotation():
     """Test for scipy issue #10444"""
-    x = torch.tensor([[0.89299824, -0.44372674, 0.0752378], [0.60221789, -0.47564102, -0.6411702]])
-    y = torch.tensor([[0.02386536, -0.82176463, 0.5693271], [-0.27654929, -0.95191427, -0.1318321]])
+    x = torch.tensor([[0.89299824, -0.44372674, 0.0752378], [0.60221789, -0.47564102, -0.6411702]]).double()
+    y = torch.tensor([[0.02386536, -0.82176463, 0.5693271], [-0.27654929, -0.95191427, -0.1318321]]).double()
 
     est, rssd = Rotation.align_vectors(x, y)
-    torch.testing.assert_close(x, est(y), atol=1e-6, rtol=1e-4)
-    assert math.isclose(rssd, 0.0, abs_tol=1e-6, rel_tol=1e-4)
+    torch.testing.assert_close(x, est(y), atol=1e-7, rtol=0)
+    torch.testing.assert_close(rssd, torch.tensor(0.0, dtype=torch.float64), atol=1e-7, rtol=0)
 
 
 def test_align_vectors_rssd_sensitivity():
@@ -981,7 +981,7 @@ def test_align_vectors_noise():
     # Check error bounds using covariance matrix
     cov *= sigma
     torch.testing.assert_close(torch.diag(cov), torch.zeros(3), atol=tolerance, rtol=0)
-    torch.testing.assert_close(torch.sum((noisy_result - est(vectors)) ** 2) ** 0.5, torch.tensor(rssd))
+    torch.testing.assert_close(torch.sum((noisy_result - est(vectors)) ** 2) ** 0.5, rssd)
 
 
 def test_align_vectors_invalid_input():
@@ -1083,10 +1083,10 @@ def test_align_vectors_near_inf():
 
 def test_align_vectors_parallel():
     atol = 1e-6
+
     a = [[1, 0, 0], [0, 1, 0]]
     b = [[0, 1, 0], [0, 1, 0]]
     m_expected = torch.tensor([[0, 1, 0], [-1, 0, 0], [0, 0, 1]]).float()
-
     r, _ = Rotation.align_vectors(a, b, weights=[torch.inf, 1])
     torch.testing.assert_close(r.as_matrix(), m_expected, atol=atol, rtol=0)
 
@@ -1337,7 +1337,8 @@ def test_mean_invalid_weights():
 def test_repr():
     """Test string representation"""
     assert repr(Rotation.identity(None)) == 'Rotation([[0.0, 0.0, 0.0, 1.0]])'
-    assert repr(Rotation.identity(1)) == '(1,)-Batched Rotation()'
+    assert repr(Rotation.identity(1)) == '(1,)-batched Rotation()'
+    assert repr(Rotation.identity(1).reflect()) == '(1,)-batched improper Rotation()'
 
 
 def test_quaternion_properties_single():
@@ -1381,3 +1382,30 @@ def test_quaternion_properties_batch():
 def test_axis_order_zyx():
     """Check that the axis order is set to zyx"""
     assert AXIS_ORDER == 'zyx'
+
+
+def test_from_to_directions():
+    """Test that from_directions and as_directions are inverse operations"""
+    one = torch.ones(1, 2, 3, 4)
+
+    # must be a rotation
+    b1 = SpatialDimension(one * (0.8146), one * (0.4707), one * (-0.3388))
+    b2 = SpatialDimension(one * (-0.4432), one * (0.8820), one * (0.1599))
+    b3 = SpatialDimension(one * (-0.3741), one * (-0.0199), one * (-0.9272))
+
+    r = Rotation.from_directions(b1, b2, b3)
+    torch.testing.assert_close(b1.zyx, r.as_directions()[0].zyx, atol=1e-4, rtol=0)
+    torch.testing.assert_close(b2.zyx, r.as_directions()[1].zyx, atol=1e-4, rtol=0)
+    torch.testing.assert_close(b3.zyx, r.as_directions()[2].zyx, atol=1e-4, rtol=0)
+
+
+def test_as_directions():
+    """Test conversion to basis vectors"""
+    r = Rotation.random(10, random_state=0)
+    matrix = r.as_matrix()
+    directions = r.as_directions()
+    for col, basis in enumerate(directions):
+        for row, axis in enumerate(AXIS_ORDER):
+            expected = matrix[:, row, col]
+            actual = getattr(basis, axis)
+            torch.testing.assert_close(actual, expected, atol=1e-4, rtol=0)
