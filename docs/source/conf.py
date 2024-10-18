@@ -11,6 +11,7 @@
 
 import os
 import sys
+from datetime import datetime
 from sphinx_pyproject import SphinxConfig
 
 from mrpro  import __version__ as project_version
@@ -20,8 +21,10 @@ sys.path.insert(0, os.path.abspath('../../src'))  # Source code dir relative to 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+# TODO: need to copy .py/.ipynb files from examples to source/_notebooks or insert them
+
 project = name
-copyright = '2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin'
+copyright = f'{datetime.now().year}, Physikalisch-Technische Bundesanstalt (PTB) Berlin'
 author = author
 version = version
 
@@ -34,6 +37,8 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
+    'nbsphinx',
+    'sphinx.ext.mathjax',
 ]
 autosummary_generate = True
 autosummary_imported_members = False
@@ -43,6 +48,9 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 source_suffix = {'.rst': 'restructuredtext', '.txt': 'restructuredtext', '.md': 'markdown'}
 
+nbsphinx_custom_formats = {
+    '.py': ['jupytext.reads', {'fmt' : 'py'}],
+}
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
