@@ -1,0 +1,183 @@
+name: Publish to PyPI
+
+on:
+  push:
+    paths:
+      - src/mrpro/VERSION
+
+jobs:
+  build-testpypi-package:
+    name: Modify version and build package for TestPyPI
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.set_suffix.outputs.version }}
+      suffix: ${{ steps.set_suffix.outputs.suffix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Set environment variable for version suffix
+        id: set_suffix
+        run: |
+          VERSION=$(cat src/mrpro/VERSION)
+          SUFFIX=rc$(date +%s)
+          echo "MRPROVERSIONSUFFIX=$SUFFIX" >> $GITHUB_ENV
+          echo "suffix=$SUFFIX" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build package with version suffix
+        run: |
+          python -m pip install --upgrade build
+          python -m build
+
+      - name: Store TestPyPi distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: testpypi-package-distribution
+          path: dist/
+
+  testpypi-deployment:
+    name: Deploy to TestPyPI
+    needs:
+      - build-testpypi-package
+    runs-on: ubuntu-latest
+
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/mrpro
+
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download TestPyPi distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: testpypi-package-distribution
+          path: dist/
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          verbose: true
+
+  test-install-from-testpypi:
+    name: Test installation from TestPyPI
+    needs:
+      - testpypi-deployment
+      - build-testpypi-package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install MRpro from TestPyPI
+        run: |
+          VERSION=${{ needs.build-testpypi-package.outputs.version }}
+          SUFFIX=${{ needs.build-testpypi-package.outputs.suffix }}
+          python -m pip install mrpro==$VERSION$SUFFIX --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/
+
+  build-pypi-package:
+    name: Build package for PyPI
+    runs-on: ubuntu-latest
+    needs:
+      - test-install-from-testpypi
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install setuptools_git_versioning
+        run: |
+          python -m pip install setuptools-git-versioning
+
+      - name: Get current version
+        id: get_version
+        run: |
+          VERSION=$(python -m setuptools_git_versioning)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build package
+        run: |
+          python -m pip install --upgrade build
+          python -m build
+
+      - name: Store PyPi distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: pypi-package-distribution
+          path: dist/
+
+  pypi-deployment:
+    name: Deploy to PyPI
+    needs:
+      - build-pypi-package
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    environment:
+      name: pypi
+      url: https://pypi.org/project/mrpro
+
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Download PyPi distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: pypi-package-distribution
+          path: dist/
+
+      - name: Create tag
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/v${{ needs.build-pypi-package.outputs.version }}',
+              sha: context.sha
+            })
+
+      - name: Create release
+        uses: actions/github-script@v7
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          script: |
+            github.rest.repos.createRelease({
+              draft: false,
+              generate_release_notes: true,
+              name: "v${{ needs.build-pypi-package.outputs.version }}",
+              owner: context.repo.owner,
+              prerelease: false,
+              repo: context.repo.repo,
+              tag_name: "v${{ needs.build-pypi-package.outputs.version }}",
+            });
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://upload.pypi.org/legacy/
+          verbose: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+
+  # Cancel in-progress runs when a new workflow with the same group name is triggered
+  cancel-in-progress: true
