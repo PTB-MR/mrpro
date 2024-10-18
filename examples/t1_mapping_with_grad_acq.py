@@ -25,7 +25,7 @@ from mrpro.utils import split_idx
 # In this acquisition, a single inversion pulse is played out, followed by a continuous data acquisition with a
 # a constant flip angle $\alpha$. Data acquisition is carried out with a 2D Golden angle radial trajectory. The acquired
 # data can be divided into different dynamic time frames, each corresponding to a different inversion time. A signal
-# model can then be fitted to this data to obtain a $T_1$ map. More information can be found in:
+# model can then be fitted to this data to obtain a $T1$ map. More information can be found in:
 #
 # Kerkering KM, Schulz-Menger J, Schaeffter T, Kolbitsch C (2023) Motion-corrected model-based reconstruction for 2D
 # myocardial T1 mapping, MRM 90 https://doi.org/10.1002/mrm.29699
@@ -35,22 +35,22 @@ from mrpro.utils import split_idx
 # temporal resolution to accurately capture the signal behavior (fewer radial lines) needs to be found.
 #
 # During data acquisition, the magnetization $M_z(t)$ can be described by the signal model:
-#   $$ M_z(t) = M_0^* + (M_0^{init} - M_0^*)e^{(-t / T_1^*)} \quad (1) $$
+#   $$ M_z(t) = M_0^* + (M_0^{init} - M_0^*)e^{(-t / T1^*)} \quad (1) $$
 # where the effective longitudinal relaxation time is given by:
-#   $$ T_1^* = \frac{1}{\frac{1}{T1} - \frac{1}{T_R} ln(cos(\alpha))} $$
+#   $$ T1^* = \frac{1}{\frac{1}{T1} - \frac{1}{T_R} ln(cos(\alpha))} $$
 # and the steady-state magnetization is
-#   $$ M_0^* = M_0 \frac{T_1^*}{T_1} .$$
+#   $$ M_0^* = M_0 \frac{T1^*}{T1} .$$
 #
 # The initial magnetization $M_0^{init}$ after an inversion pulse is $-M_0$. Nevertheless, commonly after an inversion
 # pulse, a strong spoiler gradient is played out to remove any residual transversal magnetization due to
-# imperfections of the inversion pulse. During the spoiler gradient, the magnetization recovers with $T_1$. Commonly,
+# imperfections of the inversion pulse. During the spoiler gradient, the magnetization recovers with $T1$. Commonly,
 # the duration of this spoiler gradient $\Delta t$ is between 10 to 20 ms. This leads to the initial magnetization
-#   $$ M_0^{init} = M_0(1 - 2e^{(-\Delta t / T_1)}) .$$
+#   $$ M_0^{init} = M_0(1 - 2e^{(-\Delta t / T1)}) .$$
 #
 # In this example, we are going to:
 # - Reconstruct a single high quality image using all acquired radial lines.
 # - Split the data into multiple dynamics and reconstruct these dynamic images
-# - Define a signal model and a loss function to obtain the $T_1$ maps
+# - Define a signal model and a loss function to obtain the $T1$ maps
 
 # %%
 # Download raw data in ISMRMRD format from zenodo into a temporary directory
@@ -109,7 +109,7 @@ for idx, cax in enumerate(ax.flatten()):
 
 # %% [markdown]
 # ### Signal model
-# We use a three parameter signal model $q(M_0, T_1, \alpha)$.
+# We use a three parameter signal model $q(M_0, T1, \alpha)$.
 #
 # As known input, the model needs information about the time $t$ (`sampling_time`) in Eq. (1) since the inversion pulse.
 # This can be calculated from the `acquisition_time_stamp`. If we average the `acquisition_time_stamp`-values for each
@@ -150,7 +150,7 @@ model_op = TransientSteadyStateWithPreparation(
 
 # %% [markdown]
 # The reconstructed image data is complex-valued. We could fit a complex $M_0$ to the data, but in this case it is more
-# robust to fit $|q(M_0, T_1, \alpha)|$ to the magnitude of the image data. We therefore combine our model with a
+# robust to fit $|q(M_0, T1, \alpha)|$ to the magnitude of the image data. We therefore combine our model with a
 # `MagnitudeOp`.
 
 # %%
@@ -158,7 +158,7 @@ magnitude_model_op = MagnitudeOp() @ model_op
 
 # %% [markdown]
 # ### Constraints
-# $T_1$ and $\alpha$ need to be positive. Based on the knowledge of the phantom, we can constrain $T_1$ between 50 ms
+# $T1$ and $\alpha$ need to be positive. Based on the knowledge of the phantom, we can constrain $T1$ between 50 ms
 # and 3 s. Further, we can constrain $\alpha$. Although the effective flip angle can vary, it can only vary by a
 # certain percentage relative to the nominal flip angle. Here, we chose a maximum deviation from the nominal flip angle
 # of 50%.
@@ -181,7 +181,7 @@ mse_loss = MSEDataDiscrepancy(img_rss_dynamic)
 # %% [markdown]
 # Now we can simply combine the loss function, the signal model and the constraints to solve
 #
-# $$ \min_{M_0, T_1, \alpha} || |q(M_0, T_1, \alpha)| - x||_2^2$$
+# $$ \min_{M_0, T1, \alpha} || |q(M_0, T1, \alpha)| - x||_2^2$$
 # %%
 functional = mse_loss @ magnitude_model_op @ constraints_op
 
@@ -223,11 +223,11 @@ fig.colorbar(im, cax=colorbar_ax[2])
 
 # %% [markdown]
 # ### Next steps
-# The quality of the final $T_1$ maps depends on the quality of the individual dynamic images. Using more advanced image
+# The quality of the final $T1$ maps depends on the quality of the individual dynamic images. Using more advanced image
 # reconstruction methods, we can improve the image quality and hence the quality of the maps.
 #
 # Try to exchange `DirectReconstruction` above with `IterativeSENSEReconstruction` and compare the quality of the
-# $T_1$ maps for different number of iterations (`n_iterations`).
+# $T1$ maps for different number of iterations (`n_iterations`).
 
 
 # %%
