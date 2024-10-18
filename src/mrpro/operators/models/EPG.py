@@ -17,7 +17,7 @@ class EpgRfPulse:
         phase: float | torch.Tensor,
         b1_scaling_factor: torch.Tensor | None = None,
     ):
-        """Initialise the rotation matrix describing the RF pulse.
+        """Initialize the rotation matrix describing the RF pulse.
 
         Parameters
         ----------
