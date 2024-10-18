@@ -36,7 +36,7 @@ def test_separablesum_forward():
     torch.testing.assert_close(summed(x1, x2)[0], a(x1)[0] + b(x2)[0])
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 def test_separablesum_forward_cuda():
     a = Dummy()
     b = Dummy()
