@@ -395,7 +395,7 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         return (self.x >= other.x) & (self.y >= other.y) & (self.z >= other.z)
 
     def __post_init__(self):
-        """Ensure that the data is of the same type."""
+        """Ensure that the data is of matching shape."""
         if isinstance(self.x, np.ndarray) and isinstance(self.y, np.ndarray) and isinstance(self.z, np.ndarray):
             try:
                 self.z, self.y, self.x = np.broadcast_arrays(*self.zyx, subok=True)
