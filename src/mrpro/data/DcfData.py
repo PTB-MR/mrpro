@@ -71,3 +71,12 @@ class DcfData(MoveDataMixin):
         from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 
         return DensityCompensationOp(self.data.clone())
+
+    def __repr__(self):
+        """Representation method for DcfData class."""
+        try:
+            device = str(self.device)
+        except RuntimeError:
+            device = 'mixed'
+        name = type(self).__name__
+        return f'{name} with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\nDevice: {device}.'
