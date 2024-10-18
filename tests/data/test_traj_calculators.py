@@ -1,35 +1,24 @@
 """Tests for KTrajectory Calculator classes."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 import numpy as np
 import pytest
 import torch
 from einops import repeat
 from mrpro.data import KData
 from mrpro.data.enums import AcqFlags
-from mrpro.data.traj_calculators import KTrajectoryCartesian
-from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
-from mrpro.data.traj_calculators import KTrajectoryPulseq
-from mrpro.data.traj_calculators import KTrajectoryRadial2D
-from mrpro.data.traj_calculators import KTrajectoryRpe
-from mrpro.data.traj_calculators import KTrajectorySunflowerGoldenRpe
+from mrpro.data.traj_calculators import (
+    KTrajectoryCartesian,
+    KTrajectoryIsmrmrd,
+    KTrajectoryPulseq,
+    KTrajectoryRadial2D,
+    KTrajectoryRpe,
+    KTrajectorySunflowerGoldenRpe,
+)
 
-from tests.data import IsmrmrdRawTestData
-from tests.data._PulseqRadialTestSeq import PulseqRadialTestSeq
+from tests.data import IsmrmrdRawTestData, PulseqRadialTestSeq
 
 
-@pytest.fixture()
+@pytest.fixture
 def valid_rad2d_kheader(monkeypatch, random_kheader):
     """KHeader with all necessary parameters for radial 2D trajectories."""
     # K-space dimensions
@@ -38,9 +27,9 @@ def valid_rad2d_kheader(monkeypatch, random_kheader):
     n_k2 = 1
 
     # List of k1 indices in the shape
-    idx_k1 = torch.arange(n_k1, dtype=torch.int32)[None, None, ...]
+    idx_k1 = repeat(torch.arange(n_k1, dtype=torch.int32), 'k1 -> other k2 k1', other=1, k2=1)
 
-    # Set parameters for radial 2D trajectory
+    # Set parameters for radial 2D trajectory (AcqInfo is of shape (other k2 k1 dim=1 or 3))
     monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1)[..., None] + n_k0)
     monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1)[..., None] + n_k0 // 2)
     monkeypatch.setattr(random_kheader.acq_info, 'flags', torch.zeros_like(idx_k1)[..., None])
@@ -77,7 +66,7 @@ def test_KTrajectoryRadial2D_golden(valid_rad2d_kheader):
     assert trajectory.kz.shape == valid_shape[0]
 
 
-@pytest.fixture()
+@pytest.fixture
 def valid_rpe_kheader(monkeypatch, random_kheader):
     """KHeader with all necessary parameters for RPE trajectories."""
     # K-space dimensions
@@ -92,7 +81,7 @@ def valid_rpe_kheader(monkeypatch, random_kheader):
     idx_k1 = torch.reshape(idx_k1, (1, n_k2, n_k1))
     idx_k2 = torch.reshape(idx_k2, (1, n_k2, n_k1))
 
-    # Set parameters for RPE trajectory
+    # Set parameters for RPE trajectory (AcqInfo is of shape (other k2 k1 dim=1 or 3))
     monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1)[..., None] + n_k0)
     monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1)[..., None] + n_k0 // 2)
     monkeypatch.setattr(random_kheader.acq_info, 'flags', torch.zeros_like(idx_k1)[..., None])
@@ -162,7 +151,7 @@ def test_KTrajectorySunflowerGoldenRpe(valid_rpe_kheader):
     assert trajectory.broadcasted_shape == np.broadcast_shapes(*rpe_traj_shape(valid_rpe_kheader))
 
 
-@pytest.fixture()
+@pytest.fixture
 def valid_cartesian_kheader(monkeypatch, random_kheader):
     """KHeader with all necessary parameters for Cartesian trajectories."""
     # K-space dimensions
@@ -178,7 +167,7 @@ def valid_cartesian_kheader(monkeypatch, random_kheader):
     idx_k1 = repeat(torch.reshape(idx_k1, (n_k2, n_k1)), 'k2 k1->other k2 k1', other=n_other)
     idx_k2 = repeat(torch.reshape(idx_k2, (n_k2, n_k1)), 'k2 k1->other k2 k1', other=n_other)
 
-    # Set parameters for Cartesian trajectory
+    # Set parameters for Cartesian trajectory (AcqInfo is of shape (other k2 k1 dim=1 or 3))
     monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1)[..., None] + n_k0)
     monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1)[..., None] + n_k0 // 2)
     monkeypatch.setattr(random_kheader.acq_info, 'flags', torch.zeros_like(idx_k1)[..., None])
@@ -210,7 +199,7 @@ def test_KTrajectoryCartesian(valid_cartesian_kheader):
     assert trajectory.kx.shape == valid_shape[2]
 
 
-@pytest.fixture()
+@pytest.fixture
 def valid_cartesian_kheader_bipolar(monkeypatch, valid_cartesian_kheader):
     """Set readout of other==1 to reversed."""
     acq_info_flags = valid_cartesian_kheader.acq_info.flags

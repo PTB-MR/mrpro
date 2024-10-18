@@ -1,18 +1,17 @@
+"""PyTest fixtures for the mrpro package."""
+
 import tempfile
 
 import ismrmrd
 import pytest
 import torch
 from ismrmrd import xsd
-from mrpro.data import AcqInfo
-from mrpro.data import KHeader
+from mrpro.data import AcqInfo, KHeader, KTrajectory
 from mrpro.data.enums import AcqFlags
-from xsdata.models.datatype import XmlDate
-from xsdata.models.datatype import XmlTime
+from xsdata.models.datatype import XmlDate, XmlTime
 
 from tests import RandomGenerator
-from tests.data import Dicom2DTestImage
-from tests.phantoms._EllipsePhantomTestData import EllipsePhantomTestData
+from tests.phantoms import EllipsePhantomTestData
 
 
 def generate_random_encodingcounter_properties(generator: RandomGenerator):
@@ -67,24 +66,6 @@ def generate_random_data(generator: RandomGenerator, shape=(32, 256)):
 @pytest.fixture(scope='session')
 def ellipse_phantom():
     return EllipsePhantomTestData()
-
-
-@pytest.fixture(params=({'seed': 0},))
-def cartesian_grid(request):
-    generator = RandomGenerator(request.param['seed'])
-
-    def generate(n_k2: int, n_k1: int, n_k0: int, jitter: float) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        k0_range = torch.arange(n_k0)
-        k1_range = torch.arange(n_k1)
-        k2_range = torch.arange(n_k2)
-        ky, kz, kx = torch.meshgrid(k1_range, k2_range, k0_range, indexing='xy')
-        if jitter > 0:
-            kx = kx + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
-            ky = ky + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
-            kz = kz + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
-        return kz.unsqueeze(0), ky.unsqueeze(0), kx.unsqueeze(0)
-
-    return generate
 
 
 @pytest.fixture(params=({'seed': 0, 'n_coils': 32, 'n_samples': 256},))
@@ -177,30 +158,7 @@ def random_full_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
     )
 
 
-@pytest.fixture(params=({'seed': 0},))
-def random_mandatory_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
-    """Generate a full header, i.e. all values used in
-    KHeader.from_ismrmrd_header() are set."""
-
-    seed = request.param['seed']
-    generator = RandomGenerator(seed)
-    encoding = xsd.encodingType(
-        trajectory=xsd.trajectoryType('other'),
-        encodedSpace=xsd.encodingSpaceType(
-            matrixSize=xsd.matrixSizeType(x=generator.int16(), y=generator.uint8(), z=generator.uint8()),
-            fieldOfView_mm=xsd.fieldOfViewMm(x=generator.uint8(), y=generator.uint8(), z=generator.uint8()),
-        ),
-        reconSpace=xsd.encodingSpaceType(
-            matrixSize=xsd.matrixSizeType(x=generator.uint8(), y=generator.uint8(), z=generator.uint8()),
-            fieldOfView_mm=xsd.fieldOfViewMm(x=generator.uint8(), y=generator.uint8(), z=generator.uint8()),
-        ),
-        encodingLimits=xsd.encodingLimitsType(),
-    )
-    experimental_conditions = xsd.experimentalConditionsType(H1resonanceFrequency_Hz=generator.int32())
-    return xsd.ismrmrdschema.ismrmrdHeader(encoding=[encoding], experimentalConditions=experimental_conditions)
-
-
-@pytest.fixture()
+@pytest.fixture
 def random_ismrmrd_file(random_acquisition, random_noise_acquisition, full_header):
     with tempfile.NamedTemporaryFile(suffix='.h5') as file:
         dataset = ismrmrd.Dataset(file.name)
@@ -210,13 +168,6 @@ def random_ismrmrd_file(random_acquisition, random_noise_acquisition, full_heade
         dataset.close()
 
         yield file.name
-
-
-@pytest.fixture()
-def random_acq_info(random_acquisition):
-    """Random (not necessarily valid) AcqInfo."""
-    acq_info = AcqInfo.from_ismrmrd_acquisitions([random_acquisition])
-    return acq_info
 
 
 @pytest.fixture(params=({'seed': 0},))
@@ -231,6 +182,13 @@ def random_kheader(request, random_full_ismrmrd_header, random_acq_info):
         defaults={'trajectory': trajectory},
     )
     return kheader
+
+
+@pytest.fixture
+def random_acq_info(random_acquisition):
+    """Random (not necessarily valid) AcqInfo."""
+    acq_info = AcqInfo.from_ismrmrd_acquisitions([random_acquisition])
+    return acq_info
 
 
 @pytest.fixture(params=({'seed': 0, 'n_other': 10, 'n_k2': 40, 'n_k1': 20},))
@@ -258,45 +216,41 @@ def random_kheader_shape(request, random_acquisition, random_full_ismrmrd_header
     return kheader, n_other, n_coils, n_k2, n_k1, n_k0
 
 
-@pytest.fixture(params=({'seed': 0, 'n_other': 2, 'n_coils': 16, 'n_z': 32, 'n_y': 128, 'n_x': 256},))
-def random_test_data(request):
-    seed, n_other, n_coils, n_z, n_y, n_x = (
-        request.param['seed'],
-        request.param['n_other'],
-        request.param['n_coils'],
-        request.param['n_z'],
-        request.param['n_y'],
-        request.param['n_x'],
-    )
-    generator = RandomGenerator(seed)
-    test_data = generate_random_data(generator, (n_other, n_coils, n_z, n_y, n_x))
-    return test_data
+def create_uniform_traj(nk, k_shape):
+    """Create a tensor of uniform points with predefined shape nk."""
+    kidx = torch.where(torch.tensor(nk[1:]) > 1)[0]
+    if len(kidx) > 1:
+        raise ValueError('nk is allowed to have at most one non-singleton dimension')
+    if len(kidx) >= 1:
+        # kidx+1 because we searched in nk[1:]
+        n_kpoints = nk[kidx + 1]
+        # kidx+2 because k_shape also includes coils dimensions
+        k = torch.linspace(-k_shape[kidx + 2] // 2, k_shape[kidx + 2] // 2 - 1, n_kpoints, dtype=torch.float32)
+        views = [1 if i != n_kpoints else -1 for i in nk]
+        k = k.view(*views).expand(list(nk))
+    else:
+        k = torch.zeros(nk)
+    return k
 
 
-@pytest.fixture(scope='session')
-def dcm_2d(ellipse_phantom, tmp_path_factory):
-    """Single 2D dicom image."""
-    dcm_filename = tmp_path_factory.mktemp('mrpro') / 'dicom_2d.dcm'
-    dcm_idata = Dicom2DTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom)
-    return dcm_idata
-
-
-@pytest.fixture(scope='session', params=({'n_images': 7},))
-def dcm_multi_echo_times(request, ellipse_phantom, tmp_path_factory):
-    """Multiple 2D dicom images with different echo times."""
-    n_images = request.param['n_images']
-    path = tmp_path_factory.mktemp('mrpro_multi_dcm')
-    te = 2.0
-    dcm_image_data = []
-    for _ in range(n_images):
-        dcm_filename = path / f'dicom_te_{int(te)}.dcm'
-        dcm_image_data.append(Dicom2DTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom, te=te))
-        te += 1.0
-    return dcm_image_data
+def create_traj(k_shape, nkx, nky, nkz, sx, sy, sz):
+    """Create trajectory with random entries."""
+    random_generator = RandomGenerator(seed=0)
+    k_list = []
+    for spacing, nk in zip([sz, sy, sx], [nkz, nky, nkx], strict=True):
+        if spacing == 'nuf':
+            k = random_generator.float32_tensor(size=nk)
+        elif spacing == 'uf':
+            k = create_uniform_traj(nk, k_shape=k_shape)
+        elif spacing == 'z':
+            k = torch.zeros(nk)
+        k_list.append(k)
+    trajectory = KTrajectory(k_list[0], k_list[1], k_list[2], repeat_detection_tolerance=None)
+    return trajectory
 
 
 COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
-    'im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2',
+    ('im_shape', 'k_shape', 'nkx', 'nky', 'nkz', 'sx', 'sy', 'sz', 's0', 's1', 's2'),
     [
         # (0) 2d cart mri with 1 coil, no oversampling
         (

@@ -1,18 +1,7 @@
 """Tests the IData class."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
+from pathlib import Path
 
-import numpy as np
 import pytest
 import torch
 from mrpro.data import IData
@@ -30,8 +19,46 @@ def test_IData_from_dcm_folder(dcm_multi_echo_times):
     """IData from multiple dcm files in folder."""
     idata = IData.from_dicom_folder(dcm_multi_echo_times[0].filename.parent)
     # Verify correct echo times
-    original_echo_times = [ds.te for ds in dcm_multi_echo_times]
-    assert np.all(np.sort(original_echo_times) == np.sort(idata.header.te))
+    original_echo_times = torch.as_tensor([ds.te for ds in dcm_multi_echo_times])
+    assert idata.header.te is not None
+    # dicom expects echo times in ms, mrpro in s
+    assert torch.allclose(torch.sort(original_echo_times)[0] / 1000, torch.sort(idata.header.te)[0])
+    # Verify all images were read in
+    assert idata.data.shape[0] == original_echo_times.shape[0]
+
+
+def test_IData_from_dcm_folder_via_path(dcm_multi_echo_times):
+    """IData from multiple dcm files in folder."""
+    idata = IData.from_dicom_files(Path(dcm_multi_echo_times[0].filename.parent).glob('*.dcm'))
+    # Verify correct echo times
+    original_echo_times = torch.as_tensor([ds.te for ds in dcm_multi_echo_times])
+    assert idata.header.te is not None
+    # dicom expects echo times in ms, mrpro in s
+    assert torch.allclose(torch.sort(original_echo_times)[0] / 1000, torch.sort(idata.header.te)[0])
+    # Verify all images were read in
+    assert idata.data.shape[0] == len(original_echo_times)
+
+
+def test_IData_from_wrong_path():
+    """Error for non-existing/empty folder/wrong suffix."""
+    with pytest.raises(ValueError, match='No dicom files with suffix'):
+        _ = IData.from_dicom_folder('non/existing/path')
+
+
+def test_IData_from_empty_dcm_file_list():
+    """Error for empty file list."""
+    with pytest.raises(ValueError, match='No dicom files specified'):
+        _ = IData.from_dicom_files([])
+
+
+def test_IData_from_dcm_files(dcm_multi_echo_times_multi_folders):
+    """IData from multiple dcm files in different folders."""
+    idata = IData.from_dicom_files([dcm_file.filename for dcm_file in dcm_multi_echo_times_multi_folders])
+    # Verify correct echo times
+    original_echo_times = torch.as_tensor([ds.te for ds in dcm_multi_echo_times_multi_folders])
+    assert idata.header.te is not None
+    # dicom expects echo times in ms, mrpro in s
+    assert torch.allclose(torch.sort(original_echo_times)[0] / 1000, torch.sort(idata.header.te)[0])
     # Verify all images were read in
     assert idata.data.shape[0] == len(original_echo_times)
 
@@ -49,7 +76,7 @@ def test_IData_to_complex128(random_kheader, random_test_data):
     assert idata_complex128.data.dtype == torch.complex128
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 def test_IData_cuda(random_kheader, random_test_data):
     """Move IData object to CUDA memory."""
     idata = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
@@ -57,9 +84,17 @@ def test_IData_cuda(random_kheader, random_test_data):
     assert idata_cuda.data.is_cuda
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 def test_IData_cpu(random_kheader, random_test_data):
     """Move IData object to CUDA memory and back to CPU memory."""
     idata = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
     idata_cpu = idata.cuda().cpu()
     assert idata_cpu.data.is_cpu
+
+
+def test_IData_rss(random_kheader, random_test_data):
+    """Test RSS coil combination."""
+    expected = random_test_data.abs().square().sum(dim=-4, keepdim=True).sqrt()
+    idata = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
+    torch.testing.assert_close(idata.rss(keepdim=True), expected)
+    torch.testing.assert_close(idata.rss(keepdim=False), expected.squeeze(-4))

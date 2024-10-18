@@ -1,57 +1,12 @@
 """Tests for KTrajectory class."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 import pytest
 import torch
+from einops import rearrange
 from mrpro.data import KTrajectory
 from mrpro.data.enums import TrajType
 
-from tests import RandomGenerator
-from tests.conftest import COMMON_MR_TRAJECTORIES
-
-
-def create_uniform_traj(nk, k_shape):
-    """Create a tensor of uniform points with predefined shape nk."""
-    kidx = torch.where(torch.tensor(nk[1:]) > 1)[0]
-    if len(kidx) > 1:
-        raise ValueError('nk is allowed to have at most one non-singleton dimension')
-    if len(kidx) >= 1:
-        # kidx+1 because we searched in nk[1:]
-        n_kpoints = nk[kidx + 1]
-        # kidx+2 because k_shape also includes coils dimensions
-        k = torch.linspace(-k_shape[kidx + 2] // 2, k_shape[kidx + 2] // 2 - 1, n_kpoints, dtype=torch.float32)
-        views = [1 if i != n_kpoints else -1 for i in nk]
-        k = k.view(*views).expand(list(nk))
-    else:
-        k = torch.zeros(nk)
-    return k
-
-
-def create_traj(k_shape, nkx, nky, nkz, sx, sy, sz):
-    """Create trajectory with random entries."""
-    random_generator = RandomGenerator(seed=0)
-    k_list = []
-    for spacing, nk in zip([sz, sy, sx], [nkz, nky, nkx], strict=True):
-        if spacing == 'nuf':
-            k = random_generator.float32_tensor(size=nk)
-        elif spacing == 'uf':
-            k = create_uniform_traj(nk, k_shape=k_shape)
-        elif spacing == 'z':
-            k = torch.zeros(nk)
-        k_list.append(k)
-    trajectory = KTrajectory(*k_list, repeat_detection_tolerance=None)
-    return trajectory
+from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
 
 
 def test_trajectory_repeat_detection_tol(cartesian_grid):
@@ -88,11 +43,13 @@ def test_trajectory_tensor_conversion(cartesian_grid):
     n_k2 = 30
     kz_full, ky_full, kx_full = cartesian_grid(n_k2, n_k1, n_k0, jitter=0.0)
     trajectory = KTrajectory(kz_full, ky_full, kx_full)
-    tensor = torch.stack((kz_full, ky_full, kx_full), dim=0)
+    tensor = torch.stack((kz_full, ky_full, kx_full), dim=0).to(torch.float32)
 
     tensor_from_traj = trajectory.as_tensor()  # stack_dim=0
-    tensor_from_traj_dim2 = trajectory.as_tensor(stack_dim=2).moveaxis(2, 0)
-    tensor_from_traj_from_tensor_dim3 = KTrajectory.from_tensor(tensor.moveaxis(0, 3), stack_dim=3).as_tensor()
+    tensor_from_traj_dim2 = rearrange(trajectory.as_tensor(stack_dim=2), 'other k2 dim k1 k0->dim other k2 k1 k0')
+    tensor_from_traj_from_tensor_dim3 = KTrajectory.from_tensor(
+        rearrange(tensor, 'dim other k2 k1 k0->other k2 k1 dim k0'), stack_dim=3
+    ).as_tensor()
     tensor_from_traj_from_tensor = KTrajectory.from_tensor(tensor).as_tensor()  # stack_dim=0
 
     torch.testing.assert_close(tensor, tensor_from_traj)
@@ -123,14 +80,33 @@ def test_trajectory_to_float64(cartesian_grid):
     n_k2 = 30
     kz_full, ky_full, kx_full = cartesian_grid(n_k2, n_k1, n_k0, jitter=0.0)
     trajectory = KTrajectory(kz_full, ky_full, kx_full)
-
     trajectory_float64 = trajectory.to(dtype=torch.float64)
     assert trajectory_float64.kz.dtype == torch.float64
     assert trajectory_float64.ky.dtype == torch.float64
     assert trajectory_float64.kx.dtype == torch.float64
+    assert trajectory.kz.dtype == torch.float32
+    assert trajectory.ky.dtype == torch.float32
+    assert trajectory.kx.dtype == torch.float32
 
 
-@pytest.mark.cuda()
+@pytest.mark.parametrize('dtype', [torch.float32, torch.float64, torch.int32, torch.int64])
+def test_trajectory_floating_dtype(dtype):
+    """Test if the trajectory will always be converted to float"""
+    ks = torch.ones(3, 1, 1, 1, 1, dtype=dtype)
+    traj = KTrajectory(*ks)
+    if dtype.is_floating_point:
+        # keep as as
+        assert traj.kz.dtype == dtype
+        assert traj.ky.dtype == dtype
+        assert traj.kx.dtype == dtype
+    else:
+        # convert to float32
+        assert traj.kz.dtype == torch.float32
+        assert traj.ky.dtype == torch.float32
+        assert traj.kx.dtype == torch.float32
+
+
+@pytest.mark.cuda
 def test_trajectory_cuda(cartesian_grid):
     """Move KTrajectory object to CUDA memory."""
     n_k0 = 10
@@ -144,8 +120,18 @@ def test_trajectory_cuda(cartesian_grid):
     assert trajectory_cuda.ky.is_cuda
     assert trajectory_cuda.kx.is_cuda
 
+    assert trajectory.kz.is_cpu
+    assert trajectory.ky.is_cpu
+    assert trajectory.kx.is_cpu
 
-@pytest.mark.cuda()
+    assert trajectory_cuda.is_cuda
+    assert trajectory.is_cpu
+
+    assert not trajectory_cuda.is_cpu
+    assert not trajectory.is_cuda
+
+
+@pytest.mark.cuda
 def test_trajectory_cpu(cartesian_grid):
     """Move KTrajectory object to CUDA memory and back to CPU memory."""
     n_k0 = 10

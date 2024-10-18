@@ -2,8 +2,6 @@ name: PyTest
 
 on:
   pull_request:
-    paths-ignore:
-      - "**.md"
 
 jobs:
   get_dockerfiles:
@@ -81,7 +79,7 @@ jobs:
 
       - name: Pytest coverage comment
         id: coverageComment
-        uses: MishaKav/pytest-coverage-comment@v1.1.51
+        uses: MishaKav/pytest-coverage-comment@v1.1.53
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           junitxml-path: ./pytest.xml

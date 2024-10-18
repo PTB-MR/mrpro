@@ -13,7 +13,8 @@ import os
 import sys
 from sphinx_pyproject import SphinxConfig
 
-config = SphinxConfig('../../pyproject.toml', globalns=globals())
+from mrpro  import __version__ as project_version
+config = SphinxConfig("../../pyproject.toml", globalns=globals(), config_overrides = {"version": project_version})
 sys.path.insert(0, os.path.abspath('../../src'))  # Source code dir relative to this file
 
 # -- Project information -----------------------------------------------------
@@ -35,8 +36,9 @@ extensions = [
     'sphinx.ext.napoleon',
 ]
 autosummary_generate = True
-autosummary_imported_members = True
-
+autosummary_imported_members = False
+autosummary_ignore_module_all = False
+autodoc_member_order = 'groupwise'
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 source_suffix = {'.rst': 'restructuredtext', '.txt': 'restructuredtext', '.md': 'markdown'}
@@ -45,7 +47,7 @@ source_suffix = {'.rst': 'restructuredtext', '.txt': 'restructuredtext', '.md': 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'pydata_sphinx_theme'
+html_theme = 'sphinx_rtd_theme'
 html_title = name
 html_show_sphinx = False
 html_static_path = ['_static']
