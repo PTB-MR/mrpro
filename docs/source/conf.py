@@ -36,8 +36,9 @@ extensions = [
     'sphinx.ext.napoleon',
 ]
 autosummary_generate = True
-autosummary_imported_members = True
-
+autosummary_imported_members = False
+autosummary_ignore_module_all = False
+autodoc_member_order = 'groupwise'
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 source_suffix = {'.rst': 'restructuredtext', '.txt': 'restructuredtext', '.md': 'markdown'}
