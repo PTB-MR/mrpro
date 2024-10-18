@@ -393,3 +393,18 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         if not isinstance(other, SpatialDimension):
             return NotImplemented
         return (self.x >= other.x) & (self.y >= other.y) & (self.z >= other.z)
+
+    def __post_init__(self):
+        """Ensure that the data is of the same type."""
+        if isinstance(self.x, np.ndarray) and isinstance(self.y, np.ndarray) and isinstance(self.z, np.ndarray):
+            try:
+                self.z, self.y, self.x = np.broadcast_arrays(*self.zyx, subok=True)
+            except ValueError:
+                raise ValueError('The shapes of the arrays do not match') from None
+        elif all(isinstance(val, (int | float | complex)) for val in self.zyx):
+            ...
+        else:
+            try:
+                self.z, self.y, self.x = torch.broadcast_tensors(*(torch.as_tensor(v) for v in self.zyx))
+            except RuntimeError:
+                raise ValueError('The shapes of the tensors do not match') from None
