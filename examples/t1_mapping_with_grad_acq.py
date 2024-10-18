@@ -37,7 +37,7 @@ from mrpro.utils import split_idx
 # During data acquisition, the magnetization $M_z(t)$ can be described by the signal model:
 #   $$ M_z(t) = M_0^* + (M_0^{init} - M_0^*)e^{(-t / T1^*)} \quad (1) $$
 # where the effective longitudinal relaxation time is given by:
-#   $$ T1^* = \frac{1}{\frac{1}{T1} - \frac{1}{T_R} ln(cos(\alpha))} $$
+#   $$ T1^* = \frac{1}{\frac{1}{T1} - \frac{1}{T_R} \ln(\cos(\alpha))} $$
 # and the steady-state magnetization is
 #   $$ M_0^* = M_0 \frac{T1^*}{T1} .$$
 #
