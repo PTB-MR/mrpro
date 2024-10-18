@@ -1,11 +1,14 @@
 """Endomorph Operators."""
 
+from __future__ import annotations
+
 from abc import abstractmethod
 from collections.abc import Callable
-from typing import ParamSpec, Protocol, TypeAlias, TypeVar, TypeVarTuple, cast, overload
+from typing import Any, ParamSpec, Protocol, TypeAlias, TypeVar, TypeVarTuple, cast, overload
 
 import torch
 
+import mrpro.operators
 from mrpro.operators.Operator import Operator
 
 Tin = TypeVarTuple('Tin')
@@ -205,9 +208,23 @@ class EndomorphOperator(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, 
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Apply the EndomorphOperator."""
 
-    def __matmul__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]:
+    @overload
+    def __matmul__(self, other: EndomorphOperator) -> EndomorphOperator: ...
+    @overload
+    def __matmul__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]: ...
+
+    def __matmul__(self, other: Operator[*Tin, Tout] | EndomorphOperator) -> Operator[*Tin, Tout] | EndomorphOperator:
         """Operator composition."""
-        return cast(Operator[*Tin, Tout], super().__matmul__(other))
+        if isinstance(other, mrpro.operators.MultiIdentityOp):
+            return self
+        elif isinstance(self, mrpro.operators.MultiIdentityOp):
+            return other
+
+        res = super().__matmul__(cast(Any, other))  # avoid mypy 1.11 crash
+        if isinstance(other, EndomorphOperator):
+            return cast(EndomorphOperator, res)
+        else:
+            return cast(Operator[*Tin, Tout], res)
 
     def __rmatmul__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]:
         """Operator composition."""

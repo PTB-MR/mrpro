@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import operator
 from abc import abstractmethod
 from collections.abc import Callable, Sequence
-from typing import overload
+from functools import reduce
+from typing import Any, cast, no_type_check, overload
 
 import torch
 
+import mrpro.operators
 from mrpro.operators.Operator import (
     Operator,
     OperatorComposition,
@@ -18,6 +21,39 @@ from mrpro.operators.Operator import (
 )
 
 
+class _AutogradWrapper(torch.autograd.Function):
+    """Wrap forward and adjoint functions for autograd."""
+
+    # If the forward and adjoint implementation are vmap-compatible,
+    # the function can be marked as such to enable vmap support.
+    generate_vmap_rule = True
+
+    @staticmethod
+    def forward(
+        fw: Callable[[torch.Tensor], torch.Tensor],
+        bw: Callable[[torch.Tensor], torch.Tensor],  # noqa: ARG004
+        x: torch.Tensor,
+    ) -> torch.Tensor:
+        return fw(x)
+
+    @staticmethod
+    def setup_context(
+        ctx: Any,  # noqa: ANN401
+        inputs: tuple[Callable[[torch.Tensor], torch.Tensor], Callable[[torch.Tensor], torch.Tensor], torch.Tensor],
+        output: torch.Tensor,
+    ) -> torch.Tensor:
+        ctx.fw, ctx.bw, x = inputs
+        return output
+
+    @staticmethod
+    def backward(ctx: Any, *grad_output: torch.Tensor) -> tuple[None, None, torch.Tensor]:  # noqa: ANN401
+        return None, None, _AutogradWrapper.apply(ctx.bw, ctx.fw, grad_output[0])
+
+    @staticmethod
+    def jvp(ctx: Any, *grad_inputs: Any) -> torch.Tensor:  # noqa: ANN401
+        return _AutogradWrapper.apply(ctx.fw, ctx.bw, grad_inputs[-1])
+
+
 class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """General Linear Operator.
 
@@ -25,6 +61,28 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     and fulfill f(a*x + b*y) = a*f(x) + b*f(y)
     with a,b scalars and x,y tensors.
     """
+
+    @no_type_check
+    def __init_subclass__(cls, adjoint_as_backward: bool = False, **kwargs: Any) -> None:  # noqa: ANN401
+        """Wrap the forward and adjoint functions for autograd.
+
+        Parameters
+        ----------
+        adjoint_as_backward
+            if True, the adjoint function is used as the backward function,
+            else automatic differentiation of the forward function is used.
+        kwargs
+            additional keyword arguments, passed to the super class
+        """
+        if adjoint_as_backward and not hasattr(cls, '_saved_forward'):
+            cls._saved_forward, cls._saved_adjoint = cls.forward, cls.adjoint
+            cls.forward = lambda self, x: (
+                _AutogradWrapper.apply(lambda x: self._saved_forward(x)[0], lambda x: self._saved_adjoint(x)[0], x),
+            )
+            cls.adjoint = lambda self, x: (
+                _AutogradWrapper.apply(lambda x: self._saved_adjoint(x)[0], lambda x: self._saved_forward(x)[0], x),
+            )
+        super().__init_subclass__(**kwargs)
 
     @abstractmethod
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
@@ -145,14 +203,28 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
         Returns lambda x: self(other(x))
         """
-        if isinstance(other, LinearOperator):
+        if isinstance(other, mrpro.operators.IdentityOp):
+            # neutral element of composition
+            return self
+        elif isinstance(self, mrpro.operators.IdentityOp):
+            return other
+        elif isinstance(other, LinearOperator):
             # LinearOperator@LinearOperator is linear
             return LinearOperatorComposition(self, other)
-        else:
-            return OperatorComposition(self, other)
+        elif isinstance(other, Operator):
+            # cast due to https://github.com/python/mypy/issues/16335
+            return OperatorComposition(self, cast(Operator[*Tin2, tuple[torch.Tensor,]], other))
+        return NotImplemented  # type: ignore[unreachable]
 
-    @overload
-    def __add__(self, other: LinearOperator) -> LinearOperator: ...
+    def __radd__(self, other: torch.Tensor) -> LinearOperator:
+        """Operator addition.
+
+        Returns lambda self(x) + other*x
+        """
+        return self + other
+
+    @overload  # type: ignore[override]
+    def __add__(self, other: LinearOperator | torch.Tensor) -> LinearOperator: ...
 
     @overload
     def __add__(
@@ -160,31 +232,64 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     ) -> Operator[torch.Tensor, tuple[torch.Tensor,]]: ...
 
     def __add__(
-        self, other: Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator
+        self, other: Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator | torch.Tensor
     ) -> Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator:
         """Operator addition.
 
-        Returns lambda x: self(x) + other(x)
+        Returns lambda x: self(x) + other(x) if other is a operator,
+        lambda x: self(x) + other if other is a tensor
         """
-        if not isinstance(other, LinearOperator):
-            # general case
-            return OperatorSum(self, other)  # other + cast(Operator[torch.Tensor, tuple[torch.Tensor,]], self)
-        # Sum of linear operators is a linear operator
-        return LinearOperatorSum(self, other)
+        if isinstance(other, torch.Tensor):
+            # tensor addition
+            return LinearOperatorSum(self, mrpro.operators.IdentityOp() * other)
+        elif isinstance(self, mrpro.operators.ZeroOp):
+            # neutral element of addition
+            return other
+        elif isinstance(other, mrpro.operators.ZeroOp):
+            # neutral element of addition
+            return self
+        elif isinstance(other, LinearOperator):
+            # sum of LinearOperators is linear
+            return LinearOperatorSum(self, other)
+        elif isinstance(other, Operator):
+            # for general operators
+            return OperatorSum(self, other)
+        else:
+            return NotImplemented  # type: ignore[unreachable]
 
     def __mul__(self, other: torch.Tensor | complex) -> LinearOperator:
-        """Operator elementwise left multiplication with tensor.
+        """Operator elementwise left multiplication with tensor/scalar.
 
-        Returns lambda x: self(other*x)
+        Returns lambda x: self(x*other)
         """
-        return LinearOperatorElementwiseProductLeft(self, other)
+        if isinstance(other, complex | float | int):
+            if other == 0:
+                return mrpro.operators.ZeroOp()
+            if other == 1:
+                return self
+            else:
+                return LinearOperatorElementwiseProductLeft(self, other)
+        elif isinstance(other, torch.Tensor):
+            return LinearOperatorElementwiseProductLeft(self, other)
+        else:
+            return NotImplemented  # type: ignore[unreachable]
 
     def __rmul__(self, other: torch.Tensor | complex) -> LinearOperator:
-        """Operator elementwise right multiplication with tensor.
+        """Operator elementwise right multiplication with tensor/scalar.
 
         Returns lambda x: other*self(x)
         """
-        return LinearOperatorElementwiseProductRight(self, other)
+        if isinstance(other, complex | float | int):
+            if other == 0:
+                return mrpro.operators.ZeroOp()
+            if other == 1:
+                return self
+            else:
+                return LinearOperatorElementwiseProductRight(self, other)
+        elif isinstance(other, torch.Tensor):
+            return LinearOperatorElementwiseProductRight(self, other)
+        else:
+            return NotImplemented  # type: ignore[unreachable]
 
     @property
     def gram(self) -> LinearOperator:
@@ -198,7 +303,10 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         return self.H @ self
 
 
-class LinearOperatorComposition(LinearOperator, OperatorComposition[torch.Tensor, tuple[torch.Tensor,]]):
+class LinearOperatorComposition(
+    LinearOperator,
+    OperatorComposition[torch.Tensor, tuple[torch.Tensor,]],
+):
     """LinearOperator composition.
 
     Performs operator1(operator2(x))
@@ -222,7 +330,7 @@ class LinearOperatorSum(LinearOperator, OperatorSum[torch.Tensor, tuple[torch.Te
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the operator addition."""
         # (A+B)^H = A^H + B^H
-        return (self._operator1.adjoint(x)[0] + self._operator2.adjoint(x)[0],)
+        return (reduce(operator.add, (op.adjoint(x)[0] for op in self._operators)),)
 
 
 class LinearOperatorElementwiseProductRight(
@@ -234,24 +342,20 @@ class LinearOperatorElementwiseProductRight(
     """
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Adjoint Operator elementwise multiplication with a tensor."""
-        if isinstance(self._tensor, torch.Tensor):
-            conj: torch.Tensor | complex = self._tensor.conj()
-        else:
-            conj = self._tensor.conjugate()
-
+        """Adjoint Operator elementwise multiplication with a tensor/scalar."""
+        conj = self._scalar.conj() if isinstance(self._scalar, torch.Tensor) else self._scalar.conjugate()
         return self._operator.adjoint(x * conj)
 
     @property
     def gram(self) -> LinearOperator:
         """Gram Operator."""
-        if isinstance(self._tensor, torch.Tensor):
-            factor: torch.Tensor | complex = self._tensor.conj() * self._tensor
-            if self._tensor.numel() > 1:
+        if isinstance(self._scalar, torch.Tensor):
+            factor: torch.Tensor | complex = self._scalar.conj() * self._scalar
+            if self._scalar.numel() > 1:
                 # only scalars can be moved outside the linear operator
                 return self._operator.H @ (factor * self._operator)
         else:
-            factor = self._tensor.conjugate() * self._tensor
+            factor = self._scalar.conjugate() * self._scalar
         return factor * self._operator.gram
 
 
@@ -264,22 +368,15 @@ class LinearOperatorElementwiseProductLeft(
     """
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Adjoint Operator elementwise multiplication with a tensor."""
-        if isinstance(self._tensor, torch.Tensor):
-            conj: torch.Tensor | complex = self._tensor.conj()
-        else:
-            conj = self._tensor.conjugate()
+        """Adjoint Operator elementwise multiplication with a tensor/scalar."""
+        conj = self._scalar.conj() if isinstance(self._scalar, torch.Tensor) else self._scalar.conjugate()
         return (self._operator.adjoint(x)[0] * conj,)
 
     @property
     def gram(self) -> LinearOperator:
         """Gram Operator."""
-        if isinstance(self._tensor, torch.Tensor):
-            conj: torch.Tensor | complex = self._tensor.conj()
-        else:
-            conj = self._tensor.conjugate()
-
-        return conj * self._operator.gram * self._tensor
+        conj = self._scalar.conj() if isinstance(self._scalar, torch.Tensor) else self._scalar.conjugate()
+        return conj * self._operator.gram * self._scalar
 
 
 class AdjointLinearOperator(LinearOperator):
