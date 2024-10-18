@@ -26,7 +26,7 @@ data_file.flush()
 #
 # $ y = Ax + n $
 #
-# where $n$ describes complex Gaussian noise. The image $x$ can be obtained by minimising the functionl $F$
+# where $n$ describes complex Gaussian noise. The image $x$ can be obtained by minimizing the functionl $F$
 #
 # $ F(x) = ||W^{\frac{1}{2}}(Ax - y)||_2^2 $
 #
@@ -49,7 +49,7 @@ data_file.flush()
 # dynamic images or high-quality static images have been proposed. In recent years, also the output of neural-networks
 # has been used as an image regulariser.
 #
-# In this example we are going to use a high-quality image to regularise the reconstruction of an undersampled image.
+# In this example we are going to use a high-quality image to regularize the reconstruction of an undersampled image.
 # Both images are obtained from the same data acquisition (one using all the acquired data ($x_{reg}$) and one using
 # only parts of it ($x$)). This of course is an unrealistic case but it will allow us to study the effect of the
 # regularization.
@@ -100,7 +100,7 @@ iterative_sense_reconstruction = IterativeSENSEReconstruction(kdata_us, csm=csm,
 img_us_iterative_sense = iterative_sense_reconstruction(kdata_us)
 
 # %%
-# Regularised iterativ SENSE reconstruction
+# Regularized iterativ SENSE reconstruction
 from mrpro.algorithms.reconstruction import RegularizedIterativeSENSEReconstruction
 
 regularization_weight = 1.0
@@ -169,7 +169,7 @@ img_manual = mrpro.algorithms.optimizers.cg(
 # %%
 # Display the reconstructed image
 vis_im = [img_us_regularized_iterative_sense.rss(), img_manual.abs()[:, 0, ...]]
-vis_title = ['Regularised Iterative SENSE R=20', '"Manual" Regularized Iterative SENSE R=20']
+vis_title = ['Regularized Iterative SENSE R=20', '"Manual" Regularized Iterative SENSE R=20']
 fig, ax = plt.subplots(1, 2, squeeze=False, figsize=(8, 4))
 for ind in range(2):
     ax[0, ind].imshow(vis_im[ind][0, 0, ...])
@@ -187,7 +187,7 @@ assert torch.allclose(img_us_regularized_iterative_sense.data, img_manual)
 # ### Next steps
 # Play around with the regularization_weight to see how it effects the final image quality.
 #
-# Of course we are cheating here because we used the fully sampled image as a regularisation. In real world applications
+# Of course we are cheating here because we used the fully sampled image as a regularization. In real world applications
 # we would not have that. One option is to apply a low-pass filter to the undersampled k-space data to try to reduce the
-# streaking artefacts and use that as a regularisation image. Try that and see if you can also improve the image quality
+# streaking artifacts and use that as a regularization image. Try that and see if you can also improve the image quality
 # compared to the unregularised images.

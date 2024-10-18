@@ -34,7 +34,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
     """Number of CG iterations."""
 
     regularization_data: torch.Tensor
-    """Regularisation data (i.e. prior) :math:`x_0`."""
+    """Regularization data (i.e. prior) :math:`x_0`."""
 
     regularization_weight: torch.Tensor
     """Strength of the regularization :math:`L`."""
@@ -77,7 +77,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         n_iterations
             Number of CG iterations
         regularization_data
-            Regularisation data, e.g. a reference image (:math:`x_0`).
+            Regularization data, e.g. a reference image (:math:`x_0`).
         regularization_weight
             Strength of the regularization (:math:`L`).
         regularization_op
