@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import warnings
 from collections.abc import Callable
+from itertools import product
 from pathlib import Path
 from typing import Self
 
@@ -18,7 +19,7 @@ from mrpro.data._kdata.KDataRemoveOsMixin import KDataRemoveOsMixin
 from mrpro.data._kdata.KDataSelectMixin import KDataSelectMixin
 from mrpro.data._kdata.KDataSplitMixin import KDataSplitMixin
 from mrpro.data.acq_filters import is_image_acquisition
-from mrpro.data.AcqInfo import AcqInfo
+from mrpro.data.AcqInfo import AcqInfo, rearrange_acq_info_fields
 from mrpro.data.EncodingLimits import Limits
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
@@ -26,7 +27,6 @@ from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
-from mrpro.utils import modify_acq_info
 
 KDIM_SORT_LABELS = (
     'k1',
@@ -200,10 +200,11 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         sort_idx = np.lexsort(acq_indices)  # torch does not have lexsort as of pytorch 2.2 (March 2024)
 
         # Finally, reshape and sort the tensors in acqinfo and acqinfo.idx, and kdata.
-        def sort_and_reshape_tensor_fields(input_tensor: torch.Tensor):
-            return rearrange(input_tensor[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=n_k1, k2=n_k2)
-
-        kheader.acq_info = modify_acq_info(sort_and_reshape_tensor_fields, kheader.acq_info)
+        kheader.acq_info._apply_(
+            lambda field: rearrange_acq_info_fields(
+                field, '(other k2 k1) ... -> other k2 k1 ...', {'k1': n_k1, 'k2': n_k2}
+            )
+        )
         kdata = rearrange(kdata[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=n_k1, k2=n_k2)
 
         # Calculate trajectory and check if it matches the kdata shape
@@ -235,6 +236,46 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             ) from None
 
         return cls(kheader, kdata, ktrajectory_final)
+
+    def to_file(self, filename: str | Path) -> None:
+        """Save KData as ISMRMRD dataset to file.
+
+        Parameters
+        ----------
+        filename
+            path to the ISMRMRD file
+        """
+        # Open the dataset
+        dataset = ismrmrd.Dataset(filename, 'dataset', create_if_needed=True)
+
+        # Create ISMRMRD header
+        header = self.header.to_ismrmrd()
+        header.acquisitionSystemInformation.receiverChannels = self.data.shape[-4]
+        dataset.write_xml_header(header.toXML('utf-8'))
+
+        trajectory = self.traj.as_tensor()
+        trajectory = torch.stack(
+            [torch.broadcast_to(trajectory[i, ...], self.data[..., 0, :, :, :].shape) for i in range(3)]
+        )
+
+        # Go through data and save acquisitions
+        acq_shape = [self.data.shape[-1], self.data.shape[-4]]
+        acq = ismrmrd.Acquisition()
+        acq.resize(*acq_shape, trajectory_dimensions=3)
+        for other in product(*[range(shape) for shape in self.data.shape[:-4]]):
+            for k2 in range(self.data.shape[-3]):
+                for k1 in range(self.data.shape[-2]):
+                    acq.clear_all_flags()
+                    acq = self.header.acq_info.add_to_ismrmrd_acquisition(acq, other, k2, k1)
+
+                    # Rearrange, switch from zyx to xyz and set trajectory.
+                    acq.traj[:] = rearrange(trajectory[:, *other, k2, k1, :].numpy(), 'dim k0->k0 dim')[:, ::-1]
+
+                    # Set the data and append
+                    acq.data[:] = self.data[*other, :, k2, k1, :].numpy()
+                    dataset.append_acquisition(acq)
+
+        dataset.close()
 
     def __repr__(self):
         """Representation method for KData class."""
