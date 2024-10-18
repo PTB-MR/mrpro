@@ -21,4 +21,32 @@ from mrpro.operators.SliceProjectionOp import SliceProjectionOp
 from mrpro.operators.WaveletOp import WaveletOp
 from mrpro.operators.ZeroPadOp import ZeroPadOp
 from mrpro.operators.ZeroOp import ZeroOp
-__all__ = ["Operator", "LinearOperator", "Functional", "ProximableFunctional", "ElementaryFunctional", "ElementaryProximableFunctional", "functionals", "models", "CartesianSamplingOp", "ConstraintsOp", "DensityCompensationOp", "EinsumOp", "FastFourierOp", "FiniteDifferenceOp", "FourierOp", "GridSamplingOp", "IdentityOp", "MagnitudeOp", "PhaseOp", "SensitivityOp", "SignalModel", "SliceProjectionOp", "WaveletOp", "ZeroPadOp, ZeroOp"]
+
+__all__ = [
+    "functionals",
+    "models",
+    "CartesianSamplingOp",
+    "ConstraintsOp",
+    "DensityCompensationOp",
+    "EinsumOp",
+    "ElementaryFunctional",
+    "ElementaryProximableFunctional",
+    "FastFourierOp",
+    "FiniteDifferenceOp",
+    "FourierOp",
+    "Functional",
+    "GridSamplingOp",
+    "IdentityOp",
+    "LinearOperator",
+    "MagnitudeOp",
+    "Operator",
+    "PhaseOp",
+    "ProximableFunctional",
+    "ProximableFunctionalSeparableSum",
+    "SensitivityOp",
+    "SignalModel",
+    "SliceProjectionOp",
+    "WaveletOp",
+    "ZeroOp",
+    "ZeroPadOp",
+]
