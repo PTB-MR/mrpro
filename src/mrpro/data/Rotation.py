@@ -53,7 +53,7 @@ from scipy._lib._util import check_random_state
 from scipy.spatial.transform import Rotation as Rotation_scipy
 
 from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.utils.typing import IndexerType, NestedSequence
+from mrpro.utils.typing import NestedSequence, TorchIndexerType
 
 AXIS_ORDER = 'zyx'  # This can be modified
 QUAT_AXIS_ORDER = AXIS_ORDER + 'w'  # Do not modify
@@ -962,7 +962,7 @@ class Rotation(torch.nn.Module):
         angles = (other @ self.inv()).magnitude()
         return angles < atol
 
-    def __getitem__(self, indexer: IndexerType) -> Self:
+    def __getitem__(self, indexer: TorchIndexerType) -> Self:
         """Extract rotation(s) at given index(es) from object.
 
         Create a new `Rotation` instance containing a subset of rotations
@@ -1045,7 +1045,7 @@ class Rotation(torch.nn.Module):
         axis = QUAT_AXIS_ORDER.index('w')
         self._quaternions[..., axis] = quat_w
 
-    def __setitem__(self, indexer: IndexerType, value: Rotation):
+    def __setitem__(self, indexer: TorchIndexerType, value: Rotation):
         """Set rotation(s) at given index(es) from object.
 
         Parameters

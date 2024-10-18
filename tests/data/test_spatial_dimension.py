@@ -2,6 +2,7 @@
 
 from typing import Any, assert_type
 
+import numpy as np
 import pytest
 import torch
 from mrpro.data import SpatialDimension
@@ -37,7 +38,6 @@ def test_spatial_dimension_from_xyz_tensor():
     assert torch.equal(spatial_dimension.z, XYZtensor.z)
 
 
-
 def test_spatial_dimension_from_array():
     """Test creation from arrays"""
     xyz = RandomGenerator(0).float32_tensor((1, 2, 3))
@@ -65,10 +65,11 @@ def test_spatial_dimension_from_array_wrongshape():
 
 def test_spatial_dimension_broadcasting():
     z = torch.ones(2, 1, 1)
-    y = torch.ones(1,2,1)
-    x = torch.ones(1,1,2)
-    spatial_dimension = SpatialDimension(z,y,x)
-    assert SpatialDimension.shape == (2,2,2)
+    y = torch.ones(1, 2, 1)
+    x = torch.ones(1, 1, 2)
+    spatial_dimension = SpatialDimension(z, y, x)
+    assert spatial_dimension.shape == (2, 2, 2)
+
 
 def test_spatial_dimension_apply_():
     """Test apply_ (inplace)"""
@@ -159,17 +160,35 @@ def test_spatial_dimension_cuda_float():
     assert spatial_dimension_cuda is not spatial_dimension
 
 
-def test_spatial_dimension_getitem():
+def test_spatial_dimension_getitem_tensor():
     """Test accessing elements of SpatialDimension."""
     zyx = RandomGenerator(0).float32_tensor((4, 2, 3))
     spatial_dimension = SpatialDimension.from_array_zyx(zyx)
     torch.testing.assert_close(torch.stack(spatial_dimension[:2, ...].zyx, dim=-1), zyx[:2, ...])
 
 
-def test_spatial_dimension_setitem():
-    """Test setting elements of SpatialDimension."""
+def test_spatial_dimension_setitem_tensor():
+    """Test setting elements of SpatialDimension[torch.Tensor]."""
     zyx = RandomGenerator(0).float32_tensor((4, 2, 3))
     spatial_dimension = SpatialDimension.from_array_zyx(zyx)
+    spatial_dimension_to_set = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    spatial_dimension[2, 1] = spatial_dimension_to_set
+    assert spatial_dimension[2, 1].zyx == spatial_dimension_to_set.zyx
+
+
+def test_spatial_dimension_getitem_ndarray():
+    """Test accessing elements of SpatialDimension[np.ndarray]."""
+    z = RandomGenerator(0).float32_tensor((2, 4)).numpy()
+    y = RandomGenerator(0).float32_tensor((2, 4)).numpy()
+    x = RandomGenerator(0).float32_tensor((2, 4)).numpy()
+    spatial_dimension = SpatialDimension(z, y, x)
+    np.testing.assert_allclose(spatial_dimension[:2, ...].zyx, (z[:2, ...], y[:2, ...], x[:2, ...]))
+
+
+def test_spatial_dimension_setitem_ndarray():
+    """Test setting elements of SpatialDimension[np.ndarray]."""
+    zyx = RandomGenerator(0).float32_tensor((3, 2, 4)).numpy()
+    spatial_dimension = SpatialDimension(*zyx)
     spatial_dimension_to_set = SpatialDimension(z=1.0, y=2.0, x=3.0)
     spatial_dimension[2, 1] = spatial_dimension_to_set
     assert spatial_dimension[2, 1].zyx == spatial_dimension_to_set.zyx

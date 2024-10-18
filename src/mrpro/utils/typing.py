@@ -7,12 +7,20 @@ if TYPE_CHECKING:
     from typing import SupportsIndex, TypeAlias
 
     import torch
+    from numpy import ndarray
     from torch._C import _NestedSequence as NestedSequence
 
     # This matches the torch.Tensor indexer typehint
-    _IndexerTypeInner: TypeAlias = None | bool | int | slice | EllipsisType | torch.Tensor
-    _SingleIndexerType: TypeAlias = SupportsIndex | _IndexerTypeInner | NestedSequence[_IndexerTypeInner]
-    IndexerType: TypeAlias = tuple[_SingleIndexerType, ...] | _SingleIndexerType
+    _TorchIndexerTypeInner: TypeAlias = None | bool | int | slice | EllipsisType | torch.Tensor
+    _SingleTorchIndexerType: TypeAlias = SupportsIndex | _TorchIndexerTypeInner | NestedSequence[_TorchIndexerTypeInner]
+    TorchIndexerType: TypeAlias = tuple[_SingleTorchIndexerType, ...] | _SingleTorchIndexerType
+
+    # This matches the numpy.ndarray indexer typehint
+    _SingleNumpyIndexerType: TypeAlias = ndarray | SupportsIndex | None | slice | EllipsisType
+    NumpyIndexerType: TypeAlias = tuple[_SingleNumpyIndexerType, ...] | _SingleNumpyIndexerType
+
+
 else:
-    IndexerType: TypeAlias = Any
+    TorchIndexerType: TypeAlias = Any
     NestedSequence: TypeAlias = Any
+    NumpyIndexerType: TypeAlias = Any
