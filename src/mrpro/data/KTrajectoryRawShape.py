@@ -56,8 +56,8 @@ class KTrajectoryRawShape(MoveDataMixin):
             KTrajectory with kx, ky and kz each in the shape (other k2 k1 k0).
         """
         # Resort and reshape
-        kz = rearrange(self.kz[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=n_k1, k2=n_k2)
-        ky = rearrange(self.ky[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=n_k1, k2=n_k2)
-        kx = rearrange(self.kx[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=n_k1, k2=n_k2)
+        kz = rearrange(self.kz[sort_idx, ...], '... (other k2 k1) k0 -> ... other k2 k1 k0', k1=n_k1, k2=n_k2)
+        ky = rearrange(self.ky[sort_idx, ...], '... (other k2 k1) k0 -> ... other k2 k1 k0', k1=n_k1, k2=n_k2)
+        kx = rearrange(self.kx[sort_idx, ...], '... (other k2 k1) k0 -> ... other k2 k1 k0', k1=n_k1, k2=n_k2)
 
         return KTrajectory(kz, ky, kx, repeat_detection_tolerance=self.repeat_detection_tolerance)
