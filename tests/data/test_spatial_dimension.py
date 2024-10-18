@@ -187,7 +187,7 @@ def test_spatial_dimension_getitem_ndarray():
 
 def test_spatial_dimension_setitem_ndarray():
     """Test setting elements of SpatialDimension[np.ndarray]."""
-    zyx = RandomGenerator(0).float32_tensor((3, 2, 4)).numpy()
+    zyx = RandomGenerator(0).float32_tensor((3, 5, 2)).numpy()
     spatial_dimension = SpatialDimension(*zyx)
     spatial_dimension_to_set = SpatialDimension(z=1.0, y=2.0, x=3.0)
     spatial_dimension[2, 1] = spatial_dimension_to_set
