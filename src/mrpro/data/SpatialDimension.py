@@ -5,13 +5,11 @@ from __future__ import annotations
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Generic, Protocol, TypeVar, overload
+from typing import Any, Generic, Protocol, TypeVar, overload, runtime_checkable
 
 import numpy as np
 import torch
 from numpy.typing import ArrayLike
-
-import mrpro.utils.typing as typeing_utils
 from mrpro.data.MoveDataMixin import MoveDataMixin
 
 T = TypeVar('T', int, float, np.ndarray, torch.Tensor)
@@ -19,6 +17,7 @@ T_co = TypeVar('T_co', int, float, np.ndarray, torch.Tensor, covariant=True)
 T_co_float = TypeVar('T_co_float', float, np.ndarray, torch.Tensor, covariant=True)
 T_co_vector = TypeVar('T_co_vector', np.ndarray, torch.Tensor, covariant=True)
 T_co_scalar = TypeVar('T_co_scalar', int, float, covariant=True)
+K_indexer = TypeVar('K_indexer')
 
 
 class XYZ(Protocol[T]):
@@ -28,6 +27,11 @@ class XYZ(Protocol[T]):
     y: T
     z: T
 
+@runtime_checkable
+class Indexable(Protocol[T_co_vector,K_indexer]):
+    """Protocol for Array-Like objects with getitem and setitem support"""
+    def __getitem__(self, key: K_indexer) -> T_co_vector: ...
+    def __setitem__(self, key: K_indexer, value: T_co_vector) -> None: ...
 
 @dataclass(slots=True)
 class SpatialDimension(MoveDataMixin, Generic[T_co]):
@@ -95,17 +99,17 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         return f'z={self.z}, y={self.y}, x={self.x}'
 
     def __getitem__(
-        self: SpatialDimension[torch.Tensor], idx: typeing_utils.IndexerType
-    ) -> SpatialDimension[torch.Tensor]:
+        self: SpatialDimension[Indexable[T_co_vector, K_indexer]], idx: K_indexer
+    ) -> SpatialDimension[T_co_vector]:
         """Get SpatialDimension item."""
-        if not all(isinstance(el, torch.Tensor) for el in self.zyx):
-            raise IndexError('Cannot index SpatialDimension with non-tensor')
+        if not all(isinstance(el, Indexable) for el in self.zyx):
+            raise IndexError('Cannot index SpatialDimension with non-indexable members')
         return SpatialDimension(self.z[idx], self.y[idx], self.x[idx])
 
-    def __setitem__(self: SpatialDimension[torch.Tensor], idx: typeing_utils.IndexerType, other: SpatialDimension):
+    def __setitem__(self: SpatialDimension[Indexable[T_co_vector, K_indexer]], idx:K_indexer, other: SpatialDimension):
         """Set SpatialDimension item."""
-        if not all(isinstance(el, torch.Tensor) for el in self.zyx):
-            raise IndexError('Cannot index SpatialDimension with non-tensor')
+        if not all(isinstance(el, Indexable) for el in self.zyx):
+            raise IndexError('Cannot index SpatialDimension with non-indexable members')
         self.z[idx] = other.z
         self.y[idx] = other.y
         self.x[idx] = other.x
@@ -408,3 +412,27 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
                 self.z, self.y, self.x = torch.broadcast_tensors(*(torch.as_tensor(v) for v in self.zyx))
             except RuntimeError:
                 raise ValueError('The shapes of the tensors do not match') from None
+
+
+    @property
+    def shape(self)->tuple[int,...]:
+        """Get the shape of the x, y, and z.
+        
+        Returns
+        -------
+            Empty tuple if x, y, and z are scalar types, otherwise shape
+
+        Raises
+        ------ 
+            ValueError if the shapes are not equal"""
+        if isinstance(self.x, float|int|complex) and isinstance(self.y, float|int|complex)  and isinstance(self.z, float|int|complex) :
+            return ()
+        elif isinstance(self.x, torch.Tensor|np.ndarray) and isinstance(self.y, torch.Tensor|np.ndarray)  and isinstance(self.z, torch.Tensor|np.ndarray) and self.x.shape==self.y.shape==self.z.shape:
+            return self.x.shape
+        else:
+            raise ValueError("Inconsistent shapes")
+
+
+            
+        
+

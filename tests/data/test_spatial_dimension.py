@@ -27,14 +27,15 @@ def test_spatial_dimension_from_xyz_tensor():
     """Test creation from an object with x, y, z attributes"""
 
     class XYZtensor:
-        x = 1 * torch.ones(1)
-        y = 2 * torch.ones(2)
-        z = 3 * torch.ones(3)
+        x = 1 * torch.ones(1, 2, 3)
+        y = 2 * torch.ones(1, 2, 3)
+        z = 3 * torch.ones(1, 2, 3)
 
     spatial_dimension = SpatialDimension.from_xyz(XYZtensor())
     assert torch.equal(spatial_dimension.x, XYZtensor.x)
     assert torch.equal(spatial_dimension.y, XYZtensor.y)
     assert torch.equal(spatial_dimension.z, XYZtensor.z)
+
 
 
 def test_spatial_dimension_from_array():
@@ -61,6 +62,13 @@ def test_spatial_dimension_from_array_wrongshape():
     with pytest.raises(ValueError, match='last dimension'):
         _ = SpatialDimension.from_array_xyz(tensor_wrongshape)
 
+
+def test_spatial_dimension_broadcasting():
+    z = torch.ones(2, 1, 1)
+    y = torch.ones(1,2,1)
+    x = torch.ones(1,1,2)
+    spatial_dimension = SpatialDimension(z,y,x)
+    assert SpatialDimension.shape == (2,2,2)
 
 def test_spatial_dimension_apply_():
     """Test apply_ (inplace)"""
