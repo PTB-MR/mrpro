@@ -985,22 +985,19 @@ def test_align_vectors_noise():
 
 
 def test_align_vectors_invalid_input():
-    with pytest.raises(ValueError, match='Expected input `a` to have shape'):
+    with pytest.raises(ValueError, match='Expected inputs to have same shapes'):
         Rotation.align_vectors([1, 2, 3, 4], [1, 2, 3])
 
-    with pytest.raises(ValueError, match='Expected input `b` to have shape'):
-        Rotation.align_vectors([1, 2, 3], [1, 2, 3, 4])
-
-    with pytest.raises(ValueError, match='Expected inputs `a` and `b` ' 'to have same shapes'):
+    with pytest.raises(ValueError, match='Expected inputs to have same shapes'):
         Rotation.align_vectors([[1, 2, 3], [4, 5, 6]], [[1, 2, 3]])
 
-    with pytest.raises(ValueError, match='Expected `weights` to be 1 dimensional'):
-        Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[[1]])
+    with pytest.raises(ValueError, match='Expected inputs to have shape'):
+        Rotation.align_vectors([1, 2, 3, 4], [1, 2, 3, 4])
 
-    with pytest.raises(ValueError, match='Expected `weights` to have number of values'):
+    with pytest.raises(ValueError, match='Invalid weights: expected shape'):
         Rotation.align_vectors([[1, 2, 3], [4, 5, 6]], [[1, 2, 3], [4, 5, 6]], weights=[1, 2, 3])
 
-    with pytest.raises(ValueError, match='`weights` may not contain negative values'):
+    with pytest.raises(ValueError, match='Invalid weights: expected shape'):
         Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[-1])
 
     with pytest.raises(ValueError, match='Only one infinite weight is allowed'):
@@ -1409,3 +1406,174 @@ def test_as_directions():
             expected = matrix[:, row, col]
             actual = getattr(basis, axis)
             torch.testing.assert_close(actual, expected, atol=1e-4, rtol=0)
+
+
+def test_random_improper():
+    """Test improper rotations"""
+    r = Rotation.random(10, random_state=0, improper=True)
+    matrix = r.as_matrix()
+    det = torch.linalg.det(matrix)
+    torch.testing.assert_close(det, -torch.ones(10))
+
+
+def test_reflect():
+    """Test improper rotations"""
+    r = Rotation.random(None, random_state=0)
+    r2 = r.reflect()
+    r3 = r2.reflect()
+    det = torch.linalg.det(r2.as_matrix())
+    torch.testing.assert_close(det, torch.tensor(-1.0))
+    torch.testing.assert_close(r.as_matrix(), r3.as_matrix())
+
+
+def test_invert_axes():
+    """Test inversion of axes"""
+    r = Rotation.random(None, random_state=0)
+    r2 = r.invert_axes()
+    r3 = r2.invert_axes()
+    det = torch.linalg.det(r2.as_matrix())
+    torch.testing.assert_close(det, torch.tensor(-1.0))
+    torch.testing.assert_close(r.as_matrix(), r3.as_matrix())
+    torch.testing.assert_close(r.as_matrix(), -r2.as_matrix())
+
+
+def test_improper_quat_inversion():
+    """Test improper quaternions with inversion"""
+    r = Rotation.random(10, random_state=0, improper='random')
+    q, inv = r.as_quat(improper='inversion')
+    assert torch.equal(r.is_improper, inv)
+    r2 = Rotation.from_quat(q, inversion=inv)
+    assert r2.approx_equal(r).all()
+
+
+def test_improper_quat_reflection():
+    """Test improper quaternions with reflection"""
+    r = Rotation.random(10, random_state=0, improper='random')
+    q, ref = r.as_quat(improper='reflection')
+    assert torch.equal(r.is_improper, ref)
+    r2 = Rotation.from_quat(q, reflection=ref)
+    assert r2.approx_equal(r).all()
+
+
+def test_improper_quat_warn():
+    """Test improper quaternions with warning"""
+    r = Rotation.random(10, random_state=0, improper=True)
+    with pytest.warns(UserWarning, match='Rotation contains improper'):
+        _ = r.as_quat(improper='warn')
+
+
+def test_improper_euler_reflection():
+    """Test improper euler angles with reflection"""
+    r = Rotation.random(10, random_state=0, improper=True)
+    angle, ref = r.as_euler('xyz', improper='reflection')
+    r2 = Rotation.from_euler('xyz', angle, reflection=ref)
+    assert r2.approx_equal(r, atol=1e-5).all()  # loss of precision in reflection conversion
+
+
+def test_improper_euler_inversion():
+    """Test improper euler angles with inversion"""
+    r = Rotation.random(10, random_state=0, improper=True)
+    angle, inv = r.as_euler('xyz', improper='inversion')
+    r2 = Rotation.from_euler('xyz', angle, inversion=inv)
+    assert r2.approx_equal(r).all()
+
+
+def test_improper_euler_warn():
+    """Test improper euler angles with warning"""
+    r = Rotation.random(10, random_state=0, improper=True)
+    with pytest.warns(UserWarning, match='Rotation contains improper'):
+        _ = r.as_euler('xyz', improper='warn')
+
+
+def test_improper_as_rotvec_reflection():
+    """Test improper as_rotvec with reflection"""
+    r = Rotation.random(10, random_state=0, improper=True)
+    expected = r.reflect().as_rotvec()
+    actual, _ = r.as_rotvec(improper='reflection')
+
+    torch.testing.assert_close(actual, expected, atol=1e-5, rtol=0)
+
+
+def test_improper_from_rotvec_reflection():
+    """Test improper from_rotvec with reflection"""
+    # Test the shortcut in from_rotvec
+    r = Rotation.random(10, random_state=0, improper=False)
+    rotvec = r.as_rotvec()
+    actual = Rotation.from_rotvec(rotvec, reflection=True)
+    expected = Rotation.from_rotvec(rotvec).reflect()
+    assert actual.approx_equal(expected).all()
+
+
+def test_improper_rotvec_inversion():
+    """Test improper rotvec with inversion"""
+    r = Rotation.random(10, random_state=0, improper=True)
+    rotvec, inv = r.as_rotvec(improper='inversion')
+    r2 = Rotation.from_rotvec(rotvec, inversion=inv)
+    assert r2.approx_equal(r).all()
+
+
+def test_improper_rotvec_reflection():
+    """Test improper rotvec with inversion"""
+    r = Rotation.random(1, random_state=0, improper=False)
+    rotvec = r.as_rotvec()
+    r2 = r.reflect()
+    r3 = Rotation.from_rotvec(rotvec, reflection=True)
+    assert r2.approx_equal(r3).all()
+
+
+def test_improper_rotvec_warn():
+    """Test improper rotvec with warning"""
+    r = Rotation.random(10, random_state=0, improper=True)
+    with pytest.warns(UserWarning, match='Rotation contains improper'):
+        _ = r.as_rotvec(improper='warn')
+
+
+def test_apply_scipy():
+    """Test apply to vector (scipy style apply)"""
+    r = Rotation.random(10, random_state=0)
+    v = RandomGenerator(0).float32_tensor(size=(10, 3))
+    with pytest.warns(UserWarning, match='Consider using Rotation'):
+        actual = r.apply(v)
+    expected = (r.as_matrix() @ v.unsqueeze(-1)).squeeze(-1)
+    torch.testing.assert_close(expected, actual)
+
+
+def test_apply_torch():
+    """Test apply with callable (torch style apply)"""
+    r = Rotation.random(10, random_state=0)
+    r.apply(lambda x: x.double())
+    assert r._quaternions.dtype == torch.float64
+
+
+def test_random_vmf_uniform():
+    """Test random rotations with a uniform distribution"""
+    mean = torch.tensor([0, 0, 1.0])
+    r = Rotation.random_vmf(10000, mean, kappa=0, sigma=math.inf)
+    assert r.shape == (10000,)
+    assert r.mean().magnitude() < 0.1
+
+
+def test_random_vmf_peaked():
+    """Test random rotations with a peaked distribution"""
+    mean = torch.tensor([0.0, 1.0, 0.0])
+    r = Rotation.random_vmf(1234, mean, kappa=100, sigma=100)
+    assert r.shape == (1234,)
+    torch.testing.assert_close(torch.linalg.cross(r.mean().as_rotvec(), mean), torch.zeros(3), atol=1e-2, rtol=0)
+
+
+def test_apply_improper():
+    """Test apply with improper rotations"""
+    r = Rotation.random(10, random_state=0, improper=False)
+    v = RandomGenerator(0).float32_tensor(size=(10, 3))
+    actual = r.invert_axes()(v)
+    expected = (-r.as_matrix() @ v.unsqueeze(-1)).squeeze(-1)
+    torch.testing.assert_close(expected, actual)
+
+
+def test_reshape():
+    r = Rotation.random((1, 2, 3), random_state=0, improper=False)
+    reshaped = r.reshape(3, 2, 1, 1)
+    assert reshaped.shape == (3, 2, 1, 1)
+    assert r.shape == (1, 2, 3)
+    rereshaped = reshaped.reshape(1, 2, 3)
+    torch.testing.assert_close(r._quaternions, rereshaped._quaternions)

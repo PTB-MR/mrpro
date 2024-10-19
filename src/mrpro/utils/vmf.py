@@ -10,7 +10,7 @@ from math import log, sqrt
 import torch
 
 
-def sample_vmf(mu: torch.Tensor, kappa: float, n_samples: int, seed: int | None) -> torch.Tensor:
+def sample_vmf(mu: torch.Tensor, kappa: float, n_samples: int) -> torch.Tensor:
     """
     Generate samples from the von Mises-Fisher distribution.
 
@@ -31,9 +31,10 @@ def sample_vmf(mu: torch.Tensor, kappa: float, n_samples: int, seed: int | None)
     -------
         Samples from the von Mises-Fisher distribution. Shape: (num_samples, ..., dim)
     """
-    mu = mu.unsqueeze(0) if mu.dim() == 1 else mu
-    mu = mu.expand(n_samples, *mu.shape)
-    dim = mu.shape[-1]
+    mu_ = mu.unsqueeze(0) if mu.dim() == 1 else mu
+    total_samples = n_samples * mu_[..., 0].numel()
+    mu_ = mu_.expand((n_samples, *mu_.shape))
+    dim = mu_.shape[-1]
 
     b = (dim - 1) / (sqrt(4.0 * kappa**2 + (dim - 1) ** 2) + 2 * kappa)
     x = (1.0 - b) / (1.0 + b)
@@ -44,17 +45,20 @@ def sample_vmf(mu: torch.Tensor, kappa: float, n_samples: int, seed: int | None)
     normal_dist = torch.distributions.Normal(0, 1)
 
     ws: list[torch.Tensor] = []
-    while sum(len(w) for w in ws) < n_samples:
+
+    while sum(len(w) for w in ws) < total_samples:
         # rejection sampling
-        z = beta_dist.sample(torch.Size((n_samples,)))
+        z = beta_dist.sample(torch.Size((total_samples,)))
         w = (1.0 - (1.0 + b) * z) / (1.0 - (1.0 - b) * z)
-        u = uniform_dist.sample(torch.Size((n_samples,)))
+        u = uniform_dist.sample(torch.Size((total_samples,)))
         accepted = kappa * w + (dim - 1) * torch.log(1.0 - x * w) - c >= torch.log(u)
         ws.append(w[accepted])
-    weights = torch.cat(ws)[:n_samples]
+    weights = torch.cat(ws)[:total_samples].reshape(mu_.shape[:-1])
 
-    v = normal_dist.sample(mu.shape)
-    orthogonal_vectors = v - (mu * v).sum(-1, keepdim=True) * mu / mu.norm(dim=-1, keepdim=True)
+    v = normal_dist.sample(mu_.shape)
+    orthogonal_vectors = v - (mu_ * v).sum(-1, keepdim=True) * mu_ / mu_.norm(dim=-1, keepdim=True)
     orthonormal_vectors = orthogonal_vectors / orthogonal_vectors.norm(dim=-1, keepdim=True)
-    samples = orthonormal_vectors * (1.0 - weights**2).sqrt().unsqueeze(-1) + weights.unsqueeze(-1) * mu
+    samples = orthonormal_vectors * (1.0 - weights**2).sqrt().unsqueeze(-1) + weights.unsqueeze(-1) * mu_
+    if mu.dim() == 1:
+        samples = samples.squeeze(-2)
     return samples
