@@ -14,9 +14,39 @@ from mrpro.operators.IdentityOp import IdentityOp
 from mrpro.operators.MagnitudeOp import MagnitudeOp
 from mrpro.operators.MultiIdentityOp import MultiIdentityOp
 from mrpro.operators.PhaseOp import PhaseOp
+from mrpro.operators.ProximableFunctionalSeparableSum import ProximableFunctionalSeparableSum
 from mrpro.operators.SensitivityOp import SensitivityOp
 from mrpro.operators.SignalModel import SignalModel
 from mrpro.operators.SliceProjectionOp import SliceProjectionOp
 from mrpro.operators.WaveletOp import WaveletOp
 from mrpro.operators.ZeroPadOp import ZeroPadOp
 from mrpro.operators.ZeroOp import ZeroOp
+
+__all__ = [
+    "functionals",
+    "models",
+    "CartesianSamplingOp",
+    "ConstraintsOp",
+    "DensityCompensationOp",
+    "EinsumOp",
+    "ElementaryFunctional",
+    "ElementaryProximableFunctional",
+    "FastFourierOp",
+    "FiniteDifferenceOp",
+    "FourierOp",
+    "Functional",
+    "GridSamplingOp",
+    "IdentityOp",
+    "LinearOperator",
+    "MagnitudeOp",
+    "Operator",
+    "PhaseOp",
+    "ProximableFunctional",
+    "ProximableFunctionalSeparableSum",
+    "SensitivityOp",
+    "SignalModel",
+    "SliceProjectionOp",
+    "WaveletOp",
+    "ZeroOp",
+    "ZeroPadOp",
+]
