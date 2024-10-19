@@ -102,7 +102,7 @@ class ProximableFunctionalSeparableSum(Operator[*tuple[torch.Tensor, ...], tuple
             return NotImplemented  # type: ignore[unreachable]
 
     def __ror__(self, other: ProximableFunctional) -> Self:
-        """Stack functionals."""
+        """Separable sum functionals."""
         if isinstance(other, ProximableFunctional):
             return self.__class__(other, *self.functionals)
         else:
