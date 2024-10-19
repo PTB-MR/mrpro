@@ -853,7 +853,7 @@ class Rotation(torch.nn.Module):
             Note that this required additional computation.
             If 'inversion', the boolean tensor indicates if the rotation contains
             an inversion of the coordinate system.
-            The quaterion is adjusted to represent the rotation to be performed
+            The quaternion is adjusted to represent the rotation to be performed
             before the reflection or inversion.
 
         Returns
@@ -960,7 +960,7 @@ class Rotation(torch.nn.Module):
             a reflection about a plane perpendicular to the rotation axis.
             If 'inversion', the boolean tensor indicates if the rotation contains
             an inversion of the coordinate system.
-            The quaterion is adjusted to represent the rotation to be performed
+            The quaternion is adjusted to represent the rotation to be performed
             before the reflection or inversion.
 
         Returns
@@ -1049,7 +1049,7 @@ class Rotation(torch.nn.Module):
             a reflection about a plane perpendicular to the rotation axis.
             If 'inversion', the boolean tensor indicates if the rotation contains
             an inversion of the coordinate system.
-            The quaterion is adjusted to represent the rotation to be performed
+            The quaternion is adjusted to represent the rotation to be performed
             before the reflection or inversion.
 
         Returns
@@ -1508,13 +1508,13 @@ class Rotation(torch.nn.Module):
             Object containing the reflected rotations.
         """
         if self._single:
-            quaternions = self.quaternions[0]
-            improper = self.improper[0]
+            quaternions = self._quaternions[0]
+            is_improper = self._is_improper[0]
         else:
-            quaternions = self.quaternions
-            improper = self.improper
+            quaternions = self._quaternions
+            is_improper = self._is_improper
 
-        return self.__class__(quaternions, copy=False, inversion=improper, reflection=True)
+        return self.__class__(quaternions, copy=False, inversion=is_improper, reflection=True)
 
     def invert_axes(self) -> Self:
         """Invert the axes of the coordinate system.
