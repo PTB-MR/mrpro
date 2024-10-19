@@ -24,7 +24,7 @@ def test_functional_scaling_forward(
     f = functional()
     match scale_type:
         case 'negative':
-            scale = -4.0
+            scale:float|torch.Tensor = -4.0
         case 'positive':
             scale = 3.0
         case 'tensor':
