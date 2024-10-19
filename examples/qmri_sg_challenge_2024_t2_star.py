@@ -1,5 +1,5 @@
 # %% [markdown]
-# # QMRI Challenge ISMRM 2024 - T2* mapping
+# # QMRI Challenge ISMRM 2024 - $T_2^*$ mapping
 
 # %%
 # Imports
@@ -21,7 +21,7 @@ from mrpro.operators.models import MonoExponentialDecay
 # %% [markdown]
 # ### Overview
 # The dataset consists of gradient echo images obtained at 11 different echo times, each saved in a separate DICOM file.
-# In order to obtain a T2* map, we are going to:
+# In order to obtain a $T_2^*$ map, we are going to:
 # - download the data from Zenodo
 # - read in the DICOM files (one for each echo time) and combine them in an IData object
 # - define a signal model (mono-exponential decay) and data loss (mean-squared error) function
@@ -67,9 +67,9 @@ for idx, ax in enumerate(axes.flatten()):
 # ### Signal model and loss function
 # We use the model $q$
 #
-# $q(TE) = M_0 e^{-TE/T2^*}$
+# $q(TE) = M_0 e^{-TE/T_2^*}$
 #
-# with the equilibrium magnetization $M_0$, the echo time $TE$, and $T2^*$
+# with the equilibrium magnetization $M_0$, the echo time $TE$, and $T_2^*$
 
 # %%
 model = MonoExponentialDecay(decay_time=idata_multi_te.header.te)
@@ -83,7 +83,7 @@ mse = MSEDataDiscrepancy(idata_multi_te.data)
 # %% [markdown]
 # Now we can simply combine the two into a functional which will then solve
 #
-# $ \min_{M_0, T2^*} ||q(M_0, T2^*, TE) - x||_2^2$
+# $ \min_{M_0, T_2^*} ||q(M_0, T_2^*, TE) - x||_2^2$
 # %%
 functional = mse @ model
 
@@ -115,7 +115,7 @@ t2star[torch.isnan(t2star)] = 0
 # ### Visualize the final results
 # To get an impression of how well the fit has worked, we are going to calculate the relative error between
 #
-# $E_{relative} = \sum_{TE}\frac{|(q(M_0, T2^*, TE) - x)|}{|x|}$
+# $E_{relative} = \sum_{TE}\frac{|(q(M_0, T_2^*, TE) - x)|}{|x|}$
 #
 # on a voxel-by-voxel basis.
 # %%
@@ -127,11 +127,11 @@ fig, axes = plt.subplots(1, 3, figsize=(10, 2), squeeze=False)
 colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05) for ax in axes[0, :]]
 
 im = axes[0, 0].imshow(m0[0, 0, ...].cpu())
-axes[0, 0].set_title('M0')
+axes[0, 0].set_title('$M_0$')
 fig.colorbar(im, cax=colorbar_ax[0])
 
 im = axes[0, 1].imshow(t2star[0, 0, ...].cpu(), vmin=0, vmax=500)
-axes[0, 1].set_title('T2*')
+axes[0, 1].set_title('$T_2^*$')
 fig.colorbar(im, cax=colorbar_ax[1])
 
 im = axes[0, 2].imshow(relative_absolute_error[0, 0, ...].cpu(), vmin=0, vmax=0.1)
