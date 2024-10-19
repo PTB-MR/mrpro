@@ -93,7 +93,7 @@ class ProximableFunctionalSeparableSum(Operator[*tuple[torch.Tensor, ...], tuple
         self,
         other: ProximableFunctional | ProximableFunctionalSeparableSum,
     ) -> Self:
-        """Stack functionals."""
+        """Separable sum functionals."""
         if isinstance(other, ProximableFunctionalSeparableSum):
             return self.__class__(*self.functionals, *other.functionals)
         elif isinstance(other, ProximableFunctional):
