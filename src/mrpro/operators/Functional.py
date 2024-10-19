@@ -171,13 +171,11 @@ class ProximableFunctional(Functional, ABC):
         sigma[sigma < 1e-8] += 1e-6
         return (x - sigma * self.prox(x / sigma, 1 / sigma)[0],)
 
-
     def __rmul__(self, scalar: torch.Tensor | complex) -> ProximableFunctional:
         """Multiply functional with scalar."""
         if not isinstance(scalar, int | float | torch.Tensor):
             return NotImplemented
         return ScaledProximableFunctional(self, scalar)
-
 
     def __or__(self, other: ProximableFunctional) -> mrpro.operators.ProximableFunctionalSeparableSum:
         """Create a ProximableFunctionalSeparableSum object from two proximable functionals.
