@@ -1548,7 +1548,11 @@ def test_apply_torch():
 def test_random_vmf_uniform():
     """Test random rotations with a uniform distribution"""
     mean = torch.tensor([0, 0, 1.0])
+    # vmf does not support a seed, as torch.distribution do not support it
+    prev_rng_state = torch.random.get_rng_state()
+    torch.manual_seed(0)
     r = Rotation.random_vmf(10000, mean, kappa=0, sigma=math.inf)
+    torch.random.set_rng_state(prev_rng_state)
     assert r.shape == (10000,)
     assert r.mean().magnitude() < 0.1
 
@@ -1556,9 +1560,13 @@ def test_random_vmf_uniform():
 def test_random_vmf_peaked():
     """Test random rotations with a peaked distribution"""
     mean = torch.tensor([0.0, 1.0, 0.0])
-    r = Rotation.random_vmf(1234, mean, kappa=100, sigma=100)
-    assert r.shape == (1234,)
-    torch.testing.assert_close(torch.linalg.cross(r.mean().as_rotvec(), mean), torch.zeros(3), atol=1e-2, rtol=0)
+    # vmf does not support a seed, as torch.distribution do not support it
+    prev_rng_state = torch.random.get_rng_state()
+    torch.manual_seed(0)
+    r = Rotation.random_vmf(5000, mean, kappa=50, sigma=20)
+    torch.random.set_rng_state(prev_rng_state)
+    assert r.shape == (5000,)
+    torch.testing.assert_close(torch.linalg.cross(r.mean().as_rotvec(), mean), torch.zeros(3), atol=3e-3, rtol=0)
 
 
 def test_apply_improper():
