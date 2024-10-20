@@ -214,7 +214,9 @@ class AcqInfo(MoveDataMixin):
                 raise ValueError('Spatial dimension is expected to be of shape (N,3)')
             data = data[:, None, :]
             # all spatial dimensions are float32
-            return SpatialDimension[torch.Tensor].from_array_xyz(torch.tensor(data.astype(np.float32)), conversion)
+            return (
+                SpatialDimension[torch.Tensor].from_array_xyz(torch.tensor(data.astype(np.float32))).apply_(conversion)
+            )
 
         acq_idx = AcqIdx(
             k1=tensor(idx['kspace_encode_step_1']),
