@@ -23,4 +23,4 @@ def test_jacobian_taylor():
     op = L2NormSquared()
     jacobian = Jacobian(op, x0)
     fx = jacobian.taylor(x)
-    torch.testing.assert_allclose(fx, op(x), rtol=1e-3, atol=1e-3)
+    torch.testing.assert_close(fx, op(x), rtol=1e-3, atol=1e-3)
