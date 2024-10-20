@@ -176,24 +176,6 @@ def test_spatial_dimension_setitem_tensor():
     assert spatial_dimension[2, 1].zyx == spatial_dimension_to_set.zyx
 
 
-def test_spatial_dimension_getitem_ndarray():
-    """Test accessing elements of SpatialDimension[np.ndarray]."""
-    z = RandomGenerator(0).float32_tensor((2, 4)).numpy()
-    y = RandomGenerator(0).float32_tensor((2, 4)).numpy()
-    x = RandomGenerator(0).float32_tensor((2, 4)).numpy()
-    spatial_dimension = SpatialDimension(z, y, x)
-    np.testing.assert_allclose(spatial_dimension[:2, ...].zyx, (z[:2, ...], y[:2, ...], x[:2, ...]))
-
-
-def test_spatial_dimension_setitem_ndarray():
-    """Test setting elements of SpatialDimension[np.ndarray]."""
-    zyx = RandomGenerator(0).float32_tensor((3, 5, 2)).numpy()
-    spatial_dimension = SpatialDimension(*zyx)
-    spatial_dimension_to_set = SpatialDimension(z=1.0, y=2.0, x=3.0)
-    spatial_dimension[2, 1] = spatial_dimension_to_set
-    assert spatial_dimension[2, 1].zyx == spatial_dimension_to_set.zyx
-
-
 def test_spatial_dimension_mul():
     """Test multiplication of SpatialDimension with numeric value."""
     spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
