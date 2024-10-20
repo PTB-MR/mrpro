@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Generic, Protocol, TypeVar, cast, overload, get_args
+from typing import Any, Generic, Protocol, TypeVar, get_args, overload
 
 import numpy as np
 import torch
@@ -14,14 +14,13 @@ from numpy.typing import ArrayLike
 import mrpro.utils.typing as type_utils
 from mrpro.data.MoveDataMixin import MoveDataMixin
 
-VectorTypes = torch.Tensor | torch.nn.Parameter
+# Change here to add more types
+VectorTypes = torch.Tensor
 ScalarTypes = int | float
 T = TypeVar('T', torch.Tensor, int, float)
-# Here we have to specify all subclasses of  torch.Tensor we support
-# as it is not possible to write "either int, float or any subclass of torch.Tensor"i
-T_co = TypeVar('T_co', torch.Tensor, torch.nn.Parameter, int, float, covariant=True)
-T_co_float = TypeVar('T_co_float', float, torch.Tensor, torch.nn.Parameter, covariant=True)
-T_co_vector = TypeVar('T_co_vector', torch.Tensor, torch.nn.Parameter, covariant=True)
+T_co = TypeVar('T_co', torch.Tensor, int, float, covariant=True)
+T_co_float = TypeVar('T_co_float', float, torch.Tensor, covariant=True)
+T_co_vector = torch.Tensor
 T_co_scalar = TypeVar('T_co_scalar', int, float, covariant=True)
 
 
@@ -122,17 +121,15 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         """Get SpatialDimension item."""
         if not all(isinstance(el, VectorTypes) for el in self.zyx):
             raise IndexError('Cannot index SpatialDimension with non-indexable members')
-        return SpatialDimension(
-            cast(T_co_vector, self.z[idx]), cast(T_co_vector, self.y[idx]), cast(T_co_vector, self.x[idx])
-        )
+        return SpatialDimension(self.z[idx], self.y[idx], self.x[idx])
 
     def __setitem__(self: SpatialDimension[T_co_vector], idx: type_utils.TorchIndexerType, other: SpatialDimension):
         """Set SpatialDimension item."""
         if not all(isinstance(el, VectorTypes) for el in self.zyx):
             raise IndexError('Cannot index SpatialDimension with non-indexable members')
-        self.z[idx] = cast(T_co_vector, other.z)
-        self.y[idx] = cast(T_co_vector, other.y)
-        self.x[idx] = cast(T_co_vector, other.x)
+        self.z[idx] = other.z
+        self.y[idx] = other.y
+        self.x[idx] = other.x
 
     def apply_(self: SpatialDimension[T_co], func: Callable[[T_co], T_co] | None = None) -> SpatialDimension[T_co]:
         """Apply function to each of x,y,z in-place.
