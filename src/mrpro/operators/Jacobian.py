@@ -1,5 +1,6 @@
 """Jacobian."""
-from typing import Callable
+
+from collections.abc import Callable
 
 import torch
 
@@ -24,12 +25,12 @@ class Jacobian(LinearOperator):
             point at which to linearize the operator
         """
         super().__init__()
-        self._vjp:Callable[*tuple[torch.Tensor,...],:tuple[torch.Tensor,...]]|None = None
-        self._x0:tuple[torch.Tensor,...] = x0
+        self._vjp: Callable[*tuple[torch.Tensor, ...], : tuple[torch.Tensor, ...]] | None = None
+        self._x0: tuple[torch.Tensor, ...] = x0
         self._operator = operator
-        self._f_x0:tuple[torch.Tensor,...]|None = None
+        self._f_x0: tuple[torch.Tensor, ...] | None = None
 
-    def adjoint(self, *x: torch.Tensor) -> tuple[torch.Tensor,...]:
+    def adjoint(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Apply the adjoint operator.
 
         Parameters
@@ -43,7 +44,7 @@ class Jacobian(LinearOperator):
         """
         if self._vjp is None:
             self._f_x0, self._vjp = torch.func.vjp(self._operator, *self._x0)
-        assert self._vjp is not None #noqa: S101 (hint for mypy)
+        assert self._vjp is not None  # noqa: S101 (hint for mypy)
         return (self._vjp(x)[0],)
 
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
@@ -62,11 +63,11 @@ class Jacobian(LinearOperator):
         return jvp
 
     @property
-    def value_at_x0(self) -> tuple[torch.Tensor,...]:
+    def value_at_x0(self) -> tuple[torch.Tensor, ...]:
         """Value of the operator at x0."""
         if self._f_x0 is None:
             self._f_x0 = self._operator(self._x0)
-        assert self._f_x0 is not None #noqa: S101 (hint for mypy)
+        assert self._f_x0 is not None  # noqa: S101 (hint for mypy)
         return self._f_x0
 
     def taylor(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
