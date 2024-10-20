@@ -30,7 +30,7 @@ class Jacobian(LinearOperator):
         self._operator = operator
         self._f_x0: tuple[torch.Tensor, ...] | None = None
 
-    def adjoint(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]: # type:ignore[override
+    def adjoint(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:  # type:ignore[override
         """Apply the adjoint operator.
 
         Parameters
@@ -47,7 +47,7 @@ class Jacobian(LinearOperator):
         assert self._vjp is not None  # noqa: S101 (hint for mypy)
         return (self._vjp(x)[0],)
 
-    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]: # type:ignore[override]
+    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:  # type:ignore[override]
         """Apply the operator.
 
         Parameters
