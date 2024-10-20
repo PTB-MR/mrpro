@@ -14,7 +14,7 @@ from numpy.typing import ArrayLike
 import mrpro.utils.typing as type_utils
 from mrpro.data.MoveDataMixin import MoveDataMixin
 
-VectorTypes = (torch.Tensor)
+VectorTypes = torch.Tensor
 ScalarTypes = (int, float)
 T = TypeVar('T', torch.Tensor, int, float)
 T_co = TypeVar('T_co', torch.Tensor, int, float, covariant=True)
@@ -97,7 +97,9 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         """Return a string representation of the SpatialDimension."""
         return f'z={self.z}, y={self.y}, x={self.x}'
 
-    def __getitem__(self: SpatialDimension[T_co_vector], idx: type_utils.TorchIndexerType) -> SpatialDimension[T_co_vector]:
+    def __getitem__(
+        self: SpatialDimension[T_co_vector], idx: type_utils.TorchIndexerType
+    ) -> SpatialDimension[T_co_vector]:
         """Get SpatialDimension item."""
         if not all(isinstance(el, VectorTypes) for el in self.zyx):
             raise IndexError('Cannot index SpatialDimension with non-indexable members')
