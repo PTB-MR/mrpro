@@ -14,7 +14,7 @@ from numpy.typing import ArrayLike
 import mrpro.utils.typing as type_utils
 from mrpro.data.MoveDataMixin import MoveDataMixin
 
-VectorTypes = torch.Tensor
+VectorTypes = (torch.Tensor,)
 ScalarTypes = (int, float)
 T = TypeVar('T', torch.Tensor, int, float)
 T_co = TypeVar('T_co', torch.Tensor, int, float, covariant=True)
