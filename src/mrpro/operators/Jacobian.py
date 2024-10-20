@@ -30,7 +30,7 @@ class Jacobian(LinearOperator):
         self._operator = operator
         self._f_x0: tuple[torch.Tensor, ...] | None = None
 
-    def adjoint(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+    def adjoint(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]: # type:ignore[override
         """Apply the adjoint operator.
 
         Parameters
@@ -47,7 +47,7 @@ class Jacobian(LinearOperator):
         assert self._vjp is not None  # noqa: S101 (hint for mypy)
         return (self._vjp(x)[0],)
 
-    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+    def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]: # type:ignore[override]
         """Apply the operator.
 
         Parameters
@@ -66,7 +66,7 @@ class Jacobian(LinearOperator):
     def value_at_x0(self) -> tuple[torch.Tensor, ...]:
         """Value of the operator at x0."""
         if self._f_x0 is None:
-            self._f_x0 = self._operator(self._x0)
+            self._f_x0 = self._operator(*self._x0)
         assert self._f_x0 is not None  # noqa: S101 (hint for mypy)
         return self._f_x0
 
@@ -89,6 +89,7 @@ class Jacobian(LinearOperator):
         """
         delta = tuple(ix - ix0 for ix, ix0 in zip(x, self._x0, strict=False))
         self._f_x0, jvp = torch.func.jvp(self._operator, self._x0, delta)
+        assert self._f_x0 is not None  # noqa: S101 (hint for mypy)
         f_x = tuple(ifx + ijvp for ifx, ijvp in zip(self._f_x0, jvp, strict=False))
         return f_x
 
@@ -107,4 +108,4 @@ class Jacobian(LinearOperator):
         -------
             Gauss-Newton approximation of the Hessian applied to x
         """
-        return self.adjoint(*self(x))
+        return self.adjoint(*self(*x))
