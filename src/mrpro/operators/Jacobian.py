@@ -1,4 +1,5 @@
 """Jacobian."""
+from typing import Callable
 
 import torch
 
@@ -42,7 +43,7 @@ class Jacobian(LinearOperator):
         """
         if self._vjp is None:
             self._f_x0, self._vjp = torch.func.vjp(self._operator, *self._x0)
-        assert self._vjp is not None
+        assert self._vjp is not None #noqa: S101 (hint for mypy)
         return (self._vjp(x)[0],)
 
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
@@ -65,7 +66,7 @@ class Jacobian(LinearOperator):
         """Value of the operator at x0."""
         if self._f_x0 is None:
             self._f_x0 = self._operator(self._x0)
-        assert self._f_x0 is not None
+        assert self._f_x0 is not None #noqa: S101 (hint for mypy)
         return self._f_x0
 
     def taylor(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
