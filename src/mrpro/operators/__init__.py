@@ -11,6 +11,7 @@ from mrpro.operators.FiniteDifferenceOp import FiniteDifferenceOp
 from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.GridSamplingOp import GridSamplingOp
 from mrpro.operators.IdentityOp import IdentityOp
+from mrpro.operators.Jacobian import Jacobian
 from mrpro.operators.MagnitudeOp import MagnitudeOp
 from mrpro.operators.MultiIdentityOp import MultiIdentityOp
 from mrpro.operators.PhaseOp import PhaseOp
@@ -38,6 +39,7 @@ __all__ = [
     "GridSamplingOp",
     "IdentityOp",
     "LinearOperator",
+    "Jacobian",
     "MagnitudeOp",
     "Operator",
     "PhaseOp",
