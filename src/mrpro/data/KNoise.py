@@ -47,7 +47,7 @@ class KNoise(MoveDataMixin):
         noise_data = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 
         # Reshape to standard dimensions
-        noise_data = repeat(noise_data, '... coils k0->... coils k2 k1 k0', k1=1, k2=1)
+        noise_data = repeat(noise_data, '... k0 -> ... k2 k1 k0', k1=1, k2=1)
 
         return cls(noise_data)
 
