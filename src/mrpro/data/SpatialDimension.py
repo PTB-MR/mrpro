@@ -14,12 +14,12 @@ from numpy.typing import ArrayLike
 import mrpro.utils.typing as type_utils
 from mrpro.data.MoveDataMixin import MoveDataMixin
 
-VectorTypes = (np.ndarray, torch.Tensor)
+VectorTypes = (torch.Tensor)
 ScalarTypes = (int, float)
-T = TypeVar('T', np.ndarray, torch.Tensor, int, float)
-T_co = TypeVar('T_co', np.ndarray, torch.Tensor, int, float, covariant=True)
-T_co_float = TypeVar('T_co_float', float, np.ndarray, torch.Tensor, covariant=True)
-T_co_vector = TypeVar('T_co_vector', np.ndarray, torch.Tensor, covariant=True)
+T = TypeVar('T', torch.Tensor, int, float)
+T_co = TypeVar('T_co', torch.Tensor, int, float, covariant=True)
+T_co_float = TypeVar('T_co_float', float, torch.Tensor, covariant=True)
+T_co_vector = TypeVar('T_co_vector', covariant=True, bound=torch.Tensor)
 T_co_scalar = TypeVar('T_co_scalar', int, float, covariant=True)
 
 
@@ -61,7 +61,8 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         data
             shape (..., 3) in the order (x,y,z)
         """
-        if not isinstance(data, VectorTypes):
+        if not isinstance(data, (*VectorTypes, np.ndarray)):
+            # anything numpy can convert to an array, for example list of list
             data = np.asarray(data)
 
         if np.size(data, -1) != 3:
@@ -96,31 +97,13 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         """Return a string representation of the SpatialDimension."""
         return f'z={self.z}, y={self.y}, x={self.x}'
 
-    @overload
-    def __getitem__(
-        self: SpatialDimension[torch.Tensor], idx: type_utils.TorchIndexerType
-    ) -> SpatialDimension[torch.Tensor]: ...
-    @overload
-    def __getitem__(
-        self: SpatialDimension[np.ndarray], idx: type_utils.NumpyIndexerType
-    ) -> SpatialDimension[np.ndarray]: ...
-
-    def __getitem__(self: SpatialDimension[T_co_vector], idx: Any) -> SpatialDimension[T_co_vector]:
+    def __getitem__(self: SpatialDimension[T_co_vector], idx: type_utils.TorchIndexerType) -> SpatialDimension[T_co_vector]:
         """Get SpatialDimension item."""
         if not all(isinstance(el, VectorTypes) for el in self.zyx):
             raise IndexError('Cannot index SpatialDimension with non-indexable members')
         return SpatialDimension(self.z[idx], self.y[idx], self.x[idx])
 
-    @overload
-    def __setitem__(
-        self: SpatialDimension[torch.Tensor], idx: type_utils.TorchIndexerType, other: SpatialDimension
-    ) -> None: ...
-    @overload
-    def __setitem__(
-        self: SpatialDimension[np.ndarray], idx: type_utils.NumpyIndexerType, other: SpatialDimension
-    ) -> None: ...
-
-    def __setitem__(self: SpatialDimension[T_co_vector], idx: Any, other: SpatialDimension):
+    def __setitem__(self: SpatialDimension[T_co_vector], idx: type_utils.TorchIndexerType, other: SpatialDimension):
         """Set SpatialDimension item."""
         if not all(isinstance(el, VectorTypes) for el in self.zyx):
             raise IndexError('Cannot index SpatialDimension with non-indexable members')
@@ -414,14 +397,7 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
 
     def __post_init__(self):
         """Ensure that the data is of matching shape."""
-        if isinstance(self.x, np.ndarray) and isinstance(self.y, np.ndarray) and isinstance(self.z, np.ndarray):
-            try:
-                self.z, self.y, self.x = np.broadcast_arrays(*self.zyx, subok=True)
-            except ValueError:
-                raise ValueError('The shapes of the arrays do not match') from None
-        elif all(isinstance(val, (int | float)) for val in self.zyx):
-            ...
-        else:
+        if not all(isinstance(val, (int | float)) for val in self.zyx):
             try:
                 self.z, self.y, self.x = torch.broadcast_tensors(*(torch.as_tensor(v) for v in self.zyx))
             except RuntimeError:
