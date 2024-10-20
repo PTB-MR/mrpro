@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Generic, Protocol, TypeVar, overload
+from typing import Any, Generic, Protocol, TypeVar, cast, overload, get_args
 
 import numpy as np
 import torch
@@ -14,13 +14,28 @@ from numpy.typing import ArrayLike
 import mrpro.utils.typing as type_utils
 from mrpro.data.MoveDataMixin import MoveDataMixin
 
-VectorTypes = (torch.Tensor,)
-ScalarTypes = (int, float)
+VectorTypes = torch.Tensor | torch.nn.Parameter
+ScalarTypes = int | float
 T = TypeVar('T', torch.Tensor, int, float)
-T_co = TypeVar('T_co', torch.Tensor, int, float, covariant=True)
-T_co_float = TypeVar('T_co_float', float, torch.Tensor, covariant=True)
-T_co_vector = TypeVar('T_co_vector', covariant=True, bound=torch.Tensor)
+# Here we have to specify all subclasses of  torch.Tensor we support
+# as it is not possible to write "either int, float or any subclass of torch.Tensor"i
+T_co = TypeVar('T_co', torch.Tensor, torch.nn.Parameter, int, float, covariant=True)
+T_co_float = TypeVar('T_co_float', float, torch.Tensor, torch.nn.Parameter, covariant=True)
+T_co_vector = TypeVar('T_co_vector', torch.Tensor, torch.nn.Parameter, covariant=True)
 T_co_scalar = TypeVar('T_co_scalar', int, float, covariant=True)
+
+
+def _as_vectortype(x: ArrayLike) -> VectorTypes:
+    """Convert ArrayLike to VectorType."""
+    if isinstance(x, VectorTypes) and type(x) in get_args(VectorTypes):
+        # exact type match
+        return x
+    if isinstance(x, VectorTypes):
+        # subclass of torch.Tensor
+        return torch.as_tensor(x)
+    else:
+        # any other ArrayLike (which is defined as convert to numpy array)
+        return torch.as_tensor(np.asarray(x))
 
 
 class XYZ(Protocol[T]):
@@ -61,16 +76,13 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         data
             shape (..., 3) in the order (x,y,z)
         """
-        if not isinstance(data, (*VectorTypes, np.ndarray)):
-            # anything numpy can convert to an array, for example list of list
-            data = np.asarray(data)
-
+        data_ = _as_vectortype(data)
         if np.size(data, -1) != 3:
             raise ValueError(f'Expected last dimension to be 3, got {np.size(data, -1)}')
 
-        x = torch.as_tensor(data[..., 0])
-        y = torch.as_tensor(data[..., 1])
-        z = torch.as_tensor(data[..., 2])
+        x = data_[..., 0]
+        y = data_[..., 1]
+        z = data_[..., 2]
 
         return SpatialDimension(z, y, x)
 
@@ -85,8 +97,15 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         data
             shape (..., 3) in the order (z,y,x)
         """
-        data = torch.flip(torch.as_tensor(data), (-1,))
-        return SpatialDimension.from_array_xyz(data)
+        data = _as_vectortype(data)
+        if np.size(data, -1) != 3:
+            raise ValueError(f'Expected last dimension to be 3, got {np.size(data, -1)}')
+
+        x = data[..., 2]
+        y = data[..., 1]
+        z = data[..., 0]
+
+        return SpatialDimension(z, y, x)
 
     @property
     def zyx(self) -> tuple[T_co, T_co, T_co]:
@@ -103,15 +122,17 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         """Get SpatialDimension item."""
         if not all(isinstance(el, VectorTypes) for el in self.zyx):
             raise IndexError('Cannot index SpatialDimension with non-indexable members')
-        return SpatialDimension(self.z[idx], self.y[idx], self.x[idx])
+        return SpatialDimension(
+            cast(T_co_vector, self.z[idx]), cast(T_co_vector, self.y[idx]), cast(T_co_vector, self.x[idx])
+        )
 
     def __setitem__(self: SpatialDimension[T_co_vector], idx: type_utils.TorchIndexerType, other: SpatialDimension):
         """Set SpatialDimension item."""
         if not all(isinstance(el, VectorTypes) for el in self.zyx):
             raise IndexError('Cannot index SpatialDimension with non-indexable members')
-        self.z[idx] = other.z
-        self.y[idx] = other.y
-        self.x[idx] = other.x
+        self.z[idx] = cast(T_co_vector, other.z)
+        self.y[idx] = cast(T_co_vector, other.y)
+        self.x[idx] = cast(T_co_vector, other.x)
 
     def apply_(self: SpatialDimension[T_co], func: Callable[[T_co], T_co] | None = None) -> SpatialDimension[T_co]:
         """Apply function to each of x,y,z in-place.
@@ -401,7 +422,8 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         """Ensure that the data is of matching shape."""
         if not all(isinstance(val, (int | float)) for val in self.zyx):
             try:
-                self.z, self.y, self.x = torch.broadcast_tensors(*(torch.as_tensor(v) for v in self.zyx))
+                zyx = [_as_vectortype(v) for v in self.zyx]
+                self.z, self.y, self.x = torch.broadcast_tensors(*zyx)
             except RuntimeError:
                 raise ValueError('The shapes of the tensors do not match') from None
 
