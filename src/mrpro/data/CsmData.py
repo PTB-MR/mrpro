@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING
 
 import torch
+from typing_extensions import Self
 
 from mrpro.data.IData import IData
 from mrpro.data.QData import QData

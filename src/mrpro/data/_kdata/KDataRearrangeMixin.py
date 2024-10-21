@@ -1,9 +1,9 @@
 """Rearrange KData."""
 
 import copy
-from typing import Self
 
 from einops import rearrange
+from typing_extensions import Self
 
 from mrpro.data._kdata.KDataProtocol import _KDataProtocol
 from mrpro.data.AcqInfo import AcqInfo

@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import dataclasses
 from functools import reduce
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING
 
 import torch
+from typing_extensions import Self
 
 from mrpro.algorithms.dcf.dcf_voronoi import dcf_1d, dcf_2d3d_voronoi
 from mrpro.data.KTrajectory import KTrajectory

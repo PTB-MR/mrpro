@@ -15,6 +15,14 @@ add-apt-repository ppa:deadsnakes/ppa
 apt update -qq
 ${APT_GET_INSTALL} $PYTHON-full
 
+if [[ "$PYTHON" == "python3.10" ]]; then
+    # System python on ubuntu does not support ensurepip
+    ${APT_GET_INSTALL} python3-pip
+else
+    $PYTHON -m ensurepip --upgrade
+    $PYTHON -m pip install --upgrade pip
+fi
+
 # create alias for installed python version
 ln -s /usr/bin/$PYTHON /usr/local/bin/python
 ln -s /usr/bin/$PYTHON /usr/local/bin/python3
@@ -24,8 +32,7 @@ pip install matplotlib
 # clone repo to get requirements
 git clone https://github.com/PTB-MR/mrpro --depth 1 /opt/mrpro
 cd /opt/mrpro
-python -m ensurepip --upgrade
-python -m pip install --upgrade pip
+
 
 # create alias to ensure pip works in the same way as pip3
 ln -s /usr/local/bin/pip3 /usr/local/bin/pip

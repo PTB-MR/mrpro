@@ -2,9 +2,9 @@
 
 import dataclasses
 from dataclasses import dataclass
-from typing import Self
 
 from ismrmrd.xsd.ismrmrdschema.ismrmrd import trajectoryDescriptionType
+from typing_extensions import Self
 
 
 @dataclass(slots=True)

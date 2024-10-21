@@ -1,11 +1,11 @@
 """Tests the MoveDataMixin class."""
 
 from dataclasses import dataclass, field
-from typing import Any
 
 import pytest
 import torch
 from mrpro.data import MoveDataMixin
+from typing_extensions import Any
 
 
 class SharedModule(torch.nn.Module):

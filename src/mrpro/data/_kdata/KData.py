@@ -5,13 +5,13 @@ import datetime
 import warnings
 from collections.abc import Callable
 from pathlib import Path
-from typing import Self
 
 import h5py
 import ismrmrd
 import numpy as np
 import torch
 from einops import rearrange
+from typing_extensions import Self
 
 from mrpro.data._kdata.KDataRearrangeMixin import KDataRearrangeMixin
 from mrpro.data._kdata.KDataRemoveOsMixin import KDataRemoveOsMixin

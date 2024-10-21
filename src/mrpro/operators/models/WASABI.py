@@ -4,6 +4,7 @@ import torch
 from torch import nn
 
 from mrpro.operators.SignalModel import SignalModel
+from mrpro.utils import unsqueeze_right
 
 
 class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
@@ -80,7 +81,7 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         -------
             signal with shape (offsets ... other, coils, z, y, x)
         """
-        offsets = self.expand_tensor_dim(self.offsets, b0_shift.ndim - (self.offsets.ndim - 1))  # -1 for offset
+        offsets = unsqueeze_right(self.offsets, b0_shift.ndim - (self.offsets.ndim - 1))  # -1 for offset
         delta_x = offsets - b0_shift
         b1 = self.b1_nom * relative_b1
 

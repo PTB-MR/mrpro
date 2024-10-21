@@ -1,8 +1,7 @@
 """Identity Operator with arbitrary number of inputs."""
 
-from typing import Self
-
 import torch
+from typing_extensions import Self
 
 from mrpro.operators.EndomorphOperator import EndomorphOperator, endomorph
 
