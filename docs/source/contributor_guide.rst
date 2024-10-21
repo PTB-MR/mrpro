@@ -65,6 +65,18 @@ src/mrpro structure
     batch dimension (``smap``).
 
 
+Linting
+=======
+We use Ruff for linting. If you are using VSCode, you can install an 
+`extension <https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff>`_, 
+which we have also added to the list of extensions that VSCode should recommend when you open the code. 
+We also run `mypy <https://pypi.org/project/mypy/>`_ as a type checker.
+
+In CI, our linting is driven by `pre-commit <https://pre-commit.com/>`_. 
+If you install MRpro via ``pip install -e .[test]``, pre-commit will be installed in your python environment.
+You can either add pre-commit to your git pre-commit hooks, requiring it to pass before each commit (``pre-commit install``), 
+or run it manually using ``pre-commit run --all-files`` after making your changes, before requesting a PR review.
+
 Naming convention
 =================
 We try to follow the [pep8](https://peps.python.org/pep-0008/) naming convention (e.g., all lowercase variable names,
@@ -78,4 +90,21 @@ A name starting with ``n_`` is used for variables describing a number of... (e.g
 ``num_coils``), variable names ending with ``_op`` for operators (e.g., ``fourier_op``). We use ``img`` as a variable name
 for images.
 
+Testing
+=======
+We use pytest for testing. All requiered packages will be installed if you install MRpro via ``pip install -e .[test]``.
+You can use VSCode's test panel to discover and run tests. All tests must pass before a PR can be merged. By default, we skip running CUDA tests.  You can use ``pytest -m cuda`` to run the CUDA tests if your development machine has a GPU available.
 
+Building the Documentation
+==========================
+You can build the documentation locally via ``make html```in docs folder. The documentation will also be build in each PR and can be viewed online.
+Please check how your new additions render in the documentation before requesting a PR review.
+
+Release Strategy
+================
+We are still in pre-release mode and do not guarantee a stable API / strict semver compatibility. We currently use 0.YYMMDD as versioning and release in regular intervals to `pypi  <https://pypi.org/project/mrpro/>`_.
+
+Compatibility
+=============
+We aim to always be compatible with the latest pytorch release and the lastest python version supported by pytorch. We are compatible with one previous python version.
+Our type hints will usually only be valid with the latest pytorch version.
