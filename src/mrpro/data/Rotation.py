@@ -45,12 +45,13 @@ from __future__ import annotations
 import re
 import warnings
 from collections.abc import Sequence
-from typing import Literal, Self, overload
+from typing import Literal
 
 import numpy as np
 import torch
 from scipy._lib._util import check_random_state
 from scipy.spatial.transform import Rotation as Rotation_scipy
+from typing_extensions import Self, overload
 
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.typing import IndexerType, NestedSequence
