@@ -25,12 +25,12 @@ class Jacobian(LinearOperator):
             point at which to linearize the operator
         """
         super().__init__()
-        self._vjp: Callable[*tuple[torch.Tensor, ...], : tuple[torch.Tensor, ...]] | None = None
+        self._vjp: Callable[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]] | None = None
         self._x0: tuple[torch.Tensor, ...] = x0
         self._operator = operator
         self._f_x0: tuple[torch.Tensor, ...] | None = None
 
-    def adjoint(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:  # type:ignore[override
+    def adjoint(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:  # type:ignore[override]
         """Apply the adjoint operator.
 
         Parameters
