@@ -106,5 +106,5 @@ We are still in pre-release mode and do not guarantee a stable API / strict semv
 
 Compatibility
 =============
-We aim to always be compatible with the latest pytorch release and the lastest python version supported by pytorch. We are compatible with one previous python version.
+We aim to always be compatible with the latest stable pytorch release and the latest python version supported by pytorch. We are compatible with one previous python version.
 Our type hints will usually only be valid with the latest pytorch version.
