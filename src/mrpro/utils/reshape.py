@@ -15,6 +15,10 @@ def unsqueeze_right(x: torch.Tensor, n: int) -> torch.Tensor:
         tensor to unsqueeze
     n
         number of times to unsqueeze
+
+    Returns
+    -------
+    unsqueezed tensor (view)
     """
     return x.reshape(*x.shape, *(n * (1,)))
 
@@ -32,6 +36,10 @@ def unsqueeze_left(x: torch.Tensor, n: int) -> torch.Tensor:
         tensor to unsqueeze
     n
         number of times to unsqueeze
+    
+    Returns
+    -------
+    unsqueezed tensor (view)
     """
     return x.reshape(*(n * (1,)), *x.shape)
 
