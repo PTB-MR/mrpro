@@ -3,6 +3,7 @@
 import torch
 
 from mrpro.operators.SignalModel import SignalModel
+from mrpro.utils import unsqueeze_right
 
 
 class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
@@ -105,13 +106,13 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
         m0_ndim = m0.ndim
 
         # -1 for time
-        sampling_time = self.expand_tensor_dim(self.sampling_time, m0_ndim - (self.sampling_time.ndim - 1))
+        sampling_time = unsqueeze_right(self.sampling_time, m0_ndim - (self.sampling_time.ndim - 1))
 
-        repetition_time = self.expand_tensor_dim(self.repetition_time, m0_ndim - self.repetition_time.ndim)
-        m0_scaling_preparation = self.expand_tensor_dim(
+        repetition_time = unsqueeze_right(self.repetition_time, m0_ndim - self.repetition_time.ndim)
+        m0_scaling_preparation = unsqueeze_right(
             self.m0_scaling_preparation, m0_ndim - self.m0_scaling_preparation.ndim
         )
-        delay_after_preparation = self.expand_tensor_dim(
+        delay_after_preparation = unsqueeze_right(
             self.delay_after_preparation, m0_ndim - self.delay_after_preparation.ndim
         )
 
