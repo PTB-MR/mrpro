@@ -2,11 +2,11 @@
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Self, TypeVar
 
 import ismrmrd
 import numpy as np
 import torch
+from typing_extensions import Self, TypeVar
 
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension

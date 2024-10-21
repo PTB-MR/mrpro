@@ -1,14 +1,17 @@
 """Some type hints that are used in multiple places in the codebase but not part of mrpro's public API."""
 
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, TypeAlias
+
+from typing_extensions import Any
 
 if TYPE_CHECKING:
     from types import EllipsisType
-    from typing import SupportsIndex, TypeAlias
+    from typing import TypeAlias
 
     import torch
     from numpy import ndarray
     from torch._C import _NestedSequence as NestedSequence
+    from typing_extensions import SupportsIndex
 
     # This matches the torch.Tensor indexer typehint
     _TorchIndexerTypeInner: TypeAlias = None | bool | int | slice | EllipsisType | torch.Tensor

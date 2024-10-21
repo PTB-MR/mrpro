@@ -1,11 +1,11 @@
 """Fourier Operator."""
 
 from collections.abc import Sequence
-from typing import Self
 
 import numpy as np
 import torch
 from torchkbnufft import KbNufft, KbNufftAdjoint
+from typing_extensions import Self
 
 from mrpro.data._kdata.KData import KData
 from mrpro.data.enums import TrajType

@@ -2,12 +2,12 @@
 
 import dataclasses
 from pathlib import Path
-from typing import Self
 
 import numpy as np
 import torch
 from einops import repeat
 from pydicom import dcmread
+from typing_extensions import Self
 
 from mrpro.data.Data import Data
 from mrpro.data.IHeader import IHeader
