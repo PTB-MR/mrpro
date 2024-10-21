@@ -1,10 +1,10 @@
 """MR quantitative data header (QHeader) dataclass."""
 
 from dataclasses import dataclass
-from typing import Self
 
 from pydicom.dataset import Dataset
 from pydicom.tag import Tag
+from typing_extensions import Self
 
 from mrpro.data.IHeader import IHeader
 from mrpro.data.KHeader import KHeader

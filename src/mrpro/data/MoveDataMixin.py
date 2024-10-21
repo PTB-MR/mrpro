@@ -4,9 +4,10 @@ import dataclasses
 from collections.abc import Iterator
 from copy import copy as shallowcopy
 from copy import deepcopy
-from typing import Any, ClassVar, Protocol, Self, TypeAlias, overload, runtime_checkable
+from typing import ClassVar, TypeAlias
 
 import torch
+from typing_extensions import Any, Protocol, Self, overload, runtime_checkable
 
 
 class InconsistentDeviceError(ValueError):  # noqa: D101

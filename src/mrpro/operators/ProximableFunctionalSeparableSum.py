@@ -5,15 +5,16 @@ from __future__ import annotations
 import operator
 from collections.abc import Iterator
 from functools import reduce
-from typing import Self, cast
+from typing import cast
 
 import torch
+from typing_extensions import Self, Unpack
 
 from mrpro.operators.Functional import ProximableFunctional
 from mrpro.operators.Operator import Operator
 
 
-class ProximableFunctionalSeparableSum(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor]]):
+class ProximableFunctionalSeparableSum(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torch.Tensor]]):
     r"""Separabke Sum of Proximable Functionals.
 
     This is a separable sum of the functionals. The forward method returns the sum of the functionals

@@ -1,8 +1,7 @@
 """Optimizer Status base class."""
 
-from typing import TypedDict
-
 import torch
+from typing_extensions import TypedDict
 
 
 class OptimizerStatus(TypedDict):

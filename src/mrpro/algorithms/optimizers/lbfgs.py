@@ -7,11 +7,11 @@ import torch
 from torch.optim import LBFGS
 
 from mrpro.algorithms.optimizers.OptimizerStatus import OptimizerStatus
-from mrpro.operators.Operator import Operator
+from mrpro.operators.Operator import TypeAlias
 
 
 def lbfgs(
-    f: Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor]],
+    f: TypeAlias,
     initial_parameters: Sequence[torch.Tensor],
     lr: float = 1.0,
     max_iter: int = 100,

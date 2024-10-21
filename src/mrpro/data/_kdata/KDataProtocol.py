@@ -1,8 +1,9 @@
 """Protocol for KData."""
 
-from typing import Literal, Protocol, Self
+from typing import Literal
 
 import torch
+from typing_extensions import Protocol, Self
 
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory

@@ -1,10 +1,9 @@
 """Tests for Identity Linear Operator and MultiIdentity Operator."""
 
-from typing import assert_type
-
 import torch
 from mrpro.operators import IdentityOp, MagnitudeOp, MultiIdentityOp
 from mrpro.operators.LinearOperator import LinearOperator
+from typing_extensions import assert_type
 
 from tests import RandomGenerator
 
