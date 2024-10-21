@@ -104,7 +104,7 @@ Please check how your new additions render in the documentation before requestin
 Adding new Examples
 ===================
 New application examples in ```examples``` should be commit as only ```.py``` files with code-cells. These can, for example, be used in VSCode with the python extension, or in JupyterLab with the `jupytext <https://jupytext.readthedocs.io/en/latest/install.html>`_ extension.
-An automatic workflow at github will create notebooks and pages in the documention based on the python scripts.
+An automatic workflow at github will create notebooks and pages in the documentation based on the python scripts.
 The data to run the examples should be publicly available and hosted externally, for example at zenodo.
 Please be careful not to add any binary files to our commits.
 
