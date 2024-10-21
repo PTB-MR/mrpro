@@ -36,7 +36,7 @@ def unsqueeze_left(x: torch.Tensor, n: int) -> torch.Tensor:
         tensor to unsqueeze
     n
         number of times to unsqueeze
-    
+
     Returns
     -------
     unsqueezed tensor (view)
