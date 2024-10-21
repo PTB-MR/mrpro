@@ -87,7 +87,9 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: ./docker
+          context: .
+          cache-from: type=gha,scope=${{ matrix.dockerfile }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.dockerfile }}
           file: ./docker/${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.image_name.outputs.image_name }}:test
