@@ -27,7 +27,7 @@ def unsqueeze_left(x: torch.Tensor, n: int) -> torch.Tensor:
     """Unsqueze multiple times in the leftmost dimension.
 
     Example:
-        tensor with shape (1,2,3) and n=2 would result in tensor with shape (1,1,1,1,2,3)
+        tensor with shape (1,2,3) and n=2 would result in tensor with shape (1,1,1,2,3)
 
 
     Parameters
