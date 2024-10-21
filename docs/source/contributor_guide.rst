@@ -79,7 +79,7 @@ or run it manually using ``pre-commit run --all-files`` after making your change
 
 Naming convention
 =================
-We try to follow the [pep8](https://peps.python.org/pep-0008/) naming convention (e.g., all lowercase variable names,
+We try to follow the `PEP 8 <https://peps.python.org/pep-0008/>`_ naming convention (e.g., all lowercase variable names,
 CapWords class names). We deviate for the names of source code file names containing a single class.
 These are named as the class.
 
