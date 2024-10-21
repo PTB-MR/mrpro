@@ -86,7 +86,7 @@ These are named as the class.
 We try to use descriptive variable names when applicable (e.g., ``result`` instead of ``res``, ``tolerance_squared`` instead
 of ``sqtol``, ``batchsize`` instead of ``m``).
 
-A name starting with ``n_`` is used for variables describing a number of... (e.g., ``n_coils`` instead of ``ncoils`` or
+A name starting with ``n_`` is used for variables describing a number of something (e.g., ``n_coils`` instead of ``ncoils`` or
 ``num_coils``), variable names ending with ``_op`` for operators (e.g., ``fourier_op``). We use ``img`` as a variable name
 for images.
 
@@ -97,7 +97,7 @@ You can use VSCode's test panel to discover and run tests. All tests must pass b
 
 Building the Documentation
 ==========================
-You can build the documentation locally via ``make html```in docs folder. The documentation will also be build in each PR and can be viewed online.
+You can build the documentation locally via running ```make html``` in the docs folder. The documentation will also be build in each PR and can be viewed online.
 Please check how your new additions render in the documentation before requesting a PR review.
 
 
@@ -110,7 +110,7 @@ Please be careful not to add any binary files to our commits.
 
 Release Strategy
 ================
-We are still in pre-release mode and do not guarantee a stable API / strict semver compatibility. We currently use 0.YYMMDD as versioning and release in regular intervals to `pypi  <https://pypi.org/project/mrpro/>`_.
+We are still in pre-release mode and do not guarantee a stable API / strict semver compatibility. We currently use ```0.YYMMDD``` as versioning and release in regular intervals to `pypi  <https://pypi.org/project/mrpro/>`_.
 
 Compatibility
 =============
