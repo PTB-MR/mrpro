@@ -92,7 +92,7 @@ for images.
 
 Testing
 =======
-We use pytest for testing. All requiered packages will be installed if you install MRpro via ``pip install -e .[test]``.
+We use pytest for testing. All required packages will be installed if you install MRpro via ``pip install -e .[test]``.
 You can use VSCode's test panel to discover and run tests. All tests must pass before a PR can be merged. By default, we skip running CUDA tests.  You can use ``pytest -m cuda`` to run the CUDA tests if your development machine has a GPU available.
 
 Building the Documentation
