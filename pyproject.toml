@@ -1,16 +1,30 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["setuptools>=42", "wheel", "setuptools-git-versioning>=2.0,<3"]
+build-backend = "setuptools.build_meta:__legacy__"
+
+[tool.setuptools-git-versioning]
+count_commits_from_version_file = true
+enabled = true
+version_file = "src/mrpro/VERSION"
+template = "{tag}{env:MRPROVERSIONSUFFIX:''}"
+dev_template = "{tag}{env:MRPROVERSIONSUFFIX:''}"
+dirty_template = "{tag}+dirty{sha}"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"mrpro" = ["VERSION"]
 
 [project]
 name = "mrpro"
-version = "0.0.1"
 description = "MR image reconstruction and processing package specifically developed for PyTorch."
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
-license = { file = "LICENSE" }
+dynamic = ["version"]
 keywords = ["MRI, reconstruction, processing, PyTorch"]
 authors = [
+    { name = "MRpro Team", email = "info@emerpro.de" },
     { name = "Christoph Kolbitsch", email = "christoph.kolbitsch@ptb.de" },
     { name = "Patrick Schuenke", email = "patrick.schuenke@ptb.de" },
     { name = "Felix Zimmermann", email = "felix.zimmermann89@ptb.de" },
@@ -22,21 +36,22 @@ authors = [
     { name = "Andreas Kofler", email = "andreas.kofler@ptb.de" },
 ]
 classifiers = [
+    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
-    "numpy>=1.23,<2.0",
-    "torch>=2.2,<3.0",
-    "ismrmrd",
-    "xsdata>=22.2,<23",
+    "numpy>=1.23, <2.0",
+    "torch>=2.3",
+    "ismrmrd>=1.14.1",
     "einops",
-    "pydicom",
-    "pypulseq@git+https://github.com/imr-framework/pypulseq",
+    "pydicom>=2.3",
+    "pypulseq>=1.4.2",
     "torchkbnufft>=1.4.0",
-    "scipy>=1.12"
+    "scipy>=1.12",
+    "ptwt>=0.1.8",
 ]
 
 [project.optional-dependencies]
@@ -48,8 +63,7 @@ test = [
     "pytest-cov",
     "pytest-xdist",
 ]
-lint = ["mypy", "flake8", "isort", "pre-commit", "autopep8", "pydocstyle"]
-docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject"]
+docs = ["sphinx", "sphinx_rtd_theme", "sphinx-pyproject"]
 notebook = [
     "zenodo_get",
     "ipykernel",
@@ -60,13 +74,16 @@ notebook = [
 ]
 
 [project.urls]
-"repository" = "https://github.com/PTB-MR/mrpro"
+"Documentation" = "https://ptb-mr.github.io/mrpro/"
 
 # PyTest section
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-filterwarnings = ["error"]
-# addopts = "-n auto" # TODO: debug vscode missing tests if enabled
+filterwarnings = [
+    "error",
+    "ignore:'write_like_original':DeprecationWarning:pydicom:",
+]
+addopts = "-n auto"
 markers = ["cuda : Tests only to be run when cuda device is available"]
 
 # MyPy section
@@ -79,8 +96,18 @@ exclude = ["docs"]
 enable_error_code = ["ignore-without-code"]
 warn_unused_ignores = true
 
+
 [[tool.mypy.overrides]]
-module = ["ismrmrd.*", "h5py", "scipy.*"]
+module = [
+    "ismrmrd.*",
+    "h5py",
+    "scipy.*",
+    "torchkbnufft",
+    "pypulseq",
+    "zenodo_get",
+    "ptwt.*",
+    "pywt.*",
+]
 ignore_missing_imports = true
 
 [tool.ruff]
@@ -122,7 +149,6 @@ extend-select = [
     "ANN401", #  any type annotation
     "BLE001", #  blind exception
     "D107",   #  missing docstring in __init__
-    "D415",   #  first line should end with punctuation
     "D417",   #  undocumented-parameter
 ]
 ignore = [
@@ -132,7 +158,8 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-force-single-line = true
+force-single-line = false
+split-on-trailing-comma = false
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
@@ -150,6 +177,14 @@ locale = "en-us"
 
 [tool.typos.default.extend-words]
 Reson = "Reson" # required for Proc. Intl. Soc. Mag. Reson. Med.
+iy = "iy"
+daa = 'daa'     # required for wavelet operator
+gaus = 'gaus'   # required for wavelet operator
+
+[tool.typos.files]
+extend-exclude = [
+    "examples/*.ipynb",
+] # don't check notebooks because py files have already been checked
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]

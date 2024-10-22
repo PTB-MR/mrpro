@@ -1,24 +1,10 @@
 """Numerical coil simulations."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import numpy as np
 import torch
 from einops import repeat
 
-from mrpro.data import SpatialDimension
+from mrpro.data.SpatialDimension import SpatialDimension
 
 
 def birdcage_2d(
@@ -28,6 +14,9 @@ def birdcage_2d(
     normalize_with_rss: bool = True,
 ) -> torch.Tensor:
     """Numerical simulation of 2D Birdcage coil sensitivities.
+
+    This function is strongly inspired by ISMRMRD Python Tools [ISMc]_. The associated license
+    information can be found at the end of this file.
 
     Parameters
     ----------
@@ -41,8 +30,9 @@ def birdcage_2d(
     normalize_with_rss
         If set to true, the calculated sensitivities are normalized by the root-sum-of-squares
 
-    This function is strongly inspired by https://github.com/ismrmrd/ismrmrd-python-tools. The associated license
-    information can be found at the end of this file.
+    References
+    ----------
+    .. [ISMc] ISMRMRD Python tools https://github.com/ismrmrd/ismrmrd-python-tools
     """
     dim = [number_of_coils, image_dimensions.y, image_dimensions.x]
     x_co, y_co = torch.meshgrid(
@@ -51,13 +41,16 @@ def birdcage_2d(
         indexing='xy',
     )
 
-    c = torch.linspace(0, dim[0] - 1, dim[0])[:, None, None]
+    x_co = repeat(x_co, 'y x -> coils y x', coils=1)
+    y_co = repeat(y_co, 'y x -> coils y x', coils=1)
+
+    c = repeat(torch.linspace(0, dim[0] - 1, dim[0]), 'coils -> coils y x', y=1, x=1)
     coil_center_x = dim[2] * relative_radius * np.cos(c * (2 * torch.pi / dim[0]))
     coil_center_y = dim[1] * relative_radius * np.sin(c * (2 * torch.pi / dim[0]))
     coil_phase = -c * (2 * torch.pi / dim[0])
 
-    rr = torch.sqrt((x_co[None, ...] - coil_center_x) ** 2 + (y_co[None, ...] - coil_center_y) ** 2)
-    phi = torch.arctan2((x_co[None, ...] - coil_center_x), -(y_co[None, ...] - coil_center_y)) + coil_phase
+    rr = torch.sqrt((x_co - coil_center_x) ** 2 + (y_co - coil_center_y) ** 2)
+    phi = torch.arctan2((x_co - coil_center_x), -(y_co - coil_center_y)) + coil_phase
     sensitivities = (1 / rr) * np.exp(1j * phi)
 
     if normalize_with_rss:

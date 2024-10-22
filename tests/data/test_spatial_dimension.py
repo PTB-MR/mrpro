@@ -1,17 +1,5 @@
 """Tests the Spatial class."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import pytest
 import torch
 from mrpro.data import SpatialDimension
@@ -97,3 +85,37 @@ def test_spatial_dimension_zyx():
     spatial_dimension = SpatialDimension(z=z, y=y, x=x)
     assert isinstance(spatial_dimension.zyx, tuple)
     assert spatial_dimension.zyx == (z, y, x)
+
+
+@pytest.mark.cuda
+def test_spatial_dimension_cuda_tensor():
+    """Test moving to CUDA"""
+    spatial_dimension = SpatialDimension(z=torch.ones(1), y=torch.ones(1), x=torch.ones(1))
+    spatial_dimension_cuda = spatial_dimension.cuda()
+    assert spatial_dimension_cuda.z.is_cuda
+    assert spatial_dimension_cuda.y.is_cuda
+    assert spatial_dimension_cuda.x.is_cuda
+    assert spatial_dimension.z.is_cpu
+    assert spatial_dimension.y.is_cpu
+    assert spatial_dimension.x.is_cpu
+    assert spatial_dimension_cuda.is_cuda
+    assert spatial_dimension.is_cpu
+    assert not spatial_dimension_cuda.is_cpu
+    assert not spatial_dimension.is_cuda
+
+
+def test_spatial_dimension_cuda_float():
+    """Test moving to CUDA without tensors -> copy only"""
+    spatial_dimension = SpatialDimension(z=1.0, y=2.0, x=3.0)
+    # the device number should not matter, has there is no
+    # data to move to the device
+    spatial_dimension_cuda = spatial_dimension.cuda(42)
+    # if a dataclass has no tensors, it is both on CPU and CUDA
+    # and the device is None
+    assert spatial_dimension_cuda.is_cuda
+    assert spatial_dimension.is_cpu
+    assert spatial_dimension_cuda.is_cpu
+    assert spatial_dimension.is_cuda
+    assert spatial_dimension.device is None
+    assert spatial_dimension_cuda.device is None
+    assert spatial_dimension_cuda is not spatial_dimension

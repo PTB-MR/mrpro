@@ -1,30 +1,16 @@
 """Tests for non-linear optimization algorithms."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 import pytest
 import torch
-from mrpro.algorithms import adam
-from mrpro.algorithms import lbfgs
+from mrpro.algorithms.optimizers import OptimizerStatus, adam, lbfgs
 from mrpro.operators import ConstraintsOp
-from tests.operators._OptimizationTestFunctions import Rosenbrock
+from tests.operators import Rosenbrock
 
 
 @pytest.mark.parametrize('enforce_bounds_on_x1', [True, False])
 @pytest.mark.parametrize(
     ('optimizer', 'optimizer_kwargs'), [(adam, {'lr': 0.02, 'max_iter': 10000}), (lbfgs, {'lr': 1.0})]
 )
-@pytest.mark.filterwarnings('ignore:allow_ops_in_compiled_graph')
 def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1, optimizer_kwargs):
     # use Rosenbrock function as test case with 2D test data
     a, b = 1.0, 100.0
@@ -39,7 +25,7 @@ def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1, optimizer_kwargs
 
     # save to compare with later as optimization should not change the initial points
     params_init_before = [i.detach().clone() for i in params_init]
-    params_init_grad_before = [i.grad.detach().clone() for i in params_init]
+    params_init_grad_before = [i.grad.detach().clone() if i.grad is not None else None for i in params_init]
 
     if enforce_bounds_on_x1:
         # the analytical solution for x_1 will be a, thus we can limit it into [0,2a]
@@ -64,3 +50,29 @@ def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1, optimizer_kwargs
     for p, before, grad_before in zip(params_init, params_init_before, params_init_grad_before, strict=True):
         assert p == before, 'the initial parameter should not have changed during optimization'
         assert p.grad == grad_before, 'the initial parameters gradient should not have changed during optimization'
+
+
+@pytest.mark.parametrize('optimizer', [adam, lbfgs])
+def test_callback_optimizers(optimizer):
+    """Test if a callback function is called within the optimizers."""
+
+    # use Rosenbrock function as test case with 2D test data
+    a, b = 1.0, 100.0
+    rosen_brock = Rosenbrock(a, b)
+
+    # initial point of optimization
+    parameter1 = torch.tensor([a / 3.14], requires_grad=True)
+    parameter2 = torch.tensor([3.14], requires_grad=True)
+    parameters = [parameter1, parameter2]
+
+    # maximum number of iterations
+    max_iter = 10
+
+    # callback function; if the function is called during the iterations, the
+    # test is successful
+    def callback(optimizer_status: OptimizerStatus) -> None:
+        _, _ = optimizer_status['iteration_number'], optimizer_status['solution'][0]
+        assert True
+
+    # run optimizer
+    _ = optimizer(rosen_brock, parameters, max_iter=max_iter, callback=callback)

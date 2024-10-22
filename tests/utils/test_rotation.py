@@ -41,9 +41,8 @@ from math import sqrt
 import numpy as np
 import pytest
 import torch
-from mrpro.data import SpatialDimension
-from mrpro.utils import Rotation
-from mrpro.utils._Rotation import AXIS_ORDER
+from mrpro.data import Rotation, SpatialDimension
+from mrpro.data.Rotation import AXIS_ORDER
 from scipy.stats import special_ortho_group
 
 from tests import RandomGenerator
@@ -253,7 +252,7 @@ def test_from_2d_single_rotvec():
 
 
 def test_from_generic_rotvec():
-    rotvec = [[1, 2, 2], [1, -1, 0.5], [0, 0, 0]]
+    rotvec = [[1.0, 2.0, 2.0], [1.0, -1.0, 0.5], [0.0, 0.0, 0.0]]
     expected_quat = torch.tensor(
         [[0.3324983, 0.6649967, 0.6649967, 0.0707372], [0.4544258, -0.4544258, 0.2272129, 0.7316889], [0, 0, 0, 1]]
     )
@@ -527,23 +526,24 @@ def test_from_euler_extrinsic_rotation_202():
     )
 
 
+def _test_stats(error: torch.Tensor, mean_max: float, rms_max: float) -> None:
+    # helper function for mean error tests
+    mean = torch.mean(error, dim=0)
+    std = torch.std(error, dim=0)
+    rms = torch.hypot(mean, std)
+    assert torch.all(torch.abs(mean) < mean_max)
+    assert torch.all(rms < rms_max)
+
+
 @pytest.mark.parametrize('seq_tuple', permutations('xyz'))
 @pytest.mark.parametrize('intrinsic', [False, True])
 def test_as_euler_asymmetric_axes(seq_tuple, intrinsic):
-    # helper function for mean error tests
-    def test_stats(error, mean_max, rms_max):
-        mean = torch.mean(error, axis=0)
-        std = torch.std(error, axis=0)
-        rms = torch.hypot(mean, std)
-        assert torch.all(torch.abs(mean) < mean_max)
-        assert torch.all(rms < rms_max)
-
-    rnd = np.random.RandomState(0)
+    rnd = RandomGenerator(0)
     n = 1000
-    angles = np.empty((n, 3))
-    angles[:, 0] = rnd.uniform(low=-torch.pi, high=torch.pi, size=(n,))
-    angles[:, 1] = rnd.uniform(low=-torch.pi / 2, high=torch.pi / 2, size=(n,))
-    angles[:, 2] = rnd.uniform(low=-torch.pi, high=torch.pi, size=(n,))
+    angles = torch.empty((n, 3), dtype=torch.float64)
+    angles[:, 0] = rnd.float64_tensor(low=-torch.pi, high=torch.pi, size=(n,))
+    angles[:, 1] = rnd.float64_tensor(low=-torch.pi / 2, high=torch.pi / 2, size=(n,))
+    angles[:, 2] = rnd.float64_tensor(low=-torch.pi, high=torch.pi, size=(n,))
     seq = ''.join(seq_tuple)
     if intrinsic:
         # Extrinsic rotation (wrt to global world) at lower case
@@ -551,27 +551,19 @@ def test_as_euler_asymmetric_axes(seq_tuple, intrinsic):
         seq = seq.upper()
     rotation = Rotation.from_euler(seq, angles)
     angles_quat = rotation.as_euler(seq)
-    torch.testing.assert_close(torch.as_tensor(angles), angles_quat, atol=0, rtol=1e-12)
-    test_stats(angles_quat - angles, 1e-15, 1e-14)
+    torch.testing.assert_close(angles, angles_quat, atol=0, rtol=1e-11)
+    _test_stats(angles_quat - angles, 1e-15, 1e-14)
 
 
 @pytest.mark.parametrize('seq_tuple', permutations('xyz'))
 @pytest.mark.parametrize('intrinsic', [False, True])
 def test_as_euler_symmetric_axes(seq_tuple, intrinsic):
-    # helper function for mean error tests
-    def test_stats(error, mean_max, rms_max):
-        mean = torch.mean(error, axis=0)
-        std = torch.std(error, axis=0)
-        rms = torch.hypot(mean, std)
-        assert torch.all(torch.abs(mean) < mean_max)
-        assert torch.all(rms < rms_max)
-
-    rnd = np.random.RandomState(0)
+    rnd = RandomGenerator(0)
     n = 1000
-    angles = np.empty((n, 3))
-    angles[:, 0] = rnd.uniform(low=-torch.pi, high=torch.pi, size=(n,))
-    angles[:, 1] = rnd.uniform(low=0, high=torch.pi, size=(n,))
-    angles[:, 2] = rnd.uniform(low=-torch.pi, high=torch.pi, size=(n,))
+    angles = torch.empty((n, 3), dtype=torch.float64)
+    angles[:, 0] = rnd.float64_tensor(low=-torch.pi, high=torch.pi, size=(n,))
+    angles[:, 1] = rnd.float64_tensor(low=0, high=torch.pi, size=(n,))
+    angles[:, 2] = rnd.float64_tensor(low=-torch.pi, high=torch.pi, size=(n,))
 
     # Rotation of the form A/B/A are rotation around symmetric axes
     seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
@@ -580,8 +572,8 @@ def test_as_euler_symmetric_axes(seq_tuple, intrinsic):
     rotation = Rotation.from_euler(seq, angles)
     angles_quat = rotation.as_euler(seq)
 
-    torch.testing.assert_close(torch.as_tensor(angles), angles_quat, atol=0, rtol=1e-13)
-    test_stats(angles_quat - angles, 1e-16, 1e-14)
+    torch.testing.assert_close(angles, angles_quat, atol=0, rtol=1e-11)
+    _test_stats(angles_quat - angles, 1e-16, 1e-14)
 
 
 @pytest.mark.parametrize('seq_tuple', permutations('xyz'))
@@ -922,7 +914,7 @@ def test_align_vectors_no_rotation():
 def test_align_vectors_no_noise():
     rnd = np.random.RandomState(0)
     c = Rotation.random(random_state=rnd)
-    b = rnd.normal(size=(5, 3))
+    b = torch.tensor(rnd.normal(size=(5, 3)))
     a = c(b)
 
     est, rssd = Rotation.align_vectors(a, b)
@@ -944,7 +936,7 @@ def test_align_vectors_rssd_sensitivity():
     rssd_expected = 0.141421356237308
     sens_expected = torch.tensor([[0.2, 0.0, 0.0], [0.0, 1.5, 1.0], [0.0, 1.0, 1.0]])
     a = [[0, 1, 0], [0, 1, 1], [0, 1, 1]]
-    b = [[1, 0, 0], [1, 1.1, 0], [1, 0.9, 0]]
+    b = [[1.0, 0.0, 0.0], [1.0, 1.1, 0.0], [1.0, 0.9, 0.0]]
     rot, rssd, sens = Rotation.align_vectors(a, b, return_sensitivity=True)
     assert math.isclose(rssd, rssd_expected, abs_tol=1e-6, rel_tol=1e-4)
     assert torch.allclose(sens, sens_expected, atol=1e-6, rtol=1e-4)
@@ -956,8 +948,8 @@ def test_align_vectors_scaled_weights():
     b = Rotation.random(n, random_state=1)([1, 0, 0])
     scale = 2
 
-    est1, rssd1, cov1 = Rotation.align_vectors(a, b, torch.ones(n), True)
-    est2, rssd2, cov2 = Rotation.align_vectors(a, b, scale * torch.ones(n), True)
+    est1, rssd1, cov1 = Rotation.align_vectors(a, b, torch.ones(n), return_sensitivity=True)
+    est2, rssd2, cov2 = Rotation.align_vectors(a, b, scale * torch.ones(n), return_sensitivity=True)
 
     torch.testing.assert_close(est1.as_matrix(), est2.as_matrix())
     torch.testing.assert_close(sqrt(scale) * rssd1, rssd2, atol=1e-6, rtol=1e-4)
@@ -968,13 +960,13 @@ def test_align_vectors_noise():
     rnd = np.random.RandomState(0)
     n_vectors = 100
     rot = Rotation.random(random_state=rnd)
-    vectors = rnd.normal(size=(n_vectors, 3)).astype(np.float32)
+    vectors = torch.tensor(rnd.normal(size=(n_vectors, 3)), dtype=torch.float32)
     result = rot(vectors)
 
     # The paper adds noise as independently distributed angular errors
     sigma = np.deg2rad(1)
     tolerance = 1.5 * sigma
-    noise = Rotation.from_rotvec(rnd.normal(size=(n_vectors, 3), scale=sigma).astype(np.float32))
+    noise = Rotation.from_rotvec(torch.tensor(rnd.normal(size=(n_vectors, 3), scale=sigma), dtype=torch.float32))
 
     # Attitude errors must preserve norm. Hence apply individual random
     # rotations to each vector.
@@ -1216,6 +1208,8 @@ def test_rotation_within_numpy_object_array():
     assert array.shape == (3, 2)
 
 
+# Needed because of bug in torch 2.4.0. Should be fixed with 2.4.1
+@pytest.mark.filterwarnings('ignore::FutureWarning')
 def test_pickling():
     """Test pickling a Rotation"""
     r = Rotation.from_quat([0, 0, np.sin(torch.pi / 4), np.cos(torch.pi / 4)])
@@ -1253,7 +1247,7 @@ def test_concatenate():
 def test_concatenate_wrong_type():
     """Test concatenation with non-Rotation objects"""
     with pytest.raises(TypeError, match='Rotation objects only'):
-        Rotation.concatenate([Rotation.identity(), 1, None])
+        Rotation.concatenate([Rotation.identity(), 1, None])  # type: ignore[list-item]
 
 
 def test_len_and_bool():
@@ -1335,9 +1329,9 @@ def test_weighted_mean_dims(shape, keepdim, dim, expected_shape):
 
 def test_mean_invalid_weights():
     """Test mean with invalid weights"""
-    r = Rotation.from_quat(np.eye(4))
+    r = Rotation.from_quat(torch.eye(4))
     with pytest.raises(ValueError, match='non-negative'):
-        r.mean(weights=-np.ones(4))
+        r.mean(weights=-torch.ones(4))
 
 
 def test_repr():
@@ -1355,10 +1349,10 @@ def test_quaternion_properties_single():
     assert r.quaternion_y == quat[AXIS_ORDER.index('y')]
     assert r.quaternion_z == quat[AXIS_ORDER.index('z')]
     assert r.quaternion_w == quat[-1]
-    r.quaternion_x = 1.0
+    r.quaternion_x = 1.0  # type: ignore[assignment]
     r.quaternion_y = torch.tensor(2.0)
-    r.quaternion_z = 3
-    r.quaternion_w = 4.0
+    r.quaternion_z = 3  # type: ignore[assignment]
+    r.quaternion_w = 4.0  # type: ignore[assignment]
     torch.testing.assert_close(r.quaternion_x, torch.tensor(1.0))
     torch.testing.assert_close(r.quaternion_y, torch.tensor(2.0))
     torch.testing.assert_close(r.quaternion_z, torch.tensor(3.0))

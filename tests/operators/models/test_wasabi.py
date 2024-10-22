@@ -1,5 +1,8 @@
+"""Tests for the WASABI signal model."""
+
 import torch
 from mrpro.operators.models import WASABI
+from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
 
 
 def create_data(offset_max=500, n_offsets=101, b0_shift=0, rb1=1.0, c=1.0, d=2.0):
@@ -30,3 +33,13 @@ def test_WASABI_extreme_offset():
     (signal,) = wasabi_model.forward(b0_shift, rb1, c, d)
 
     assert torch.isclose(signal, torch.tensor([1.0])), 'For an extreme offset, the signal should be unattenuated'
+
+
+@SHAPE_VARIATIONS_SIGNAL_MODELS
+def test_WASABI_shape(parameter_shape, contrast_dim_shape, signal_shape):
+    """Test correct signal shapes."""
+    (offsets,) = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=1)
+    model_op = WASABI(offsets)
+    b0_shift, rb1, c, d = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=4)
+    (signal,) = model_op.forward(b0_shift, rb1, c, d)
+    assert signal.shape == signal_shape

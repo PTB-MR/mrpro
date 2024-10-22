@@ -1,21 +1,8 @@
 """Tests for KTrajectoryRawShape class."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 import numpy as np
 import torch
-from einops import rearrange
-from einops import repeat
+from einops import rearrange, repeat
 from mrpro.data import KTrajectoryRawShape
 
 
@@ -52,10 +39,10 @@ def test_trajectory_raw_reshape(cartesian_grid):
     kx_raw = make_trajectory_raw_shape(kx_full, sort_idx)
 
     # Create raw trajectory
-    trajectory_raw = KTrajectoryRawShape(kz_raw, ky_raw, kx_raw)
+    trajectory_raw = KTrajectoryRawShape(kz_raw, ky_raw, kx_raw, repeat_detection_tolerance=None)
 
     # Reshape to original trajectory
-    trajectory = trajectory_raw.sort_and_reshape(sort_idx, n_k2, n_k1, repeat_detection_tolerance=None)
+    trajectory = trajectory_raw.sort_and_reshape(sort_idx, n_k2, n_k1)
 
     # Compare trajectories
     torch.testing.assert_close(trajectory.kz, kz_full)
