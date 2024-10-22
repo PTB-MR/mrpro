@@ -28,7 +28,7 @@ class NonUniformFastFourierOp(LinearOperator):
         Parameters
         ----------
         dim
-            dimension along which NUFFT and iNUFFT are applied
+            dimension along which non-uniform FFT is applied
         recon_matrix
             dimension of the reconstructed image corresponding to dim
         encoding_matrix
@@ -78,7 +78,7 @@ class NonUniformFastFourierOp(LinearOperator):
         self._nufft_dims = dim
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Forward operator mapping the coil-images to the coil k-space data.
+        """NUFFT from image space to k-space.
 
         Parameters
         ----------
@@ -114,7 +114,7 @@ class NonUniformFastFourierOp(LinearOperator):
         return (x,)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Adjoint operator mapping the coil k-space data to the coil images.
+        """NUFFT from k-space to image space.
 
         Parameters
         ----------
