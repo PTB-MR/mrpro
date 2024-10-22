@@ -610,7 +610,7 @@ class Rotation(torch.nn.Module):
             3 Basis vectors of the new coordinate system, i.e. the columns of the rotation matrix
         allow_improper
             If true, the rotation is considered as improper if the determinant of the matrix is negative
-            snd the sign will be preserved. If false, an ValueError is raised if the determinant is negative.
+            and the sign will be preserved. If false, a ValueError is raised if the determinant is negative.
 
 
         Returns
@@ -671,7 +671,7 @@ class Rotation(torch.nn.Module):
             otherwise radians.
         reflection
             If True, the resulting transformation will contain a reflection
-            about a plane perpendicular to the rotation axis, resulting in a rotoflexion
+            about a plane perpendicular to the rotation axis, resulting in a rotoflection
             (improper rotation).
         inversion
             If True, the resulting transformation will contain an inversion of the coordinate system,
