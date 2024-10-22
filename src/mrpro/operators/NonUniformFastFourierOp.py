@@ -10,7 +10,7 @@ from mrpro.data.KTrajectory import KTrajectory
 from mrpro.operators.LinearOperator import LinearOperator
 
 
-class NonUniformFastFourierOp(LinearOperator):
+class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
     """Non-Uniform Fast Fourier Operator class."""
 
     def __init__(
