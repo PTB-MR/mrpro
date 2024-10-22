@@ -180,3 +180,12 @@ class KTrajectory(MoveDataMixin):
         x = summarize_tensorvalues(torch.tensor(self.kx.shape))
         out = f'{type(self).__name__} with shape: kz={z}, ky={y}, kx={x}'
         return out
+
+    def __getitem__(self, item: torch.Tensor) -> 'KTrajectoryView':
+        raise NotImplementedError
+
+    def rearrange(self, pattern: str, **axes_lengths) -> Self:
+        raise NotImplementedError
+
+
+class KTrajectoryView(KTrajectory): ...

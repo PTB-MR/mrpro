@@ -2,6 +2,7 @@
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from typing import Literal
 from typing import Self, TypeVar
 
 import ismrmrd
@@ -23,6 +24,27 @@ def ms_to_s(ms: T) -> T:
 def mm_to_m(m: T) -> T:
     """Convert mm to m."""
     return m / 1000
+
+
+AcqIdxLiteral = Literal[
+    'k1',
+    'k2',
+    'average',
+    'slice',
+    'contrast',
+    'phase',
+    'repetition',
+    'set',
+    'segment',
+    'user0',
+    'user1',
+    'user2',
+    'user3',
+    'user4',
+    'user5',
+    'user6',
+    'user7',
+]
 
 
 @dataclass(slots=True)
