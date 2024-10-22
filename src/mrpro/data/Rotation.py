@@ -515,7 +515,7 @@ class Rotation(torch.nn.Module):
         i.e. rotations with reflection with respect to the plane perpendicular to the rotation axis
         or inversion of the coordinate system.
 
-        Note: If inversion != reflection, the rotion will be improper and concerted to a rotation
+        Note: If inversion != reflection, the rotation will be improper and save as a rotation followed by an inversion.
         containing an inversion of the coordinate system.
 
         Parameters
