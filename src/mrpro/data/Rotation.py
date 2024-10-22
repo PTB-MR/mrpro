@@ -53,7 +53,7 @@ import torch
 import torch.nn.functional as F  # noqa: N812
 from einops import rearrange
 from scipy._lib._util import check_random_state
-from typing_extensions import Self, overload
+from typing_extensions import Self, Unpack, overload
 
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.typing import IndexerType, NestedSequence
@@ -601,7 +601,7 @@ class Rotation(torch.nn.Module):
 
     @classmethod
     def from_directions(
-        cls, *basis: *tuple[SpatialDimension, SpatialDimension, SpatialDimension], allow_improper: bool = True
+        cls, *basis: Unpack[tuple[SpatialDimension, SpatialDimension, SpatialDimension]], allow_improper: bool = True
     ):
         """Initialize from basis vectors as SpatialDimensions.
 
