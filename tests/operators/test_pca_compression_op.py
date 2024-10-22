@@ -8,43 +8,55 @@ from tests.helper import dotproduct_adjointness_test
 
 
 @pytest.mark.parametrize(
-    ('init_data_shape', 'input_shape', 'n_components', 'compression_dim', 'separate_dims'),
+    ('init_data_shape', 'input_shape', 'n_components'),
     [
-        ((10, 100), (10, 15, 30, 25), 3, 0, None),
-        ((10, 15, 100), (10, 15, 30, 25), 6, 0, (1,)),
-        ((3, 10, 20, 25), (4, 3, 10, 30, 25), 2, -3, (-4,)),
-        ((3, 10, 20, 25), (4, 3, 10, 30, 25), 4, -1, (-3,)),
-        ((3, 10, 20, 25), (4, 3, 10, 20, 25), 7, -3, (-2, -1)),
+        ((40, 10), (100, 10), 6),
+        ((40, 10), (3, 4, 5, 100, 10), 3),
+        ((3, 4, 40, 10), (3, 4, 100, 10), 6),
+        ((3, 4, 40, 10), (7, 3, 4, 100, 10), 3),
     ],
 )
-def test_pca_compression_op_adjoint(init_data_shape, input_shape, n_components, compression_dim, separate_dims):
+def test_pca_compression_op_adjoint(init_data_shape, input_shape, n_components):
     """Test adjointness of PCA Compression Op."""
 
     # Create test data
     generator = RandomGenerator(seed=0)
-    data_to_calculate_compression_matrix = generator.complex64_tensor(init_data_shape)
+    data_to_calculate_compression_matrix_from = generator.complex64_tensor(init_data_shape)
     u = generator.complex64_tensor(input_shape)
-    output_shape = list(input_shape)
-    output_shape[compression_dim] = n_components
+    output_shape = (*input_shape[:-1], n_components)
     v = generator.complex64_tensor(output_shape)
 
     # Create operator and apply
-    pca_comp_op = PCACompressionOp(
-        data=data_to_calculate_compression_matrix,
-        n_components=n_components,
-        compression_dim=compression_dim,
-        separate_dims=separate_dims,
-    )
+    pca_comp_op = PCACompressionOp(data=data_to_calculate_compression_matrix_from, n_components=n_components)
     dotproduct_adjointness_test(pca_comp_op, u, v)
 
 
 def test_pca_compression_op_wrong_compression_dim():
-    """Raise error for compression dim in separate_dims."""
-    input_shape = (5, 10, 20, 30)
+    """Raise error if compression dimension is different between matrix and data."""
+    init_data_shape = (10, 6)
+    input_shape = (100, 3)
 
     # Create test data
     generator = RandomGenerator(seed=0)
+    data_to_calculate_compression_matrix_from = generator.complex64_tensor(init_data_shape)
     input_data = generator.complex64_tensor(input_shape)
 
-    with pytest.raises(ValueError, match='compression dimension must not be in separate_dim'):
-        PCACompressionOp(data=input_data, n_components=2, compression_dim=-2, separate_dims=(-2, -3))
+    pca_comp_op = PCACompressionOp(data=data_to_calculate_compression_matrix_from, n_components=2)
+
+    with pytest.raises(ValueError, match='Compression dimension does not match'):
+        pca_comp_op.forward(input_data)
+
+
+def test_pca_compression_op_not_broadcastable():
+    """Raise error if compression matrix cannot be broadcast."""
+    init_data_shape = (7, 5, 6)
+    input_shape = (3, 4, 5, 6)
+
+    # Create test data
+    generator = RandomGenerator(seed=0)
+    data_to_calculate_compression_matrix_from = generator.complex64_tensor(init_data_shape)
+    input_data = generator.complex64_tensor(input_shape)
+
+    pca_comp_op = PCACompressionOp(data=data_to_calculate_compression_matrix_from, n_components=2)
+    with pytest.raises(ValueError, match='cannot be croadcasted'):
+        pca_comp_op.forward(input_data)
