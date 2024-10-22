@@ -46,13 +46,14 @@ import math
 import re
 import warnings
 from collections.abc import Callable, Sequence
-from typing import Literal, Self, cast, overload
+
 
 import numpy as np
 import torch
 import torch.nn.functional as F  # noqa: N812
 from einops import rearrange
 from scipy._lib._util import check_random_state
+from typing_extensions import Self, overload,  Literal, Self, cast, overload
 
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.typing import IndexerType, NestedSequence

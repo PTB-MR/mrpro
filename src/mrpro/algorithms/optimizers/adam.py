@@ -6,11 +6,11 @@ import torch
 from torch.optim import Adam, AdamW
 
 from mrpro.algorithms.optimizers.OptimizerStatus import OptimizerStatus
-from mrpro.operators.Operator import Operator
+from mrpro.operators.Operator import OperatorType
 
 
 def adam(
-    f: Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor]],
+    f: OperatorType,
     initial_parameters: Sequence[torch.Tensor],
     max_iter: int,
     lr: float = 1e-3,
