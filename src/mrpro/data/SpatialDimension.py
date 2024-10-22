@@ -10,6 +10,7 @@ from typing import Any, Generic, Protocol, TypeVar, get_args, overload
 import numpy as np
 import torch
 from numpy.typing import ArrayLike
+from typing_extensions import Protocol, TypeVar
 
 import mrpro.utils.typing as type_utils
 from mrpro.data.MoveDataMixin import MoveDataMixin
@@ -18,6 +19,8 @@ from mrpro.data.MoveDataMixin import MoveDataMixin
 VectorTypes = torch.Tensor
 ScalarTypes = int | float
 T = TypeVar('T', torch.Tensor, int, float)
+# Covariant types, as SpatialDimension is a Container
+# and we want, for example, SpatialDimension[int] to also be a SpatialDimension[float]
 T_co = TypeVar('T_co', torch.Tensor, int, float, covariant=True)
 T_co_float = TypeVar('T_co_float', float, torch.Tensor, covariant=True)
 T_co_vector = torch.Tensor
@@ -76,8 +79,8 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
             shape (..., 3) in the order (x,y,z)
         """
         data_ = _as_vectortype(data)
-        if np.size(data, -1) != 3:
-            raise ValueError(f'Expected last dimension to be 3, got {np.size(data, -1)}')
+        if np.size(data_, -1) != 3:
+            raise ValueError(f'Expected last dimension to be 3, got {np.size(data_, -1)}')
 
         x = data_[..., 0]
         y = data_[..., 1]
@@ -96,13 +99,13 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         data
             shape (..., 3) in the order (z,y,x)
         """
-        data = _as_vectortype(data)
-        if np.size(data, -1) != 3:
-            raise ValueError(f'Expected last dimension to be 3, got {np.size(data, -1)}')
+        data_ = _as_vectortype(data)
+        if np.size(data_, -1) != 3:
+            raise ValueError(f'Expected last dimension to be 3, got {np.size(data_, -1)}')
 
-        x = data[..., 2]
-        y = data[..., 1]
-        z = data[..., 0]
+        x = data_[..., 2]
+        y = data_[..., 1]
+        z = data_[..., 0]
 
         return SpatialDimension(z, y, x)
 

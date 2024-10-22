@@ -55,6 +55,29 @@ def test_spatial_dimension_from_array():
     assert torch.equal(spatial_dimension_xyz.z, spatial_dimension_zyx.z)
 
 
+def test_from_array_arraylike():
+    """Test creation from an ArrayLike list of list of int"""
+    xyz = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+
+    spatial_dimension_xyz = SpatialDimension.from_array_xyz(list(zip(*xyz, strict=False)))
+    assert isinstance(spatial_dimension_xyz.x, torch.Tensor)
+    assert isinstance(spatial_dimension_xyz.y, torch.Tensor)
+    assert isinstance(spatial_dimension_xyz.z, torch.Tensor)
+    assert_type(spatial_dimension_xyz, SpatialDimension[torch.Tensor])
+    assert torch.equal(spatial_dimension_xyz.x, torch.tensor(xyz[0]))
+    assert torch.equal(spatial_dimension_xyz.y, torch.tensor(xyz[1]))
+    assert torch.equal(spatial_dimension_xyz.z, torch.tensor(xyz[2]))
+
+    spatial_dimension_zyx = SpatialDimension.from_array_zyx(list(zip(*xyz[::-1], strict=False)))
+    assert isinstance(spatial_dimension_xyz.x, torch.Tensor)
+    assert isinstance(spatial_dimension_xyz.y, torch.Tensor)
+    assert isinstance(spatial_dimension_xyz.z, torch.Tensor)
+    assert_type(spatial_dimension_zyx, SpatialDimension[torch.Tensor])
+    assert torch.equal(spatial_dimension_zyx.x, torch.tensor(xyz[0]))
+    assert torch.equal(spatial_dimension_zyx.y, torch.tensor(xyz[1]))
+    assert torch.equal(spatial_dimension_zyx.z, torch.tensor(xyz[2]))
+
+
 def test_spatial_dimension_from_array_wrongshape():
     """Test error message on wrong shape"""
     tensor_wrongshape = torch.zeros(1, 2, 5)
