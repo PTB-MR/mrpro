@@ -21,6 +21,8 @@ class PCACompressionOp(LinearOperator):
         dimension of a data with shape (*other, joint_dim, compression_dim). A single SVD is carried out for everything
         along joint_dim. Other are batch dimensions.
 
+        Consider combining this operator with RearrangeOp to make sure the data is in the correct shape before applying.
+
         Parameters
         ----------
         data
@@ -37,18 +39,6 @@ class PCACompressionOp(LinearOperator):
         v = repeat(v, '... comp1 comp2 -> ... joint_dim comp1 comp2', joint_dim=1)
         self.register_buffer('_compression_matrix', v[..., :n_components, :].clone())
 
-    @staticmethod
-    def _apply_matrix(data: torch.Tensor, matrix: torch.Tensor) -> torch.Tensor:
-        if data.shape[-1] != matrix.shape[-1]:
-            raise ValueError(f'Compression dimension does not match. Data: {data.shape[-1]} Matrix: {matrix.shape[-1]}')
-        try:
-            torch.broadcast_shapes(data.shape[:-1], matrix.shape[:-2])
-        except RuntimeError:
-            raise ValueError(
-                f'Shape of matrix {matrix.shape[:-2]} cannot be croadcasted to data {data.shape[:-1]}'
-            ) from None
-        return (matrix @ data.unsqueeze(-1)).squeeze(-1)
-
     def forward(self, data: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the compression to the data.
 
@@ -61,7 +51,15 @@ class PCACompressionOp(LinearOperator):
         -------
             compressed data of shape (*other, joint_dim, n_components)
         """
-        return (self._apply_matrix(data, self._compression_matrix),)
+        try:
+            result = (self._compression_matrix @ data.unsqueeze(-1)).squeeze(-1)
+        except RuntimeError as e:
+            raise RuntimeError(
+                'Shape mismatch in adjoint Compression: '
+                f'Matrix {tuple(self._compression_matrix.shape)} '
+                f'cannot be multiplied with Data {tuple(data.shape)}.'
+            ) from e
+        return (result,)
 
     def adjoint(self, data: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the adjoint compression to the data.
@@ -75,4 +73,12 @@ class PCACompressionOp(LinearOperator):
         -------
             expanded data of shape (*other, joint_dim, compression_dim)
         """
-        return (self._apply_matrix(data, self._compression_matrix.mH),)
+        try:
+            result = (self._compression_matrix.mH @ data.unsqueeze(-1)).squeeze(-1)
+        except RuntimeError as e:
+            raise RuntimeError(
+                'Shape mismatch in adjoint Compression: '
+                f'Matrix^H {tuple(self._compression_matrix.mH.shape)} '
+                f'cannot be multiplied with Data {tuple(data.shape)}.'
+            ) from e
+        return (result,)

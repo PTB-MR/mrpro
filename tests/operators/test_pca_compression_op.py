@@ -31,8 +31,8 @@ def test_pca_compression_op_adjoint(init_data_shape, input_shape, n_components):
     dotproduct_adjointness_test(pca_comp_op, u, v)
 
 
-def test_pca_compression_op_wrong_compression_dim():
-    """Raise error if compression dimension is different between matrix and data."""
+def test_pca_compression_op_wrong_shapes():
+    """Test if Operator raises error if shape mismatch."""
     init_data_shape = (10, 6)
     input_shape = (100, 3)
 
@@ -43,20 +43,8 @@ def test_pca_compression_op_wrong_compression_dim():
 
     pca_comp_op = PCACompressionOp(data=data_to_calculate_compression_matrix_from, n_components=2)
 
-    with pytest.raises(ValueError, match='Compression dimension does not match'):
-        pca_comp_op.forward(input_data)
+    with pytest.raises(RuntimeError, match='Matrix'):
+        pca_comp_op(input_data)
 
-
-def test_pca_compression_op_not_broadcastable():
-    """Raise error if compression matrix cannot be broadcast."""
-    init_data_shape = (7, 5, 6)
-    input_shape = (3, 4, 5, 6)
-
-    # Create test data
-    generator = RandomGenerator(seed=0)
-    data_to_calculate_compression_matrix_from = generator.complex64_tensor(init_data_shape)
-    input_data = generator.complex64_tensor(input_shape)
-
-    pca_comp_op = PCACompressionOp(data=data_to_calculate_compression_matrix_from, n_components=2)
-    with pytest.raises(ValueError, match='cannot be croadcasted'):
-        pca_comp_op.forward(input_data)
+    with pytest.raises(RuntimeError, match='Matrix.H'):
+        pca_comp_op.adjoint(input_data)
