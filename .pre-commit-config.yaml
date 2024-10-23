@@ -37,6 +37,7 @@ repos:
           - numpy
           - torch>=2.4.0
           - types-requests
+          - typing-extensions
           - einops
           - pydicom
           - matplotlib

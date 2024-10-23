@@ -1,10 +1,11 @@
 from copy import deepcopy
-from typing import Literal, TypedDict
+from typing import Literal
 
 import pytest
 import torch
 from mrpro.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
 from mrpro.operators.functionals import L1Norm, L1NormViewAsReal, L2NormSquared, ZeroFunctional
+from typing_extensions import TypedDict
 
 from tests import RandomGenerator
 from tests.operators.functionals.conftest import (
