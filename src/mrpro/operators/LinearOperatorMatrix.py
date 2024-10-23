@@ -6,7 +6,7 @@ import operator
 from collections.abc import Callable, Iterator, Sequence
 from functools import reduce
 from types import EllipsisType
-from typing import Self, TypeVar, cast
+from typing_extensions import Self, TypeVar, cast, Unpack
 
 import torch
 
