@@ -17,10 +17,8 @@ from mrpro.operators.ZeroOp import ZeroOp
 _SingleIdxType = int | slice | EllipsisType | Sequence[int]
 _IdxType = _SingleIdxType | tuple[_SingleIdxType, _SingleIdxType]
 
-T = TypeVar('T', bound=Operator)
 
-
-class LinearOperatorMatrix(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]]):
+class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torch.Tensor, ...]]):
     r"""Matrix of Linear Operators.
 
     A matrix of Linear Operators, where each element is a Linear Operator.
