@@ -9,15 +9,23 @@ if TYPE_CHECKING:
     from typing import TypeAlias
 
     import torch
+    from numpy import ndarray
     from torch._C import _NestedSequence as NestedSequence
     from typing_extensions import SupportsIndex
 
     # This matches the torch.Tensor indexer typehint
-    _IndexerTypeInner: TypeAlias = None | bool | int | slice | EllipsisType | torch.Tensor
-    _SingleIndexerType: TypeAlias = SupportsIndex | _IndexerTypeInner | NestedSequence[_IndexerTypeInner]
-    IndexerType: TypeAlias = tuple[_SingleIndexerType, ...] | _SingleIndexerType
-else:
-    IndexerType: TypeAlias = Any
-    NestedSequence: TypeAlias = Any
+    _TorchIndexerTypeInner: TypeAlias = None | bool | int | slice | EllipsisType | torch.Tensor
+    _SingleTorchIndexerType: TypeAlias = SupportsIndex | _TorchIndexerTypeInner | NestedSequence[_TorchIndexerTypeInner]
+    TorchIndexerType: TypeAlias = tuple[_SingleTorchIndexerType, ...] | _SingleTorchIndexerType
 
-__all__ = ['IndexerType', 'NestedSequence']
+    # This matches the numpy.ndarray indexer typehint
+    _SingleNumpyIndexerType: TypeAlias = ndarray | SupportsIndex | None | slice | EllipsisType
+    NumpyIndexerType: TypeAlias = tuple[_SingleNumpyIndexerType, ...] | _SingleNumpyIndexerType
+
+
+else:
+    TorchIndexerType: TypeAlias = Any
+    NestedSequence: TypeAlias = Any
+    NumpyIndexerType: TypeAlias = Any
+
+__all__ = ['TorchIndexerType', 'NumpyIndexerType', 'NestedSequence']

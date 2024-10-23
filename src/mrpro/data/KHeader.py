@@ -187,11 +187,13 @@ class KHeader(MoveDataMixin):
                 parameters['seq_type'] = header.sequenceParameters.sequence_type
 
         if enc.reconSpace is not None:
-            parameters['recon_fov'] = SpatialDimension[float].from_xyz(enc.reconSpace.fieldOfView_mm, mm_to_m)
+            parameters['recon_fov'] = SpatialDimension[float].from_xyz(enc.reconSpace.fieldOfView_mm).apply_(mm_to_m)
             parameters['recon_matrix'] = SpatialDimension[int].from_xyz(enc.reconSpace.matrixSize)
 
         if enc.encodedSpace is not None:
-            parameters['encoding_fov'] = SpatialDimension[float].from_xyz(enc.encodedSpace.fieldOfView_mm, mm_to_m)
+            parameters['encoding_fov'] = (
+                SpatialDimension[float].from_xyz(enc.encodedSpace.fieldOfView_mm).apply_(mm_to_m)
+            )
             parameters['encoding_matrix'] = SpatialDimension[int].from_xyz(enc.encodedSpace.matrixSize)
 
         if enc.encodingLimits is not None:
