@@ -21,7 +21,7 @@ jobs:
           base: main
           filters: |
             version_changed:
-              - src/mrpro/VERSION
+              - 'src/mrpro/VERSION'
 
       - name: Checkout code
         uses: actions/checkout@v4
