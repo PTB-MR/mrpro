@@ -3,6 +3,7 @@
 import pytest
 import torch
 from mrpro.operators.models import MonoExponentialDecay
+from tests.helper import autodiff_of_operator_test
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
 
 
@@ -41,3 +42,11 @@ def test_mono_exponential_decay_shape(parameter_shape, contrast_dim_shape, signa
     m0, decay_constant = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=2)
     (signal,) = model_op.forward(m0, decay_constant)
     assert signal.shape == signal_shape
+
+
+@pytest.mark.filterwarnings('ignore:Anomaly Detection has been enabled')
+def test_autodiff_exponential_decay():
+    """Test autodiff works for mono-exponential decay model."""
+    model = MonoExponentialDecay(decay_time=20)
+    m0, decay_constant = create_parameter_tensor_tuples(parameter_shape=(2, 5, 10, 10, 10), number_of_tensors=2)
+    autodiff_of_operator_test(model, m0, decay_constant)

@@ -5,6 +5,7 @@ import torch
 from mrpro.operators import ConstraintsOp
 
 from tests import RandomGenerator
+from tests.helper import autodiff_of_operator_test
 
 
 @pytest.mark.parametrize(
@@ -141,3 +142,16 @@ def test_constraints_operator_multiple_inputs(bounds):
 def test_constraints_operator_illegal_bounds(bounds):
     with pytest.raises(ValueError, match='invalid'):
         ConstraintsOp(bounds)
+
+
+@pytest.mark.filterwarnings('ignore:Anomaly Detection has been enabled')
+def test_autodiff_constraints_operator():
+    """Test autodiff works for constraints operator."""
+    # random tensors with arbitrary values
+    random_generator = RandomGenerator(seed=0)
+    x1 = random_generator.float32_tensor(size=(36, 72), low=-1, high=1)
+    x2 = random_generator.float32_tensor(size=(36, 72), low=-1, high=1)
+    x3 = random_generator.float32_tensor(size=(36, 72), low=-1, high=1)
+
+    constraints_op = ConstraintsOp(bounds=((None, None), (1.0, None), (None, 1.0)))
+    autodiff_of_operator_test(constraints_op, x1, x2, x3)
