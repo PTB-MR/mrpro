@@ -16,19 +16,6 @@ from tests.phantoms import EllipsePhantomTestData
 
 
 @pytest.fixture(scope='session')
-def ismrmrd_cart(ellipse_phantom, tmp_path_factory):
-    """Fully sampled cartesian data set."""
-    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
-    ismrmrd_kdata = IsmrmrdRawTestData(
-        filename=ismrmrd_filename,
-        noise_level=0.0,
-        repetitions=3,
-        phantom=ellipse_phantom.phantom,
-    )
-    return ismrmrd_kdata
-
-
-@pytest.fixture(scope='session')
 def ismrmrd_cart_with_calibration_lines(ellipse_phantom, tmp_path_factory):
     """Undersampled Cartesian data set with calibration lines."""
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
