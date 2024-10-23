@@ -1,10 +1,9 @@
 """Tests the Spatial class."""
 
-from typing_extensions import Any, assert_type
-
 import pytest
 import torch
 from mrpro.data import SpatialDimension
+from typing_extensions import Any, assert_type
 
 from tests import RandomGenerator
 
