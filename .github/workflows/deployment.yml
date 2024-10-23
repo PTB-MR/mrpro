@@ -14,6 +14,11 @@ jobs:
       suffix: ${{ steps.set_suffix.outputs.suffix }}
       version_changed: ${{ steps.changes.outputs.version_changed }}
     steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
       - name: Check if VERSION file is modified compared to main
         uses: dorny/paths-filter@v3
         id: changes
@@ -23,15 +28,18 @@ jobs:
             version_changed:
               - 'src/mrpro/VERSION'
 
+      - name: Check if files in docker or the toml file has been modified
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            docker_toml:
+              - 'docker/*'
+              - '.github/workflows/docker.yml'
+
       - name: Checkout code
         uses: actions/checkout@v4
         if: steps.changes.outputs.version_changed == 'true'
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        if: steps.changes.outputs.version_changed == 'true'
-        with:
-          python-version: "3.x"
 
       - name: Set environment variable for version suffix
         id: set_suffix
