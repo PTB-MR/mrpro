@@ -52,7 +52,7 @@ class WaveletOp(LinearOperator):
 
         For complex images the wavelet coefficients are calculated for real and imaginary part separately.
 
-        For a 2D image, the coefficients are labelled [aa, (ad_n, da_n, dd_n), ..., (ad_1, da_1, dd_1)] where a refers
+        For a 2D image, the coefficients are labeled [aa, (ad_n, da_n, dd_n), ..., (ad_1, da_1, dd_1)] where a refers
         to the approximation coefficients and d to the detail coefficients. The index indicates the level.
 
         Parameters

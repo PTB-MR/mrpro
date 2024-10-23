@@ -47,6 +47,7 @@ jobs:
       pull-requests: write
       contents: write
     strategy:
+      fail-fast: false 
       matrix:
         imagename: ${{ fromJson(needs.get_dockerfiles.outputs.imagenames) }}
     # runs within Docker container
@@ -79,7 +80,7 @@ jobs:
 
       - name: Pytest coverage comment
         id: coverageComment
-        uses: MishaKav/pytest-coverage-comment@v1.1.52
+        uses: MishaKav/pytest-coverage-comment@v1.1.53
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           junitxml-path: ./pytest.xml

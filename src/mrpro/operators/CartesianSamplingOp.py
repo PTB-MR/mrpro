@@ -12,7 +12,7 @@ from mrpro.operators.LinearOperator import LinearOperator
 class CartesianSamplingOp(LinearOperator):
     """Cartesian Sampling Operator.
 
-    Selects points on a Cartisian grid based on the the k-space trajectory.
+    Selects points on a Cartesian grid based on the k-space trajectory.
     Thus, the adjoint sorts the data into regular Cartesian sampled grid based on the k-space
     trajectory. Non-acquired points are zero-filled.
     """
