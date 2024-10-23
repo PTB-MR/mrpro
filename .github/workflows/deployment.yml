@@ -8,6 +8,7 @@ on:
 jobs:
   build-testpypi-package:
     name: Modify version and build package for TestPyPI
+    if: github.event.head_commit.message !~ 'Merge branch \'main\' into'
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.set_suffix.outputs.version }}
