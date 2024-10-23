@@ -56,7 +56,7 @@ from scipy._lib._util import check_random_state
 from typing_extensions import Self, Unpack, overload
 
 from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.utils.typing import TorchIndexerType, NestedSequence
+from mrpro.utils.typing import NestedSequence, TorchIndexerType
 from mrpro.utils.vmf import sample_vmf
 
 AXIS_ORDER = 'zyx'  # This can be modified

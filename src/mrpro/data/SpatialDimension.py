@@ -5,12 +5,12 @@ from __future__ import annotations
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Generic, Protocol, TypeVar, get_args, overload
+from typing import Generic, get_args
 
 import numpy as np
 import torch
 from numpy.typing import ArrayLike
-from typing_extensions import Protocol, TypeVar
+from typing_extensions import Any, Protocol, TypeVar, overload
 
 import mrpro.utils.typing as type_utils
 from mrpro.data.MoveDataMixin import MoveDataMixin
