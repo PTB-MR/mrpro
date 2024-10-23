@@ -23,7 +23,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         nufft_numpoints: int = 6,
         nufft_kbwidth: float = 2.34,
     ) -> None:
-        """Non-Uniform Fast Fourier Operator class.
+        """Initialize Non-Uniform Fast Fourier Operator.
 
         Parameters
         ----------
