@@ -1,14 +1,23 @@
 ARG BASE_IMAGE=ubuntu:22.04
-FROM ${BASE_IMAGE} as base
+FROM ${BASE_IMAGE} AS base
 
 ARG DEBIAN_FRONTEND=noninteractive
 
 ARG PYTHON="python3.12"
 
-# install python and mrpro dependencies
-COPY install_mrpro.sh .
-RUN bash install_mrpro.sh
-RUN rm install_mrpro.sh
+# install python
+COPY docker/install_system.sh .
+RUN bash install_system.sh && rm install_system.sh
+
+# install mrpro dependencies
+# forces rebuild if either the version or the pyproject.toml changes
+COPY docker/install_dependencies.sh pyproject.toml src/mrpro/VERSION ./
+RUN bash install_dependencies.sh && rm install_dependencies.sh pyproject.toml VERSION
+
+# install mrpro
+# forces rebuild on any change in the mrpro directory
+COPY . /mrpro/
+RUN python -m pip install  "/mrpro[notebook]" --no-cache-dir --upgrade --upgrade-strategy "eager" && rm -rf /mrpro
 
 # set user
 USER runner

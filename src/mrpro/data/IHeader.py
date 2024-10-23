@@ -3,12 +3,12 @@
 import dataclasses
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Self
 
 import numpy as np
 import torch
 from pydicom.dataset import Dataset
 from pydicom.tag import Tag, TagType
+from typing_extensions import Self
 
 from mrpro.data.KHeader import KHeader
 from mrpro.data.MoveDataMixin import MoveDataMixin

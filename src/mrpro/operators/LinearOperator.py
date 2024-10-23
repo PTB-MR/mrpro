@@ -6,9 +6,10 @@ import operator
 from abc import abstractmethod
 from collections.abc import Callable, Sequence
 from functools import reduce
-from typing import Any, cast, no_type_check, overload
+from typing import cast, no_type_check
 
 import torch
+from typing_extensions import Any, Unpack, overload
 
 import mrpro.operators
 from mrpro.operators.Operator import (
@@ -194,11 +195,13 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     def __matmul__(self, other: LinearOperator) -> LinearOperator: ...
 
     @overload
-    def __matmul__(self, other: Operator[*Tin2, tuple[torch.Tensor,]]) -> Operator[*Tin2, tuple[torch.Tensor,]]: ...
+    def __matmul__(
+        self, other: Operator[Unpack[Tin2], tuple[torch.Tensor,]]
+    ) -> Operator[Unpack[Tin2], tuple[torch.Tensor,]]: ...
 
     def __matmul__(
-        self, other: Operator[*Tin2, tuple[torch.Tensor,]] | LinearOperator
-    ) -> Operator[*Tin2, tuple[torch.Tensor,]] | LinearOperator:
+        self, other: Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator
+    ) -> Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator:
         """Operator composition.
 
         Returns lambda x: self(other(x))
@@ -213,7 +216,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
             return LinearOperatorComposition(self, other)
         elif isinstance(other, Operator):
             # cast due to https://github.com/python/mypy/issues/16335
-            return OperatorComposition(self, cast(Operator[*Tin2, tuple[torch.Tensor,]], other))
+            return OperatorComposition(self, cast(Operator[Unpack[Tin2], tuple[torch.Tensor,]], other))
         return NotImplemented  # type: ignore[unreachable]
 
     def __radd__(self, other: torch.Tensor) -> LinearOperator:
