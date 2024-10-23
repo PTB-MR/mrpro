@@ -1,9 +1,9 @@
 """Fourier Operator."""
 
 from collections.abc import Sequence
-from typing import Self
 
 import torch
+from typing_extensions import Self
 
 from mrpro.data._kdata.KData import KData
 from mrpro.data.enums import TrajType
