@@ -19,6 +19,9 @@ jobs:
         with:
           python-version: "3.x"
 
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Check if VERSION file is modified compared to main
         uses: dorny/paths-filter@v3
         id: changes
@@ -36,10 +39,6 @@ jobs:
             docker_toml:
               - 'docker/*'
               - '.github/workflows/docker.yml'
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-        if: steps.changes.outputs.version_changed == 'true'
 
       - name: Set environment variable for version suffix
         id: set_suffix
