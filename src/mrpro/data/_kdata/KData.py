@@ -13,6 +13,7 @@ import torch
 from einops import rearrange
 from typing_extensions import Self
 
+from mrpro.data._kdata.KDataCombineCoilsMixin import KDataCombineCoilsMixin
 from mrpro.data._kdata.KDataRearrangeMixin import KDataRearrangeMixin
 from mrpro.data._kdata.KDataRemoveOsMixin import KDataRemoveOsMixin
 from mrpro.data._kdata.KDataSelectMixin import KDataSelectMixin
@@ -62,7 +63,9 @@ OTHER_LABELS = (
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
-class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveOsMixin, MoveDataMixin):
+class KData(
+    KDataCombineCoilsMixin, KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveOsMixin, MoveDataMixin
+):
     """MR raw data / k-space data class."""
 
     header: KHeader
