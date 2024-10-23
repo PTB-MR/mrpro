@@ -114,7 +114,7 @@ class IHeader(MoveDataMixin):
             get_items_from_all_dicoms('PixelSpacing')[0][1],
         )
         fov_z_mm = get_float_items_from_all_dicoms('SliceThickness')[0]
-        fov = SpatialDimension(fov_x_mm / 1000.0, fov_y_mm / 1000.0, fov_z_mm / 1000.0)
+        fov = SpatialDimension(fov_x_mm, fov_y_mm, fov_z_mm) / 1000  # convert to m
 
         # Get misc parameters
         misc = {}
