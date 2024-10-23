@@ -6,9 +6,10 @@ import operator
 from collections.abc import Callable, Iterator, Sequence
 from functools import reduce
 from types import EllipsisType
-from typing_extensions import Self, TypeVar, cast, Unpack
+from typing import cast
 
 import torch
+from typing_extensions import Self, Unpack
 
 from mrpro.operators.LinearOperator import LinearOperator, LinearOperatorSum
 from mrpro.operators.Operator import Operator
