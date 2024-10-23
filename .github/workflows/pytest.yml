@@ -47,7 +47,7 @@ jobs:
       pull-requests: write
       contents: write
     strategy:
-      fail-fast: false 
+      fail-fast: false
       matrix:
         imagename: ${{ fromJson(needs.get_dockerfiles.outputs.imagenames) }}
     # runs within Docker container
@@ -85,8 +85,9 @@ jobs:
           pytest-coverage-path: ./pytest-coverage.txt
           junitxml-path: ./pytest.xml
 
-      - name: Create the Badge
+      - name: Create the Badge if PR is merged to main
         uses: schneegans/dynamic-badges-action@v1.7.0
+        if: github.event.pull_request.merged == true && github.ref == 'refs/heads/main'
         with:
           auth: ${{ secrets.GIST_SECRET }}
           gistID: 48e334a10caf60e6708d7c712e56d241
