@@ -2,9 +2,10 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import Literal, Self
+from typing import Literal
 
 import torch
+from typing_extensions import Self
 
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
 from mrpro.data._kdata.KData import KData

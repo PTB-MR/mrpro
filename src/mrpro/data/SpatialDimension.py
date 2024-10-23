@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Generic, Protocol, TypeVar
+from typing import Generic
 
 import numpy as np
 import torch
 from numpy.typing import ArrayLike
+from typing_extensions import Protocol, TypeVar
 
 from mrpro.data.MoveDataMixin import MoveDataMixin
 
