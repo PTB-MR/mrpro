@@ -2,6 +2,9 @@ name: PyTest
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
 
 jobs:
   get_dockerfiles:
@@ -59,7 +62,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install mrpro and dependencies
+      - name: Install MRpro and dependencies
         run: pip install --upgrade --upgrade-strategy "eager" .[test]
 
       - name: Install pytest-github-actions-annotate-failures plugin
@@ -85,9 +88,9 @@ jobs:
           pytest-coverage-path: ./pytest-coverage.txt
           junitxml-path: ./pytest.xml
 
-      - name: Create the Badge if PR is merged to main
+      - name: Create coverage badge if PR is merged to main
         uses: schneegans/dynamic-badges-action@v1.7.0
-        if: github.event.pull_request.merged == true && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           auth: ${{ secrets.GIST_SECRET }}
           gistID: 48e334a10caf60e6708d7c712e56d241
