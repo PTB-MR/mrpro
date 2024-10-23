@@ -1,6 +1,6 @@
 """Tests the Spatial class."""
 
-from typing import Any, assert_type
+from typing_extensions import Any, assert_type
 
 import pytest
 import torch
