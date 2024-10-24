@@ -21,7 +21,7 @@ def test_mono_exponential_decay(decay_time, result):
     """
     model = MonoExponentialDecay(decay_time)
     m0, decay_constant = create_parameter_tensor_tuples()
-    (image,) = model.forward(m0, decay_constant)
+    (image,) = model(m0, decay_constant)
 
     zeros = torch.zeros_like(m0)
 
@@ -39,5 +39,5 @@ def test_mono_exponential_decay_shape(parameter_shape, contrast_dim_shape, signa
     (decay_time,) = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=1)
     model_op = MonoExponentialDecay(decay_time)
     m0, decay_constant = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=2)
-    (signal,) = model_op.forward(m0, decay_constant)
+    (signal,) = model_op(m0, decay_constant)
     assert signal.shape == signal_shape
