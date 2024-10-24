@@ -115,7 +115,7 @@ class FastFourierOp(LinearOperator):
             FFT of x
         """
         y = torch.fft.fftshift(
-            torch.fft.fftn(torch.fft.ifftshift(*self._pad_op.forward(x), dim=self._dim), dim=self._dim, norm='ortho'),
+            torch.fft.fftn(torch.fft.ifftshift(*self._pad_op(x), dim=self._dim), dim=self._dim, norm='ortho'),
             dim=self._dim,
         )
         return (y,)
