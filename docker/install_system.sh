@@ -8,7 +8,7 @@ apt-get update -qq
 ${APT_GET_INSTALL} --reinstall ca-certificates
 
 # base utilities
-${APT_GET_INSTALL} git software-properties-common gpg-agent
+${APT_GET_INSTALL} git software-properties-common gpg-agent pandoc
 
 # add repo for python installation
 add-apt-repository ppa:deadsnakes/ppa
