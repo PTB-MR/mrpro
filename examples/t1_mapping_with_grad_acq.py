@@ -28,7 +28,7 @@ from mrpro.utils import split_idx
 # model can then be fitted to this data to obtain a $T_1$ map. More information can be found in:
 #
 # Kerkering KM, Schulz-Menger J, Schaeffter T, Kolbitsch C (2023) Motion-corrected model-based reconstruction for 2D
-# myocardial T1 mapping, MRM 90 https://doi.org/10.1002/mrm.29699
+# myocardial $T_1$ mapping, MRM 90 https://doi.org/10.1002/mrm.29699
 #
 # The number of time frames and hence the number of radial lines per time frame, can in principle be chosen arbitrarily.
 # However, a tradeoff between image quality (more radial lines per dynamic) and
@@ -37,7 +37,7 @@ from mrpro.utils import split_idx
 # During data acquisition, the magnetization $M_z(t)$ can be described by the signal model:
 #   $$ M_z(t) = M_0^* + (M_0^{init} - M_0^*)e^{(-t / T_1^*)} \quad (1) $$
 # where the effective longitudinal relaxation time is given by:
-#   $$ T_1^* = \frac{1}{\frac{1}{T1} - \frac{1}{T_R} ln(cos(\alpha))} $$
+#   $$ T_1^* = \frac{1}{\frac{1}{T_1} - \frac{1}{T_R} \ln(\cos(\alpha))} $$
 # and the steady-state magnetization is
 #   $$ M_0^* = M_0 \frac{T_1^*}{T_1} .$$
 #
@@ -105,7 +105,7 @@ for idx, cax in enumerate(ax.flatten()):
     cax.set_title(f'Dynamic {idx}')
 
 # %% [markdown]
-# ## Estimate T1 map
+# ## Estimate $T_1$ map
 
 # %% [markdown]
 # ### Signal model
@@ -212,10 +212,10 @@ m0, t1, flip_angle = (p.detach() for p in params_result)
 fig, axes = plt.subplots(1, 3, figsize=(10, 2), squeeze=False)
 colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05) for ax in axes[0, :]]
 im = axes[0, 0].imshow(m0[0, ...].abs(), cmap='gray')
-axes[0, 0].set_title('M0')
+axes[0, 0].set_title('$M_0$')
 fig.colorbar(im, cax=colorbar_ax[0])
 im = axes[0, 1].imshow(t1[0, ...], vmin=0, vmax=2)
-axes[0, 1].set_title('T1 (s)')
+axes[0, 1].set_title('$T_1$ (s)')
 fig.colorbar(im, cax=colorbar_ax[1])
 im = axes[0, 2].imshow(flip_angle[0, ...] / torch.pi * 180, vmin=0, vmax=8)
 axes[0, 2].set_title('Flip angle (°)')
