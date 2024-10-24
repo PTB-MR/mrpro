@@ -10,6 +10,7 @@ from mrpro.data.enums import TrajType
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.FastFourierOp import FastFourierOp
+from mrpro.operators.IdentityOp import IdentityOp
 from mrpro.operators.LinearOperator import LinearOperator
 from mrpro.operators.NonUniformFastFourierOp import NonUniformFastFourierOp
 
@@ -49,9 +50,6 @@ class FourierOp(LinearOperator):
                 if i in dims
             ]
 
-        def get_traj(traj: KTrajectory, dims: Sequence[int]):
-            return [k for k, i in zip((traj.kz, traj.ky, traj.kx), (-3, -2, -1), strict=True) if i in dims]
-
         self._ignore_dims, self._fft_dims, self._nufft_dims = [], [], []
         for dim, type_ in zip((-3, -2, -1), traj.type_along_kzyx, strict=True):
             if type_ & TrajType.SINGLEVALUE:
@@ -62,12 +60,15 @@ class FourierOp(LinearOperator):
             else:
                 self._nufft_dims.append(dim)
 
-        if self._fft_dims:
-            self._fast_fourier_op = FastFourierOp(
+        self._fast_fourier_op = (
+            FastFourierOp(
                 dim=tuple(self._fft_dims),
                 recon_matrix=get_spatial_dims(recon_matrix, self._fft_dims),
                 encoding_matrix=get_spatial_dims(encoding_matrix, self._fft_dims),
             )
+            if self._fft_dims
+            else IdentityOp()
+        )
 
         if self._nufft_dims:
             fft_dims_k210 = [
@@ -82,13 +83,17 @@ class FourierOp(LinearOperator):
                     'k-space dimension, i.e. kx along k0, ky along k1 and kz along k2',
                 )
 
-            self._non_uniform_fast_fourier_op = NonUniformFastFourierOp(
+        self._non_uniform_fast_fourier_op = (
+            NonUniformFastFourierOp(
                 dim=tuple(self._nufft_dims),
                 recon_matrix=get_spatial_dims(recon_matrix, self._nufft_dims),
                 encoding_matrix=get_spatial_dims(encoding_matrix, self._nufft_dims),
                 traj=traj,
                 nufft_oversampling=nufft_oversampling,
             )
+            if self._nufft_dims
+            else IdentityOp()
+        )
 
     @classmethod
     def from_kdata(cls, kdata: KData, recon_shape: SpatialDimension[int] | None = None) -> Self:
@@ -119,14 +124,8 @@ class FourierOp(LinearOperator):
         -------
             coil k-space data with shape: (... coils k2 k1 k0)
         """
-        if len(self._fft_dims):
-            # FFT
-            (x,) = self._fast_fourier_op(x)
-
-        if self._nufft_dims:
-            # NUFFT
-            (x,) = self._non_uniform_fast_fourier_op.forward(x)
-        return (x,)
+        # FFT followed by NUFFT
+        return self._non_uniform_fast_fourier_op(self._fast_fourier_op(x)[0])
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint operator mapping the coil k-space data to the coil images.
@@ -140,11 +139,5 @@ class FourierOp(LinearOperator):
         -------
             coil image data with shape: (... coils z y x)
         """
-        if self._fft_dims:
-            # IFFT
-            (x,) = self._fast_fourier_op.adjoint(x)
-
-        if self._nufft_dims:
-            # NUFFT
-            (x,) = self._non_uniform_fast_fourier_op.adjoint(x)
-        return (x,)
+        # NUFFT followed by FFT
+        return self._fast_fourier_op.adjoint(self._non_uniform_fast_fourier_op.adjoint(x)[0])
