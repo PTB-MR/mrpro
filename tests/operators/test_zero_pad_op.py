@@ -20,7 +20,7 @@ def test_zero_pad_op_content():
         original_shape=tuple([original_shape[d] for d in padding_dimensions]),
         padded_shape=tuple([padded_shape[d] for d in padding_dimensions]),
     )
-    (padded_data,) = zero_padding_op.forward(original_data)
+    (padded_data,) = zero_padding_op(original_data)
 
     # Compare overlapping region
     torch.testing.assert_close(original_data[:, 10:90, :, 50:150, :, :], padded_data[:, :, :, :, 95:145, :])
