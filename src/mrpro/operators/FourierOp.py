@@ -121,7 +121,7 @@ class FourierOp(LinearOperator):
         """
         if len(self._fft_dims):
             # FFT
-            (x,) = self._fast_fourier_op.forward(x)
+            (x,) = self._fast_fourier_op(x)
 
         if self._nufft_dims:
             # NUFFT
