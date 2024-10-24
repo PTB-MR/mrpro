@@ -5,10 +5,11 @@ from mrpro.utils.remove_repeat import remove_repeat
 from mrpro.utils.zero_pad_or_crop import zero_pad_or_crop
 from mrpro.utils.modify_acq_info import modify_acq_info
 from mrpro.utils.split_idx import split_idx
-from mrpro.utils.reshape import broadcast_right, unsqueeze_left, unsqueeze_right
+from mrpro.utils.reshape import broadcast_right, unsqueeze_left, unsqueeze_right, reduce_view
 __all__ = [
     "broadcast_right",
     "modify_acq_info",
+    "reduce_view",
     "remove_repeat",
     "slice_profiles",
     "smap",

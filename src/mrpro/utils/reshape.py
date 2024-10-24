@@ -1,5 +1,7 @@
 """Tensor reshaping utilities."""
 
+from collections.abc import Sequence
+
 import torch
 
 
@@ -67,3 +69,32 @@ def broadcast_right(*x: torch.Tensor) -> tuple[torch.Tensor, ...]:
     max_dim = max(el.ndim for el in x)
     unsqueezed = torch.broadcast_tensors(*(unsqueeze_right(el, max_dim - el.ndim) for el in x))
     return unsqueezed
+
+
+def reduce_view(x: torch.Tensor, dim: int | Sequence[int] | None = None) -> torch.Tensor:
+    """Replace expanded dimensions in a view by singletons.
+
+    Reduce either all or a specific dimension to a singleton only if it
+    points to the same memory address.
+    This undoes expand.
+
+    Parameters
+    ----------
+    x
+        input tensor
+    dim
+        only undo expands in the specified dimensions.
+        If None, undo expand in all dimensions.
+    """
+    if dim is None:
+        dim_: Sequence[int] = range(x.ndim)
+    elif isinstance(dim, Sequence):
+        dim_ = [d % x.ndim for d in dim]
+    else:
+        dim_ = [dim % x.ndim]
+
+    stride = x.stride()
+    size = [
+        1 if stride == 0 and d in dim_ else size for d, (size, stride) in enumerate(zip(x.size(), stride, strict=True))
+    ]
+    return torch.as_strided(x, size, stride)
