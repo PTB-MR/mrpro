@@ -23,8 +23,6 @@ from mrpro.operators.ZeroPadOp import ZeroPadOp
 from mrpro.operators.ZeroOp import ZeroOp
 
 __all__ = [
-    "functionals",
-    "models",
     "CartesianSamplingOp",
     "ConstraintsOp",
     "DensityCompensationOp",
@@ -39,14 +37,19 @@ __all__ = [
     "IdentityOp",
     "LinearOperator",
     "MagnitudeOp",
+    "MultiIdentityOp",
     "Operator",
     "PhaseOp",
     "ProximableFunctional",
     "ProximableFunctionalSeparableSum",
+    "ScaledFunctional",
+    "ScaledProximableFunctional",
     "SensitivityOp",
     "SignalModel",
     "SliceProjectionOp",
     "WaveletOp",
     "ZeroOp",
     "ZeroPadOp",
+    "functionals",
+    "models"
 ]
