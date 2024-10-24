@@ -1,5 +1,5 @@
 # %% [markdown]
-# # T1 mapping from a continuous Golden radial acquisition
+# # $T_1$ mapping from a continuous Golden radial acquisition
 
 # %%
 # Imports
