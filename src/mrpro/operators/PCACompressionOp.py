@@ -26,7 +26,7 @@ class PCACompressionOp(LinearOperator):
         Parameters
         ----------
         data
-            Data to be used to find the principal components of shape (*other, joint_dim, compression_dim)
+            Data of shape (*other, joint_dim, compression_dim) to be used to find the principal components.
         n_components
             Number of principal components to keep along the compression_dim.
         """
