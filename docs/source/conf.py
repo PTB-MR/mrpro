@@ -11,7 +11,6 @@
 
 import os
 import sys
-from datetime import datetime
 from sphinx_pyproject import SphinxConfig
 
 from mrpro  import __version__ as project_version
@@ -22,7 +21,7 @@ sys.path.insert(0, os.path.abspath('../../src'))  # Source code dir relative to 
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = name
-copyright = f'2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin'
+copyright = '2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin'
 author = author
 version = version
 
@@ -37,6 +36,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'nbsphinx',
     'sphinx.ext.mathjax',
+    'sphinx-mathjax-offline'
 ]
 autosummary_generate = True
 autosummary_imported_members = False
@@ -48,7 +48,7 @@ source_suffix = {'.rst': 'restructuredtext', '.txt': 'restructuredtext', '.md': 
 
 # do not execute notebooks before including in the examples
 # assuming they were executed before
-nbsphinx_execute = 'never'
+nbsphinx_execute = 'auto'
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
