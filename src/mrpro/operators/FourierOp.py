@@ -11,6 +11,7 @@ from mrpro.data._kdata.KData import KData
 from mrpro.data.enums import TrajType
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
+from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp
 from mrpro.operators.FastFourierOp import FastFourierOp
 from mrpro.operators.LinearOperator import LinearOperator
 
@@ -72,6 +73,7 @@ class FourierOp(LinearOperator):
                 recon_matrix=get_spatial_dims(recon_matrix, self._fft_dims),
                 encoding_matrix=get_spatial_dims(encoding_matrix, self._fft_dims),
             )
+            self._cart_sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=traj)
 
         # Find dimensions which require NUFFT
         if self._nufft_dims:
@@ -148,7 +150,7 @@ class FourierOp(LinearOperator):
         """
         if len(self._fft_dims):
             # FFT
-            (x,) = self._fast_fourier_op(x)
+            (x,) = self._cart_sampling_op(self._fast_fourier_op(x)[0])
 
         if self._nufft_dims:
             # we need to move the nufft-dimensions to the end and flatten all other dimensions
@@ -189,7 +191,7 @@ class FourierOp(LinearOperator):
         """
         if self._fft_dims:
             # IFFT
-            (x,) = self._fast_fourier_op.adjoint(x)
+            (x,) = self._fast_fourier_op.adjoint(self._cart_sampling_op.adjoint(x)[0])
 
         if self._nufft_dims:
             # we need to move the nufft-dimensions to the end, flatten them and flatten all other dimensions

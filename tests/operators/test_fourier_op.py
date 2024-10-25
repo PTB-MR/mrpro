@@ -1,7 +1,9 @@
 """Tests for Fourier operator."""
 
 import pytest
-from mrpro.data import SpatialDimension
+import torch
+from mrpro.data import KData, KTrajectory, SpatialDimension
+from mrpro.data.traj_calculators import KTrajectoryCartesian
 from mrpro.operators import FourierOp
 
 from tests import RandomGenerator
@@ -20,7 +22,7 @@ def create_data(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz):
 
 
 @COMMON_MR_TRAJECTORIES
-def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
+def test_fourier_op_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
     """Test adjoint property of Fourier operator."""
 
     # generate random images and k-space trajectories
@@ -57,7 +59,7 @@ def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, 
         ),
     ],
 )
-def test_fourier_not_supported_traj(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz):
+def test_fourier_op_not_supported_traj(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz):
     """Test trajectory not supported by Fourier operator."""
 
     # generate random images and k-space trajectories
@@ -68,3 +70,22 @@ def test_fourier_not_supported_traj(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz
     encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
     with pytest.raises(NotImplementedError, match='Cartesian FFT dims need to be aligned'):
         FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
+
+
+def test_fourier_op_cartesian_sorting(ismrmrd_cart):
+    """Verify correct sorting of Cartesian k-space data before FFT."""
+    kdata = KData.from_file(ismrmrd_cart.filename, KTrajectoryCartesian())
+    ff_op = FourierOp.from_kdata(kdata)
+    (img,) = ff_op.adjoint(kdata.data)
+
+    # shuffle the kspace points along k0
+    permutation_index = torch.randperm(kdata.data.shape[-1])
+    kdata_unsorted = KData(
+        header=kdata.header,
+        data=kdata.data[..., permutation_index],
+        traj=KTrajectory.from_tensor(kdata.traj.as_tensor()[..., permutation_index]),
+    )
+    ff_op_unsorted = FourierOp.from_kdata(kdata_unsorted)
+    (img_unsorted,) = ff_op_unsorted.adjoint(kdata_unsorted.data)
+
+    torch.testing.assert_close(img, img_unsorted)
