@@ -107,7 +107,6 @@ class Reconstruction(torch.nn.Module, ABC):
             operator = operator @ self.csm.as_operator()
         if self.dcf is not None:
             operator = self.dcf.as_operator() @ operator
-        operator = operator
         (img_tensor,) = operator.H(kdata.data)
         img = IData.from_tensor_and_kheader(img_tensor, kdata.header)
         return img

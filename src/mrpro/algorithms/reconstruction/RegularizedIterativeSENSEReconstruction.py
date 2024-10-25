@@ -57,6 +57,9 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
     ) -> None:
         """Initialize RegularizedIterativeSENSEReconstruction.
 
+        For a unregularized version of the iterative SENSE algorithm the regularization_weight can be set to 0 or
+        IterativeSENSEReconstruction algorithm can be used.
+
         Parameters
         ----------
         kdata
