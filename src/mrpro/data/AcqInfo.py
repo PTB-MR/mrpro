@@ -2,6 +2,7 @@
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from typing import Literal
 
 import ismrmrd
 import numpy as np
@@ -23,6 +24,27 @@ def ms_to_s(ms: T) -> T:
 def mm_to_m(m: T) -> T:
     """Convert mm to m."""
     return m / 1000
+
+
+AcqIdxLiteral = Literal[
+    'k1',
+    'k2',
+    'average',
+    'slice',
+    'contrast',
+    'phase',
+    'repetition',
+    'set',
+    'segment',
+    'user0',
+    'user1',
+    'user2',
+    'user3',
+    'user4',
+    'user5',
+    'user6',
+    'user7',
+]
 
 
 @dataclass(slots=True)
@@ -79,6 +101,38 @@ class AcqIdx(MoveDataMixin):
 
     user7: torch.Tensor
     """User index 7."""
+
+    def arange_(self, dim: int, idx_label: AcqIdxLiteral):
+        """Overwrite the index attribute in the acquisition based on the data shape.
+
+        The index attribute is overwritten with a range from 0 to the length of the data in the specified dimension.
+        This can be used to assign a new index to the data, e.g. after rearranging the data.
+
+        Parameters
+        ----------
+        dim
+            Dimension of the data to consider.
+        idx_label
+            The name of the AcqIdx attribute to overwrite as a string.
+
+        """
+        shape = self.data.shape
+        if dim >= len(shape) or dim < -len(shape):
+            raise ValueError(f'dim {dim} is out of range for data with shape {shape}')
+        dim = dim % len(shape)
+        if dim == len(shape) - 1:
+            raise ValueError('Cannot use the k0 dimension for arange_idx_, as it is not encoded in the acquisition idx')
+        if dim == len(shape) - 4:
+            raise ValueError(
+                'Cannot use the coil dimension for arange_idx_, as it is not encoded in the acquisition idx'
+            )
+
+        idx_old = getattr(self, idx_label)
+        idx_new = torch.arange(shape[dim], device=idx_old.device, dtype=idx_old.dtype)
+        target_dim = dim - 1 if (dim > len(shape) - 4) else dim  # skip the coil dimension
+        idx_new = idx_new[..., (None,) * (idx_old.ndim - target_dim - 1)]
+        idx_new.expand(*idx_old.shape[:target_dim], -1, *idx_old.shape[target_dim + 1 :])
+        setattr(self.header.acq_info.idx, idx_label, idx_new)
 
 
 @dataclass(slots=True)
@@ -214,9 +268,7 @@ class AcqInfo(MoveDataMixin):
                 raise ValueError('Spatial dimension is expected to be of shape (N,3)')
             data = data[:, None, :]
             # all spatial dimensions are float32
-            return (
-                SpatialDimension[torch.Tensor].from_array_xyz(torch.tensor(data.astype(np.float32))).apply_(conversion)
-            )
+            return SpatialDimension[torch.Tensor].from_array_xyz(torch.tensor(data.astype(np.float32)), conversion)
 
         acq_idx = AcqIdx(
             k1=tensor(idx['kspace_encode_step_1']),
