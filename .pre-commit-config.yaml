@@ -26,6 +26,13 @@ repos:
     hooks:
       - id: typos
 
+  - repo: https://github.com/fzimmermann89/check_all
+    rev: v1.0
+    hooks:
+      - id: check-init-all
+        args: [--double-quotes]
+        exclude: ^tests/
+
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.11.2
     hooks:
@@ -37,6 +44,7 @@ repos:
           - numpy
           - torch>=2.4.0
           - types-requests
+          - typing-extensions
           - einops
           - pydicom
           - matplotlib
@@ -44,6 +52,7 @@ repos:
           - xsdata
           - "--index-url=https://download.pytorch.org/whl/cpu"
           - "--extra-index-url=https://pypi.python.org/simple"
+
 ci:
     autofix_commit_msg: |
         [pre-commit] auto fixes from pre-commit hooks

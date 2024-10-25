@@ -92,6 +92,7 @@ jobs:
       image: ghcr.io/ptb-mr/mrpro_py311:latest
       options: --user root
     strategy:
+      fail-fast: false
       matrix:
         notebook: ${{ fromJson(needs.get_notebooks.outputs.notebooks) }}
     steps:
@@ -184,15 +185,9 @@ jobs:
           done
 
       - name: Build docs
-        run: sphinx-build -b html ./docs/source ./docs/build/html
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          publish_branch: github-pages
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/build/html
-        if: github.event_name != 'pull_request'
+        run: |
+          sphinx-build -b html ./docs/source ./docs/build/html
+          rm -rf ./docs/build/html/.doctrees
 
       - name: Save Documentation
         id: save_docu
@@ -200,7 +195,7 @@ jobs:
         with:
           name: Documentation
           path: docs/build/html/
-
+      
       - run: echo 'Artifact url ${{ steps.save_docu.outputs.artifact-url }}'
 
       - run: echo 'Event number ${{ github.event.number }}'
@@ -221,6 +216,26 @@ jobs:
             :mag: [View online](https://zimf.de/zipserve/${{ steps.save_docu.outputs.artifact-url }}/)
           edit-mode: replace
 
+      - name: Upload pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/build/html/
+        if: github.event_name != 'pull_request'
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    permissions:
+        pages: write   
+        id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: create_documentation
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

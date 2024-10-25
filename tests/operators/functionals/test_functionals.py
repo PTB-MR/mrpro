@@ -1,10 +1,11 @@
 from copy import deepcopy
-from typing import Literal, TypedDict
+from typing import Literal
 
 import pytest
 import torch
 from mrpro.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
-from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared, ZeroFunctional
+from mrpro.operators.functionals import L1Norm, L1NormViewAsReal, L2NormSquared, ZeroFunctional
+from typing_extensions import TypedDict
 
 from tests import RandomGenerator
 from tests.operators.functionals.conftest import (
@@ -240,6 +241,17 @@ class NumericCase(TypedDict):
 
 # This is more readable than using pytest.mark.parametrize directly
 NUMERICCASES: dict[str, NumericCase] = {  # Name: Case
+    'L1Norm real odl': {
+        # Generated with ODL
+        'functional': L1Norm,
+        'x': torch.tensor([[[-3.0, -2.0, -1.0], [0.0, 1.0, 2.0]]]),
+        'weight': 2.0,
+        'target': torch.tensor([[[0.340, 0.130, 0.230], [0.230, -1.120, -0.190]]]),
+        'sigma': 0.5,
+        'fx_expected': torch.tensor(22.480),
+        'prox_expected': torch.tensor([[[-2.0, -1.0, 0.0], [0.230, 0.0, 1.0]]]),
+        'prox_convex_conj_expected': torch.tensor([[[-2.0, -2.0, -1.115], [-0.115, 1.560, 2.0]]]),
+    },
     'ZeroFunctional with complex weight': {
         'functional': ZeroFunctional,
         'x': torch.tensor([1.0, 2.0, 3.0]),

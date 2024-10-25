@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Callable
-from typing import Any, ParamSpec, Protocol, TypeAlias, TypeVar, TypeVarTuple, cast, overload
+from typing import TypeAlias, cast
 
 import torch
+from typing_extensions import Any, ParamSpec, Protocol, TypeVar, TypeVarTuple, Unpack, overload
 
 import mrpro.operators
 from mrpro.operators.Operator import Operator
@@ -172,13 +173,14 @@ class _EndomorphCallable(Protocol):
         torch.Tensor,
         torch.Tensor,
         torch.Tensor,
-        *tuple[torch.Tensor, ...],
+        Unpack[tuple[torch.Tensor, ...]],
     ]: ...
 
     @overload
     def __call__(self, /, *args: torch.Tensor) -> tuple[torch.Tensor, ...]: ...
 
-    def __call__(self, /, *args: torch.Tensor) -> tuple[torch.Tensor, ...]: ...
+    def __call__(self, /, *args: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply the Operator."""
 
 
 def endomorph(f: F, /) -> _EndomorphCallable:
@@ -190,7 +192,7 @@ def endomorph(f: F, /) -> _EndomorphCallable:
     return f
 
 
-class EndomorphOperator(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]]):
+class EndomorphOperator(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torch.Tensor, ...]]):
     """Endomorph Operator.
 
     Endomorph Operators have N tensor inputs and exactly N outputs.
@@ -210,9 +212,11 @@ class EndomorphOperator(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, 
     @overload
     def __matmul__(self, other: EndomorphOperator) -> EndomorphOperator: ...
     @overload
-    def __matmul__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]: ...
+    def __matmul__(self, other: Operator[Unpack[Tin], Tout]) -> Operator[Unpack[Tin], Tout]: ...
 
-    def __matmul__(self, other: Operator[*Tin, Tout] | EndomorphOperator) -> Operator[*Tin, Tout] | EndomorphOperator:
+    def __matmul__(
+        self, other: Operator[Unpack[Tin], Tout] | EndomorphOperator
+    ) -> Operator[Unpack[Tin], Tout] | EndomorphOperator:
         """Operator composition."""
         if isinstance(other, mrpro.operators.MultiIdentityOp):
             return self
@@ -223,8 +227,8 @@ class EndomorphOperator(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, 
         if isinstance(other, EndomorphOperator):
             return cast(EndomorphOperator, res)
         else:
-            return cast(Operator[*Tin, Tout], res)
+            return cast(Operator[Unpack[Tin], Tout], res)
 
-    def __rmatmul__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]:
+    def __rmatmul__(self, other: Operator[Unpack[Tin], Tout]) -> Operator[Unpack[Tin], Tout]:
         """Operator composition."""
-        return other.__matmul__(cast(Operator[*Tin, tuple[*Tin]], self))
+        return other.__matmul__(cast(Operator[Unpack[Tin], tuple[Unpack[Tin]]], self))

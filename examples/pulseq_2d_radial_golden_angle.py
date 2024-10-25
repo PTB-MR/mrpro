@@ -37,7 +37,7 @@ kdata = KData.from_file(data_file.name, KTrajectoryIsmrmrd())
 
 # Reconstruct image
 direct_reconstruction = DirectReconstruction(kdata)
-img_using_ismrmrd_traj = direct_reconstruction.forward(kdata)
+img_using_ismrmrd_traj = direct_reconstruction(kdata)
 
 # %% [markdown]
 # ### Image reconstruction using KTrajectoryRadial2D
@@ -49,7 +49,7 @@ kdata = KData.from_file(data_file.name, KTrajectoryRadial2D())
 
 # Reconstruct image
 direct_reconstruction = DirectReconstruction(kdata)
-img_using_rad2d_traj = direct_reconstruction.forward(kdata)
+img_using_rad2d_traj = direct_reconstruction(kdata)
 
 # %% [markdown]
 # ### Image reconstruction using KTrajectoryPulseq
@@ -73,7 +73,7 @@ kdata = KData.from_file(data_file.name, KTrajectoryPulseq(seq_path=seq_file.name
 
 # Reconstruct image
 direct_reconstruction = DirectReconstruction(kdata)
-img_using_pulseq_traj = direct_reconstruction.forward(kdata)
+img_using_pulseq_traj = direct_reconstruction(kdata)
 
 # %% [markdown]
 # ### Plot the different reconstructed images

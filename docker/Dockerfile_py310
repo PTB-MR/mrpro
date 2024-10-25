@@ -3,7 +3,7 @@ FROM ${BASE_IMAGE} AS base
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ARG PYTHON="python3.11"
+ARG PYTHON="python3.10"
 
 # install python
 COPY docker/install_system.sh .
