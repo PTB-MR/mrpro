@@ -5,6 +5,8 @@ fname = r'/sc-projects/sc-proj-cc06-agsack/noja11/ImageReconstruction/Data/meas_
 path_out = r'/sc-projects/sc-proj-cc06-agsack/noja11/ImageReconstruction/'
 fname = '/echo/kolbit01/data/GRPE_Charite/2024_05_30/meas_MID00291_FID96729_20240520_fov288_288_200mm_192_192_640_3D_saggital.mrd'
 path_out = '/echo/kolbit01/data/GRPE_Charite/2024_05_30/'
+fname = '/echo/kolbit01/data/GRPE_Charite/2024_10_23/meas_MID00044_FID09487_20241021_fov288_288_160mm_154_92_200_3d_grpe_itl_pf0_6.h5'
+path_out = '/echo/kolbit01/data/GRPE_Charite/2024_10_23/'
 # ### Imports
 import matplotlib.pyplot as plt
 import torch
@@ -19,9 +21,11 @@ from mrpro.utils import split_idx
 import os
 import nibabel as nib
 
+import time
+
 
 # Correct for partial fourier sampling, as Siemens scanner does not save trajectory correctly
-if not os.path.exists(fname.replace('.mrd', '_pf.h5')):
+if not os.path.exists(fname.replace('.h5', '_pf.h5')):
     import ismrmrd
     
     # Get info and acquisitons from original data
@@ -31,10 +35,16 @@ if not os.path.exists(fname.replace('.mrd', '_pf.h5')):
         acquisitions = ds.acquisitions[:]
 
     # Create new file
-    fname_out = fname.replace('.mrd', '_pf.h5')
+    fname_out = fname.replace('.h5', '_pf.h5')
+    if fname_out == fname:
+        raise ValueError('filennames cannot be identical')
     ds = ismrmrd.Dataset(fname_out)
+    # 192 ky
     ismrmrd_header.encoding[0].encodingLimits.kspace_encoding_step_1.maximum=111
     ismrmrd_header.encoding[0].encodingLimits.kspace_encoding_step_1.center=96
+    # 92 ky
+    ismrmrd_header.encoding[0].encodingLimits.kspace_encoding_step_1.maximum=54
+    ismrmrd_header.encoding[0].encodingLimits.kspace_encoding_step_1.center=46
     ds.write_xml_header(ismrmrd_header.toXML())
     
     k1 = []
@@ -56,6 +66,8 @@ def get_coronal_sagittal_axial_view(img, other=None, z=None, y=None, x=None):
     y = img.shape[-2]//2 if y is None else y
     x = img.shape[-1]//2 if x is None else x
     
+    img = img.numpy()
+    
     return np.concatenate((np.rot90(img[other,:,y,:]),
                         np.rot90(img[other,z,:,:]),
                         np.rot90(img[other,:,::-1,x])), axis=1)
@@ -63,27 +75,37 @@ def get_coronal_sagittal_axial_view(img, other=None, z=None, y=None, x=None):
     
 # Display slices
 showz, showy, showx = [50, 96, 115]
-    
+showz, showy, showx = [50, 50, 50]    
+
+tstart = time.time()
 
 # %% Read data
 # We are going to reconstruct an image using all the acquired data.
 # Read the raw data, calculate the trajectory and dcf
-kdata = KData.from_file(fname.replace('.mrd', '_pf.h5'), KTrajectoryRpe(angle=torch.pi * 0.618034))
+kdata = KData.from_file(fname.replace('.h5', '_pf.h5'), KTrajectoryRpe(angle=torch.pi * 0.618034))
 
 # Set the matrix sizes which are not encoded correctly in the pulseq sequence
 kdata.header.encoding_matrix.z = kdata.header.encoding_matrix.y
-kdata.header.recon_matrix.x = 192
-kdata.header.recon_matrix.y = 192
-kdata.header.recon_matrix.z = 220
+kdata.header.recon_matrix.x = 100
+kdata.header.recon_matrix.y = 100
+kdata.header.recon_matrix.z = 100
+
+kdata.header.encoding_matrix.y = 92
+kdata.header.encoding_matrix.z = 92
+
 
 plt.figure()
 plt.plot(kdata.traj.ky[0,:10,:,0], kdata.traj.kz[0,:10,:,0], 'ob')
+
+idx_rpe_lines = torch.as_tensor(torch.arange(0,50))[None,:]
+kdata_dynamic = kdata.split_k2_into_other(idx_rpe_lines, other_label='repetition')
+
 
 # %% Iterative reconstruction of average
 itSENSE_recon = IterativeSENSEReconstruction(kdata)
 img_itSENSE = itSENSE_recon.forward(kdata)
 
-img_coronal_sagittal_axial = get_coronal_sagittal_axial_view(img_itSENSE.rss().numpy(), z=showz, y=showy, x=showx)
+img_coronal_sagittal_axial = get_coronal_sagittal_axial_view(img_itSENSE.rss(), z=showz, y=showy, x=showx)
 img_coronal_sagittal_axial /= img_coronal_sagittal_axial.max()
 plt.figure()
 plt.imshow(img_coronal_sagittal_axial, cmap='grey', vmin=0, vmax=0.35)
@@ -145,7 +167,8 @@ kdata = kdata.rearrange_k2_k1_into_k1()
 resp_nav_interpolated = np.interp(2.5*kdata.header.acq_info.acquisition_time_stamp[0,0,:,0]/1000, nav_signal_time_in_s[:,0], resp_nav)
 
 # %%  Split data into different motion phases
-resp_idx = split_idx(torch.argsort(torch.as_tensor(resp_nav_interpolated)), 160*112, 160*50)
+total_npe = kdata.data.shape[-2]*kdata.data.shape[-3]
+resp_idx = split_idx(torch.argsort(torch.as_tensor(resp_nav_interpolated)), int(total_npe*0.3), int(total_npe*0.15)) # 160*112, 160*50
 kdata_resp_resolved = kdata.split_k1_into_other(resp_idx, other_label='repetition')
 
 # %% Motion-resolved reconstruction
@@ -155,27 +178,28 @@ img_direct_resp_resolved = direct_recon_resp_resolved.forward(kdata_resp_resolve
 plot_resp_idx = [0, resp_idx.shape[0]-1]
 fig, ax = plt.subplots(len(plot_resp_idx),1)
 for nnd in range(len(plot_resp_idx)):
-    ax[nnd].imshow(get_coronal_sagittal_axial_view(img_direct_resp_resolved.rss(), other=plot_resp_idx[nnd], z=50, y=96, x=115))
+    ax[nnd].imshow(get_coronal_sagittal_axial_view(img_direct_resp_resolved.rss(), other=plot_resp_idx[nnd], z=showz, y=showy, x=showx))
 
 
 itSENSE_recon_resp_resolved = IterativeSENSEReconstruction(kdata_resp_resolved, csm=itSENSE_recon.csm, n_iterations=10)
 img_itSENSE_resp_resolved = itSENSE_recon_resp_resolved.forward(kdata_resp_resolved)
 
-img_resp_resolved_abs = img_itSENSE_resp_resolved.rss().numpy()
+img_resp_resolved_abs = img_itSENSE_resp_resolved.rss()
 img_resp_resolved_abs /= img_resp_resolved_abs.max()
 
 plot_resp_idx = [0, resp_idx.shape[0]-1]
 fig, ax = plt.subplots(len(plot_resp_idx),1)
 for nnd in range(len(plot_resp_idx)):
-    img_coronal_sagittal_axial = get_coronal_sagittal_axial_view(img_resp_resolved_abs, other=plot_resp_idx[nnd], z=50, y=96, x=115)
+    img_coronal_sagittal_axial = get_coronal_sagittal_axial_view(img_resp_resolved_abs, other=plot_resp_idx[nnd], z=showz, y=showy, x=showx)
     ax[nnd].imshow(img_coronal_sagittal_axial, cmap='grey', vmin=0, vmax=0.25)
 
 
 for i in range(img_resp_resolved_abs.shape[0]):
-    nii_resp = nib.Nifti1Image(img_resp_resolved_abs[i], affine=torch.eye(4))
+    nii_resp = nib.Nifti1Image(img_resp_resolved_abs[i].numpy(), affine=torch.eye(4))
     nib.save(nii_resp,os.path.join(path_out,"resp_state_iterative_"+str(i))) 
     
     img_coronal_sagittal_axial = get_coronal_sagittal_axial_view(img_resp_resolved_abs, other=i, z=showz, y=showy, x=showx)
     plt.imsave(os.path.join(path_out,f'resp_state_iterative_{i}.png'), img_coronal_sagittal_axial, dpi=300, cmap='grey', vmin=0, vmax=0.25)
     
-    
+print(f'Total time {(time.time()-tstart)/60}min')
+# %%
