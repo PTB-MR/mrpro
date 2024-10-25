@@ -66,9 +66,8 @@ test = [
 docs = ["sphinx", 
     "sphinx_rtd_theme", 
     "sphinx-pyproject", 
-    "nbsphinx", 
+    "myst-nb", 
     "sphinx-mathjax-offline",
-    "pypandoc-binary"
     ]
 notebook = [
     "zenodo_get",
