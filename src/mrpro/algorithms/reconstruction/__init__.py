@@ -5,5 +5,6 @@ from mrpro.algorithms.reconstruction.IterativeSENSEReconstruction import Iterati
 __all__ = [
     "DirectReconstruction",
     "IterativeSENSEReconstruction",
-    "Reconstruction"
+    "Reconstruction",
+    "RegularizedIterativeSENSEReconstruction"
 ]
