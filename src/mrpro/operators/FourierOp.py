@@ -148,10 +148,6 @@ class FourierOp(LinearOperator):
         -------
             coil k-space data with shape: (... coils k2 k1 k0)
         """
-        if len(self._fft_dims):
-            # FFT
-            (x,) = self._cart_sampling_op(self._fast_fourier_op(x)[0])
-
         if self._nufft_dims:
             # we need to move the nufft-dimensions to the end and flatten all other dimensions
             # so the new shape will be (... non_nufft_dims) coils nufft_dims
@@ -175,6 +171,11 @@ class FourierOp(LinearOperator):
             shape_nufft_dims = [self._kshape[i] for i in self._nufft_dims]
             x = x.reshape(*permuted_x_shape[: -len(keep_dims)], -1, *shape_nufft_dims)  # -1 is coils
             x = x.permute(*unpermute)
+
+        if len(self._fft_dims):
+            # FFT
+            (x,) = self._cart_sampling_op(self._fast_fourier_op(x)[0])
+
         return (x,)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
