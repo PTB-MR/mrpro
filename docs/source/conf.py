@@ -76,3 +76,8 @@ html_theme_options = {
         },
     ],
 }
+
+def setup(app):
+    # forces mathjax on all pages
+    app.set_html_assets_policy('always')
+
