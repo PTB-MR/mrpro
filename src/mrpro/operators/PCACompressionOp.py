@@ -21,7 +21,7 @@ class PCACompressionOp(LinearOperator):
         dimension of a data with shape (*other, joint_dim, compression_dim). A single SVD is carried out for everything
         along joint_dim. Other are batch dimensions.
 
-        Consider combining this operator with :class:`mrpro.operators.RearrangeOp` to make sure the data is 
+        Consider combining this operator with :class:`mrpro.operators.RearrangeOp` to make sure the data is
         in the correct shape before applying.
 
         Parameters
