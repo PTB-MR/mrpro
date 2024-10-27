@@ -16,9 +16,9 @@ def test_cart_sampling_op_data_match():
     nkx = (1, 1, 1, 60)
     nky = (1, 1, 40, 1)
     nkz = (1, 20, 1, 1)
-    sx = 'uf'
-    sy = 'uf'
-    sz = 'uf'
+    sx = 'uniform'
+    sy = 'uniform'
+    sz = 'uniform'
     trajectory = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
 
     # Create matching data
@@ -69,9 +69,9 @@ def test_cart_sampling_op_fwd_adj(sampling):
     nkx = (2, 1, 1, 60)
     nky = (2, 1, 40, 1)
     nkz = (2, 20, 1, 1)
-    sx = 'uf'
-    sy = 'uf'
-    sz = 'uf'
+    sx = 'uniform'
+    sy = 'uniform'
+    sz = 'uniform'
     trajectory_tensor = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz).as_tensor()
 
     # Subsample data and trajectory

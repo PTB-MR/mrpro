@@ -16,7 +16,8 @@ from tests import RandomGenerator
         (1, 32, False),
         (4, 32, True),
         (4, 32, False),
-    ]
+    ],
+    ids=['complex_single', 'real_single', 'complex_batch', 'real_batch'],
 )
 def system(request):
     """Generate data for creating a system Hx=b with linear and self-adjoint
