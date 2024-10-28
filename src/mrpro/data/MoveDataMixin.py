@@ -225,7 +225,9 @@ class MoveDataMixin:
         new.apply_(_convert, memo=memo)
         return new
 
-    def apply_(self: Self, function: Callable[T, T], memo: dict[int, Any] | None = None, recurse: bool = True) -> Self:
+    def apply_(
+        self: Self, function: Callable[[T], T], memo: dict[int, Any] | None = None, recurse: bool = True
+    ) -> Self:
         """Apply a function to all children in-place.
 
         Parameters
