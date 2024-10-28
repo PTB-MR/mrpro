@@ -1,6 +1,6 @@
 """Acquisition information dataclass."""
 
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 import ismrmrd
