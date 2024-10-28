@@ -4,7 +4,7 @@ import dataclasses
 from collections.abc import Callable, Iterator
 from copy import copy as shallowcopy
 from copy import deepcopy
-from typing import ClassVar, TypeAlias
+from typing import ClassVar, TypeAlias, cast
 
 import torch
 from typing_extensions import Any, Protocol, Self, TypeVar, overload, runtime_checkable
@@ -212,28 +212,42 @@ class MoveDataMixin:
                 data = deepcopy(data)
             return data._apply(_tensor_to, recurse=True)
 
+        def _mixin_to(obj: MoveDataMixin) -> MoveDataMixin:
+            return obj._to(
+                device=device,
+                dtype=dtype,
+                non_blocking=non_blocking,
+                memory_format=memory_format,
+                shared_memory=shared_memory,
+                copy=copy,
+                memo=memo,
+            )
+
         def _convert(data: T) -> T:
-            converted: T
+            converted: Any  # https://github.com/python/mypy/issues/10817
             if isinstance(data, torch.Tensor):
                 converted = _tensor_to(data)
+            elif isinstance(data, MoveDataMixin):
+                converted = _mixin_to(data)
             elif isinstance(data, torch.nn.Module):
                 converted = _module_to(data)
             else:
                 converted = data
-            return converted
+            return cast(T, converted)
 
-        new.apply_(_convert, memo=memo)
+        # manual recursion allows us to do the copy only once
+        new.apply_(_convert, memo=memo, recurse=False)
         return new
 
     def apply_(
-        self: Self, function: Callable[[T], T], memo: dict[int, Any] | None = None, recurse: bool = True
+        self: Self, function: Callable[[T], T] | None = None, memo: dict[int, Any] | None = None, recurse: bool = True
     ) -> Self:
         """Apply a function to all children in-place.
 
         Parameters
         ----------
         function
-            The function to apply to all tensors.
+            The function to apply to all tensors. None is interpreted as a no-op.
 
         memo
             A dictionary to keep track of  objects that the function has already been applied to,
@@ -242,8 +256,14 @@ class MoveDataMixin:
         recurse
             If True, the function will be applied to all children that are MoveDataMixin instances.
         """
+        applied: Any
+
         if memo is None:
             memo = {}
+
+        if function is None:
+            return self
+
         for name, data in self._items():
             if id(data) in memo:
                 # this works even if self is frozen
@@ -255,6 +275,7 @@ class MoveDataMixin:
                 applied = function(data)
             memo[id(data)] = applied
             object.__setattr__(self, name, applied)
+        return self
 
     def cuda(
         self,

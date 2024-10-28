@@ -264,9 +264,7 @@ class AcqInfo(MoveDataMixin):
                 raise ValueError('Spatial dimension is expected to be of shape (N,3)')
             data = data[:, None, :]
             # all spatial dimensions are float32
-            return (
-                SpatialDimension[torch.Tensor].from_array_xyz(torch.tensor(data.astype(np.float32))).apply_(conversion)
-            )
+            return SpatialDimension[torch.Tensor].from_array_xyz(torch.tensor(data.astype(np.float32)))
 
         acq_idx = AcqIdx(
             k1=tensor(idx['kspace_encode_step_1']),
@@ -320,10 +318,10 @@ class AcqInfo(MoveDataMixin):
             flags=tensor_2d(headers['flags']),
             measurement_uid=tensor_2d(headers['measurement_uid']),
             number_of_samples=tensor_2d(headers['number_of_samples']),
-            patient_table_position=spatialdimension_2d(headers['patient_table_position'], mm_to_m),
+            patient_table_position=spatialdimension_2d(headers['patient_table_position']).apply_(mm_to_m),
             phase_dir=spatialdimension_2d(headers['phase_dir']),
             physiology_time_stamp=tensor_2d(headers['physiology_time_stamp']),
-            position=spatialdimension_2d(headers['position'], mm_to_m),
+            position=spatialdimension_2d(headers['position']).apply_(mm_to_m),
             read_dir=spatialdimension_2d(headers['read_dir']),
             sample_time_us=tensor_2d(headers['sample_time_us']),
             scan_counter=tensor_2d(headers['scan_counter']),

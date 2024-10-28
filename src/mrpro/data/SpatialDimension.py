@@ -134,21 +134,6 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         self.y[idx] = other.y
         self.x[idx] = other.x
 
-    def apply_(self: SpatialDimension[T_co], func: Callable[[T_co], T_co] | None = None) -> SpatialDimension[T_co]:
-        """Apply function to each of x,y,z in-place.
-
-        Parameters
-        ----------
-        func
-            function to apply to each of x,y,z
-            None is interpreted as the identity function.
-        """
-        if func is not None:
-            self.z = func(self.z)
-            self.y = func(self.y)
-            self.x = func(self.x)
-        return self
-
     def apply(self: SpatialDimension[T_co], func: Callable[[T_co], T_co] | None = None) -> SpatialDimension[T_co]:
         """Apply function to each of x,y,z.
 
