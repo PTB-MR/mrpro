@@ -229,8 +229,8 @@ def test_KData_to_complex128_header(ismrmrd_cart):
     """Change KData dtype complex128: test header"""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     kdata_complex128 = kdata.to(dtype=torch.complex128)
-    assert kdata_complex128.header.acq_info.user_float.dtype == torch.float64
-    assert kdata_complex128.header.acq_info.user_int.dtype == torch.int32
+    assert kdata_complex128.header.acq_info.user.float0.dtype == torch.float64
+    assert kdata_complex128.header.acq_info.user.int0.dtype == torch.int32
 
 
 @pytest.mark.cuda
@@ -254,7 +254,7 @@ def test_KData_cuda(ismrmrd_cart):
     assert kdata_cuda.traj.kz.is_cuda
     assert kdata_cuda.traj.ky.is_cuda
     assert kdata_cuda.traj.kx.is_cuda
-    assert kdata_cuda.header.acq_info.user_int.is_cuda
+    assert kdata_cuda.header.acq_info.user.int0.is_cuda
     assert kdata_cuda.device == torch.device(torch.cuda.current_device())
     assert kdata_cuda.header.acq_info.device == torch.device(torch.cuda.current_device())
     assert kdata_cuda.is_cuda
@@ -270,7 +270,7 @@ def test_KData_cpu(ismrmrd_cart):
     assert kdata_cpu.traj.kz.is_cpu
     assert kdata_cpu.traj.ky.is_cpu
     assert kdata_cpu.traj.kx.is_cpu
-    assert kdata_cpu.header.acq_info.user_int.is_cpu
+    assert kdata_cpu.header.acq_info.user.int0.is_cpu
     assert kdata_cpu.device == torch.device('cpu')
     assert kdata_cpu.header.acq_info.device == torch.device('cpu')
 
