@@ -256,9 +256,7 @@ class AcqInfo(MoveDataMixin):
                 data_tensor = data_tensor[None, None]
             return data_tensor
 
-        def spatialdimension_2d(
-            data: np.ndarray, conversion: Callable[[torch.Tensor], torch.Tensor] | None = None
-        ) -> SpatialDimension[torch.Tensor]:
+        def spatialdimension_2d(data: np.ndarray) -> SpatialDimension[torch.Tensor]:
             # Ensure spatial dimension is (k1*k2*other, 1, 3)
             if data.ndim != 2:
                 raise ValueError('Spatial dimension is expected to be of shape (N,3)')
