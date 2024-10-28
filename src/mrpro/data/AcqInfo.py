@@ -1,6 +1,6 @@
 """Acquisition information dataclass."""
 
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TypeAlias
 
@@ -303,13 +303,6 @@ class AcqInfo(MoveDataMixin):
             tensor = einops.repeat(tensor, '... -> other coil k2 (...) k0', other=1, coil=1, k2=1, k0=1)
             return tensor
 
-            # # Ensure that data is (k1*k2*other, >=1)
-            # if data_tensor.ndim == 1:
-            #     data_tensor = data_tensor[:, None]
-            # elif data_tensor.ndim == 0:
-            #     data_tensor = data_tensor[None, None]
-            # return data_tensor
-
         def spatialdimension_2d(data: np.ndarray) -> SpatialDimension[torch.Tensor]:
             # Ensure spatial dimension is (k1*k2*other, 1, 3)
             if data.ndim != 2:
@@ -369,10 +362,10 @@ class AcqInfo(MoveDataMixin):
             flags=tensor(headers['flags']),
             measurement_uid=tensor(headers['measurement_uid']),
             number_of_samples=tensor(headers['number_of_samples']),
-            patient_table_position=spatialdimension_2d(headers['patient_table_position'], mm_to_m),
+            patient_table_position=spatialdimension_2d(headers['patient_table_position']).apply_(mm_to_m),
             phase_dir=spatialdimension_2d(headers['phase_dir']),
             physiology_time_stamp=tensor(headers['physiology_time_stamp']),
-            position=spatialdimension_2d(headers['position'], mm_to_m),
+            position=spatialdimension_2d(headers['position']).apply_(mm_to_m),
             read_dir=spatialdimension_2d(headers['read_dir']),
             sample_time_us=tensor(headers['sample_time_us']),
             scan_counter=tensor(headers['scan_counter']),
