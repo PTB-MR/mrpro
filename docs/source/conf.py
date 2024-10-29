@@ -11,7 +11,6 @@
 
 import os
 import sys
-from datetime import datetime
 from sphinx_pyproject import SphinxConfig
 
 from mrpro  import __version__ as project_version
@@ -22,7 +21,7 @@ sys.path.insert(0, os.path.abspath('../../src'))  # Source code dir relative to 
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = name
-copyright = f'2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin'
+copyright = '2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin'
 author = author
 version = version
 
@@ -35,8 +34,9 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
-    'nbsphinx',
+    'myst_nb',
     'sphinx.ext.mathjax',
+    'sphinx-mathjax-offline'
 ]
 autosummary_generate = True
 autosummary_imported_members = False
@@ -46,9 +46,10 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 source_suffix = {'.rst': 'restructuredtext', '.txt': 'restructuredtext', '.md': 'markdown'}
 
-# do not execute notebooks before including in the examples
-# assuming they were executed before
-nbsphinx_execute = 'never'
+myst_enable_extensions = [
+    "amsmath",
+    "dollarmath",
+]
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -75,3 +76,8 @@ html_theme_options = {
         },
     ],
 }
+
+def setup(app):
+    # forces mathjax on all pages
+    app.set_html_assets_policy('always')
+
