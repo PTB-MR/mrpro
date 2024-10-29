@@ -146,6 +146,7 @@ def test_callback(system):
 
     cg(h_operator, right_hand_side, callback=callback)
 
+
 def test_autograd(system):
     """Test autograd through cg"""
     h_operator, right_hand_side, _ = system
@@ -154,6 +155,3 @@ def test_autograd(system):
         result = cg(h_operator, right_hand_side, tolerance=0, max_iterations=5)
         result.backward()
     assert right_hand_side is not None
-
-
-
