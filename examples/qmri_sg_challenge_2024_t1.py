@@ -53,7 +53,7 @@ if idata_multi_ti.header.ti is None:
 fig, axes = plt.subplots(1, 3, squeeze=False)
 for idx, ax in enumerate(axes.flatten()):
     ax.imshow(torch.abs(idata_multi_ti.data[idx, 0, 0, :, :]))
-    ax.set_title(f'TI = {idata_multi_ti.header.ti[idx]:.0f}ms')
+    ax.set_title(f'TI = {idata_multi_ti.header.ti[idx]:.3f}s')
 
 # %% [markdown]
 # ### Signal model and loss function
@@ -97,8 +97,8 @@ functional = mse @ model
 # well the signals fit to each other)
 
 # %%
-# Define 100 T1 values between 100 and 3000 ms
-t1_dictionary = torch.linspace(100, 3000, 100)
+# Define 100 T1 values between 0.1 and 3.0 s
+t1_dictionary = torch.linspace(0.1, 3.0, 100)
 
 # Calculate the signal corresponding to each of these T1 values. We set M0 to 1, but this is arbitrary because M0 is
 # just a scaling factor and we are going to normalize the signal curves.

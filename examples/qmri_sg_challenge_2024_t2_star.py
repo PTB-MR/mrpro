@@ -61,7 +61,7 @@ if idata_multi_te.header.te is None:
 fig, axes = plt.subplots(1, 3, squeeze=False)
 for idx, ax in enumerate(axes.flatten()):
     ax.imshow(torch.abs(idata_multi_te.data[idx, 0, 0, :, :]).cpu())
-    ax.set_title(f'TE = {idata_multi_te.header.te[idx]:.0f}ms')
+    ax.set_title(f'TE = {idata_multi_te.header.te[idx]:.3f}s')
 
 # %% [markdown]
 # ### Signal model and loss function
@@ -94,7 +94,7 @@ functional = mse @ model
 # The shortest echo time is a good approximation of the equilibrium magnetization
 m0_start = torch.abs(idata_multi_te.data[torch.argmin(idata_multi_te.header.te), ...])
 # 20 ms as a starting value for T2*
-t2star_start = torch.ones(m0_start.shape, dtype=torch.float32, device=m0_start.device) * 20
+t2star_start = torch.ones(m0_start.shape, dtype=torch.float32, device=m0_start.device) * 20e-3
 
 # Hyperparameters for optimizer
 max_iter = 20000
