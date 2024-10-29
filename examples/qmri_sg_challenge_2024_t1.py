@@ -124,7 +124,7 @@ colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05)
 im = axes[0, 0].imshow(m0_start[0, 0, ...])
 axes[0, 0].set_title('$M_0$ start values')
 fig.colorbar(im, cax=colorbar_ax[0])
-im = axes[0, 1].imshow(t1_start[0, 0, ...], vmin=0, vmax=2500)
+im = axes[0, 1].imshow(t1_start[0, 0, ...], vmin=0, vmax=2.5)
 axes[0, 1].set_title('$T_1$ start values')
 fig.colorbar(im, cax=colorbar_ax[1])
 
@@ -134,7 +134,7 @@ fig.colorbar(im, cax=colorbar_ax[1])
 # %%
 # Hyperparameters for optimizer
 max_iter = 2000
-lr = 1e0
+lr = 1e-1
 
 # Run optimization
 params_result = adam(functional, [m0_start, t1_start], max_iter=max_iter, lr=lr)
@@ -160,7 +160,7 @@ colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05)
 im = axes[0, 0].imshow(m0[0, 0, ...])
 axes[0, 0].set_title('$M_0$')
 fig.colorbar(im, cax=colorbar_ax[0])
-im = axes[0, 1].imshow(t1[0, 0, ...], vmin=0, vmax=2500)
+im = axes[0, 1].imshow(t1[0, 0, ...], vmin=0, vmax=2.5)
 axes[0, 1].set_title('$T_1$')
 fig.colorbar(im, cax=colorbar_ax[1])
 im = axes[0, 2].imshow(relative_absolute_error[0, 0, ...], vmin=0, vmax=1.0)
