@@ -114,8 +114,8 @@ idx_best_match = torch.argmax(torch.abs(dot_product), dim=1)
 t1_start = rearrange(t1_dictionary[idx_best_match], '(y x)->1 1 y x', y=n_y, x=n_x)
 
 # %%
-# The image with the longest inversion time is a good approximation of the equilibrium magnetization
-m0_start = torch.abs(idata_multi_ti.data[torch.argmax(idata_multi_ti.header.ti), ...])
+# The maximum absolute value observed is a good approximation for m0
+m0_start = torch.amax(torch.abs(idata_multi_ti.data), 0)
 
 # %%
 # Visualize the starting values
