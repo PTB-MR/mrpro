@@ -145,3 +145,13 @@ def test_callback(system):
         assert True
 
     cg(h_operator, right_hand_side, callback=callback)
+
+
+def test_autograd(system):
+    """Test autograd through cg"""
+    h_operator, right_hand_side, _ = system
+    right_hand_side.requires_grad_(True)
+    with torch.autograd.detect_anomaly():
+        result = cg(h_operator, right_hand_side, tolerance=0, max_iterations=5)
+        result.abs().sum().backward()
+    assert right_hand_side.grad is not None
