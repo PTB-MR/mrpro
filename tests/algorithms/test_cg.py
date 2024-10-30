@@ -153,5 +153,5 @@ def test_autograd(system):
     right_hand_side.requires_grad_(True)
     with torch.autograd.detect_anomaly():
         result = cg(h_operator, right_hand_side, tolerance=0, max_iterations=5)
-        result.backward()
-    assert right_hand_side is not None
+        result.sum().backward()
+    assert right_hand_side.grad is not None
