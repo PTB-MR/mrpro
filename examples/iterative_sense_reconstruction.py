@@ -26,7 +26,7 @@ data_file.flush()
 #
 # $ y = Ax + n $
 #
-# where $n$ describes complex Gaussian noise. The image $x$ can be obtained by minimising the functionl $F$
+# where $n$ describes complex Gaussian noise. The image $x$ can be obtained by minimizing the functional $F$
 #
 # $ F(x) = ||W^{\frac{1}{2}}(Ax - y)||_2^2 $
 #
@@ -41,6 +41,10 @@ data_file.flush()
 # %%
 import mrpro
 
+# %% [markdown]
+# ##### Read-in the raw data
+
+# %%
 # Use the trajectory that is stored in the ISMRMRD file
 trajectory = mrpro.data.traj_calculators.KTrajectoryIsmrmrd()
 # Load in the Data from the ISMRMRD file
@@ -48,12 +52,23 @@ kdata = mrpro.data.KData.from_file(data_file.name, trajectory)
 kdata.header.recon_matrix.x = 256
 kdata.header.recon_matrix.y = 256
 
+# %% [markdown]
+# ##### Direct reconstruction for comparison
+
 # %%
-iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction.from_kdata(
-    kdata, n_iterations=4
+# For comparison we can carry out a direct reconstruction
+direct_reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
+img_direct = direct_reconstruction(kdata)
+
+# %% [markdown]
+# ##### Iterative SENSE reconstruction
+
+# %%
+# We can use the direct reconstruction to obtain the coil maps.
+iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
+    kdata, csm=direct_reconstruction.csm, n_iterations=4
 )
 img = iterative_sense_reconstruction(kdata)
-
 
 # %% [markdown]
 # ### Behind the scenes
@@ -102,12 +117,6 @@ operator = acquisition_operator.H @ dcf_operator @ acquisition_operator
 img_manual = mrpro.algorithms.optimizers.cg(
     operator, right_hand_side, initial_value=right_hand_side, max_iterations=4, tolerance=0.0
 )
-
-
-# %%
-# For comparison we can also carry out a direct reconstruction
-direct_reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction.from_kdata(kdata)
-img_direct = direct_reconstruction(kdata)
 
 # %%
 # Display the reconstructed image

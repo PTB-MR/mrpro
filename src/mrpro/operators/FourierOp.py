@@ -1,11 +1,11 @@
 """Fourier Operator."""
 
 from collections.abc import Sequence
-from typing import Self
 
 import numpy as np
 import torch
 from torchkbnufft import KbNufft, KbNufftAdjoint
+from typing_extensions import Self
 
 from mrpro.data._kdata.KData import KData
 from mrpro.data.enums import TrajType
@@ -148,7 +148,7 @@ class FourierOp(LinearOperator):
         """
         if len(self._fft_dims):
             # FFT
-            (x,) = self._fast_fourier_op.forward(x)
+            (x,) = self._fast_fourier_op(x)
 
         if self._nufft_dims:
             # we need to move the nufft-dimensions to the end and flatten all other dimensions

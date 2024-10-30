@@ -75,7 +75,7 @@ def test_dcf_spiral_traj_voronoi_singlespiral():
     torch.testing.assert_close(dcf_three_broadcast.data[..., 1, :-ignore_last], dcf_single.data[..., 0, :-ignore_last])
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 @pytest.mark.parametrize(('n_kr', 'n_ka', 'n_k0'), [(10, 6, 20)])
 def test_dcf_rpe_traj_voronoi_cuda(n_kr, n_ka, n_k0):
     """Voronoi-based dcf calculation for RPE trajectory in CUDA memory."""

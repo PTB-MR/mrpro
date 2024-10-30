@@ -6,10 +6,11 @@ import dataclasses
 import datetime
 import warnings
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING
 
 import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
 import torch
+from typing_extensions import Self
 
 from mrpro.data import enums
 from mrpro.data.AcqInfo import AcqInfo, mm_to_m, ms_to_s
@@ -17,6 +18,7 @@ from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.TrajectoryDescription import TrajectoryDescription
+from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 
 if TYPE_CHECKING:
     # avoid circular imports by importing only when type checking
@@ -185,11 +187,13 @@ class KHeader(MoveDataMixin):
                 parameters['seq_type'] = header.sequenceParameters.sequence_type
 
         if enc.reconSpace is not None:
-            parameters['recon_fov'] = SpatialDimension[float].from_xyz(enc.reconSpace.fieldOfView_mm, mm_to_m)
+            parameters['recon_fov'] = SpatialDimension[float].from_xyz(enc.reconSpace.fieldOfView_mm).apply_(mm_to_m)
             parameters['recon_matrix'] = SpatialDimension[int].from_xyz(enc.reconSpace.matrixSize)
 
         if enc.encodedSpace is not None:
-            parameters['encoding_fov'] = SpatialDimension[float].from_xyz(enc.encodedSpace.fieldOfView_mm, mm_to_m)
+            parameters['encoding_fov'] = (
+                SpatialDimension[float].from_xyz(enc.encodedSpace.fieldOfView_mm).apply_(mm_to_m)
+            )
             parameters['encoding_matrix'] = SpatialDimension[int].from_xyz(enc.encodedSpace.matrixSize)
 
         if enc.encodingLimits is not None:
@@ -268,3 +272,18 @@ class KHeader(MoveDataMixin):
                 'Consider setting them via the defaults dictionary',
             ) from None
         return instance
+
+    def __repr__(self):
+        """Representation method for KHeader class."""
+        te = summarize_tensorvalues(self.te)
+        ti = summarize_tensorvalues(self.ti)
+        fa = summarize_tensorvalues(self.fa)
+        out = (
+            f'FOV [m]: {self.encoding_fov!s}\n'
+            f'TE [s]: {te}\n'
+            f'TI [s]: {ti}\n'
+            f'Flip angle [rad]: {fa}\n'
+            f'Encoding matrix: {self.encoding_matrix!s} \n'
+            f'Recon matrix: {self.recon_matrix!s} \n'
+        )
+        return out

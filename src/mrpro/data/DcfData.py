@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import dataclasses
 from functools import reduce
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING
 
 import torch
+from typing_extensions import Self
 
 from mrpro.algorithms.dcf.dcf_voronoi import dcf_1d, dcf_2d3d_voronoi
 from mrpro.data.KTrajectory import KTrajectory
@@ -71,3 +72,12 @@ class DcfData(MoveDataMixin):
         from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 
         return DensityCompensationOp(self.data.clone())
+
+    def __repr__(self):
+        """Representation method for DcfData class."""
+        try:
+            device = str(self.device)
+        except RuntimeError:
+            device = 'mixed'
+        name = type(self).__name__
+        return f'{name} with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\nDevice: {device}.'

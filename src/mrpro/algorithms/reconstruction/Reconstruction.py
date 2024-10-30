@@ -1,9 +1,11 @@
 """Reconstruction module."""
 
 from abc import ABC, abstractmethod
-from typing import Literal, Self
+from collections.abc import Callable
+from typing import Literal
 
 import torch
+from typing_extensions import Self
 
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
 from mrpro.data._kdata.KData import KData
@@ -53,14 +55,22 @@ class Reconstruction(torch.nn.Module, ABC):
         self.dcf = DcfData.from_traj_voronoi(kdata.traj)
         return self
 
-    def recalculate_csm_walsh(self, kdata: KData, noise: KNoise | None | Literal[False] = None) -> Self:
-        """Update (in place) the CSM from KData using Walsh.
+    def recalculate_csm(
+        self,
+        kdata: KData,
+        csm_calculation: Callable[[IData], CsmData] = CsmData.from_idata_walsh,
+        noise: KNoise | None | Literal[False] = None,
+    ) -> Self:
+        """Update (in place) the CSM from KData.
 
         Parameters
         ----------
         kdata
             KData used for adjoint reconstruction (including DCF-weighting if available), which is then used for
-            Walsh CSM estimation.
+            CSM estimation.
+        csm_calculation
+            Function to calculate csm expecting idata as input and returning csmdata. For examples have a look at the
+            CsmData class e.g. from_idata_walsh or from_idata_inati.
         noise
             Noise measurement for prewhitening.
             If None, self.noise (if previously set) is used.
@@ -71,9 +81,9 @@ class Reconstruction(torch.nn.Module, ABC):
             noise = None
         elif noise is None:
             noise = self.noise
-        recon = type(self)(self.fourier_op, dcf=self.dcf, noise=noise)
+        recon = type(self)(fourier_op=self.fourier_op, dcf=self.dcf, noise=noise, csm=None)
         image = recon.direct_reconstruction(kdata)
-        self.csm = CsmData.from_idata_walsh(image)
+        self.csm = csm_calculation(image)
         return self
 
     def direct_reconstruction(self, kdata: KData) -> IData:
@@ -91,15 +101,13 @@ class Reconstruction(torch.nn.Module, ABC):
         -------
             image data
         """
-        device = kdata.data.device
         if self.noise is not None:
-            kdata = prewhiten_kspace(kdata, self.noise.to(device))
+            kdata = prewhiten_kspace(kdata, self.noise)
         operator = self.fourier_op
         if self.csm is not None:
             operator = operator @ self.csm.as_operator()
         if self.dcf is not None:
             operator = self.dcf.as_operator() @ operator
-        operator = operator.to(device)
         (img_tensor,) = operator.H(kdata.data)
         img = IData.from_tensor_and_kheader(img_tensor, kdata.header)
         return img

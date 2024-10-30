@@ -1,16 +1,30 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["setuptools>=42", "wheel", "setuptools-git-versioning>=2.0,<3"]
+build-backend = "setuptools.build_meta:__legacy__"
+
+[tool.setuptools-git-versioning]
+count_commits_from_version_file = true
+enabled = true
+version_file = "src/mrpro/VERSION"
+template = "{tag}{env:MRPROVERSIONSUFFIX:''}"
+dev_template = "{tag}{env:MRPROVERSIONSUFFIX:''}"
+dirty_template = "{tag}+dirty{sha}"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"mrpro" = ["VERSION"]
 
 [project]
 name = "mrpro"
-version = "0.0.1"
 description = "MR image reconstruction and processing package specifically developed for PyTorch."
 readme = "README.md"
-requires-python = ">=3.11,<3.14"
-license = { file = "LICENSE" }
+requires-python = ">=3.10,<3.14"
+dynamic = ["version"]
 keywords = ["MRI, reconstruction, processing, PyTorch"]
 authors = [
+    { name = "MRpro Team", email = "info@emerpro.de" },
     { name = "Christoph Kolbitsch", email = "christoph.kolbitsch@ptb.de" },
     { name = "Patrick Schuenke", email = "patrick.schuenke@ptb.de" },
     { name = "Felix Zimmermann", email = "felix.zimmermann89@ptb.de" },
@@ -22,7 +36,9 @@ authors = [
     { name = "Andreas Kofler", email = "andreas.kofler@ptb.de" },
 ]
 classifiers = [
+    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3 :: Only",
@@ -32,10 +48,12 @@ dependencies = [
     "torch>=2.3",
     "ismrmrd>=1.14.1",
     "einops",
-    "pydicom",
+    "pydicom>=2.3",
     "pypulseq>=1.4.2",
     "torchkbnufft>=1.4.0",
     "scipy>=1.12",
+    "ptwt>=0.1.8",
+    "typing-extensions>=4.12",
 ]
 
 [project.optional-dependencies]
@@ -58,12 +76,16 @@ notebook = [
 ]
 
 [project.urls]
-"repository" = "https://github.com/PTB-MR/mrpro"
+"Documentation" = "https://ptb-mr.github.io/mrpro/"
 
 # PyTest section
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-filterwarnings = ["error"]
+filterwarnings = [
+    "error",
+    "ignore:'write_like_original':DeprecationWarning:pydicom:",
+    "ignore:Anomaly Detection has been enabled:UserWarning", #torch.autograd
+]
 addopts = "-n auto"
 markers = ["cuda : Tests only to be run when cuda device is available"]
 
@@ -86,6 +108,8 @@ module = [
     "torchkbnufft",
     "pypulseq",
     "zenodo_get",
+    "ptwt.*",
+    "pywt.*",
 ]
 ignore_missing_imports = true
 
@@ -157,6 +181,8 @@ locale = "en-us"
 [tool.typos.default.extend-words]
 Reson = "Reson" # required for Proc. Intl. Soc. Mag. Reson. Med.
 iy = "iy"
+daa = 'daa'     # required for wavelet operator
+gaus = 'gaus'   # required for wavelet operator
 
 [tool.typos.files]
 extend-exclude = [
