@@ -82,6 +82,59 @@ class AcqIdx(MoveDataMixin):
 
 
 @dataclass(slots=True)
+class UserValues(MoveDataMixin):
+    """User-defined values for each readout."""
+
+    float0: torch.Tensor
+    """User float 0."""
+
+    float1: torch.Tensor
+    """User float 1."""
+
+    float2: torch.Tensor
+    """User float 2."""
+
+    float3: torch.Tensor
+    """User float 3."""
+
+    float4: torch.Tensor
+    """User float 4."""
+
+    float5: torch.Tensor
+    """User float 5."""
+
+    float6: torch.Tensor
+    """User float 6."""
+
+    float7: torch.Tensor
+    """User float 7."""
+
+    int0: torch.Tensor
+    """User int 0."""
+
+    int1: torch.Tensor
+    """User int 1."""
+
+    int2: torch.Tensor
+    """User int 2."""
+
+    int3: torch.Tensor
+    """User int 3."""
+
+    int4: torch.Tensor
+    """User int 4."""
+
+    int5: torch.Tensor
+    """User int 5."""
+
+    int6: torch.Tensor
+    """User int 6."""
+
+    int7: torch.Tensor
+    """User int 7."""
+
+
+@dataclass(slots=True)
 class AcqInfo(MoveDataMixin):
     """Acquisition information for each readout."""
 
@@ -148,11 +201,8 @@ class AcqInfo(MoveDataMixin):
     trajectory_dimensions: torch.Tensor  # =3. We only support 3D Trajectories: kz always exists.
     """Dimensionality of the k-space trajectory vector."""
 
-    user_float: torch.Tensor
-    """User-defined float parameters."""
-
-    user_int: torch.Tensor
-    """User-defined int parameters."""
+    user: UserValues
+    """User-defined values."""
 
     version: torch.Tensor
     """Major version number."""
@@ -238,6 +288,25 @@ class AcqInfo(MoveDataMixin):
             user7=tensor(idx['user'][:, 7]),
         )
 
+        user_values = UserValues(
+            float0=tensor_2d(headers['user_float'][:, 0]),
+            float1=tensor_2d(headers['user_float'][:, 1]),
+            float2=tensor_2d(headers['user_float'][:, 2]),
+            float3=tensor_2d(headers['user_float'][:, 3]),
+            float4=tensor_2d(headers['user_float'][:, 4]),
+            float5=tensor_2d(headers['user_float'][:, 5]),
+            float6=tensor_2d(headers['user_float'][:, 6]),
+            float7=tensor_2d(headers['user_float'][:, 7]),
+            int0=tensor_2d(headers['user_int'][:, 0]),
+            int1=tensor_2d(headers['user_int'][:, 1]),
+            int2=tensor_2d(headers['user_int'][:, 2]),
+            int3=tensor_2d(headers['user_int'][:, 3]),
+            int4=tensor_2d(headers['user_int'][:, 4]),
+            int5=tensor_2d(headers['user_int'][:, 5]),
+            int6=tensor_2d(headers['user_int'][:, 6]),
+            int7=tensor_2d(headers['user_int'][:, 7]),
+        )
+
         acq_info = cls(
             idx=acq_idx,
             acquisition_time_stamp=tensor_2d(headers['acquisition_time_stamp']),
@@ -260,8 +329,7 @@ class AcqInfo(MoveDataMixin):
             scan_counter=tensor_2d(headers['scan_counter']),
             slice_dir=spatialdimension_2d(headers['slice_dir']),
             trajectory_dimensions=tensor_2d(headers['trajectory_dimensions']).fill_(3),  # see above
-            user_float=tensor_2d(headers['user_float']),
-            user_int=tensor_2d(headers['user_int']),
+            user=user_values,
             version=tensor_2d(headers['version']),
         )
         return acq_info
