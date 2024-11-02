@@ -181,7 +181,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
             operators.append([op * o for op, o in zip(row, other_, strict=True)])
         return self.__class__(operators)
 
-    def __rmul__(self, other: torch.Tensor | Sequence[torch.Tensor]yy | complex) -> Self:
+    def __rmul__(self, other: torch.Tensor | Sequence[torch.Tensor] | complex) -> Self:
         """Tensor*LinearOperatorMatrix multiplication.
         
             Example: (c*[A,B])(x) = [c*A, c*B](x) = c*A(x) + c*B(x)
