@@ -27,9 +27,9 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
     This matrix can be applied to a sequence of tensors, where the number of tensors should match
     the number of columns of the matrix. The output will be a sequence of tensors, where the number
     of tensors will match the number of rows of the matrix.
-    The j-th output tensor is calculated as
-    :math:`\sum_i \text{operators}[i][j](x[i])` where :math:`\text{operators}[i][j]` is the linear operator
-    in the i-th row and j-th column and :math:`x[i]` is the i-th input tensor.
+    The i-th output tensor is calculated as
+    :math:`\sum_j \text{operators}[i][j](x[j])` where :math:`\text{operators}[i][j]` is the linear operator
+    in the i-th row and j-th column and :math:`x[j]` is the j-th input tensor.
 
     The matrix can be indexed and sliced like a regular matrix to get submatrices.
     If indexing returns a single element, it is returned as a Linear Operator.
@@ -166,7 +166,10 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
         return self.__add__(other)
 
     def __mul__(self, other: torch.Tensor | Sequence[torch.Tensor | complex] | complex) -> Self:
-        """LinearOperatorMatrix*Tensor multiplication."""
+        """LinearOperatorMatrix*Tensor multiplication.
+        
+            Example: ([A,B]*c)(x) = [A*c, B*c](x) = A(c*x) + B(c*x)
+        """
         if isinstance(other, torch.Tensor | complex | float | int):
             other_: Sequence[torch.Tensor | complex] = (other,) * self.shape[1]
         elif len(other) != self.shape[1]:
@@ -178,8 +181,11 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
             operators.append([op * o for op, o in zip(row, other_, strict=True)])
         return self.__class__(operators)
 
-    def __rmul__(self, other: torch.Tensor | Sequence[torch.Tensor] | complex) -> Self:
-        """Tensor*LinearOperatorMatrix multiplication."""
+    def __rmul__(self, other: torch.Tensor | Sequence[torch.Tensor]yy | complex) -> Self:
+        """Tensor*LinearOperatorMatrix multiplication.
+        
+            Example: (c*[A,B])(x) = [c*A, c*B](x) = c*A(x) + c*B(x)
+        """
         if isinstance(other, torch.Tensor | complex | float | int):
             other_: Sequence[torch.Tensor | complex] = (other,) * self.shape[0]
         elif len(other) != self.shape[0]:
