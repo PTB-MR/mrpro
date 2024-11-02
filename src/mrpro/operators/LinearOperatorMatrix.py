@@ -167,8 +167,8 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
 
     def __mul__(self, other: torch.Tensor | Sequence[torch.Tensor | complex] | complex) -> Self:
         """LinearOperatorMatrix*Tensor multiplication.
-        
-            Example: ([A,B]*c)(x) = [A*c, B*c](x) = A(c*x) + B(c*x)
+
+        Example: ([A,B]*c)(x) = [A*c, B*c](x) = A(c*x) + B(c*x)
         """
         if isinstance(other, torch.Tensor | complex | float | int):
             other_: Sequence[torch.Tensor | complex] = (other,) * self.shape[1]
@@ -183,8 +183,8 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
 
     def __rmul__(self, other: torch.Tensor | Sequence[torch.Tensor] | complex) -> Self:
         """Tensor*LinearOperatorMatrix multiplication.
-        
-            Example: (c*[A,B])(x) = [c*A, c*B](x) = c*A(x) + c*B(x)
+
+        Example: (c*[A,B])(x) = [c*A, c*B](x) = c*A(x) + c*B(x)
         """
         if isinstance(other, torch.Tensor | complex | float | int):
             other_: Sequence[torch.Tensor | complex] = (other,) * self.shape[0]

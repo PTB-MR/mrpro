@@ -39,6 +39,7 @@ __all__ = [
     "GridSamplingOp",
     "IdentityOp",
     "LinearOperator",
+    "LinearOperatorMatrix",
     "MagnitudeOp",
     "Operator",
     "PhaseOp",
