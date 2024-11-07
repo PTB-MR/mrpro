@@ -36,7 +36,7 @@ jobs:
       - name: Install mrpro and dependencies
         run: pip install --upgrade --upgrade-strategy "eager" .[notebook]
 
-      - name: Translate scripts to notebooks
+      - name: Translate scripts to notebooks and add colab info
         run: |
           scripts=$(ls ./examples/*.py)
           for script in $scripts
@@ -45,22 +45,7 @@ jobs:
 
       - name: Add info for colab to notebooks
         run: |
-          import nbformat
-
-          # Load the existing notebook
-          notebook_path = 'examples/direct_reconstruction.ipynb'
-          with open(notebook_path, 'r') as f:
-              notebook = nbformat.read(f, as_version=4)
-
-          # Define the new cell to add (a code cell in this case)
-          new_cell = nbformat.v4.new_code_cell(source="print('Hello, this is a new cell!')")
-
-          # Add the new cell to the notebook (e.g., appending to the end)
-          notebook.cells.append(new_cell)
-
-          # Save the modified notebook
-          with open(notebook_path, 'w') as f:
-              nbformat.write(notebook, f)
+          python .github/workflows/add_colab_info_to_notebooks.py
 
       - name: Add/Update badges
         id: badges
