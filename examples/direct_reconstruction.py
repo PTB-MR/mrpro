@@ -2,9 +2,7 @@
 # # Direct Reconstruction of 2D golden angle radial data
 # Here we use the DirectReconstruction class to reconstruct images from ISMRMRD 2D radial data
 
-# %% [markdown]
 # Click here {{ badge }} to run this notebook in Google colab.
-# To install MRpro in Google colab simply run ```!pip install mrpro```
 
 # %%
 # define zenodo URL of the example ismrmd data
