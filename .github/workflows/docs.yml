@@ -43,6 +43,13 @@ jobs:
             do jupytext --set-kernel "python3" --update --output ${script//.py/.ipynb} $script
           done
 
+      - name: Add/Update badges
+        id: badges
+        uses: trsvchn/colab-badge-action@v4
+        with:
+          check: "all"
+          update: true
+
       - name: Check if any notebooks have been changed
         uses: tj-actions/verify-changed-files@v20
         id: verify-changed-notebooks
@@ -195,7 +202,7 @@ jobs:
         with:
           name: Documentation
           path: docs/build/html/
-      
+
       - run: echo 'Artifact url ${{ steps.save_docu.outputs.artifact-url }}'
 
       - run: echo 'Event number ${{ github.event.number }}'
@@ -225,7 +232,7 @@ jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
     permissions:
-        pages: write   
+        pages: write
         id-token: write
     environment:
       name: github-pages
