@@ -1,7 +1,17 @@
 import nbformat
+import argparse
+
+# Set up command-line argument parsing
+parser = argparse.ArgumentParser(description="Modify a Jupyter notebook")
+parser.add_argument('notebook_path', type=str, help='Path to the Jupyter notebook to modify')
+
+# Parse the arguments
+args = parser.parse_args()
+
+# Path to your notebook
+notebook_path = args.notebook_path
 
 # Load the existing notebook
-notebook_path = 'examples/direct_reconstruction.ipynb'
 with open(notebook_path, 'r') as f:
     notebook = nbformat.read(f, as_version=4)
 

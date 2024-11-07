@@ -45,7 +45,9 @@ jobs:
 
       - name: Add info for colab to notebooks
         run: |
-          python .github/workflows/add_colab_info_to_notebooks.py
+          for script in $scripts
+            do python .github/workflows/add_colab_info_to_notebooks.py ${script//.py/.ipynb}
+          done
 
       - name: Add/Update badges
         id: badges
