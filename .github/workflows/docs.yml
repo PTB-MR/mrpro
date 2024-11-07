@@ -47,9 +47,6 @@ jobs:
       - name: Add/Update badges
         id: badges
         uses: trsvchn/colab-badge-action@v4
-        with:
-          check: "all"
-          update: true
 
       - name: Check if any notebooks have been changed
         uses: tj-actions/verify-changed-files@v20
