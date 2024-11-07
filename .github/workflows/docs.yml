@@ -36,17 +36,12 @@ jobs:
       - name: Install mrpro and dependencies
         run: pip install --upgrade --upgrade-strategy "eager" .[notebook]
 
-      - name: Translate scripts to notebooks and add colab info
+      - name: Translate scripts to notebooks
         run: |
           scripts=$(ls ./examples/*.py)
           for script in $scripts
-            do jupytext --set-kernel "python3" --update --output ${script//.py/.ipynb} $script
-          done
-
-      - name: Add info for colab to notebooks
-        run: |
-          for script in $scripts
-            do python .github/workflows/add_colab_info_to_notebooks.py ${script//.py/.ipynb}
+            do
+              jupytext --set-kernel "python3" --update --output ${script//.py/.ipynb} $script
           done
 
       - name: Add/Update badges

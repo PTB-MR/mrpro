@@ -4,6 +4,8 @@
 
 # Click here {{ badge }} to run this notebook in Google colab.
 
+# IMPORTANT: to install MRpro in Google colab run ```!pip install mrpro```
+
 # %%
 # define zenodo URL of the example ismrmd data
 zenodo_url = 'https://zenodo.org/records/10854057/files/'
