@@ -14,51 +14,6 @@ defaults:
     shell: bash
 
 jobs:
-  convert_scripts:
-    name: Translate scripts to notebooks
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      contents: write
-    outputs:
-      commit_hash: ${{ steps.add-commit-push.outputs.commit_hash }}
-    container:
-      image: ghcr.io/ptb-mr/mrpro_py311:latest
-      options: --user runner
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.commit }}
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
-
-      - name: Install mrpro and dependencies
-        run: pip install --upgrade --upgrade-strategy "eager" .[notebook]
-
-      - name: Translate scripts to notebooks
-        run: |
-          scripts=$(ls ./examples/*.py)
-          for script in $scripts
-            do jupytext --set-kernel "python3" --update --output ${script//.py/.ipynb} $script
-          done
-
-      - name: Check if any notebooks have been changed
-        uses: tj-actions/verify-changed-files@v20
-        id: verify-changed-notebooks
-        with:
-          files: ./examples/*.ipynb
-
-      - name: Commit notebooks
-        if: steps.verify-changed-notebooks.outputs.files_changed == 'true'
-        uses: actions4git/add-commit-push@v1
-        with:
-          commit-message: Notebooks updated
-
-      - name: Get hash of last commit
-        id: add-commit-push
-        run: echo "commit_hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-
   get_notebooks:
     name: Get list of notebooks
     needs: convert_scripts
@@ -66,8 +21,6 @@ jobs:
     steps:
       - name: Checkout mrpro repo
         uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.convert_scripts.outputs.commit_hash }}
 
       - id: set-matrix
         run: |
@@ -195,7 +148,7 @@ jobs:
         with:
           name: Documentation
           path: docs/build/html/
-      
+
       - run: echo 'Artifact url ${{ steps.save_docu.outputs.artifact-url }}'
 
       - run: echo 'Event number ${{ github.event.number }}'
@@ -225,7 +178,7 @@ jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
     permissions:
-        pages: write   
+        pages: write
         id-token: write
     environment:
       name: github-pages

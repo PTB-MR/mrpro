@@ -53,6 +53,22 @@ repos:
           - "--index-url=https://download.pytorch.org/whl/cpu"
           - "--extra-index-url=https://pypi.python.org/simple"
 
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.8.0
+    hooks:
+    # cleans the .ipynbs (removes outputs, resets all cell-ids to 0..N, cleans steps)
+    - id: nbstripout
+      files: examples\/.*\.ipynb
+
+  - repo: https://github.com/mwouts/jupytext
+    rev: v1.16.4
+    # converts (--to ipynb) the .py to the .ipynb and preserves (--update) the assigned
+    # "clear" cells' ids from the nbstripout
+    hooks:
+     - id: jupytext
+       args: [--to, ipynb, --update]
+       files: examples\/.*\.py
+
 ci:
     autofix_commit_msg: |
         [pre-commit] auto fixes from pre-commit hooks
