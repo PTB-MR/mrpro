@@ -100,7 +100,7 @@ t2star_start = torch.ones(m0_start.shape, dtype=torch.float32, device=m0_start.d
 
 # Hyperparameters for optimizer
 max_iter = 20000
-lr = 1e0
+lr = 1e-3
 
 if flag_use_cuda:
     functional.cuda()
