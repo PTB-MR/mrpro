@@ -26,7 +26,7 @@ from mrpro.utils import split_idx
 # a constant flip angle $\alpha$. Data acquisition is carried out with a 2D Golden angle radial trajectory. The acquired
 # data can be divided into different dynamic time frames, each corresponding to a different inversion time. A signal
 # model can then be fitted to this data to obtain a $T_1$ map.
-# 
+#
 # More information can be found in:
 # Kerkering KM, Schulz-Menger J, Schaeffter T, Kolbitsch C (2023). Motion-corrected model-based reconstruction for 2D
 # myocardial $T_1$ mapping. *Magnetic Resonance in Medicine*, 90(3):1086-1100, [10.1002/mrm.29699](https://doi.org/10.1002/mrm.29699)
@@ -39,7 +39,7 @@ from mrpro.utils import split_idx
 
 # %% [markdown]
 # During data acquisition, the magnetization $M_z(t)$ can be described by the signal model:
-# 
+#
 # $$
 #   M_z(t) = M_0^* + (M_0^{init} - M_0^*)e^{(-t / T_1^*)} \quad (1)
 # $$
@@ -151,9 +151,9 @@ sampling_time *= 2.5 / 1000
 # %% [markdown]
 # We also need the repetition time between two RF-pulses. There is a parameter `tr` in the header, but this describes
 # the time "between the beginning of a pulse sequence and the beginning of the succeeding (essentially identical) pulse
-# sequence" (see [DICOM Standard Browser](https://dicom.innolitics.com/ciods/mr-image/mr-image/00180080)). We have one inversion pulse at the
-# beginning, which is never repeated and hence `tr` is the duration of the entire scan. Therefore, we have to use the
-# parameter `echo_spacing`, which describes the time between two gradient echoes.
+# sequence" (see [DICOM Standard Browser](https://dicom.innolitics.com/ciods/mr-image/mr-image/00180080)). We have one
+# inversion pulse at the beginning, which is never repeated and hence `tr` is the duration of the entire scan.
+# Therefore, we have to use the parameter `echo_spacing`, which describes the time between two gradient echoes.
 
 # %%
 if kdata_dynamic.header.echo_spacing is None:
