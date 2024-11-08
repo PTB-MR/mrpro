@@ -1,6 +1,7 @@
 """Fourier Operator."""
 
 from collections.abc import Sequence
+from itertools import product
 
 import numpy as np
 import torch
@@ -8,10 +9,12 @@ from torchkbnufft import KbNufft, KbNufftAdjoint
 from typing_extensions import Self
 
 from mrpro.data._kdata.KData import KData
+from mrpro.data.DcfData import DcfData
 from mrpro.data.enums import TrajType
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.FastFourierOp import FastFourierOp
+from mrpro.operators.IdentityOp import IdentityOp
 from mrpro.operators.LinearOperator import LinearOperator
 
 
@@ -212,3 +215,166 @@ class FourierOp(LinearOperator):
             x = x.permute(*unpermute)
 
         return (x,)
+
+    @property
+    def gram(self) -> LinearOperator:
+        """Return the gram operator."""
+        return FourierGramOp(self)
+
+
+def symmetrize(kernel: torch.Tensor, rank: int) -> torch.Tensor:
+    """Enforce hermitian symmetry on the kernel. Returns only half of the kernel."""
+    flipped = kernel.clone()
+    for d in range(-rank, 0):
+        flipped = flipped.index_select(d, -1 * torch.arange(flipped.shape[d], device=flipped.device) % flipped.size(d))
+    kernel = (kernel + flipped.conj()) / 2
+    last_len = kernel.shape[-1]
+    return kernel[..., : last_len // 2 + 1]
+
+
+def gramm_nufft_kernel(weight: torch.Tensor, trajectory: torch.Tensor, recon_shape: Sequence[int]) -> torch.Tensor:
+    """Calculate the convolution kernel for the NUFFT gram operator.
+
+    Parameters
+    ----------
+    weight
+        either ones or density compensation weights
+    trajectory
+        k-space trajectory
+    recon_shape
+        shape of the reconstructed image
+
+    Returns
+    -------
+    kernel
+        real valued convolution kernel for the NUFFT gram operator, already in Fourier space
+    """
+    rank = trajectory.shape[-2]
+    if rank != len(recon_shape):
+        raise ValueError('Rank of trajectory and image size must match.')
+    # Instead of doing one adjoint nufft with double the recon size in all dimensions,
+    # we do two adjoint nuffts per dimensions, saving a lot of memory.
+    adjnufft_ob = KbNufftAdjoint(im_size=recon_shape, n_shift=[0] * rank).to(trajectory)
+
+    kernel = adjnufft_ob(weight, trajectory)  # this will be the top left ... corner block
+    pad = []
+    for s in kernel.shape[: -rank - 1 : -1]:
+        pad.extend([0, s])
+    kernel = torch.nn.functional.pad(kernel, pad)  # twice the size in all dimensions
+
+    for flips in list(product([1, -1], repeat=rank)):
+        if all(flip == 1 for flip in flips):
+            # top left ... block already processed before padding
+            continue
+        flipped_trajectory = trajectory * torch.tensor(flips).to(trajectory).unsqueeze(-1)
+        kernel_part = adjnufft_ob(weight, flipped_trajectory)
+        slices = []  # which part of the kernel to is currently being processed
+        for dim, flip in zip(range(-rank, 0), flips, strict=True):
+            if flip > 0:  # first half in the dimension
+                slices.append(slice(0, kernel_part.size(dim)))
+            else:  # second half in the dimension
+                slices.append(slice(kernel_part.size(dim) + 1, None))
+                kernel_part = kernel_part.index_select(dim, torch.arange(kernel_part.size(dim) - 1, 0, -1))  # flip
+
+        kernel[[..., *slices]] = kernel_part
+
+    kernel = symmetrize(kernel, rank)
+    kernel = torch.fft.hfftn(kernel, dim=list(range(-rank, 0)), norm='backward')
+    kernel /= kernel.shape[-rank:].numel()
+    return kernel
+
+
+class FourierGramOp(LinearOperator):
+    """Gram operator for the Fourier operator.
+
+    Implements the adjoint of the forward operator of the Fourier operator, i.e. the gram operator
+    `F.H@F.
+
+    Uses a convolution, implemented as multiplication in Fourier space, to calculate the gram operator
+    for the toeplitz NUFFT operator.
+
+    This Operator is only used internally and should not be used directly.
+    Instead, consider using the `gram` property of :class: `mrpro.operators.FourierOp`.
+    """
+
+    _kernel: torch.Tensor | None
+
+    def __init__(self, fourier_op: FourierOp, dcf: torch.Tensor | DcfData | None = None) -> None:
+        """Initialize the gram operator.
+
+        If density compensation weights are provided, they the operator
+        F.H@dcf@F is calculated.
+
+        Parameters
+        ----------
+        fourier_op
+            the Fourier operator to calculate the gram operator for
+        dcf
+            density compensation weights. If None, ones are used.
+
+        """
+        super().__init__()
+        if fourier_op._nufft_dims:
+            if dcf is None:
+                weight = torch.ones_like(fourier_op._omega[..., :1, :, :, :])
+            elif isinstance(dcf, DcfData):
+                weight = dcf.data.unsqueeze(-4)
+            else:
+                weight = dcf.unsqueeze(-4)
+            keep_dims = [-4, *fourier_op._nufft_dims]  # -4 is coil
+            permute = [i for i in range(-weight.ndim, 0) if i not in keep_dims] + keep_dims
+            unpermute = np.argsort(permute)
+            weight = weight.permute(*permute)
+            weight_unflattend_shape = weight.shape
+            weight = weight.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
+            weight = weight + 0j
+            omega = fourier_op._omega.permute(*permute)
+            omega = omega.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
+            kernel = gramm_nufft_kernel(weight, omega, fourier_op._nufft_im_size)
+            kernel = kernel.reshape(*weight_unflattend_shape[: -len(keep_dims)], *kernel.shape[-len(keep_dims) :])
+            kernel = kernel.permute(*unpermute)
+            self.register_buffer('_kernel', kernel)
+            self._nufft_im_size = fourier_op._nufft_im_size
+        else:
+            self._kernel = None
+        self._nufft_dims = fourier_op._nufft_dims
+
+        if fourier_op._fft_dims:
+            self.fast_fourier_gram = fourier_op._fast_fourier_op.gram
+        else:
+            self.fast_fourier_gram = IdentityOp()
+        self._fft_dims = fourier_op._fft_dims
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply the operator to the input tensor.
+
+        Parameters
+        ----------
+        x
+            input tensor, shape (..., coils, z, y, x)
+        """
+        if self._kernel is not None:
+            slices = [slice(0, s) for s in x.shape]
+            x = torch.fft.fftn(x, dim=self._nufft_dims, s=[2 * s for s in self._nufft_im_size])
+            x = x * self._kernel
+            x = torch.fft.ifftn(x, dim=self._nufft_dims)
+            x = x[slices]
+
+        if self._fft_dims:
+            (x,) = self.fast_fourier_gram(x)
+        return (x,)
+
+    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply the adjoint operator to the input tensor.
+
+        Parameters
+        ----------
+        x
+            input tensor, shape (..., coils, k2, k1, k0)
+        """
+        return self.forward(x)
+
+    @property
+    def H(self) -> Self:  # noqa: N802
+        """Adjoint operator of the gram operator."""
+        return self

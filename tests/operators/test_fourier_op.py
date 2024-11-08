@@ -1,6 +1,7 @@
 """Tests for Fourier operator."""
 
 import pytest
+import torch
 from mrpro.data import SpatialDimension
 from mrpro.operators import FourierOp
 
@@ -39,6 +40,21 @@ def test_fourier_fwd_adj_property(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, 
     u = random_generator.complex64_tensor(size=img.shape)
     v = random_generator.complex64_tensor(size=kdata.shape)
     dotproduct_adjointness_test(fourier_op, u, v)
+
+
+@COMMON_MR_TRAJECTORIES
+def test_fouriergram(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
+    """Test gram of Fourier operator."""
+    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz)
+
+    recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
+    encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
+
+    (expected,) = (fourier_op.H @ fourier_op)(img)
+    (actual,) = fourier_op.gram(img)
+
+    torch.testing.assert_close(actual, expected, rtol=1e-3, atol=1e-3)
 
 
 @pytest.mark.parametrize(
