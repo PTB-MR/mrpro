@@ -48,6 +48,8 @@ with zipfile.ZipFile(data_folder / Path('T2star.zip'), 'r') as zip_ref:
 # %%
 te_dicom_files = data_folder.glob('**/*.dcm')
 idata_multi_te = IData.from_dicom_files(te_dicom_files)
+# scaling the signal down to make the optimization easier
+idata_multi_te.data[...] = idata_multi_te.data / 1500
 
 # Move the data to the GPU
 if flag_use_cuda:
@@ -130,7 +132,7 @@ im = axes[0, 0].imshow(m0[0, 0, ...].cpu())
 axes[0, 0].set_title('$M_0$')
 fig.colorbar(im, cax=colorbar_ax[0])
 
-im = axes[0, 1].imshow(t2star[0, 0, ...].cpu(), vmin=0, vmax=500)
+im = axes[0, 1].imshow(t2star[0, 0, ...].cpu(), vmin=0, vmax=5)
 axes[0, 1].set_title('$T_2^*$')
 fig.colorbar(im, cax=colorbar_ax[1])
 
