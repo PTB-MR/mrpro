@@ -19,13 +19,14 @@ from mrpro.data.traj_calculators import KTrajectoryIsmrmrd, KTrajectoryPulseq, K
 # define zenodo records URL and create a temporary directory and h5-file
 zenodo_url = 'https://zenodo.org/records/10854057/files/'
 fname = 'pulseq_radial_2D_402spokes_golden_angle_with_traj.h5'
-data_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.h5')
+
 
 # %%
 # Download raw data using requests
-response = requests.get(zenodo_url + fname, timeout=30)
-data_file.write(response.content)
-data_file.flush()
+with tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.h5') as data_file:
+    response = requests.get(zenodo_url + fname, timeout=30)
+    data_file.write(response.content)
+    data_file.flush()
 
 # %% [markdown]
 # ### Image reconstruction using KTrajectoryIsmrmrd
@@ -37,7 +38,7 @@ kdata = KData.from_file(data_file.name, KTrajectoryIsmrmrd())
 
 # Reconstruct image
 direct_reconstruction = DirectReconstruction(kdata)
-img_using_ismrmrd_traj = direct_reconstruction.forward(kdata)
+img_using_ismrmrd_traj = direct_reconstruction(kdata)
 
 # %% [markdown]
 # ### Image reconstruction using KTrajectoryRadial2D
@@ -49,7 +50,7 @@ kdata = KData.from_file(data_file.name, KTrajectoryRadial2D())
 
 # Reconstruct image
 direct_reconstruction = DirectReconstruction(kdata)
-img_using_rad2d_traj = direct_reconstruction.forward(kdata)
+img_using_rad2d_traj = direct_reconstruction(kdata)
 
 # %% [markdown]
 # ### Image reconstruction using KTrajectoryPulseq
@@ -62,10 +63,10 @@ img_using_rad2d_traj = direct_reconstruction.forward(kdata)
 # download the sequence file from zenodo
 zenodo_url = 'https://zenodo.org/records/10868061/files/'
 seq_fname = 'pulseq_radial_2D_402spokes_golden_angle.seq'
-seq_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.seq')
-response = requests.get(zenodo_url + seq_fname, timeout=30)
-seq_file.write(response.content)
-seq_file.flush()
+with tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.seq') as seq_file:
+    response = requests.get(zenodo_url + seq_fname, timeout=30)
+    seq_file.write(response.content)
+    seq_file.flush()
 
 # %%
 # Read raw data and calculate trajectory using KTrajectoryPulseq
@@ -73,7 +74,7 @@ kdata = KData.from_file(data_file.name, KTrajectoryPulseq(seq_path=seq_file.name
 
 # Reconstruct image
 direct_reconstruction = DirectReconstruction(kdata)
-img_using_pulseq_traj = direct_reconstruction.forward(kdata)
+img_using_pulseq_traj = direct_reconstruction(kdata)
 
 # %% [markdown]
 # ### Plot the different reconstructed images

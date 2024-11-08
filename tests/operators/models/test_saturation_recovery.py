@@ -21,7 +21,7 @@ def test_saturation_recovery(ti, result):
     """
     model = SaturationRecovery(ti)
     m0, t1 = create_parameter_tensor_tuples()
-    (image,) = model.forward(m0, t1)
+    (image,) = model(m0, t1)
 
     zeros = torch.zeros_like(m0)
 
@@ -39,5 +39,5 @@ def test_saturation_recovery_shape(parameter_shape, contrast_dim_shape, signal_s
     (ti,) = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=1)
     model_op = SaturationRecovery(ti)
     m0, t1 = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=2)
-    (signal,) = model_op.forward(m0, t1)
+    (signal,) = model_op(m0, t1)
     assert signal.shape == signal_shape

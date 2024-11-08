@@ -92,6 +92,7 @@ jobs:
       image: ghcr.io/ptb-mr/mrpro_py311:latest
       options: --user root
     strategy:
+      fail-fast: false
       matrix:
         notebook: ${{ fromJson(needs.get_notebooks.outputs.notebooks) }}
     steps:

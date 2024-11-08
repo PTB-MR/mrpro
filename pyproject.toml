@@ -20,7 +20,7 @@ include-package-data = true
 name = "mrpro"
 description = "MR image reconstruction and processing package specifically developed for PyTorch."
 readme = "README.md"
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.10,<3.14"
 dynamic = ["version"]
 keywords = ["MRI, reconstruction, processing, PyTorch"]
 authors = [
@@ -38,6 +38,7 @@ authors = [
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3 :: Only",
@@ -52,6 +53,7 @@ dependencies = [
     "torchkbnufft>=1.4.0",
     "scipy>=1.12",
     "ptwt>=0.1.8",
+    "typing-extensions>=4.12",
 ]
 
 [project.optional-dependencies]
@@ -87,6 +89,7 @@ testpaths = ["tests"]
 filterwarnings = [
     "error",
     "ignore:'write_like_original':DeprecationWarning:pydicom:",
+    "ignore:Anomaly Detection has been enabled:UserWarning", #torch.autograd
 ]
 addopts = "-n auto"
 markers = ["cuda : Tests only to be run when cuda device is available"]
