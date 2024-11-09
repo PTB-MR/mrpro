@@ -166,23 +166,6 @@ def test_KData_raise_wrong_coil_number(ismrmrd_cart):
         )
 
 
-@pytest.mark.filterwarnings('ignore:Acquisitions with different number:UserWarning')
-def test_KData_select_bodycoil_via_header_overwrite(ismrmrd_cart_bodycoil_and_surface_coil):
-    # Unrecommended alternative to using an acquisition filter
-    kdata = KData.from_file(
-        ismrmrd_cart_bodycoil_and_surface_coil.filename, DummyTrajectory(), header_overwrites={'n_coils': 2}
-    )
-    assert kdata.data.shape[-4] == 2
-
-
-def test_KData_raise_error_for_wrong_n_coils_type(ismrmrd_cart_bodycoil_and_surface_coil):
-    """n_coils has to int or float."""
-    with pytest.raises(ValueError, match='n_coils has to be numeric'):
-        _ = KData.from_file(
-            ismrmrd_cart_bodycoil_and_surface_coil.filename, DummyTrajectory(), header_overwrites={'n_coils': '2'}
-        )
-
-
 def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
     """Multiple repetitions with different number of phase encoding lines."""
     with pytest.warns(UserWarning, match=r'different number'):

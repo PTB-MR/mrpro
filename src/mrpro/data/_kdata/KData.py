@@ -114,7 +114,10 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         # we need the same number of receiver coils for all acquisitions
         n_coils_available = {acq.data.shape[0] for acq in acquisitions}
         if len(n_coils_available) > 1:
-            if ismrmrd_header.acquisitionSystemInformation is not None and ismrmrd_header.acquisitionSystemInformation.receiverChannels is not None:
+            if (
+                ismrmrd_header.acquisitionSystemInformation is not None
+                and ismrmrd_header.acquisitionSystemInformation.receiverChannels is not None
+            ):
                 n_coils = int(ismrmrd_header.acquisitionSystemInformation.receiverChannels)
             else:
                 # most likely, these the coils used for imaging
