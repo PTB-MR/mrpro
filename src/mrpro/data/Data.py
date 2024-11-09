@@ -2,9 +2,9 @@
 
 import dataclasses
 from abc import ABC
-from typing import Any
 
 import torch
+from typing_extensions import Any
 
 from mrpro.data.MoveDataMixin import MoveDataMixin
 

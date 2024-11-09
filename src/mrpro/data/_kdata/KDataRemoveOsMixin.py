@@ -1,9 +1,9 @@
 """Remove oversampling along readout dimension."""
 
 from copy import deepcopy
-from typing import Self
 
 import torch
+from typing_extensions import Self
 
 from mrpro.data._kdata.KDataProtocol import _KDataProtocol
 from mrpro.data.KTrajectory import KTrajectory
@@ -49,7 +49,7 @@ class KDataRemoveOsMixin(_KDataProtocol):
         start_cropped_readout = (self.header.encoding_matrix.x - self.header.recon_matrix.x) // 2
         end_cropped_readout = start_cropped_readout + self.header.recon_matrix.x
 
-        def crop_readout(data_to_crop: torch.Tensor):
+        def crop_readout(data_to_crop: torch.Tensor) -> torch.Tensor:
             # returns a cropped copy
             return data_to_crop[..., start_cropped_readout:end_cropped_readout].clone()
 
@@ -61,7 +61,7 @@ class KDataRemoveOsMixin(_KDataProtocol):
         ks = [self.traj.kz, self.traj.ky, self.traj.kx]
         # only cropped ks that are not broadcasted/singleton along k0
         cropped_ks = [crop_readout(k) if k.shape[-1] > 1 else k.clone() for k in ks]
-        cropped_traj = KTrajectory(*cropped_ks)
+        cropped_traj = KTrajectory(cropped_ks[0], cropped_ks[1], cropped_ks[2])
 
         # Adapt header parameters
         header = deepcopy(self.header)
