@@ -16,10 +16,10 @@ def test_cart_sampling_op_data_match():
     nkx = (1, 1, 1, 60)
     nky = (1, 1, 40, 1)
     nkz = (1, 20, 1, 1)
-    sx = 'uniform'
-    sy = 'uniform'
-    sz = 'uniform'
-    trajectory = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
+    type_kx = 'uniform'
+    type_ky = 'uniform'
+    type_kz = 'uniform'
+    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # Create matching data
     random_generator = RandomGenerator(seed=0)

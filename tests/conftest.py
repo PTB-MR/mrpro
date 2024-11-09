@@ -233,11 +233,11 @@ def create_uniform_traj(nk, k_shape):
     return k
 
 
-def create_traj(k_shape, nkx, nky, nkz, sx, sy, sz):
+def create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
     """Create trajectory with random entries."""
     random_generator = RandomGenerator(seed=0)
     k_list = []
-    for spacing, nk in zip([sz, sy, sx], [nkz, nky, nkx], strict=True):
+    for spacing, nk in zip([type_kz, type_ky, type_kx], [nkz, nky, nkx], strict=True):
         if spacing == 'non-uniform':
             k = random_generator.float32_tensor(size=nk)
         elif spacing == 'uniform':
@@ -250,33 +250,33 @@ def create_traj(k_shape, nkx, nky, nkz, sx, sy, sz):
 
 
 COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
-    ('im_shape', 'k_shape', 'nkx', 'nky', 'nkz', 'sx', 'sy', 'sz', 's0', 's1', 's2'),
+    ('im_shape', 'k_shape', 'nkx', 'nky', 'nkz', 'type_kx', 'type_ky', 'type_kz', 'type_k0', 'type_k1', 'type_k2'),
     [
-        (  # (0) 2d cart mri with 1 coil, no oversampling
+        (  # (0) 2d Cartesian single coil, no oversampling
             (1, 1, 1, 96, 128),  # im_shape
             (1, 1, 1, 96, 128),  # k_shape
             (1, 1, 1, 128),  # nkx
             (1, 1, 96, 1),  # nky
             (1, 1, 1, 1),  # nkz
-            'uniform',  # sx
-            'uniform',  # sy
-            'zero',  # sz
-            'uniform',  # s0
-            'uniform',  # s1
-            'zero',  # s2
+            'uniform',  # type_kx
+            'uniform',  # type_ky
+            'zero',  # type_kz
+            'uniform',  # type_k0
+            'uniform',  # type_k1
+            'zero',  # type_k2
         ),
-        (  # (1) 2d cart mri with 1 coil, with oversampling
+        (  # (1) 2d Cartesian single coil, with oversampling
             (1, 1, 1, 96, 128),  # im_shape
             (1, 1, 1, 128, 192),  # k_shape
             (1, 1, 1, 192),  # nkx
             (1, 1, 128, 1),  # nky
             (1, 1, 1, 1),  # nkz
-            'uniform',  # sx
-            'uniform',  # sy
-            'zero',  # sz
-            'uniform',  # s0
-            'uniform',  # s1
-            'zero',  # s2
+            'uniform',  # type_kx
+            'uniform',  # type_ky
+            'zero',  # type_kz
+            'uniform',  # type_k0
+            'uniform',  # type_k1
+            'zero',  # type_k2
         ),
         (  # (2) 2d non-Cartesian mri with 2 coils
             (1, 2, 1, 96, 128),  # im_shape
@@ -284,25 +284,25 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             (1, 1, 16, 192),  # nkx
             (1, 1, 16, 192),  # nky
             (1, 1, 1, 1),  # nkz
-            'non-uniform',  # sx
-            'non-uniform',  # sy
-            'zero',  # sz
-            'non-uniform',  # s0
-            'non-uniform',  # s1
-            'zero',  # s2
+            'non-uniform',  # type_kx
+            'non-uniform',  # type_ky
+            'zero',  # type_kz
+            'non-uniform',  # type_k0
+            'non-uniform',  # type_k1
+            'zero',  # type_k2
         ),
-        (  # (3) 2d cart mri with irregular sampling
+        (  # (3) 2d Cartesian with irregular sampling
             (1, 1, 1, 96, 128),  # im_shape
             (1, 1, 1, 1, 192),  # k_shape
             (1, 1, 1, 192),  # nkx
             (1, 1, 1, 192),  # nky
             (1, 1, 1, 1),  # nkz
-            'uniform',  # sx
-            'uniform',  # sy
-            'zero',  # sz
-            'uniform',  # s0
-            'zero',  # s1
-            'zero',  # s2
+            'uniform',  # type_kx
+            'uniform',  # type_ky
+            'zero',  # type_kz
+            'uniform',  # type_k0
+            'zero',  # type_k1
+            'zero',  # type_k2
         ),
         (  # (4) 2d single shot spiral
             (1, 2, 1, 96, 128),  # im_shape
@@ -310,101 +310,101 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             (1, 1, 1, 192),  # nkx
             (1, 1, 1, 192),  # nky
             (1, 1, 1, 1),  # nkz
-            'non-uniform',  # sx
-            'non-uniform',  # sy
-            'zero',  # sz
-            'non-uniform',  # s0
-            'zero',  # s1
-            'zero',  # s2
+            'non-uniform',  # type_kx
+            'non-uniform',  # type_ky
+            'zero',  # type_kz
+            'non-uniform',  # type_k0
+            'zero',  # type_k1
+            'zero',  # type_k2
         ),
-        (  # (5) 3d nuniformFT mri, 4 coils, 2 other
+        (  # (5) 3d non-uniform, 4 coils, 2 other
             (2, 4, 16, 32, 64),  # im_shape
             (2, 4, 16, 32, 64),  # k_shape
             (2, 16, 32, 64),  # nkx
             (2, 16, 32, 64),  # nky
             (2, 16, 32, 64),  # nkz
-            'non-uniform',  # sx
-            'non-uniform',  # sy
-            'non-uniform',  # sz
-            'non-uniform',  # s0
-            'non-uniform',  # s1
-            'non-uniform',  # s2
+            'non-uniform',  # type_kx
+            'non-uniform',  # type_ky
+            'non-uniform',  # type_kz
+            'non-uniform',  # type_k0
+            'non-uniform',  # type_k1
+            'non-uniform',  # type_k2
         ),
-        (  # (6) 2d nuniformFT cine mri with 8 cardiac phases, 5 coils
+        (  # (6) 2d non-uniform cine with 8 cardiac phases, 5 coils
             (8, 5, 1, 64, 64),  # im_shape
             (8, 5, 1, 18, 128),  # k_shape
             (8, 1, 18, 128),  # nkx
             (8, 1, 18, 128),  # nky
             (8, 1, 1, 1),  # nkz
-            'non-uniform',  # sx
-            'non-uniform',  # sy
-            'zero',  # sz
-            'non-uniform',  # s0
-            'non-uniform',  # s1
-            'zero',  # s2
+            'non-uniform',  # type_kx
+            'non-uniform',  # type_ky
+            'zero',  # type_kz
+            'non-uniform',  # type_k0
+            'non-uniform',  # type_k1
+            'zero',  # type_k2
         ),
-        (  # (7) 2d cart cine mri with 9 cardiac phases, 6 coils
+        (  # (7) 2d cartesian cine with 9 cardiac phases, 6 coils
             (9, 6, 1, 96, 128),  # im_shape
             (9, 6, 1, 128, 192),  # k_shape
             (9, 1, 1, 192),  # nkx
             (9, 1, 128, 1),  # nky
             (9, 1, 1, 1),  # nkz
-            'uniform',  # sx
-            'uniform',  # sy
-            'zero',  # sz
-            'uniform',  # s0
-            'uniform',  # s1
-            'zero',  # s2
+            'uniform',  # type_kx
+            'uniform',  # type_ky
+            'zero',  # type_kz
+            'uniform',  # type_k0
+            'uniform',  # type_k1
+            'zero',  # type_k2
         ),
-        (  # (8) radial phase encoding (RPE), 8 coils, with oversampling in both FFT and nuniformFT directions
+        (  # (8) radial phase encoding (RPE), 8 coils, with oversampling in both FFT and non-uniform directions
             (2, 8, 64, 32, 48),  # im_shape
             (2, 8, 8, 64, 96),  # k_shape
             (2, 1, 1, 96),  # nkx
             (2, 8, 64, 1),  # nky
             (2, 8, 64, 1),  # nkz
-            'uniform',  # sx
-            'non-uniform',  # sy
-            'non-uniform',  # sz
-            'uniform',  # s0
-            'non-uniform',  # s1
-            'non-uniform',  # s2
+            'uniform',  # type_kx
+            'non-uniform',  # type_ky
+            'non-uniform',  # type_kz
+            'uniform',  # type_k0
+            'non-uniform',  # type_k1
+            'non-uniform',  # type_k2
         ),
-        (  # (9) radial phase encoding (RPE) , 8 coils with non-Cartesian sampling along readout
+        (  # (9) radial phase encoding (RPE), 8 coils with non-Cartesian sampling along readout
             (2, 8, 64, 32, 48),  # im_shape
             (2, 8, 8, 64, 96),  # k_shape
             (2, 1, 1, 96),  # nkx
             (2, 8, 64, 1),  # nky
             (2, 8, 64, 1),  # nkz
-            'non-uniform',  # sx
-            'non-uniform',  # sy
-            'non-uniform',  # sz
-            'non-uniform',  # s0
-            'non-uniform',  # s1
-            'non-uniform',  # s2
+            'non-uniform',  # type_kx
+            'non-uniform',  # type_ky
+            'non-uniform',  # type_kz
+            'non-uniform',  # type_k0
+            'non-uniform',  # type_k1
+            'non-uniform',  # type_k2
         ),
-        (  # (10) stack of stars, 5 other, 3 coil, oversampling in both FFT and nuniformFT directions
+        (  # (10) stack of stars, 5 other, 3 coil, oversampling in both FFT and non-uniform directions
             (5, 3, 48, 16, 32),  # im_shape
             (5, 3, 96, 18, 64),  # k_shape
             (5, 1, 18, 64),  # nkx
             (5, 1, 18, 64),  # nky
             (5, 96, 1, 1),  # nkz
-            'non-uniform',  # sx
-            'non-uniform',  # sy
-            'uniform',  # sz
-            'non-uniform',  # s0
-            'non-uniform',  # s1
-            'uniform',  # s2
+            'non-uniform',  # type_kx
+            'non-uniform',  # type_ky
+            'uniform',  # type_kz
+            'non-uniform',  # type_k0
+            'non-uniform',  # type_k1
+            'uniform',  # type_k2
         ),
     ],
     ids=[
-        '2d_cart_mri_1_coil_no_oversampling',
-        '2d_cart_mri_1_coil_with_oversampling',
+        '2d_cartesian_1_coil_no_oversampling',
+        '2d_cartesian_1_coil_with_oversampling',
         '2d_non_cartesian_mri_2_coils',
-        '2d_cart_mri_irregular_sampling',
+        '2d_cartesian_irregular_sampling',
         '2d_single_shot_spiral',
-        '3d_nuniformFT_mri_4_coils_2_other',
-        '2d_nuniformFT_cine_mri_8_cardiac_phases_5_coils',
-        '2d_cart_cine_mri_9_cardiac_phases_6_coils',
+        '3d_nonuniform_4_coils_2_other',
+        '2d_nnonuniform_cine_mri_8_cardiac_phases_5_coils',
+        '2d_cartesian_cine_9_cardiac_phases_6_coils',
         'radial_phase_encoding_8_coils_with_oversampling',
         'radial_phase_encoding_8_coils_non_cartesian_sampling',
         'stack_of_stars_5_other_3_coil_with_oversampling',
