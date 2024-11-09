@@ -72,9 +72,9 @@ def broadcast_right(*x: torch.Tensor) -> tuple[torch.Tensor, ...]:
 
 
 def reduce_view(x: torch.Tensor, dim: int | Sequence[int] | None = None) -> torch.Tensor:
-    """Replace expanded dimensions in a view by singletons.
+    """Reduce expanded dimensions in a view to singletons.
 
-    Reduce either all or a specific dimension to a singleton only if it
+    Reduce either all or specific dimensions to a singleton if it
     points to the same memory address.
     This undoes expand.
 
@@ -83,8 +83,8 @@ def reduce_view(x: torch.Tensor, dim: int | Sequence[int] | None = None) -> torc
     x
         input tensor
     dim
-        only undo expands in the specified dimensions.
-        If None, undo expand in all dimensions.
+        only reduce expanded dimensions in the specified dimensions.
+        If None, reduce all expanded dimensions.
     """
     if dim is None:
         dim_: Sequence[int] = range(x.ndim)
