@@ -63,9 +63,6 @@ class KHeader(MoveDataMixin):
     h1_freq: float
     """Lamor frequency of hydrogen nuclei [Hz]."""
 
-    n_coils: int | None = None
-    """Number of receiver coils."""
-
     datetime: datetime.datetime | None = None
     """Date and time of acquisition."""
 
@@ -163,12 +160,6 @@ class KHeader(MoveDataMixin):
 
         if defaults is not None:
             parameters.update(defaults)
-
-        if (
-            header.acquisitionSystemInformation is not None
-            and header.acquisitionSystemInformation.receiverChannels is not None
-        ):
-            parameters['n_coils'] = header.acquisitionSystemInformation.receiverChannels
 
         if header.sequenceParameters is not None:
             if header.sequenceParameters.TR:

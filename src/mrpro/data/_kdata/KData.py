@@ -111,24 +111,13 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
 
         acquisitions = [acq for acq in acquisitions if acquisition_filter_criterion(acq)]
 
-        # Select only acquisitions with the desired number of receiver channels/coils.
-        # If the number of coils is not defined use all acquisitions
+        # we need the same number of receiver coils for all acquisitions
         n_coils_available = {acq.data.shape[0] for acq in acquisitions}
-
-        # We need to handle the n_coils parameter of header_overwrites here separately rather than in
-        # KHeader.from_ismrmrd, because the acquisitions have to be selected before we can calculate the header
         if len(n_coils_available) > 1:
-            if header_overwrites is not None and 'n_coils' in header_overwrites:
-                if isinstance(header_overwrites['n_coils'], int | float):
-                    n_coils = int(header_overwrites['n_coils'])
-                else:
-                    raise ValueError(f'n_coils has to be numeric but is {type(header_overwrites["n_coils"])}')
-            elif (
-                ismrmrd_header.acquisitionSystemInformation is not None
-                and ismrmrd_header.acquisitionSystemInformation.receiverChannels is not None
-            ):
+            if ismrmrd_header.acquisitionSystemInformation is not None and ismrmrd_header.acquisitionSystemInformation.receiverChannels is not None:
                 n_coils = int(ismrmrd_header.acquisitionSystemInformation.receiverChannels)
             else:
+                # most likely, these the coils used for imaging
                 n_coils = int(max(n_coils_available))
 
             warnings.warn(
@@ -136,8 +125,6 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
                 'Data with {n_coils} receiver coil elements will be used.',
                 stacklevel=1,
             )
-
-            # Select acquisition with n_coils receiver coils
             acquisitions = [acq for acq in acquisitions if has_n_coils(n_coils, acq)]
 
         if len(acquisitions) == 0:
