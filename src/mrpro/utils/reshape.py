@@ -94,7 +94,7 @@ def reduce_view(x: torch.Tensor, dim: int | Sequence[int] | None = None) -> torc
         dim_ = [dim % x.ndim]
 
     stride = x.stride()
-    size = [
-        1 if stride == 0 and d in dim_ else size for d, (size, stride) in enumerate(zip(x.size(), stride, strict=True))
+    newsize = [
+        1 if stride == 0 and d in dim_ else oldsize for d, (oldsize, stride) in enumerate(zip(x.size(), stride, strict=True))
     ]
-    return torch.as_strided(x, size, stride)
+    return torch.as_strided(x, newsize, stride)
