@@ -50,7 +50,7 @@ class KDataSelectMixin(_KDataProtocol):
         other_idx = torch.cat([torch.where(idx == label_idx[:, 0, 0])[0] for idx in subset_idx], dim=0)
 
         # Adapt header
-        kheader.acq_info.apply_(lambda field: field[other_idx, ...])
+        kheader.acq_info.apply_(lambda field: field[other_idx, ...] if isinstance(field, torch.Tensor) else field)
 
         # Select data
         kdat = self.data[other_idx, ...]

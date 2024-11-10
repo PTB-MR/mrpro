@@ -7,29 +7,21 @@ import ismrmrd
 import numpy as np
 import torch
 from einops import rearrange
-from typing_extensions import Self, TypeVar
+from typing_extensions import Self
 
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.unit_conversion import mm_to_m
 
-T = TypeVar('T', torch.Tensor, Rotation, SpatialDimension)
 
-
-def rearrange_acq_info_fields(field: T, pattern: str, **axes_lengths:dict[str,int]) -> T:
+def rearrange_acq_info_fields(field: object, pattern: str, **axes_lengths: dict[str, int]) -> object:
     """Change the shape of the fields in AcqInfo."""
-    match field:
-        case Rotation():
-            return Rotation.from_matrix(rearrange(field.as_matrix(), pattern, **axes_lengths))
-        case SpatialDimension(z,y,x)
-            return SpatialDimension(
-                z=rearrange(z, pattern, **axes_lengths),
-                y=rearrange(y, pattern, **axes_lengths),
-                x=rearrange(x, pattern, **axes_lengths),
-            )
-        case torch.Tensor:
-            return rearrange(field, pattern, **axes_lengths)
+    if isinstance(field, Rotation):
+        return Rotation.from_matrix(rearrange(field.as_matrix(), pattern, **axes_lengths))
+
+    if isinstance(field, torch.Tensor):
+        return rearrange(field, pattern, **axes_lengths)
 
     return field
 

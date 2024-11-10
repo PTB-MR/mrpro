@@ -1,6 +1,5 @@
 """Mixin class to split KData into other subsets."""
 
-import copy
 from typing import Literal, TypeVar
 
 import torch
@@ -97,11 +96,13 @@ class KDataSplitMixin(_KDataProtocol):
         ktraj = rearrange(split_data_traj(ktraj), rearrange_pattern_traj)
 
         # Create new header with correct shape
-        kheader = copy.deepcopy(self.header)
+        kheader = self.header.clone()
 
         # Update shape of acquisition info index
         kheader.acq_info.apply_(
             lambda field: rearrange_acq_info_fields(split_acq_info(field), rearrange_pattern_acq_info)
+            if isinstance(field, T.__constraints__)
+            else field
         )
 
         # Update other label limits and acquisition info
