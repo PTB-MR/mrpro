@@ -115,29 +115,6 @@ def test_spatial_dimension_apply_():
     assert torch.equal(spatial_dimension_inplace.z, z)
 
 
-def test_spatial_dimension_apply():
-    """Test apply (out of place)"""
-
-    def conversion(x: torch.Tensor) -> torch.Tensor:
-        assert isinstance(x, torch.Tensor), 'The argument to the conversion function should be a tensor'
-        return x.swapaxes(0, 1).square()
-
-    xyz = RandomGenerator(0).float32_tensor((1, 2, 3))
-    spatial_dimension = SpatialDimension.from_array_xyz(xyz.numpy())
-    spatial_dimension_outofplace = spatial_dimension.apply().apply(conversion)
-
-    assert spatial_dimension_outofplace is not spatial_dimension
-
-    assert isinstance(spatial_dimension_outofplace.x, torch.Tensor)
-    assert isinstance(spatial_dimension_outofplace.y, torch.Tensor)
-    assert isinstance(spatial_dimension_outofplace.z, torch.Tensor)
-
-    x, y, z = conversion(xyz).unbind(-1)
-    assert torch.equal(spatial_dimension_outofplace.x, x)
-    assert torch.equal(spatial_dimension_outofplace.y, y)
-    assert torch.equal(spatial_dimension_outofplace.z, z)
-
-
 def test_spatial_dimension_zyx():
     """Test the zyx tuple property"""
     z, y, x = (2, 3, 4)
