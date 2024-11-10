@@ -110,7 +110,7 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
 
     def apply_(self, function: Callable[[T], T] | None = None, **_) -> Self:
         """Apply a function to the fields of the dataclass."""
-        return super().apply_(function)
+        return super(SpatialDimension, self).apply_(function)
 
     @property
     def zyx(self) -> tuple[T_co, T_co, T_co]:
