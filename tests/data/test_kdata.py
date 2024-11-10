@@ -80,7 +80,7 @@ def consistently_shaped_kdata(request, random_kheader_shape):
 
     kheader.acq_info.apply_(
         lambda field: rearrange_acq_info_fields(
-            field, '(other k2 k1) ... -> other k2 k1 ...', other=n_other, k2=n_k2, k1=n_k1}
+            field, '(other k2 k1) ... -> other k2 k1 ...', other=n_other, k2=n_k2, k1=n_k1
         )
     )
 
@@ -478,7 +478,7 @@ def test_modify_acq_info(random_kheader_shape):
     # Create random header where AcqInfo fields are of shape [n_k1*n_k2] and reshape to [n_other, n_k2, n_k1]
     kheader, n_other, _, n_k2, n_k1, _ = random_kheader_shape
 
-    kheader.acq_info._apply(
+    kheader.acq_info.apply_(
         lambda field: rearrange_acq_info_fields(
             field, '(other k2 k1) ... -> other k2 k1 ...', other=n_other, k2=n_k2, k1=n_k1
         )
