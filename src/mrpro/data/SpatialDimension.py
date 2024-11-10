@@ -134,33 +134,6 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         self.y[idx] = other.y
         self.x[idx] = other.x
 
-    def apply(self: SpatialDimension[T_co], func: Callable[[T_co], T_co] | None = None) -> SpatialDimension[T_co]:
-        """Apply function to each of x,y,z.
-
-        Parameters
-        ----------
-        func
-            function to apply to each of x,y,z
-            None is interpreted as the identity function.
-        """
-
-        def func_(x: Any) -> T_co:  # noqa: ANN401
-            if isinstance(x, torch.Tensor):
-                # use clone for autograd
-                x = x.clone()
-            else:
-                x = deepcopy(x)
-            if func is None:
-                return x
-            else:
-                return func(x)
-
-        return self.__class__(func_(self.z), func_(self.y), func_(self.x))
-
-    def clone(self: SpatialDimension[T_co]) -> SpatialDimension[T_co]:
-        """Return a deep copy of the SpatialDimension."""
-        return self.apply()
-
     @overload
     def __mul__(self: SpatialDimension[T_co], other: T_co | SpatialDimension[T_co]) -> SpatialDimension[T_co]: ...
 

@@ -45,9 +45,9 @@ def generate_random_acquisition_properties(generator: RandomGenerator):
         'encoding_space_ref': generator.uint16(),
         'sample_time_us': generator.float32(),
         'position': generator.float32_tuple(3),
-        'read_dir': generator.float32_tuple(3),
-        'phase_dir': generator.float32_tuple(3),
-        'slice_dir': generator.float32_tuple(3),
+        'read_dir': (1, 0, 0),  # read, phase and slice have to form rotation
+        'phase_dir': (0, 1, 0),
+        'slice_dir': (0, 0, 1),
         'patient_table_position': generator.float32_tuple(3),
         'idx': ismrmrd.EncodingCounters(**idx_properties),
         'user_int': generator.uint32_tuple(8),
