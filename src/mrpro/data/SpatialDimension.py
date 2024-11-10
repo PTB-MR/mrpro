@@ -109,7 +109,13 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         return SpatialDimension(z, y, x)
 
     def apply_(self, function: Callable[[T], T] | None = None, **_) -> Self:
-        """Apply a function to the fields of the dataclass."""
+        """Apply a function to each z, y, x (in-place).
+
+        Parameters
+        ----------
+        function
+            function to apply
+        """
         return super(SpatialDimension, self).apply_(function)
 
     @property
