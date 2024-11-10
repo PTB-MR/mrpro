@@ -101,15 +101,13 @@ class Reconstruction(torch.nn.Module, ABC):
         -------
             image data
         """
-        device = kdata.data.device
         if self.noise is not None:
-            kdata = prewhiten_kspace(kdata, self.noise.to(device))
+            kdata = prewhiten_kspace(kdata, self.noise)
         operator = self.fourier_op
         if self.csm is not None:
             operator = operator @ self.csm.as_operator()
         if self.dcf is not None:
             operator = self.dcf.as_operator() @ operator
-        operator = operator.to(device)
         (img_tensor,) = operator.H(kdata.data)
         img = IData.from_tensor_and_kheader(img_tensor, kdata.header)
         return img
