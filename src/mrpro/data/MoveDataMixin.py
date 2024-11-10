@@ -251,7 +251,7 @@ class MoveDataMixin:
         Parameters
         ----------
         function
-            The function to apply to all tensors. None is interpreted as a no-op.
+            The function to apply to all fields. None is interpreted as a no-op.
 
         memo
             A dictionary to keep track of  objects that the function has already been applied to,
