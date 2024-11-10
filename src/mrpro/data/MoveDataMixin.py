@@ -240,7 +240,11 @@ class MoveDataMixin:
         return new
 
     def apply_(
-        self: Self, function: Callable[[T], T] | None = None, memo: dict[int, Any] | None = None, recurse: bool = True
+        self: Self,
+        function: Callable[[Any], Any] | None = None,
+        *,
+        memo: dict[int, Any] | None = None,
+        recurse: bool = True,
     ) -> Self:
         """Apply a function to all children in-place.
 

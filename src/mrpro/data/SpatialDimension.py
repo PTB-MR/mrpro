@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from copy import deepcopy
 from dataclasses import dataclass
 from typing import Generic, get_args
 
 import numpy as np
 import torch
 from numpy.typing import ArrayLike
-from typing_extensions import Any, Protocol, TypeVar, overload
+from typing_extensions import Protocol, Self, TypeVar, overload
 
 import mrpro.utils.typing as type_utils
 from mrpro.data.MoveDataMixin import MoveDataMixin
@@ -108,6 +107,10 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         z = data_[..., 0]
 
         return SpatialDimension(z, y, x)
+
+    def apply_(self, function: Callable[[T], T] | None = None, **_) -> Self:
+        """Apply a function to the fields of the dataclass."""
+        return super().apply_(function)
 
     @property
     def zyx(self) -> tuple[T_co, T_co, T_co]:
