@@ -98,7 +98,7 @@ class CartesianSamplingOp(LinearOperator):
         self._needs_indexing = (
             not torch.all(torch.diff(kidx) == 1)
             or traj.broadcasted_shape[-3:] != sorted_grid_shape.zyx
-            or self._data_outside_of_encoding_matrix is not None
+            or self._inside_encoding_matrix_idx is not None
         )
 
         self._trajectory_shape = traj.broadcasted_shape
