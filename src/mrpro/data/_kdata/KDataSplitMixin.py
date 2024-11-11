@@ -1,6 +1,6 @@
 """Mixin class to split KData into other subsets."""
 
-from typing import Literal, TypeVar
+from typing import Literal, TypeVar, cast
 
 import torch
 from einops import rearrange, repeat
@@ -11,7 +11,7 @@ from mrpro.data.AcqInfo import rearrange_acq_info_fields
 from mrpro.data.EncodingLimits import Limits
 from mrpro.data.Rotation import Rotation
 
-RotationOrTensor = TypeVar('RotationOrTensor', torch.Tensor, Rotation)
+RotationOrTensor = TypeVar('RotationOrTensor', bound=torch.Tensor | Rotation)
 
 
 class KDataSplitMixin(_KDataProtocol):
@@ -59,7 +59,8 @@ class KDataSplitMixin(_KDataProtocol):
                 return dat_traj[:, :, :, split_idx, :]
 
             def split_acq_info(acq_info: RotationOrTensor) -> RotationOrTensor:
-                return acq_info[:, :, split_idx, ...]
+                # cast due to https://github.com/python/mypy/issues/10817
+                return cast(RotationOrTensor, acq_info[:, :, split_idx, ...])
 
             # Rearrange other_split and k1 dimension
             rearrange_pattern_data = 'other coils k2 other_split k1 k0->(other other_split) coils k2 k1 k0'
@@ -72,7 +73,7 @@ class KDataSplitMixin(_KDataProtocol):
                 return dat_traj[:, :, split_idx, :, :]
 
             def split_acq_info(acq_info: RotationOrTensor) -> RotationOrTensor:
-                return acq_info[:, split_idx, ...]
+                return cast(RotationOrTensor, acq_info[:, split_idx, ...])
 
             # Rearrange other_split and k1 dimension
             rearrange_pattern_data = 'other coils other_split k2 k1 k0->(other other_split) coils k2 k1 k0'
