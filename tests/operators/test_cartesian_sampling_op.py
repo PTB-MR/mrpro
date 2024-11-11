@@ -2,6 +2,7 @@
 
 import pytest
 import torch
+from einops import rearrange
 from mrpro.data import KTrajectory, SpatialDimension
 from mrpro.operators import CartesianSamplingOp
 
@@ -59,6 +60,9 @@ def test_cart_sampling_op_data_match():
         'regular_undersampling',
         'random_undersampling',
         'different_random_undersampling',
+        'cartesian_and_non_cartesian',
+        'kx_ky_along_k0',
+        'kx_ky_along_k0_undersampling',
     ],
 )
 def test_cart_sampling_op_fwd_adj(sampling):
@@ -70,8 +74,8 @@ def test_cart_sampling_op_fwd_adj(sampling):
     nky = (2, 1, 40, 1)
     nkz = (2, 20, 1, 1)
     sx = 'uf'
-    sy = 'uf'
-    sz = 'uf'
+    sy = 'nuf' if sampling == 'cartesian_and_non_cartesian' else 'uf'
+    sz = 'nuf' if sampling == 'cartesian_and_non_cartesian' else 'uf'
     trajectory_tensor = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz).as_tensor()
 
     # Subsample data and trajectory
@@ -94,6 +98,15 @@ def test_cart_sampling_op_fwd_adj(sampling):
                 for traj_one_other in trajectory_tensor.unbind(1)
             ]
             trajectory = KTrajectory.from_tensor(torch.stack(traj_list, dim=1))
+        case 'cartesian_and_non_cartesian':
+            trajectory = KTrajectory.from_tensor(trajectory_tensor)
+        case 'kx_ky_along_k0':
+            trajectory_tensor = rearrange(trajectory_tensor, '... k1 k0->... 1 (k1 k0)')
+            trajectory = KTrajectory.from_tensor(trajectory_tensor)
+        case 'kx_ky_along_k0_undersampling':
+            trajectory_tensor = rearrange(trajectory_tensor, '... k1 k0->... 1 (k1 k0)')
+            random_idx = torch.randperm(trajectory_tensor.shape[-1])
+            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., random_idx[: trajectory_tensor.shape[-1] // 2]])
         case _:
             raise NotImplementedError(f'Test {sampling} not implemented.')
 
