@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from copy import deepcopy
 from dataclasses import dataclass
 from typing import Generic, get_args
 
 import numpy as np
 import torch
 from numpy.typing import ArrayLike
-from typing_extensions import Any, Protocol, TypeVar, overload
+from typing_extensions import Protocol, Self, TypeVar, overload
 
 import mrpro.utils.typing as type_utils
 from mrpro.data.MoveDataMixin import MoveDataMixin
@@ -109,6 +108,16 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
 
         return SpatialDimension(z, y, x)
 
+    def apply_(self, function: Callable[[T], T] | None = None, **_) -> Self:
+        """Apply a function to each z, y, x (in-place).
+
+        Parameters
+        ----------
+        function
+            function to apply
+        """
+        return super(SpatialDimension, self).apply_(function)
+
     @property
     def zyx(self) -> tuple[T_co, T_co, T_co]:
         """Return a z,y,x tuple."""
@@ -133,48 +142,6 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         self.z[idx] = other.z
         self.y[idx] = other.y
         self.x[idx] = other.x
-
-    def apply_(self: SpatialDimension[T_co], func: Callable[[T_co], T_co] | None = None) -> SpatialDimension[T_co]:
-        """Apply function to each of x,y,z in-place.
-
-        Parameters
-        ----------
-        func
-            function to apply to each of x,y,z
-            None is interpreted as the identity function.
-        """
-        if func is not None:
-            self.z = func(self.z)
-            self.y = func(self.y)
-            self.x = func(self.x)
-        return self
-
-    def apply(self: SpatialDimension[T_co], func: Callable[[T_co], T_co] | None = None) -> SpatialDimension[T_co]:
-        """Apply function to each of x,y,z.
-
-        Parameters
-        ----------
-        func
-            function to apply to each of x,y,z
-            None is interpreted as the identity function.
-        """
-
-        def func_(x: Any) -> T_co:  # noqa: ANN401
-            if isinstance(x, torch.Tensor):
-                # use clone for autograd
-                x = x.clone()
-            else:
-                x = deepcopy(x)
-            if func is None:
-                return x
-            else:
-                return func(x)
-
-        return self.__class__(func_(self.z), func_(self.y), func_(self.x))
-
-    def clone(self: SpatialDimension[T_co]) -> SpatialDimension[T_co]:
-        """Return a deep copy of the SpatialDimension."""
-        return self.apply()
 
     @overload
     def __mul__(self: SpatialDimension[T_co], other: T_co | SpatialDimension[T_co]) -> SpatialDimension[T_co]: ...
