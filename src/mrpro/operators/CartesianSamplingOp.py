@@ -9,6 +9,7 @@ from mrpro.data.enums import TrajType
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
+from mrpro.utils.reshape import unsqueeze_left
 
 
 class CartesianSamplingOp(LinearOperator):
@@ -69,12 +70,9 @@ class CartesianSamplingOp(LinearOperator):
 
         # check that all points are inside the encoding matrix
         inside_encoding_matrix = (
-            (kx_idx >= 0)
-            & (kx_idx < sorted_grid_shape.x)
-            & (ky_idx >= 0)
-            & (ky_idx < sorted_grid_shape.y)
-            & (kz_idx >= 0)
-            & (kz_idx < sorted_grid_shape.z)
+            ((kx_idx >= 0) & (kx_idx < sorted_grid_shape.x))
+            & ((ky_idx >= 0) & (ky_idx < sorted_grid_shape.y))
+            & ((kz_idx >= 0) & (kz_idx < sorted_grid_shape.z))
         )
         if not torch.all(inside_encoding_matrix):
             warnings.warn(
@@ -84,8 +82,7 @@ class CartesianSamplingOp(LinearOperator):
             )
 
             inside_encoding_matrix = rearrange(inside_encoding_matrix, '... kz ky kx -> ... 1 (kz ky kx)')
-            inside_encoding_matrix_idx = torch.broadcast_to(torch.arange(0, kidx.shape[-1]), kidx.shape)
-            inside_encoding_matrix_idx = inside_encoding_matrix_idx[inside_encoding_matrix]
+            inside_encoding_matrix_idx = inside_encoding_matrix.nonzero(as_tuple=True)[-1]
             inside_encoding_matrix_idx = torch.reshape(inside_encoding_matrix_idx, (*kidx.shape[:-1], -1))
             self.register_buffer('_inside_encoding_matrix_idx', inside_encoding_matrix_idx)
             kidx = torch.take_along_dim(kidx, inside_encoding_matrix_idx, dim=-1)
@@ -124,17 +121,20 @@ class CartesianSamplingOp(LinearOperator):
             return (x,)
 
         x_kflat = rearrange(x, '... coil k2_enc k1_enc k0_enc -> ... coil (k2_enc k1_enc k0_enc)')
-        # take_along_dim does broadcast, so no need for extending here
-        x_inside_encoding_matrix = torch.take_along_dim(x_kflat, self._fft_idx, dim=-1)
+        # take_along_dim broadcasts, but needs the same number of dimensions
+        idx = unsqueeze_left(self._fft_idx, x_kflat.ndim - self._fft_idx.ndim)
+        x_inside_encoding_matrix = torch.take_along_dim(x_kflat, idx, dim=-1)
 
-        if self._inside_encoding_matrix_idx is not None:
+        if self._inside_encoding_matrix_idx is None:
+            # all trajectory points are inside the encoding matrix
+            x_indexed = x_inside_encoding_matrix
+        else:
+            # we need to add zeros
             x_indexed = self._broadcast_and_scatter_along_last_dim(
                 x_inside_encoding_matrix,
                 self._trajectory_shape[-1] * self._trajectory_shape[-2] * self._trajectory_shape[-3],
                 self._inside_encoding_matrix_idx,
             )
-        else:
-            x_indexed = x_inside_encoding_matrix
 
         # reshape to (... other coil, k2, k1, k0)
         x_reshaped = x_indexed.reshape(x.shape[:-3] + self._trajectory_shape[-3:])
@@ -162,7 +162,8 @@ class CartesianSamplingOp(LinearOperator):
         y_kflat = rearrange(y, '... coil k2 k1 k0 -> ... coil (k2 k1 k0)')
 
         if self._inside_encoding_matrix_idx is not None:
-            y_kflat = torch.take_along_dim(y_kflat, self._inside_encoding_matrix_idx, dim=-1)
+            idx = unsqueeze_left(self._inside_encoding_matrix_idx, y_kflat.ndim - self._inside_encoding_matrix_idx.ndim)
+            y_kflat = torch.take_along_dim(y_kflat, idx, dim=-1)
 
         y_scattered = self._broadcast_and_scatter_along_last_dim(
             y_kflat, self._sorted_grid_shape.z * self._sorted_grid_shape.y * self._sorted_grid_shape.x, self._fft_idx
