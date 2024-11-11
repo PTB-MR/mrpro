@@ -6,15 +6,15 @@ import numpy as np
 import torch
 
 __all__ = [
-    "ms_to_s",
-    "s_to_ms",
-    "mm_to_m",
-    "m_to_mm",
-    "deg_to_rad",
-    "rad_to_deg",
-    "lamor_frequency_to_magnetic_field",
-    "magnetic_field_to_lamor_frequency",
-    "GYROMAGNETIC_RATIO_PROTON"
+    'ms_to_s',
+    's_to_ms',
+    'mm_to_m',
+    'm_to_mm',
+    'deg_to_rad',
+    'rad_to_deg',
+    'lamor_frequency_to_magnetic_field',
+    'magnetic_field_to_lamor_frequency',
+    'GYROMAGNETIC_RATIO_PROTON',
 ]
 
 GYROMAGNETIC_RATIO_PROTON = 42.58 * 1e6
