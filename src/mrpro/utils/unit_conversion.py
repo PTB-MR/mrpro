@@ -5,7 +5,20 @@ from typing import TypeVar
 import numpy as np
 import torch
 
-GYROMAGNETIC_MOMENT_PROTON = 42.58 * 1e6
+__all__ = [
+    "ms_to_s",
+    "s_to_ms",
+    "mm_to_m",
+    "m_to_mm",
+    "deg_to_rad",
+    "rad_to_deg",
+    "lamor_frequency_to_magnetic_field",
+    "magnetic_field_to_lamor_frequency",
+    "GYROMAGNETIC_RATIO_PROTON"
+]
+
+GYROMAGNETIC_RATIO_PROTON = 42.58 * 1e6
+r"""The gyromagnetic ratio :math:`\frac{\gamma}{2\pi}` of 1H in H20 in Hz/T"""
 
 # Conversion functions for units
 T = TypeVar('T', float, torch.Tensor)
@@ -45,7 +58,7 @@ def rad_to_deg(deg: T) -> T:
     return deg * 180.0 / np.pi
 
 
-def lamor_frequency_to_magnetic_field(lamor_frequency: T, gyromagnetic_ratio: float = GYROMAGNETIC_MOMENT_PROTON) -> T:
+def lamor_frequency_to_magnetic_field(lamor_frequency: T, gyromagnetic_ratio: float = GYROMAGNETIC_RATIO_PROTON) -> T:
     """Convert the Lamor frequency [Hz] to the magntic field strength [T].
 
     Parameters
@@ -63,7 +76,7 @@ def lamor_frequency_to_magnetic_field(lamor_frequency: T, gyromagnetic_ratio: fl
 
 
 def magnetic_field_to_lamor_frequency(
-    magnetic_field_strength: T, gyromagnetic_ratio: float = GYROMAGNETIC_MOMENT_PROTON
+    magnetic_field_strength: T, gyromagnetic_ratio: float = GYROMAGNETIC_RATIO_PROTON
 ) -> T:
     """Convert the magntic field strength [T] to Lamor frequency [Hz].
 
