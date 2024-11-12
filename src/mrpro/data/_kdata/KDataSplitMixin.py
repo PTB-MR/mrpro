@@ -1,15 +1,17 @@
 """Mixin class to split KData into other subsets."""
 
-import copy
-from typing import Literal
+from typing import Literal, TypeVar, cast
 
 import torch
 from einops import rearrange, repeat
 from typing_extensions import Self
 
 from mrpro.data._kdata.KDataProtocol import _KDataProtocol
+from mrpro.data.AcqInfo import rearrange_acq_info_fields
 from mrpro.data.EncodingLimits import Limits
-from mrpro.utils import modify_acq_info
+from mrpro.data.Rotation import Rotation
+
+RotationOrTensor = TypeVar('RotationOrTensor', bound=torch.Tensor | Rotation)
 
 
 class KDataSplitMixin(_KDataProtocol):
@@ -56,8 +58,9 @@ class KDataSplitMixin(_KDataProtocol):
             def split_data_traj(dat_traj: torch.Tensor) -> torch.Tensor:
                 return dat_traj[:, :, :, split_idx, :]
 
-            def split_acq_info(acq_info: torch.Tensor) -> torch.Tensor:
-                return acq_info[:, :, split_idx, ...]
+            def split_acq_info(acq_info: RotationOrTensor) -> RotationOrTensor:
+                # cast due to https://github.com/python/mypy/issues/10817
+                return cast(RotationOrTensor, acq_info[:, :, split_idx, ...])
 
             # Rearrange other_split and k1 dimension
             rearrange_pattern_data = 'other coils k2 other_split k1 k0->(other other_split) coils k2 k1 k0'
@@ -69,8 +72,8 @@ class KDataSplitMixin(_KDataProtocol):
             def split_data_traj(dat_traj: torch.Tensor) -> torch.Tensor:
                 return dat_traj[:, :, split_idx, :, :]
 
-            def split_acq_info(acq_info: torch.Tensor) -> torch.Tensor:
-                return acq_info[:, split_idx, ...]
+            def split_acq_info(acq_info: RotationOrTensor) -> RotationOrTensor:
+                return cast(RotationOrTensor, acq_info[:, split_idx, ...])
 
             # Rearrange other_split and k1 dimension
             rearrange_pattern_data = 'other coils other_split k2 k1 k0->(other other_split) coils k2 k1 k0'
@@ -93,13 +96,14 @@ class KDataSplitMixin(_KDataProtocol):
         ktraj = rearrange(split_data_traj(ktraj), rearrange_pattern_traj)
 
         # Create new header with correct shape
-        kheader = copy.deepcopy(self.header)
+        kheader = self.header.clone()
 
         # Update shape of acquisition info index
-        def reshape_acq_info(info: torch.Tensor):
-            return rearrange(split_acq_info(info), rearrange_pattern_acq_info)
-
-        kheader.acq_info = modify_acq_info(reshape_acq_info, kheader.acq_info)
+        kheader.acq_info.apply_(
+            lambda field: rearrange_acq_info_fields(split_acq_info(field), rearrange_pattern_acq_info)
+            if isinstance(field, Rotation | torch.Tensor)
+            else field
+        )
 
         # Update other label limits and acquisition info
         setattr(kheader.encoding_limits, other_label, Limits(min=0, max=n_other - 1, center=0))
