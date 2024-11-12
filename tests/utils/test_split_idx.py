@@ -4,6 +4,7 @@ import pytest
 import torch
 from einops import repeat
 from mrpro.utils import split_idx
+from tests import RandomGenerator
 
 
 @pytest.mark.parametrize(
@@ -19,7 +20,7 @@ def test_split_idx(ni_per_block, ni_overlap, cyclic, unique_values_in_last_block
     # Create a regular sequence of values
     vals = repeat(torch.tensor([0, 1, 2, 3]), 'd0 -> (d0 repeat)', repeat=5)
     # Mix up values
-    vals = vals[torch.randperm(vals.shape[0])]
+    vals = vals[RandomGenerator(13).randperm(vals.shape[0])]
 
     # Split indices of sorted sequence
     idx_split = split_idx(torch.argsort(vals), ni_per_block, ni_overlap, cyclic)
