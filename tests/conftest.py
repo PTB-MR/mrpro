@@ -11,6 +11,7 @@ from mrpro.data.enums import AcqFlags
 from xsdata.models.datatype import XmlDate, XmlTime
 
 from tests import RandomGenerator
+from tests.data import IsmrmrdRawTestData
 from tests.phantoms import EllipsePhantomTestData
 
 
@@ -247,6 +248,19 @@ def create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
         k_list.append(k)
     trajectory = KTrajectory(k_list[0], k_list[1], k_list[2], repeat_detection_tolerance=None)
     return trajectory
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart(ellipse_phantom, tmp_path_factory):
+    """Fully sampled cartesian data set."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        phantom=ellipse_phantom.phantom,
+    )
+    return ismrmrd_kdata
 
 
 COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
