@@ -94,6 +94,7 @@ def pdhg(
         return tuple(initial_values)
 
     if operator is None:
+        # Use identity operator if no operator is supplied
         rows = len(f) if f is not None else 1
         cols = len(g) if g is not None else 1
         if rows != cols:
@@ -101,6 +102,7 @@ def pdhg(
         operator_matrix = LinearOperatorMatrix.from_diagonal(*((IdentityOp(),) * rows))
     else:
         if isinstance(operator, LinearOperator):
+            # We allways use a matrix of operators for homogeneous handling
             operator_matrix = LinearOperatorMatrix.from_diagonal(operator)
         else:
             operator_matrix = operator
@@ -111,6 +113,7 @@ def pdhg(
             raise ValueError('Number of columns in operator does not match number of functionals in g')
 
     if f is None:
+        # We always use a separable sum for homogeneous handling, even if it is just a ZeroFunctional
         f_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * rows)
     elif isinstance(f, ProximableFunctional):
         f_sum = ProximableFunctionalSeparableSum(f)
@@ -118,6 +121,7 @@ def pdhg(
         f_sum = f
 
     if g is None:
+        # We always use a separable sum for homogeneous handling, even if it is just a ZeroFunctional
         g_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * cols)
     elif isinstance(g, ProximableFunctional):
         g_sum = ProximableFunctionalSeparableSum(g)
