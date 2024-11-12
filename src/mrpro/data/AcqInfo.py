@@ -2,7 +2,6 @@
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Self
 
 import ismrmrd
 import numpy as np
@@ -10,6 +9,7 @@ import torch
 from einops import rearrange
 from typing_extensions import Self
 
+import mrpro.utils.typing as type_utils
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
@@ -230,23 +230,6 @@ class AcqInfo(MoveDataMixin):
             user7=tensor(idx['user'][:, 7]),
         )
 
-        # Calculate orientation as rotation matrix from directional cosines
-        def orientation_from_directional_cosine(
-            slice_dir: SpatialDimension[torch.Tensor],
-            phase_dir: SpatialDimension[torch.Tensor],
-            read_dir: SpatialDimension[torch.Tensor],
-        ) -> Rotation:
-            return Rotation.from_matrix(
-                torch.stack(
-                    (
-                        torch.stack((slice_dir.z, slice_dir.y, slice_dir.x), dim=-1),
-                        torch.stack((read_dir.z, read_dir.y, read_dir.x), dim=-1),
-                        torch.stack((phase_dir.z, phase_dir.y, phase_dir.x), dim=-1),
-                    ),
-                    dim=-2,
-                )
-            )
-
         acq_info = cls(
             idx=acq_idx,
             acquisition_time_stamp=tensor_2d(headers['acquisition_time_stamp']),
@@ -278,7 +261,7 @@ class AcqInfo(MoveDataMixin):
         return acq_info
 
     def add_to_ismrmrd_acquisition(
-        self, acquisition: ismrmrd.Acquisition, other: Any, k2: int, k1: int
+        self, acquisition: ismrmrd.Acquisition, other: type_utils.TorchIndexerType, k2: int, k1: int
     ) -> ismrmrd.Acquisition:
         """ISMRMRD acquisition information for single acquisition."""
         acquisition.idx.kspace_encode_step_1 = self.idx.k1[*other, k2, k1]
@@ -310,14 +293,16 @@ class AcqInfo(MoveDataMixin):
         acquisition.discard_pre = self.discard_pre[*other, k2, k1, 0]
         acquisition.encoding_space_ref = self.encoding_space_ref[*other, k2, k1, 0]
         acquisition.measurement_uid = self.measurement_uid[*other, k2, k1, 0]
-        acquisition.patient_table_position = self.patient_table_position[*other, k2, k1, 0].apply_(m_to_mm)
-        acquisition.phase_dir = tuple(self.orientation.as_matrix()[*other, k2, k1, 0, 2, :])[::-1]  # zyx -> xyz
+        acquisition.patient_table_position = (
+            self.patient_table_position[*other, k2, k1, 0].apply_(m_to_mm).zyx[::-1]
+        )  # zyx -> xyz
+        acquisition.phase_dir = self.orientation.as_directions()[-2][*other, k2, k1, 0].zyx[::-1]  # zyx -> xyz
         acquisition.physiology_time_stamp = tuple(self.physiology_time_stamp[*other, k2, k1, :])
-        acquisition.position = self.position[*other, k2, k1, 0].apply_(m_to_mm)
-        acquisition.read_dir = tuple(self.orientation.as_matrix()[*other, k2, k1, 0, 1, :])[::-1]  # zyx -> xyz
+        acquisition.position = self.position[*other, k2, k1, 0].apply_(m_to_mm).zyx[::-1]  # zyx -> xyz
+        acquisition.read_dir = self.orientation.as_directions()[-1][*other, k2, k1, 0].zyx[::-1]  # zyx -> xyz
         acquisition.sample_time_us = self.sample_time_us[*other, k2, k1, 0]
         acquisition.scan_counter = self.scan_counter[*other, k2, k1, 0]
-        acquisition.slice_dir = tuple(self.orientation.as_matrix()[*other, k2, k1, 0, 0, :])[::-1]  # zyx -> xyz
+        acquisition.slice_dir = self.orientation.as_directions()[-3][*other, k2, k1, 0].zyx[::-1]  # zyx -> xyz
         acquisition.user_float = tuple(self.user_float[*other, k2, k1, :])
         acquisition.user_int = tuple(self.user_int[*other, k2, k1, :])
         acquisition.version = self.version[*other, k2, k1, 0]

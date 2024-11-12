@@ -219,9 +219,9 @@ class IsmrmrdRawTestData:
         acq.version = 1
         acq.available_channels = self.n_coils
         acq.center_sample = round(n_freq_encoding / 2)
-        acq.read_dir[0] = 1.0
-        acq.phase_dir[1] = 1.0
-        acq.slice_dir[2] = 1.0
+        acq.read_dir = (-0.33, 0.38, -0.86)
+        acq.phase_dir = (0.75, 0.66, 0.0)
+        acq.slice_dir = (-0.57, 0.65, 0.5)
 
         scan_counter = 0
 

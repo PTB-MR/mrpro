@@ -548,5 +548,11 @@ def test_KData_to_file(ismrmrd_cart, tmp_path_factory):
 
     torch.testing.assert_close(kdata.data, kdata_reload.data)
     torch.testing.assert_close(kdata.traj.as_tensor(), kdata_reload.traj.as_tensor())
+    torch.testing.assert_close(
+        kdata.header.acq_info.orientation.as_matrix(), kdata_reload.header.acq_info.orientation.as_matrix()
+    )
+    torch.testing.assert_close(kdata.header.acq_info.position.z, kdata_reload.header.acq_info.position.z)
+    torch.testing.assert_close(kdata.header.acq_info.position.y, kdata_reload.header.acq_info.position.y)
+    torch.testing.assert_close(kdata.header.acq_info.position.x, kdata_reload.header.acq_info.position.x)
     assert kdata.header.encoding_fov.x == kdata_reload.header.encoding_fov.x
     assert kdata.header.encoding_limits.k1.max == kdata_reload.header.encoding_limits.k1.max

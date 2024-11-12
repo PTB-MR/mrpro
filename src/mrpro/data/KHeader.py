@@ -161,13 +161,13 @@ class KHeader(MoveDataMixin):
             parameters.update(defaults)
 
         if header.sequenceParameters is not None:
-            if any(header.sequenceParameters.TR):
+            if header.sequenceParameters.TR:
                 parameters['tr'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TR))
-            if any(header.sequenceParameters.TE):
+            if header.sequenceParameters.TE:
                 parameters['te'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TE))
-            if any(header.sequenceParameters.TI):
+            if header.sequenceParameters.TI:
                 parameters['ti'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TI))
-            if any(header.sequenceParameters.flipAngle_deg):
+            if header.sequenceParameters.flipAngle_deg:
                 parameters['fa'] = torch.deg2rad(torch.as_tensor(header.sequenceParameters.flipAngle_deg))
             if header.sequenceParameters.echo_spacing:
                 parameters['echo_spacing'] = ms_to_s(torch.as_tensor(header.sequenceParameters.echo_spacing))
