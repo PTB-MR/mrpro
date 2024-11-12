@@ -130,7 +130,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             )
             acquisitions = [acq for acq in acquisitions if has_n_coils(n_coils, acq)]
 
-        if len(acquisitions) == 0:
+        if not acquisitions:
             raise ValueError('No acquisitions meeting the given filter criteria were found.')
 
         kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
