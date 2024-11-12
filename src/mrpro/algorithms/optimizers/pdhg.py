@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 import torch
 
-from mrpro.algorithms.optimizers import OptimizerStatus
+from mrpro.algorithms.optimizers.OptimizerStatus import OptimizerStatus
 from mrpro.operators import (
     IdentityOp,
     LinearOperator,
