@@ -4,4 +4,4 @@ from mrpro.algorithms.optimizers.cg import cg
 from mrpro.algorithms.optimizers.lbfgs import lbfgs
 from mrpro.algorithms.optimizers.pgd import pgd
 
-__all__ = ["OptimizerStatus", "adam", "cg", "lbfgs", "pdg"]
+__all__ = ["OptimizerStatus", "adam", "cg", "lbfgs", "pdg", "pgd"]

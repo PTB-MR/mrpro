@@ -1,10 +1,10 @@
 """Tests for the proximal gradient descent."""
+
 import torch
 from mrpro.algorithms.optimizers import pgd
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators import FastFourierOp
-from mrpro.operators.functionals import L1Norm
-from mrpro.operators.functionals import L2NormSquared
+from mrpro.operators.functionals import L1Norm, L2NormSquared
 from mrpro.phantoms import EllipsePhantom
 
 
