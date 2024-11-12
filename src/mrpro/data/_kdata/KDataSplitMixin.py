@@ -13,6 +13,7 @@ from mrpro.data.Rotation import Rotation
 
 RotationOrTensor = TypeVar('RotationOrTensor', bound=torch.Tensor | Rotation)
 
+
 class KDataSplitMixin(_KDataProtocol):
     """Split KData into other subsets."""
 
