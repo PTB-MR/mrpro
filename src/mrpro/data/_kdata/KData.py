@@ -120,7 +120,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             ):
                 n_coils = int(ismrmrd_header.acquisitionSystemInformation.receiverChannels)
             else:
-                # most likely, these the coils used for imaging
+                # most likely, highest number of elements are the coils used for imaging
                 n_coils = int(max(n_coils_available))
 
             warnings.warn(
