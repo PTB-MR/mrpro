@@ -2,17 +2,21 @@ name: PyTest
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
 
 jobs:
   get_dockerfiles:
-    name: Get list of dockerfiles for different containers
+    name: Get List of Dockerfiles for Containers
     runs-on: ubuntu-latest
     permissions:
       packages: read
     outputs:
       imagenames: ${{ steps.set-matrix.outputs.imagenames }}
     steps:
-      - id: set-matrix
+      - name: Retrieve Docker Image Names
+        id: set-matrix
         env:
           GH_TOKEN: ${{ secrets.GHCR_TOKEN }}
         run: |
@@ -35,57 +39,56 @@ jobs:
           echo "image names with tag latest: $imagenames_latest"
           echo "imagenames=$imagenames_latest" >> $GITHUB_OUTPUT
 
-      - name: Dockerfile overview
+      - name: Dockerfile Overview
         run: |
-          echo "final list of images with tag latest: ${{ steps.set-matrix.outputs.imagenames }}"
+          echo "Final list of images with tag latest: ${{ steps.set-matrix.outputs.imagenames }}"
 
   test:
-    name: Run tests and get coverage report
+    name: Run Tests and Coverage Report
     needs: get_dockerfiles
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
       contents: write
     strategy:
+      fail-fast: false
       matrix:
         imagename: ${{ fromJson(needs.get_dockerfiles.outputs.imagenames) }}
-    # runs within Docker container
     container:
       image: ghcr.io/ptb-mr/${{ matrix.imagename }}:latest
       options: --user runner
-
     steps:
-      - name: Checkout repo
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install mrpro and dependencies
-        run: pip install --upgrade --upgrade-strategy "eager" .[test]
+      - name: Install MRpro and Dependencies
+        run: pip install --upgrade --upgrade-strategy eager .[test]
 
-      - name: Install pytest-github-actions-annotate-failures plugin
+      - name: Install PyTest GitHub Annotation Plugin
         run: pip install pytest-github-actions-annotate-failures
 
-      - name: Run PyTest
+      - name: Run PyTest and Generate Coverage Report
         run: |
-          pytest -n 4 -m "not cuda" --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
+          pytest -n 4 -m "not cuda" --junitxml=pytest.xml \
+          --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
 
-      - name: Check for pytest.xml
+      - name: Verify PyTest XML Output
         run: |
-          if [ -f pytest.xml ]; then
-            echo "pytest.xml file found. Continuing..."
-          else
-            echo "pytest.xml file not found. Please check previous 'Run PyTest' section for errors."
+          if [ ! -f pytest.xml ]; then
+            echo "PyTest XML report not found. Please check the previous 'Run PyTest' step for errors."
             exit 1
           fi
 
-      - name: Pytest coverage comment
+      - name: Post PyTest Coverage Comment
         id: coverageComment
-        uses: MishaKav/pytest-coverage-comment@v1.1.52
+        uses: MishaKav/pytest-coverage-comment@v1.1.53
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           junitxml-path: ./pytest.xml
 
-      - name: Create the Badge
+      - name: Create Coverage Badge on Main Branch Push
         uses: schneegans/dynamic-badges-action@v1.7.0
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           auth: ${{ secrets.GIST_SECRET }}
           gistID: 48e334a10caf60e6708d7c712e56d241
@@ -95,12 +98,12 @@ jobs:
           color: ${{ steps.coverageComment.outputs.color }}
           namedLogo: python
 
-      - name: Set pipeline status
+      - name: Set Pipeline Status Based on Test Results
         if: steps.coverageComment.outputs.errors != 0 || steps.coverageComment.outputs.failures != 0
         uses: actions/github-script@v7
         with:
           script: |
-            core.setFailed('PyTest workflow failed with ${{ steps.coverageComment.outputs.errors }} errors and ${{ steps.coverageComment.outputs.failures }} failures.')
+            core.setFailed("PyTest workflow failed with ${{ steps.coverageComment.outputs.errors }} errors and ${{ steps.coverageComment.outputs.failures }} failures.")
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

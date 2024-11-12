@@ -10,11 +10,10 @@ from tests import RandomGenerator
 
 
 def test_power_iteration_uses_stopping_criterion():
-    """Test if the power iteration stops if the the absolute and relative tolerance are chosen high."""
+    """Test if the power iteration stops if the absolute and relative tolerance are chosen high."""
 
-    # callback function that should not be called because the power iteration
-    # should stop if the tolerances are set high
-    def callback():
+    def callback(_):
+        """Callback function that should not be called, because the power iteration should stop."""
         pytest.fail('The power iteration did not stop despite high atol and rtol!')
 
     random_generator = RandomGenerator(seed=0)

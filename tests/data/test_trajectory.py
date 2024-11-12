@@ -106,7 +106,7 @@ def test_trajectory_floating_dtype(dtype):
         assert traj.kx.dtype == torch.float32
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 def test_trajectory_cuda(cartesian_grid):
     """Move KTrajectory object to CUDA memory."""
     n_k0 = 10
@@ -131,7 +131,7 @@ def test_trajectory_cuda(cartesian_grid):
     assert not trajectory.is_cuda
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 def test_trajectory_cpu(cartesian_grid):
     """Move KTrajectory object to CUDA memory and back to CPU memory."""
     n_k0 = 10
@@ -147,16 +147,16 @@ def test_trajectory_cpu(cartesian_grid):
 
 
 @COMMON_MR_TRAJECTORIES
-def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
+def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2):
     """Test identification of traj types."""
 
     # Generate random k-space trajectories
-    trajectory = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
+    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # Find out the type of the kz, ky and kz dimensions
-    single_value_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx), strict=True) if s == 'z']
-    on_grid_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx), strict=True) if s == 'uf']
-    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (sz, sy, sx), strict=True) if s == 'nuf']
+    single_value_dims = [d for d, s in zip((-3, -2, -1), (type_kz, type_ky, type_kx), strict=True) if s == 'z']
+    on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_kz, type_ky, type_kx), strict=True) if s == 'uf']
+    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_kz, type_ky, type_kx), strict=True) if s == 'nuf']
 
     # check dimensions which are of shape 1 and do not need any transform
     assert all(trajectory.type_along_kzyx[dim] & TrajType.SINGLEVALUE for dim in single_value_dims)
@@ -171,16 +171,16 @@ def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, 
 
 
 @COMMON_MR_TRAJECTORIES
-def test_ktype_along_k210(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
+def test_ktype_along_k210(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2):
     """Test identification of traj types."""
 
     # Generate random k-space trajectories
-    trajectory = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
+    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # Find out the type of the k2, k1 and k0 dimensions
-    single_value_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0), strict=True) if s == 'z']
-    on_grid_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0), strict=True) if s == 'uf']
-    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (s2, s1, s0), strict=True) if s == 'nuf']
+    single_value_dims = [d for d, s in zip((-3, -2, -1), (type_k2, type_k1, type_k0), strict=True) if s == 'z']
+    on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_k2, type_k1, type_k0), strict=True) if s == 'uf']
+    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_k2, type_k1, type_k0), strict=True) if s == 'nuf']
 
     # check dimensions which are of shape 1 and do not need any transform
     assert all(trajectory.type_along_k210[dim] & TrajType.SINGLEVALUE for dim in single_value_dims)

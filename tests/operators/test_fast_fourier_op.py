@@ -28,7 +28,7 @@ def test_fast_fourier_op_forward(npoints, a):
 
     # Transform image to k-space
     ff_op = FastFourierOp(dim=(0,))
-    (igauss_fwd,) = ff_op.forward(igauss)
+    (igauss_fwd,) = ff_op(igauss)
 
     # Scaling to "undo" fft scaling
     igauss_fwd *= np.sqrt(npoints) / 2
