@@ -175,6 +175,7 @@ def test_cart_sampling_op_gram(sampling):
     (actual,) = sampling_op.gram(u)
     torch.testing.assert_close(actual, expected, rtol=1e-3, atol=1e-3)
 
+
 @pytest.mark.parametrize(('k2_min', 'k2_max'), [(-1, 21), (-21, 1)])
 @pytest.mark.parametrize(('k0_min', 'k0_max'), [(-6, 13), (-13, 6)])
 def test_cart_sampling_op_oversampling(k0_min, k0_max, k2_min, k2_max):
@@ -198,4 +199,3 @@ def test_cart_sampling_op_oversampling(k0_min, k0_max, k2_min, k2_max):
 
     assert sampling_op.adjoint(u)[0].shape[-3:] == encoding_matrix.zyx
     assert sampling_op(v)[0].shape[-3:] == (kz.shape[-3], ky.shape[-2], kx.shape[-1])
-    
