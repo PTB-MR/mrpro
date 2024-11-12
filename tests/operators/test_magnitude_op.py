@@ -3,8 +3,7 @@
 import torch
 from mrpro.operators import MagnitudeOp
 
-from tests import RandomGenerator
-from tests.helper import autodiff_test
+from tests import RandomGenerator, autodiff_test
 
 
 def test_magnitude_operator_forward():

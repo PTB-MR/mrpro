@@ -3,8 +3,7 @@
 import pytest
 import torch
 from mrpro.operators.models import MOLLI
-from tests import RandomGenerator
-from tests.helper import autodiff_test
+from tests import RandomGenerator, autodiff_test
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
 
 

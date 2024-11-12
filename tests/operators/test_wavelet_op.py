@@ -8,8 +8,7 @@ from ptwt.conv_transform import wavedec
 from ptwt.conv_transform_2 import wavedec2
 from ptwt.conv_transform_3 import wavedec3
 
-from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test, linear_operator_unitary_test, operator_isometry_test
+from tests import RandomGenerator, dotproduct_adjointness_test, linear_operator_unitary_test, operator_isometry_test
 
 
 @pytest.mark.parametrize(

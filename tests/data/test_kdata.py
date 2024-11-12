@@ -10,9 +10,9 @@ from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
 from mrpro.utils import split_idx
 
+from tests import relative_image_difference
 from tests.conftest import RandomGenerator, generate_random_data
 from tests.data import IsmrmrdRawTestData
-from tests.helper import relative_image_difference
 from tests.phantoms import EllipsePhantomTestData
 
 

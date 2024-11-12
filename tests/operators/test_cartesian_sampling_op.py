@@ -6,9 +6,8 @@ from einops import rearrange
 from mrpro.data import KTrajectory, SpatialDimension
 from mrpro.operators import CartesianSamplingOp
 
-from tests import RandomGenerator
+from tests import RandomGenerator, dotproduct_adjointness_test
 from tests.conftest import create_traj
-from tests.helper import dotproduct_adjointness_test
 
 
 def test_cart_sampling_op_data_match():

@@ -4,7 +4,7 @@ import pytest
 import torch
 from einops import repeat
 from mrpro.operators.models import TransientSteadyStateWithPreparation
-from tests.helper import autodiff_test
+from tests import autodiff_test
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
 
 

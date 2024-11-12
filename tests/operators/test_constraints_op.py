@@ -4,8 +4,7 @@ import pytest
 import torch
 from mrpro.operators import ConstraintsOp
 
-from tests import RandomGenerator
-from tests.helper import autodiff_test
+from tests import RandomGenerator, autodiff_test
 
 
 @pytest.mark.parametrize(

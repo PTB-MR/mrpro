@@ -3,8 +3,7 @@
 import pytest
 from mrpro.operators.RearrangeOp import RearrangeOp
 
-from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test
+from tests import RandomGenerator, dotproduct_adjointness_test
 
 
 @pytest.mark.parametrize('dtype', ['float32', 'complex128'])
