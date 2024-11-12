@@ -252,11 +252,9 @@ class MoveDataMixin:
         ----------
         function
             The function to apply to all fields. None is interpreted as a no-op.
-
         memo
-            A dictionary to keep track of  objects that the function has already been applied to,
+            A dictionary to keep track of objects that the function has already been applied to,
             to avoid multiple applications. This is useful if the object has a circular reference.
-
         recurse
             If True, the function will be applied to all children that are MoveDataMixin instances.
         """
