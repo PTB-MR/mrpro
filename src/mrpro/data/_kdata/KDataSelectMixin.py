@@ -7,7 +7,7 @@ import torch
 from typing_extensions import Self
 
 from mrpro.data._kdata.KDataProtocol import _KDataProtocol
-from mrpro.utils import modify_acq_info
+from mrpro.data.Rotation import Rotation
 
 
 class KDataSelectMixin(_KDataProtocol):
@@ -51,10 +51,9 @@ class KDataSelectMixin(_KDataProtocol):
         other_idx = torch.cat([torch.where(idx == label_idx[:, 0, 0])[0] for idx in subset_idx], dim=0)
 
         # Adapt header
-        def select_acq_info(info: torch.Tensor):
-            return info[other_idx, ...]
-
-        kheader.acq_info = modify_acq_info(select_acq_info, kheader.acq_info)
+        kheader.acq_info.apply_(
+            lambda field: field[other_idx, ...] if isinstance(field, torch.Tensor | Rotation) else field
+        )
 
         # Select data
         kdat = self.data[other_idx, ...]
