@@ -79,11 +79,13 @@ def pgd(
     x_old = initial_value
     y = initial_value
     t_old = 1.0
-
+    grad_and_value_f = torch.func.grad_and_value(
+        lambda *x: f(*x)[0],
+    )
     for _ in range(max_iterations):
         while stepsize > 1e-30:
             # calculate the proximal gradient step
-            gradient, f_y = torch.func.grad_and_value(f, y)
+            gradient, f_y = grad_and_value_f(y)
             (x,) = g.prox(y - stepsize * gradient, reg_parameter * stepsize)
 
             if not backtracking:
