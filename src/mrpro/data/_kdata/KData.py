@@ -124,8 +124,8 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
                 n_coils = int(max(n_coils_available))
 
             warnings.warn(
-                f'Acquisitions with different number {n_coils_available} of receiver coil elements detected.'
-                'Data with {n_coils} receiver coil elements will be used.',
+                f'Acquisitions with different number {n_coils_available} of receiver coil elements detected. '
+                f'Data with {n_coils} receiver coil elements will be used.',
                 stacklevel=1,
             )
             acquisitions = [acq for acq in acquisitions if has_n_coils(n_coils, acq)]
