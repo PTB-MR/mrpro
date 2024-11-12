@@ -6,23 +6,24 @@ from dataclasses import dataclass
 import ismrmrd
 import numpy as np
 import torch
-from typing_extensions import Self, TypeVar
+from einops import rearrange
+from typing_extensions import Self
 
 from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
-
-# Conversion functions for units
-T = TypeVar('T', float, torch.Tensor)
+from mrpro.utils.unit_conversion import mm_to_m
 
 
-def ms_to_s(ms: T) -> T:
-    """Convert ms to s."""
-    return ms / 1000
+def rearrange_acq_info_fields(field: object, pattern: str, **axes_lengths: dict[str, int]) -> object:
+    """Change the shape of the fields in AcqInfo."""
+    if isinstance(field, Rotation):
+        return Rotation.from_matrix(rearrange(field.as_matrix(), pattern, **axes_lengths))
 
+    if isinstance(field, torch.Tensor):
+        return rearrange(field, pattern, **axes_lengths)
 
-def mm_to_m(m: T) -> T:
-    """Convert mm to m."""
-    return m / 1000
+    return field
 
 
 @dataclass(slots=True)
@@ -121,11 +122,11 @@ class AcqInfo(MoveDataMixin):
     number_of_samples: torch.Tensor
     """Number of sample points per readout (readouts may have different number of sample points)."""
 
+    orientation: Rotation
+    """Rotation describing the orientation of the readout, phase and slice encoding direction."""
+
     patient_table_position: SpatialDimension[torch.Tensor]
     """Offset position of the patient table, in LPS coordinates [m]."""
-
-    phase_dir: SpatialDimension[torch.Tensor]
-    """Directional cosine of phase encoding (2D)."""
 
     physiology_time_stamp: torch.Tensor
     """Time stamps relative to physiological triggering, e.g. ECG. Not in s but in vendor-specific time units"""
@@ -133,17 +134,11 @@ class AcqInfo(MoveDataMixin):
     position: SpatialDimension[torch.Tensor]
     """Center of the excited volume, in LPS coordinates relative to isocenter [m]."""
 
-    read_dir: SpatialDimension[torch.Tensor]
-    """Directional cosine of readout/frequency encoding."""
-
     sample_time_us: torch.Tensor
     """Readout bandwidth, as time between samples [us]."""
 
     scan_counter: torch.Tensor
     """Zero-indexed incrementing counter for readouts."""
-
-    slice_dir: SpatialDimension[torch.Tensor]
-    """Directional cosine of slice normal, i.e. cross-product of read_dir and phase_dir."""
 
     trajectory_dimensions: torch.Tensor  # =3. We only support 3D Trajectories: kz always exists.
     """Dimensionality of the k-space trajectory vector."""
@@ -247,14 +242,16 @@ class AcqInfo(MoveDataMixin):
             flags=tensor_2d(headers['flags']),
             measurement_uid=tensor_2d(headers['measurement_uid']),
             number_of_samples=tensor_2d(headers['number_of_samples']),
+            orientation=Rotation.from_directions(
+                spatialdimension_2d(headers['slice_dir']),
+                spatialdimension_2d(headers['phase_dir']),
+                spatialdimension_2d(headers['read_dir']),
+            ),
             patient_table_position=spatialdimension_2d(headers['patient_table_position']).apply_(mm_to_m),
-            phase_dir=spatialdimension_2d(headers['phase_dir']),
             physiology_time_stamp=tensor_2d(headers['physiology_time_stamp']),
             position=spatialdimension_2d(headers['position']).apply_(mm_to_m),
-            read_dir=spatialdimension_2d(headers['read_dir']),
             sample_time_us=tensor_2d(headers['sample_time_us']),
             scan_counter=tensor_2d(headers['scan_counter']),
-            slice_dir=spatialdimension_2d(headers['slice_dir']),
             trajectory_dimensions=tensor_2d(headers['trajectory_dimensions']).fill_(3),  # see above
             user_float=tensor_2d(headers['user_float']),
             user_int=tensor_2d(headers['user_int']),
