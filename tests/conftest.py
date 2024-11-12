@@ -240,7 +240,7 @@ def create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
     k_list = []
     for spacing, nk in zip([type_kz, type_ky, type_kx], [nkz, nky, nkx], strict=True):
         if spacing == 'non-uniform':
-            k = random_generator.float32_tensor(size=nk)
+            k = random_generator.float32_tensor(size=nk, low=-1, high=1) * max(nk)
         elif spacing == 'uniform':
             k = create_uniform_traj(nk, k_shape=k_shape)
         elif spacing == 'zero':
