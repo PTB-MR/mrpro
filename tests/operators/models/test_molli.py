@@ -28,7 +28,7 @@ def test_molli(ti, result):
 
     # Generate signal model and torch tensor for comparison
     model = MOLLI(ti)
-    (image,) = model.forward(a, c, t1)
+    (image,) = model(a, c, t1)
 
     # Assert closeness to a(1-c) for large ti
     if result == 'a(1-c)':
@@ -44,7 +44,7 @@ def test_molli_shape(parameter_shape, contrast_dim_shape, signal_shape):
     (ti,) = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=1)
     model_op = MOLLI(ti)
     a, c, t1 = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=3)
-    (signal,) = model_op.forward(a, c, t1)
+    (signal,) = model_op(a, c, t1)
     assert signal.shape == signal_shape
 
 

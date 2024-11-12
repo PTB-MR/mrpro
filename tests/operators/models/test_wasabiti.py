@@ -16,7 +16,7 @@ def test_WASABITI_symmetry():
     """Test symmetry property of complete WASABITI spectra."""
     offsets, b0_shift, rb1, t1 = create_data()
     wasabiti_model = WASABITI(offsets=offsets, trec=torch.ones_like(offsets))
-    (signal,) = wasabiti_model.forward(b0_shift, rb1, t1)
+    (signal,) = wasabiti_model(b0_shift, rb1, t1)
 
     # check that all values are symmetric around the center
     assert torch.allclose(signal, signal.flipud(), rtol=1e-15), 'Result should be symmetric around center'
@@ -27,7 +27,7 @@ def test_WASABITI_symmetry_after_shift():
     offsets_shifted, b0_shift, rb1, t1 = create_data(b0_shift=100)
     trec = torch.ones_like(offsets_shifted)
     wasabiti_model = WASABITI(offsets=offsets_shifted, trec=trec)
-    (signal_shifted,) = wasabiti_model.forward(b0_shift, rb1, t1)
+    (signal_shifted,) = wasabiti_model(b0_shift, rb1, t1)
 
     lower_index = (offsets_shifted == -300).nonzero()[0][0].item()
     upper_index = (offsets_shifted == 500).nonzero()[0][0].item()
@@ -43,7 +43,7 @@ def test_WASABITI_asymmetry_for_non_unique_trec():
     trec[: len(offsets_unshifted) // 2] = 2.0
 
     wasabiti_model = WASABITI(offsets=offsets_unshifted, trec=trec)
-    (signal,) = wasabiti_model.forward(b0_shift, rb1, t1)
+    (signal,) = wasabiti_model(b0_shift, rb1, t1)
 
     assert not torch.allclose(signal, signal.flipud(), rtol=1e-8), 'Result should not be symmetric around center'
 
@@ -54,7 +54,7 @@ def test_WASABITI_relaxation_term(t1):
     offset, b0_shift, rb1, t1 = create_data(offset_max=50000, n_offsets=1, t1=t1)
     trec = torch.ones_like(offset) * t1
     wasabiti_model = WASABITI(offsets=offset, trec=trec)
-    sig = wasabiti_model.forward(b0_shift, rb1, t1)
+    sig = wasabiti_model(b0_shift, rb1, t1)
 
     assert torch.isclose(sig[0], torch.FloatTensor([1 - torch.exp(torch.FloatTensor([-1]))]), rtol=1e-8)
 
@@ -73,7 +73,7 @@ def test_WASABITI_shape(parameter_shape, contrast_dim_shape, signal_shape):
     ti, trec = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=2)
     model_op = WASABITI(ti, trec)
     b0_shift, rb1, t1 = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=3)
-    (signal,) = model_op.forward(b0_shift, rb1, t1)
+    (signal,) = model_op(b0_shift, rb1, t1)
     assert signal.shape == signal_shape
 
 

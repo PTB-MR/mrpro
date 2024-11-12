@@ -24,7 +24,7 @@ def test_transient_steady_state(sampling_time, m0_scaling_preparation, result):
     repetition_time = 5
     model = TransientSteadyStateWithPreparation(sampling_time, repetition_time, m0_scaling_preparation)
     m0, t1, flip_angle = create_parameter_tensor_tuples(number_of_tensors=3)
-    (signal,) = model.forward(m0, t1, flip_angle)
+    (signal,) = model(m0, t1, flip_angle)
 
     # Assert closeness to m0
     if result == 'm0':
@@ -57,7 +57,7 @@ def test_transient_steady_state_inversion_recovery():
     analytical_signal = m0 * (1 - 2 * torch.exp(-(sampling_time / t1)))
 
     model = TransientSteadyStateWithPreparation(sampling_time, repetition_time=100, m0_scaling_preparation=-1)
-    (signal,) = model.forward(m0, t1, flip_angle)
+    (signal,) = model(m0, t1, flip_angle)
 
     torch.testing.assert_close(signal, analytical_signal)
 
@@ -78,7 +78,7 @@ def test_transient_steady_state_shape(parameter_shape, contrast_dim_shape, signa
         sampling_time, repetition_time, m0_scaling_preparation, delay_after_preparation
     )
     m0, t1, flip_angle = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=3)
-    (signal,) = model_op.forward(m0, t1, flip_angle)
+    (signal,) = model_op(m0, t1, flip_angle)
     assert signal.shape == signal_shape
 
 
