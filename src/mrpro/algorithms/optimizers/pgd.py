@@ -4,28 +4,12 @@ import math
 
 import torch
 
-from mrpro.operators.Functional import Functional
-
-
-def grad_and_value(function, x, create_graph=False):
-    def inner(x):
-        if create_graph and x.requires_grad:
-            # shallow clone
-            xg = x.view_as(x)
-
-        xg = x.detach().requires_grad_(True)
-        (y,) = function(xg)
-
-        yg = y if isinstance(y, torch.Tensor) else y[0]
-        grad = torch.autograd.grad(yg, xg)[0]
-        return grad, y
-
-    return inner(x)
+from mrpro.operators.Functional import Functional, ProximableFunctional
 
 
 def pgd(
     f: Functional,
-    g: Functional,
+    g: ProximableFunctional,  # TODO: would it work with ProximableFunctionalSeparableSum?
     initial_value: torch.Tensor,
     stepsize: float = 1.0,
     reg_parameter: float = 0.01,
@@ -97,7 +81,7 @@ def pgd(
     for _ in range(max_iterations):
         while stepsize > 1e-30:
             # calculate the proximal gradient step
-            gradient, f_y = grad_and_value(f, y)
+            gradient, f_y = torch.func.grad_and_value(f, y)
             (x,) = g.prox(y - stepsize * gradient, reg_parameter * stepsize)
 
             if not backtracking:
