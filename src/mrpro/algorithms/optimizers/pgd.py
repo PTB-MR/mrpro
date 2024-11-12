@@ -4,12 +4,14 @@ import math
 
 import torch
 
-from mrpro.operators.Functional import Functional, ProximableFunctional
+from mrpro.operators.Functional import ProximableFunctional
+from mrpro.operators.Operator import Operator
 
 
+# TODO: make it work with g:ProximableFunctionalSeparableSum and f:Operator with multiple inputs
 def pgd(
-    f: Functional,
-    g: ProximableFunctional,  # TODO: would it work with ProximableFunctionalSeparableSum?
+    f: Operator[torch.Tensor, tuple[torch.Tensor]],
+    g: ProximableFunctional,
     initial_value: torch.Tensor,
     stepsize: float = 1.0,
     reg_parameter: float = 0.01,
