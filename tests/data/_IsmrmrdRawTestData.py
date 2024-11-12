@@ -9,6 +9,7 @@ import torch
 from einops import repeat
 from mrpro.data import SpatialDimension
 from mrpro.phantoms import EllipsePhantom
+
 from tests import RandomGenerator
 
 ISMRMRD_TRAJECTORY_TYPE = (
