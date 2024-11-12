@@ -215,3 +215,7 @@ class RandomGenerator:
         else:
             tensor = self._randint(shape, low, high, dtype)
         return tensor
+
+    def randperm(self, n, *, dtype=torch.int64) -> torch.Tensor:
+        """Generate a random permutation of integers from 0 to n-1."""
+        return torch.randperm(n, generator=self.generator, dtype=dtype)

@@ -239,7 +239,7 @@ class CartesianSamplingGramOp(LinearOperator):
             Output data
         """
         return self.forward(y)
-=======
+
     @staticmethod
     def _broadcast_and_scatter_along_last_dim(
         data_to_scatter: torch.Tensor, n_last_dim: int, scatter_index: torch.Tensor

@@ -1,5 +1,6 @@
 """Tests for the Cartesian sampling operator."""
 
+import re
 import pytest
 import torch
 from einops import rearrange
@@ -51,6 +52,34 @@ def test_cart_sampling_op_data_match():
     torch.testing.assert_close(kdata[:, :, ::2, ::4, ::3], k_sub[:, :, ::2, ::4, ::3])
 
 
+def subsample_traj(trajectory: KTrajectory, sampling: str, k_shape: tuple[int, int, int]) -> KTrajectory:
+    """Subsample trajectory based on sampling type."""
+    trajectory_tensor = trajectory.as_tensor()
+    # Subsample data and trajectory
+    match sampling:
+        case 'random':
+            random_idx = torch.randperm(k_shape[-2])
+            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., random_idx, :])
+        case 'partial_echo':
+            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., : k_shape[-1] // 2])
+        case 'partial_fourier':
+            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., : k_shape[-3] // 2, : k_shape[-2] // 2, :])
+        case 'regular_undersampling':
+            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., ::3, ::5, :])
+        case 'random_undersampling':
+            random_idx = torch.randperm(k_shape[-2])
+            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., random_idx[: k_shape[-2] // 2], :])
+        case 'different_random_undersampling':
+            traj_list = [
+                traj_one_other[..., torch.randperm(k_shape[-2])[: k_shape[-2] // 2], :]
+                for traj_one_other in trajectory_tensor.unbind(1)
+            ]
+            trajectory = KTrajectory.from_tensor(torch.stack(traj_list, dim=1))
+        case _:
+            raise NotImplementedError(f'Test {sampling} not implemented.')
+    return trajectory
+
+
 @pytest.mark.parametrize(
     'sampling',
     [
@@ -76,39 +105,8 @@ def test_cart_sampling_op_fwd_adj(sampling):
     type_kx = 'uniform'
     type_ky = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
     type_kz = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
-    trajectory_tensor = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz).as_tensor()
-
-    # Subsample data and trajectory
-    match sampling:
-        case 'random':
-            random_idx = torch.randperm(k_shape[-2])
-            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., random_idx, :])
-        case 'partial_echo':
-            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., : k_shape[-1] // 2])
-        case 'partial_fourier':
-            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., : k_shape[-3] // 2, : k_shape[-2] // 2, :])
-        case 'regular_undersampling':
-            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., ::3, ::5, :])
-        case 'random_undersampling':
-            random_idx = torch.randperm(k_shape[-2])
-            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., random_idx[: k_shape[-2] // 2], :])
-        case 'different_random_undersampling':
-            traj_list = [
-                traj_one_other[..., torch.randperm(k_shape[-2])[: k_shape[-2] // 2], :]
-                for traj_one_other in trajectory_tensor.unbind(1)
-            ]
-            trajectory = KTrajectory.from_tensor(torch.stack(traj_list, dim=1))
-        case 'cartesian_and_non_cartesian':
-            trajectory = KTrajectory.from_tensor(trajectory_tensor)
-        case 'kx_ky_along_k0':
-            trajectory_tensor = rearrange(trajectory_tensor, '... k1 k0->... 1 (k1 k0)')
-            trajectory = KTrajectory.from_tensor(trajectory_tensor)
-        case 'kx_ky_along_k0_undersampling':
-            trajectory_tensor = rearrange(trajectory_tensor, '... k1 k0->... 1 (k1 k0)')
-            random_idx = torch.randperm(trajectory_tensor.shape[-1])
-            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., random_idx[: trajectory_tensor.shape[-1] // 2]])
-        case _:
-            raise NotImplementedError(f'Test {sampling} not implemented.')
+    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    trajectory = subsample_traj(trajectory, sampling, k_shape)
 
     encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
@@ -143,30 +141,8 @@ def test_cart_sampling_op_gram(sampling):
     type_kx = 'uniform'
     type_ky = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
     type_kz = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
-    trajectory_tensor = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz).as_tensor()
-
-    # Subsample data and trajectory
-    match sampling:
-        case 'random':
-            random_idx = torch.randperm(k_shape[-2])
-            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., random_idx, :])
-        case 'partial_echo':
-            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., : k_shape[-1] // 2])
-        case 'partial_fourier':
-            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., : k_shape[-3] // 2, : k_shape[-2] // 2, :])
-        case 'regular_undersampling':
-            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., ::3, ::5, :])
-        case 'random_undersampling':
-            random_idx = torch.randperm(k_shape[-2])
-            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., random_idx[: k_shape[-2] // 2], :])
-        case 'different_random_undersampling':
-            traj_list = [
-                traj_one_other[..., torch.randperm(k_shape[-2])[: k_shape[-2] // 2], :]
-                for traj_one_other in trajectory_tensor.unbind(1)
-            ]
-            trajectory = KTrajectory.from_tensor(torch.stack(traj_list, dim=1))
-        case _:
-            raise NotImplementedError(f'Test {sampling} not implemented.')
+    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    trajectory = subsample_traj(trajectory, sampling, k_shape)
 
     encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
