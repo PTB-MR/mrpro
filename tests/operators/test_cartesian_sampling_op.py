@@ -17,10 +17,10 @@ def test_cart_sampling_op_data_match():
     nkx = (1, 1, 1, 60)
     nky = (1, 1, 40, 1)
     nkz = (1, 20, 1, 1)
-    sx = 'uf'
-    sy = 'uf'
-    sz = 'uf'
-    trajectory = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
+    type_kx = 'uniform'
+    type_ky = 'uniform'
+    type_kz = 'uniform'
+    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # Create matching data
     random_generator = RandomGenerator(seed=0)
@@ -73,10 +73,10 @@ def test_cart_sampling_op_fwd_adj(sampling):
     nkx = (2, 1, 1, 60)
     nky = (2, 1, 40, 1)
     nkz = (2, 20, 1, 1)
-    sx = 'uf'
-    sy = 'nuf' if sampling == 'cartesian_and_non_cartesian' else 'uf'
-    sz = 'nuf' if sampling == 'cartesian_and_non_cartesian' else 'uf'
-    trajectory_tensor = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz).as_tensor()
+    type_kx = 'uniform'
+    type_ky = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
+    type_kz = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
+    trajectory_tensor = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz).as_tensor()
 
     # Subsample data and trajectory
     match sampling:
