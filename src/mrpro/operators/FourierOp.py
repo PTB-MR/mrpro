@@ -68,12 +68,14 @@ class FourierOp(LinearOperator):
                 self._nufft_dims.append(dim)
 
         if self._fft_dims:
-            self._fast_fourier_op = FastFourierOp(
+            self._fast_fourier_op: FastFourierOp | None = FastFourierOp(
                 dim=tuple(self._fft_dims),
                 recon_matrix=get_spatial_dims(recon_matrix, self._fft_dims),
                 encoding_matrix=get_spatial_dims(encoding_matrix, self._fft_dims),
             )
-            self._cart_sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=traj)
+            self._cart_sampling_op: CartesianSamplingOp | None = CartesianSamplingOp(
+                encoding_matrix=encoding_matrix, traj=traj
+            )
         else:
             self._fast_fourier_op = None
             self._cart_sampling_op = None
@@ -106,13 +108,13 @@ class FourierOp(LinearOperator):
             omega = [k.expand(*np.broadcast_shapes(*[k.shape for k in omega])) for k in omega]
             self.register_buffer('_omega', torch.stack(omega, dim=-4))  # use the 'coil' dim for the direction
 
-            self._fwd_nufft_op = KbNufft(
+            self._fwd_nufft_op: KbNufftAdjoint | None = KbNufft(
                 im_size=self._nufft_im_size,
                 grid_size=grid_size,
                 numpoints=nufft_numpoints,
                 kbwidth=nufft_kbwidth,
             )
-            self._adj_nufft_op = KbNufftAdjoint(
+            self._adj_nufft_op: KbNufftAdjoint | None = KbNufftAdjoint(
                 im_size=self._nufft_im_size,
                 grid_size=grid_size,
                 numpoints=nufft_numpoints,

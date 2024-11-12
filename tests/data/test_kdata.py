@@ -30,6 +30,7 @@ def ismrmrd_cart_bodycoil_and_surface_coil(ellipse_phantom, tmp_path_factory):
     return ismrmrd_kdata
 
 
+@pytest.fixture(scope='session')
 def ismrmrd_cart_with_calibration_lines(ellipse_phantom, tmp_path_factory):
     """Undersampled Cartesian data set with calibration lines."""
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'

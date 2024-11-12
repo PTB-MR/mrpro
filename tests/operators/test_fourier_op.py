@@ -65,7 +65,6 @@ def test_fourier_op_fwd_adj_property(
     ],
     ids=['cartesian_fft_dims_not_aligned_with_k2_k1_k0_dims'],
 )
-
 def test_fourier_op_not_supported_traj(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
     """Test trajectory not supported by Fourier operator."""
 
