@@ -17,7 +17,7 @@ from mrpro.data._kdata.KDataRearrangeMixin import KDataRearrangeMixin
 from mrpro.data._kdata.KDataRemoveOsMixin import KDataRemoveOsMixin
 from mrpro.data._kdata.KDataSelectMixin import KDataSelectMixin
 from mrpro.data._kdata.KDataSplitMixin import KDataSplitMixin
-from mrpro.data.acq_filters import is_image_acquisition
+from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
 from mrpro.data.AcqInfo import AcqInfo, rearrange_acq_info_fields
 from mrpro.data.EncodingLimits import Limits
 from mrpro.data.KHeader import KHeader
@@ -110,6 +110,29 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             modification_time = datetime.datetime.fromtimestamp(mtime)
 
         acquisitions = [acq for acq in acquisitions if acquisition_filter_criterion(acq)]
+
+        # we need the same number of receiver coils for all acquisitions
+        n_coils_available = {acq.data.shape[0] for acq in acquisitions}
+        if len(n_coils_available) > 1:
+            if (
+                ismrmrd_header.acquisitionSystemInformation is not None
+                and ismrmrd_header.acquisitionSystemInformation.receiverChannels is not None
+            ):
+                n_coils = int(ismrmrd_header.acquisitionSystemInformation.receiverChannels)
+            else:
+                # most likely, highest number of elements are the coils used for imaging
+                n_coils = int(max(n_coils_available))
+
+            warnings.warn(
+                f'Acquisitions with different number {n_coils_available} of receiver coil elements detected.'
+                'Data with {n_coils} receiver coil elements will be used.',
+                stacklevel=1,
+            )
+            acquisitions = [acq for acq in acquisitions if has_n_coils(n_coils, acq)]
+
+        if not acquisitions:
+            raise ValueError('No acquisitions meeting the given filter criteria were found.')
+
         kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
