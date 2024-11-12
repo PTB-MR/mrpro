@@ -11,6 +11,7 @@ from mrpro.operators.FiniteDifferenceOp import FiniteDifferenceOp
 from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.GridSamplingOp import GridSamplingOp
 from mrpro.operators.IdentityOp import IdentityOp
+from mrpro.operators.LinearOperatorMatrix import LinearOperatorMatrix
 from mrpro.operators.MagnitudeOp import MagnitudeOp
 from mrpro.operators.MultiIdentityOp import MultiIdentityOp
 from mrpro.operators.PCACompressionOp import PCACompressionOp
@@ -24,8 +25,6 @@ from mrpro.operators.ZeroPadOp import ZeroPadOp
 from mrpro.operators.ZeroOp import ZeroOp
 
 __all__ = [
-    "functionals",
-    "models",
     "CartesianSamplingOp",
     "ConstraintsOp",
     "DensityCompensationOp",
@@ -39,16 +38,22 @@ __all__ = [
     "GridSamplingOp",
     "IdentityOp",
     "LinearOperator",
+    "LinearOperatorMatrix",
     "MagnitudeOp",
+    "MultiIdentityOp",
     "Operator",
     "PCACompressionOp",
     "PhaseOp",
     "ProximableFunctional",
     "ProximableFunctionalSeparableSum",
+    "ScaledFunctional",
+    "ScaledProximableFunctional",
     "SensitivityOp",
     "SignalModel",
     "SliceProjectionOp",
     "WaveletOp",
     "ZeroOp",
     "ZeroPadOp",
+    "functionals",
+    "models"
 ]
