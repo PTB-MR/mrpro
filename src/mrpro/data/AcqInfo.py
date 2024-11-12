@@ -1,36 +1,30 @@
 """Acquisition information dataclass."""
 
-import dataclasses
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Self, TypeVar
+from typing import Any, Self
 
 import ismrmrd
 import numpy as np
 import torch
 from einops import rearrange
+from typing_extensions import Self
 
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.unit_conversion import m_to_mm, mm_to_m
 
-T = TypeVar('T', torch.Tensor, Rotation, SpatialDimension)
 
-
-def rearrange_acq_info_fields(field: T, pattern: str, additional_info: dict[str, int] | None = None) -> T:
+def rearrange_acq_info_fields(field: object, pattern: str, **axes_lengths: dict[str, int]) -> object:
     """Change the shape of the fields in AcqInfo."""
-    axes_lengths = {} if additional_info is None else additional_info
     if isinstance(field, Rotation):
         return Rotation.from_matrix(rearrange(field.as_matrix(), pattern, **axes_lengths))
-    elif isinstance(field, SpatialDimension):
-        return SpatialDimension(
-            z=rearrange(field.z, pattern, **axes_lengths),
-            y=rearrange(field.y, pattern, **axes_lengths),
-            x=rearrange(field.x, pattern, **axes_lengths),
-        )
-    else:
+
+    if isinstance(field, torch.Tensor):
         return rearrange(field, pattern, **axes_lengths)
+
+    return field
 
 
 @dataclass(slots=True)
@@ -208,15 +202,13 @@ class AcqInfo(MoveDataMixin):
                 data_tensor = data_tensor[None, None]
             return data_tensor
 
-        def spatialdimension_2d(
-            data: np.ndarray, conversion: Callable[[torch.Tensor], torch.Tensor] | None = None
-        ) -> SpatialDimension[torch.Tensor]:
+        def spatialdimension_2d(data: np.ndarray) -> SpatialDimension[torch.Tensor]:
             # Ensure spatial dimension is (k1*k2*other, 1, 3)
             if data.ndim != 2:
                 raise ValueError('Spatial dimension is expected to be of shape (N,3)')
             data = data[:, None, :]
             # all spatial dimensions are float32
-            return SpatialDimension[torch.Tensor].from_array_xyz(torch.tensor(data.astype(np.float32)), conversion)
+            return SpatialDimension[torch.Tensor].from_array_xyz(torch.tensor(data.astype(np.float32)))
 
         acq_idx = AcqIdx(
             k1=tensor(idx['kspace_encode_step_1']),
@@ -268,14 +260,14 @@ class AcqInfo(MoveDataMixin):
             flags=tensor_2d(headers['flags']),
             measurement_uid=tensor_2d(headers['measurement_uid']),
             number_of_samples=tensor_2d(headers['number_of_samples']),
-            orientation=orientation_from_directional_cosine(
+            orientation=Rotation.from_directions(
                 spatialdimension_2d(headers['slice_dir']),
                 spatialdimension_2d(headers['phase_dir']),
                 spatialdimension_2d(headers['read_dir']),
             ),
-            patient_table_position=spatialdimension_2d(headers['patient_table_position'], mm_to_m),
+            patient_table_position=spatialdimension_2d(headers['patient_table_position']).apply_(mm_to_m),
             physiology_time_stamp=tensor_2d(headers['physiology_time_stamp']),
-            position=spatialdimension_2d(headers['position'], mm_to_m),
+            position=spatialdimension_2d(headers['position']).apply_(mm_to_m),
             sample_time_us=tensor_2d(headers['sample_time_us']),
             scan_counter=tensor_2d(headers['scan_counter']),
             trajectory_dimensions=tensor_2d(headers['trajectory_dimensions']).fill_(3),  # see above
@@ -318,18 +310,10 @@ class AcqInfo(MoveDataMixin):
         acquisition.discard_pre = self.discard_pre[*other, k2, k1, 0]
         acquisition.encoding_space_ref = self.encoding_space_ref[*other, k2, k1, 0]
         acquisition.measurement_uid = self.measurement_uid[*other, k2, k1, 0]
-        acquisition.patient_table_position = (
-            m_to_mm(self.patient_table_position.x[*other, k2, k1, 0]),
-            m_to_mm(self.patient_table_position.y[*other, k2, k1, 0]),
-            m_to_mm(self.patient_table_position.z[*other, k2, k1, 0]),
-        )
+        acquisition.patient_table_position = self.patient_table_position[*other, k2, k1, 0].apply_(m_to_mm)
         acquisition.phase_dir = tuple(self.orientation.as_matrix()[*other, k2, k1, 0, 2, :])[::-1]  # zyx -> xyz
         acquisition.physiology_time_stamp = tuple(self.physiology_time_stamp[*other, k2, k1, :])
-        acquisition.position = (
-            m_to_mm(self.position.x[*other, k2, k1, 0]),
-            m_to_mm(self.position.y[*other, k2, k1, 0]),
-            m_to_mm(self.position.z[*other, k2, k1, 0]),
-        )
+        acquisition.position = self.position[*other, k2, k1, 0].apply_(m_to_mm)
         acquisition.read_dir = tuple(self.orientation.as_matrix()[*other, k2, k1, 0, 1, :])[::-1]  # zyx -> xyz
         acquisition.sample_time_us = self.sample_time_us[*other, k2, k1, 0]
         acquisition.scan_counter = self.scan_counter[*other, k2, k1, 0]
@@ -338,21 +322,3 @@ class AcqInfo(MoveDataMixin):
         acquisition.user_int = tuple(self.user_int[*other, k2, k1, :])
         acquisition.version = self.version[*other, k2, k1, 0]
         return acquisition
-
-    def _apply_(self, modify_acq_info_field: Callable) -> None:
-        """Go through all fields of AcqInfo object and apply function in-place.
-
-        Parameters
-        ----------
-        modify_acq_info_field
-            Function which takes AcqInfo fields as input and returns modified AcqInfo field
-        """
-        for field in dataclasses.fields(self):
-            current = getattr(self, field.name)
-            if dataclasses.is_dataclass(current):
-                for subfield in dataclasses.fields(current):
-                    subcurrent = getattr(current, subfield.name)
-                    setattr(current, subfield.name, modify_acq_info_field(subcurrent))
-            else:
-                setattr(self, field.name, modify_acq_info_field(current))
-        return None

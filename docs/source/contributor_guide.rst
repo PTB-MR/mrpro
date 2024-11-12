@@ -65,17 +65,54 @@ src/mrpro structure
     batch dimension (``smap``).
 
 
+Linting
+=======
+We use Ruff for linting. If you are using VSCode, you can install an 
+`extension <https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff>`_, 
+which we have also added to the list of extensions that VSCode should recommend when you open the code. 
+We also run `mypy <https://pypi.org/project/mypy/>`_ as a type checker.
+
+In CI, our linting is driven by `pre-commit <https://pre-commit.com/>`_. 
+If you install MRpro via ``pip install -e .[test]``, pre-commit will be installed in your python environment.
+You can either add pre-commit to your git pre-commit hooks, requiring it to pass before each commit (``pre-commit install``), 
+or run it manually using ``pre-commit run --all-files`` after making your changes, before requesting a PR review.
+
 Naming convention
 =================
-We try to follow the [pep8](https://peps.python.org/pep-0008/) naming convention (e.g., all lowercase variable names,
+We try to follow the `PEP 8 <https://peps.python.org/pep-0008/>`_ naming convention (e.g., all lowercase variable names,
 CapWords class names). We deviate for the names of source code file names containing a single class.
 These are named as the class.
 
 We try to use descriptive variable names when applicable (e.g., ``result`` instead of ``res``, ``tolerance_squared`` instead
 of ``sqtol``, ``batchsize`` instead of ``m``).
 
-A name starting with ``n_`` is used for variables describing a number of... (e.g., ``n_coils`` instead of ``ncoils`` or
+A name starting with ``n_`` is used for variables describing a number of something (e.g., ``n_coils`` instead of ``ncoils`` or
 ``num_coils``), variable names ending with ``_op`` for operators (e.g., ``fourier_op``). We use ``img`` as a variable name
 for images.
 
+Testing
+=======
+We use pytest for testing. All required packages will be installed if you install MRpro via ``pip install -e .[test]``.
+You can use VSCode's test panel to discover and run tests. All tests must pass before a PR can be merged. By default, we skip running CUDA tests.  You can use ``pytest -m cuda`` to run the CUDA tests if your development machine has a GPU available.
 
+Building the Documentation
+==========================
+You can build the documentation locally via running ```make html``` in the docs folder. The documentation will also be build in each PR and can be viewed online.
+Please check how your new additions render in the documentation before requesting a PR review.
+
+
+Adding new Examples
+===================
+New exciting applications of MRpro can be added in ```examples``` as only ```.py``` files with code-cells. These can, for example, be used in VSCode with the python extension, or in JupyterLab with the `jupytext <https://jupytext.readthedocs.io/en/latest/install.html>`_ extension.
+An automatic workflow at github will create notebooks and pages in the documentation based on the python scripts.
+The data to run the examples should be publicly available and hosted externally, for example at zenodo.
+Please be careful not to add any binary files to your commits.
+
+Release Strategy
+================
+We are still in pre-release mode and do not guarantee a stable API / strict semantic versioning compatibility. We currently use ```0.YYMMDD``` as versioning and release in regular intervals to `pypi  <https://pypi.org/project/mrpro/>`_.
+
+Compatibility
+=============
+We aim to always be compatible with the latest stable pytorch release and the latest python version supported by pytorch. We are compatible with one previous python version.
+Our type hints will usually only be valid with the latest pytorch version.

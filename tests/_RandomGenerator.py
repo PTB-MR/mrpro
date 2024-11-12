@@ -53,48 +53,48 @@ class RandomGenerator:
             info = torch.finfo(dtype)
         return (info.min, info.max)
 
-    def _randint(self, size, low, high, dtype=torch.int64):
+    def _randint(self, size, low, high, dtype=torch.int64) -> torch.Tensor:
         """Generates uniform random integers in the range [low, high) with the
         given dtype."""
         low, high = self._clip_bounds(low, high, *self._dtype_bounds(dtype))
         return torch.randint(low, high, size, generator=self.generator, dtype=dtype)
 
-    def _rand(self, size, low, high, dtype=torch.float32):
+    def _rand(self, size, low, high, dtype=torch.float32) -> torch.Tensor:
         """Generates uniform random floats in the range [low, high) with the
         given dtype."""
         low, high = self._clip_bounds(low, high, *self._dtype_bounds(dtype))
         return (torch.rand(size, generator=self.generator, dtype=dtype) * (high - low)) + low
 
-    def float32_tensor(self, size: Sequence[int] | int = (1,), low: float = 0.0, high: float = 1.0):
+    def float32_tensor(self, size: Sequence[int] | int = (1,), low: float = 0.0, high: float = 1.0) -> torch.Tensor:
         return self._rand(size, low, high, torch.float32)
 
-    def float64_tensor(self, size: Sequence[int] | int = (1,), low: float = 0.0, high: float = 1.0):
+    def float64_tensor(self, size: Sequence[int] | int = (1,), low: float = 0.0, high: float = 1.0) -> torch.Tensor:
         return self._rand(size, low, high, torch.float64)
 
-    def complex64_tensor(self, size: Sequence[int] | int = (1,), low: float = 0.0, high: float = 1.0):
+    def complex64_tensor(self, size: Sequence[int] | int = (1,), low: float = 0.0, high: float = 1.0) -> torch.Tensor:
         if low < 0:
             raise ValueError('low/high refer to the amplitude and must be positive')
         amp = self.float32_tensor(size, low, high)
         phase = self.float32_tensor(size, -torch.pi, torch.pi)
         return (amp * torch.exp(1j * phase)).to(dtype=torch.complex64)
 
-    def complex128_tensor(self, size: Sequence[int] | int = (1,), low: float = 0.0, high: float = 1.0):
+    def complex128_tensor(self, size: Sequence[int] | int = (1,), low: float = 0.0, high: float = 1.0) -> torch.Tensor:
         if low < 0:
             raise ValueError('low/high refer to the amplitude and must be positive')
         amp = self.float64_tensor(size, low, high)
         phase = self.float64_tensor(size, -torch.pi, torch.pi)
         return (amp * torch.exp(1j * phase)).to(dtype=torch.complex128)
 
-    def int8_tensor(self, size: Sequence[int] | int = (1,), low: int = -1 << 7, high: int = 1 << 7):
+    def int8_tensor(self, size: Sequence[int] | int = (1,), low: int = -1 << 7, high: int = 1 << 7) -> torch.Tensor:
         return self._randint(size, low, high, dtype=torch.int8)
 
-    def int16_tensor(self, size: Sequence[int] | int = (1,), low: int = -1 << 15, high: int = 1 << 15):
+    def int16_tensor(self, size: Sequence[int] | int = (1,), low: int = -1 << 15, high: int = 1 << 15) -> torch.Tensor:
         return self._randint(size, low, high, dtype=torch.int16)
 
-    def int32_tensor(self, size: Sequence[int] | int = (1,), low: int = -1 << 31, high: int = 1 << 31):
+    def int32_tensor(self, size: Sequence[int] | int = (1,), low: int = -1 << 31, high: int = 1 << 31) -> torch.Tensor:
         return self._randint(size, low, high, dtype=torch.int32)
 
-    def int64_tensor(self, size: Sequence[int] | int = (1,), low: int = -1 << 63, high: int = 1 << 63):
+    def int64_tensor(self, size: Sequence[int] | int = (1,), low: int = -1 << 63, high: int = 1 << 63) -> torch.Tensor:
         return self._randint(size, low, high, dtype=torch.int64)
 
     # There is no uint32 in pytorch yet
@@ -105,7 +105,7 @@ class RandomGenerator:
     # def uint64_tensor(self, size: Sequence[int] = (1,), low: int = 0, high: int = 1 << 64):
     #    return self._randint(size, low, high, dtype=torch.uint64) # noqa: ERA001
 
-    def uint8_tensor(self, size: Sequence[int] | int = (1,), low: int = 0, high: int = 1 << 8):
+    def uint8_tensor(self, size: Sequence[int] | int = (1,), low: int = 0, high: int = 1 << 8) -> torch.Tensor:
         return self._randint(size, low, high, dtype=torch.uint8)
 
     def bool(self) -> bool:
@@ -124,26 +124,26 @@ class RandomGenerator:
         return self.complex128_tensor((1,), low, high).item()
 
     def uint8(self, low: int = 0, high: int = 1 << 8) -> int:
-        return self.uint8_tensor((1,), low, high).item()
+        return int(self.uint8_tensor((1,), low, high).item())
 
     def uint16(self, low: int = 0, high: int = 1 << 16) -> int:
-        return self.int32_tensor((1,), low, high).item()
+        return int(self.int32_tensor((1,), low, high).item())
 
     def uint32(self, low: int = 0, high: int = 1 << 32) -> int:
         # using int64 to avoid overflow
-        return self.int64_tensor((1,), low, high).item()
+        return int(self.int64_tensor((1,), low, high).item())
 
     def int8(self, low: int = -1 << 7, high: int = 1 << 7 - 1) -> int:
-        return self.int8_tensor((1,), low, high).item()
+        return int(self.int8_tensor((1,), low, high).item())
 
     def int16(self, low: int = -1 << 15, high: int = 1 << 15 - 1) -> int:
-        return self.int16_tensor((1,), low, high).item()
+        return int(self.int16_tensor((1,), low, high).item())
 
     def int32(self, low: int = -1 << 31, high: int = 1 << 31 - 1) -> int:
-        return self.int32_tensor((1,), low, high).item()
+        return int(self.int32_tensor((1,), low, high).item())
 
     def int64(self, low: int = -1 << 63, high: int = 1 << 63 - 1) -> int:
-        return self.int64_tensor((1,), low, high).item()
+        return int(self.int64_tensor((1,), low, high).item())
 
     def uint64(self, low: int = 0, high: int = 1 << 64) -> int:
         # pytorch does not support uint64, so we use int64 instead
@@ -199,3 +199,19 @@ class RandomGenerator:
 
     def ascii(self, size: int) -> str:
         return ''.join([chr(self.uint8(32, 127)) for _ in range(size)])
+
+    def rand_like(self, x: torch.Tensor, low=0.0, high=1.0) -> torch.Tensor:
+        """Generate a tensor with the same shape as x filled with uniform random numbers in [low , high)."""
+        return self.rand_tensor(x.shape, x.dtype, low=low, high=high)
+
+    def rand_tensor(self, shape: Sequence[int], dtype: torch.dtype, low: float, high: float) -> torch.Tensor:
+        """Generates a tensor with the given shape and dtype filled with uniform random numbers in [low , high)."""
+        if dtype.is_complex:
+            tensor = self.complex64_tensor(shape, low, high).to(dtype=dtype)
+        elif dtype.is_floating_point:
+            tensor = self._rand(shape, low, high, dtype)
+        elif dtype == torch.bool:
+            tensor = self.int32_tensor(shape, low=0, high=1) > 0
+        else:
+            tensor = self._randint(shape, low, high, dtype)
+        return tensor

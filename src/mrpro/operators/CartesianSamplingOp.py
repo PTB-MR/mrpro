@@ -12,7 +12,7 @@ from mrpro.operators.LinearOperator import LinearOperator
 class CartesianSamplingOp(LinearOperator):
     """Cartesian Sampling Operator.
 
-    Selects points on a Cartisian grid based on the the k-space trajectory.
+    Selects points on a Cartesian grid based on the k-space trajectory.
     Thus, the adjoint sorts the data into regular Cartesian sampled grid based on the k-space
     trajectory. Non-acquired points are zero-filled.
     """
@@ -47,26 +47,28 @@ class CartesianSamplingOp(LinearOperator):
             kx_idx = ktraj_tensor[-1, ...].round().to(dtype=torch.int64) + sorted_grid_shape.x // 2
         else:
             sorted_grid_shape.x = ktraj_tensor.shape[-1]
-            kx_idx = repeat(torch.arange(ktraj_tensor.shape[-1]), 'k0->other k1 k2 k0', other=1, k2=1, k1=1)
+            kx_idx = repeat(torch.arange(ktraj_tensor.shape[-1]), 'k0->other k2 k1 k0', other=1, k2=1, k1=1)
 
         if traj_type_kzyx[-2] == TrajType.ONGRID:  # ky
             ky_idx = ktraj_tensor[-2, ...].round().to(dtype=torch.int64) + sorted_grid_shape.y // 2
         else:
             sorted_grid_shape.y = ktraj_tensor.shape[-2]
-            ky_idx = repeat(torch.arange(ktraj_tensor.shape[-2]), 'k1->other k1 k2 k0', other=1, k2=1, k0=1)
+            ky_idx = repeat(torch.arange(ktraj_tensor.shape[-2]), 'k1->other k2 k1 k0', other=1, k2=1, k0=1)
 
         if traj_type_kzyx[-3] == TrajType.ONGRID:  # kz
             kz_idx = ktraj_tensor[-3, ...].round().to(dtype=torch.int64) + sorted_grid_shape.z // 2
         else:
             sorted_grid_shape.z = ktraj_tensor.shape[-3]
-            kz_idx = repeat(torch.arange(ktraj_tensor.shape[-3]), 'k2->other k1 k2 k0', other=1, k1=1, k0=1)
+            kz_idx = repeat(torch.arange(ktraj_tensor.shape[-3]), 'k2->other k2 k1 k0', other=1, k1=1, k0=1)
 
         # 1D indices into a flattened tensor.
         kidx = kz_idx * sorted_grid_shape.y * sorted_grid_shape.x + ky_idx * sorted_grid_shape.x + kx_idx
         kidx = rearrange(kidx, '... kz ky kx -> ... 1 (kz ky kx)')
         self.register_buffer('_fft_idx', kidx)
         # we can skip the indexing if the data is already sorted
-        self._needs_indexing = not torch.all(torch.diff(kidx) == 1)
+        self._needs_indexing = (
+            not torch.all(torch.diff(kidx) == 1) or traj.broadcasted_shape[-3:] != sorted_grid_shape.zyx
+        )
 
         self._trajectory_shape = traj.broadcasted_shape
         self._sorted_grid_shape = sorted_grid_shape
