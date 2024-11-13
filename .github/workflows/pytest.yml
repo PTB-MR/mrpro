@@ -18,7 +18,7 @@ jobs:
       - name: Retrieve Docker Image Names
         id: set-matrix
         env:
-          GH_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           imagenames=$(curl -s --request GET \
           --url "https://api.github.com/orgs/PTB-MR/packages?package_type=container" \
