@@ -252,16 +252,16 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         )
         return out
 
-    def combine_coils(
+    def compress_coils(
         self: Self,
-        n_combined_coils: int,
+        n_compressed_coils: int,
         batch_dims: None | Sequence[int] = None,
         joint_dims: Sequence[int] | EllipsisType = ...,
     ) -> Self:
         """Reduce the number of coils based on a PCA compression.
 
-        A PCA is carried out along the coil dimension and the n_combined_coils virtual coil elements are selected. For
-        more information on coil combination and coil compression please see [BUE2007]_ and [DON2008]_.
+        A PCA is carried out along the coil dimension and the n_compressed_coils virtual coil elements are selected. For
+        more information on coil compression please see [BUE2007]_, [DON2008]_ and [HUA2008]_.
 
         Returns a copy of the data.
 
@@ -269,20 +269,20 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         ----------
         kdata
             K-space data
-        n_combined_coils
-            Number of combined coils
+        n_compressed_coils
+            Number of compressed coils
         batch_dims
-            Dimensions which are treated as batched, i.e. separate coil combination matrizes (e.g. different slices).
-            Default is to do one coil combination matrix for the entire k-space data. Only batch_dim or joint_dim can
+            Dimensions which are treated as batched, i.e. separate coil compression matrizes (e.g. different slices).
+            Default is to do one coil compression matrix for the entire k-space data. Only batch_dim or joint_dim can
             be defined. If batch_dims is not None then joint_dims has to be ...
         joint_dims
-            Dimensions which are combined to calculate single coil combination matrix (e.g. k0, k1, contrast). Default
+            Dimensions which are combined to calculate single coil compression matrix (e.g. k0, k1, contrast). Default
             is that all dimensions (except for the coil dimension) are joint_dims. Only batch_dim or joint_dim can
             be defined. If joint_dims is not ... batch_dims has to be None
 
         Returns
         -------
-            Copy of K-space data with combined coils.
+            Copy of K-space data with compressed coils.
 
         Raises
         ------
@@ -297,6 +297,9 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
            arrays. MRM 57. https://doi.org/10.1002/mrm.21237
         .. [DON2008] Doneva M, Boernert P (2008) Automatic coil selection for channel reduction in SENSE-based parallel
            imaging. MAGMA 21. https://doi.org/10.1007/s10334-008-0110-x
+        .. [HUA2008] Huang F, Vijayakumar S, Li Y, Hertel S, Duensing GR (2008) A software channel compression
+           technique for faster reconstruction with many channels. MRM 26. https://doi.org/10.1016/j.mri.2007.04.010
+
         """
         from mrpro.operators import PCACompressionOp
 
@@ -322,18 +325,18 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             + [i for i in range(self.data.ndim) if i != coil_dim and i not in batch_dims_normalized]
             + [coil_dim]
         )
-        kdata_coil_combined = self.data.permute(permute_order)
-        permuted_kdata_shape = kdata_coil_combined.shape
-        kdata_coil_combined = kdata_coil_combined.flatten(
+        kdata_coil_compressed = self.data.permute(permute_order)
+        permuted_kdata_shape = kdata_coil_compressed.shape
+        kdata_coil_compressed = kdata_coil_compressed.flatten(
             start_dim=len(batch_dims_normalized), end_dim=-2
         )  # keep separate dimensions and coil
 
-        pca_compression_op = PCACompressionOp(data=kdata_coil_combined, n_components=n_combined_coils)
-        (kdata_coil_combined,) = pca_compression_op(kdata_coil_combined)
+        pca_compression_op = PCACompressionOp(data=kdata_coil_compressed, n_components=n_compressed_coils)
+        (kdata_coil_compressed,) = pca_compression_op(kdata_coil_compressed)
 
         # reshape to original dimensions and undo permutation
-        kdata_coil_combined = torch.reshape(
-            kdata_coil_combined, [*permuted_kdata_shape[:-1], n_combined_coils]
+        kdata_coil_compressed = torch.reshape(
+            kdata_coil_compressed, [*permuted_kdata_shape[:-1], n_compressed_coils]
         ).permute(*np.argsort(permute_order))
 
-        return type(self)(self.header, kdata_coil_combined, self.traj)
+        return type(self)(self.header.clone(), kdata_coil_compressed, self.traj.clone())

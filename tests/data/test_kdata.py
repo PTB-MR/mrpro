@@ -471,10 +471,10 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader):
     assert relative_image_difference(torch.abs(img_recon), img_tensor[:, 0, ...]) <= 0.05
 
 
-def test_KData_combine_coils(ismrmrd_cart):
+def test_KData_compress_coils(ismrmrd_cart):
     """Test coil combination does not alter image content (much)."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
-    kdata = kdata.combine_coils(n_combined_coils=4)
+    kdata = kdata.compress_coils(n_compressed_coils=4)
     ff_op = FastFourierOp(dim=(-1, -2))
     (reconstructed_img,) = ff_op.adjoint(kdata.data)
 
@@ -496,25 +496,32 @@ def test_KData_combine_coils(ismrmrd_cart):
         (None, (-1, -2, -3)),
         (None, (0, -1, -2, -3)),
     ],
+    ids=[
+        'single_compression',
+        'batching_along_dim0',
+        'batching_along_dim-2_and_dim-1',
+        'single_compression_for_last_3_dims',
+        'single_compression_for_last_3_and_first_dims',
+    ],
 )
-def test_KData_combine_coils_diff_batch_joint_dims(consistently_shaped_kdata, batch_dims, joint_dims):
+def test_KData_compress_coils_diff_batch_joint_dims(consistently_shaped_kdata, batch_dims, joint_dims):
     """Test that all of these options work and yield the same shape."""
-    n_combined_coils = 4
+    n_compressed_coils = 4
     orig_kdata_shape = consistently_shaped_kdata.data.shape
-    kdata = consistently_shaped_kdata.combine_coils(n_combined_coils, batch_dims, joint_dims)
-    assert kdata.data.shape == (*orig_kdata_shape[:-4], n_combined_coils, *orig_kdata_shape[-3:])
+    kdata = consistently_shaped_kdata.compress_coils(n_compressed_coils, batch_dims, joint_dims)
+    assert kdata.data.shape == (*orig_kdata_shape[:-4], n_compressed_coils, *orig_kdata_shape[-3:])
 
 
-def test_KData_combine_coils_error_both_batch_and_joint(consistently_shaped_kdata):
+def test_KData_compress_coils_error_both_batch_and_joint(consistently_shaped_kdata):
     """Test if error is raised if both batch_dims and joint_dims is defined."""
     with pytest.raises(ValueError, match='Either batch_dims or joint_dims'):
-        consistently_shaped_kdata.combine_coils(n_combined_coils=3, batch_dims=(0,), joint_dims=(0,))
+        consistently_shaped_kdata.compress_coils(n_compressed_coils=3, batch_dims=(0,), joint_dims=(0,))
 
 
-def test_KData_combine_coils_error_coil_dim(consistently_shaped_kdata):
+def test_KData_compress_coils_error_coil_dim(consistently_shaped_kdata):
     """Test if error is raised if coil_dim is in batch_dims or joint_dims."""
     with pytest.raises(ValueError, match='Coil dimension must not'):
-        consistently_shaped_kdata.combine_coils(n_combined_coils=3, batch_dims=(-4,))
+        consistently_shaped_kdata.compress_coils(n_compressed_coils=3, batch_dims=(-4,))
 
     with pytest.raises(ValueError, match='Coil dimension must not'):
-        consistently_shaped_kdata.combine_coils(n_combined_coils=3, joint_dims=(-4,))
+        consistently_shaped_kdata.compress_coils(n_compressed_coils=3, joint_dims=(-4,))
