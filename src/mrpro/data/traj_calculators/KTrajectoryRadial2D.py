@@ -51,6 +51,7 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         """Generate KTrajectory object without header information.
 
         Args:
+            angle (float, optional): Rotation angle per subsequent spoke. Defaults to pi * 0.618034.
             n_spokes (int, optional): Number of radial spokes. Defaults to 240.
             n_k0 (int, optional): Number of k0 points along each spoke. Defaults to 256.
             initial_angle (float, optional): Initial rotation angle of the first spoke. Defaults to 0.
@@ -59,7 +60,6 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         -------
             radial 2D trajectory
         """
-        rotation_angle = self.angle
         center_sample = n_k0 // 2
 
         # K-space locations along readout lines
@@ -67,7 +67,7 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         spoke_idx = torch.arange(n_spokes)
 
         # Angles of readout lines
-        kang = (spoke_idx * rotation_angle + initial_angle)[None, None, :, None]
+        kang = (spoke_idx * self.angle + initial_angle)[None, None, :, None]
 
         # K-space radial coordinates
         kx = radial * torch.cos(kang)
