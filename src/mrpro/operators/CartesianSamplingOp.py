@@ -2,6 +2,7 @@
 
 import warnings
 
+import numpy as np
 import torch
 from einops import rearrange, repeat
 
@@ -42,25 +43,26 @@ class CartesianSamplingOp(LinearOperator):
         # in it and the shape of data will remain.
         # only dimensions on a cartesian grid will be reordered.
         traj_type_kz, traj_type_ky, traj_type_kx = np.bitwise_and.reduce(traj.type_matrix, 1)
+        traj_shape = traj.broadcasted_shape
         if traj_type_kx == TrajType.ONGRID:
             kx_idx = traj.kx.round().to(dtype=torch.int64) + sorted_grid_shape.x // 2
         else:
-            sorted_grid_shape.x = traj.kx.shape[-1]
+            sorted_grid_shape.x = traj_shape[-1]
             kx_idx = repeat(torch.arange(sorted_grid_shape.x), 'k0->other k2 k1 k0', other=1, k2=1, k1=1)
         if traj_type_ky == TrajType.ONGRID:
             ky_idx = traj.ky.round().to(dtype=torch.int64) + sorted_grid_shape.y // 2
         else:
-            sorted_grid_shape.y = traj.ky.shape[-2]
+            sorted_grid_shape.y = traj_shape[-2]
             ky_idx = repeat(torch.arange(sorted_grid_shape.y), 'k1->other k2 k1 k0', other=1, k2=1, k0=1)
         if traj_type_kz == TrajType.ONGRID:
-            ky_idx = traj.kz.round().to(dtype=torch.int64) + sorted_grid_shape.z // 2
+            kz_idx = traj.kz.round().to(dtype=torch.int64) + sorted_grid_shape.z // 2
         else:
-            sorted_grid_shape.z = traj.kz.shape[-3]
+            sorted_grid_shape.z = traj_shape[-3]
             kz_idx = repeat(torch.arange(sorted_grid_shape.z), 'k2->other k2 k1 k0', other=1, k1=1, k0=1)
 
         # 1D indices into a flattened tensor.
-        kidx = kz_idx * sorted_grid_shape.y * sorted_grid_shape.x + ky_idx * sorted_grid_shape.x + kx_idx
-        kidx = rearrange(kidx, '... kz ky kx -> ... 1 (kz ky kx)')
+        kidx = kz_idx * sorted_grid_shape.z * sorted_grid_shape.y + ky_idx * sorted_grid_shape.x + kx_idx
+        kidx = rearrange(kidx, '... k1 k2 k0 -> ... 1 (k1 k2 k0)')
 
         # check that all points are inside the encoding matrix
         inside_encoding_matrix = (
@@ -75,7 +77,7 @@ class CartesianSamplingOp(LinearOperator):
                 stacklevel=2,
             )
 
-            inside_encoding_matrix = rearrange(inside_encoding_matrix, '... kz ky kx -> ... 1 (kz ky kx)')
+            inside_encoding_matrix = rearrange(inside_encoding_matrix, '... k1 k2 k0 -> ... 1 (k1 k2 k0)')
             inside_encoding_matrix_idx = inside_encoding_matrix.nonzero(as_tuple=True)[-1]
             inside_encoding_matrix_idx = torch.reshape(inside_encoding_matrix_idx, (*kidx.shape[:-1], -1))
             self.register_buffer('_inside_encoding_matrix_idx', inside_encoding_matrix_idx)

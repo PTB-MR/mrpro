@@ -1,5 +1,6 @@
 """Tests for KTrajectory class."""
 
+import numpy as np
 import pytest
 import torch
 from einops import rearrange
@@ -7,7 +8,6 @@ from mrpro.data import KTrajectory
 from mrpro.data.enums import TrajType
 
 from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
-import numpy as np
 
 
 def test_trajectory_repeat_detection_tol(cartesian_grid):

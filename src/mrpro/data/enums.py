@@ -1,6 +1,6 @@
 """All acquisition enums."""
 
-from enum import Enum, Flag, auto
+from enum import Enum, IntFlag, auto, Flag
 
 
 class AcqFlags(Flag):
@@ -124,8 +124,8 @@ class CalibrationMode(Enum):
     OTHER = 'other'
 
 
-class TrajType(Flag):
+class TrajType(IntFlag):
     """Special Properties of the Trajectory."""
 
-    SINGLEVALUE = 1
-    ONGRID = 2
+    SINGLEVALUE = auto()
+    ONGRID = auto()
