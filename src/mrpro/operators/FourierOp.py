@@ -16,7 +16,7 @@ from mrpro.operators.FastFourierOp import FastFourierOp
 from mrpro.operators.LinearOperator import LinearOperator
 
 
-class FourierOp(LinearOperator):
+class FourierOp(LinearOperator, adjoint_as_backward=True):
     """Fourier Operator class."""
 
     def __init__(
