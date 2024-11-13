@@ -501,6 +501,7 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader):
     # differences along the edges of the elliptic objects.
     assert relative_image_difference(torch.abs(img_recon), img_tensor[:, 0, ...]) <= 0.05
 
+
 def test_modify_acq_info(random_kheader_shape):
     """Test the modification of the acquisition info."""
     # Create random header where AcqInfo fields are of shape [n_k1*n_k2] and reshape to [n_other, n_k2, n_k1]
@@ -517,6 +518,7 @@ def test_modify_acq_info(random_kheader_shape):
     assert kheader.acq_info.idx.k1.shape == (n_other, n_k2, n_k1)
     assert kheader.acq_info.orientation.shape == (n_other, n_k2, n_k1, 1)
     assert kheader.acq_info.position.z.shape == (n_other, n_k2, n_k1, 1)
+
 
 def test_KData_compress_coils(ismrmrd_cart):
     """Test coil combination does not alter image content (much)."""
