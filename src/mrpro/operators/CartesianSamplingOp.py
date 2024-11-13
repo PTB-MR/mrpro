@@ -36,33 +36,27 @@ class CartesianSamplingOp(LinearOperator):
             i.e., the operator's range
         """
         super().__init__()
-        # the shape of the k data,
         sorted_grid_shape = SpatialDimension.from_xyz(encoding_matrix)
-
-        # Cache as these might take some time to compute
-        traj_type_kzyx = traj.type_along_kzyx
-        ktraj_tensor = traj.as_tensor()
 
         # If a dimension is irregular or singleton, we will not perform any reordering
         # in it and the shape of data will remain.
         # only dimensions on a cartesian grid will be reordered.
-        if traj_type_kzyx[-1] == TrajType.ONGRID:  # kx
-            kx_idx = ktraj_tensor[-1, ...].round().to(dtype=torch.int64) + sorted_grid_shape.x // 2
+        traj_type_kz, traj_type_ky, traj_type_kx = np.bitwise_and.reduce(traj.type_matrix, 1)
+        if traj_type_kx == TrajType.ONGRID:
+            kx_idx = traj.kx.round().to(dtype=torch.int64) + sorted_grid_shape.x // 2
         else:
-            sorted_grid_shape.x = ktraj_tensor.shape[-1]
-            kx_idx = repeat(torch.arange(ktraj_tensor.shape[-1]), 'k0->other k2 k1 k0', other=1, k2=1, k1=1)
-
-        if traj_type_kzyx[-2] == TrajType.ONGRID:  # ky
-            ky_idx = ktraj_tensor[-2, ...].round().to(dtype=torch.int64) + sorted_grid_shape.y // 2
+            sorted_grid_shape.x = traj.kx.shape[-1]
+            kx_idx = repeat(torch.arange(sorted_grid_shape.x), 'k0->other k2 k1 k0', other=1, k2=1, k1=1)
+        if traj_type_ky == TrajType.ONGRID:
+            ky_idx = traj.ky.round().to(dtype=torch.int64) + sorted_grid_shape.y // 2
         else:
-            sorted_grid_shape.y = ktraj_tensor.shape[-2]
-            ky_idx = repeat(torch.arange(ktraj_tensor.shape[-2]), 'k1->other k2 k1 k0', other=1, k2=1, k0=1)
-
-        if traj_type_kzyx[-3] == TrajType.ONGRID:  # kz
-            kz_idx = ktraj_tensor[-3, ...].round().to(dtype=torch.int64) + sorted_grid_shape.z // 2
+            sorted_grid_shape.y = traj.ky.shape[-2]
+            ky_idx = repeat(torch.arange(sorted_grid_shape.y), 'k1->other k2 k1 k0', other=1, k2=1, k0=1)
+        if traj_type_kz == TrajType.ONGRID:
+            ky_idx = traj.kz.round().to(dtype=torch.int64) + sorted_grid_shape.z // 2
         else:
-            sorted_grid_shape.z = ktraj_tensor.shape[-3]
-            kz_idx = repeat(torch.arange(ktraj_tensor.shape[-3]), 'k2->other k2 k1 k0', other=1, k1=1, k0=1)
+            sorted_grid_shape.z = traj.kz.shape[-3]
+            kz_idx = repeat(torch.arange(sorted_grid_shape.z), 'k2->other k2 k1 k0', other=1, k1=1, k0=1)
 
         # 1D indices into a flattened tensor.
         kidx = kz_idx * sorted_grid_shape.y * sorted_grid_shape.x + ky_idx * sorted_grid_shape.x + kx_idx

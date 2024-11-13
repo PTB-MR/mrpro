@@ -7,6 +7,7 @@ from mrpro.data import KTrajectory
 from mrpro.data.enums import TrajType
 
 from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
+import numpy as np
 
 
 def test_trajectory_repeat_detection_tol(cartesian_grid):
@@ -154,20 +155,20 @@ def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, ty
     trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # Find out the type of the kz, ky and kz dimensions
-    single_value_dims = [d for d, s in zip((-3, -2, -1), (type_kz, type_ky, type_kx), strict=True) if s == 'z']
-    on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_kz, type_ky, type_kx), strict=True) if s == 'uf']
-    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_kz, type_ky, type_kx), strict=True) if s == 'nuf']
+    single_value_dims = [d for d, s in zip((-3, -2, -1), (type_kz, type_ky, type_kx), strict=True) if s == 'zero']
+    on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_kz, type_ky, type_kx), strict=True) if s == 'uniform']
+    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_kz, type_ky, type_kx), strict=True) if s == 'non-uniform']
+
+    type_along_kzyx = np.bitwise_and.reduce(trajectory.type_matrix, 1)
 
     # check dimensions which are of shape 1 and do not need any transform
-    assert all(trajectory.type_along_kzyx[dim] & TrajType.SINGLEVALUE for dim in single_value_dims)
+    assert all(type_along_kzyx[dim] & TrajType.SINGLEVALUE for dim in single_value_dims)
 
     # Check dimensions which are on a grid and require FFT
-    assert all(trajectory.type_along_kzyx[dim] & TrajType.ONGRID for dim in on_grid_dims)
+    assert all(type_along_kzyx[dim] & TrajType.ONGRID for dim in on_grid_dims)
 
     # Check dimensions which are not on a grid and require NUFFT
-    assert all(
-        ~(trajectory.type_along_kzyx[dim] & (TrajType.SINGLEVALUE | TrajType.ONGRID)) for dim in not_on_grid_dims
-    )
+    assert all(~(type_along_kzyx[dim] & (TrajType.SINGLEVALUE | TrajType.ONGRID)) for dim in not_on_grid_dims)
 
 
 @COMMON_MR_TRAJECTORIES
@@ -178,17 +179,17 @@ def test_ktype_along_k210(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, ty
     trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # Find out the type of the k2, k1 and k0 dimensions
-    single_value_dims = [d for d, s in zip((-3, -2, -1), (type_k2, type_k1, type_k0), strict=True) if s == 'z']
-    on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_k2, type_k1, type_k0), strict=True) if s == 'uf']
-    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_k2, type_k1, type_k0), strict=True) if s == 'nuf']
+    single_value_dims = [d for d, s in zip((-3, -2, -1), (type_k2, type_k1, type_k0), strict=True) if s == 'zero']
+    on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_k2, type_k1, type_k0), strict=True) if s == 'uniform']
+    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_k2, type_k1, type_k0), strict=True) if s == 'non-uniform']
+
+    type_along_k210 = np.bitwise_and.reduce(trajectory.type_matrix, 0)
 
     # check dimensions which are of shape 1 and do not need any transform
-    assert all(trajectory.type_along_k210[dim] & TrajType.SINGLEVALUE for dim in single_value_dims)
+    assert all(type_along_k210[dim] & TrajType.SINGLEVALUE.value for dim in single_value_dims)
 
     # Check dimensions which are on a grid and require FFT
-    assert all(trajectory.type_along_k210[dim] & TrajType.ONGRID for dim in on_grid_dims)
+    assert all(type_along_k210[dim] & TrajType.ONGRID.value for dim in on_grid_dims)
 
     # Check dimensions which are not on a grid and require NUFFT
-    assert all(
-        ~(trajectory.type_along_k210[dim] & (TrajType.SINGLEVALUE | TrajType.ONGRID)) for dim in not_on_grid_dims
-    )
+    assert all(~(type_along_k210[dim] & (TrajType.SINGLEVALUE | TrajType.ONGRID).value) for dim in not_on_grid_dims)
