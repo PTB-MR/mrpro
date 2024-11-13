@@ -23,6 +23,7 @@ class A(MoveDataMixin):
     """Test class A."""
 
     floattensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1.0))
+    floattensor2: torch.Tensor = field(default_factory=lambda: torch.tensor(-1.0))
     complextensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1.0, dtype=torch.complex64))
     inttensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1, dtype=torch.int32))
     booltensor: torch.Tensor = field(default_factory=lambda: torch.tensor(True))
@@ -204,3 +205,21 @@ def test_movedatamixin_cuda(already_moved: bool, copy: bool):
     assert original is not new, 'original and new should not be the same object'
 
     assert new.module.module1.weight is new.module.module1.weight, 'shared module parameters should remain shared'
+
+
+def test_movedatamixin_apply():
+    """Tests apply_ method of MoveDataMixin."""
+    data = B()
+    # make one of the parameters shared to test memo behavior
+    data.child.floattensor2 = data.child.floattensor
+    original = data.clone()
+
+    def multiply_by_2(obj):
+        if isinstance(obj, torch.Tensor):
+            return obj * 2
+        return obj
+
+    data.apply_(multiply_by_2)
+    torch.testing.assert_close(data.floattensor, original.floattensor * 2)
+    torch.testing.assert_close(data.child.floattensor2, original.child.floattensor2 * 2)
+    assert data.child.floattensor is data.child.floattensor2, 'shared module parameters should remain shared'

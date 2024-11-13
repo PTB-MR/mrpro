@@ -2,12 +2,13 @@
 
 import pytest
 import torch
-from einops import rearrange, repeat
+from einops import repeat
 from mrpro.data import KData, KTrajectory, SpatialDimension
-from mrpro.data.acq_filters import is_coil_calibration_acquisition
+from mrpro.data.acq_filters import has_n_coils, is_coil_calibration_acquisition, is_image_acquisition
+from mrpro.data.AcqInfo import rearrange_acq_info_fields
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
-from mrpro.utils import modify_acq_info, split_idx
+from mrpro.utils import split_idx
 
 from tests.conftest import RandomGenerator, generate_random_data
 from tests.data import IsmrmrdRawTestData
@@ -16,14 +17,15 @@ from tests.phantoms import EllipsePhantomTestData
 
 
 @pytest.fixture(scope='session')
-def ismrmrd_cart(ellipse_phantom, tmp_path_factory):
-    """Fully sampled cartesian data set."""
+def ismrmrd_cart_bodycoil_and_surface_coil(ellipse_phantom, tmp_path_factory):
+    """Fully sampled cartesian data set with bodycoil and surface coil data."""
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
     ismrmrd_kdata = IsmrmrdRawTestData(
         filename=ismrmrd_filename,
         noise_level=0.0,
         repetitions=3,
         phantom=ellipse_phantom.phantom,
+        add_bodycoil_acquisitions=True,
     )
     return ismrmrd_kdata
 
@@ -77,10 +79,11 @@ def consistently_shaped_kdata(request, random_kheader_shape):
     # Start with header
     kheader, n_other, n_coils, n_k2, n_k1, n_k0 = random_kheader_shape
 
-    def reshape_acq_data(data):
-        return rearrange(data, '(other k2 k1) ... -> other k2 k1 ...', other=n_other, k2=n_k2, k1=n_k1)
-
-    kheader.acq_info = modify_acq_info(reshape_acq_data, kheader.acq_info)
+    kheader.acq_info.apply_(
+        lambda field: rearrange_acq_info_fields(
+            field, '(other k2 k1) ... -> other k2 k1 ...', other=n_other, k2=n_k2, k1=n_k1
+        )
+    )
 
     # Create kdata with consistent shape
     kdata = generate_random_data(RandomGenerator(request.param['seed']), (n_other, n_coils, n_k2, n_k1, n_k0))
@@ -124,6 +127,34 @@ def test_KData_raise_wrong_trajectory_shape(ismrmrd_cart):
         _ = KData.from_file(ismrmrd_cart.filename, trajectory)
 
 
+def test_KData_raise_warning_for_bodycoil(ismrmrd_cart_bodycoil_and_surface_coil):
+    """Mix of bodycoil and surface coil acquisitions leads to warning."""
+    with pytest.raises(UserWarning, match='Acquisitions with different number'):
+        _ = KData.from_file(ismrmrd_cart_bodycoil_and_surface_coil.filename, DummyTrajectory())
+
+
+@pytest.mark.filterwarnings('ignore:Acquisitions with different number:UserWarning')
+def test_KData_select_bodycoil_via_filter(ismrmrd_cart_bodycoil_and_surface_coil):
+    """Bodycoil can be selected via a custom acquisition filter."""
+    # This is the recommended way of selecting the body coil (i.e. 2 receiver elements)
+    kdata = KData.from_file(
+        ismrmrd_cart_bodycoil_and_surface_coil.filename,
+        DummyTrajectory(),
+        acquisition_filter_criterion=lambda acq: has_n_coils(2, acq) and is_image_acquisition(acq),
+    )
+    assert kdata.data.shape[-4] == 2
+
+
+def test_KData_raise_wrong_coil_number(ismrmrd_cart):
+    """Wrong number of coils leads to empty acquisitions."""
+    with pytest.raises(ValueError, match='No acquisitions meeting the given filter criteria were found'):
+        _ = KData.from_file(
+            ismrmrd_cart.filename,
+            DummyTrajectory(),
+            acquisition_filter_criterion=lambda acq: has_n_coils(2, acq) and is_image_acquisition(acq),
+        )
+
+
 def test_KData_from_file_diff_nky_for_rep(ismrmrd_cart_invalid_reps):
     """Multiple repetitions with different number of phase encoding lines."""
     with pytest.warns(UserWarning, match=r'different number'):
@@ -162,7 +193,7 @@ def test_KData_kspace(ismrmrd_cart):
     assert relative_image_difference(reconstructed_img[0, 0, 0, ...], ismrmrd_cart.img_ref) <= 0.05
 
 
-@pytest.mark.parametrize(('field', 'value'), [('b0', 11.3), ('tr', torch.tensor([24.3]))])
+@pytest.mark.parametrize(('field', 'value'), [('lamor_frequency_proton', 42.88 * 1e6), ('tr', torch.tensor([24.3]))])
 def test_KData_modify_header(ismrmrd_cart, field, value):
     """Overwrite some parameters in the header."""
     parameter_dict = {field: value}
@@ -469,3 +500,21 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader):
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
     # differences along the edges of the elliptic objects.
     assert relative_image_difference(torch.abs(img_recon), img_tensor[:, 0, ...]) <= 0.05
+
+
+def test_modify_acq_info(random_kheader_shape):
+    """Test the modification of the acquisition info."""
+    # Create random header where AcqInfo fields are of shape [n_k1*n_k2] and reshape to [n_other, n_k2, n_k1]
+    kheader, n_other, _, n_k2, n_k1, _ = random_kheader_shape
+
+    kheader.acq_info.apply_(
+        lambda field: rearrange_acq_info_fields(
+            field, '(other k2 k1) ... -> other k2 k1 ...', other=n_other, k2=n_k2, k1=n_k1
+        )
+    )
+
+    # Verify shape
+    assert kheader.acq_info.center_sample.shape == (n_other, n_k2, n_k1, 1)
+    assert kheader.acq_info.idx.k1.shape == (n_other, n_k2, n_k1)
+    assert kheader.acq_info.orientation.shape == (n_other, n_k2, n_k1, 1)
+    assert kheader.acq_info.position.z.shape == (n_other, n_k2, n_k1, 1)

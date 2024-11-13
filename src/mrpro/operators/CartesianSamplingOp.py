@@ -1,5 +1,7 @@
 """Cartesian Sampling Operator."""
 
+import warnings
+
 import torch
 from einops import rearrange, repeat
 
@@ -7,6 +9,7 @@ from mrpro.data.enums import TrajType
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
+from mrpro.utils.reshape import unsqueeze_left
 
 
 class CartesianSamplingOp(LinearOperator):
@@ -47,26 +50,53 @@ class CartesianSamplingOp(LinearOperator):
             kx_idx = ktraj_tensor[-1, ...].round().to(dtype=torch.int64) + sorted_grid_shape.x // 2
         else:
             sorted_grid_shape.x = ktraj_tensor.shape[-1]
-            kx_idx = repeat(torch.arange(ktraj_tensor.shape[-1]), 'k0->other k1 k2 k0', other=1, k2=1, k1=1)
+            kx_idx = repeat(torch.arange(ktraj_tensor.shape[-1]), 'k0->other k2 k1 k0', other=1, k2=1, k1=1)
 
         if traj_type_kzyx[-2] == TrajType.ONGRID:  # ky
             ky_idx = ktraj_tensor[-2, ...].round().to(dtype=torch.int64) + sorted_grid_shape.y // 2
         else:
             sorted_grid_shape.y = ktraj_tensor.shape[-2]
-            ky_idx = repeat(torch.arange(ktraj_tensor.shape[-2]), 'k1->other k1 k2 k0', other=1, k2=1, k0=1)
+            ky_idx = repeat(torch.arange(ktraj_tensor.shape[-2]), 'k1->other k2 k1 k0', other=1, k2=1, k0=1)
 
         if traj_type_kzyx[-3] == TrajType.ONGRID:  # kz
             kz_idx = ktraj_tensor[-3, ...].round().to(dtype=torch.int64) + sorted_grid_shape.z // 2
         else:
             sorted_grid_shape.z = ktraj_tensor.shape[-3]
-            kz_idx = repeat(torch.arange(ktraj_tensor.shape[-3]), 'k2->other k1 k2 k0', other=1, k1=1, k0=1)
+            kz_idx = repeat(torch.arange(ktraj_tensor.shape[-3]), 'k2->other k2 k1 k0', other=1, k1=1, k0=1)
 
         # 1D indices into a flattened tensor.
         kidx = kz_idx * sorted_grid_shape.y * sorted_grid_shape.x + ky_idx * sorted_grid_shape.x + kx_idx
         kidx = rearrange(kidx, '... kz ky kx -> ... 1 (kz ky kx)')
+
+        # check that all points are inside the encoding matrix
+        inside_encoding_matrix = (
+            ((kx_idx >= 0) & (kx_idx < sorted_grid_shape.x))
+            & ((ky_idx >= 0) & (ky_idx < sorted_grid_shape.y))
+            & ((kz_idx >= 0) & (kz_idx < sorted_grid_shape.z))
+        )
+        if not torch.all(inside_encoding_matrix):
+            warnings.warn(
+                'K-space points lie outside of the encoding_matrix and will be ignored.'
+                ' Increase the encoding_matrix to include these points.',
+                stacklevel=2,
+            )
+
+            inside_encoding_matrix = rearrange(inside_encoding_matrix, '... kz ky kx -> ... 1 (kz ky kx)')
+            inside_encoding_matrix_idx = inside_encoding_matrix.nonzero(as_tuple=True)[-1]
+            inside_encoding_matrix_idx = torch.reshape(inside_encoding_matrix_idx, (*kidx.shape[:-1], -1))
+            self.register_buffer('_inside_encoding_matrix_idx', inside_encoding_matrix_idx)
+            kidx = torch.take_along_dim(kidx, inside_encoding_matrix_idx, dim=-1)
+        else:
+            self._inside_encoding_matrix_idx: torch.Tensor | None = None
+
         self.register_buffer('_fft_idx', kidx)
+
         # we can skip the indexing if the data is already sorted
-        self._needs_indexing = not torch.all(torch.diff(kidx) == 1)
+        self._needs_indexing = (
+            not torch.all(torch.diff(kidx) == 1)
+            or traj.broadcasted_shape[-3:] != sorted_grid_shape.zyx
+            or self._inside_encoding_matrix_idx is not None
+        )
 
         self._trajectory_shape = traj.broadcasted_shape
         self._sorted_grid_shape = sorted_grid_shape
@@ -91,8 +121,21 @@ class CartesianSamplingOp(LinearOperator):
             return (x,)
 
         x_kflat = rearrange(x, '... coil k2_enc k1_enc k0_enc -> ... coil (k2_enc k1_enc k0_enc)')
-        # take_along_dim does broadcast, so no need for extending here
-        x_indexed = torch.take_along_dim(x_kflat, self._fft_idx, dim=-1)
+        # take_along_dim broadcasts, but needs the same number of dimensions
+        idx = unsqueeze_left(self._fft_idx, x_kflat.ndim - self._fft_idx.ndim)
+        x_inside_encoding_matrix = torch.take_along_dim(x_kflat, idx, dim=-1)
+
+        if self._inside_encoding_matrix_idx is None:
+            # all trajectory points are inside the encoding matrix
+            x_indexed = x_inside_encoding_matrix
+        else:
+            # we need to add zeros
+            x_indexed = self._broadcast_and_scatter_along_last_dim(
+                x_inside_encoding_matrix,
+                self._trajectory_shape[-1] * self._trajectory_shape[-2] * self._trajectory_shape[-3],
+                self._inside_encoding_matrix_idx,
+            )
+
         # reshape to (... other coil, k2, k1, k0)
         x_reshaped = x_indexed.reshape(x.shape[:-3] + self._trajectory_shape[-3:])
 
@@ -118,18 +161,13 @@ class CartesianSamplingOp(LinearOperator):
 
         y_kflat = rearrange(y, '... coil k2 k1 k0 -> ... coil (k2 k1 k0)')
 
-        # scatter does not broadcast, so we need to manually broadcast the indices
-        broadcast_shape = torch.broadcast_shapes(self._fft_idx.shape[:-1], y_kflat.shape[:-1])
-        idx_expanded = torch.broadcast_to(self._fft_idx, (*broadcast_shape, self._fft_idx.shape[-1]))
+        if self._inside_encoding_matrix_idx is not None:
+            idx = unsqueeze_left(self._inside_encoding_matrix_idx, y_kflat.ndim - self._inside_encoding_matrix_idx.ndim)
+            y_kflat = torch.take_along_dim(y_kflat, idx, dim=-1)
 
-        # although scatter_ is inplace, this will not cause issues with autograd, as self
-        # is always constant zero and gradients w.r.t. src work as expected.
-        y_scattered = torch.zeros(
-            *broadcast_shape,
-            self._sorted_grid_shape.z * self._sorted_grid_shape.y * self._sorted_grid_shape.x,
-            dtype=y.dtype,
-            device=y.device,
-        ).scatter_(dim=-1, index=idx_expanded, src=y_kflat)
+        y_scattered = self._broadcast_and_scatter_along_last_dim(
+            y_kflat, self._sorted_grid_shape.z * self._sorted_grid_shape.y * self._sorted_grid_shape.x, self._fft_idx
+        )
 
         # reshape to  ..., other, coil, k2_enc, k1_enc, k0_enc
         y_reshaped = y_scattered.reshape(
@@ -140,3 +178,37 @@ class CartesianSamplingOp(LinearOperator):
         )
 
         return (y_reshaped,)
+
+    @staticmethod
+    def _broadcast_and_scatter_along_last_dim(
+        data_to_scatter: torch.Tensor, n_last_dim: int, scatter_index: torch.Tensor
+    ) -> torch.Tensor:
+        """Broadcast scatter index and scatter into zero tensor.
+
+        Parameters
+        ----------
+        data_to_scatter
+            Data to be scattered at indices scatter_index
+        n_last_dim
+            Number of data points in last dimension
+        scatter_index
+            Indices describing where to scatter data
+
+        Returns
+        -------
+            Data scattered into tensor along scatter_index
+        """
+        # scatter does not broadcast, so we need to manually broadcast the indices
+        broadcast_shape = torch.broadcast_shapes(scatter_index.shape[:-1], data_to_scatter.shape[:-1])
+        idx_expanded = torch.broadcast_to(scatter_index, (*broadcast_shape, scatter_index.shape[-1]))
+
+        # although scatter_ is inplace, this will not cause issues with autograd, as self
+        # is always constant zero and gradients w.r.t. src work as expected.
+        data_scattered = torch.zeros(
+            *broadcast_shape,
+            n_last_dim,
+            dtype=data_to_scatter.dtype,
+            device=data_to_scatter.device,
+        ).scatter_(dim=-1, index=idx_expanded, src=data_to_scatter)
+
+        return data_scattered
