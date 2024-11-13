@@ -1,19 +1,28 @@
 """Base Class Functional."""
 
+from __future__ import annotations
+
 import math
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 
 import torch
 
+import mrpro.operators
 from mrpro.operators.Operator import Operator
 
 
 class Functional(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """Functional Base Class."""
 
+    def __rmul__(self, scalar: torch.Tensor | complex) -> Functional:
+        """Multiply functional with scalar."""
+        if not isinstance(scalar, int | float | torch.Tensor):
+            return NotImplemented
+        return ScaledFunctional(self, scalar)
+
     def _throw_if_negative_or_complex(
-        self, x: torch.Tensor | float, message: str = 'sigma must be real and contain only positive values'
+        self, x: torch.Tensor | complex, message: str = 'sigma must be real and contain only positive values'
     ) -> None:
         """Throw an ValueError if any element of x is negative or complex.
 
@@ -162,6 +171,28 @@ class ProximableFunctional(Functional, ABC):
         sigma[sigma < 1e-8] += 1e-6
         return (x - sigma * self.prox(x / sigma, 1 / sigma)[0],)
 
+    def __rmul__(self, scalar: torch.Tensor | complex) -> ProximableFunctional:
+        """Multiply functional with scalar."""
+        if not isinstance(scalar, int | float | torch.Tensor):
+            return NotImplemented
+        return ScaledProximableFunctional(self, scalar)
+
+    def __or__(self, other: ProximableFunctional) -> mrpro.operators.ProximableFunctionalSeparableSum:
+        """Create a ProximableFunctionalSeparableSum object from two proximable functionals.
+
+        Parameters
+        ----------
+        other
+            second functional to be summed
+
+        Returns
+        -------
+            ProximableFunctionalSeparableSum object
+        """
+        if isinstance(other, ProximableFunctional):
+            return mrpro.operators.ProximableFunctionalSeparableSum(self, other)
+        return NotImplemented  # type: ignore[unreachable]
+
 
 class ElementaryProximableFunctional(ElementaryFunctional, ProximableFunctional):
     r"""Elementary proximable functional base class.
@@ -173,3 +204,80 @@ class ElementaryProximableFunctional(ElementaryFunctional, ProximableFunctional)
     A proximable functional is a functional :math:`f(x)` that has a prox implementation,
     i.e. a function that yields :math:`argmin_x \sigma f(x) + 1/2 \|x - y\|^2`.
     """
+
+
+class ScaledFunctional(Functional):
+    """Functional scaled by a scalar."""
+
+    def __init__(self, functional: Functional, scale: torch.Tensor | float) -> None:
+        r"""Initialize a scaled functional.
+
+        A scaled functional is a functional that is scaled by a scalar factor :math:`\alpha`,
+        i.e. :math:`f(x) = \alpha g(x)`.
+
+        Parameters
+        ----------
+        functional
+            functional to be scaled
+        scale
+            scaling factor, must be real and positive
+        """
+        super().__init__()
+        self.functional = functional
+        self.register_buffer('scale', torch.as_tensor(scale))
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Forward method.
+
+        Parameters
+        ----------
+        x
+            input tensor
+
+        Returns
+        -------
+            scaled output of the functional
+        """
+        return (self.scale * self.functional(x)[0],)
+
+
+class ScaledProximableFunctional(ScaledFunctional, ProximableFunctional):
+    """Proximable Functional scaled by a scalar."""
+
+    def prox(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
+        """Proximal Mapping.
+
+        Parameters
+        ----------
+        x
+            input tensor
+        sigma
+            scaling factor
+
+        Returns
+        -------
+            Proximal mapping applied to the input tensor
+        """
+        self._throw_if_negative_or_complex(
+            self.scale, 'For prox to be defined, the scaling factor must be real and non-negative'
+        )
+        return (self.functional.prox(x, sigma * self.scale)[0],)
+
+    def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
+        """Proximal Mapping of the convex conjugate.
+
+        Parameters
+        ----------
+        x
+            input tensor
+        sigma
+            scaling factor
+
+        Returns
+        -------
+            Proximal mapping of the convex conjugate applied to the input tensor
+        """
+        self._throw_if_negative_or_complex(
+            self.scale, 'For prox_convex_conj to be defined, the scaling factor must be real and non-negative'
+        )
+        return (self.scale * self.functional.prox_convex_conj(x / self.scale, sigma / self.scale)[0],)

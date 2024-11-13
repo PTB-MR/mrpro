@@ -1,21 +1,22 @@
 """Fourier Operator."""
 
 from collections.abc import Sequence
-from typing import Self
 
 import numpy as np
 import torch
 from torchkbnufft import KbNufft, KbNufftAdjoint
+from typing_extensions import Self
 
 from mrpro.data._kdata.KData import KData
 from mrpro.data.enums import TrajType
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
+from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp
 from mrpro.operators.FastFourierOp import FastFourierOp
 from mrpro.operators.LinearOperator import LinearOperator
 
 
-class FourierOp(LinearOperator):
+class FourierOp(LinearOperator, adjoint_as_backward=True):
     """Fourier Operator class."""
 
     def __init__(
@@ -67,12 +68,17 @@ class FourierOp(LinearOperator):
                 self._nufft_dims.append(dim)
 
         if self._fft_dims:
-            self._fast_fourier_op = FastFourierOp(
+            self._fast_fourier_op: FastFourierOp | None = FastFourierOp(
                 dim=tuple(self._fft_dims),
                 recon_matrix=get_spatial_dims(recon_matrix, self._fft_dims),
                 encoding_matrix=get_spatial_dims(encoding_matrix, self._fft_dims),
             )
-
+            self._cart_sampling_op: CartesianSamplingOp | None = CartesianSamplingOp(
+                encoding_matrix=encoding_matrix, traj=traj
+            )
+        else:
+            self._fast_fourier_op = None
+            self._cart_sampling_op = None
         # Find dimensions which require NUFFT
         if self._nufft_dims:
             fft_dims_k210 = [
@@ -102,20 +108,23 @@ class FourierOp(LinearOperator):
             omega = [k.expand(*np.broadcast_shapes(*[k.shape for k in omega])) for k in omega]
             self.register_buffer('_omega', torch.stack(omega, dim=-4))  # use the 'coil' dim for the direction
 
-            self._fwd_nufft_op = KbNufft(
+            self._fwd_nufft_op: KbNufftAdjoint | None = KbNufft(
                 im_size=self._nufft_im_size,
                 grid_size=grid_size,
                 numpoints=nufft_numpoints,
                 kbwidth=nufft_kbwidth,
             )
-            self._adj_nufft_op = KbNufftAdjoint(
+            self._adj_nufft_op: KbNufftAdjoint | None = KbNufftAdjoint(
                 im_size=self._nufft_im_size,
                 grid_size=grid_size,
                 numpoints=nufft_numpoints,
                 kbwidth=nufft_kbwidth,
             )
-
-            self._kshape = traj.broadcasted_shape
+        else:
+            self._omega: torch.Tensor | None = None
+            self._fwd_nufft_op = None
+            self._adj_nufft_op = None
+        self._kshape = traj.broadcasted_shape
 
     @classmethod
     def from_kdata(cls, kdata: KData, recon_shape: SpatialDimension[int] | None = None) -> Self:
@@ -146,11 +155,8 @@ class FourierOp(LinearOperator):
         -------
             coil k-space data with shape: (... coils k2 k1 k0)
         """
-        if len(self._fft_dims):
-            # FFT
-            (x,) = self._fast_fourier_op.forward(x)
-
-        if self._nufft_dims:
+        if self._fwd_nufft_op is not None and self._omega is not None:
+            # NUFFT Type 2
             # we need to move the nufft-dimensions to the end and flatten all other dimensions
             # so the new shape will be (... non_nufft_dims) coils nufft_dims
             # we could move the permute to __init__ but then we still would need to prepend if len(other)>1
@@ -163,7 +169,6 @@ class FourierOp(LinearOperator):
             x = x.flatten(end_dim=-len(keep_dims) - 1)
 
             # omega should be (... non_nufft_dims) n_nufft_dims (nufft_dims)
-            # TODO: consider moving the broadcast along fft dimensions to __init__ (independent of x shape).
             omega = self._omega.permute(*permute)
             omega = omega.broadcast_to(*permuted_x_shape[: -len(keep_dims)], *omega.shape[-len(keep_dims) :])
             omega = omega.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
@@ -173,6 +178,11 @@ class FourierOp(LinearOperator):
             shape_nufft_dims = [self._kshape[i] for i in self._nufft_dims]
             x = x.reshape(*permuted_x_shape[: -len(keep_dims)], -1, *shape_nufft_dims)  # -1 is coils
             x = x.permute(*unpermute)
+
+        if self._fast_fourier_op is not None and self._cart_sampling_op is not None:
+            # FFT
+            (x,) = self._cart_sampling_op(self._fast_fourier_op(x)[0])
+
         return (x,)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
@@ -187,11 +197,12 @@ class FourierOp(LinearOperator):
         -------
             coil image data with shape: (... coils z y x)
         """
-        if self._fft_dims:
+        if self._fast_fourier_op is not None and self._cart_sampling_op is not None:
             # IFFT
-            (x,) = self._fast_fourier_op.adjoint(x)
+            (x,) = self._fast_fourier_op.adjoint(self._cart_sampling_op.adjoint(x)[0])
 
-        if self._nufft_dims:
+        if self._adj_nufft_op is not None and self._omega is not None:
+            # NUFFT Type 1
             # we need to move the nufft-dimensions to the end, flatten them and flatten all other dimensions
             # so the new shape will be (... non_nufft_dims) coils (nufft_dims)
             keep_dims = [-4, *self._nufft_dims]  # -4 is coil

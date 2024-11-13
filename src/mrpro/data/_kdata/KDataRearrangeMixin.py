@@ -1,13 +1,12 @@
 """Rearrange KData."""
 
 import copy
-from typing import Self
 
 from einops import rearrange
+from typing_extensions import Self
 
 from mrpro.data._kdata.KDataProtocol import _KDataProtocol
-from mrpro.data.AcqInfo import AcqInfo
-from mrpro.utils import modify_acq_info
+from mrpro.data.AcqInfo import rearrange_acq_info_fields
 
 
 class KDataRearrangeMixin(_KDataProtocol):
@@ -35,9 +34,8 @@ class KDataRearrangeMixin(_KDataProtocol):
         kheader = copy.deepcopy(self.header)
 
         # Update shape of acquisition info index
-        def reshape_acq_info(info: AcqInfo):
-            return rearrange(info, 'other k2 k1 ... -> other 1 (k2 k1) ...')
-
-        kheader.acq_info = modify_acq_info(reshape_acq_info, kheader.acq_info)
+        kheader.acq_info.apply_(
+            lambda field: rearrange_acq_info_fields(field, 'other k2 k1 ... -> other 1 (k2 k1) ...')
+        )
 
         return type(self)(kheader, kdat, type(self.traj).from_tensor(ktraj))

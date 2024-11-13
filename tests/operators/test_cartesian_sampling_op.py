@@ -2,6 +2,7 @@
 
 import pytest
 import torch
+from einops import rearrange
 from mrpro.data import KTrajectory, SpatialDimension
 from mrpro.operators import CartesianSamplingOp
 
@@ -16,10 +17,10 @@ def test_cart_sampling_op_data_match():
     nkx = (1, 1, 1, 60)
     nky = (1, 1, 40, 1)
     nkz = (1, 20, 1, 1)
-    sx = 'uf'
-    sy = 'uf'
-    sz = 'uf'
-    trajectory = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
+    type_kx = 'uniform'
+    type_ky = 'uniform'
+    type_kz = 'uniform'
+    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # Create matching data
     random_generator = RandomGenerator(seed=0)
@@ -59,6 +60,9 @@ def test_cart_sampling_op_data_match():
         'regular_undersampling',
         'random_undersampling',
         'different_random_undersampling',
+        'cartesian_and_non_cartesian',
+        'kx_ky_along_k0',
+        'kx_ky_along_k0_undersampling',
     ],
 )
 def test_cart_sampling_op_fwd_adj(sampling):
@@ -69,10 +73,10 @@ def test_cart_sampling_op_fwd_adj(sampling):
     nkx = (2, 1, 1, 60)
     nky = (2, 1, 40, 1)
     nkz = (2, 20, 1, 1)
-    sx = 'uf'
-    sy = 'uf'
-    sz = 'uf'
-    trajectory_tensor = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz).as_tensor()
+    type_kx = 'uniform'
+    type_ky = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
+    type_kz = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
+    trajectory_tensor = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz).as_tensor()
 
     # Subsample data and trajectory
     match sampling:
@@ -94,6 +98,15 @@ def test_cart_sampling_op_fwd_adj(sampling):
                 for traj_one_other in trajectory_tensor.unbind(1)
             ]
             trajectory = KTrajectory.from_tensor(torch.stack(traj_list, dim=1))
+        case 'cartesian_and_non_cartesian':
+            trajectory = KTrajectory.from_tensor(trajectory_tensor)
+        case 'kx_ky_along_k0':
+            trajectory_tensor = rearrange(trajectory_tensor, '... k1 k0->... 1 (k1 k0)')
+            trajectory = KTrajectory.from_tensor(trajectory_tensor)
+        case 'kx_ky_along_k0_undersampling':
+            trajectory_tensor = rearrange(trajectory_tensor, '... k1 k0->... 1 (k1 k0)')
+            random_idx = torch.randperm(trajectory_tensor.shape[-1])
+            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., random_idx[: trajectory_tensor.shape[-1] // 2]])
         case _:
             raise NotImplementedError(f'Test {sampling} not implemented.')
 
@@ -105,3 +118,28 @@ def test_cart_sampling_op_fwd_adj(sampling):
     u = random_generator.complex64_tensor(size=k_shape)
     v = random_generator.complex64_tensor(size=k_shape[:2] + trajectory.as_tensor().shape[2:])
     dotproduct_adjointness_test(sampling_op, u, v)
+
+
+@pytest.mark.parametrize(('k2_min', 'k2_max'), [(-1, 21), (-21, 1)])
+@pytest.mark.parametrize(('k0_min', 'k0_max'), [(-6, 13), (-13, 6)])
+def test_cart_sampling_op_oversampling(k0_min, k0_max, k2_min, k2_max):
+    """Test trajectory points outside of encoding_matrix."""
+    encoding_matrix = SpatialDimension(40, 1, 20)
+
+    # Create kx and kz sampling which are asymmetric and larger than the encoding matrix on one side
+    # The indices are inverted to ensure CartesianSamplingOp acts on them
+    kx = rearrange(torch.linspace(k0_max, k0_min, 20), 'kx->1 1 1 kx')
+    ky = torch.ones(1, 1, 1, 1)
+    kz = rearrange(torch.linspace(k2_max, k2_min, 40), 'kz-> kz 1 1')
+    kz = torch.stack([kz, -kz], dim=0)  # different kz values for two other elements
+    trajectory = KTrajectory(kz=kz, ky=ky, kx=kx)
+
+    with pytest.warns(UserWarning, match='K-space points lie outside of the encoding_matrix'):
+        sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
+
+    random_generator = RandomGenerator(seed=0)
+    u = random_generator.complex64_tensor(size=(3, 2, 5, kz.shape[-3], ky.shape[-2], kx.shape[-1]))
+    v = random_generator.complex64_tensor(size=(3, 2, 5, *encoding_matrix.zyx))
+
+    assert sampling_op.adjoint(u)[0].shape[-3:] == encoding_matrix.zyx
+    assert sampling_op(v)[0].shape[-3:] == (kz.shape[-3], ky.shape[-2], kx.shape[-1])
