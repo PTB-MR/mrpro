@@ -91,7 +91,6 @@ instance/
 
 # Sphinx documentation
 docs/_build/
-docs/source/_notebooks/*
 
 # PyBuilder
 .pybuilder/

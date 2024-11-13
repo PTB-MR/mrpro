@@ -5,8 +5,4 @@ Notebooks with examples of how you can use MRpro.
 All of the notebooks can directly be run via binder or colab from the repo.
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-   :glob:
-
-   _notebooks/*/*
+   :maxdepth: 1

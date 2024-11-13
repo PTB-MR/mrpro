@@ -120,14 +120,14 @@ jobs:
         run: |
           notebook=${{ matrix.notebook }}
           echo "ARTIFACT_NAME=${notebook/.ipynb/}" >> $GITHUB_OUTPUT
-          echo "IPYNB_EXECUTED=${notebook}" >> $GITHUB_OUTPUT
+          echo "HTML_RESULT=${notebook/.ipynb/.html}" >> $GITHUB_OUTPUT
 
       - name: Upload notebook
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ${{ steps.artifact_names.outputs.ARTIFACT_NAME }}
-          path: ${{ github.workspace }}/nb-runner.out/${{ steps.artifact_names.outputs.IPYNB_EXECUTED }}
+          path: ${{ github.workspace }}/nb-runner.out/${{ steps.artifact_names.outputs.HTML_RESULT }}
         env:
           RUNNER: ${{ toJson(runner) }}
 
@@ -150,11 +150,39 @@ jobs:
       - name: Install mrpro and dependencies
         run: pip install --upgrade --upgrade-strategy "eager" .[docs]
 
-      - name: Download executed notebook ipynb files
+      - name: Download notebook html files
         id: download
         uses: actions/download-artifact@v4
         with:
-          path: ./docs/source/_notebooks/
+          path: ./docs/source/notebook_artifact/
+
+      - name: Copy notebook html files
+        run: |
+          mkdir ./docs/source/_notebooks
+          cd ./docs/source/notebook_artifact/
+          notebooks=$(grep -rl --include='*' './')
+          for nb in $notebooks
+          do
+            echo "current jupyter-notebook: $nb"
+            cp ./$nb ../_notebooks/
+          done
+
+      - name: List of notebooks
+        run: |
+          cd ./docs/source/_notebooks/
+          notebooks=$(grep -rl --include='*.html' './')
+          cd ../
+          echo "" >> examples.rst
+          for nb in $notebooks
+          do
+            echo "   notebook_${nb/.html/.rst}" >> examples.rst
+            notebook_description=$(grep '<h1 id=' ./_notebooks/$nb | sed 's/.*">\(.*\)<a class=.*/\1/')
+            echo $notebook_description
+            echo $notebook_description > "notebook_${nb/.html/.rst}"
+            echo "========" >> "notebook_${nb/.html/.rst}"
+            echo ".. raw:: html" >> "notebook_${nb/.html/.rst}"
+            echo "   :file: ./_notebooks/$nb" >> "notebook_${nb/.html/.rst}"
+          done
 
       - name: Build docs
         run: |
