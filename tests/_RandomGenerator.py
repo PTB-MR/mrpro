@@ -142,10 +142,16 @@ class RandomGenerator:
 
     def uint16(self, low: int = 0, high: int = 1 << 16) -> int:
         """Generate a uint16 in [low, high)."""
+        if low < 0 or high > 1 << 16:
+            raise ValueError('Low must be positive and high must be <= 2^16')
+        # using int32 as it is the smallest that can hold 2^16 (no uint32 in pytorch)
         return int(self.int32_tensor((1,), low, high).item())
 
     def uint32(self, low: int = 0, high: int = 1 << 32) -> int:
         """Generate a uint32 in [low, high)."""
+        if low < 0 or high > 1 << 32:
+            raise ValueError('Low must be positive and high must be <= 2^32')
+        # using int64 as it is the smallest that can hold 2^32 (no uint64 in pytorch)
         return int(self.int64_tensor((1,), low, high).item())
 
     def int8(self, low: int = -1 << 7, high: int = 1 << 7 - 1) -> int:
@@ -166,11 +172,11 @@ class RandomGenerator:
 
     def uint64(self, low: int = 0, high: int = 1 << 64) -> int:
         """Generate a uint64 in [low, high)."""
+        if low < 0 or high > 1 << 64:
+            raise ValueError('Low must be positive and high must be <= 2^64')
+        # no uint64 in pytorch. int64 would not be able to produce 2^64,
+        # so we need to shift the values from [-2^63, 2^63) to [0, 2^64)
         range_ = high - low
-        if low < 0:
-            raise ValueError('Low must be positive')
-        if range_ > 1 << 64:
-            raise ValueError('Range too large')
         new_low = -1 << 63
         new_high = new_low + range_
         value = self.int64(new_low, new_high) - new_low + low
