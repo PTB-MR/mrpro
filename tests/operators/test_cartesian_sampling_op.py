@@ -1,11 +1,11 @@
 """Tests for the Cartesian sampling operator."""
 
-import re
 import pytest
 import torch
 from einops import rearrange
 from mrpro.data import KTrajectory, SpatialDimension
 from mrpro.operators import CartesianSamplingOp
+from typing_extensions import Unpack
 
 from tests import RandomGenerator
 from tests.conftest import create_traj
@@ -52,7 +52,9 @@ def test_cart_sampling_op_data_match():
     torch.testing.assert_close(kdata[:, :, ::2, ::4, ::3], k_sub[:, :, ::2, ::4, ::3])
 
 
-def subsample_traj(trajectory: KTrajectory, sampling: str, k_shape: tuple[int, int, int]) -> KTrajectory:
+def subsample_traj(
+    trajectory: KTrajectory, sampling: str, k_shape: tuple[int, int, int, Unpack[tuple[int, ...]]]
+) -> KTrajectory:
     """Subsample trajectory based on sampling type."""
     trajectory_tensor = trajectory.as_tensor()
     # Subsample data and trajectory
@@ -75,6 +77,15 @@ def subsample_traj(trajectory: KTrajectory, sampling: str, k_shape: tuple[int, i
                 for traj_one_other in trajectory_tensor.unbind(1)
             ]
             trajectory = KTrajectory.from_tensor(torch.stack(traj_list, dim=1))
+        case 'cartesian_and_non_cartesian':
+            trajectory = KTrajectory.from_tensor(trajectory_tensor)
+        case 'kx_ky_along_k0':
+            trajectory_tensor = rearrange(trajectory_tensor, '... k1 k0->... 1 (k1 k0)')
+            trajectory = KTrajectory.from_tensor(trajectory_tensor)
+        case 'kx_ky_along_k0_undersampling':
+            trajectory_tensor = rearrange(trajectory_tensor, '... k1 k0->... 1 (k1 k0)')
+            random_idx = torch.randperm(trajectory_tensor.shape[-1])
+            trajectory = KTrajectory.from_tensor(trajectory_tensor[..., random_idx[: trajectory_tensor.shape[-1] // 2]])
         case _:
             raise NotImplementedError(f'Test {sampling} not implemented.')
     return trajectory
@@ -128,6 +139,8 @@ def test_cart_sampling_op_fwd_adj(sampling):
         'random_undersampling',
         'different_random_undersampling',
         'cartesian_and_non_cartesian',
+        'kx_ky_along_k0',
+        'kx_ky_along_k0_undersampling',
     ],
 )
 def test_cart_sampling_op_gram(sampling):

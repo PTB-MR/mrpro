@@ -50,12 +50,16 @@ def test_fourier_op_fwd_adj_property(
 
 
 @COMMON_MR_TRAJECTORIES
-def test_fouriergram(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz, s0, s1, s2):
+def test_fourier_op_gram(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2):
     """Test gram of Fourier operator."""
-    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz)
+    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
-    encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    encoding_matrix = SpatialDimension(
+        int(trajectory.kz.max() - trajectory.kz.min() + 1),
+        int(trajectory.ky.max() - trajectory.ky.min() + 1),
+        int(trajectory.kx.max() - trajectory.kx.min() + 1),
+    )
     fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
 
     (expected,) = (fourier_op.H @ fourier_op)(img)

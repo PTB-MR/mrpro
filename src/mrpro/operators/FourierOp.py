@@ -15,7 +15,6 @@ from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp
 from mrpro.operators.FastFourierOp import FastFourierOp
-from mrpro.operators.IdentityOp import IdentityOp
 from mrpro.operators.LinearOperator import LinearOperator
 
 
@@ -292,6 +291,7 @@ def gramm_nufft_kernel(weight: torch.Tensor, trajectory: torch.Tensor, recon_sha
     kernel = symmetrize(kernel, rank)
     kernel = torch.fft.hfftn(kernel, dim=list(range(-rank, 0)), norm='backward')
     kernel /= kernel.shape[-rank:].numel()
+    kernel = torch.fft.fftshift(kernel, dim=list(range(-rank, 0)))
     return kernel
 
 
@@ -325,7 +325,7 @@ class FourierGramOp(LinearOperator):
 
         """
         super().__init__()
-        if fourier_op._nufft_dims:
+        if fourier_op._nufft_dims and fourier_op._omega is not None:
             if dcf is None:
                 weight = torch.ones_like(fourier_op._omega[..., :1, :, :, :])
             elif isinstance(dcf, DcfData):
@@ -344,17 +344,21 @@ class FourierGramOp(LinearOperator):
             kernel = gramm_nufft_kernel(weight, omega, fourier_op._nufft_im_size)
             kernel = kernel.reshape(*weight_unflattend_shape[: -len(keep_dims)], *kernel.shape[-len(keep_dims) :])
             kernel = kernel.permute(*unpermute)
-            self.register_buffer('_kernel', kernel)
-            self._nufft_im_size = fourier_op._nufft_im_size
+            fft = FastFourierOp(
+                dim=fourier_op._nufft_dims,
+                encoding_matrix=[2 * s for s in fourier_op._nufft_im_size],
+                recon_matrix=fourier_op._nufft_im_size,
+            )
+            self.nufft_gram: None | LinearOperator = fft.H * kernel @ fft
         else:
-            self._kernel = None
-        self._nufft_dims = fourier_op._nufft_dims
+            self.nufft_gram = None
 
-        if fourier_op._fft_dims:
-            self.fast_fourier_gram = fourier_op._fast_fourier_op.gram
+        if fourier_op._fast_fourier_op is not None and fourier_op._cart_sampling_op is not None:
+            self.fast_fourier_gram: None | LinearOperator = (
+                fourier_op._fast_fourier_op.H @ fourier_op._cart_sampling_op.gram @ fourier_op._fast_fourier_op
+            )
         else:
-            self.fast_fourier_gram = IdentityOp()
-        self._fft_dims = fourier_op._fft_dims
+            self.fast_fourier_gram = None
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the operator to the input tensor.
@@ -364,14 +368,10 @@ class FourierGramOp(LinearOperator):
         x
             input tensor, shape (..., coils, z, y, x)
         """
-        if self._kernel is not None:
-            slices = [slice(0, s) for s in x.shape]
-            x = torch.fft.fftn(x, dim=self._nufft_dims, s=[2 * s for s in self._nufft_im_size])
-            x = x * self._kernel
-            x = torch.fft.ifftn(x, dim=self._nufft_dims)
-            x = x[slices]
+        if self.nufft_gram is not None:
+            (x,) = self.nufft_gram(x)
 
-        if self._fft_dims:
+        if self.fast_fourier_gram is not None:
             (x,) = self.fast_fourier_gram(x)
         return (x,)
 
