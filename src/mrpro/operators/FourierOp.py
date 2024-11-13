@@ -9,7 +9,6 @@ from torchkbnufft import KbNufft, KbNufftAdjoint
 from typing_extensions import Self
 
 from mrpro.data._kdata.KData import KData
-from mrpro.data.DcfData import DcfData
 from mrpro.data.enums import TrajType
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
@@ -242,7 +241,7 @@ def symmetrize(kernel: torch.Tensor, rank: int) -> torch.Tensor:
     return kernel[..., : last_len // 2 + 1]
 
 
-def gramm_nufft_kernel(weight: torch.Tensor, trajectory: torch.Tensor, recon_shape: Sequence[int]) -> torch.Tensor:
+def gram_nufft_kernel(weight: torch.Tensor, trajectory: torch.Tensor, recon_shape: Sequence[int]) -> torch.Tensor:
     """Calculate the convolution kernel for the NUFFT gram operator.
 
     Parameters
@@ -304,13 +303,16 @@ class FourierGramOp(LinearOperator):
     Uses a convolution, implemented as multiplication in Fourier space, to calculate the gram operator
     for the toeplitz NUFFT operator.
 
+    Uses a multiplication with a binary mask in Fourier space to calculate the gram operator for
+    the Cartesian FFT operator
+
     This Operator is only used internally and should not be used directly.
     Instead, consider using the `gram` property of :class: `mrpro.operators.FourierOp`.
     """
 
     _kernel: torch.Tensor | None
 
-    def __init__(self, fourier_op: FourierOp, dcf: torch.Tensor | DcfData | None = None) -> None:
+    def __init__(self, fourier_op: FourierOp) -> None:
         """Initialize the gram operator.
 
         If density compensation weights are provided, they the operator
@@ -320,18 +322,11 @@ class FourierGramOp(LinearOperator):
         ----------
         fourier_op
             the Fourier operator to calculate the gram operator for
-        dcf
-            density compensation weights. If None, ones are used.
 
         """
         super().__init__()
         if fourier_op._nufft_dims and fourier_op._omega is not None:
-            if dcf is None:
-                weight = torch.ones_like(fourier_op._omega[..., :1, :, :, :])
-            elif isinstance(dcf, DcfData):
-                weight = dcf.data.unsqueeze(-4)
-            else:
-                weight = dcf.unsqueeze(-4)
+            weight = torch.ones_like(fourier_op._omega[..., :1, :, :, :])
             keep_dims = [-4, *fourier_op._nufft_dims]  # -4 is coil
             permute = [i for i in range(-weight.ndim, 0) if i not in keep_dims] + keep_dims
             unpermute = np.argsort(permute)
@@ -341,7 +336,7 @@ class FourierGramOp(LinearOperator):
             weight = weight + 0j
             omega = fourier_op._omega.permute(*permute)
             omega = omega.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
-            kernel = gramm_nufft_kernel(weight, omega, fourier_op._nufft_im_size)
+            kernel = gram_nufft_kernel(weight, omega, fourier_op._nufft_im_size)
             kernel = kernel.reshape(*weight_unflattend_shape[: -len(keep_dims)], *kernel.shape[-len(keep_dims) :])
             kernel = kernel.permute(*unpermute)
             fft = FastFourierOp(
