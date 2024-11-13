@@ -15,7 +15,7 @@ import zenodo_get
 from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore [import-untyped]
 from mrpro.algorithms.optimizers import adam
 from mrpro.data import IData
-from mrpro.operators.functionals import L2NormSquared
+from mrpro.operators.functionals import MSE
 from mrpro.operators.models import MonoExponentialDecay
 
 # %% [markdown]
@@ -78,14 +78,14 @@ model = MonoExponentialDecay(decay_time=idata_multi_te.header.te)
 # As a loss function for the optimizer, we calculate the mean-squared error between the image data $x$ and our signal
 # model $q$.
 # %%
-l2norm_squared = L2NormSquared(idata_multi_te.data, divide_by_n=True)
+mse = MSE(idata_multi_te.data)
 
 # %% [markdown]
 # Now we can simply combine the two into a functional which will then solve
 #
 # $ \min_{M_0, T2^*} ||q(M_0, T2^*, TE) - x||_2^2$
 # %%
-functional = l2norm_squared @ model
+functional = mse @ model
 
 # %% [markdown]
 # ### Carry out fit
