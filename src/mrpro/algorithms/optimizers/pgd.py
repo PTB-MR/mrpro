@@ -3,21 +3,22 @@
 import math
 
 import torch
+from typing_extensions import Unpack
 
+from mrpro.operators import ProximableFunctionalSeparableSum
 from mrpro.operators.Functional import ProximableFunctional
 from mrpro.operators.Operator import Operator
 
 
-# TODO: make it work with g:ProximableFunctionalSeparableSum and f:Operator with multiple inputs
 def pgd(
-    f: Operator[torch.Tensor, tuple[torch.Tensor]],
-    g: ProximableFunctional,
-    initial_value: torch.Tensor,
+    f: Operator[torch.Tensor, tuple[torch.Tensor]] | Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torch.Tensor]],
+    g: ProximableFunctional | ProximableFunctionalSeparableSum,
+    initial_value: torch.Tensor | tuple[torch.Tensor, ...],
     stepsize: float = 1.0,
     reg_parameter: float = 0.01,
     max_iterations: int = 128,
     backtrack_factor: float = 1.0,
-) -> torch.Tensor:
+) -> tuple[torch.Tensor, ...]:
     r"""Proximal gradient descent algorithm for solving problem min_x f(x) + g(x).
 
     f is convex, differentiable, and with L-Lispchitz gradient.
@@ -75,30 +76,49 @@ def pgd(
     -------
         an approximate solution of the minimization problem
     """
+    # check that backtracking factor is in the correct range
+    if not 0.0 <= backtrack_factor <= 1.0:
+        raise ValueError('Backtracking factor must be in the range [0, 1].')
+
     backtracking = not math.isclose(backtrack_factor, 1)
-    x_old = initial_value
-    y = initial_value
+
+    if isinstance(initial_value, torch.Tensor):
+        initial_values: tuple[torch.Tensor, ...] = (initial_value,)
+    else:
+        initial_values = initial_value
+
+    if isinstance(g, ProximableFunctional):
+        g_sum = ProximableFunctionalSeparableSum(g)
+    else:
+        g_sum = g
+
+    x_old = initial_values
+    y: tuple[torch.Tensor, ...] = initial_values
+    gradient: tuple[torch.Tensor, ...]
+    f_y: torch.Tensor
     t_old = 1.0
     grad_and_value_f = torch.func.grad_and_value(
-        lambda *x: f(*x)[0],
+        lambda x: f(*x)[0],
     )
     for _ in range(max_iterations):
         while stepsize > 1e-30:
             # calculate the proximal gradient step
             gradient, f_y = grad_and_value_f(y)
-            (x,) = g.prox(y - stepsize * gradient, reg_parameter * stepsize)
+            x = g_sum.prox(
+                *[yi - stepsize * gi for yi, gi in zip(y, gradient, strict=True)], sigma=reg_parameter * stepsize
+            )
 
             if not backtracking:
                 # no need to check stepsize, continue to next iteration
                 break
-            difference = x - y
+            difference = tuple(xi - yi for xi, yi in zip(x, y, strict=True))
             quadratic_approx = (
                 f_y
-                + 1 / (2 * stepsize) * difference.abs().square().sum()
-                + torch.vdot(gradient.flatten(), difference.flatten()).real
+                + 1 / (2 * stepsize) * sum(di.abs().square().sum() for di in difference)
+                + sum(torch.vdot(gi.flatten(), di.flatten()).real for gi, di in zip(gradient, difference, strict=True))
             )
 
-            (f_x,) = f(x)
+            (f_x,) = f(*x)
             if f_x <= quadratic_approx:
                 # stepsize is ok, continue to next iteration
                 break
@@ -114,7 +134,7 @@ def pgd(
         t = (1 + math.sqrt(1 + 4 * t_old**2)) / 2
 
         # update the solution
-        y = x + (t_old - 1.0) / t * (x - x_old)
+        y = tuple(xi + (t_old - 1.0) / t * (xi - xi_old) for xi, xi_old in zip(x, x_old, strict=True))
 
         # update x and  t
         x_old = x
