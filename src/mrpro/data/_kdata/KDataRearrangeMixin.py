@@ -1,28 +1,12 @@
 """Rearrange KData."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from __future__ import annotations
-
 import copy
-from typing import Self
 
 from einops import rearrange
+from typing_extensions import Self
+
 from mrpro.data._kdata.KDataProtocol import _KDataProtocol
-from mrpro.data.AcqInfo import AcqInfo
-from mrpro.utils import modify_acq_info
+from mrpro.data.AcqInfo import rearrange_acq_info_fields
 
 
 class KDataRearrangeMixin(_KDataProtocol):
@@ -50,9 +34,8 @@ class KDataRearrangeMixin(_KDataProtocol):
         kheader = copy.deepcopy(self.header)
 
         # Update shape of acquisition info index
-        def reshape_acq_info(info: AcqInfo):
-            return rearrange(info, 'other k2 k1 ... -> other 1 (k2 k1) ...')
-
-        kheader.acq_info = modify_acq_info(reshape_acq_info, kheader.acq_info)
+        kheader.acq_info.apply_(
+            lambda field: rearrange_acq_info_fields(field, 'other k2 k1 ... -> other 1 (k2 k1) ...')
+        )
 
         return type(self)(kheader, kdat, type(self.traj).from_tensor(ktraj))

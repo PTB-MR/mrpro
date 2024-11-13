@@ -1,24 +1,9 @@
 """Tests for inversion recovery signal model."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import pytest
 import torch
 from mrpro.operators.models import InversionRecovery
-from tests.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
-from tests.conftest import create_parameter_tensor_tuples
+from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
 
 
 @pytest.mark.parametrize(
@@ -36,7 +21,7 @@ def test_inversion_recovery(ti, result):
     """
     model = InversionRecovery(ti)
     m0, t1 = create_parameter_tensor_tuples()
-    (image,) = model.forward(m0, t1)
+    (image,) = model(m0, t1)
 
     # Assert closeness to -m0 for ti=0
     if result == '-m0':
@@ -52,5 +37,5 @@ def test_inversion_recovery_shape(parameter_shape, contrast_dim_shape, signal_sh
     (ti,) = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=1)
     model_op = InversionRecovery(ti)
     m0, t1 = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=2)
-    (signal,) = model_op.forward(m0, t1)
+    (signal,) = model_op(m0, t1)
     assert signal.shape == signal_shape

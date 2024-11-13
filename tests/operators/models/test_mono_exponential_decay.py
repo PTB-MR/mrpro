@@ -1,24 +1,9 @@
 """Tests for the mono-exponential decay signal model."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import pytest
 import torch
 from mrpro.operators.models import MonoExponentialDecay
-from tests.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
-from tests.conftest import create_parameter_tensor_tuples
+from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
 
 
 @pytest.mark.parametrize(
@@ -36,7 +21,7 @@ def test_mono_exponential_decay(decay_time, result):
     """
     model = MonoExponentialDecay(decay_time)
     m0, decay_constant = create_parameter_tensor_tuples()
-    (image,) = model.forward(m0, decay_constant)
+    (image,) = model(m0, decay_constant)
 
     zeros = torch.zeros_like(m0)
 
@@ -54,5 +39,5 @@ def test_mono_exponential_decay_shape(parameter_shape, contrast_dim_shape, signa
     (decay_time,) = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=1)
     model_op = MonoExponentialDecay(decay_time)
     m0, decay_constant = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=2)
-    (signal,) = model_op.forward(m0, decay_constant)
+    (signal,) = model_op(m0, decay_constant)
     assert signal.shape == signal_shape

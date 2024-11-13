@@ -1,21 +1,10 @@
 """Helper/Utilities for test functions."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 import torch
+from mrpro.operators import Operator
 
 
-def relative_image_difference(img1, img2):
+def relative_image_difference(img1: torch.Tensor, img2: torch.Tensor) -> torch.Tensor:
     """Calculate mean absolute relative difference between two images.
 
     Parameters
@@ -37,9 +26,9 @@ def relative_image_difference(img1, img2):
 
 
 def dotproduct_adjointness_test(
-    operator, u: torch.Tensor, v: torch.Tensor, relative_tolerance: float = 1e-3, absolute_tolerance=1e-5
+    operator: Operator, u: torch.Tensor, v: torch.Tensor, relative_tolerance: float = 1e-3, absolute_tolerance=1e-5
 ):
-    """Test the adjointness of operator and operator.H
+    """Test the adjointness of operator and operator.H.
 
     Test if
          <Operator(u),v> == <u, Operator^H(v)>
@@ -82,3 +71,61 @@ def dotproduct_adjointness_test(
     dotproduct_range = torch.vdot(forward_u.flatten(), v.flatten())
     dotproduct_domain = torch.vdot(u.flatten().flatten(), adjoint_v.flatten())
     torch.testing.assert_close(dotproduct_range, dotproduct_domain, rtol=relative_tolerance, atol=absolute_tolerance)
+
+
+def operator_isometry_test(
+    operator: Operator, u: torch.Tensor, relative_tolerance: float = 1e-3, absolute_tolerance=1e-5
+):
+    """Test the isometry of an operator.
+
+    Test if
+         ||Operator(u)|| == ||u||
+         for u ∈ domain of Operator.
+
+    Parameters
+    ----------
+    operator
+        operator
+    u
+        element of the domain of the operator
+    relative_tolerance
+        default is pytorch's default for float16
+    absolute_tolerance
+        default is pytorch's default for float16
+
+    Raises
+    ------
+    AssertionError
+        if the adjointness property does not hold
+    """
+    torch.testing.assert_close(
+        torch.norm(u), torch.norm(operator(u)[0]), rtol=relative_tolerance, atol=absolute_tolerance
+    )
+
+
+def operator_unitary_test(
+    operator: Operator, u: torch.Tensor, relative_tolerance: float = 1e-3, absolute_tolerance=1e-5
+):
+    """Test if an operator is unitary.
+
+    Test if
+         Operator.adjoint(Operator(u)) == u
+         for u ∈ domain of Operator.
+
+    Parameters
+    ----------
+    operator
+        operator
+    u
+        element of the domain of the operator
+    relative_tolerance
+        default is pytorch's default for float16
+    absolute_tolerance
+        default is pytorch's default for float16
+
+    Raises
+    ------
+    AssertionError
+        if the adjointness property does not hold
+    """
+    torch.testing.assert_close(u, operator.adjoint(operator(u)[0])[0], rtol=relative_tolerance, atol=absolute_tolerance)

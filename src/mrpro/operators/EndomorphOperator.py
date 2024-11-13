@@ -1,33 +1,15 @@
 """Endomorph Operators."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Callable
-from typing import ParamSpec
-from typing import Protocol
-from typing import TypeAlias
-from typing import TypeVar
-from typing import TypeVarTuple
-from typing import cast
-from typing import overload
+from typing import TypeAlias, cast
 
 import torch
+from typing_extensions import Any, ParamSpec, Protocol, TypeVar, TypeVarTuple, Unpack, overload
 
+import mrpro.operators
 from mrpro.operators.Operator import Operator
 
 Tin = TypeVarTuple('Tin')
@@ -191,13 +173,14 @@ class _EndomorphCallable(Protocol):
         torch.Tensor,
         torch.Tensor,
         torch.Tensor,
-        *tuple[torch.Tensor, ...],
+        Unpack[tuple[torch.Tensor, ...]],
     ]: ...
 
     @overload
     def __call__(self, /, *args: torch.Tensor) -> tuple[torch.Tensor, ...]: ...
 
-    def __call__(self, /, *args: torch.Tensor) -> tuple[torch.Tensor, ...]: ...
+    def __call__(self, /, *args: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """Apply the Operator."""
 
 
 def endomorph(f: F, /) -> _EndomorphCallable:
@@ -209,7 +192,7 @@ def endomorph(f: F, /) -> _EndomorphCallable:
     return f
 
 
-class EndomorphOperator(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]]):
+class EndomorphOperator(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torch.Tensor, ...]]):
     """Endomorph Operator.
 
     Endomorph Operators have N tensor inputs and exactly N outputs.
@@ -226,10 +209,26 @@ class EndomorphOperator(Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, 
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
         """Apply the EndomorphOperator."""
 
-    def __matmul__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]:
-        """Operator composition."""
-        return cast(Operator[*Tin, Tout], super().__matmul__(other))
+    @overload
+    def __matmul__(self, other: EndomorphOperator) -> EndomorphOperator: ...
+    @overload
+    def __matmul__(self, other: Operator[Unpack[Tin], Tout]) -> Operator[Unpack[Tin], Tout]: ...
 
-    def __rmatmul__(self, other: Operator[*Tin, Tout]) -> Operator[*Tin, Tout]:
+    def __matmul__(
+        self, other: Operator[Unpack[Tin], Tout] | EndomorphOperator
+    ) -> Operator[Unpack[Tin], Tout] | EndomorphOperator:
         """Operator composition."""
-        return other.__matmul__(cast(Operator[*Tin, tuple[*Tin]], self))
+        if isinstance(other, mrpro.operators.MultiIdentityOp):
+            return self
+        elif isinstance(self, mrpro.operators.MultiIdentityOp):
+            return other
+
+        res = super().__matmul__(cast(Any, other))  # avoid mypy 1.11 crash
+        if isinstance(other, EndomorphOperator):
+            return cast(EndomorphOperator, res)
+        else:
+            return cast(Operator[Unpack[Tin], Tout], res)
+
+    def __rmatmul__(self, other: Operator[Unpack[Tin], Tout]) -> Operator[Unpack[Tin], Tout]:
+        """Operator composition."""
+        return other.__matmul__(cast(Operator[Unpack[Tin], tuple[Unpack[Tin]]], self))

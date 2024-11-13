@@ -1,24 +1,11 @@
 """Tests the MoveDataMixin class."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
-from dataclasses import dataclass
-from dataclasses import field
-from typing import Any
+from dataclasses import dataclass, field
 
 import pytest
 import torch
 from mrpro.data import MoveDataMixin
+from typing_extensions import Any
 
 
 class SharedModule(torch.nn.Module):
@@ -36,6 +23,7 @@ class A(MoveDataMixin):
     """Test class A."""
 
     floattensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1.0))
+    floattensor2: torch.Tensor = field(default_factory=lambda: torch.tensor(-1.0))
     complextensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1.0, dtype=torch.complex64))
     inttensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1, dtype=torch.int32))
     booltensor: torch.Tensor = field(default_factory=lambda: torch.tensor(True))
@@ -169,7 +157,7 @@ def test_movedatamixin_convert(copy: bool, dtype: torch.dtype, attribute: str):
     assert new.module.module1.weight is new.module.module1.weight, 'shared module parameters should remain shared'
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 @pytest.mark.parametrize('already_moved', [True, False])
 @pytest.mark.parametrize('copy', [True, False])
 def test_movedatamixin_cuda(already_moved: bool, copy: bool):
@@ -217,3 +205,21 @@ def test_movedatamixin_cuda(already_moved: bool, copy: bool):
     assert original is not new, 'original and new should not be the same object'
 
     assert new.module.module1.weight is new.module.module1.weight, 'shared module parameters should remain shared'
+
+
+def test_movedatamixin_apply():
+    """Tests apply_ method of MoveDataMixin."""
+    data = B()
+    # make one of the parameters shared to test memo behavior
+    data.child.floattensor2 = data.child.floattensor
+    original = data.clone()
+
+    def multiply_by_2(obj):
+        if isinstance(obj, torch.Tensor):
+            return obj * 2
+        return obj
+
+    data.apply_(multiply_by_2)
+    torch.testing.assert_close(data.floattensor, original.floattensor * 2)
+    torch.testing.assert_close(data.child.floattensor2, original.child.floattensor2 * 2)
+    assert data.child.floattensor is data.child.floattensor2, 'shared module parameters should remain shared'

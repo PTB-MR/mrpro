@@ -1,34 +1,13 @@
 """MoveDataMixin."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from __future__ import annotations
-
 import dataclasses
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from copy import copy as shallowcopy
 from copy import deepcopy
-from typing import Any
-from typing import ClassVar
-from typing import Protocol
-from typing import Self
-from typing import TypeAlias
-from typing import overload
-from typing import runtime_checkable
+from typing import ClassVar, TypeAlias, cast
 
 import torch
+from typing_extensions import Any, Protocol, Self, TypeVar, overload, runtime_checkable
 
 
 class InconsistentDeviceError(ValueError):  # noqa: D101
@@ -41,6 +20,9 @@ class DataclassInstance(Protocol):
     """An instance of a dataclass."""
 
     __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
+
+
+T = TypeVar('T')
 
 
 class MoveDataMixin:
@@ -81,7 +63,7 @@ class MoveDataMixin:
         """Perform dtype and/or device conversion of data.
 
         A torch.dtype and torch.device are inferred from the arguments
-        of self.to(*args, **kwargs). Please have a look at the
+        args and kwargs. Please have a look at the
         documentation of torch.Tensor.to() for more details.
 
         A new instance of the dataclass will be returned.
@@ -90,15 +72,16 @@ class MoveDataMixin:
         fields of the dataclass, and to all fields that implement
         the MoveDataMixin.
 
-        The dtype-type, i.e. float/complex will always be preserved,
+        The dtype-type, i.e. float or complex will always be preserved,
         but the precision of floating point dtypes might be changed.
 
         Example:
-            If called with dtype=torch.float32 OR dtype=torch.complex64:
-                - A complex128 tensor will be converted to complex64
-                - A float64 tensor will be converted to float32
-                - A bool tensor will remain bool
-                - An int64 tensor will remain int64
+        If called with dtype=torch.float32 OR dtype=torch.complex64:
+
+        - A complex128 tensor will be converted to complex64
+        - A float64 tensor will be converted to float32
+        - A bool tensor will remain bool
+        - An int64 tensor will remain int64
 
         If other conversions are desired, please use the torch.Tensor.to() method of
         the fields directly.
@@ -171,7 +154,6 @@ class MoveDataMixin:
         copy: bool = False,
         memo: dict | None = None,
     ) -> Self:
-        new = shallowcopy(self) if copy or not isinstance(self, torch.nn.Module) else self
         """Move data to device and convert dtype if necessary.
 
         This method is called by .to(),  .cuda(),  .cpu(), .double(), and so on.
@@ -199,6 +181,8 @@ class MoveDataMixin:
         memo
             A dictionary to keep track of already converted objects to avoid multiple conversions.
         """
+        new = shallowcopy(self) if copy or not isinstance(self, torch.nn.Module) else self
+
         if memo is None:
             memo = {}
 
@@ -239,25 +223,61 @@ class MoveDataMixin:
                 memo=memo,
             )
 
-        converted: Any
-        for name, data in new._items():
-            if id(data) in memo:
-                object.__setattr__(new, name, memo[id(data)])
-                continue
+        def _convert(data: T) -> T:
+            converted: Any  # https://github.com/python/mypy/issues/10817
             if isinstance(data, torch.Tensor):
                 converted = _tensor_to(data)
             elif isinstance(data, MoveDataMixin):
                 converted = _mixin_to(data)
             elif isinstance(data, torch.nn.Module):
                 converted = _module_to(data)
-            elif copy:
-                converted = deepcopy(data)
             else:
                 converted = data
-            memo[id(data)] = converted
-            # this works even if new is frozen
-            object.__setattr__(new, name, converted)
+            return cast(T, converted)
+
+        # manual recursion allows us to do the copy only once
+        new.apply_(_convert, memo=memo, recurse=False)
         return new
+
+    def apply_(
+        self: Self,
+        function: Callable[[Any], Any] | None = None,
+        *,
+        memo: dict[int, Any] | None = None,
+        recurse: bool = True,
+    ) -> Self:
+        """Apply a function to all children in-place.
+
+        Parameters
+        ----------
+        function
+            The function to apply to all fields. None is interpreted as a no-op.
+        memo
+            A dictionary to keep track of objects that the function has already been applied to,
+            to avoid multiple applications. This is useful if the object has a circular reference.
+        recurse
+            If True, the function will be applied to all children that are MoveDataMixin instances.
+        """
+        applied: Any
+
+        if memo is None:
+            memo = {}
+
+        if function is None:
+            return self
+
+        for name, data in self._items():
+            if id(data) in memo:
+                # this works even if self is frozen
+                object.__setattr__(self, name, memo[id(data)])
+                continue
+            if recurse and isinstance(data, MoveDataMixin):
+                applied = data.apply_(function, memo=memo)
+            else:
+                applied = function(data)
+            memo[id(data)] = applied
+            object.__setattr__(self, name, applied)
+        return self
 
     def cuda(
         self,

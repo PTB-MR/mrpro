@@ -1,19 +1,5 @@
 """MR raw data / k-space data header dataclass."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 from __future__ import annotations
 
 import dataclasses
@@ -24,13 +10,15 @@ from typing import TYPE_CHECKING
 
 import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
 import torch
+from typing_extensions import Self
 
 from mrpro.data import enums
 from mrpro.data.AcqInfo import AcqInfo
 from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.data.TrajectoryDescription import TrajectoryDescription
+from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
+from mrpro.utils.unit_conversion import mm_to_m, ms_to_s
 
 if TYPE_CHECKING:
     # avoid circular imports by importing only when type checking
@@ -50,33 +38,80 @@ class KHeader(MoveDataMixin):
     """
 
     trajectory: KTrajectoryCalculator
-    b0: float
+    """Function to calculate the k-space trajectory."""
+
     encoding_limits: EncodingLimits
+    """K-space encoding limits."""
+
     recon_matrix: SpatialDimension[int]
+    """Dimensions of the reconstruction matrix."""
+
     recon_fov: SpatialDimension[float]
+    """Field-of-view of the reconstructed image [m]."""
+
     encoding_matrix: SpatialDimension[int]
+    """Dimensions of the encoded k-space matrix."""
+
     encoding_fov: SpatialDimension[float]
+    """Field of view of the image encoded by the k-space trajectory [m]."""
+
     acq_info: AcqInfo
-    h1_freq: float
-    n_coils: int | None = None
+    """Information of the acquisitions (i.e. readout lines)."""
+
+    lamor_frequency_proton: float
+    """Lamor frequency of hydrogen nuclei [Hz]."""
+
     datetime: datetime.datetime | None = None
+    """Date and time of acquisition."""
+
     te: torch.Tensor | None = None
+    """Echo time [s]."""
+
     ti: torch.Tensor | None = None
+    """Inversion time [s]."""
+
     fa: torch.Tensor | None = None
+    """Flip angle [rad]."""
+
     tr: torch.Tensor | None = None
+    """Repetition time [s]."""
+
     echo_spacing: torch.Tensor | None = None
+    """Echo spacing [s]."""
+
     echo_train_length: int = 1
-    seq_type: str = UNKNOWN
+    """Number of echoes in a multi-echo acquisition."""
+
+    sequence_type: str = UNKNOWN
+    """Type of sequence."""
+
     model: str = UNKNOWN
+    """Scanner model."""
+
     vendor: str = UNKNOWN
+    """Scanner vendor."""
+
     protocol_name: str = UNKNOWN
-    misc: dict = dataclasses.field(default_factory=dict)  # do not use {} here!
+    """Name of the acquisition protocol."""
+
     calibration_mode: enums.CalibrationMode = enums.CalibrationMode.OTHER
+    """Mode of how calibration data is acquired. """
+
     interleave_dim: enums.InterleavingDimension = enums.InterleavingDimension.OTHER
-    traj_type: enums.TrajectoryType = enums.TrajectoryType.OTHER
+    """Interleaving dimension."""
+
+    trajectory_type: enums.TrajectoryType = enums.TrajectoryType.OTHER
+    """Type of trajectory."""
+
     measurement_id: str = UNKNOWN
+    """Measurement ID."""
+
     patient_name: str = UNKNOWN
-    trajectory_description: TrajectoryDescription = dataclasses.field(default_factory=TrajectoryDescription)
+    """Name of the patient."""
+
+    _misc: dict = dataclasses.field(default_factory=dict)  # do not use {} here!
+    """Dictionary with miscellaneous parameters. These parameters are for information purposes only. Reconstruction
+    algorithms should not rely on them."""
 
     @property
     def fa_degree(self) -> torch.Tensor | None:
@@ -95,7 +130,7 @@ class KHeader(MoveDataMixin):
         defaults: dict | None = None,
         overwrite: dict | None = None,
         encoding_number: int = 0,
-    ) -> KHeader:
+    ) -> Self:
         """Create an Header from ISMRMRD Data.
 
         Parameters
@@ -111,30 +146,19 @@ class KHeader(MoveDataMixin):
         encoding_number
             as ismrmrdHeader can contain multiple encodings, selects which to consider
         """
-
-        # Conversion functions for units
-        def ms_to_s(ms: torch.Tensor) -> torch.Tensor:
-            return ms / 1000
-
-        def mm_to_m(m: float) -> float:
-            return m / 1000
-
         if not 0 <= encoding_number < len(header.encoding):
             raise ValueError(f'encoding_number must be between 0 and {len(header.encoding)}')
 
         enc: ismrmrdschema.encodingType = header.encoding[encoding_number]
 
         # These are guaranteed to exist
-        parameters = {'h1_freq': header.experimentalConditions.H1resonanceFrequency_Hz, 'acq_info': acq_info}
+        parameters = {
+            'lamor_frequency_proton': header.experimentalConditions.H1resonanceFrequency_Hz,
+            'acq_info': acq_info,
+        }
 
         if defaults is not None:
             parameters.update(defaults)
-
-        if (
-            header.acquisitionSystemInformation is not None
-            and header.acquisitionSystemInformation.receiverChannels is not None
-        ):
-            parameters['n_coils'] = header.acquisitionSystemInformation.receiverChannels
 
         if header.sequenceParameters is not None:
             if header.sequenceParameters.TR:
@@ -149,14 +173,16 @@ class KHeader(MoveDataMixin):
                 parameters['echo_spacing'] = ms_to_s(torch.as_tensor(header.sequenceParameters.echo_spacing))
 
             if header.sequenceParameters.sequence_type is not None:
-                parameters['seq_type'] = header.sequenceParameters.sequence_type
+                parameters['sequence_type'] = header.sequenceParameters.sequence_type
 
         if enc.reconSpace is not None:
-            parameters['recon_fov'] = SpatialDimension[float].from_xyz(enc.reconSpace.fieldOfView_mm, mm_to_m)
+            parameters['recon_fov'] = SpatialDimension[float].from_xyz(enc.reconSpace.fieldOfView_mm).apply_(mm_to_m)
             parameters['recon_matrix'] = SpatialDimension[int].from_xyz(enc.reconSpace.matrixSize)
 
         if enc.encodedSpace is not None:
-            parameters['encoding_fov'] = SpatialDimension[float].from_xyz(enc.encodedSpace.fieldOfView_mm, mm_to_m)
+            parameters['encoding_fov'] = (
+                SpatialDimension[float].from_xyz(enc.encodedSpace.fieldOfView_mm).apply_(mm_to_m)
+            )
             parameters['encoding_matrix'] = SpatialDimension[int].from_xyz(enc.encodedSpace.matrixSize)
 
         if enc.encodingLimits is not None:
@@ -175,7 +201,7 @@ class KHeader(MoveDataMixin):
                 )
 
         if enc.trajectory is not None:
-            parameters['traj_type'] = enums.TrajectoryType(enc.trajectory.value)
+            parameters['trajectory_type'] = enums.TrajectoryType(enc.trajectory.value)
 
         # Either use the series or study time if available
         if header.measurementInformation is not None and header.measurementInformation.seriesTime is not None:
@@ -208,15 +234,8 @@ class KHeader(MoveDataMixin):
             if header.acquisitionSystemInformation.systemModel is not None:
                 parameters['model'] = header.acquisitionSystemInformation.systemModel
 
-            if header.acquisitionSystemInformation.systemFieldStrength_T is not None:
-                parameters['b0'] = header.acquisitionSystemInformation.systemFieldStrength_T
-
-        # estimate b0 from h1_freq if not given
-        if 'b0' not in parameters:
-            parameters['b0'] = parameters['h1_freq'] / 4258e4
-
         # Dump everything into misc
-        parameters['misc'] = dataclasses.asdict(header)
+        parameters['_misc'] = dataclasses.asdict(header)
 
         if overwrite is not None:
             parameters.update(overwrite)
@@ -235,3 +254,18 @@ class KHeader(MoveDataMixin):
                 'Consider setting them via the defaults dictionary',
             ) from None
         return instance
+
+    def __repr__(self):
+        """Representation method for KHeader class."""
+        te = summarize_tensorvalues(self.te)
+        ti = summarize_tensorvalues(self.ti)
+        fa = summarize_tensorvalues(self.fa)
+        out = (
+            f'FOV [m]: {self.encoding_fov!s}\n'
+            f'TE [s]: {te}\n'
+            f'TI [s]: {ti}\n'
+            f'Flip angle [rad]: {fa}\n'
+            f'Encoding matrix: {self.encoding_matrix!s} \n'
+            f'Recon matrix: {self.recon_matrix!s} \n'
+        )
+        return out

@@ -1,23 +1,10 @@
 """Remove oversampling along readout dimension."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
-from __future__ import annotations
-
 from copy import deepcopy
-from typing import Self
 
 import torch
+from typing_extensions import Self
+
 from mrpro.data._kdata.KDataProtocol import _KDataProtocol
 from mrpro.data.KTrajectory import KTrajectory
 
@@ -26,9 +13,8 @@ class KDataRemoveOsMixin(_KDataProtocol):
     """Remove oversampling along readout dimension."""
 
     def remove_readout_os(self: Self) -> Self:
-        """Remove any oversampling along the readout (k0) direction.
+        """Remove any oversampling along the readout (k0) direction [GAD]_.
 
-        This function is inspired by https://github.com/gadgetron/gadgetron-python.
         Returns a copy of the data.
 
         Parameters
@@ -44,6 +30,10 @@ class KDataRemoveOsMixin(_KDataProtocol):
         ------
         ValueError
             If the recon matrix along x is larger than the encoding matrix along x.
+
+        References
+        ----------
+        .. [GAD] Gadgetron https://github.com/gadgetron/gadgetron-python
         """
         from mrpro.operators.FastFourierOp import FastFourierOp
 
@@ -59,7 +49,7 @@ class KDataRemoveOsMixin(_KDataProtocol):
         start_cropped_readout = (self.header.encoding_matrix.x - self.header.recon_matrix.x) // 2
         end_cropped_readout = start_cropped_readout + self.header.recon_matrix.x
 
-        def crop_readout(data_to_crop: torch.Tensor):
+        def crop_readout(data_to_crop: torch.Tensor) -> torch.Tensor:
             # returns a cropped copy
             return data_to_crop[..., start_cropped_readout:end_cropped_readout].clone()
 
@@ -71,7 +61,7 @@ class KDataRemoveOsMixin(_KDataProtocol):
         ks = [self.traj.kz, self.traj.ky, self.traj.kx]
         # only cropped ks that are not broadcasted/singleton along k0
         cropped_ks = [crop_readout(k) if k.shape[-1] > 1 else k.clone() for k in ks]
-        cropped_traj = KTrajectory(*cropped_ks)
+        cropped_traj = KTrajectory(cropped_ks[0], cropped_ks[1], cropped_ks[2])
 
         # Adapt header parameters
         header = deepcopy(self.header)

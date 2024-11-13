@@ -1,28 +1,13 @@
 """Select subset along other dimensions of KData."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from __future__ import annotations
-
 import copy
 from typing import Literal
-from typing import Self
 
 import torch
+from typing_extensions import Self
+
 from mrpro.data._kdata.KDataProtocol import _KDataProtocol
-from mrpro.utils import modify_acq_info
+from mrpro.data.Rotation import Rotation
 
 
 class KDataSelectMixin(_KDataProtocol):
@@ -66,10 +51,9 @@ class KDataSelectMixin(_KDataProtocol):
         other_idx = torch.cat([torch.where(idx == label_idx[:, 0, 0])[0] for idx in subset_idx], dim=0)
 
         # Adapt header
-        def select_acq_info(info: torch.Tensor):
-            return info[other_idx, ...]
-
-        kheader.acq_info = modify_acq_info(select_acq_info, kheader.acq_info)
+        kheader.acq_info.apply_(
+            lambda field: field[other_idx, ...] if isinstance(field, torch.Tensor | Rotation) else field
+        )
 
         # Select data
         kdat = self.data[other_idx, ...]

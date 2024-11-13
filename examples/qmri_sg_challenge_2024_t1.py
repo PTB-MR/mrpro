@@ -50,7 +50,7 @@ if idata_multi_ti.header.ti is None:
 
 # %%
 # Let's have a look at some of the images
-fig, axes = plt.subplots(1, 3)
+fig, axes = plt.subplots(1, 3, squeeze=False)
 for idx, ax in enumerate(axes.flatten()):
     ax.imshow(torch.abs(idata_multi_ti.data[idx, 0, 0, :, :]))
     ax.set_title(f'TI = {idata_multi_ti.header.ti[idx]:.0f}ms')
@@ -119,13 +119,13 @@ m0_start = torch.abs(idata_multi_ti.data[torch.argmax(idata_multi_ti.header.ti),
 
 # %%
 # Visualize the starting values
-fig, axes = plt.subplots(1, 2, figsize=(8, 2))
-colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05) for ax in axes]
-im = axes[0].imshow(m0_start[0, 0, ...])
-axes[0].set_title('M0 start values')
+fig, axes = plt.subplots(1, 2, figsize=(8, 2), squeeze=False)
+colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05) for ax in axes[0, :]]
+im = axes[0, 0].imshow(m0_start[0, 0, ...])
+axes[0, 0].set_title('M0 start values')
 fig.colorbar(im, cax=colorbar_ax[0])
-im = axes[1].imshow(t1_start[0, 0, ...], vmin=0, vmax=2500)
-axes[1].set_title('T1 start values')
+im = axes[0, 1].imshow(t1_start[0, 0, ...], vmin=0, vmax=2500)
+axes[0, 1].set_title('T1 start values')
 fig.colorbar(im, cax=colorbar_ax[1])
 
 # %% [markdown]
@@ -155,23 +155,19 @@ img_mult_te_abs_sum = torch.sum(torch.abs(idata_multi_ti.data), dim=0)
 relative_absolute_error = torch.sum(torch.abs(model(m0, t1)[0] - idata_multi_ti.data), dim=0) / (
     img_mult_te_abs_sum + 1e-9
 )
-fig, axes = plt.subplots(1, 3, figsize=(10, 2))
-colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05) for ax in axes]
-im = axes[0].imshow(m0[0, 0, ...])
-axes[0].set_title('M0')
+fig, axes = plt.subplots(1, 3, figsize=(10, 2), squeeze=False)
+colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05) for ax in axes[0, :]]
+im = axes[0, 0].imshow(m0[0, 0, ...])
+axes[0, 0].set_title('M0')
 fig.colorbar(im, cax=colorbar_ax[0])
-im = axes[1].imshow(t1[0, 0, ...], vmin=0, vmax=2500)
-axes[1].set_title('T1')
+im = axes[0, 1].imshow(t1[0, 0, ...], vmin=0, vmax=2500)
+axes[0, 1].set_title('T1')
 fig.colorbar(im, cax=colorbar_ax[1])
-im = axes[2].imshow(relative_absolute_error[0, 0, ...], vmin=0, vmax=1.0)
-axes[2].set_title('Relative error')
+im = axes[0, 2].imshow(relative_absolute_error[0, 0, ...], vmin=0, vmax=1.0)
+axes[0, 2].set_title('Relative error')
 fig.colorbar(im, cax=colorbar_ax[2])
 
 
 # %%
 # Clean-up by removing temporary directory
 shutil.rmtree(data_folder)
-
-# %% [markdown]
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-# Apache License 2.0. See LICENSE file for details.

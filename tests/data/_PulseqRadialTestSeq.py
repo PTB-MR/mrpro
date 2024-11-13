@@ -1,19 +1,8 @@
 """Create Pulseq test file with radial trajectory."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 import pypulseq
 import torch
+from einops import repeat
 from mrpro.data import KTrajectory
 
 
@@ -61,9 +50,9 @@ class PulseqRadialTestSeq:
         self.seq_filename = seq_filename
 
         kz = torch.zeros(1, 1, n_spokes, n_x)
-        angle = torch.pi / n_spokes * torch.arange(n_spokes)
-        k0 = delta_k * torch.linspace(-n_x / 2, n_x / 2 - 1, n_x)
-        kx = (torch.cos(angle)[:, None] * k0)[None, None, ...]
-        ky = (torch.sin(angle)[:, None] * k0)[None, None, ...]
+        angle = repeat(torch.pi / n_spokes * torch.arange(n_spokes), 'k1 -> other k2 k1 k0', other=1, k2=1, k0=1)
+        k0 = repeat(delta_k * torch.linspace(-n_x / 2, n_x / 2 - 1, n_x), 'k0 -> other k2 k1 k0', other=1, k2=1, k1=1)
+        kx = torch.cos(angle) * k0
+        ky = torch.sin(angle) * k0
 
         self.traj_analytical = KTrajectory(kz, ky, kx)

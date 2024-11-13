@@ -1,19 +1,5 @@
 """Class for Finite Difference Operator."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 from collections.abc import Sequence
 from typing import Literal
 
@@ -24,15 +10,7 @@ from mrpro.utils.filters import filter_separable
 
 
 class FiniteDifferenceOp(LinearOperator):
-    """Finite Difference Operator.
-
-    This work is inspired by:
-    https://github.com/koflera/LearningRegularizationParameterMaps/blob/main/networks/grad_ops.py
-
-    Please see https://github.com/koflera/LearningRegularizationParameterMaps/tree/main?tab=Apache-2.0-1-ov-file#readme
-    for the copyright statement.
-
-    """
+    """Finite Difference Operator."""
 
     @staticmethod
     def finite_difference_kernel(mode: str) -> torch.Tensor:
@@ -99,8 +77,8 @@ class FiniteDifferenceOp(LinearOperator):
         return (
             torch.stack(
                 [
-                    filter_separable(x, (self.kernel,), axis=(d,), pad_mode=self.pad_mode, pad_value=0.0)
-                    for d in self.dim
+                    filter_separable(x, (self.kernel,), dim=(dim,), pad_mode=self.pad_mode, pad_value=0.0)
+                    for dim in self.dim
                 ]
             ),
         )
@@ -132,7 +110,7 @@ class FiniteDifferenceOp(LinearOperator):
                         filter_separable(
                             yi,
                             (torch.flip(self.kernel, dims=(-1,)),),
-                            axis=(dim,),
+                            dim=(dim,),
                             pad_mode=self.pad_mode,
                             pad_value=0.0,
                         )

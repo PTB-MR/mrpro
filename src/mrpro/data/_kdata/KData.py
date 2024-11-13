@@ -1,51 +1,64 @@
 """MR raw data / k-space data class."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from __future__ import annotations
-
 import dataclasses
 import datetime
 import warnings
 from collections.abc import Callable
 from pathlib import Path
-from typing import Protocol
 
 import h5py
 import ismrmrd
 import numpy as np
 import torch
 from einops import rearrange
+from typing_extensions import Self
+
 from mrpro.data._kdata.KDataRearrangeMixin import KDataRearrangeMixin
 from mrpro.data._kdata.KDataRemoveOsMixin import KDataRemoveOsMixin
 from mrpro.data._kdata.KDataSelectMixin import KDataSelectMixin
 from mrpro.data._kdata.KDataSplitMixin import KDataSplitMixin
-from mrpro.data.acq_filters import is_image_acquisition
-from mrpro.data.AcqInfo import AcqInfo
+from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
+from mrpro.data.AcqInfo import AcqInfo, rearrange_acq_info_fields
 from mrpro.data.EncodingLimits import Limits
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
 from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.Rotation import Rotation
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
-from mrpro.utils import modify_acq_info
 
-KDIM_SORT_LABELS = ('k1', 'k2', 'average', 'slice', 'contrast', 'phase', 'repetition', 'set')
-# TODO: Consider adding the users labels here, but remember issue #32 and NOT add user5 and user6.
-OTHER_LABELS = ('average', 'slice', 'contrast', 'phase', 'repetition', 'set')
+KDIM_SORT_LABELS = (
+    'k1',
+    'k2',
+    'average',
+    'slice',
+    'contrast',
+    'phase',
+    'repetition',
+    'set',
+    'user0',
+    'user1',
+    'user2',
+    'user3',
+    'user4',
+    'user7',
+)
+
+OTHER_LABELS = (
+    'average',
+    'slice',
+    'contrast',
+    'phase',
+    'repetition',
+    'set',
+    'user0',
+    'user1',
+    'user2',
+    'user3',
+    'user4',
+    'user7',
+)
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
@@ -53,8 +66,13 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
     """MR raw data / k-space data class."""
 
     header: KHeader
+    """Header information for k-space data"""
+
     data: torch.Tensor
+    """K-space data. Shape (...other coils k2 k1 k0)"""
+
     traj: KTrajectory
+    """K-space trajectory along kz, ky and kx. Shape (...other k2 k1 k0)"""
 
     @classmethod
     def from_file(
@@ -64,7 +82,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         header_overwrites: dict[str, object] | None = None,
         dataset_idx: int = -1,
         acquisition_filter_criterion: Callable = is_image_acquisition,
-    ) -> KData:
+    ) -> Self:
         """Load k-space data from an ISMRMRD file.
 
         Parameters
@@ -76,7 +94,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         header_overwrites
             dictionary of key-value pairs to overwrite the header
         dataset_idx
-            index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...), default is -1 (last)
+            index of the ISMRMRD dataset to load (converter creates dataset, dataset_1, ...)
         acquisition_filter_criterion
             function which returns True if an acquisition should be included in KData
         """
@@ -92,9 +110,48 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             modification_time = datetime.datetime.fromtimestamp(mtime)
 
         acquisitions = [acq for acq in acquisitions if acquisition_filter_criterion(acq)]
+
+        # we need the same number of receiver coils for all acquisitions
+        n_coils_available = {acq.data.shape[0] for acq in acquisitions}
+        if len(n_coils_available) > 1:
+            if (
+                ismrmrd_header.acquisitionSystemInformation is not None
+                and ismrmrd_header.acquisitionSystemInformation.receiverChannels is not None
+            ):
+                n_coils = int(ismrmrd_header.acquisitionSystemInformation.receiverChannels)
+            else:
+                # most likely, highest number of elements are the coils used for imaging
+                n_coils = int(max(n_coils_available))
+
+            warnings.warn(
+                f'Acquisitions with different number {n_coils_available} of receiver coil elements detected. '
+                f'Data with {n_coils} receiver coil elements will be used.',
+                stacklevel=1,
+            )
+            acquisitions = [acq for acq in acquisitions if has_n_coils(n_coils, acq)]
+
+        if not acquisitions:
+            raise ValueError('No acquisitions meeting the given filter criteria were found.')
+
         kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
+
+        if len(torch.unique(acqinfo.idx.user5)) > 1:
+            warnings.warn(
+                'The Siemens to ismrmrd converter currently (ab)uses '
+                'the user 5 indices for storing the kspace center line number.\n'
+                'User 5 indices will be ignored',
+                stacklevel=1,
+            )
+
+        if len(torch.unique(acqinfo.idx.user6)) > 1:
+            warnings.warn(
+                'The Siemens to ismrmrd converter currently (ab)uses '
+                'the user 6 indices for storing the kspace center partition number.\n'
+                'User 6 indices will be ignored',
+                stacklevel=1,
+            )
 
         # Raises ValueError if required fields are missing in the header
         kheader = KHeader.from_ismrmrd(
@@ -166,10 +223,13 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         sort_idx = np.lexsort(acq_indices)  # torch does not have lexsort as of pytorch 2.2 (March 2024)
 
         # Finally, reshape and sort the tensors in acqinfo and acqinfo.idx, and kdata.
-        def sort_and_reshape_tensor_fields(input_tensor: torch.Tensor):
-            return rearrange(input_tensor[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=n_k1, k2=n_k2)
-
-        kheader.acq_info = modify_acq_info(sort_and_reshape_tensor_fields, kheader.acq_info)
+        kheader.acq_info.apply_(
+            lambda field: rearrange_acq_info_fields(
+                field[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=n_k1, k2=n_k2
+            )
+            if isinstance(field, torch.Tensor | Rotation)
+            else field
+        )
         kdata = rearrange(kdata[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=n_k1, k2=n_k2)
 
         # Calculate trajectory and check if it matches the kdata shape
@@ -202,30 +262,17 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
 
         return cls(kheader, kdata, ktrajectory_final)
 
-
-class _KDataProtocol(Protocol):
-    """Protocol for KData used for type hinting in KData mixins.
-
-    Note that the actual KData class can have more properties and methods than those defined here.
-
-    If you want to use a property or method of KData in a new KDataMixin class,
-    you must add it to this Protocol to make sure that the type hinting works.
-
-    For more information about Protocols see:
-    https://typing.readthedocs.io/en/latest/spec/protocol.html#protocols
-    """
-
-    @property
-    def header(self) -> KHeader: ...
-
-    @property
-    def data(self) -> torch.Tensor: ...
-
-    @property
-    def traj(self) -> KTrajectory: ...
-
-    def __init__(self, header: KHeader, data: torch.Tensor, traj: KTrajectory): ...
-
-    def _split_k2_or_k1_into_other(
-        self, split_idx: torch.Tensor, other_label: str, split_dir: str
-    ) -> _KDataProtocol: ...
+    def __repr__(self):
+        """Representation method for KData class."""
+        traj = KTrajectory(self.traj.kz, self.traj.ky, self.traj.kx)
+        try:
+            device = str(self.device)
+        except RuntimeError:
+            device = 'mixed'
+        out = (
+            f'{type(self).__name__} with shape {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
+            f'Device: {device}\n'
+            f'{traj}\n'
+            f'{self.header}'
+        )
+        return out

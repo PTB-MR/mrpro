@@ -1,19 +1,8 @@
 """Tests for finite difference operator."""
 
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#       http://www.apache.org/licenses/LICENSE-2.0
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import pytest
 import torch
+from einops import repeat
 from mrpro.operators import FiniteDifferenceOp
 
 from tests import RandomGenerator
@@ -24,7 +13,9 @@ from tests.helper import dotproduct_adjointness_test
 def test_finite_difference_op_forward(mode):
     """Test correct finite difference of simple object."""
     # Test object with positive linear gradient in real and negative linear gradient imaginary part
-    linear_gradient_object = torch.arange(1, 21)[None, :] + 2 * torch.arange(1, 21)[:, None].to(dtype=torch.float32)
+    linear_gradient_object = (
+        repeat(torch.arange(1, 21), 'x -> y x', y=1) + 2 * repeat(torch.arange(1, 21), 'y -> y x', x=1)
+    ).to(dtype=torch.float32)
     linear_gradient_object = linear_gradient_object - 1j * linear_gradient_object
 
     # Generate and apply finite difference operator

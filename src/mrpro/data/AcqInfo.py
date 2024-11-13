@@ -1,30 +1,29 @@
 """Acquisition information dataclass."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-from __future__ import annotations
-
 from collections.abc import Sequence
 from dataclasses import dataclass
 
 import ismrmrd
 import numpy as np
 import torch
+from einops import rearrange
+from typing_extensions import Self
 
 from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
+from mrpro.utils.unit_conversion import mm_to_m
+
+
+def rearrange_acq_info_fields(field: object, pattern: str, **axes_lengths: dict[str, int]) -> object:
+    """Change the shape of the fields in AcqInfo."""
+    if isinstance(field, Rotation):
+        return Rotation.from_matrix(rearrange(field.as_matrix(), pattern, **axes_lengths))
+
+    if isinstance(field, torch.Tensor):
+        return rearrange(field, pattern, **axes_lengths)
+
+    return field
 
 
 @dataclass(slots=True)
@@ -32,22 +31,55 @@ class AcqIdx(MoveDataMixin):
     """Acquisition index for each readout."""
 
     k1: torch.Tensor
+    """First phase encoding."""
+
     k2: torch.Tensor
+    """Second phase encoding."""
+
     average: torch.Tensor
+    """Signal average."""
+
     slice: torch.Tensor
+    """Slice number (multi-slice 2D)."""
+
     contrast: torch.Tensor
+    """Echo number in multi-echo."""
+
     phase: torch.Tensor
+    """Cardiac phase."""
+
     repetition: torch.Tensor
+    """Counter in repeated/dynamic acquisitions."""
+
     set: torch.Tensor
+    """Sets of different preparation, e.g. flow encoding, diffusion weighting."""
+
     segment: torch.Tensor
+    """Counter for segmented acquisitions."""
+
     user0: torch.Tensor
+    """User index 0."""
+
     user1: torch.Tensor
+    """User index 1."""
+
     user2: torch.Tensor
+    """User index 2."""
+
     user3: torch.Tensor
+    """User index 3."""
+
     user4: torch.Tensor
+    """User index 4."""
+
     user5: torch.Tensor
+    """User index 5."""
+
     user6: torch.Tensor
+    """User index 6."""
+
     user7: torch.Tensor
+    """User index 7."""
 
 
 @dataclass(slots=True)
@@ -55,36 +87,73 @@ class AcqInfo(MoveDataMixin):
     """Acquisition information for each readout."""
 
     idx: AcqIdx
+    """Indices describing acquisitions (i.e. readouts)."""
+
     acquisition_time_stamp: torch.Tensor
+    """Clock time stamp. Not in s but in vendor-specific time units (e.g. 2.5ms for Siemens)"""
+
     active_channels: torch.Tensor
+    """Number of active receiver coil elements."""
+
     available_channels: torch.Tensor
+    """Number of available receiver coil elements."""
+
     center_sample: torch.Tensor
+    """Index of the readout sample corresponding to k-space center (zero indexed)."""
+
     channel_mask: torch.Tensor
+    """Bit mask indicating active coils (64*16 = 1024 bits)."""
+
     discard_post: torch.Tensor
+    """Number of readout samples to be discarded at the end (e.g. if the ADC is active during gradient events)."""
+
     discard_pre: torch.Tensor
+    """Number of readout samples to be discarded at the beginning (e.g. if the ADC is active during gradient events)"""
+
     encoding_space_ref: torch.Tensor
+    """Indexed reference to the encoding spaces enumerated in the MRD (xml) header."""
+
     flags: torch.Tensor
+    """A bit mask of common attributes applicable to individual acquisition readouts."""
+
     measurement_uid: torch.Tensor
+    """Unique ID corresponding to the readout."""
 
     number_of_samples: torch.Tensor
-    """Number of readout sample points per readout (readouts may have different
-    number of sample points)."""
+    """Number of sample points per readout (readouts may have different number of sample points)."""
+
+    orientation: Rotation
+    """Rotation describing the orientation of the readout, phase and slice encoding direction."""
 
     patient_table_position: SpatialDimension[torch.Tensor]
-    phase_dir: SpatialDimension[torch.Tensor]
+    """Offset position of the patient table, in LPS coordinates [m]."""
+
     physiology_time_stamp: torch.Tensor
+    """Time stamps relative to physiological triggering, e.g. ECG. Not in s but in vendor-specific time units"""
+
     position: SpatialDimension[torch.Tensor]
-    read_dir: SpatialDimension[torch.Tensor]
+    """Center of the excited volume, in LPS coordinates relative to isocenter [m]."""
+
     sample_time_us: torch.Tensor
+    """Readout bandwidth, as time between samples [us]."""
+
     scan_counter: torch.Tensor
-    slice_dir: SpatialDimension[torch.Tensor]
+    """Zero-indexed incrementing counter for readouts."""
+
     trajectory_dimensions: torch.Tensor  # =3. We only support 3D Trajectories: kz always exists.
+    """Dimensionality of the k-space trajectory vector."""
+
     user_float: torch.Tensor
+    """User-defined float parameters."""
+
     user_int: torch.Tensor
+    """User-defined int parameters."""
+
     version: torch.Tensor
+    """Major version number."""
 
     @classmethod
-    def from_ismrmrd_acquisitions(cls, acquisitions: Sequence[ismrmrd.Acquisition]) -> AcqInfo:
+    def from_ismrmrd_acquisitions(cls, acquisitions: Sequence[ismrmrd.Acquisition]) -> Self:
         """Read the header of a list of acquisition and store information.
 
         Parameters
@@ -173,14 +242,16 @@ class AcqInfo(MoveDataMixin):
             flags=tensor_2d(headers['flags']),
             measurement_uid=tensor_2d(headers['measurement_uid']),
             number_of_samples=tensor_2d(headers['number_of_samples']),
-            patient_table_position=spatialdimension_2d(headers['patient_table_position']),
-            phase_dir=spatialdimension_2d(headers['phase_dir']),
+            orientation=Rotation.from_directions(
+                spatialdimension_2d(headers['slice_dir']),
+                spatialdimension_2d(headers['phase_dir']),
+                spatialdimension_2d(headers['read_dir']),
+            ),
+            patient_table_position=spatialdimension_2d(headers['patient_table_position']).apply_(mm_to_m),
             physiology_time_stamp=tensor_2d(headers['physiology_time_stamp']),
-            position=spatialdimension_2d(headers['position']),
-            read_dir=spatialdimension_2d(headers['read_dir']),
+            position=spatialdimension_2d(headers['position']).apply_(mm_to_m),
             sample_time_us=tensor_2d(headers['sample_time_us']),
             scan_counter=tensor_2d(headers['scan_counter']),
-            slice_dir=spatialdimension_2d(headers['slice_dir']),
             trajectory_dimensions=tensor_2d(headers['trajectory_dimensions']).fill_(3),  # see above
             user_float=tensor_2d(headers['user_float']),
             user_int=tensor_2d(headers['user_int']),

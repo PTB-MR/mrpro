@@ -1,19 +1,5 @@
 """Numerical phantom with ellipses."""
 
-# Copyright 2023 Physikalisch-Technische Bundesanstalt
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at:
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 from collections.abc import Sequence
 
 import numpy as np
@@ -57,8 +43,7 @@ class EllipsePhantom:
 
         For a corresponding image with 256 x 256 voxel, the k-space locations should be defined within [-128, 127]
 
-        The Fourier representation of ellipses can be analytically described by Bessel functions. Further information
-        and derivations can be found e.g. here: https://doi.org/10.1002/mrm.21292
+        The Fourier representation of ellipses can be analytically described by Bessel functions [KOA2007]_.
 
         Parameters
         ----------
@@ -66,6 +51,12 @@ class EllipsePhantom:
             k-space locations in ky
         kx
             k-space locations in kx (frequency encoding direction). Same shape as ky.
+
+        References
+        ----------
+        .. [KOA2007] Koay C, Sarlls J, Oezarslan E (2007) Three-dimensional analytical magnetic resonance imaging
+           phantom in the Fourier domain. MRM 58(2) https://doi.org/10.1002/mrm.21292
+        ..
         """
         # kx and ky have to be of same shape
         if kx.shape != ky.shape:

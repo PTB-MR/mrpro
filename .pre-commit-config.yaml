@@ -3,9 +3,9 @@
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
-      - id: check-docstring-first
+      - id: check-added-large-files
       - id: check-merge-conflict
       - id: check-yaml
       - id: check-toml
@@ -14,19 +14,26 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.7
+    rev: v0.7.2
     hooks:
       - id: ruff # linter
         args: [--fix]
       - id: ruff-format # formatter
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.21.0
+    rev: v1.27.0
     hooks:
       - id: typos
 
+  - repo: https://github.com/fzimmermann89/check_all
+    rev: v1.0
+    hooks:
+      - id: check-init-all
+        args: [--double-quotes]
+        exclude: ^tests/
+
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.10.0
+    rev: v1.13.0
     hooks:
       - id: mypy
         pass_filenames: false
@@ -34,8 +41,9 @@ repos:
         args: [src, tests, examples]
         additional_dependencies:
           - numpy
-          - torch>=2.3.0
+          - torch>=2.4.0
           - types-requests
+          - typing-extensions
           - einops
           - pydicom
           - matplotlib
@@ -43,3 +51,13 @@ repos:
           - xsdata
           - "--index-url=https://download.pytorch.org/whl/cpu"
           - "--extra-index-url=https://pypi.python.org/simple"
+
+ci:
+  autofix_commit_msg: |
+    [pre-commit] auto fixes from pre-commit hooks
+  autofix_prs: false
+  autoupdate_branch: ""
+  autoupdate_commit_msg: "[pre-commit] pre-commit autoupdate"
+  autoupdate_schedule: monthly
+  skip: [mypy]
+  submodules: false

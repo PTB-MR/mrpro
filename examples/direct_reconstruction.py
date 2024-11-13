@@ -7,16 +7,15 @@ zenodo_url = 'https://zenodo.org/records/10854057/files/'
 fname = 'pulseq_radial_2D_402spokes_golden_angle_with_traj.h5'
 # %%
 # Download raw data
-import shutil
 import tempfile
-from pathlib import Path
 
 import requests
 
-data_folder = Path(tempfile.mkdtemp())
-data_file = tempfile.NamedTemporaryFile(dir=data_folder, mode='wb', delete=False, suffix='.h5')
+data_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.h5')
 response = requests.get(zenodo_url + fname, timeout=30)
 data_file.write(response.content)
+data_file.flush()
+
 # %% [markdown]
 # ### Image reconstruction
 # We use the DirectReconstruction class to reconstruct images from 2D radial data.
@@ -30,7 +29,7 @@ trajectory = mrpro.data.traj_calculators.KTrajectoryIsmrmrd()
 # Load in the Data from the ISMRMRD file
 kdata = mrpro.data.KData.from_file(data_file.name, trajectory)
 # Perform the reconstruction
-reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction.from_kdata(kdata)
+reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
 # Use this to run on gpu: kdata = kdata.cuda()
 img = reconstruction(kdata)
 # %%
@@ -97,9 +96,3 @@ import torch
 # If the assert statement did not raise an exception, the results are equal.
 assert torch.allclose(img.data, img_manual.data)
 assert torch.allclose(img.data, img_more_manual.data)
-# %%
-# Clean-up by removing temporary directory
-shutil.rmtree(data_folder)
-# %% [markdown]
-# Copyright 2024 Physikalisch-Technische Bundesanstalt
-# Apache License 2.0. See LICENSE file for details.
