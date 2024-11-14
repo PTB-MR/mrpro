@@ -28,20 +28,20 @@ data_file.flush()
 #
 # where $n$ describes complex Gaussian noise. The image $x$ can be obtained by minimizing the functionl $F$
 #
-# $ F(x) = ||W^{\frac{1}{2}}(Ax - y)||_2^2 $
+# $ F(x) = ||(Ax - y)||_2^2 $
 #
-# where $W^\frac{1}{2}$ is the square root of the density compensation function (which corresponds to a diagonal
-# operator). Because this is an ill-posed problem, we can add a regularization term to stabilize the problem and obtain
+# Because this is an ill-posed problem, we can add a regularization term to stabilize the problem and obtain
 # a solution with certain properties:
 #
-# $ F(x) = ||W^{\frac{1}{2}}(Ax - y)||_2^2 + l||Bx - x_{reg}||_2^2$
+# $ F(x) = ||(Ax - y)||_2^2 + \lambda||Bx - x_{reg}||_2^2$
 #
-# where $l$ is the strength of the regularization, $B$ is a linear operator and $x_{reg}$ is a regularization image.
+# where $\lambda$ is the strength of the regularization, $B$ is a linear operator and $x_{reg}$ is a
+# regularization image.
 # With this functional $F$ we obtain a solution which is close to $x_{reg}$ and to the acquired data $y$.
 #
 # Setting the derivative of the functional $F$ to zero and rearranging yields
 #
-# $ (A^H W A + l B) x = A^H W y + l x_{reg}$
+# $ (A^H A + \lambda B) x = A^H y + \lambda x_{reg}$
 #
 # which is a linear system $Hx = b$ that needs to be solved for $x$.
 #
@@ -143,9 +143,7 @@ acquisition_operator = fourier_operator @ csm_operator
 # ##### Calculate the right-hand-side of the linear system $b = A^H W y + l x_{reg}$
 
 # %%
-right_hand_side = (
-    acquisition_operator.H(dcf_operator(kdata_us.data)[0])[0] + regularization_weight * img_iterative_sense.data
-)
+right_hand_side = acquisition_operator.H(kdata_us.data) + regularization_weight * img_iterative_sense.data
 
 
 # %% [markdown]
@@ -154,9 +152,7 @@ right_hand_side = (
 # %%
 from mrpro.operators import IdentityOp
 
-operator = acquisition_operator.H @ dcf_operator @ acquisition_operator + IdentityOp() * torch.as_tensor(
-    regularization_weight
-)
+operator = acquisition_operator.gram + IdentityOp() * torch.as_tensor(regularization_weight)
 
 # %% [markdown]
 # ##### Run conjugate gradient

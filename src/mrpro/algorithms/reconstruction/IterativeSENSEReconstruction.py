@@ -17,14 +17,13 @@ from mrpro.operators.LinearOperator import LinearOperator
 class IterativeSENSEReconstruction(RegularizedIterativeSENSEReconstruction):
     r"""Iterative SENSE reconstruction.
 
-    This algorithm solves the problem :math:`min_x \frac{1}{2}||W^\frac{1}{2} (Ax - y)||_2^2`
+    This algorithm solves the problem :math:`min_x \frac{1}{2}||(Ax - y)||_2^2`
     by using a conjugate gradient algorithm to solve
-    :math:`H x = b` with :math:`H = A^H W A` and :math:`b = A^H W y` where :math:`A` is the acquisition model
-    (coil sensitivity maps, Fourier operator, k-space sampling), :math:`y` is the acquired k-space data and :math:`W`
-    describes the density compensation [PRU2001]_ .
+    :math:`H x = b` with :math:`H = A^H A` and :math:`b = A^H y` where :math:`A` is the acquisition model
+    (coil sensitivity maps, Fourier operator, k-space sampling) and :math:`y` is the acquired k-space data [PRU2001]_ .
 
-    Note: In [PRU2001]_ a k-space filter is applied as a final step to null all k-space values outside the k-space
-    coverage. This is not done here.
+    Note: In [PRU2001]_, the density function is used to to reweight the reconstruction objective and a k-space filter
+    is applied as a final step to null all k-space values outside the k-space coverage. Both is not done here.
 
     .. [PRU2001] Pruessmann K, Weiger M, Boernert P, and Boesiger P (2001), Advances in sensitivity encoding with
        arbitrary k-space trajectories. MRI 46, 638-651. https://doi.org/10.1002/mrm.1241
@@ -64,7 +63,8 @@ class IterativeSENSEReconstruction(RegularizedIterativeSENSEReconstruction):
         noise
             KNoise used for prewhitening. If None, no prewhitening is performed
         dcf
-            K-space sampling density compensation. If None, set up based on kdata.
+            K-space sampling density compensation.
+            Only used to obtain the starting point of the iterative reconstruction.
         n_iterations
             Number of CG iterations
 
