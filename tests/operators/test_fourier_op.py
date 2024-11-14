@@ -89,7 +89,7 @@ def test_fourier_op_cartesian_sorting(ismrmrd_cart):
     (img,) = ff_op.adjoint(kdata.data)
 
     # shuffle the kspace points along k0
-    permutation_index = torch.randperm(kdata.data.shape[-1])
+    permutation_index = RandomGenerator(13).randperm(kdata.data.shape[-1])
     kdata_unsorted = KData(
         header=kdata.header,
         data=kdata.data[..., permutation_index],
