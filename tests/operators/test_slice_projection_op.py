@@ -9,7 +9,33 @@ from mrpro.data import Rotation, SpatialDimension
 from mrpro.operators import SliceProjectionOp
 from mrpro.utils.slice_profiles import SliceGaussian, SliceInterpolate, SliceSmoothedRectangular
 
-from tests import RandomGenerator, dotproduct_adjointness_test
+from tests import (
+    RandomGenerator,
+    dotproduct_adjointness_test,
+    forward_mode_autodiff_of_linear_operator_test,
+    gradient_of_linear_operator_test,
+)
+
+
+def create_slice_projection_op_and_domain_range(optimize_for, dtype):
+    """Create a slice projection operator and an element from domain and range."""
+    rng = getattr(RandomGenerator(314), f'{dtype}_tensor')
+    operator_dtype = getattr(torch, dtype).to_real()
+    input_shape = SpatialDimension(10, 20, 30)
+    slice_rotation = None
+    slice_shift = 0.0
+    slice_profile = 1.0
+    operator = SliceProjectionOp(
+        input_shape=input_shape,
+        slice_rotation=slice_rotation,
+        slice_shift=slice_shift,
+        slice_profile=slice_profile,
+        optimize_for=optimize_for,
+    )
+    operator = operator.to(operator_dtype)
+    u = rng((1, *input_shape.zyx))
+    v = rng((1, 1, 1, max(input_shape.zyx), max(input_shape.zyx)))
+    return operator, u, v
 
 
 def test_slice_projection_op_cube_basic():
@@ -98,23 +124,7 @@ def test_slice_projection_width_error():
 @pytest.mark.parametrize('dtype', ['complex64', 'float64', 'float32'])
 @pytest.mark.parametrize('optimize_for', ['forward', 'adjoint', 'both'])
 def test_slice_projection_op_basic_adjointness(optimize_for, dtype):
-    rng = getattr(RandomGenerator(314), f'{dtype}_tensor')
-    operator_dtype = getattr(torch, dtype).to_real()
-    input_shape = SpatialDimension(10, 20, 30)
-    slice_rotation = None
-    slice_shift = 0.0
-    slice_profile = 1.0
-    operator = SliceProjectionOp(
-        input_shape=input_shape,
-        slice_rotation=slice_rotation,
-        slice_shift=slice_shift,
-        slice_profile=slice_profile,
-        optimize_for=optimize_for,
-    )
-    operator = operator.to(operator_dtype)
-    u = rng((1, *input_shape.zyx))
-    v = rng((1, 1, 1, max(input_shape.zyx), max(input_shape.zyx)))
-    dotproduct_adjointness_test(operator, u, v)
+    dotproduct_adjointness_test(*create_slice_projection_op_and_domain_range(optimize_for, dtype))
 
 
 def test_slice_projection_op_slice_batching():
@@ -189,3 +199,13 @@ def test_slice_projection_op_backward_is_adjoint(optimize_for, dtype, direction)
     dotproduct_range = torch.vdot(forward_u.flatten(), v.flatten())
     dotproduct_domain = torch.vdot(u.flatten().flatten(), adjoint_v.flatten())
     torch.testing.assert_close(dotproduct_range, dotproduct_domain)
+
+
+def test_slice_projection_op_grad():
+    """Test gradient of slice projection operator."""
+    gradient_of_linear_operator_test(*create_slice_projection_op_and_domain_range('both', 'complex64'))
+
+
+def test_slice_projection_op_forward_mode_autodiff():
+    """Test forward-mode autodiff of slice projection operator."""
+    forward_mode_autodiff_of_linear_operator_test(*create_slice_projection_op_and_domain_range('both', 'complex64'))
