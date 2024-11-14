@@ -6,9 +6,8 @@ from mrpro.data import KData, KTrajectory, SpatialDimension
 from mrpro.data.traj_calculators import KTrajectoryCartesian
 from mrpro.operators import FourierOp
 
-from tests import RandomGenerator
+from tests import RandomGenerator, dotproduct_adjointness_test
 from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
-from tests.helper import dotproduct_adjointness_test
 
 
 def create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):

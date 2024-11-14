@@ -5,8 +5,7 @@ import torch
 from mrpro.data import CsmData, QHeader, SpatialDimension
 from mrpro.operators import SensitivityOp
 
-from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test
+from tests import RandomGenerator, dotproduct_adjointness_test
 
 
 def test_sensitivity_op_adjointness():
