@@ -77,7 +77,7 @@ from mrpro.utils import split_idx
 # %%
 # Download raw data in ISMRMRD format from zenodo into a temporary directory
 data_folder = Path(tempfile.mkdtemp())
-dataset = '10671597'
+dataset = '13207352'
 zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 
 
