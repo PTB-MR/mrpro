@@ -16,7 +16,6 @@ defaults:
 jobs:
   get_notebooks:
     name: Get list of notebooks
-    needs: convert_scripts
     runs-on: ubuntu-latest
     steps:
       - name: Checkout mrpro repo
@@ -36,7 +35,7 @@ jobs:
 
   run_notebook:
     name: Run notebook
-    needs: [convert_scripts, get_notebooks]
+    needs: get_notebooks
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -51,8 +50,6 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.convert_scripts.outputs.commit_hash }}
 
       - name: Install mrpro and dependencies
         run: pip install --upgrade --upgrade-strategy "eager" .[notebook]
@@ -86,7 +83,7 @@ jobs:
 
   create_documentation:
     name: Build and deploy documentation
-    needs: [convert_scripts, run_notebook]
+    needs: run_notebook
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/ptb-mr/mrpro_py311:latest
@@ -97,8 +94,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.convert_scripts.outputs.commit_hash }}
 
       - name: Install mrpro and dependencies
         run: pip install --upgrade --upgrade-strategy "eager" .[docs]
