@@ -125,6 +125,7 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             self._fwd_nufft_op = None
             self._adj_nufft_op = None
         self._kshape = traj.broadcasted_shape
+        self._traj = traj
 
     @classmethod
     def from_kdata(cls, kdata: KData, recon_shape: SpatialDimension[int] | None = None) -> Self:
@@ -223,3 +224,18 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             x = x.permute(*unpermute)
 
         return (x,)
+
+    def __repr__(self):
+        """Representation method for Fourier Operator."""
+        device = str(self._traj.device)
+        if self._nufft_dims:
+            dims = self._nufft_dims
+        else:
+            dims = self._fft_dims
+        out = (
+            f'{type(self).__name__} on device: {device}\n'
+            f'{self._traj}\n'
+            f'Dimension along which FFT/NUFFT is applied: {dims}\n'
+            f'Dimension which is ignored in FFT/NUFFT: {self._ignore_dims}\n'
+        )
+        return out
