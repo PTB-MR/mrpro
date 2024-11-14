@@ -50,6 +50,7 @@ myst_enable_extensions = [
     "amsmath",
     "dollarmath",
 ]
+nb_execution_mode = "off"
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
