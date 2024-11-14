@@ -16,7 +16,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore [import-
 from mrpro.algorithms.optimizers import adam
 from mrpro.data import IData
 from mrpro.operators import MagnitudeOp
-from mrpro.operators.functionals import MSEDataDiscrepancy
+from mrpro.operators.functionals import MSE
 from mrpro.operators.models import InversionRecovery
 
 # %% [markdown]
@@ -71,7 +71,7 @@ model = MagnitudeOp() @ InversionRecovery(ti=idata_multi_ti.header.ti)
 # As a loss function for the optimizer, we calculate the mean-squared error between the image data $x$ and our signal
 # model $q$.
 # %%
-mse = MSEDataDiscrepancy(idata_multi_ti.data.abs())
+mse = MSE(idata_multi_ti.data.abs())
 
 # %% [markdown]
 # Now we can simply combine the two into a functional to solve
