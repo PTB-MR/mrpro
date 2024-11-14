@@ -576,6 +576,7 @@ def test_KData_compress_coils_error_coil_dim(consistently_shaped_kdata):
     with pytest.raises(ValueError, match='Coil dimension must not'):
         consistently_shaped_kdata.compress_coils(n_compressed_coils=3, joint_dims=(-4,))
 
+
 def test_KData_to_file(ismrmrd_cart, tmp_path_factory):
     """Read in data to file."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
@@ -597,4 +598,4 @@ def test_KData_to_file(ismrmrd_cart, tmp_path_factory):
     torch.testing.assert_close(kdata.header.acq_info.position.y, kdata_reload.header.acq_info.position.y)
     torch.testing.assert_close(kdata.header.acq_info.position.x, kdata_reload.header.acq_info.position.x)
     assert kdata.header.encoding_fov.x == kdata_reload.header.encoding_fov.x
-    assert kdata.header.encoding_limits.k1.max == kdata_reload.header.encoding_limits.k1.max        
+    assert kdata.header.encoding_limits.k1.max == kdata_reload.header.encoding_limits.k1.max
