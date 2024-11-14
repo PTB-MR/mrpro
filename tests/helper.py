@@ -1,9 +1,8 @@
 """Helper/Utilities for test functions."""
 
-from typing import Any
-
 import torch
 from mrpro.operators import LinearOperator, Operator
+from typing_extensions import TypeVarTuple, Unpack
 
 
 def relative_image_difference(img1: torch.Tensor, img2: torch.Tensor) -> torch.Tensor:
@@ -140,9 +139,12 @@ def linear_operator_unitary_test(
     torch.testing.assert_close(u, operator.adjoint(operator(u)[0])[0], rtol=relative_tolerance, atol=absolute_tolerance)
 
 
+Tin = TypeVarTuple('Tin')
+
+
 def autodiff_test(
-    operator: Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]],
-    *u: Any,
+    operator: Operator[Unpack[Tin], tuple[torch.Tensor, ...]],
+    *u: Unpack[Tin],
 ):
     """Test if autodiff of an operator is working.
     This test does not check that the gradient is correct but simply that it can be calculated using both torch.func.jvp
@@ -154,6 +156,7 @@ def autodiff_test(
         operator
     u
         element(s) of the domain of the operator
+
     Raises
     ------
     AssertionError
