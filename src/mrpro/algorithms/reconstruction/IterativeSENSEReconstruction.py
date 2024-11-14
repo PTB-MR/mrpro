@@ -36,11 +36,11 @@ class IterativeSENSEReconstruction(RegularizedIterativeSENSEReconstruction):
     def __init__(
         self,
         kdata: KData | None = None,
+        *,
         fourier_op: LinearOperator | None = None,
         csm: Callable | CsmData | None = CsmData.from_idata_walsh,
         noise: KNoise | None = None,
         dcf: DcfData | None = None,
-        *,
         n_iterations: int = 5,
     ) -> None:
         """Initialize IterativeSENSEReconstruction.
@@ -50,8 +50,7 @@ class IterativeSENSEReconstruction(RegularizedIterativeSENSEReconstruction):
         Parameters
         ----------
         kdata
-            KData. If kdata is provided and fourier_op or dcf are None, then fourier_op and dcf are estimated based on
-            kdata. Otherwise fourier_op and dcf are used as provided.
+            KData. If kdata is provided and fourier_op is None, then fourier_op created based on kdata.
         fourier_op
             Instance of the FourierOperator used for reconstruction. If None, set up based on kdata.
         csm
@@ -73,4 +72,12 @@ class IterativeSENSEReconstruction(RegularizedIterativeSENSEReconstruction):
         ValueError
             If the kdata and fourier_op are None or if csm is a Callable but kdata is None.
         """
-        super().__init__(kdata, fourier_op, csm, noise, dcf, n_iterations=n_iterations, regularization_weight=0)
+        super().__init__(
+            kdata=kdata,
+            fourier_op=fourier_op,
+            csm=csm,
+            noise=noise,
+            dcf=dcf,
+            n_iterations=n_iterations,
+            regularization_weight=0,
+        )

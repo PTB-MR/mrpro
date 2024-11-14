@@ -8,7 +8,6 @@ from mrpro.data.CsmData import CsmData
 from mrpro.data.DcfData import DcfData
 from mrpro.data.IData import IData
 from mrpro.data.KNoise import KNoise
-from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.LinearOperator import LinearOperator
 
 
@@ -18,11 +17,12 @@ class DirectReconstruction(Reconstruction):
     def __init__(
         self,
         kdata: KData | None = None,
+        *,
         fourier_op: LinearOperator | None = None,
         csm: Callable[[IData], CsmData] | CsmData | None = CsmData.from_idata_walsh,
         noise: KNoise | None = None,
         dcf: DcfData | None = None,
-    ):
+    ) -> None:
         """Initialize DirectReconstruction.
 
         Parameters
@@ -52,12 +52,12 @@ class DirectReconstruction(Reconstruction):
         if fourier_op is None:
             if kdata is None:
                 raise ValueError('Either kdata or fourier_op needs to be defined.')
-            self.fourier_op = FourierOp.from_kdata(kdata)
+            self.recalculate_fourierop(kdata)
         else:
             self.fourier_op = fourier_op
 
         if kdata is not None and dcf is None:
-            self.dcf = DcfData.from_traj_voronoi(kdata.traj)
+            self.recalculate_dcf(kdata.traj)
         else:
             self.dcf = dcf
 
@@ -82,4 +82,4 @@ class DirectReconstruction(Reconstruction):
         -------
             the reconstruced image.
         """
-        return self.direct_reconstruction(kdata)
+        return self._direct_reconstruction(kdata)

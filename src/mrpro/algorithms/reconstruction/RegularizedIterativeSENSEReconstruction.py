@@ -8,7 +8,7 @@ import torch
 
 from mrpro.algorithms.optimizers.cg import cg
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
-from mrpro.algorithms.reconstruction.DirectReconstruction import DirectReconstruction
+from mrpro.algorithms.reconstruction import Reconstruction
 from mrpro.data._kdata.KData import KData
 from mrpro.data.CsmData import CsmData
 from mrpro.data.DcfData import DcfData
@@ -18,7 +18,7 @@ from mrpro.operators.IdentityOp import IdentityOp
 from mrpro.operators.LinearOperator import LinearOperator
 
 
-class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
+class RegularizedIterativeSENSEReconstruction(Reconstruction):
     r"""Regularized iterative SENSE reconstruction.
 
     This algorithm solves the problem :math:`min_x \frac{1}{2}||(Ax - y)||_2^2 +
@@ -45,12 +45,12 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
 
     def __init__(
         self,
+        *,
         kdata: KData | None = None,
         fourier_op: LinearOperator | None = None,
         csm: Callable | CsmData | None = CsmData.from_idata_walsh,
         noise: KNoise | None = None,
         dcf: DcfData | None = None,
-        *,
         n_iterations: int = 5,
         regularization_data: float | torch.Tensor = 0.0,
         regularization_weight: float | torch.Tensor,
@@ -64,8 +64,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         Parameters
         ----------
         kdata
-            KData. If kdata is provided and fourier_op or dcf are None, then fourier_op and dcf are estimated based on
-            kdata. Otherwise fourier_op and dcf are used as provided.
+            KData. If kdata is provided and fourier_op is None, then fourier_op created based on kdata.
         fourier_op
             Instance of the FourierOperator used for reconstruction. If None, set up based on kdata.
         csm
@@ -95,11 +94,30 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         ValueError
             If the kdata and fourier_op are None or if csm is a Callable but kdata is None.
         """
-        super().__init__(kdata, fourier_op, csm, noise, dcf)
+        super().__init__()
         self.n_iterations = n_iterations
         self.regularization_data = torch.as_tensor(regularization_data)
         self.regularization_weight = torch.as_tensor(regularization_weight)
         self.regularization_op = regularization_op if regularization_op is not None else IdentityOp()
+
+        if fourier_op is None:
+            if kdata is None:
+                raise ValueError('Either kdata or fourier_op needs to be defined.')
+            self.recalculate_fourierop(kdata)
+        else:
+            self.fourier_op = fourier_op
+
+        self.noise = noise
+        self.dcf = dcf
+
+        if csm is None or isinstance(csm, CsmData):
+            self.csm = csm
+        else:
+            if kdata is None:
+                raise ValueError('kdata needs to be defined to calculate the sensitivity maps.')
+            if self.dcf is None:
+                self.recalculate_dcf(kdata.traj)
+            self.recalculate_csm(kdata, csm)
 
     def forward(self, kdata: KData) -> IData:
         """Apply the reconstruction.

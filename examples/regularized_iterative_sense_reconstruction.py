@@ -96,7 +96,7 @@ kdata_us = kdata.split_k1_into_other(idx_us, other_label='repetition')
 
 # %%
 # Iterativ SENSE reconstruction
-iterative_sense_reconstruction = IterativeSENSEReconstruction(kdata_us, csm=csm, n_iterations=6)
+iterative_sense_reconstruction = IterativeSENSEReconstruction(kdata=kdata_us, csm=csm, n_iterations=6)
 img_us_iterative_sense = iterative_sense_reconstruction(kdata_us)
 
 # %%
@@ -106,7 +106,7 @@ from mrpro.algorithms.reconstruction import RegularizedIterativeSENSEReconstruct
 regularization_weight = 1.0
 n_iterations = 6
 regularized_iterative_sense_reconstruction = RegularizedIterativeSENSEReconstruction(
-    kdata_us,
+    kdata=kdata_us,
     csm=csm,
     n_iterations=n_iterations,
     regularization_data=img_iterative_sense.data,
@@ -140,14 +140,14 @@ csm_operator = csm.as_operator()
 acquisition_operator = fourier_operator @ csm_operator
 
 # %% [markdown]
-# ##### Calculate the right-hand-side of the linear system $b = A^H W y + l x_{reg}$
+# ##### Calculate the right-hand-side of the linear system $b = A^H y + \lambda x_{reg}$
 
 # %%
-right_hand_side = acquisition_operator.H(kdata_us.data) + regularization_weight * img_iterative_sense.data
+right_hand_side = acquisition_operator.H(kdata_us.data)[0] + regularization_weight * img_iterative_sense.data
 
 
 # %% [markdown]
-# ##### Set-up the linear self-adjoint operator $H = A^H W A + l$
+# ##### Set-up the linear self-adjoint operator $H = A^H A + \lambda I$
 
 # %%
 from mrpro.operators import IdentityOp
