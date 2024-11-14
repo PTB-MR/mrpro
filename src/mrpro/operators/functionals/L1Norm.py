@@ -14,7 +14,6 @@ class L1Norm(ElementaryProximableFunctional):
     that is applied to the input.
 
     In most cases, consider setting divide_by_n to true to be independent of input size.
-    Alternatively the functional :class:`mrpro.operators.functionals.L2NormSquared` can be used.
 
     The norm of the vector is computed along the dimensions given at initialization.
     """
