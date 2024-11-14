@@ -44,6 +44,4 @@ class MSE(L2NormSquared):
             else they are removed from the result.
 
         """
-        if target is None:
-            raise ValueError('Please specify a target or consider using L2NormSquared.')
         super().__init__(weight=weight, target=target, dim=dim, divide_by_n=divide_by_n, keepdim=keepdim)
