@@ -4,7 +4,21 @@ import pytest
 import torch
 from mrpro.operators import ZeroPadOp
 
-from tests import RandomGenerator, dotproduct_adjointness_test
+from tests import (
+    RandomGenerator,
+    dotproduct_adjointness_test,
+    forward_mode_autodiff_of_linear_operator_test,
+    gradient_of_linear_operator_test,
+)
+
+
+def create_zero_pad_op_and_domain_range(u_shape, v_shape):
+    """Create a zero padding operator and an element from domain and range."""
+    generator = RandomGenerator(seed=0)
+    u = generator.complex64_tensor(u_shape)
+    v = generator.complex64_tensor(v_shape)
+    zero_padding_op = ZeroPadOp(dim=(-3, -2, -1), original_shape=u_shape, padded_shape=v_shape)
+    return zero_padding_op, u, v
 
 
 def test_zero_pad_op_content():
@@ -36,8 +50,14 @@ def test_zero_pad_op_content():
 )
 def test_zero_pad_op_adjoint(u_shape, v_shape):
     """Test adjointness of pad operator."""
-    generator = RandomGenerator(seed=0)
-    u = generator.complex64_tensor(u_shape)
-    v = generator.complex64_tensor(v_shape)
-    zero_padding_op = ZeroPadOp(dim=(-3, -2, -1), original_shape=u_shape, padded_shape=v_shape)
-    dotproduct_adjointness_test(zero_padding_op, u, v)
+    dotproduct_adjointness_test(*create_zero_pad_op_and_domain_range(u_shape, v_shape))
+
+
+def test_zero_pad_op_grad():
+    """Test gradient of zero padding operator."""
+    gradient_of_linear_operator_test(*create_zero_pad_op_and_domain_range((101, 201, 50), (13, 221, 64)))
+
+
+def test_zero_pad_op_forward_mode_autodiff():
+    """Test forward-mode autodiff of zero padding operator."""
+    forward_mode_autodiff_of_linear_operator_test(*create_zero_pad_op_and_domain_range((101, 201, 50), (13, 221, 64)))
