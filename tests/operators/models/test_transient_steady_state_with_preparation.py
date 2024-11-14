@@ -4,6 +4,7 @@ import pytest
 import torch
 from einops import repeat
 from mrpro.operators.models import TransientSteadyStateWithPreparation
+from tests import autodiff_test
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
 
 
@@ -79,3 +80,17 @@ def test_transient_steady_state_shape(parameter_shape, contrast_dim_shape, signa
     m0, t1, flip_angle = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=3)
     (signal,) = model_op(m0, t1, flip_angle)
     assert signal.shape == signal_shape
+
+
+def test_autodiff_transient_steady_state():
+    """Test autodiff works for transient steady state model."""
+    contrast_dim_shape = (6,)
+    (sampling_time,) = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=1)
+    repetition_time, m0_scaling_preparation, delay_after_preparation = create_parameter_tensor_tuples(
+        contrast_dim_shape[1:], number_of_tensors=3
+    )
+    model = TransientSteadyStateWithPreparation(
+        sampling_time, repetition_time, m0_scaling_preparation, delay_after_preparation
+    )
+    m0, t1, flip_angle = create_parameter_tensor_tuples(parameter_shape=(2, 5, 10, 10, 10), number_of_tensors=3)
+    autodiff_test(model, m0, t1, flip_angle)
