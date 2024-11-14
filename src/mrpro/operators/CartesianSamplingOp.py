@@ -41,28 +41,36 @@ class CartesianSamplingOp(LinearOperator):
 
         # Cache as these might take some time to compute
         traj_type_kzyx = traj.type_along_kzyx
+        traj_device = traj.device
         ktraj_tensor = traj.as_tensor()
 
         # If a dimension is irregular or singleton, we will not perform any reordering
         # in it and the shape of data will remain.
         # only dimensions on a cartesian grid will be reordered.
+        # The device of the input is matched.
         if traj_type_kzyx[-1] == TrajType.ONGRID:  # kx
-            kx_idx = ktraj_tensor[-1, ...].round().to(dtype=torch.int64) + sorted_grid_shape.x // 2
+            kx_idx = ktraj_tensor[-1, ...].round().to(dtype=torch.int64, device=traj_device) + sorted_grid_shape.x // 2
         else:
             sorted_grid_shape.x = ktraj_tensor.shape[-1]
-            kx_idx = repeat(torch.arange(ktraj_tensor.shape[-1]), 'k0->other k2 k1 k0', other=1, k2=1, k1=1)
+            kx_idx = repeat(
+                torch.arange(ktraj_tensor.shape[-1], device=traj_device), 'k0->other k2 k1 k0', other=1, k2=1, k1=1
+            )
 
         if traj_type_kzyx[-2] == TrajType.ONGRID:  # ky
-            ky_idx = ktraj_tensor[-2, ...].round().to(dtype=torch.int64) + sorted_grid_shape.y // 2
+            ky_idx = ktraj_tensor[-2, ...].round().to(dtype=torch.int64, device=traj_device) + sorted_grid_shape.y // 2
         else:
             sorted_grid_shape.y = ktraj_tensor.shape[-2]
-            ky_idx = repeat(torch.arange(ktraj_tensor.shape[-2]), 'k1->other k2 k1 k0', other=1, k2=1, k0=1)
+            ky_idx = repeat(
+                torch.arange(ktraj_tensor.shape[-2], device=traj_device), 'k1->other k2 k1 k0', other=1, k2=1, k0=1
+            )
 
         if traj_type_kzyx[-3] == TrajType.ONGRID:  # kz
-            kz_idx = ktraj_tensor[-3, ...].round().to(dtype=torch.int64) + sorted_grid_shape.z // 2
+            kz_idx = ktraj_tensor[-3, ...].round().to(dtype=torch.int64, device=traj_device) + sorted_grid_shape.z // 2
         else:
             sorted_grid_shape.z = ktraj_tensor.shape[-3]
-            kz_idx = repeat(torch.arange(ktraj_tensor.shape[-3]), 'k2->other k2 k1 k0', other=1, k1=1, k0=1)
+            kz_idx = repeat(
+                torch.arange(ktraj_tensor.shape[-3], device=traj_device), 'k2->other k2 k1 k0', other=1, k1=1, k0=1
+            )
 
         # 1D indices into a flattened tensor.
         kidx = kz_idx * sorted_grid_shape.y * sorted_grid_shape.x + ky_idx * sorted_grid_shape.x + kx_idx
