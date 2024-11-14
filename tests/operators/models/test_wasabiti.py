@@ -3,10 +3,13 @@
 import pytest
 import torch
 from mrpro.operators.models import WASABITI
+from tests import autodiff_test
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
 
 
-def create_data(offset_max=500, n_offsets=101, b0_shift=0, rb1=1.0, t1=1.0):
+def create_data(
+    offset_max=500, n_offsets=101, b0_shift=0, rb1=1.0, t1=1.0
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     offsets = torch.linspace(-offset_max, offset_max, n_offsets)
     return offsets, torch.Tensor([b0_shift]), torch.Tensor([rb1]), torch.Tensor([t1])
 
@@ -28,8 +31,8 @@ def test_WASABITI_symmetry_after_shift():
     wasabiti_model = WASABITI(offsets=offsets_shifted, trec=trec)
     (signal_shifted,) = wasabiti_model(b0_shift, rb1, t1)
 
-    lower_index = (offsets_shifted == -300).nonzero()[0][0].item()
-    upper_index = (offsets_shifted == 500).nonzero()[0][0].item()
+    lower_index = int((offsets_shifted == -300).nonzero()[0][0])
+    upper_index = int((offsets_shifted == 500).nonzero()[0][0])
 
     assert signal_shifted[lower_index] == signal_shifted[upper_index], 'Result should be symmetric around shift'
 
@@ -74,3 +77,11 @@ def test_WASABITI_shape(parameter_shape, contrast_dim_shape, signal_shape):
     b0_shift, rb1, t1 = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=3)
     (signal,) = model_op(b0_shift, rb1, t1)
     assert signal.shape == signal_shape
+
+
+def test_autodiff_WASABITI():
+    """Test autodiff works for WASABITI model."""
+    offset, b0_shift, rb1, t1 = create_data(offset_max=300, n_offsets=2)
+    trec = torch.ones_like(offset) * t1
+    wasabiti_model = WASABITI(offsets=offset, trec=trec)
+    autodiff_test(wasabiti_model, b0_shift, rb1, t1)

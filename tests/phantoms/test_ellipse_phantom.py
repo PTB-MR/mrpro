@@ -5,7 +5,7 @@ import torch
 from mrpro.data import SpatialDimension
 from mrpro.operators import FastFourierOp
 
-from tests.helper import relative_image_difference
+from tests import relative_image_difference
 
 
 def test_image_space(ellipse_phantom):
