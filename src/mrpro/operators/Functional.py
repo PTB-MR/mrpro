@@ -50,8 +50,8 @@ class ElementaryFunctional(Functional):
 
     def __init__(
         self,
-        weight: torch.Tensor | complex = 1.0,
         target: torch.Tensor | None | complex = None,
+        weight: torch.Tensor | complex = 1.0,
         dim: int | Sequence[int] | None = None,
         divide_by_n: bool = False,
         keepdim: bool = False,
@@ -64,10 +64,10 @@ class ElementaryFunctional(Functional):
 
         Parameters
         ----------
-        weight
-            weight parameter (see above)
         target
             target element - often data tensor (see above)
+        weight
+            weight parameter (see above)
         dim
             dimension(s) over which functional is reduced.
             All other dimensions of  `weight ( x - target)` will be treated as batch dimensions.
