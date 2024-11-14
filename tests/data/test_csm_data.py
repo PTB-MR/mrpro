@@ -6,8 +6,8 @@ import pytest
 import torch
 from mrpro.data import CsmData, SpatialDimension
 
+from tests import relative_image_difference
 from tests.algorithms.csm.test_walsh import multi_coil_image
-from tests.helper import relative_image_difference
 
 
 def test_CsmData_is_frozen_dataclass(random_test_data, random_kheader):
