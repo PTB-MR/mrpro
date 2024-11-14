@@ -79,7 +79,7 @@ def dotproduct_adjointness_test(
 
 
 def operator_isometry_test(
-    operator: Operator[*tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]],
+    operator: Operator[torch.Tensor, tuple[torch.Tensor]],
     u: torch.Tensor,
     relative_tolerance: float = 1e-3,
     absolute_tolerance=1e-5,
