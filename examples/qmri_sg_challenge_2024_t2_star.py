@@ -15,7 +15,7 @@ import zenodo_get
 from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore [import-untyped]
 from mrpro.algorithms.optimizers import adam
 from mrpro.data import IData
-from mrpro.operators.functionals import MSEDataDiscrepancy
+from mrpro.operators.functionals import MSE
 from mrpro.operators.models import MonoExponentialDecay
 
 # %% [markdown]
@@ -80,7 +80,7 @@ model = MonoExponentialDecay(decay_time=idata_multi_te.header.te)
 # As a loss function for the optimizer, we calculate the mean-squared error between the image data $x$ and our signal
 # model $q$.
 # %%
-mse = MSEDataDiscrepancy(idata_multi_te.data)
+mse = MSE(idata_multi_te.data)
 
 # %% [markdown]
 # Now we can simply combine the two into a functional which will then solve

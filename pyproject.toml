@@ -34,6 +34,7 @@ authors = [
     { name = "Johannes Hammacher", email = "johannnes.hammacher@ptb.de" },
     { name = "Stefan Martin", email = "stefan.martin@ptb.de" },
     { name = "Andreas Kofler", email = "andreas.kofler@ptb.de" },
+    { name = "Catarina Redshaw Kranich", email = "catarina.redshaw-kranich@ptb.de" },
 ]
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
