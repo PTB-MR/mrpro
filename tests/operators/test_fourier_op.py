@@ -6,9 +6,8 @@ from mrpro.data import KData, KTrajectory, SpatialDimension
 from mrpro.data.traj_calculators import KTrajectoryCartesian
 from mrpro.operators import FourierOp
 
-from tests import RandomGenerator
+from tests import RandomGenerator, dotproduct_adjointness_test
 from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
-from tests.helper import dotproduct_adjointness_test
 
 
 def create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
@@ -108,7 +107,7 @@ def test_fourier_op_cartesian_sorting(ismrmrd_cart):
     (img,) = ff_op.adjoint(kdata.data)
 
     # shuffle the kspace points along k0
-    permutation_index = torch.randperm(kdata.data.shape[-1])
+    permutation_index = RandomGenerator(13).randperm(kdata.data.shape[-1])
     kdata_unsorted = KData(
         header=kdata.header,
         data=kdata.data[..., permutation_index],

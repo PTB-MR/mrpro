@@ -7,9 +7,8 @@ from mrpro.data import KTrajectory, SpatialDimension
 from mrpro.operators import CartesianSamplingOp
 from typing_extensions import Unpack
 
-from tests import RandomGenerator
+from tests import RandomGenerator, dotproduct_adjointness_test
 from tests.conftest import create_traj
-from tests.helper import dotproduct_adjointness_test
 
 
 def test_cart_sampling_op_data_match():
@@ -60,7 +59,7 @@ def subsample_traj(
     # Subsample data and trajectory
     match sampling:
         case 'random':
-            random_idx = torch.randperm(k_shape[-2])
+            random_idx = RandomGenerator(13).randperm(k_shape[-2])
             trajectory = KTrajectory.from_tensor(trajectory_tensor[..., random_idx, :])
         case 'partial_echo':
             trajectory = KTrajectory.from_tensor(trajectory_tensor[..., : k_shape[-1] // 2])
@@ -69,11 +68,11 @@ def subsample_traj(
         case 'regular_undersampling':
             trajectory = KTrajectory.from_tensor(trajectory_tensor[..., ::3, ::5, :])
         case 'random_undersampling':
-            random_idx = torch.randperm(k_shape[-2])
+            random_idx = RandomGenerator(13).randperm(k_shape[-2])
             trajectory = KTrajectory.from_tensor(trajectory_tensor[..., random_idx[: k_shape[-2] // 2], :])
         case 'different_random_undersampling':
             traj_list = [
-                traj_one_other[..., torch.randperm(k_shape[-2])[: k_shape[-2] // 2], :]
+                traj_one_other[..., RandomGenerator(13).randperm(k_shape[-2])[: k_shape[-2] // 2], :]
                 for traj_one_other in trajectory_tensor.unbind(1)
             ]
             trajectory = KTrajectory.from_tensor(torch.stack(traj_list, dim=1))
@@ -84,7 +83,7 @@ def subsample_traj(
             trajectory = KTrajectory.from_tensor(trajectory_tensor)
         case 'kx_ky_along_k0_undersampling':
             trajectory_tensor = rearrange(trajectory_tensor, '... k1 k0->... 1 (k1 k0)')
-            random_idx = torch.randperm(trajectory_tensor.shape[-1])
+            random_idx = RandomGenerator(13).randperm(trajectory_tensor.shape[-1])
             trajectory = KTrajectory.from_tensor(trajectory_tensor[..., random_idx[: trajectory_tensor.shape[-1] // 2]])
         case _:
             raise NotImplementedError(f'Test {sampling} not implemented.')
