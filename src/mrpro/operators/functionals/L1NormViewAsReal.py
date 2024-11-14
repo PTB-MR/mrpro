@@ -16,6 +16,7 @@ class L1NormViewAsReal(ElementaryProximableFunctional):
     If it is complex-valued, :math:`W_r` and :math:`W_I` are set to the real and imaginary part, respectively.
 
     In most cases, consider setting divide_by_n to true to be independent of input size.
+    Alternatively the functional :class:`mrpro.operators.functionals.L2NormSquared` can be used.
 
     The norm of the vector is computed along the dimensions set at initialization.
     """

@@ -8,10 +8,7 @@ from mrpro.operators.functionals.L2NormSquared import L2NormSquared
 
 
 class MSE(L2NormSquared):
-    r"""Functional class for the mean square error.
-
-    This makes use of the functional L2NormSquared.
-    """
+    r"""Functional class for the mean squared error."""
 
     def __init__(
         self,
@@ -21,16 +18,16 @@ class MSE(L2NormSquared):
         divide_by_n: bool = True,
         keepdim: bool = False,
     ) -> None:
-        r"""Initialize a Functional.
+        r"""Initialize MSE Functional.
 
-        We assume that functionals are given in the form
-        :math:`f(x) = \phi ( weight ( x - target))`
-        for some functional :math:`\phi`.
+        The MSE functional is given by
+        :math:`f: C^N -> [0, \infty), x -> 1/N \| W (x-b)\|_2^2`,
+        where :math:W is either a scalar or tensor that corresponds to a (block-) diagonal operator
+        that is applied to the input. The squared norm is then divided by N.
+        For more details also see :class:`mrpro.operators.functionals.L2NormSquared`
 
         Parameters
         ----------
-         functional
-            functional to be employed
         weight
             weight parameter (see above)
         target

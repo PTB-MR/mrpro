@@ -173,7 +173,7 @@ constraints_op = ConstraintsOp(bounds=((None, None), (0.05, 3.0), (nominal_flip_
 
 # %% [markdown]
 # ### Loss function
-# As a loss function for the optimizer, we calculate the squared L2 norm between the image data $x$ and our signal
+# As a loss function for the optimizer, we calculate the mean squared error between the image data $x$ and our signal
 # model $q$.
 # %%
 mse_loss = MSE(img_rss_dynamic)
