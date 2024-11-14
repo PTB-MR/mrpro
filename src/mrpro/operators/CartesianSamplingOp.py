@@ -212,3 +212,12 @@ class CartesianSamplingOp(LinearOperator):
         ).scatter_(dim=-1, index=idx_expanded, src=data_to_scatter)
 
         return data_scattered
+
+    def __repr__(self):
+        """Representation method for CartesianSamplingOperator."""
+        out = (
+            f'Needs indexing: {self._needs_indexing}\n'
+            f'Sorted grid shape: {self._sorted_grid_shape}\n'
+            f'Inside encoding matrix index: {self._inside_encoding_matrix_idx}'
+        )
+        return out

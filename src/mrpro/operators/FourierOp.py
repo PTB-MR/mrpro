@@ -227,15 +227,20 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
 
     def __repr__(self):
         """Representation method for Fourier Operator."""
-        device = str(self._traj.device)
         if self._nufft_dims:
-            dims = self._nufft_dims
+            string = (
+                f'Dimension along which NUFFT is applied: {self._nufft_dims}\n'
+                f'Dimension which is ignored in NUFFT: {self._ignore_dims!s}\n'
+            )
         else:
-            dims = self._fft_dims
-        out = (
-            f'{type(self).__name__} on device: {device}\n'
-            f'{self._traj}\n'
-            f'Dimension along which FFT/NUFFT is applied: {dims}\n'
-            f'Dimension which is ignored in FFT/NUFFT: {self._ignore_dims}\n'
-        )
+            string = ''
+        if self._fft_dims:
+            string += (
+                f'{self._fast_fourier_op}\n'
+                f'Dimension which is ignored in FFT: {self._ignore_dims!s}\n'
+                f'{self._cart_sampling_op}\n'
+            )
+        device = str(self._traj.device)
+        traj = self._traj
+        out = f'{type(self).__name__} on device: {device}\n' f'{traj}\n' f'{string}'
         return out
