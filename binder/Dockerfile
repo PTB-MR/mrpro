@@ -7,7 +7,6 @@ ARG NB_USER runner
 ARG NB_UID 1001
 
 ENV NB_UID ${NB_UID}
-ENV HOME /home/${NB_USER}
-
+ENV HOME /tmp
 
 USER runner
