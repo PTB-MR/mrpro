@@ -95,14 +95,14 @@ def pdhg(
 
     if operator is None:
         # Use identity operator if no operator is supplied
-        rows = len(f) if f is not None else 1
-        cols = len(g) if g is not None else 1
+        rows = len(f) if isinstance(f, ProximableFunctionalSeparableSum) else 1
+        cols = len(g) if isinstance(g, ProximableFunctionalSeparableSum) else 1
         if rows != cols:
             raise ValueError('If operator is None, the number of elements in f and g should be the same')
         operator_matrix = LinearOperatorMatrix.from_diagonal(*((IdentityOp(),) * rows))
     else:
         if isinstance(operator, LinearOperator):
-            # We allways use a matrix of operators for homogeneous handling
+            # We always use a matrix of operators for homogeneous handling
             operator_matrix = LinearOperatorMatrix.from_diagonal(operator)
         else:
             operator_matrix = operator
@@ -131,9 +131,9 @@ def pdhg(
     if primal_stepsize is None or dual_stepsize is None:
         # choose primal and dual step size such that their product is 1/|operator|**2
         # to ensure convergence
-        operator_norm = operator_matrix.operator_norm(initial_values)
+        operator_norm = operator_matrix.operator_norm(*initial_values)
         if primal_stepsize is None and dual_stepsize is None:
-            primal_stepsize_ = dual_stepsize = 1.0 / operator_norm
+            primal_stepsize_ = dual_stepsize_ = 1.0 / operator_norm
         elif primal_stepsize is None:
             primal_stepsize_ = 1 / (operator_norm * dual_stepsize)
         elif dual_stepsize is None:
@@ -151,12 +151,12 @@ def pdhg(
     primals = initial_values
     for i in range(n_iterations):
         duals = tuple(
-            dual + dual_stepsize_ * step for dual, step in zip(duals, operator_matrix(primals_relaxed), strict=False)
+            dual + dual_stepsize_ * step for dual, step in zip(duals, operator_matrix(*primals_relaxed), strict=False)
         )
         duals = f_sum.prox_convex_conj(*duals, sigma=dual_stepsize_)
 
         primals_new = tuple(
-            primal - primal_stepsize_ * step for primal, step in zip(primals, operator_matrix.H(duals), strict=False)
+            primal - primal_stepsize_ * step for primal, step in zip(primals, operator_matrix.H(*duals), strict=False)
         )
         primals_new = g_sum.prox(*primals_new, sigma=primal_stepsize_)
         primals_relaxed = [
