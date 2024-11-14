@@ -15,6 +15,8 @@ class L1NormViewAsReal(ElementaryProximableFunctional):
     If the parameter `weight` is real-valued, :math:`W_r` and :math:`W_i` are both set to `weight`.
     If it is complex-valued, :math:`W_r` and :math:`W_I` are set to the real and imaginary part, respectively.
 
+    In most cases, consider setting divide_by_n to true to be independent of input size.
+
     The norm of the vector is computed along the dimensions set at initialization.
     """
 

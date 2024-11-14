@@ -3,8 +3,8 @@
 import torch
 from mrpro.algorithms.csm import inati
 from mrpro.data import SpatialDimension
+from tests import relative_image_difference
 from tests.algorithms.csm.conftest import multi_coil_image
-from tests.helper import relative_image_difference
 
 
 def test_inati(ellipse_phantom, random_kheader):
