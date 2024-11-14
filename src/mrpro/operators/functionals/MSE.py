@@ -22,7 +22,7 @@ class MSE(L2NormSquared):
 
         The MSE functional is given by
         :math:`f: C^N -> [0, \infty), x -> 1/N \| W (x-b)\|_2^2`,
-        where :math:W is either a scalar or tensor that corresponds to a (block-) diagonal operator
+        where :math:`W` is either a scalar or tensor that corresponds to a (block-) diagonal operator
         that is applied to the input. The squared norm is then divided by N.
         For more details also see :class:`mrpro.operators.functionals.L2NormSquared`
 
