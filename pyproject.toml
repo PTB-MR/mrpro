@@ -65,7 +65,12 @@ test = [
     "pytest-cov",
     "pytest-xdist",
 ]
-docs = ["sphinx", "sphinx_rtd_theme", "sphinx-pyproject"]
+docs = ["sphinx",
+    "sphinx_rtd_theme",
+    "sphinx-pyproject",
+    "myst-nb",
+    "sphinx-mathjax-offline",
+    ]
 notebook = [
     "zenodo_get",
     "ipykernel",
