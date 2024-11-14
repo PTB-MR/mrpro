@@ -134,7 +134,7 @@ fig.colorbar(im, cax=colorbar_ax[0])
 
 im = axes[0, 1].imshow(t2star[0, 0, ...].cpu(), vmin=0, vmax=5)
 axes[0, 1].set_title('$T_2^*$')
-fig.colorbar(im, cax=colorbar_ax[1])
+fig.colorbar(im, cax=colorbar_ax[1], label='s')
 
 im = axes[0, 2].imshow(relative_absolute_error[0, 0, ...].cpu(), vmin=0, vmax=0.1)
 axes[0, 2].set_title('Relative error')

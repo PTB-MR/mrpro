@@ -126,7 +126,7 @@ axes[0, 0].set_title('$M_0$ start values')
 fig.colorbar(im, cax=colorbar_ax[0])
 im = axes[0, 1].imshow(t1_start[0, 0, ...], vmin=0, vmax=2.5)
 axes[0, 1].set_title('$T_1$ start values')
-fig.colorbar(im, cax=colorbar_ax[1])
+fig.colorbar(im, cax=colorbar_ax[1], label='s')
 
 # %% [markdown]
 # ### Carry out fit
@@ -162,7 +162,7 @@ axes[0, 0].set_title('$M_0$')
 fig.colorbar(im, cax=colorbar_ax[0])
 im = axes[0, 1].imshow(t1[0, 0, ...], vmin=0, vmax=2.5)
 axes[0, 1].set_title('$T_1$')
-fig.colorbar(im, cax=colorbar_ax[1])
+fig.colorbar(im, cax=colorbar_ax[1], label='time (s)')
 im = axes[0, 2].imshow(relative_absolute_error[0, 0, ...], vmin=0, vmax=1.0)
 axes[0, 2].set_title('Relative error')
 fig.colorbar(im, cax=colorbar_ax[2])
