@@ -32,7 +32,11 @@ def create_fourier_op_and_range_domain(im_shape, k_shape, nkx, nky, nkz, type_kx
 
     # create operator
     recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
-    encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    encoding_matrix = SpatialDimension(
+        int(trajectory.kz.max() - trajectory.kz.min() + 1),
+        int(trajectory.ky.max() - trajectory.ky.min() + 1),
+        int(trajectory.kx.max() - trajectory.kx.min() + 1),
+    )
     fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
     # apply forward operator
     (kdata,) = fourier_op(img)
