@@ -1,6 +1,5 @@
 """Numerical coil simulations."""
 
-import numpy as np
 import torch
 from einops import repeat
 
@@ -45,16 +44,16 @@ def birdcage_2d(
     y_co = repeat(y_co, 'y x -> coils y x', coils=1)
 
     c = repeat(torch.linspace(0, dim[0] - 1, dim[0]), 'coils -> coils y x', y=1, x=1)
-    coil_center_x = dim[2] * relative_radius * np.cos(c * (2 * torch.pi / dim[0]))
-    coil_center_y = dim[1] * relative_radius * np.sin(c * (2 * torch.pi / dim[0]))
+    coil_center_x = dim[2] * relative_radius * torch.cos(c * (2 * torch.pi / dim[0]))
+    coil_center_y = dim[1] * relative_radius * torch.sin(c * (2 * torch.pi / dim[0]))
     coil_phase = -c * (2 * torch.pi / dim[0])
 
     rr = torch.sqrt((x_co - coil_center_x) ** 2 + (y_co - coil_center_y) ** 2)
     phi = torch.arctan2((x_co - coil_center_x), -(y_co - coil_center_y)) + coil_phase
-    sensitivities = (1 / rr) * np.exp(1j * phi)
+    sensitivities = (1 / rr) * torch.exp(1j * phi)
 
     if normalize_with_rss:
-        rss = torch.sqrt(torch.sum(torch.abs(sensitivities) ** 2, 0))
+        rss = sensitivities.abs().square().sum(0).sqrt()
         # Normalize only where rss is > 0
         sensitivities[:, rss > 0] /= rss[None, rss > 0]
 
