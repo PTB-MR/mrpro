@@ -56,7 +56,9 @@ repos:
     rev: 0.8.0
     hooks:
     # cleans the .ipynbs (removes outputs, resets all cell-ids to 0..N, cleans steps)
+    # also clean any kernel information left after execution
     - id: nbstripout
+      args: [--extra-keys, metadata.kernelspec]
       files: examples\/.*\.ipynb
 
   - repo: https://github.com/mwouts/jupytext
