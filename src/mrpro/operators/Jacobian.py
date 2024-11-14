@@ -1,6 +1,7 @@
 """Jacobian."""
 
 from collections.abc import Callable
+from typing import Unpack
 
 import torch
 
@@ -25,7 +26,7 @@ class Jacobian(LinearOperator):
             point at which to linearize the operator
         """
         super().__init__()
-        self._vjp: Callable[tuple[torch.Tensor, ...], tuple[torch.Tensor, ...]] | None = None
+        self._vjp: Callable[[Unpack[tuple[torch.Tensor, ...]]], tuple[torch.Tensor, ...]] | None = None
         self._x0: tuple[torch.Tensor, ...] = x0
         self._operator = operator
         self._f_x0: tuple[torch.Tensor, ...] | None = None
