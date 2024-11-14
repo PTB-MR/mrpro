@@ -6,7 +6,9 @@ from tests import autodiff_test
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
 
 
-def create_data(offset_max=500, n_offsets=101, b0_shift=0, rb1=1.0, c=1.0, d=2.0):
+def create_data(
+    offset_max=500, n_offsets=101, b0_shift=0, rb1=1.0, c=1.0, d=2.0
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     offsets = torch.linspace(-offset_max, offset_max, n_offsets)
     return offsets, torch.Tensor([b0_shift]), torch.Tensor([rb1]), torch.Tensor([c]), torch.Tensor([d])
 
@@ -21,8 +23,8 @@ def test_WASABI_shift():
     wasabi_model = WASABI(offsets=offsets_shifted)
     (signal_shifted,) = wasabi_model(b0_shift, rb1, c, d)
 
-    lower_index = (offsets_shifted == -300).nonzero()[0][0].item()
-    upper_index = (offsets_shifted == 500).nonzero()[0][0].item()
+    lower_index = int((offsets_shifted == -300).nonzero()[0][0])
+    upper_index = int((offsets_shifted == 500).nonzero()[0][0])
 
     assert signal[0] == signal[-1], 'Result should be symmetric around center'
     assert signal_shifted[lower_index] == signal_shifted[upper_index], 'Result should be symmetric around shift'

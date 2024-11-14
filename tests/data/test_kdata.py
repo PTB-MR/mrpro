@@ -518,3 +518,59 @@ def test_modify_acq_info(random_kheader_shape):
     assert kheader.acq_info.idx.k1.shape == (n_other, n_k2, n_k1)
     assert kheader.acq_info.orientation.shape == (n_other, n_k2, n_k1, 1)
     assert kheader.acq_info.position.z.shape == (n_other, n_k2, n_k1, 1)
+
+
+def test_KData_compress_coils(ismrmrd_cart):
+    """Test coil combination does not alter image content (much)."""
+    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kdata = kdata.compress_coils(n_compressed_coils=4)
+    ff_op = FastFourierOp(dim=(-1, -2))
+    (reconstructed_img,) = ff_op.adjoint(kdata.data)
+
+    # Image content of each coil is the same. Therefore we only compare one coil image but we need to normalize.
+    reconstructed_img = reconstructed_img[0, 0, 0, ...].abs()
+    reconstructed_img /= reconstructed_img.max()
+    ref_img = ismrmrd_cart.img_ref[0, 0, 0, ...].abs()
+    ref_img /= ref_img.max()
+
+    assert relative_image_difference(reconstructed_img, ref_img) <= 0.1
+
+
+@pytest.mark.parametrize(
+    ('batch_dims', 'joint_dims'),
+    [
+        (None, ...),
+        ((0,), ...),
+        ((-2, -1), ...),
+        (None, (-1, -2, -3)),
+        (None, (0, -1, -2, -3)),
+    ],
+    ids=[
+        'single_compression',
+        'batching_along_dim0',
+        'batching_along_dim-2_and_dim-1',
+        'single_compression_for_last_3_dims',
+        'single_compression_for_last_3_and_first_dims',
+    ],
+)
+def test_KData_compress_coils_diff_batch_joint_dims(consistently_shaped_kdata, batch_dims, joint_dims):
+    """Test that all of these options work and yield the same shape."""
+    n_compressed_coils = 4
+    orig_kdata_shape = consistently_shaped_kdata.data.shape
+    kdata = consistently_shaped_kdata.compress_coils(n_compressed_coils, batch_dims, joint_dims)
+    assert kdata.data.shape == (*orig_kdata_shape[:-4], n_compressed_coils, *orig_kdata_shape[-3:])
+
+
+def test_KData_compress_coils_error_both_batch_and_joint(consistently_shaped_kdata):
+    """Test if error is raised if both batch_dims and joint_dims is defined."""
+    with pytest.raises(ValueError, match='Either batch_dims or joint_dims'):
+        consistently_shaped_kdata.compress_coils(n_compressed_coils=3, batch_dims=(0,), joint_dims=(0,))
+
+
+def test_KData_compress_coils_error_coil_dim(consistently_shaped_kdata):
+    """Test if error is raised if coil_dim is in batch_dims or joint_dims."""
+    with pytest.raises(ValueError, match='Coil dimension must not'):
+        consistently_shaped_kdata.compress_coils(n_compressed_coils=3, batch_dims=(-4,))
+
+    with pytest.raises(ValueError, match='Coil dimension must not'):
+        consistently_shaped_kdata.compress_coils(n_compressed_coils=3, joint_dims=(-4,))

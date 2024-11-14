@@ -67,9 +67,9 @@ def test_transient_steady_state_shape(parameter_shape, contrast_dim_shape, signa
     """Test correct signal shapes."""
     (sampling_time,) = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=1)
     if len(parameter_shape) == 1:
-        repetition_time = 5
-        m0_scaling_preparation = 1
-        delay_after_preparation = 0.01
+        repetition_time: float | torch.Tensor = 5
+        m0_scaling_preparation: float | torch.Tensor = 1
+        delay_after_preparation: float | torch.Tensor = 0.01
     else:
         repetition_time, m0_scaling_preparation, delay_after_preparation = create_parameter_tensor_tuples(
             contrast_dim_shape[1:], number_of_tensors=3
