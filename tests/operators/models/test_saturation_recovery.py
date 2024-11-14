@@ -3,6 +3,7 @@
 import pytest
 import torch
 from mrpro.operators.models import SaturationRecovery
+from tests import autodiff_test
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
 
 
@@ -41,3 +42,10 @@ def test_saturation_recovery_shape(parameter_shape, contrast_dim_shape, signal_s
     m0, t1 = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=2)
     (signal,) = model_op(m0, t1)
     assert signal.shape == signal_shape
+
+
+def test_autodiff_aturation_recovery():
+    """Test autodiff works for aturation recovery model."""
+    model = SaturationRecovery(ti=10)
+    m0, t1 = create_parameter_tensor_tuples((2, 5, 10, 10, 10), number_of_tensors=2)
+    autodiff_test(model, m0, t1)

@@ -13,6 +13,8 @@ class L1Norm(ElementaryProximableFunctional):
     where W is a either a scalar or tensor that corresponds to a (block-) diagonal operator
     that is applied to the input.
 
+    In most cases, consider setting divide_by_n to true to be independent of input size.
+
     The norm of the vector is computed along the dimensions given at initialization.
     """
 
