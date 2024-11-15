@@ -3,6 +3,7 @@
 import pytest
 import torch
 from mrpro.data import KData, KTrajectory, SpatialDimension
+from mrpro.data.enums import TrajType
 from mrpro.data.traj_calculators import KTrajectoryCartesian
 from mrpro.operators import FourierOp
 
@@ -64,8 +65,55 @@ def test_fourier_op_norm(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, typ
     )
     fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
     # only do few iterations to speed up the test
-    norm = fourier_op.operator_norm(img, dim=None, max_iterations=4)
+    norm = fourier_op.operator_norm(img, dim=None, max_iterations=20)
     torch.testing.assert_close(norm.squeeze(), torch.tensor(1.0), atol=0.1, rtol=0.0)
+
+
+@COMMON_MR_TRAJECTORIES
+def test_fourier_op_fft_nufft(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2):
+    """Test Nufft vs FFT for Fourier operator."""
+
+    # generate random images and k-space trajectories
+    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+
+    # create operator
+    recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
+    encoding_matrix = SpatialDimension(
+        int(trajectory.kz.max() - trajectory.kz.min() + 1),
+        int(trajectory.ky.max() - trajectory.ky.min() + 1),
+        int(trajectory.kx.max() - trajectory.kx.min() + 1),
+    )
+    fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
+
+    class NufftTrajektory(KTrajectory):
+        """Always returns non-grid trajectory type."""
+
+        def _traj_types(
+            self,
+            tolerance: float,
+        ) -> tuple[tuple[TrajType, TrajType, TrajType], tuple[TrajType, TrajType, TrajType]]:
+            true_types = super()._traj_types(tolerance)
+            modified = tuple([tuple([t & (~TrajType.ONGRID) for t in ts]) for ts in true_types])
+            return modified
+
+    nufft_fourier_op = FourierOp(
+        recon_matrix=recon_matrix,
+        encoding_matrix=encoding_matrix,
+        traj=NufftTrajektory(trajectory.kz, trajectory.ky, trajectory.kx),
+    )
+
+    (result_normal,) = fourier_op(img)
+    (result_nufft,) = nufft_fourier_op(img)
+    torch.testing.assert_close(result_normal, result_nufft, atol=1e-5, rtol=1e-4)
+
+    k = RandomGenerator(0).complex64_tensor(size=k_shape)
+    (result_normal,) = fourier_op.H(k)
+    (result_nufft,) = nufft_fourier_op.H(k)
+    torch.testing.assert_close(result_normal, result_nufft, atol=1e-5, rtol=1e-4)
+
+    (result_normal,) = fourier_op(img)
+    (result_nufft,) = nufft_fourier_op(img)
+    torch.testing.assert_close(result_normal, result_nufft, atol=1e-5, rtol=1e-4)
 
 
 @COMMON_MR_TRAJECTORIES
