@@ -47,7 +47,7 @@ class CartesianSamplingOp(LinearOperator):
         # If a dimension is irregular or singleton, we will not perform any reordering
         # in it and the shape of data will remain.
         # only dimensions on a cartesian grid will be reordered.
-        # The device of the input is matched.
+        # The device of the input trajectory is matched.
         if traj_type_kzyx[-1] == TrajType.ONGRID:  # kx
             kx_idx = ktraj_tensor[-1, ...].round().to(dtype=torch.int64, device=traj_device) + sorted_grid_shape.x // 2
         else:
