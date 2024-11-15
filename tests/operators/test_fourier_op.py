@@ -49,6 +49,26 @@ def test_fourier_op_fwd_adj_property(
 
 
 @COMMON_MR_TRAJECTORIES
+def test_fourier_op_norm(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2):
+    """Test operator norm of Fourier Operator, should be 1."""
+
+    # generate random images and k-space trajectories
+    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+
+    # create operator
+    recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
+    encoding_matrix = SpatialDimension(
+        int(trajectory.kz.max() - trajectory.kz.min() + 1),
+        int(trajectory.ky.max() - trajectory.ky.min() + 1),
+        int(trajectory.kx.max() - trajectory.kx.min() + 1),
+    )
+    fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
+    # only do few iterations to speed up the test
+    norm = fourier_op.operator_norm(img, dim=None, max_iterations=4)
+    torch.testing.assert_close(norm.squeeze(), torch.tensor(1.0), atol=0.1, rtol=0.0)
+
+
+@COMMON_MR_TRAJECTORIES
 def test_fourier_op_gram(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2):
     """Test gram of Fourier operator."""
     img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
