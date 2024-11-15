@@ -12,7 +12,6 @@ import mrpro.utils.unit_conversion
 __all__ = [
     "broadcast_right",
     "fill_range_",
-    "modify_acq_info",
     "reduce_view",
     "remove_repeat",
     "slice_profiles",
