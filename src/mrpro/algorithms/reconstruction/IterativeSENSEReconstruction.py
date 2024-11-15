@@ -40,7 +40,7 @@ class IterativeSENSEReconstruction(RegularizedIterativeSENSEReconstruction):
         fourier_op: LinearOperator | None = None,
         csm: Callable | CsmData | None = CsmData.from_idata_walsh,
         noise: KNoise | None = None,
-        dcf: DcfData | None = None,
+        dcf: Callable | DcfData | None = None,
         n_iterations: int = 5,
     ) -> None:
         """Initialize IterativeSENSEReconstruction.

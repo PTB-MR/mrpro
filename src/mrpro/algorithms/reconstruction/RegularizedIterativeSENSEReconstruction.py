@@ -14,6 +14,7 @@ from mrpro.data.CsmData import CsmData
 from mrpro.data.DcfData import DcfData
 from mrpro.data.IData import IData
 from mrpro.data.KNoise import KNoise
+from mrpro.data.KTrajectory import KTrajectory
 from mrpro.operators.IdentityOp import IdentityOp
 from mrpro.operators.LinearOperator import LinearOperator
 
@@ -45,12 +46,12 @@ class RegularizedIterativeSENSEReconstruction(Reconstruction):
 
     def __init__(
         self,
-        *,
         kdata: KData | None = None,
+        *,
         fourier_op: LinearOperator | None = None,
-        csm: Callable | CsmData | None = CsmData.from_idata_walsh,
+        csm: Callable[[IData], CsmData] | CsmData | None = CsmData.from_idata_walsh,
         noise: KNoise | None = None,
-        dcf: DcfData | None = None,
+        dcf: Callable[[KTrajectory], DcfData] | DcfData | None = DcfData.from_traj_voronoi,
         n_iterations: int = 5,
         regularization_data: float | torch.Tensor = 0.0,
         regularization_weight: float | torch.Tensor,
@@ -108,15 +109,19 @@ class RegularizedIterativeSENSEReconstruction(Reconstruction):
             self.fourier_op = fourier_op
 
         self.noise = noise
-        self.dcf = dcf
+
+        if dcf is None or isinstance(dcf, DcfData):
+            self.dcf = dcf
+        else:
+            if kdata is None:
+                raise ValueError('kdata needs to be defined to calculate the density compensation.')
+            self.recalculate_dcf(kdata.traj, dcf)
 
         if csm is None or isinstance(csm, CsmData):
             self.csm = csm
         else:
             if kdata is None:
                 raise ValueError('kdata needs to be defined to calculate the sensitivity maps.')
-            if self.dcf is None:
-                self.recalculate_dcf(kdata.traj)
             self.recalculate_csm(kdata, csm)
 
     def forward(self, kdata: KData) -> IData:

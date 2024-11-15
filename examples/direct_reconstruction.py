@@ -29,7 +29,7 @@ trajectory = mrpro.data.traj_calculators.KTrajectoryIsmrmrd()
 # Load in the Data from the ISMRMRD file
 kdata = mrpro.data.KData.from_file(data_file.name, trajectory)
 # Perform the reconstruction
-reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata=kdata)
+reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
 # Use this to run on gpu: kdata = kdata.cuda()
 img = reconstruction(kdata)
 # %%

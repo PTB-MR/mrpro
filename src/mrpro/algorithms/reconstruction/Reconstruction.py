@@ -55,15 +55,20 @@ class Reconstruction(torch.nn.Module, ABC):
         self.fourier_op = FourierOp.from_kdata(kdata)
         return self
 
-    def recalculate_dcf(self, ktraj: KTrajectory) -> Self:
+    def recalculate_dcf(
+        self, ktraj: KTrajectory, dcf_calculation: Callable[[KTrajectory], DcfData] = DcfData.from_traj_voronoi
+    ) -> Self:
         """Update (in place) the DCF from a Trajectory.
 
         Parameters
         ----------
         ktraj
             Trajectory to calculate the DCF from.
+        dcf_calculation
+            Function to calculate dcf expecting ktraj as input and returning dcfdata. For examples have a look at the
+            DcfData class e.g. from_traj_voronoi.
         """
-        self.dcf = DcfData.from_traj_voronoi(ktraj)
+        self.dcf = dcf_calculation(ktraj)
         return self
 
     def recalculate_csm(

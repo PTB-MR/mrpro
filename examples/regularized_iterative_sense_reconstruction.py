@@ -81,7 +81,7 @@ img_coilwise = direct_reconstruction(kdata)
 csm = CsmData.from_idata_walsh(img_coilwise)
 
 # Iterative SENSE reconstruction
-iterative_sense_reconstruction = IterativeSENSEReconstruction(kdata, csm=csm, n_iterations=3)
+iterative_sense_reconstruction = IterativeSENSEReconstruction(kdata, csm=csm, n_iterations=8)
 img_iterative_sense = iterative_sense_reconstruction(kdata)
 
 # %% [markdown]
@@ -104,7 +104,7 @@ img_us_iterative_sense = iterative_sense_reconstruction(kdata_us)
 from mrpro.algorithms.reconstruction import RegularizedIterativeSENSEReconstruction
 
 regularization_weight = 1.0
-n_iterations = 6
+n_iterations = 8
 regularized_iterative_sense_reconstruction = RegularizedIterativeSENSEReconstruction(
     kdata=kdata_us,
     csm=csm,

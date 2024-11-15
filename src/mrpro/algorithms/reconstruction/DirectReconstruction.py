@@ -3,6 +3,7 @@
 from collections.abc import Callable
 
 from mrpro.algorithms.reconstruction.Reconstruction import Reconstruction
+from mrpro.data import KTrajectory
 from mrpro.data._kdata.KData import KData
 from mrpro.data.CsmData import CsmData
 from mrpro.data.DcfData import DcfData
@@ -21,7 +22,7 @@ class DirectReconstruction(Reconstruction):
         fourier_op: LinearOperator | None = None,
         csm: Callable[[IData], CsmData] | CsmData | None = CsmData.from_idata_walsh,
         noise: KNoise | None = None,
-        dcf: DcfData | None = None,
+        dcf: Callable[[KTrajectory], DcfData] | DcfData | None = DcfData.from_traj_voronoi,
     ) -> None:
         """Initialize DirectReconstruction.
 
@@ -56,10 +57,12 @@ class DirectReconstruction(Reconstruction):
         else:
             self.fourier_op = fourier_op
 
-        if kdata is not None and dcf is None:
-            self.recalculate_dcf(kdata.traj)
-        else:
+        if dcf is None or isinstance(dcf, DcfData):
             self.dcf = dcf
+        else:
+            if kdata is None:
+                raise ValueError('kdata needs to be defined to calculate the density compensation.')
+            self.recalculate_dcf(kdata.traj, dcf)
 
         self.noise = noise
 

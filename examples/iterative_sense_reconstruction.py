@@ -96,7 +96,7 @@ csm_operator = mrpro.data.CsmData.from_idata_walsh(img_coilwise).as_operator()
 acquisition_operator = fourier_operator @ csm_operator
 
 # %% [markdown]
-# ##### Calculate the right-hand-side of the linear system $b = A^H W y$
+# ##### Calculate the right-hand-side of the linear system $b = A^H y$
 
 # %%
 (right_hand_side,) = acquisition_operator.H(kdata.data)
