@@ -1,7 +1,7 @@
 import mrpro.utils.slice_profiles
 import mrpro.utils.typing
 import mrpro.utils.unit_conversion
-from mrpro.utils.arange_ import arange_
+from mrpro.utils.fill_range import fill_range_
 from mrpro.utils.smap import smap
 from mrpro.utils.remove_repeat import remove_repeat
 from mrpro.utils.zero_pad_or_crop import zero_pad_or_crop
@@ -10,9 +10,10 @@ from mrpro.utils.reshape import broadcast_right, unsqueeze_left, unsqueeze_right
 import mrpro.utils.unit_conversion
 
 __all__ = [
-    "arange_",
     "broadcast_right",
     "reduce_view",
+    "fill_range_",
+    "modify_acq_info",
     "remove_repeat",
     "slice_profiles",
     "smap",
