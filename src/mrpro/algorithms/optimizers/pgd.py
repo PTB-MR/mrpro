@@ -1,13 +1,22 @@
 """Proximal Gradient Descent algorithm."""
 
 import math
+from collections.abc import Callable
 
 import torch
 from typing_extensions import Unpack
 
+from mrpro.algorithms.optimizers.OptimizerStatus import OptimizerStatus
 from mrpro.operators import ProximableFunctionalSeparableSum
 from mrpro.operators.Functional import ProximableFunctional
 from mrpro.operators.Operator import Operator
+
+
+class PGDStatus(OptimizerStatus):
+    """Proximal Gradient Descent callback base class."""
+
+    stepsize: float
+    """Current stepsize of the algorithm."""
 
 
 def pgd(
@@ -18,23 +27,25 @@ def pgd(
     reg_parameter: float = 0.01,
     max_iterations: int = 128,
     backtrack_factor: float = 1.0,
+    callback: Callable[[PGDStatus], None] | None = None,
 ) -> tuple[torch.Tensor, ...]:
-    r"""Proximal gradient descent algorithm for solving problem min_x f(x) + g(x).
+    r"""Proximal gradient descent algorithm for solving problem :math:`min_x f(x) + g(x)`.
 
     f is convex, differentiable, and with L-Lispchitz gradient.
     g is convex, non-smooth with computable proximal map.
 
-    For fixed stepsize t, pgd converges globally when t \in (0, 1/L),
+    For fixed stepsize t, pgd converges globally when :math:`t \in (0, 1/L)`,
     where L is the Lipschitz constant of the gradient of f.
-    In applications, f is usually of the form f(x) = 1/2 ||Ax - target||^2, where A is a linear operator.
-    In this case, t \in (0, 1/||A^T A||) for convergence.
+    In applications, f is usually of the form :math:`f(x) = 1/2 ||Ax - target||^2`,
+    where :math:`A` is a linear operator.
+    In this case, :math:`t \in (0, 1/||A^T A||)` for convergence.
     If no backtracking is used, the fixed stepsize should be given accordingly to the convergence condition.
 
     Example:
-        L1 regularized image reconstruction. Problem formulation: min_x 1/2 ||Fx - target||^2 + ||x||_1,
-        with F being the Fourier Transform, target the acquired data \in k-space and x \in image space,
-        f(x) = 1/2 ||Fx - target||^2, g(x) = ||x||_1.
-        In this case, ||F^T F|| = 1. ::
+        L1 regularized image reconstruction. Problem formulation: :math:`min_x 1/2 ||Fx - target||^2 + ||x||_1`,
+        with :math:`F` being the Fourier Transform, target the acquired data \in k-space and x \in image space,
+        :math:`f(x) = 1/2 ||Fx - target||^2, g(x) = ||x||_1`.
+        In this case, :math:`||F^T F|| = 1`. ::
                 fft = FastFourierOp()
                 l2 = L2NormSquared(target=kspace_data)
                 f = l2 @ fft
@@ -62,15 +73,16 @@ def pgd(
     initial_value
         initial value for the solution of the algorithm
     stepsize
-        stepsize needed in the gradient step, is constant throughout all
-        iterations
+        stepsize needed in the gradient step, constant if no backtracking is used, otherwise it is the initial stepsize
     reg_parameter
         regularization parameter that multiplies g
-    max_iterations, optional
+    max_iterations
         number of iterations
     backtrack_factor
-        must be <=1. if <1., Backtracking rule for stepsize following https://www.ceremade.dauphine.fr/~carlier/FISTA
+        must be :math:`<=1`. if :math:`<1.`, backtracking rule for stepsize following https://www.ceremade.dauphine.fr/~carlier/FISTA
         is used
+    callback
+        function to be called at each iteration
 
     Returns
     -------
@@ -100,7 +112,7 @@ def pgd(
     grad_and_value_f = torch.func.grad_and_value(
         lambda x: f(*x)[0],
     )
-    for _ in range(max_iterations):
+    for iteration in range(max_iterations):
         while stepsize > 1e-30:
             # calculate the proximal gradient step
             gradient, f_y = grad_and_value_f(y)
@@ -139,5 +151,8 @@ def pgd(
         # update x and  t
         x_old = x
         t_old = t
+
+        if callback is not None:
+            callback(PGDStatus(solution=y, iteration_number=iteration, stepsize=stepsize))
 
     return y
