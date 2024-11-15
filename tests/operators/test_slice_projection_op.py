@@ -201,11 +201,14 @@ def test_slice_projection_op_backward_is_adjoint(optimize_for, dtype, direction)
     torch.testing.assert_close(dotproduct_range, dotproduct_domain)
 
 
+# Sparse tensors do currently not work with torch.func. See https://github.com/pytorch/pytorch/issues/136357
 def test_slice_projection_op_grad():
     """Test gradient of slice projection operator."""
-    gradient_of_linear_operator_test(*create_slice_projection_op_and_domain_range('both', 'complex64'))
+    with pytest.raises(RuntimeError, match='Sparse CSR tensors'):
+        gradient_of_linear_operator_test(*create_slice_projection_op_and_domain_range('both', 'complex64'))
 
 
 def test_slice_projection_op_forward_mode_autodiff():
     """Test forward-mode autodiff of slice projection operator."""
-    forward_mode_autodiff_of_linear_operator_test(*create_slice_projection_op_and_domain_range('both', 'complex64'))
+    with pytest.raises(RuntimeError, match='Sparse CSR tensors'):
+        forward_mode_autodiff_of_linear_operator_test(*create_slice_projection_op_and_domain_range('both', 'complex64'))
