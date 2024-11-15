@@ -15,7 +15,7 @@ def test_fill_range(dtype):
 
 
 def test_fill_range_dim_out_of_range():
-    """Test arange_ with a dimension out of fill_range_."""
+    """Test fill_range_ with a dimension out of range."""
     tensor = torch.zeros(3, 4)
     with pytest.raises(IndexError, match='Dimension 2 is out of range'):
         fill_range_(tensor, dim=2)
