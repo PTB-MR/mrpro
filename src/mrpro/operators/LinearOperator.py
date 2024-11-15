@@ -416,8 +416,3 @@ class AdjointLinearOperator(LinearOperator):
     def H(self) -> LinearOperator:  # noqa: N802
         """Adjoint of adjoint operator, i.e. original LinearOperator."""
         return self.operator
-
-    @property
-    def gram(self) -> LinearOperator:
-        """Gram operator."""
-        return self._operator.gram.H
