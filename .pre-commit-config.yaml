@@ -58,7 +58,7 @@ repos:
     # cleans the .ipynbs (removes outputs, resets all cell-ids to 0..N, cleans steps)
     # also clean any kernel information left after execution
     - id: nbstripout
-      args: [--extra-keys, metadata.kernelspec]
+      args: [--extra-keys, "metadata.kernelspec metadata.language_info"]
       files: examples\/.*\.ipynb
 
   - repo: https://github.com/mwouts/jupytext
