@@ -293,7 +293,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             for k2 in range(self.data.shape[-3]):
                 for k1 in range(self.data.shape[-2]):
                     acq.clear_all_flags()
-                    acq = self.header.acq_info.add_to_ismrmrd_acquisition(acq, other, k2, k1)
+                    acq = self.header.acq_info.add_to_ismrmrd_acquisition(acq, (*other, k2, k1))
 
                     # Rearrange, switch from zyx to xyz and set trajectory.
                     acq.traj[:] = rearrange(trajectory[:, *other, k2, k1, :].numpy(), 'dim k0->k0 dim')[:, ::-1]
