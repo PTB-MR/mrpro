@@ -51,7 +51,7 @@ def test_fast_fourier_op_forward(npoints, a):
     torch.testing.assert_close(igauss_fwd, kgauss)
 
 
-@pytest.mark.parametrize(
+MATRIX_PARAMETERS = pytest.mark.parametrize(
     ('encoding_matrix', 'recon_matrix'),
     [
         ((101, 201, 50), (13, 221, 64)),
@@ -60,9 +60,26 @@ def test_fast_fourier_op_forward(npoints, a):
         ((100, 200, 50), (13, 221, 64)),
     ],
 )
+
+
+@MATRIX_PARAMETERS
 def test_fast_fourier_op_adjoint(encoding_matrix, recon_matrix):
     """Test adjointness of Fast Fourier Op."""
     dotproduct_adjointness_test(*create_fast_fourier_op_and_range_domain(recon_matrix, encoding_matrix))
+
+
+@MATRIX_PARAMETERS
+def test_density_compensation_op_grad(encoding_matrix, recon_matrix):
+    """Test the gradient of the fast Fourier operator."""
+    gradient_of_linear_operator_test(*create_fast_fourier_op_and_range_domain(recon_matrix, encoding_matrix))
+
+
+@MATRIX_PARAMETERS
+def test_density_compensation_op_forward_mode_autodiff(encoding_matrix, recon_matrix):
+    """Test forward-mode autodiff of the fast Fourier operator."""
+    forward_mode_autodiff_of_linear_operator_test(
+        *create_fast_fourier_op_and_range_domain(recon_matrix, encoding_matrix)
+    )
 
 
 def test_fast_fourier_op_spatial_dim():
@@ -111,17 +128,3 @@ def test_invalid_dim():
 
     with pytest.raises(NotImplementedError, match='encoding_matrix'):
         FastFourierOp(recon_matrix=None, encoding_matrix=encoding_matrix, dim=(-4, -2, -1))
-
-
-def test_density_compensation_op_grad():
-    """Test the gradient of the fast Fourier operator."""
-    gradient_of_linear_operator_test(
-        *create_fast_fourier_op_and_range_domain(recon_matrix=(13, 221, 64), encoding_matrix=(101, 201, 50))
-    )
-
-
-def test_density_compensation_op_forward_mode_autodiff():
-    """Test forward-mode autodiff of the fast Fourier operator."""
-    forward_mode_autodiff_of_linear_operator_test(
-        *create_fast_fourier_op_and_range_domain(recon_matrix=(13, 221, 64), encoding_matrix=(101, 201, 50))
-    )

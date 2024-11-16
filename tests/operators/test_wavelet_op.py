@@ -115,8 +115,7 @@ def test_wavelet_op_complex_real_shape():
     assert wavelet_op.adjoint(coeff_complex)[0].shape == wavelet_op.adjoint(coeff_real)[0].shape
 
 
-@pytest.mark.parametrize('wavelet_name', ['haar', 'db4'])
-@pytest.mark.parametrize(
+SHAPE_PARAMETERS = pytest.mark.parametrize(
     ('im_shape', 'domain_shape', 'dim'),
     [
         ((1, 5, 20, 30), (30,), (-1,)),
@@ -131,6 +130,10 @@ def test_wavelet_op_complex_real_shape():
         ((5, 10, 20, 30), None, (-3, -2, -1)),
     ],
 )
+
+
+@pytest.mark.parametrize('wavelet_name', ['haar', 'db4'])
+@SHAPE_PARAMETERS
 def test_wavelet_op_isometry(im_shape, domain_shape, dim, wavelet_name):
     """Test that the wavelet operator is a linear isometry."""
     random_generator = RandomGenerator(seed=0)
@@ -140,40 +143,14 @@ def test_wavelet_op_isometry(im_shape, domain_shape, dim, wavelet_name):
 
 
 @pytest.mark.parametrize('wavelet_name', ['haar', 'db4'])
-@pytest.mark.parametrize(
-    ('im_shape', 'domain_shape', 'dim'),
-    [
-        ((1, 5, 20, 30), (30,), (-1,)),
-        ((5, 1, 10, 20, 30), (10,), (-3,)),
-        ((1, 5, 20, 30), (20, 30), (-2, -1)),
-        ((4, 10, 20, 30), (20, 30), (-2, -1)),
-        ((4, 10, 20, 30), (10, 30), (-3, -1)),
-        ((5, 10, 20, 30), (10, 20, 30), (-3, -2, -1)),
-        ((6, 10, 20, 30), (6, 20, 30), (-4, -2, -1)),
-        ((6, 10, 20, 30), (20, 30, 6), (-2, -1, -4)),
-        ((6, 10, 20, 30), (20, 30, 6), (2, 3, 0)),
-    ],
-)
+@SHAPE_PARAMETERS
 def test_wavelet_op_adjointness(im_shape, domain_shape, dim, wavelet_name):
     """Test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v."""
     dotproduct_adjointness_test(*create_wavelet_op_and_domain_range(im_shape, domain_shape, dim, wavelet_name))
 
 
 @pytest.mark.parametrize('wavelet_name', ['haar', 'db4'])
-@pytest.mark.parametrize(
-    ('im_shape', 'domain_shape', 'dim'),
-    [
-        ((1, 5, 20, 30), (30,), (-1,)),
-        ((5, 1, 10, 20, 30), (10,), (-3,)),
-        ((1, 5, 20, 30), (20, 30), (-2, -1)),
-        ((4, 10, 20, 30), (20, 30), (-2, -1)),
-        ((4, 10, 20, 30), (10, 30), (-3, -1)),
-        ((5, 10, 20, 30), (10, 20, 30), (-3, -2, -1)),
-        ((6, 10, 20, 30), (6, 20, 30), (-4, -2, -1)),
-        ((6, 10, 20, 30), (20, 30, 6), (-2, -1, -4)),
-        ((6, 10, 20, 30), (20, 30, 6), (2, 3, 0)),
-    ],
-)
+@SHAPE_PARAMETERS
 def test_wavelet_op_unitary(im_shape, domain_shape, dim, wavelet_name):
     """Test if wavelet operator is unitary."""
     random_generator = RandomGenerator(seed=0)
@@ -182,21 +159,17 @@ def test_wavelet_op_unitary(im_shape, domain_shape, dim, wavelet_name):
     linear_operator_unitary_test(wavelet_op, img)
 
 
-def test_wavelet_op_grad():
+@pytest.mark.parametrize('wavelet_name', ['haar', 'db4'])
+@SHAPE_PARAMETERS
+def test_wavelet_op_grad(im_shape, domain_shape, dim, wavelet_name):
     """Test gradient of wavelet operator."""
-    im_shape = (6, 10, 20, 30)
-    domain_shape = (6, 20, 30)
-    dim = (-4, -2, -1)
-    wavelet_name = 'db4'
     gradient_of_linear_operator_test(*create_wavelet_op_and_domain_range(im_shape, domain_shape, dim, wavelet_name))
 
 
-def test_wavelet_op_forward_mode_autodiff():
+@pytest.mark.parametrize('wavelet_name', ['haar', 'db4'])
+@SHAPE_PARAMETERS
+def test_wavelet_op_forward_mode_autodiff(im_shape, domain_shape, dim, wavelet_name):
     """Test forward-mode autodiff of wavelet operator."""
-    im_shape = (6, 10, 20, 30)
-    domain_shape = (6, 20, 30)
-    dim = (-4, -2, -1)
-    wavelet_name = 'db4'
     forward_mode_autodiff_of_linear_operator_test(
         *create_wavelet_op_and_domain_range(im_shape, domain_shape, dim, wavelet_name)
     )

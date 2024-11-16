@@ -39,7 +39,7 @@ def test_zero_pad_op_content():
     torch.testing.assert_close(original_data[:, 10:90, :, 50:150, :, :], padded_data[:, :, :, :, 95:145, :])
 
 
-@pytest.mark.parametrize(
+SHAPE_PARAMETERS = pytest.mark.parametrize(
     ('u_shape', 'v_shape'),
     [
         ((101, 201, 50), (13, 221, 64)),
@@ -48,16 +48,21 @@ def test_zero_pad_op_content():
         ((100, 200, 50), (13, 221, 64)),
     ],
 )
+
+
+@SHAPE_PARAMETERS
 def test_zero_pad_op_adjoint(u_shape, v_shape):
     """Test adjointness of pad operator."""
     dotproduct_adjointness_test(*create_zero_pad_op_and_domain_range(u_shape, v_shape))
 
 
-def test_zero_pad_op_grad():
+@SHAPE_PARAMETERS
+def test_zero_pad_op_grad(u_shape, v_shape):
     """Test gradient of zero padding operator."""
-    gradient_of_linear_operator_test(*create_zero_pad_op_and_domain_range((101, 201, 50), (13, 221, 64)))
+    gradient_of_linear_operator_test(*create_zero_pad_op_and_domain_range(u_shape, v_shape))
 
 
-def test_zero_pad_op_forward_mode_autodiff():
+@SHAPE_PARAMETERS
+def test_zero_pad_op_forward_mode_autodiff(u_shape, v_shape):
     """Test forward-mode autodiff of zero padding operator."""
-    forward_mode_autodiff_of_linear_operator_test(*create_zero_pad_op_and_domain_range((101, 201, 50), (13, 221, 64)))
+    forward_mode_autodiff_of_linear_operator_test(*create_zero_pad_op_and_domain_range(u_shape, v_shape))

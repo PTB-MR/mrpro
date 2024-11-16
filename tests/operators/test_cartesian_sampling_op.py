@@ -117,7 +117,7 @@ def create_cart_sampling_op_and_range_domain(sampling):
     return sampling_op, u, v
 
 
-@pytest.mark.parametrize(
+SAMPLING_PARAMETERS = pytest.mark.parametrize(
     'sampling',
     [
         'random',
@@ -131,19 +131,24 @@ def create_cart_sampling_op_and_range_domain(sampling):
         'kx_ky_along_k0_undersampling',
     ],
 )
+
+
+@SAMPLING_PARAMETERS
 def test_cart_sampling_op_fwd_adj(sampling):
     """Test adjoint property of the Cartesian sampling operator."""
     dotproduct_adjointness_test(*create_cart_sampling_op_and_range_domain(sampling))
 
 
-def test_cart_sampling_op_grad():
+@SAMPLING_PARAMETERS
+def test_cart_sampling_op_grad(sampling):
     """Test the gradient of the Cartesian sampling operator."""
-    gradient_of_linear_operator_test(*create_cart_sampling_op_and_range_domain('random'))
+    gradient_of_linear_operator_test(*create_cart_sampling_op_and_range_domain(sampling))
 
 
-def test_cart_sampling_op_forward_mode_autodiff():
+@SAMPLING_PARAMETERS
+def test_cart_sampling_op_forward_mode_autodiff(sampling):
     """Test forward-mode autodiff of the Cartesian sampling operator."""
-    forward_mode_autodiff_of_linear_operator_test(*create_cart_sampling_op_and_range_domain('random'))
+    forward_mode_autodiff_of_linear_operator_test(*create_cart_sampling_op_and_range_domain(sampling))
 
 
 @pytest.mark.parametrize(

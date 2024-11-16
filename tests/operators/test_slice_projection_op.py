@@ -202,13 +202,17 @@ def test_slice_projection_op_backward_is_adjoint(optimize_for, dtype, direction)
 
 
 # Sparse tensors do currently not work with torch.func. See https://github.com/pytorch/pytorch/issues/136357
-def test_slice_projection_op_grad():
+@pytest.mark.parametrize('dtype', ['complex64', 'float64', 'float32'])
+@pytest.mark.parametrize('optimize_for', ['forward', 'adjoint', 'both'])
+def test_slice_projection_op_grad(optimize_for, dtype):
     """Test gradient of slice projection operator."""
     with pytest.raises(RuntimeError, match='Sparse CSR tensors'):
-        gradient_of_linear_operator_test(*create_slice_projection_op_and_domain_range('both', 'complex64'))
+        gradient_of_linear_operator_test(*create_slice_projection_op_and_domain_range(optimize_for, dtype))
 
 
-def test_slice_projection_op_forward_mode_autodiff():
+@pytest.mark.parametrize('dtype', ['complex64', 'float64', 'float32'])
+@pytest.mark.parametrize('optimize_for', ['forward', 'adjoint', 'both'])
+def test_slice_projection_op_forward_mode_autodiff(optimize_for, dtype):
     """Test forward-mode autodiff of slice projection operator."""
     with pytest.raises(RuntimeError, match='Sparse CSR tensors'):
-        forward_mode_autodiff_of_linear_operator_test(*create_slice_projection_op_and_domain_range('both', 'complex64'))
+        forward_mode_autodiff_of_linear_operator_test(*create_slice_projection_op_and_domain_range(optimize_for, dtype))

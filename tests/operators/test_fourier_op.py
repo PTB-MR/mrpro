@@ -57,27 +57,21 @@ def test_fourier_fwd_adj_property(
     )
 
 
-def test_fourier_op_grad():
+@COMMON_MR_TRAJECTORIES
+def test_fourier_op_grad(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2):
     """Test gradient of Fourier operator."""
-    im_shape = (2, 8, 64, 32, 48)
-    k_shape = (2, 8, 8, 64, 96)
-    nkx = (2, 1, 1, 96)
-    nky = (2, 8, 64, 1)
-    nkz = (2, 8, 64, 1)
     gradient_of_linear_operator_test(
-        *create_fourier_op_and_range_domain(im_shape, k_shape, nkx, nky, nkz, 'uniform', 'non-uniform', 'non-uniform')
+        *create_fourier_op_and_range_domain(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
     )
 
 
-def test_fourier_op_forward_mode_autodiff():
+@COMMON_MR_TRAJECTORIES
+def test_fourier_op_forward_mode_autodiff(
+    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
+):
     """Test forward-mode autodiff of Fourier operator."""
-    im_shape = (2, 8, 64, 32, 48)
-    k_shape = (2, 8, 8, 64, 96)
-    nkx = (2, 1, 1, 96)
-    nky = (2, 8, 64, 1)
-    nkz = (2, 8, 64, 1)
     forward_mode_autodiff_of_linear_operator_test(
-        *create_fourier_op_and_range_domain(im_shape, k_shape, nkx, nky, nkz, 'uniform', 'non-uniform', 'non-uniform')
+        *create_fourier_op_and_range_domain(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
     )
 
 

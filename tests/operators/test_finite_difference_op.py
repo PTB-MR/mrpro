@@ -52,13 +52,17 @@ def test_finite_difference_op_adjointness(dim, mode, pad_mode):
     dotproduct_adjointness_test(*create_finite_difference_op_and_range_domain(dim, mode, pad_mode))
 
 
-def test_finite_difference_op_grad():
+@pytest.mark.parametrize('pad_mode', ['zeros', 'circular'])
+@pytest.mark.parametrize('mode', ['central', 'forward', 'backward'])
+@pytest.mark.parametrize('dim', [(-1,), (-2, -1), (-3, -2, -1), (-4,), (1, 3)])
+def test_finite_difference_op_grad(dim, mode, pad_mode):
     """Test the gradient of finite difference operator."""
-    gradient_of_linear_operator_test(*create_finite_difference_op_and_range_domain((-3, -2, -1), 'central', 'circular'))
+    gradient_of_linear_operator_test(*create_finite_difference_op_and_range_domain(dim, mode, pad_mode))
 
 
-def test_finite_difference_op_forward_mode_autodiff():
+@pytest.mark.parametrize('pad_mode', ['zeros', 'circular'])
+@pytest.mark.parametrize('mode', ['central', 'forward', 'backward'])
+@pytest.mark.parametrize('dim', [(-1,), (-2, -1), (-3, -2, -1), (-4,), (1, 3)])
+def test_finite_difference_op_forward_mode_autodiff(dim, mode, pad_mode):
     """Test the forward-mode autodiff of the finite difference operator."""
-    forward_mode_autodiff_of_linear_operator_test(
-        *create_finite_difference_op_and_range_domain((-3, -2, -1), 'central', 'circular')
-    )
+    forward_mode_autodiff_of_linear_operator_test(*create_finite_difference_op_and_range_domain(dim, mode, pad_mode))
