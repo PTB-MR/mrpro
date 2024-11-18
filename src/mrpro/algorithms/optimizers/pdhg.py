@@ -143,7 +143,7 @@ def pdhg(
         dual_stepsize_ = dual_stepsize
 
     primals_relaxed = initial_values if initial_relaxed is None else initial_relaxed
-    duals = (0 * operator_matrix)(initial_values) if initial_duals is None else initial_duals
+    duals = (0 * operator_matrix)(*initial_values) if initial_duals is None else initial_duals
 
     if len(duals) != rows:
         raise ValueError('if dual y is supplied, it should be a tuple of same length as the tuple of g')
