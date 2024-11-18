@@ -415,4 +415,4 @@ class AdjointLinearOperator(LinearOperator):
     @property
     def H(self) -> LinearOperator:  # noqa: N802
         """Adjoint of adjoint operator, i.e. original LinearOperator."""
-        return self.operator
+        return self._operator
