@@ -107,16 +107,14 @@ def pdhg(
         else:
             operator_matrix = operator
         rows, cols = operator_matrix.shape
-        if f is not None and len(f) != rows:
-            raise ValueError('Number of rows in operator does not match number of functionals in f')
-        if g is not None and len(g) != cols:
-            raise ValueError('Number of columns in operator does not match number of functionals in g')
 
     if f is None:
         # We always use a separable sum for homogeneous handling, even if it is just a ZeroFunctional
         f_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * rows)
     elif isinstance(f, ProximableFunctional):
         f_sum = ProximableFunctionalSeparableSum(f)
+        if len(f) != rows:
+            raise ValueError('Number of rows in operator does not match number of functionals in f')
     else:
         f_sum = f
 
@@ -125,6 +123,8 @@ def pdhg(
         g_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * cols)
     elif isinstance(g, ProximableFunctional):
         g_sum = ProximableFunctionalSeparableSum(g)
+        if len(g) != cols:
+            raise ValueError('Number of columns in operator does not match number of functionals in g')
     else:
         g_sum = g
 
