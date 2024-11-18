@@ -139,8 +139,8 @@ def pdhg(
         f_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_rows)
     elif isinstance(f, ProximableFunctional):
         f_sum = ProximableFunctionalSeparableSum(f)
-        if len(f) != rows:
-            raise ValueError('Number of rows in operator does not match number of functionals in f')
+    elif len(f) != rows:
+        raise ValueError('Number of rows in operator does not match number of functionals in f')
     else:
         f_sum = f
 
@@ -151,8 +151,8 @@ def pdhg(
         g_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_columns)
     elif isinstance(g, ProximableFunctional):
         g_sum = ProximableFunctionalSeparableSum(g)
-        if len(g) != cols:
-            raise ValueError('Number of columns in operator does not match number of functionals in g')
+    elif len(g) != cols:
+        raise ValueError('Number of columns in operator does not match number of functionals in g')
     else:
         g_sum = g
 
