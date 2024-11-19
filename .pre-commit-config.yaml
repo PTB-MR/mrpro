@@ -70,7 +70,6 @@ repos:
      - id: jupytext
        name: convert .py to .ipynb
        args: [--to, ipynb, --update]
-       verbose: true
        files: '^examples/(.*\.py)$'
   - repo: https://github.com/mwouts/jupytext
     rev: v1.16.4
