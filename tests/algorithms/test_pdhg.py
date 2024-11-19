@@ -18,7 +18,7 @@ def test_l2_l1_identification1():
     """
     random_generator = RandomGenerator(seed=0)
 
-    data_shape = (160, 160)
+    data_shape = (32, 32)
     data = random_generator.float32_tensor(size=data_shape)
 
     regularization_parameter = 0.1
@@ -28,7 +28,7 @@ def test_l2_l1_identification1():
 
     f = l2
     g = l1
-    operator = IdentityOp()
+    operator = None  # corresponds to IdentityOp()
 
     initial_values = (random_generator.float32_tensor(size=data_shape),)
     expected = torch.nn.functional.softshrink(data, regularization_parameter)
@@ -58,13 +58,15 @@ def test_l2_l1_identification2():
     l1 = regularization_parameter * L1Norm(divide_by_n=False)
 
     f = ProximableFunctionalSeparableSum(l2, l1)
-    g = ZeroFunctional()
+    g = None  # corresponds to ZeroFunctional()
     operator = LinearOperatorMatrix(((IdentityOp(),), (IdentityOp(),)))
 
     initial_values = (random_generator.float32_tensor(size=data_shape),)
+
+    # solution given by soft thresholding
     expected = torch.nn.functional.softshrink(data, regularization_parameter)
 
-    n_iterations = 64
+    n_iterations = 128
     (pdhg_solution,) = pdhg(f=f, g=g, operator=operator, initial_values=initial_values, n_iterations=n_iterations)
     torch.testing.assert_close(pdhg_solution, expected, rtol=5e-4, atol=5e-4)
 
@@ -93,6 +95,8 @@ def test_fourier_l2_l1_():
     operator = LinearOperatorMatrix(((fourier_op,), (IdentityOp(),)))
 
     initial_values = (random_generator.complex64_tensor(size=image_shape),)
+
+    # solution given by soft thresholding
     expected = torch.view_as_complex(
         torch.nn.functional.softshrink(torch.view_as_real(fourier_op.H(data)[0]), regularization_parameter)
     )
@@ -105,7 +109,7 @@ def test_fourier_l2_l1_():
 def test_fourier_l2_wavelet_l1_():
     """Set up the problem min_x 1/2*|| Fx - y||_2^2 + lambda * || W x||_1,
     where F is the full FFT sampled on a Cartesian grid and W a wavelet transform.
-    Because both F and W are invertible, the problem has a closed-form solution
+    Because both F and W are invertible and preserve the norm, the problem has a closed-form solution
     obtainable by soft-thresholding.
     """
     random_generator = RandomGenerator(seed=0)
@@ -129,6 +133,8 @@ def test_fourier_l2_wavelet_l1_():
     operator = LinearOperatorMatrix(((fourier_op,), (wavelet_op,)))
 
     initial_values = (random_generator.complex64_tensor(size=image_shape),)
+
+    # solution given by soft thresholding
     expected = wavelet_op.H(
         torch.view_as_complex(
             torch.nn.functional.softshrink(
