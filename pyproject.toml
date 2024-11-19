@@ -177,6 +177,9 @@ inline-quotes = "single"
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
 
+[tool.ruff.lint.per-file-ignores]
+"examples/**.py" = ["ERA001"] # py:percent preamble handled as commented out code
+
 [tool.ruff.format]
 quote-style = "single"
 skip-magic-trailing-comma = false
