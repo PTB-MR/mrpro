@@ -26,10 +26,10 @@ repos:
       - id: typos
 
   - repo: https://github.com/fzimmermann89/check_all
-    rev: v1.0
+    rev: v1.1
     hooks:
       - id: check-init-all
-        args: [--double-quotes]
+        args: [--double-quotes, --fix]
         exclude: ^tests/
 
   - repo: https://github.com/pre-commit/mirrors-mypy
