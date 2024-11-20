@@ -52,7 +52,7 @@ Quantitative parameter maps can be obtained by creating a functional to be minim
 # Define signal model
 model = MagnitudeOp() @ InversionRecovery(ti=idata_multi_ti.header.ti)
 # Define loss function and combine with signal model
-mse = MSEDataDiscrepancy(idata_multi_ti.data.abs())
+mse = MSE(idata_multi_ti.data.abs())
 functional = mse @ model
 [...]
 # Run optimization

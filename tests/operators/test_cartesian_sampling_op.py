@@ -5,10 +5,10 @@ import torch
 from einops import rearrange
 from mrpro.data import KTrajectory, SpatialDimension
 from mrpro.operators import CartesianSamplingOp
+from typing_extensions import Unpack
 
-from tests import RandomGenerator
+from tests import RandomGenerator, dotproduct_adjointness_test
 from tests.conftest import create_traj
-from tests.helper import dotproduct_adjointness_test
 
 
 def test_cart_sampling_op_data_match():
@@ -51,33 +51,11 @@ def test_cart_sampling_op_data_match():
     torch.testing.assert_close(kdata[:, :, ::2, ::4, ::3], k_sub[:, :, ::2, ::4, ::3])
 
 
-@pytest.mark.parametrize(
-    'sampling',
-    [
-        'random',
-        'partial_echo',
-        'partial_fourier',
-        'regular_undersampling',
-        'random_undersampling',
-        'different_random_undersampling',
-        'cartesian_and_non_cartesian',
-        'kx_ky_along_k0',
-        'kx_ky_along_k0_undersampling',
-    ],
-)
-def test_cart_sampling_op_fwd_adj(sampling):
-    """Test adjoint property of Cartesian sampling operator."""
-
-    # Create 3D uniform trajectory
-    k_shape = (2, 5, 20, 40, 60)
-    nkx = (2, 1, 1, 60)
-    nky = (2, 1, 40, 1)
-    nkz = (2, 20, 1, 1)
-    type_kx = 'uniform'
-    type_ky = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
-    type_kz = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
-    trajectory_tensor = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz).as_tensor()
-
+def subsample_traj(
+    trajectory: KTrajectory, sampling: str, k_shape: tuple[int, int, int, Unpack[tuple[int, ...]]]
+) -> KTrajectory:
+    """Subsample trajectory based on sampling type."""
+    trajectory_tensor = trajectory.as_tensor()
     # Subsample data and trajectory
     match sampling:
         case 'random':
@@ -109,6 +87,36 @@ def test_cart_sampling_op_fwd_adj(sampling):
             trajectory = KTrajectory.from_tensor(trajectory_tensor[..., random_idx[: trajectory_tensor.shape[-1] // 2]])
         case _:
             raise NotImplementedError(f'Test {sampling} not implemented.')
+    return trajectory
+
+
+@pytest.mark.parametrize(
+    'sampling',
+    [
+        'random',
+        'partial_echo',
+        'partial_fourier',
+        'regular_undersampling',
+        'random_undersampling',
+        'different_random_undersampling',
+        'cartesian_and_non_cartesian',
+        'kx_ky_along_k0',
+        'kx_ky_along_k0_undersampling',
+    ],
+)
+def test_cart_sampling_op_fwd_adj(sampling):
+    """Test adjoint property of Cartesian sampling operator."""
+
+    # Create 3D uniform trajectory
+    k_shape = (2, 5, 20, 40, 60)
+    nkx = (2, 1, 1, 60)
+    nky = (2, 1, 40, 1)
+    nkz = (2, 20, 1, 1)
+    type_kx = 'uniform'
+    type_ky = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
+    type_kz = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
+    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    trajectory = subsample_traj(trajectory, sampling, k_shape)
 
     encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
@@ -118,6 +126,42 @@ def test_cart_sampling_op_fwd_adj(sampling):
     u = random_generator.complex64_tensor(size=k_shape)
     v = random_generator.complex64_tensor(size=k_shape[:2] + trajectory.as_tensor().shape[2:])
     dotproduct_adjointness_test(sampling_op, u, v)
+
+
+@pytest.mark.parametrize(
+    'sampling',
+    [
+        'random',
+        'partial_echo',
+        'partial_fourier',
+        'regular_undersampling',
+        'random_undersampling',
+        'different_random_undersampling',
+        'cartesian_and_non_cartesian',
+        'kx_ky_along_k0',
+        'kx_ky_along_k0_undersampling',
+    ],
+)
+def test_cart_sampling_op_gram(sampling):
+    """Test adjoint gram of Cartesian sampling operator."""
+
+    # Create 3D uniform trajectory
+    k_shape = (2, 5, 20, 40, 60)
+    nkx = (2, 1, 1, 60)
+    nky = (2, 1, 40, 1)
+    nkz = (2, 20, 1, 1)
+    type_kx = 'uniform'
+    type_ky = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
+    type_kz = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
+    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    trajectory = subsample_traj(trajectory, sampling, k_shape)
+
+    encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
+    u = RandomGenerator(seed=0).complex64_tensor(size=k_shape)
+    (expected,) = (sampling_op.H @ sampling_op)(u)
+    (actual,) = sampling_op.gram(u)
+    torch.testing.assert_close(actual, expected, rtol=1e-3, atol=1e-3)
 
 
 @pytest.mark.parametrize(('k2_min', 'k2_max'), [(-1, 21), (-21, 1)])

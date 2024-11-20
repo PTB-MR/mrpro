@@ -213,6 +213,16 @@ class CartesianSamplingOp(LinearOperator):
 
         return data_scattered
 
+    @property
+    def gram(self) -> 'CartesianSamplingGramOp':
+        """Return the Gram operator for this Cartesian Sampling Operator.
+
+        Returns
+        -------
+            Gram operator for this Cartesian Sampling Operator
+        """
+        return CartesianSamplingGramOp(self)
+      
     def __repr__(self):
         """Representation method for CartesianSamplingOperator."""
         out = (
@@ -221,3 +231,59 @@ class CartesianSamplingOp(LinearOperator):
             f'Inside encoding matrix index: {self._inside_encoding_matrix_idx}'
         )
         return out
+
+
+class CartesianSamplingGramOp(LinearOperator):
+    """Gram operator for Cartesian Sampling Operator.
+
+    The Gram operator is the composition CartesianSamplingOp.H @ CartesianSamplingOp.
+    """
+
+    def __init__(self, sampling_op: CartesianSamplingOp):
+        """Initialize Cartesian Sampling Gram Operator class.
+
+        This should not be used directly, but rather through the `gram` method of a
+        :class:`mrpro.operator.CartesianSamplingOp` object.
+
+        Parameters
+        ----------
+        sampling_op
+            The Cartesian Sampling Operator for which to create the Gram operator.
+        """
+        super().__init__()
+        if sampling_op._needs_indexing:
+            ones = torch.ones(*sampling_op._trajectory_shape[:-3], 1, *sampling_op._sorted_grid_shape.zyx)
+            (mask,) = sampling_op.adjoint(*sampling_op.forward(ones))
+            self.register_buffer('_mask', mask)
+        else:
+            self._mask: torch.Tensor | None = None
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply the Gram operator.
+
+        Parameters
+        ----------
+        x
+            Input data
+
+        Returns
+        -------
+            Output data
+        """
+        if self._mask is None:
+            return (x,)
+        return (x * self._mask,)
+
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply the adjoint of the Gram operator.
+
+        Parameters
+        ----------
+        y
+            Input data
+
+        Returns
+        -------
+            Output data
+        """
+        return self.forward(y)
