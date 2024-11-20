@@ -23,8 +23,7 @@ jobs:
 
       - id: set-matrix
         run: |
-          cd ./examples/
-          ls
+          cd ./examples/notebooks
           echo "notebooks=$(ls *.ipynb | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
       - name: Notebook overview
@@ -63,7 +62,7 @@ jobs:
         env:
           RUNNER: ${{ toJson(runner) }}
         with:
-          notebook: ./examples/${{ matrix.notebook }}
+          notebook: ./examples/notebooks/${{ matrix.notebook }}
 
       - name: Get artifact names
         id: artifact_names
