@@ -142,16 +142,13 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[*Tin]]):
         return
 
     def forward(self, input_signal: torch.Tensor) -> tuple[Unpack[Tin]]:
-        reshape = rearrange(input_signal, 'other 1 z y x->(z y x) other')
-        similar = einops.einsum(reshape, self.y, 'k t, t idx -> k idx')
-        idx = torch.argmax(torch.abs(similar), dim=1)
-        n_y, n_x = input_signal.shape[-2:]
-        t1_start = rearrange(self.x[idx], '(y x)->1 1 y x', y=n_y, x=n_x)
-        return t1_start
+        similar = einops.einsum(input_signal, self.y, 't ..., t idx -> idx ...')
+        idx = torch.argmax(torch.abs(similar), dim=0)
+        t1_start_neu = self.x[idx]
+        return t1_start_neu
 
 
 dict_match_op = DictionaryMatchOp(model)
 dictionary = dict_match_op.append(torch.ones(1), t1_dictionary)
-t1_map = dict_match_op.forward(idata_multi_ti.data)
-
-print(torch.equal(t1_map, t1_start))
+t1_start_neu = dict_match_op.forward(idata_multi_ti.data)
+(t1_start == t1_start_neu).all()
