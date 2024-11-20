@@ -4,7 +4,6 @@ import dataclasses
 import datetime
 import warnings
 from collections.abc import Callable, Sequence
-from itertools import product
 from pathlib import Path
 from types import EllipsisType
 
@@ -280,26 +279,27 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         header.acquisitionSystemInformation.receiverChannels = self.data.shape[-4]
         dataset.write_xml_header(header.toXML('utf-8'))
 
-        trajectory = self.traj.as_tensor()
-        trajectory = torch.stack(
-            [torch.broadcast_to(trajectory[i, ...], self.data[..., 0, :, :, :].shape) for i in range(3)]
-        )
+        trajectory = self.traj.as_tensor(-1)
+        trajectory_shape = (*self.data[..., 0, :, :, :].shape, 3)  # no coils, 3d
+        trajectory = torch.broadcast_to(trajectory, trajectory_shape)
 
         # Go through data and save acquisitions
         acq_shape = [self.data.shape[-1], self.data.shape[-4]]
         acq = ismrmrd.Acquisition()
         acq.resize(*acq_shape, trajectory_dimensions=3)
-        for other in product(*[range(shape) for shape in self.data.shape[:-4]]):
+
+        for other in np.ndindex(self.data.shape[:-4]):
             for k2 in range(self.data.shape[-3]):
                 for k1 in range(self.data.shape[-2]):
                     acq.clear_all_flags()
-                    acq = self.header.acq_info.add_to_ismrmrd_acquisition(acq, (*other, k2, k1))
+                    self.header.acq_info.write_to_ismrmrd_acquisition(acq, (*other, k2, k1))
 
                     # Rearrange, switch from zyx to xyz and set trajectory.
-                    acq.traj[:] = rearrange(trajectory[:, *other, k2, k1, :].numpy(), 'dim k0->k0 dim')[:, ::-1]
+                    acq.traj[:] = trajectory[(*other, k2, k1)].numpy()[:, ::-1]  # zyx -> xyz
 
                     # Set the data and append
-                    acq.data[:] = self.data[*other, :, k2, k1, :].numpy()
+                    idx = other + (slice(None),) + (k2, k1)  # python 3.10 and mypy #noqa: RUF005
+                    acq.data[:] = self.data[idx].numpy()
                     dataset.append_acquisition(acq)
 
         dataset.close()

@@ -12,6 +12,7 @@ from typing_extensions import Self
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
+from mrpro.utils.typing import TorchIndexerType
 from mrpro.utils.unit_conversion import m_to_mm, mm_to_m
 
 
@@ -259,48 +260,50 @@ class AcqInfo(MoveDataMixin):
         )
         return acq_info
 
-    def add_to_ismrmrd_acquisition(self, acquisition: ismrmrd.Acquisition, idx: Sequence[int]) -> ismrmrd.Acquisition:
-        """ISMRMRD acquisition information for single acquisition."""
-        acquisition.idx.kspace_encode_step_1 = self.idx.k1[*idx]
-        acquisition.idx.kspace_encode_step_2 = self.idx.k2[*idx]
-        acquisition.idx.average = self.idx.average[*idx]
-        acquisition.idx.slice = self.idx.slice[*idx]
-        acquisition.idx.contrast = self.idx.contrast[*idx]
-        acquisition.idx.phase = self.idx.phase[*idx]
-        acquisition.idx.repetition = self.idx.repetition[*idx]
-        acquisition.idx.set = self.idx.set[*idx]
-        acquisition.idx.segment = self.idx.segment[*idx]
+    def write_to_ismrmrd_acquisition(
+        self, acquisition: ismrmrd.Acquisition, idx: TorchIndexerType
+    ) -> ismrmrd.Acquisition:
+        """Overwrite ISMRMRD acquisition information for single acquisition."""
+        acquisition.idx.kspace_encode_step_1 = self.idx.k1[idx]
+        acquisition.idx.kspace_encode_step_2 = self.idx.k2[idx]
+        acquisition.idx.average = self.idx.average[idx]
+        acquisition.idx.slice = self.idx.slice[idx]
+        acquisition.idx.contrast = self.idx.contrast[idx]
+        acquisition.idx.phase = self.idx.phase[idx]
+        acquisition.idx.repetition = self.idx.repetition[idx]
+        acquisition.idx.set = self.idx.set[idx]
+        acquisition.idx.segment = self.idx.segment[idx]
         acquisition.idx.user = (
-            self.idx.user0[*idx],
-            self.idx.user1[*idx],
-            self.idx.user2[*idx],
-            self.idx.user3[*idx],
-            self.idx.user4[*idx],
-            self.idx.user5[*idx],
-            self.idx.user6[*idx],
-            self.idx.user7[*idx],
+            self.idx.user0[idx],
+            self.idx.user1[idx],
+            self.idx.user2[idx],
+            self.idx.user3[idx],
+            self.idx.user4[idx],
+            self.idx.user5[idx],
+            self.idx.user6[idx],
+            self.idx.user7[idx],
         )
 
         # active_channesl, number_of_samples and trajectory_dimensions are read-only and cannot be set
-        acquisition.acquisition_time_stamp = self.acquisition_time_stamp[*idx][0]
-        acquisition.available_channels = self.available_channels[*idx][0]
-        acquisition.center_sample = self.center_sample[*idx][0]
-        acquisition.channel_mask = tuple(self.channel_mask[*idx])
-        acquisition.discard_post = self.discard_post[*idx][0]
-        acquisition.discard_pre = self.discard_pre[*idx][0]
-        acquisition.encoding_space_ref = self.encoding_space_ref[*idx][0]
-        acquisition.measurement_uid = self.measurement_uid[*idx][0]
-        acquisition.patient_table_position = (
-            self.patient_table_position[*idx][0].apply_(m_to_mm).zyx[::-1]
-        )  # zyx -> xyz
-        acquisition.phase_dir = self.orientation.as_directions()[-2][*idx][0].zyx[::-1]  # zyx -> xyz
-        acquisition.physiology_time_stamp = tuple(self.physiology_time_stamp[*idx])
-        acquisition.position = self.position[*idx][0].apply_(m_to_mm).zyx[::-1]  # zyx -> xyz
-        acquisition.read_dir = self.orientation.as_directions()[-1][*idx][0].zyx[::-1]  # zyx -> xyz
-        acquisition.sample_time_us = self.sample_time_us[*idx][0]
-        acquisition.scan_counter = self.scan_counter[*idx][0]
-        acquisition.slice_dir = self.orientation.as_directions()[-3][*idx][0].zyx[::-1]  # zyx -> xyz
-        acquisition.user_float = tuple(self.user_float[*idx])
-        acquisition.user_int = tuple(self.user_int[*idx])
-        acquisition.version = self.version[*idx][0]
+        acquisition.acquisition_time_stamp = self.acquisition_time_stamp[idx].squeeze(-1)
+        acquisition.available_channels = self.available_channels[idx].squeeze(-1)
+        acquisition.center_sample = self.center_sample[idx].squeeze(-1)
+        acquisition.channel_mask = tuple(self.channel_mask[idx])
+        acquisition.discard_post = self.discard_post[idx].squeeze(-1)
+        acquisition.discard_pre = self.discard_pre[idx].squeeze(-1)
+        acquisition.encoding_space_ref = self.encoding_space_ref[idx].squeeze(-1)
+        acquisition.measurement_uid = self.measurement_uid[idx].squeeze(-1)
+        acquisition.patient_table_position = self.patient_table_position[idx][0].apply(m_to_mm).zyx[::-1]  # zyx -> xyz
+        directions = self.orientation[idx][0].as_directions()
+        acquisition.slice_dir = directions[0].zyx[::-1]  # zyx -> xyz
+        acquisition.phase_dir = directions[1].zyx[::-1]
+        acquisition.read_dir = directions[2].zyx[::-1]
+
+        acquisition.physiology_time_stamp = tuple(self.physiology_time_stamp[idx])
+        acquisition.position = self.position[idx][0].apply(m_to_mm).zyx[::-1]
+        acquisition.sample_time_us = self.sample_time_us[idx].squeeze(-1)
+        acquisition.scan_counter = self.scan_counter[idx].squeeze(-1)
+        acquisition.user_float = tuple(self.user_float[idx])
+        acquisition.user_int = tuple(self.user_int[idx])
+        acquisition.version = self.version[idx].squeeze(-1)
         return acquisition
