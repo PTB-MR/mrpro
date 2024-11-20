@@ -70,7 +70,7 @@ def pdhg(
     that if no stepsizes are provided, the algorithm runs a power iteration to obtain the
     upper bound of the stepsizes.
 
-    For a warm start, the intial relaxed primal and dual variables can be supplied.
+    For a warm start, the initial relaxed primal and dual variables can be supplied.
     These might be obtained from the status object of a previous run.
 
     Parameters
