@@ -60,7 +60,7 @@ repos:
     - id: nbstripout
       name: clean .ipynb output
       args: [--extra-keys, "metadata.language_info"]
-      files: examples\/.*\.ipynb
+      files: examples/notebooks
 
   - repo: https://github.com/mwouts/jupytext
     rev: v1.16.4
@@ -72,8 +72,8 @@ repos:
          - --update-metadata
          - '{"kernelspec": {"display_name": "Python 3 (ipykernel)","language": "python","name": "python3"}}'
          - --set-formats
-         - ipynb,py:percent
-       files: '^examples/(.*\.ipynb|.*\.py)$'
+         - examples/notebooks//ipynb,examples/scripts//py:percent
+       files: '^examples/notebooks/.*\.ipynb$'
 ci:
   autofix_commit_msg: |
     [pre-commit] auto fixes from pre-commit hooks

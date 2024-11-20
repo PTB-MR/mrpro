@@ -2,7 +2,7 @@
 # jupyter:
 #   jupytext:
 #     cell_metadata_filter: -all
-#     formats: ipynb,py:percent
+#     formats: examples/notebooks//ipynb,examples/scripts//py:percent
 #     text_representation:
 #       extension: .py
 #       format_name: percent
