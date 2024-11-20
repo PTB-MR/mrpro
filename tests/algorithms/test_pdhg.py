@@ -161,7 +161,7 @@ def test_f_and_g_None():
 
     initial_values = (random_generator.complex64_tensor(size=data_shape),)
 
-    with pytest.raises(Warning, match='constant'):
+    with pytest.warns(UserWarning, match='constant'):
         (pdhg_solution,) = pdhg(f=f, g=g, operator=operator, initial_values=initial_values, max_iterations=1)
     assert (pdhg_solution == initial_values[0]).all()
 
