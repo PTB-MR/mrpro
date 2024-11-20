@@ -31,10 +31,10 @@ class PDHGStatus(OptimizerStatus):
     relaxed: Sequence[torch.Tensor]
 
 
+def _norm_squared(*values: torch.Tensor) -> torch.Tensor:
+    """Calculate the squared L2 norm of the stack of tensors."""
+    return sum([torch.vdot(value.flatten(), value.flatten()).real for value in values], start=torch.tensor(0.0))
 
-def _norm_squared(*values:torch.Tensor) -> torch.Tensor:
-    """Calculate the squared L2 norm of the stack of tensors""" 
-    return sum(torch.vdot(value.flatten(), value.flatten()).real for value in values, start=torch.tensor(0.))
 
 def pdhg(
     f: ProximableFunctionalSeparableSum | ProximableFunctional | None,
@@ -42,7 +42,7 @@ def pdhg(
     operator: LinearOperator | LinearOperatorMatrix | None,
     initial_values: Sequence[torch.Tensor],
     max_iterations: int = 32,
-    tolerance: float = 1e-6,
+    tolerance: float = 0,
     primal_stepsize: float | None = None,
     dual_stepsize: float | None = None,
     relaxation: float = 1.0,
@@ -121,24 +121,26 @@ def pdhg(
             operator_matrix = operator
         n_rows, n_columns = operator_matrix.shape
 
-    if f is None: 
-        # We always use a separable sum for homogeneous handling, even if it is just a ZeroFunctional
+    # We always use a separable sum for homogeneous handling, even if it is just a ZeroFunctional
+    if f is None:
         f_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_rows)
     elif isinstance(f, ProximableFunctional):
         f_sum = ProximableFunctionalSeparableSum(f)
-    elif len(f) != rows:
-        raise ValueError('Number of rows in operator does not match number of functionals in f')
     else:
         f_sum = f
 
     if g is None:
-        g_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_cols)
+        g_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_columns)
     elif isinstance(g, ProximableFunctional):
         g_sum = ProximableFunctionalSeparableSum(g)
-    elif len(g) != cols:
-        raise ValueError('Number of columns in operator does not match number of functionals in g')
     else:
         g_sum = g
+
+    if len(f_sum) != n_rows:
+        raise ValueError('Number of rows in operator does not match number of functionals in f')
+
+    if len(g) != n_columns:
+        raise ValueError('Number of columns in operator does not match number of functionals in g')
 
     if primal_stepsize is None or dual_stepsize is None:
         # choose primal and dual step size such that their product is 1/|operator|**2
@@ -179,13 +181,13 @@ def pdhg(
 
         # check if the solution is already accurate enough
         if tolerance != 0:
-            change_squared = _norm_squared(*[(primal - primal_new) for primal, primal_new in zip(primals, primals_new, strict=True)])
-            primals_squared = _norm_squared(*primals)]
-
-            if change_squared / primals_squared < tolerance**2:
-                return tuple(primals)
+            change_squared = _norm_squared(*[(old - new) for old, new in zip(primals, primals_new, strict=True)])
+            primals_new_squared = _norm_squared(*primals_new)
+            if change_squared < tolerance**2 * primals_new_squared:
+                return tuple(primals_new)
 
         primals = primals_new
+
         if callback is not None:
             status = PDHGStatus(
                 iteration_number=i,
