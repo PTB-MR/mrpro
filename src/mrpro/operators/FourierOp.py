@@ -126,7 +126,7 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             self._fwd_nufft_op = None
             self._adj_nufft_op = None
         self._kshape = traj.broadcasted_shape
-        self._traj = traj
+        self._traj_out = repr(traj)
 
     @classmethod
     def from_kdata(cls, kdata: KData, recon_shape: SpatialDimension[int] | None = None) -> Self:
@@ -225,30 +225,33 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             x = x.permute(*unpermute)
 
         return (x,)
-      
+
     @property
     def gram(self) -> LinearOperator:
         """Return the gram operator."""
         return FourierGramOp(self)
-      
-    def __repr__(self):
+
+    def __repr__(self) -> str:
         """Representation method for Fourier Operator."""
+        ignore = f'Dimension(s) which are ignored: {self._ignore_dims!s}\n'
+
+        string = ''
+        device_omega = None
+        device_cart = None
+
         if self._nufft_dims:
-            string = (
-                f'Dimension along which NUFFT is applied: {self._nufft_dims}\n'
-                f'Dimension which is ignored in NUFFT: {self._ignore_dims!s}\n'
-            )
-        else:
-            string = ''
+            string += f'Dimension(s) along which NUFFT is applied: {self._nufft_dims}\n{ignore}'
+            device_omega = self._omega.device if self._omega is not None else None
         if self._fft_dims:
-            string += (
-                f'{self._fast_fourier_op}\n'
-                f'Dimension which is ignored in FFT: {self._ignore_dims!s}\n'
-                f'{self._cart_sampling_op}\n'
-            )
-        device = str(self._traj.device)
-        traj = self._traj
-        out = f'{type(self).__name__} on device: {device}\n' f'{traj}\n' f'{string}'
+            string += f'{self._fast_fourier_op}\n{ignore}\n{self._cart_sampling_op}\n'
+            device_cart = self._cart_sampling_op._fft_idx.device if self._cart_sampling_op is not None else None
+
+        if device_omega and device_cart:
+            device = device_omega if device_omega == device_cart else 'Different devices'
+        else:
+            device = device_omega or device_cart or 'None'
+
+        out = f'{type(self).__name__} on device: {device}\n' f'{string}\n' f'{self._traj_out}'
         return out
 
 
