@@ -414,3 +414,7 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
             return self.x.shape
         else:
             raise ValueError('Inconsistent shapes')
+
+    def prod(self: SpatialDimension[T_co]) -> T_co:
+        """Calculate the product x*y*z."""
+        return self.x * self.y * self.z
