@@ -295,7 +295,7 @@ def test_pdhg_stopping_after_one_iteration():
 
     random_generator = RandomGenerator(seed=0)
 
-    data_shape = (4, 8, 8, 16, 16)
+    data_shape = (1, 2, 3)
     data = random_generator.float32_tensor(size=data_shape)
 
     regularization_parameter = 2.0
