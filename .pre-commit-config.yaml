@@ -73,7 +73,7 @@ repos:
          - '{"kernelspec": {"display_name": "Python 3 (ipykernel)","language": "python","name": "python3"}}'
          - --set-formats
          - examples/notebooks//ipynb,examples/scripts//py:percent
-       files: '^examples/notebooks/.*\.ipynb$'
+       files: '^examples/(notebooks/.*\.ipynb|scripts/.*\.py)$'
 ci:
   autofix_commit_msg: |
     [pre-commit] auto fixes from pre-commit hooks
