@@ -22,7 +22,7 @@ description = "MR image reconstruction and processing package specifically devel
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
 dynamic = ["version"]
-keywords = ["MRI, reconstruction, processing, PyTorch"]
+keywords = ["MRI", "reconstruction", "processing", "PyTorch"]
 authors = [
     { name = "MRpro Team", email = "info@emerpro.de" },
     { name = "Christoph Kolbitsch", email = "christoph.kolbitsch@ptb.de" },
