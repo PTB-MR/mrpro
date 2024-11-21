@@ -109,7 +109,7 @@ def pdhg(
     if operator is None:
         # Use identity operator if no operator is supplied
         n_rows = len(f) if isinstance(f, ProximableFunctionalSeparableSum) else 1
-        n_columns = len(f) if isinstance(g, ProximableFunctionalSeparableSum) else 1
+        n_columns = len(g) if isinstance(g, ProximableFunctionalSeparableSum) else 1
         if n_rows != n_columns:
             raise ValueError('If operator is None, the number of elements in f and g should be the same')
         operator_matrix = LinearOperatorMatrix.from_diagonal(*((IdentityOp(),) * n_rows))
@@ -129,6 +129,9 @@ def pdhg(
     else:
         f_sum = f
 
+    if len(f_sum) != n_rows:
+        raise ValueError('Number of rows in operator does not match number of functionals in f')
+
     if g is None:
         g_sum = ProximableFunctionalSeparableSum(*(ZeroFunctional(),) * n_columns)
     elif isinstance(g, ProximableFunctional):
@@ -136,10 +139,7 @@ def pdhg(
     else:
         g_sum = g
 
-    if len(f_sum) != n_rows:
-        raise ValueError('Number of rows in operator does not match number of functionals in f')
-
-    if len(g) != n_columns:
+    if len(g_sum) != n_columns:
         raise ValueError('Number of columns in operator does not match number of functionals in g')
 
     if primal_stepsize is None or dual_stepsize is None:
