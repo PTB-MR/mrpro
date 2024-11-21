@@ -177,5 +177,3 @@ ax[0, 1].imshow(img_iterative_sense.data.abs()[0, 0, 0, :, :], clim=clim)
 ax[0, 2].set_title('PDHG', fontsize=10)
 ax[0, 2].imshow(img_pdhg.abs()[0, 0, 0, :, :], clim=clim)
 plt.setp(ax, xticks=[], yticks=[])
-
-# %%
