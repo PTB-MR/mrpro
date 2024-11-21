@@ -17,16 +17,13 @@ jobs:
     steps:
       - name: Retrieve Docker Image Names
         id: set-matrix
-        env:
-          GH_TOKEN: ${{ secrets.GHCR_TOKEN }}
         run: |
-          imagenames=$(curl -s --request GET \
-          --url "https://api.github.com/orgs/PTB-MR/packages?package_type=container" \
-          --header "Authorization: Bearer $GH_TOKEN"  | jq -r '.[].name')
+          # search for Dockefile_* in the docker directory, replace "Dockerfile" prefix with "mrpro" and to imagenames
+          imagenames=$(find docker -type f -name 'Dockerfile*' -exec basename {} \; | sed 's/^Dockerfile/mrpro/')
           echo "image names: $imagenames"
 
           imagenames_latest=()
-          for image in $(echo $imagenames)
+          for image in $imagenames
           do
             echo "checking $image ..."
             if docker manifest inspect "ghcr.io/ptb-mr/"$image":latest" >/dev/null; then
