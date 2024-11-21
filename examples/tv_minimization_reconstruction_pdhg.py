@@ -94,7 +94,8 @@ kdata.header.recon_matrix.y = 256
 
 # %% [markdown]
 # ### Set up the operator$A$
-# Estimate coil sensitivity maps and density compensation function
+# Estimate coil sensitivity maps and density compensation function. Also run a direct (adjoint)
+# reconstruction and iterative SENSE as methods of comparison.
 
 # %%
 # Set up direct reconstruction class to estimate coil sensitivity maps, density compensation etc
@@ -127,6 +128,8 @@ acquisition_operator = fourier_operator @ csm_operator
 
 # %% [markdown]
 # ### Recast the problem for PDHG to be applicable
+
+# %%
 # Define the gradient operator
 from mrpro.operators import FiniteDifferenceOp
 
@@ -154,9 +157,11 @@ operator = LinearOperatorMatrix(((acquisition_operator,), (nabla_operator,)))
 # initialize PDHG with iterative SENSE solution for warm start
 initial_values = (img_iterative_sense.data,)
 
-# Run PDHG for a certain number of iterations
+# %%
+# ### Run PDHG for a certain number of iterations
 max_iterations = 32
 (img_pdhg,) = pdhg(f=f, g=g, operator=operator, initial_values=initial_values, max_iterations=max_iterations)
+
 
 # %%
 # ### Compare the results
