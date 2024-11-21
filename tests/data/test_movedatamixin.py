@@ -207,7 +207,7 @@ def test_movedatamixin_cuda(already_moved: bool, copy: bool):
     assert new.module.module1.weight is new.module.module1.weight, 'shared module parameters should remain shared'
 
 
-def test_movedatamixin_apply():
+def test_movedatamixin_apply_():
     """Tests apply_ method of MoveDataMixin."""
     data = B()
     # make one of the parameters shared to test memo behavior
@@ -223,3 +223,24 @@ def test_movedatamixin_apply():
     torch.testing.assert_close(data.floattensor, original.floattensor * 2)
     torch.testing.assert_close(data.child.floattensor2, original.child.floattensor2 * 2)
     assert data.child.floattensor is data.child.floattensor2, 'shared module parameters should remain shared'
+
+
+def test_movedatamixin_apply():
+    """Tests apply method of MoveDataMixin."""
+    data = B()
+    # make one of the parameters shared to test memo behavior
+    data.child.floattensor2 = data.child.floattensor
+    original = data.clone()
+
+    def multiply_by_2(obj):
+        if isinstance(obj, torch.Tensor):
+            return obj * 2
+        return obj
+
+    new = data.apply(multiply_by_2)
+    torch.testing.assert_close(data.floattensor, original.floattensor)
+    torch.testing.assert_close(data.child.floattensor2, original.child.floattensor2)
+    torch.testing.assert_close(new.floattensor, original.floattensor * 2)
+    torch.testing.assert_close(new.child.floattensor2, original.child.floattensor2 * 2)
+    assert data.child.floattensor is data.child.floattensor2, 'shared module parameters should remain shared'
+    assert new is not data, 'new object should be different from the original'
