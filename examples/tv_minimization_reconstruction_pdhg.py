@@ -157,7 +157,7 @@ operator = LinearOperatorMatrix(((acquisition_operator,), (nabla_operator,)))
 # initialize PDHG with iterative SENSE solution for warm start
 initial_values = (img_iterative_sense.data,)
 
-# %%
+# %% [markdown]
 # ### Run PDHG for a certain number of iterations
 max_iterations = 32
 (img_pdhg,) = pdhg(f=f, g=g, operator=operator, initial_values=initial_values, max_iterations=max_iterations)
