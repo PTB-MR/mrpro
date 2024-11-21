@@ -71,9 +71,7 @@ jobs:
 
       - id: set-matrix
         run: |
-          cd ./examples/
-          ls
-          echo "notebooks=$(ls *.ipynb | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+          echo "notebooks=$(find examples -type f -name '*.ipynb' | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
       - name: Notebook overview
         run: |
