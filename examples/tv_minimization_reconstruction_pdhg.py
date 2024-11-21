@@ -20,13 +20,13 @@ data_file.flush()
 # ### Image reconstruction
 # Here, we use the Primal Dual Hybrid Gradient (PDHG) algorithm to reconstruct images from 2D radial data.
 #
-# Let $y$ denote the k-space data of an image $x_{mathrm{true}}$ sampled with an acquisition model $A$
+# Let $y$ denote the k-space data of an image $x_{\mathrm{true}}$ sampled with an acquisition model $A$
 # (Fourier transform, # coil sensitivity maps, ...), i.e the forward problem is given as
 #
-# $ y = Ax_{mathrm{true}} + n $
+# $ y = Ax_{\mathrm{true}} + n $
 #
 # where $n$ describes complex Gaussian noise. When using TV-minimization as regularization method, an approximation of
-# $x_{mathrm{true}}$ is obtained by minimizing the following functional $\mathcal{F}$:
+# $x_{\mathrm{true}}$ is obtained by minimizing the following functional $\mathcal{F}$:
 #
 # $ \mathcal{F}(x) = \frac{1}{2}||Ax - y||_2^2 + \lambda \| \nabla x \|_1, \quad \quad \quad (1)$
 #
