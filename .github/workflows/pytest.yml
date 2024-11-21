@@ -25,6 +25,12 @@ jobs:
           imagenames=$(find docker -type f -name 'Dockerfile*' -exec basename {} \; | sed 's/^Dockerfile/mrpro/')
           echo "image names: $imagenames"
 
+          # if imagenames is empty - fail the workflow
+          if [ -z "$imagenames" ]; then
+            echo "No Dockerfiles found in the docker directory. Exiting..."
+            exit 1
+          fi
+
           imagenames_latest=()
           for image in $imagenames
           do
