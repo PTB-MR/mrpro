@@ -136,7 +136,7 @@ from mrpro.operators import FiniteDifferenceOp
 # The operator computes the directional derivatives along the penultimate and last dimensions (x,y)
 nabla_operator = FiniteDifferenceOp(dim=(-2, -1), mode='forward')
 
-# Set up the problem by using the previously described identification.
+# Set up the problem by using the previously described identification
 from mrpro.algorithms.optimizers import pdhg
 from mrpro.operators import LinearOperatorMatrix, ProximableFunctionalSeparableSum
 from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared, ZeroFunctional
