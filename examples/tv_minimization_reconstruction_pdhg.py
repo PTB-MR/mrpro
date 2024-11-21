@@ -45,8 +45,8 @@ data_file.flush()
 #
 # PDHG then, essentially consists of three steps, which read as
 #
-# $z_{k+1} = \mathrm{prox}_{\sigma f^{\ast}}(z_k + \sigma K \bar{x}_k)$ \
-# $x_{k+1} = \mathrm{prox}_{\tau g}(x_k - \tau K^H z_{k+1})$ \
+# $z_{k+1} = \mathrm{prox}_{\sigma f^{\ast}}(z_k + \sigma K \bar{x}_k)$ \n
+# $x_{k+1} = \mathrm{prox}_{\tau g}(x_k - \tau K^H z_{k+1})$ \n
 # $\bar{x}_{k+1} = x_{k+1} + \theta(x_{k+1} - x_k)$,
 #
 # where $\mathrm{prox}$ denotes the proximal operator and $f^{\ast}$ denotes the convex conjugate of the
@@ -58,8 +58,8 @@ data_file.flush()
 #
 # An possible and intuitive (but unfortunately not efficient) identification is the following
 #
-# $f(x) = \lambda \| x\|_1,$\
-# $g(x) = \frac{1}{2}||Ax  - y||_2^2,$\
+# $f(x) = \lambda \| x\|_1,$\n
+# $g(x) = \frac{1}{2}\|Ax  - y\|_2^2,$\n
 # $K(x) = \nabla x$,
 #
 # However, although $\mathrm{prox}_{\sigma f^\ast}$ has a simple form, some calculations show that
@@ -68,8 +68,8 @@ data_file.flush()
 #
 # Thus, another (less intuitive, but way more efficient) identification is the following:
 #
-# $f(z) = f(p,q) = f_1(p) + f_2(q) =  \frac{1}{2}||p  - y||_2^2 + \lambda \| q \|_1,$\
-# $K(x) = [A, \nabla]^T,$\
+# $f(z) = f(p,q) = f_1(p) + f_2(q) =  \frac{1}{2}\|p  - y\|_2^2 + \lambda \| q \|_1,$\n
+# $K(x) = [A, \nabla]^T,$\n
 # $g(x) = 0,$
 #
 # for which, one can show that both $\mathrm{prox}_{\sigma f^{\ast}}$ and $\mathrm{prox}_{\tau g}$ are
