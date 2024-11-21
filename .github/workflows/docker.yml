@@ -39,7 +39,7 @@ jobs:
         id: set-matrix
         if: steps.filter.outputs.docker_toml == 'true' || github.event_name == 'push'
         run: |
-          dockerfiles=$(find docker -type f -name 'Dockerfile* -exec basename {} \; | jq -R -s -c 'split("\n")[:-1]'')
+          dockerfiles=$(find docker -type f -name 'Dockerfile* -exec basename {} \; | jq -R -s -c 'split("\n")[:-1]')
           echo "dockerfiles: $dockerfiles"
           echo "dockerfiles=$dockerfiles" >> $GITHUB_OUTPUT
           imagenames=$(find docker -type f -name 'Dockerfile*' -exec basename {} \; | sed 's/^Dockerfile/ghcr.io\/ptb-mr\/mrpro/' | jq -R -s -c 'split("\n")[:-1]')
