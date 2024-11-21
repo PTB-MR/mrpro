@@ -1,6 +1,6 @@
 # %% [markdown]
 # # Total-Variation (TV)-minimization Reconstruction of 2D golden angle radial data
-# Here we use the PDHG algorithm to reconstruct images from ISMRMRD 2D radial data
+
 # %%
 # define zenodo URL of the example ismrmd data
 zenodo_url = 'https://zenodo.org/records/10854057/files/'
@@ -18,35 +18,36 @@ data_file.flush()
 
 # %% [markdown]
 # ### Image reconstruction
-# We use the Primal Dual Hybrid Gradient (PDHG) algorithm to reconstruct images from 2D radial data.
+# Here, we use the Primal Dual Hybrid Gradient (PDHG) algorithm to reconstruct images from 2D radial data.
 #
-# Let's assume we have obtained the k-space data $y$ from an image $x$ with an acquisition model (Fourier transforms,
-# coil sensitivity maps...) $A$ then we can formulate the forward problem as:
+# Let $y$ denote the k-space data of an image $x_{mathrm{true}}$ sampled with an acquisition model $A$
+# (Fourier transform, # coil sensitivity maps, ...), i.e the forward problem is given as
 #
-# $ y = Ax + n $
+# $ y = Ax_{mathrm{true}} + n $
 #
-# where $n$ describes complex Gaussian noise. When using TV-minimization as regularization method, the image $x$ can be
-# obtained by minimizing the following functional $\mathcal{F}$
+# where $n$ describes complex Gaussian noise. When using TV-minimization as regularization method, an approximation of
+# $x_{mathrm{true}}$ is obtained by minimizing the following functional $\mathcal{F}$:
 #
 # $ \mathcal{F}(x) = \frac{1}{2}||Ax - y||_2^2 + \lambda \| \nabla x \|_1, \quad \quad \quad (1)$
 #
-# where $W^\frac{1}{2}$ is the square root of the density compensation function (which corresponds to a diagonal
-# operator) and $\nabla$ is the discretized gradient operator.
+# where $\nabla$ is the discretized gradient operator.
 #
 # The minimization of the functional $\mathcal{F}$ is a non-trivial task due to the presence of the operator
 # $\nabla$ in the non-differentiable $\ell_1$-norm. A suitable algorithm to solve the problem is the
 # PDHG-algorithm [Chambolle \& Pock, JMIV 2011].
 #
-# PDHG is a method for solving the problem
+# PDHG is a method for solving problems of the form
 #
 # $ \min_x f(K(x)) + g(x)  \quad \quad \quad (2)$
 #
-# where $f$ and $g$ denote proper. convex, lower-semicontinous functionals and $K$ denotes a linear operator.
+# where $f$ and $g$ denote proper, convex, lower-semicontinous functionals and $K$ denotes a linear operator.
 #
 # PDHG then, essentially consists of three steps, which read as
 #
-# $z_{k+1} = \mathrm{prox}_{\sigma f^{\ast}}(z_k + \sigma K \bar{x}_k)$ \n
-# $x_{k+1} = \mathrm{prox}_{\tau g}(x_k - \tau K^H z_{k+1})$ \n
+# $z_{k+1} = \mathrm{prox}_{\sigma f^{\ast}}(z_k + \sigma K \bar{x}_k)$
+#
+# $x_{k+1} = \mathrm{prox}_{\tau g}(x_k - \tau K^H z_{k+1})$
+#
 # $\bar{x}_{k+1} = x_{k+1} + \theta(x_{k+1} - x_k)$,
 #
 # where $\mathrm{prox}$ denotes the proximal operator and $f^{\ast}$ denotes the convex conjugate of the
@@ -58,22 +59,26 @@ data_file.flush()
 #
 # An possible and intuitive (but unfortunately not efficient) identification is the following
 #
-# $f(x) = \lambda \| x\|_1,$\n
-# $g(x) = \frac{1}{2}\|Ax  - y\|_2^2,$\n
+# $f(x) = \lambda \| x\|_1,$
+#
+# $g(x) = \frac{1}{2}\|Ax  - y\|_2^2,$
+#
 # $K(x) = \nabla x$,
 #
 # However, although $\mathrm{prox}_{\sigma f^\ast}$ has a simple form, some calculations show that
-# to be able compute the $\mathrm{prox}_{\tau g}$, one would need to solve a linear system at each
+# to be able to compute $\mathrm{prox}_{\tau g}$, one would need to solve a linear system at each
 # iteration.
 #
 # Thus, another (less intuitive, but way more efficient) identification is the following:
 #
-# $f(z) = f(p,q) = f_1(p) + f_2(q) =  \frac{1}{2}\|p  - y\|_2^2 + \lambda \| q \|_1,$\n
-# $K(x) = [A, \nabla]^T,$\n
+# $f(z) = f(p,q) = f_1(p) + f_2(q) =  \frac{1}{2}\|p  - y\|_2^2 + \lambda \| q \|_1,$
+#
+# $K(x) = [A, \nabla]^T,$
+#
 # $g(x) = 0,$
 #
 # for which, one can show that both $\mathrm{prox}_{\sigma f^{\ast}}$ and $\mathrm{prox}_{\tau g}$ are
-# given by simple easy-to-compute operations, see for example [Sidky et al, PMB 2012].
+# given by simple and easy-to-compute operations, see for example [Sidky et al, PMB 2012].
 #
 # In the following, we load some 2D radial MR data and use the just described identification to set up
 # the corresponding problem to be solved with PDHG.
@@ -93,7 +98,7 @@ kdata.header.recon_matrix.x = 256
 kdata.header.recon_matrix.y = 256
 
 # %% [markdown]
-# ### Set up the operator$A$
+# ### Set up the operator $A$
 # Estimate coil sensitivity maps and density compensation function. Also run a direct (adjoint)
 # reconstruction and iterative SENSE as methods of comparison.
 
@@ -127,7 +132,7 @@ acquisition_operator = fourier_operator @ csm_operator
 
 
 # %% [markdown]
-# ### Recast the problem for PDHG to be applicable
+# ### Recast the problem to be able to apply PDHG
 
 # %%
 # Define the gradient operator
@@ -144,12 +149,12 @@ from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared, ZeroFun
 # Regularization parameter for the $\ell_1$-norm
 regularization_parameter = 0.5
 
-# Define the separable functionals
+# Define the functionals
 kdata_tensor = kdata.data
 l2 = 0.5 * L2NormSquared(target=kdata_tensor, divide_by_n=True)
 l1 = regularization_parameter * L1NormViewAsReal(divide_by_n=True)
 
-# Define the functionals f and g
+# Define the functionals f and g and the operator K
 f = ProximableFunctionalSeparableSum(l2, l1)
 g = ZeroFunctional()
 operator = LinearOperatorMatrix(((acquisition_operator,), (nabla_operator,)))
@@ -161,7 +166,7 @@ initial_values = (img_iterative_sense.data,)
 # ### Run PDHG for a certain number of iterations
 
 # %%
-max_iterations = 32
+max_iterations = 64
 (img_pdhg,) = pdhg(f=f, g=g, operator=operator, initial_values=initial_values, max_iterations=max_iterations)
 
 # %%
