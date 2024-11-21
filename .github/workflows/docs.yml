@@ -111,7 +111,7 @@ jobs:
         env:
           RUNNER: ${{ toJson(runner) }}
         with:
-          notebook: ./examples/${{ matrix.notebook }}
+          notebook: ./${{ matrix.notebook }}
 
       - name: Get artifact names
         id: artifact_names
