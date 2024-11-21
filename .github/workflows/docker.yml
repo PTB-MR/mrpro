@@ -39,10 +39,10 @@ jobs:
         id: set-matrix
         if: steps.filter.outputs.docker_toml == 'true' || github.event_name == 'push'
         run: |
-          dockerfiles=$(find docker -type f -name 'Dockerfile*')
+          dockerfiles=$(find docker -type f -name 'Dockerfile* -exec basename {} \; | jq -R -s -c 'split("\n")[:-1]'')
           echo "dockerfiles: $dockerfiles"
           echo "dockerfiles=$dockerfiles" >> $GITHUB_OUTPUT
-          imagenames=$(find docker -type f -name 'Dockerfile*' -exec basename {} \; | sed 's/^Dockerfile/ghcr.io\/ptb-mr\/mrpro/' | | jq -R -s -c 'split("\n")[:-1]')
+          imagenames=$(find docker -type f -name 'Dockerfile*' -exec basename {} \; | sed 's/^Dockerfile/ghcr.io\/ptb-mr\/mrpro/' | jq -R -s -c 'split("\n")[:-1]')
           echo "image names: $imagenames"
           echo "imagenames=$imagenames" >> $GITHUB_OUTPUT
 
@@ -71,7 +71,7 @@ jobs:
         id: image_name
         run: |
           dockerfile=${{ matrix.dockerfile }}
-          echo "image_name=${dockerfile/Dockerfile_/ghcr.io/ptb-mr/mrpro_}" >> $GITHUB_OUTPUT
+          echo "image_name=${dockerfile/Dockerfile/ghcr.io/ptb-mr/mrpro}" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -141,7 +141,7 @@ jobs:
         id: image_name
         run: |
           dockerfile=${{ matrix.dockerfile }}
-          echo "image_name=${dockerfile/Dockerfile_/ghcr.io/ptb-mr/mrpro_}" >> $GITHUB_OUTPUT
+          echo "image_name=${dockerfile/Dockerfile/ghcr.io/ptb-mr/mrpro}" >> $GITHUB_OUTPUT
 
       - name: Login to GitHub Packages
         uses: docker/login-action@v3
