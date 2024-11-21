@@ -15,6 +15,9 @@ jobs:
     outputs:
       imagenames: ${{ steps.set-matrix.outputs.imagenames }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Retrieve Docker Image Names
         id: set-matrix
         run: |
