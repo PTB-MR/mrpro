@@ -64,25 +64,13 @@ data_file.flush()
 #
 # $g(x) = \frac{1}{2}\|Ax  - y\|_2^2,$
 #
-# $K(x) = \nabla x$,
+# $K(x) = \nabla x.$
 #
-# However, although $\mathrm{prox}_{\sigma f^\ast}$ has a simple form, some calculations show that
+# However, although $\mathrm{prox}_{\sigma f^\ast}$ has a simple form, calculations show that
 # to be able to compute $\mathrm{prox}_{\tau g}$, one would need to solve a linear system at each
-# iteration.
+# iteration. We will therefore use a way more efficient identification.
 #
-# Thus, another (less intuitive, but way more efficient) identification is the following:
-#
-# $f(z) = f(p,q) = f_1(p) + f_2(q) =  \frac{1}{2}\|p  - y\|_2^2 + \lambda \| q \|_1,$
-#
-# $K(x) = [A, \nabla]^T,$
-#
-# $g(x) = 0,$
-#
-# for which one can show that both $\mathrm{prox}_{\sigma f^{\ast}}$ and $\mathrm{prox}_{\tau g}$ are
-# given by simple and easy-to-compute operations, see for example [Sidky et al, PMB 2012].
-#
-# In the following, we load some 2D radial MR data and use the just described identification to set up
-# the corresponding problem to be solved with PDHG.
+# In the following, we load some 2D radial MR data and PDHG to reconstruct it.
 
 # %%
 import mrpro
@@ -91,10 +79,8 @@ import mrpro
 # ##### Read-in the raw data
 
 # %%
-# Use the trajectory that is stored in the ISMRMRD file
-trajectory = mrpro.data.traj_calculators.KTrajectoryIsmrmrd()
 # Load in the Data from the ISMRMRD file
-kdata = mrpro.data.KData.from_file(data_file.name, trajectory)
+kdata = mrpro.data.KData.from_file(data_file.name, mrpro.data.traj_calculators.KTrajectoryIsmrmrd())
 kdata.header.recon_matrix.x = 256
 kdata.header.recon_matrix.y = 256
 
@@ -106,59 +92,68 @@ kdata.header.recon_matrix.y = 256
 # %%
 # Set up direct reconstruction class to estimate coil sensitivity maps, density compensation etc
 direct_reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
-img_direct = direct_reconstruction(kdata).data
+img_direct = direct_reconstruction(kdata)
 
 # run tierative SENSE to get an initiual guess of the solution
 iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
-    kdata, n_iterations=8, csm=direct_reconstruction.csm
+    kdata,
+    n_iterations=8,
+    csm=direct_reconstruction.csm,
+    dcf=direct_reconstruction.dcf,
 )
-img_iterative_sense = iterative_sense_reconstruction(kdata).data
+img_iterative_sense = iterative_sense_reconstruction(kdata)
 
-# Define Fourier operator using the trajectory and header information in kdata
-fourier_operator = mrpro.operators.FourierOp.from_kdata(kdata)
+# Define Fourier operator and csm-operator re-using the ones already constructed in the
+# direct reconstruction class
+from mrpro.operators import SensitivityOp
 
-# estimate density compensation
-dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata.traj).as_operator()
+fourier_operator = direct_reconstruction.fourier_op
+csm_operator = SensitivityOp(direct_reconstruction.csm)
 
-# Calculate coil maps
-img_coilwise = mrpro.data.IData.from_tensor_and_kheader(*fourier_operator.H(*dcf_operator(kdata.data)), kdata.header)
-csm_operator = mrpro.data.CsmData.from_idata_walsh(img_coilwise).as_operator()
-
-# Create the entire acquisition operator A
+# Create the entire acquisition operator A to be used in the operator K=[A, \nabla]^T for PDHG
 acquisition_operator = fourier_operator @ csm_operator
 
-# adjoint and iterative SENSE reconstruction as comparison methods
-# adjoint reconstruction
+# adjoint reconstruction as additional method of comparison
 (img_adjoint,) = acquisition_operator.H(kdata.data)
 
 
 # %% [markdown]
 # ### Recast the problem to be able to apply PDHG
+# As mentioned, the previously described identification is not efficient.
+# Another (less intuitive, but way more efficient) identification is the following:
+#
+# $f(z) = f(p,q) = f_1(p) + f_2(q) =  \frac{1}{2}\|p  - y\|_2^2 + \lambda \| q \|_1,$
+#
+# $K(x) = [A, \nabla]^T,$
+#
+# $g(x) = 0,$
+#
+# for which one can show that both $\mathrm{prox}_{\sigma f^{\ast}}$ and $\mathrm{prox}_{\tau g}$ are
+# given by simple and easy-to-compute operations, see for example [Sidky et al, PMB 2012].
+#
+# In the following, we first identify the functionals $f$, $g$ and the operator $K$ and then run PDHG.
 
 # %%
-# Define the gradient operator
+# Define the gradient operator \nabla to be used in the operator K=[A, \nabla]^T for PDHG
 from mrpro.operators import FiniteDifferenceOp
 
 # The operator computes the directional derivatives along the penultimate and last dimensions (x,y)
 nabla_operator = FiniteDifferenceOp(dim=(-2, -1), mode='forward')
 
-# Set up the problem by using the previously described identification
 from mrpro.algorithms.optimizers import pdhg
 from mrpro.operators import LinearOperatorMatrix, ProximableFunctionalSeparableSum
 from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared, ZeroFunctional
 
 # Regularization parameter for the $\ell_1$-norm
-regularization_parameter = 0.5
+regularization_parameter = 2
 
-# Define the functionals
-kdata_tensor = kdata.data
-l2 = 0.5 * L2NormSquared(target=kdata_tensor, divide_by_n=True)
+# Set up the problem by using the previously described identification
+l2 = 0.5 * L2NormSquared(target=kdata.data, divide_by_n=True)
 l1 = regularization_parameter * L1NormViewAsReal(divide_by_n=True)
 
-# Define the functionals f and g and the operator K
 f = ProximableFunctionalSeparableSum(l2, l1)
 g = ZeroFunctional()
-operator = LinearOperatorMatrix(((acquisition_operator,), (nabla_operator,)))
+K = LinearOperatorMatrix(((acquisition_operator,), (nabla_operator,)))
 
 # initialize PDHG with iterative SENSE solution for warm start
 initial_values = (img_iterative_sense.data,)
@@ -168,7 +163,7 @@ initial_values = (img_iterative_sense.data,)
 
 # %%
 max_iterations = 64
-(img_pdhg,) = pdhg(f=f, g=g, operator=operator, initial_values=initial_values, max_iterations=max_iterations)
+(img_pdhg,) = pdhg(f=f, g=g, operator=K, initial_values=initial_values, max_iterations=max_iterations)
 
 # %%
 # ### Compare the results
@@ -178,7 +173,7 @@ import matplotlib.pyplot as plt
 fig, ax = plt.subplots(1, 3, squeeze=False)
 clim = [0, 1e-3]
 ax[0, 0].set_title('Adjoint Recon', fontsize=10)
-ax[0, 0].imshow(img_direct.abs()[0, 0, 0, :, :], clim=clim)
+ax[0, 0].imshow(img_direct.data.abs()[0, 0, 0, :, :], clim=clim)
 ax[0, 1].set_title('Iterative SENSE', fontsize=10)
 ax[0, 1].imshow(img_iterative_sense.data.abs()[0, 0, 0, :, :], clim=clim)
 ax[0, 2].set_title('PDHG', fontsize=10)
@@ -187,4 +182,4 @@ plt.setp(ax, xticks=[], yticks=[])
 
 # %% [markdown]
 # ### Next steps
-# Play around with the regularization_weight and the number of iterations to see how it effects the final image.
+# Play around with the regularization weight and the number of iterations to see how they effect the final image.
