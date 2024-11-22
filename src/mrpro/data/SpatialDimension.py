@@ -109,6 +109,7 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
 
         return SpatialDimension(z, y, x)
 
+    # This function is mainly for type hinting and docstring
     def apply_(self, function: Callable[[T], T] | None = None, **_) -> Self:
         """Apply a function to each z, y, x (in-place).
 
@@ -120,6 +121,8 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         # This function is mainly used for type hinting
         return super(SpatialDimension, self).apply_(function)
 
+
+    # This function is mainly for type hinting and docstring
     def apply(self, function: Callable[[T], T] | None = None, **_) -> Self:
         """Apply a function to each z, y, x (returning a new object).
 
@@ -128,7 +131,6 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         function
             function to apply
         """
-        # This function is mainly used for type hinting
         return super(SpatialDimension, self).apply(function)
 
     @property
