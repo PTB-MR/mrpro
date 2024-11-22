@@ -92,6 +92,7 @@ jobs:
       image: ghcr.io/ptb-mr/mrpro_py311:latest
       options: --user root
     strategy:
+      fail-fast: false
       matrix:
         notebook: ${{ fromJson(needs.get_notebooks.outputs.notebooks) }}
     steps:
@@ -119,14 +120,14 @@ jobs:
         run: |
           notebook=${{ matrix.notebook }}
           echo "ARTIFACT_NAME=${notebook/.ipynb/}" >> $GITHUB_OUTPUT
-          echo "HTML_RESULT=${notebook/.ipynb/.html}" >> $GITHUB_OUTPUT
+          echo "IPYNB_EXECUTED=${notebook}" >> $GITHUB_OUTPUT
 
       - name: Upload notebook
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ${{ steps.artifact_names.outputs.ARTIFACT_NAME }}
-          path: ${{ github.workspace }}/nb-runner.out/${{ steps.artifact_names.outputs.HTML_RESULT }}
+          path: ${{ github.workspace }}/nb-runner.out/${{ steps.artifact_names.outputs.IPYNB_EXECUTED }}
         env:
           RUNNER: ${{ toJson(runner) }}
 
@@ -149,39 +150,11 @@ jobs:
       - name: Install mrpro and dependencies
         run: pip install --upgrade --upgrade-strategy "eager" .[docs]
 
-      - name: Download notebook html files
+      - name: Download executed notebook ipynb files
         id: download
         uses: actions/download-artifact@v4
         with:
-          path: ./docs/source/notebook_artifact/
-
-      - name: Copy notebook html files
-        run: |
-          mkdir ./docs/source/_notebooks
-          cd ./docs/source/notebook_artifact/
-          notebooks=$(grep -rl --include='*' './')
-          for nb in $notebooks
-          do
-            echo "current jupyter-notebook: $nb"
-            cp ./$nb ../_notebooks/
-          done
-
-      - name: List of notebooks
-        run: |
-          cd ./docs/source/_notebooks/
-          notebooks=$(grep -rl --include='*.html' './')
-          cd ../
-          echo "" >> examples.rst
-          for nb in $notebooks
-          do
-            echo "   notebook_${nb/.html/.rst}" >> examples.rst
-            notebook_description=$(grep '<h1 id=' ./_notebooks/$nb | sed 's/.*">\(.*\)<a class=.*/\1/')
-            echo $notebook_description
-            echo $notebook_description > "notebook_${nb/.html/.rst}"
-            echo "========" >> "notebook_${nb/.html/.rst}"
-            echo ".. raw:: html" >> "notebook_${nb/.html/.rst}"
-            echo "   :file: ./_notebooks/$nb" >> "notebook_${nb/.html/.rst}"
-          done
+          path: ./docs/source/_notebooks/
 
       - name: Build docs
         run: |
@@ -194,7 +167,7 @@ jobs:
         with:
           name: Documentation
           path: docs/build/html/
-      
+
       - run: echo 'Artifact url ${{ steps.save_docu.outputs.artifact-url }}'
 
       - run: echo 'Event number ${{ github.event.number }}'
@@ -224,7 +197,7 @@ jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
     permissions:
-        pages: write   
+        pages: write
         id-token: write
     environment:
       name: github-pages

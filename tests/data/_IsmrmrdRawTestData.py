@@ -10,6 +10,8 @@ from einops import repeat
 from mrpro.data import SpatialDimension
 from mrpro.phantoms import EllipsePhantom
 
+from tests import RandomGenerator
+
 ISMRMRD_TRAJECTORY_TYPE = (
     'cartesian',
     'epi',
@@ -67,6 +69,7 @@ class IsmrmrdRawTestData:
         trajectory_type: Literal['cartesian', 'radial'] = 'cartesian',
         sampling_order: Literal['linear', 'low_high', 'high_low', 'random'] = 'linear',
         phantom: EllipsePhantom | None = None,
+        add_bodycoil_acquisitions: bool = False,
         n_separate_calibration_lines: int = 0,
     ):
         if not phantom:
@@ -222,23 +225,32 @@ class IsmrmrdRawTestData:
         acq.phase_dir[1] = 1.0
         acq.slice_dir[2] = 1.0
 
-        # Initialize an acquisition counter
-        counter = 0
+        scan_counter = 0
 
         # Write out a few noise scans
         for _ in range(32):
             noise = self.noise_level * torch.randn(self.n_coils, n_freq_encoding, dtype=torch.complex64)
             # here's where we would make the noise correlated
-            acq.scan_counter = counter
+            acq.scan_counter = scan_counter
             acq.clearAllFlags()
             acq.setFlag(ismrmrd.ACQ_IS_NOISE_MEASUREMENT)
             acq.data[:] = noise.numpy()
             dataset.append_acquisition(acq)
-            counter += 1  # increment the scan counter
+            scan_counter += 1
+
+        # Add acquisitions obtained with a 2-element body coil (e.g. used for adjustment scans)
+        if add_bodycoil_acquisitions:
+            acq.resize(n_freq_encoding, 2, trajectory_dimensions=2)
+            for _ in range(8):
+                acq.scan_counter = scan_counter
+                acq.clearAllFlags()
+                acq.data[:] = torch.randn(2, n_freq_encoding, dtype=torch.complex64)
+                dataset.append_acquisition(acq)
+                scan_counter += 1
+            acq.resize(n_freq_encoding, self.n_coils, trajectory_dimensions=2)
 
         # Calibration lines
         if n_separate_calibration_lines > 0:
-            # we take calibration lines around the k-space center
             traj_ky_calibration, traj_kx_calibration, kpe_calibration = self._cartesian_trajectory(
                 n_separate_calibration_lines,
                 n_freq_encoding,
@@ -253,7 +265,7 @@ class IsmrmrdRawTestData:
 
             for pe_idx, pe_pos in enumerate(kpe_calibration):
                 # Set some fields in the header
-                acq.scan_counter = counter
+                acq.scan_counter = scan_counter
 
                 # kpe is in the range [-npe//2, npe//2), the ismrmrd kspace_encoding_step_1 is in the range [0, npe)
                 kspace_encoding_step_1 = pe_pos + n_phase_encoding // 2
@@ -264,7 +276,7 @@ class IsmrmrdRawTestData:
                 # Set the data and append
                 acq.data[:] = kspace_calibration[:, :, pe_idx].numpy()
                 dataset.append_acquisition(acq)
-                counter += 1
+                scan_counter += 1
 
         # Loop over the repetitions, add noise and write to disk
         for rep in range(self.repetitions):
@@ -275,7 +287,7 @@ class IsmrmrdRawTestData:
             for pe_idx, pe_pos in enumerate(kpe[rep]):
                 if not self.flag_invalid_reps or rep == 0 or pe_idx < len(kpe[rep]) // 2:  # fewer lines for rep > 0
                     # Set some fields in the header
-                    acq.scan_counter = counter
+                    acq.scan_counter = scan_counter
 
                     # kpe is in the range [-npe//2, npe//2), the ismrmrd kspace_encoding_step_1 is in the range [0, npe)
                     kspace_encoding_step_1 = pe_pos + n_phase_encoding // 2
@@ -298,7 +310,7 @@ class IsmrmrdRawTestData:
                     # Set the data and append
                     acq.data[:] = kspace_with_noise[:, :, pe_idx].numpy()
                     dataset.append_acquisition(acq)
-                    counter += 1
+                    scan_counter += 1
 
         # Clean up
         dataset.close()
@@ -337,7 +349,7 @@ class IsmrmrdRawTestData:
 
         # Different temporal orders of phase encoding points
         if sampling_order == 'random':
-            perm = torch.randperm(len(kpe))
+            perm = RandomGenerator(13).randperm(len(kpe))
             kpe = kpe[perm[: len(perm) // acceleration]]
         elif sampling_order == 'linear':
             kpe, _ = torch.sort(kpe)

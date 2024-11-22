@@ -1,10 +1,11 @@
 from copy import deepcopy
-from typing import Literal, TypedDict
+from typing import Literal
 
 import pytest
 import torch
 from mrpro.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
-from mrpro.operators.functionals import L1Norm, L1NormViewAsReal, L2NormSquared, ZeroFunctional
+from mrpro.operators.functionals import MSE, L1Norm, L1NormViewAsReal, L2NormSquared, ZeroFunctional
+from typing_extensions import TypedDict
 
 from tests import RandomGenerator
 from tests.operators.functionals.conftest import (
@@ -294,6 +295,19 @@ NUMERICCASES: dict[str, NumericCase] = {  # Name: Case
         'prox_expected': torch.tensor([[[-0.328, -0.296, -0.016], [0.184, -0.696, 0.248]]]),
         'prox_convex_conj_expected': torch.tensor(
             [[[-2.983529, -1.943529, -1.049412], [-0.108235, 1.468235, 1.971765]]]
+        ),
+    },
+    'MSE': {
+        # Generated with ODL
+        'functional': MSE,
+        'x': torch.tensor([[[-3.0, -2.0, -1.0], [0.0, 1.0, 2.0]]]),
+        'weight': 2.0,
+        'target': torch.tensor([[[0.340, 0.130, 0.230], [0.230, -1.120, -0.190]]]),
+        'sigma': 0.5,
+        'fx_expected': torch.tensor(17.6992),
+        'prox_expected': torch.tensor([[[-1.6640, -1.1480, -0.5080], [0.0920, 0.1520, 1.1240]]]),
+        'prox_convex_conj_expected': torch.tensor(
+            [[[-2.305455, -1.501818, -0.810909], [-0.083636, 1.134545, 1.523636]]]
         ),
     },
 }

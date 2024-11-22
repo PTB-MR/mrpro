@@ -1,11 +1,9 @@
-from typing import assert_type
-
 import torch
 from mrpro.operators import IdentityOp, LinearOperator, MagnitudeOp, Operator, ZeroOp
 from mrpro.operators.LinearOperator import LinearOperatorSum
+from typing_extensions import assert_type
 
-from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test
+from tests import RandomGenerator, dotproduct_adjointness_test
 
 
 def test_zero_op_keepshape():

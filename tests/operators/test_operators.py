@@ -1,13 +1,13 @@
 """Tests for the operators module."""
 
-from typing import Any, assert_type, cast
+from typing import cast
 
 import pytest
 import torch
 from mrpro.operators import LinearOperator, Operator
+from typing_extensions import Any, assert_type
 
-from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test
+from tests import RandomGenerator, dotproduct_adjointness_test
 
 
 class DummyOperator(Operator[torch.Tensor, tuple[torch.Tensor,]]):

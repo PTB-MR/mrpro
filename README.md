@@ -52,7 +52,7 @@ Quantitative parameter maps can be obtained by creating a functional to be minim
 # Define signal model
 model = MagnitudeOp() @ InversionRecovery(ti=idata_multi_ti.header.ti)
 # Define loss function and combine with signal model
-mse = MSEDataDiscrepancy(idata_multi_ti.data.abs())
+mse = MSE(idata_multi_ti.data.abs())
 functional = mse @ model
 [...]
 # Run optimization
@@ -74,6 +74,8 @@ Full example: <https://github.com/PTB-MR/mrpro/blob/main/examples/pulseq_2d_radi
 
 ## Contributing
 
+We are looking forward to your contributions via Pull-Requests.
+
 ### Installation for developers
 
 1. Clone the MRpro repository
@@ -81,10 +83,6 @@ Full example: <https://github.com/PTB-MR/mrpro/blob/main/examples/pulseq_2d_radi
 3. Install "MRpro" in editable mode including test dependencies: ``` pip install -e ".[test]" ```
 4. Setup pre-commit hook: ``` pre-commit install ```
 
-### Recommended IDE and Extensions
-
-We recommend to use [Microsoft Visual Studio Code](https://code.visualstudio.com/download). A list of recommended extensions for VSCode is given in the [.vscode/extensions.json](.vscode\extensions.json)
-
-### Style
-
 Please look at our [contributor guide](https://ptb-mr.github.io/mrpro/contributor_guide.html) for more information on the repository structure, naming conventions, and other useful information.
+
+
