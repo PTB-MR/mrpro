@@ -1,5 +1,5 @@
 # %% [markdown]
-# # Total-Variation (TV)-minimization Reconstruction of 2D golden angle radial data
+# # Total-variation (TV)-minimization reconstruction of 2D golden angle radial data
 
 # %%
 # define zenodo URL of the example ismrmd data
@@ -18,12 +18,13 @@ data_file.flush()
 
 # %% [markdown]
 # ### Image reconstruction
-# Here, we use the Primal Dual Hybrid Gradient (PDHG) algorithm to reconstruct images from 2D radial data.
+# Here, we use the Primal Dual Hybrid Gradient (PDHG) algorithm to reconstruct an image from 2D radial k-space data
+# data.
 #
-# Let $y$ denote the k-space data of an image $x_{\mathrm{true}}$ sampled with an acquisition model $A$
-# (Fourier transform, # coil sensitivity maps, ...), i.e the forward problem is given as
+# Let $y$ denote the k-space data of the image $x_{\mathrm{true}}$ sampled with an acquisition model $A$
+# (Fourier transform, coil sensitivity maps, ...), i.e the forward problem is given as
 #
-# $ y = Ax_{\mathrm{true}} + n $
+# $ y = Ax_{\mathrm{true}} + n, $
 #
 # where $n$ describes complex Gaussian noise. When using TV-minimization as regularization method, an approximation of
 # $x_{\mathrm{true}}$ is obtained by minimizing the following functional $\mathcal{F}$:
@@ -42,7 +43,7 @@ data_file.flush()
 #
 # where $f$ and $g$ denote proper, convex, lower-semicontinous functionals and $K$ denotes a linear operator.
 #
-# PDHG then, essentially consists of three steps, which read as
+# PDHG essentially consists of three steps, which read as
 #
 # $z_{k+1} = \mathrm{prox}_{\sigma f^{\ast}}(z_k + \sigma K \bar{x}_k)$
 #
@@ -51,13 +52,13 @@ data_file.flush()
 # $\bar{x}_{k+1} = x_{k+1} + \theta(x_{k+1} - x_k)$,
 #
 # where $\mathrm{prox}$ denotes the proximal operator and $f^{\ast}$ denotes the convex conjugate of the
-# functional $f$, $\theta\in [0,1]$ and step sizes $\sigma, \tau$ such that $\sigma \tau < 1/L^2$, where $L$ is
-# the operator norm of the operator $K$.
+# functional $f$, $\theta\in [0,1]$ and step sizes $\sigma, \tau$ such that $\sigma \tau < 1/L^2$, where
+# $L=\|K\|_2$ is the operator norm of the operator $K$.
 #
 # The first step is to recast problem (1) into the general form of (2) and then to apply the steps above
 # in an iterative fashion.
 #
-# An possible and intuitive (but unfortunately not efficient) identification is the following
+# A possible and intuitive (but unfortunately not efficient) identification is the following
 #
 # $f(x) = \lambda \| x\|_1,$
 #
@@ -77,7 +78,7 @@ data_file.flush()
 #
 # $g(x) = 0,$
 #
-# for which, one can show that both $\mathrm{prox}_{\sigma f^{\ast}}$ and $\mathrm{prox}_{\tau g}$ are
+# for which one can show that both $\mathrm{prox}_{\sigma f^{\ast}}$ and $\mathrm{prox}_{\tau g}$ are
 # given by simple and easy-to-compute operations, see for example [Sidky et al, PMB 2012].
 #
 # In the following, we load some 2D radial MR data and use the just described identification to set up
@@ -183,3 +184,7 @@ ax[0, 1].imshow(img_iterative_sense.data.abs()[0, 0, 0, :, :], clim=clim)
 ax[0, 2].set_title('PDHG', fontsize=10)
 ax[0, 2].imshow(img_pdhg.abs()[0, 0, 0, :, :], clim=clim)
 plt.setp(ax, xticks=[], yticks=[])
+
+# %% [markdown]
+# ### Next steps
+# Play around with the regularization_weight and the number of iterations to see how it effects the final image.
