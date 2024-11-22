@@ -102,44 +102,40 @@ def reduce_view(x: torch.Tensor, dim: int | Sequence[int] | None = None) -> torc
     return torch.as_strided(x, newsize, stride)
 
 
-
-
 @lru_cache
-def _reshape_idx(old_shape:tuple[int,...], new_shape:tuple[int,...], old_stride:tuple[int,...])->list[slice]:
-    """Cached helper function for reshape_view"""
+def _reshape_idx(old_shape: tuple[int, ...], new_shape: tuple[int, ...], old_stride: tuple[int, ...]) -> list[slice]:
+    """Get reshape reduce index (Cached helper function for reshape_view)."""
     # This function tries to group axes from new_shape and old_shape into the smallest groups that have#
     # the same number of elements, starting from the right.
     # If all axes of old shape of a group are stride=0 dimensions,
     # we can reduce them.
-    result = []
-    i, j = len(old_shape) - 1, len(new_shape) - 1
-    while i >= 0 and j >= 0:
+    idx = []
+    i, j = len(old_shape), len(new_shape)
+    while i and j:
+        product_new = product_old = 1
         grouped = []
-        product_old, product_new = 1, 1
-        
         while product_old != product_new or not grouped:
             if product_old < product_new:
+                i -= 1
                 grouped.append(i)
                 product_old *= old_shape[i]
-                i -= 1
             else:
-                product_new *= new_shape[j]
                 j -= 1
+                product_new *= new_shape[j]
         # we found a group
-       
-        if all(old_stride[d]==0 for d in grouped):
+        if all(old_stride[d] == 0 for d in grouped):
             # all dimensions are broadcasted
             # reduce to singleton
-            result.extend([slice(1)] * len(grouped))
+            idx.extend([slice(1)] * len(grouped))
         else:
             # preserve
-            result.exstend([slice(None) * len(grouped)]
-        
-    return result[::-1]
+            idx.extend([slice(None)] * len(grouped))
 
-def reshape_view(tensor:torch.Tensor, *shape:int)->torch.Tensor:
-    """
-    Reshapes a tensor while preserving broadcasted (stride 0) dimensions where possible.
+    return idx[::-1]
+
+
+def reshape(tensor: torch.Tensor, *shape: int) -> torch.Tensor:
+    """Reshape a tensor while preserving broadcasted (stride 0) dimensions where possible.
 
     Parameters
     ----------
@@ -150,13 +146,13 @@ def reshape_view(tensor:torch.Tensor, *shape:int)->torch.Tensor:
 
     Returns
     -------
-    torch.Tensor
         A tensor reshaped to the target shape, preserving broadcasted dimensions where feasible.
+
     """
     try:
         return tensor.view(shape)
     except RuntimeError:
         idx = _reshape_idx(tensor.shape, shape, tensor.stride())
-        # make contiguous only in dimensions where broadcasting cannot be preserved
-        semicontiguous=tensor[idx].contiguous().expand(tensor.shape)
-        return semicontiguous.view(new_shape)
+        # make contiguous in all dimensions in which broadcasting cannot be preserved
+        semicontiguous = tensor[idx].contiguous().expand(tensor.shape)
+        return semicontiguous.view(shape)
