@@ -108,6 +108,8 @@ img_iterative_sense = iterative_sense_reconstruction(kdata)
 from mrpro.operators import SensitivityOp
 
 fourier_operator = direct_reconstruction.fourier_op
+
+assert direct_reconstruction.csm is not None
 csm_operator = SensitivityOp(direct_reconstruction.csm)
 
 # Create the entire acquisition operator A to be used in the operator K=[A, \nabla]^T for PDHG
