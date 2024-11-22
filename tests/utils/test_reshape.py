@@ -1,7 +1,8 @@
 """Tests for reshaping utilities."""
 
+import pytest
 import torch
-from mrpro.utils import broadcast_right, reduce_view, unsqueeze_left, unsqueeze_right
+from mrpro.utils import broadcast_right, reduce_view, reshape_broadcasted, unsqueeze_left, unsqueeze_right
 
 from tests import RandomGenerator
 
@@ -51,3 +52,30 @@ def test_reduce_view():
     reduced_one_pos = reduce_view(tensor, 0)
     assert reduced_one_pos.shape == (1, 2, 3, 4, 5, 6)
     assert torch.equal(reduced_one_pos.expand_as(tensor), tensor)
+
+
+@pytest.mark.parametrize(
+    ('shape', 'expand_shape', 'permute', 'final_shape', 'expected_stride'),
+    [
+        ((1, 2, 3, 1, 1), (1, 2, 3, 4, 5), (0, 2, 1, 3, 4), (1, 6, 2, 2, 5), (6, 1, 0, 0, 0)),
+        ((1, 2, 1), (100, 2, 2), (0, 1, 2), (100, 4), (0, 1)),
+        ((1, 1, 1, 1), (2, 3, 4, 5), (2, 3, 0, 1), (1, 2, 6, 10, 1), (0, 0, 0, 0, 0)),
+        ((1, 2, 3), (1, 2, 3), (0, 1, 2), (6,), (1,)),
+    ],
+)
+def test_reshape_broadcasted(shape, expand_shape, permute, final_shape, expected_stride):
+    """Test reshape_broadcasted"""
+    rng = RandomGenerator(0)
+    tensor = rng.float32_tensor(shape).expand(*expand_shape).permute(*permute)
+    reshaped = reshape_broadcasted(tensor, *final_shape)
+    expected_values = tensor.reshape(*final_shape)
+    assert reshaped.shape == expected_values.shape
+    assert reshaped.stride() == expected_stride
+    assert torch.equal(reshaped, expected_values)
+
+
+def test_reshape_broadcasted_fail():
+    """Test reshape_broadcasted with invalid input"""
+    a = torch.ones(2)
+    with pytest.raises(ValueError, match='number of elements must match'):
+        reshape_broadcasted(a, 3)
