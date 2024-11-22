@@ -6,6 +6,7 @@ import numpy as np
 import torch
 
 from mrpro.operators.SignalModel import SignalModel
+from mrpro.utils import unsqueeze_right
 
 
 def epg_rf_rotation_matrix(
@@ -337,10 +338,10 @@ class EpgMrfFispWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Te
             with shape (time ... other, coils, z, y, x)
         """
         delta_ndim = m0.ndim - (self.flip_angles.ndim - 1)  # -1 for time
-        flip_angles = self.flip_angles[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.flip_angles
-        rf_phases = self.rf_phases[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.rf_phases
-        te = self.te[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.te
-        tr = self.tr[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.tr
+        flip_angles = unsqueeze_right(self.flip_angles, delta_ndim)
+        rf_phases = unsqueeze_right(self.rf_phases, delta_ndim)
+        te = unsqueeze_right(self.te, delta_ndim)
+        tr = unsqueeze_right(self.tr, delta_ndim)
 
         signal = torch.zeros(flip_angles.shape[0], *m0.shape, dtype=torch.cfloat, device=m0.device)
         epg_configuration_states = torch.zeros((*m0.shape, 3, 1), dtype=torch.cfloat, device=m0.device)
@@ -391,7 +392,7 @@ class EpgMrfFispWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Te
             last_idx_of_previous_block = np.int64(np.sum(self.n_rf_pulses_per_block[:block_idx]))
             for idx_in_block in range(n_rf_pulses_per_block):
                 idx_in_total_acq = last_idx_of_previous_block + idx_in_block
-                rf_pulse = epg_rf_rotation(flip_angles[idx_in_total_acq, ...], rf_phases[idx_in_total_acq, ...])
+                rf_pulse = epg_rf_rotation_matrix(flip_angles[idx_in_total_acq, ...], rf_phases[idx_in_total_acq, ...])
                 te_relaxation = epg_relaxation_matrix(te[idx_in_total_acq, ...], t1, t2)
                 tr_relaxation = epg_relaxation_matrix((tr - te)[idx_in_total_acq, ...], t1, t2)
 
