@@ -117,7 +117,7 @@ jobs:
         id: artifact_names
         run: |
           notebook=${{ matrix.notebook }}
-          echo "ARTIFACT_NAME=${notebook/.ipynb/}" >> $GITHUB_OUTPUT
+          echo "ARTIFACT_NAME=$(basename ${notebook/.ipynb})" >> $GITHUB_OUTPUT
           echo "IPYNB_EXECUTED=$(basename $notebook)" >> $GITHUB_OUTPUT
 
       - name: Upload notebook
