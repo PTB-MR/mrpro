@@ -83,7 +83,6 @@ def epg_gradient_dephasing(
     ----------
     epg_configuration_states
         EPG configuration states Fplus, Fminus, Z
-
     keep_fixed_number_of_states
         True to NOT add any higher-order states - assume that they just go to zero.  Be careful - this speeds up
         simulations, but may compromise accuracy!
@@ -135,7 +134,7 @@ def epg_relaxation_matrix(relaxation_time: float | torch.Tensor, t1: torch.Tenso
 
     Returns
     -------
-        Matrix describing EPG relaxation
+        matrix describing EPG relaxation
     """
     relaxation_time = torch.as_tensor(relaxation_time)
     exp_t2 = torch.exp(-relaxation_time / t2)
@@ -153,6 +152,8 @@ def epg_relaxation(
     ----------
     epg_configuration_states
         EPG configuration states Fplus, Fminus, Z
+    relaxation_matrix
+        matrix describing EPG relaxation
     t1_recovery
         recovery of longitudinal EPG states
 
@@ -500,9 +501,9 @@ class EpgTse(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
             Signal of a TSE acquisition
         """
         delta_ndim = m0.ndim - (self.flip_angles.ndim - 1)  # -1 for time
-        flip_angles = self.flip_angles[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.flip_angles
-        rf_phases = self.rf_phases[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.rf_phases
-        te = self.te[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.te
+        flip_angles = unsqueeze_right(self.flip_angles, delta_ndim)
+        rf_phases = unsqueeze_right(self.rf_phases, delta_ndim)
+        te = unsqueeze_right(self.te, delta_ndim)
 
         signal = torch.zeros(flip_angles.shape[0] * len(self.tr), *m0.shape, dtype=torch.cfloat, device=m0.device)
         epg_configuration_states = torch.zeros((*m0.shape, 3, 1), dtype=torch.cfloat, device=m0.device)
