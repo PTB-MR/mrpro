@@ -8,9 +8,8 @@ from mrpro.operators.models.EPG import EpgMrfFispWithPreparation
 from mrpro.operators.models.EPG import EpgTse
 from mrpro.operators.models.TransientSteadyStateWithPreparation import TransientSteadyStateWithPreparation
 __all__ = [
-    "EpgMrfFispWithPreparation", 
-    "EpgTse", 
-    "TransientSteadyStateWithPreparation"
+    "EpgMrfFispWithPreparation",
+    "EpgTse",
     "InversionRecovery",
     "MOLLI",
     "MonoExponentialDecay",
