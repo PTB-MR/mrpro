@@ -4,7 +4,7 @@
         "davidanson.vscode-markdownlint",
         "editorconfig.editorconfig",
         "kevinrose.vsc-python-indent",
-        "ms-python.black-formatter",
+        "charliermarsh.ruff",
         "ms-python.isort",
         "ms-python.python",
         "ms-python.vscode-pylance",

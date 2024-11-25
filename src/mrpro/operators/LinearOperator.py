@@ -6,9 +6,10 @@ import operator
 from abc import abstractmethod
 from collections.abc import Callable, Sequence
 from functools import reduce
-from typing import Any, cast, no_type_check, overload
+from typing import cast, no_type_check
 
 import torch
+from typing_extensions import Any, Unpack, overload
 
 import mrpro.operators
 from mrpro.operators.Operator import (
@@ -101,7 +102,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         max_iterations: int = 20,
         relative_tolerance: float = 1e-4,
         absolute_tolerance: float = 1e-5,
-        callback: Callable | None = None,
+        callback: Callable[[torch.Tensor], None] | None = None,
     ) -> torch.Tensor:
         """Power iteration for computing the operator norm of the linear operator.
 
@@ -162,7 +163,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         # operator norm is a strictly positive number. This ensures that the first time the
         # change between the old and the new estimate of the operator norm is non-zero and
         # thus prevents the loop from exiting despite a non-correct estimate.
-        op_norm_old = torch.zeros(*tuple([1 for _ in range(vector.ndim)]))
+        op_norm_old = torch.zeros(*tuple([1 for _ in range(vector.ndim)]), device=vector.device)
 
         dim = tuple(dim) if dim is not None else dim
         for _ in range(max_iterations):
@@ -194,11 +195,13 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     def __matmul__(self, other: LinearOperator) -> LinearOperator: ...
 
     @overload
-    def __matmul__(self, other: Operator[*Tin2, tuple[torch.Tensor,]]) -> Operator[*Tin2, tuple[torch.Tensor,]]: ...
+    def __matmul__(
+        self, other: Operator[Unpack[Tin2], tuple[torch.Tensor,]]
+    ) -> Operator[Unpack[Tin2], tuple[torch.Tensor,]]: ...
 
     def __matmul__(
-        self, other: Operator[*Tin2, tuple[torch.Tensor,]] | LinearOperator
-    ) -> Operator[*Tin2, tuple[torch.Tensor,]] | LinearOperator:
+        self, other: Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator
+    ) -> Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator:
         """Operator composition.
 
         Returns lambda x: self(other(x))
@@ -213,7 +216,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
             return LinearOperatorComposition(self, other)
         elif isinstance(other, Operator):
             # cast due to https://github.com/python/mypy/issues/16335
-            return OperatorComposition(self, cast(Operator[*Tin2, tuple[torch.Tensor,]], other))
+            return OperatorComposition(self, cast(Operator[Unpack[Tin2], tuple[torch.Tensor,]], other))
         return NotImplemented  # type: ignore[unreachable]
 
     def __radd__(self, other: torch.Tensor) -> LinearOperator:
@@ -290,6 +293,20 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
             return LinearOperatorElementwiseProductRight(self, other)
         else:
             return NotImplemented  # type: ignore[unreachable]
+
+    def __and__(self, other: LinearOperator) -> mrpro.operators.LinearOperatorMatrix:
+        """Vertical stacking of two LinearOperators."""
+        if not isinstance(other, LinearOperator):
+            return NotImplemented  # type: ignore[unreachable]
+        operators = [[self], [other]]
+        return mrpro.operators.LinearOperatorMatrix(operators)
+
+    def __or__(self, other: LinearOperator) -> mrpro.operators.LinearOperatorMatrix:
+        """Horizontal stacking of two LinearOperators."""
+        if not isinstance(other, LinearOperator):
+            return NotImplemented  # type: ignore[unreachable]
+        operators = [[self, other]]
+        return mrpro.operators.LinearOperatorMatrix(operators)
 
     @property
     def gram(self) -> LinearOperator:

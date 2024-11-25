@@ -1,10 +1,10 @@
 """KTrajectory dataclass."""
 
 from dataclasses import dataclass
-from typing import Self
 
 import numpy as np
 import torch
+from typing_extensions import Self
 
 from mrpro.data.enums import TrajType
 from mrpro.data.MoveDataMixin import MoveDataMixin

@@ -15,6 +15,8 @@ class L2NormSquared(ElementaryProximableFunctional):
     reconstruction when using a density-compensation function for k-space pre-conditioning,
     for masking of image data, or for spatially varying regularization weights.
 
+    In most cases, consider setting divide_by_n to true to be independent of input size.
+    Alternatively the functional :class:`mrpro.operators.functionals.MSE` can be used.
     The norm is computed along the dimensions given at initialization, all other dimensions are
     considered batch dimensions.
     """

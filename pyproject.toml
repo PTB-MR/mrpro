@@ -20,7 +20,7 @@ include-package-data = true
 name = "mrpro"
 description = "MR image reconstruction and processing package specifically developed for PyTorch."
 readme = "README.md"
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.10,<3.14"
 dynamic = ["version"]
 keywords = ["MRI, reconstruction, processing, PyTorch"]
 authors = [
@@ -34,10 +34,12 @@ authors = [
     { name = "Johannes Hammacher", email = "johannnes.hammacher@ptb.de" },
     { name = "Stefan Martin", email = "stefan.martin@ptb.de" },
     { name = "Andreas Kofler", email = "andreas.kofler@ptb.de" },
+    { name = "Catarina Redshaw Kranich", email = "catarina.redshaw-kranich@ptb.de" },
 ]
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3 :: Only",
@@ -52,6 +54,7 @@ dependencies = [
     "torchkbnufft>=1.4.0",
     "scipy>=1.12",
     "ptwt>=0.1.8",
+    "typing-extensions>=4.12",
 ]
 
 [project.optional-dependencies]
@@ -63,7 +66,12 @@ test = [
     "pytest-cov",
     "pytest-xdist",
 ]
-docs = ["sphinx", "sphinx_rtd_theme", "sphinx-pyproject"]
+docs = ["sphinx",
+    "sphinx_rtd_theme",
+    "sphinx-pyproject",
+    "myst-nb",
+    "sphinx-mathjax-offline",
+    ]
 notebook = [
     "zenodo_get",
     "ipykernel",
@@ -82,6 +90,7 @@ testpaths = ["tests"]
 filterwarnings = [
     "error",
     "ignore:'write_like_original':DeprecationWarning:pydicom:",
+    "ignore:Anomaly Detection has been enabled:UserWarning", #torch.autograd
 ]
 addopts = "-n auto"
 markers = ["cuda : Tests only to be run when cuda device is available"]
@@ -174,12 +183,14 @@ skip-magic-trailing-comma = false
 
 [tool.typos.default]
 locale = "en-us"
+check-filename = false
 
 [tool.typos.default.extend-words]
-Reson = "Reson" # required for Proc. Intl. Soc. Mag. Reson. Med.
+Reson = "Reson"   # required for Proc. Intl. Soc. Mag. Reson. Med.
 iy = "iy"
-daa = 'daa'     # required for wavelet operator
-gaus = 'gaus'   # required for wavelet operator
+daa = "daa"       # required for wavelet operator
+gaus = "gaus"     # required for wavelet operator
+arange = "arange" # torch.arange
 
 [tool.typos.files]
 extend-exclude = [
