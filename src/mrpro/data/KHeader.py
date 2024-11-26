@@ -295,15 +295,15 @@ class KHeader(MoveDataMixin):
 
         # Sequence information
         seq = ismrmrdschema.sequenceParametersType()
-        if isinstance(self.tr, torch.Tensor):
+        if self.tr is not None:
             seq.TR = s_to_ms(self.tr).tolist()
-        if isinstance(self.te, torch.Tensor):
+        if self.te is not None:
             seq.TE = s_to_ms(self.te).tolist()
-        if isinstance(self.ti, torch.Tensor):
+        if self.ti is not None:
             seq.TI = s_to_ms(self.ti).tolist()
-        if isinstance(self.fa, torch.Tensor):
+        if self.fa is not None:
             seq.flipAngle_deg = torch.rad2deg(self.fa).tolist()
-        if isinstance(self.echo_spacing, torch.Tensor):
+        if self.echo_spacing is not None:
             seq.echo_spacing = s_to_ms(self.echo_spacing).tolist()
         seq.sequence_type = self.sequence_type
         header.sequenceParameters = seq
