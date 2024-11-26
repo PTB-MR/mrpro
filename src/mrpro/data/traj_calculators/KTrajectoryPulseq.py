@@ -54,13 +54,17 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
             raise ValueError('We currently only support constant number of samples')
         n_k0 = int(n_samples.item())
 
-        def reshape_pulseq_traj(k_traj: torch.Tensor, encoding_size: int):
-            k_traj *= encoding_size / (2 * torch.max(torch.abs(k_traj)))
+        def rescale_and_reshape_traj(k_traj: torch.Tensor, encoding_size: int):
+            if encoding_size > 1 and torch.max(torch.abs(k_traj)) > 0:
+                scaling_factor = encoding_size / (2 * torch.max(torch.abs(k_traj)))
+            else:
+                scaling_factor = 0
+            k_traj *= scaling_factor
             return rearrange(k_traj, '(other k0) -> other k0', k0=n_k0)
 
         # rearrange k-space trajectory to match MRpro convention
-        kx = reshape_pulseq_traj(k_traj_adc[0], kheader.encoding_matrix.x)
-        ky = reshape_pulseq_traj(k_traj_adc[1], kheader.encoding_matrix.y)
-        kz = reshape_pulseq_traj(k_traj_adc[2], kheader.encoding_matrix.z)
+        kx = rescale_and_reshape_traj(k_traj_adc[0], kheader.encoding_matrix.x)
+        ky = rescale_and_reshape_traj(k_traj_adc[1], kheader.encoding_matrix.y)
+        kz = rescale_and_reshape_traj(k_traj_adc[2], kheader.encoding_matrix.z)
 
         return KTrajectoryRawShape(kz, ky, kx, self.repeat_detection_tolerance)
