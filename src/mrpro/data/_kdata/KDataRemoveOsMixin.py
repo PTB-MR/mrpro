@@ -65,11 +65,5 @@ class KDataRemoveOsMixin(_KDataProtocol):
 
         # Adapt header parameters
         header = deepcopy(self.header)
-        header.acq_info.center_sample -= start_cropped_readout
-        header.acq_info.number_of_samples[:] = cropped_data.shape[-1]
         header.encoding_matrix.x = cropped_data.shape[-1]
-
-        header.acq_info.discard_post = (header.acq_info.discard_post * x_ratio).to(torch.int32)
-        header.acq_info.discard_pre = (header.acq_info.discard_pre * x_ratio).to(torch.int32)
-
         return type(self)(header, cropped_data, cropped_traj)
