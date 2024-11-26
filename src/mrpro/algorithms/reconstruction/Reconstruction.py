@@ -8,10 +8,10 @@ import torch
 from typing_extensions import Self
 
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
-from mrpro.data._kdata.KData import KData
 from mrpro.data.CsmData import CsmData
 from mrpro.data.DcfData import DcfData
 from mrpro.data.IData import IData
+from mrpro.data.KData import KData
 from mrpro.data.KNoise import KNoise
 from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.LinearOperator import LinearOperator

@@ -8,8 +8,8 @@ import torch
 from torchkbnufft import KbNufft, KbNufftAdjoint
 from typing_extensions import Self
 
-from mrpro.data._kdata.KData import KData
 from mrpro.data.enums import TrajType
+from mrpro.data.KData import KData
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp
