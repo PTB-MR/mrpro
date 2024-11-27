@@ -110,7 +110,7 @@ fourier_operator = direct_reconstruction.fourier_op
 assert direct_reconstruction.csm is not None
 csm_operator = direct_reconstruction.csm.as_operator()
 
-# Create the entire acquisition operator A to be used in the operator K=[A, \nabla]^T for PDHG
+# Create the entire acquisition operator A
 acquisition_operator = fourier_operator @ csm_operator
 
 # %% [markdown]
