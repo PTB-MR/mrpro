@@ -54,16 +54,26 @@ def pdhg(
 
     Solves the minimization problem
         :math:`\min_x g(x) + f(A x)`
-    with linear operator A and proximable functionals f and g.
+    with linear operator :math:`A` and proper, convex, lower-semicontinous functionals :math:`f` and :math:`g`.
 
-    The operator is supplied as a matrix (tuple of tuples) of linear operators,
+    PDHG is a primal-dual algorithm that performs the following steps
+
+    :math:`z_{k+1} = \mathrm{prox}_{\sigma f^{\ast}}(z_k + \sigma K \bar{x}_k),`
+    :math:`x_{k+1} = \mathrm{prox}_{\tau g}(x_k - \tau K^H z_{k+1}),`
+    :math:`\bar{x}_{k+1} = x_{k+1} + \theta(x_{k+1} - x_k),`
+
+    where :math:`\mathrm{prox}` denotes the proximal operator and :math:`f^{\ast}`is the
+    convex conjugate of the functional :math:`f`. Thereby, :math:`\tau` and :math:`\sigma`
+    are the primal and dual step sizes, respectively (see further below) and :math:`\theta\in [0,1]`.
+
+    The operator is supplied as a LinearOperator or as a matrix (tuple of tuples) of linear operators,
     f and g are supplied as tuples of proximable functionals interpreted as separable sums.
 
-    Thus, problem solved is
+    Thus, the problem to be solved is
             :math:`\min_x \sum_i,j g_j(x_j) + f_i(A_ij x_j)`.
 
-    If neither primal nor dual step size are not supplied, they are chose as :math:`1/||A||_{op}`.
-    If either is supplied, the other is chosen such that
+    If neither primal nor dual step size are not supplied, they are both chosen as :math:`1/||A||_{op}`.
+    If one of them is supplied, the other is chosen such that
         primal_stepsize*dual_stepsize = :math:`1/||A||_{op}^2`
 
     Note that the computation of the operator-norm can be computationally expensive and
@@ -76,11 +86,14 @@ def pdhg(
     Parameters
     ----------
     f
-        tuple of proximable functionals interpreted as a separable sum
+        tuple of proximable functionals interpreted as a separable sum;
+        if set to None, it is interpreted as the zero-functional
     g
-        tuple of proximable functionals interpreted as a separable sum
+        tuple of proximable functionals interpreted as a separable sum;
+        if set to None, it is interpreted as the zero-functional
     operator
-        matrix of linear operators
+        linear operator or matrix of linear operators;
+        if set to None, it is interpreted as the Identity-operator
     initial_values
         initial guess of the solution
     max_iterations
