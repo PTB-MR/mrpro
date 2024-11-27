@@ -5,7 +5,7 @@ import torch
 from einops import repeat
 
 from mrpro.data.KTrajectory import KTrajectory
-from mrpro.data.traj_calculators import KTrajectoryCalculator
+from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 
 GOLDEN_RATIO = 0.5 * (5**0.5 + 1)
 
@@ -56,9 +56,9 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryCalculator):
         self,
         *,
         n_k0: int,
-        k0_center: int,
+        k0_center: int | torch.Tensor,
         k1_idx: torch.Tensor,
-        k1_center: int,
+        k1_center: int | torch.Tensor,
         k2_idx: torch.Tensor,
         reversed_readout_mask: torch.Tensor | None = None,
         **_,

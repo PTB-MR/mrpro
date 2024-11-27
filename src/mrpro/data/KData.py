@@ -137,9 +137,12 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
 
         kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 
-        acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
+        acq_info, (k0_center, n_k0_tensor, discard_pre, discard_post) = AcqInfo.from_ismrmrd_acquisitions(
+            acquisitions,
+            additional_fields=('center_sample', 'number_of_samples', 'discard_pre', 'discard_post'),
+        )
 
-        if len(torch.unique(acqinfo.idx.user5)) > 1:
+        if len(torch.unique(acq_info.idx.user5)) > 1:
             warnings.warn(
                 'The Siemens to ismrmrd converter currently (ab)uses '
                 'the user 5 indices for storing the kspace center line number.\n'
@@ -147,7 +150,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
                 stacklevel=1,
             )
 
-        if len(torch.unique(acqinfo.idx.user6)) > 1:
+        if len(torch.unique(acq_info.idx.user6)) > 1:
             warnings.warn(
                 'The Siemens to ismrmrd converter currently (ab)uses '
                 'the user 6 indices for storing the kspace center partition number.\n'
@@ -158,7 +161,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         # Raises ValueError if required fields are missing in the header
         kheader = KHeader.from_ismrmrd(
             ismrmrd_header,
-            acqinfo,
+            acq_info,
             defaults={
                 'datetime': modification_time,  # use the modification time of the dataset as fallback
                 'trajectory': ktrajectory,
@@ -172,9 +175,9 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             # (number_of_samples, center_sample) of (100, 20) (e.g. partial Fourier in the negative k0 direction) and
             # (100, 80) (e.g. partial Fourier in the positive k0 direction) then this should lead to encoding limits of
             # [min=0, max=159, center=80]
-            max_center_sample = int(torch.max(kheader.acq_info.center_sample))
-            max_pos_k0_extend = int(torch.max(kheader.acq_info.number_of_samples - kheader.acq_info.center_sample))
-            kheader.encoding_limits.k0 = Limits(0, max_center_sample + max_pos_k0_extend - 1, max_center_sample)
+            max_center_sample = int(torch.max(k0_center))
+            max_positive_k0_extend = int(torch.max(n_k0_tensor - k0_center))
+            kheader.encoding_limits.k0 = Limits(0, max_center_sample + max_positive_k0_extend - 1, max_center_sample)
 
         # Sort and reshape the kdata and the acquisistion info according to the indices.
         # within "other", the aquisistions are sorted in the order determined by KDIM_SORT_LABELS.
@@ -240,14 +243,19 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
                 ktrajectory_final = ktrajectory(acquisitions).sort_and_reshape(sort_idx, n_k2, n_k1)
             case KTrajectoryCalculator():
                 reversed_readout_mask = (kheader.acq_info.flags[..., 0] & AcqFlags.ACQ_IS_REVERSE.value).bool()
-
+                n_k0_unique = torch.unique(n_k0_tensor)
+                if len(n_k0_unique) > 1:
+                    raise ValueError(
+                        'Trajectory can only be calculated for constant number of readout samples.\n'
+                        f'Got unique values {list(n_k0_unique)}'
+                    )
                 ktrajectory_or_rawshape = ktrajectory(
-                    n_k0=0,
-                    k0_center=0,
+                    n_k0=int(n_k0_unique[0]),
+                    k0_center=k0_center,
                     k1_idx=kheader.acq_info.idx.k1,
-                    k1_center=0,
+                    k1_center=kheader.encoding_limits.k1.center,
                     k2_idx=kheader.acq_info.idx.k2,
-                    k2_center=0,
+                    k2_center=kheader.encoding_limits.k2.center,
                     reversed_readout_mask=reversed_readout_mask,
                     encoding_matrix=kheader.encoding_matrix,
                 )

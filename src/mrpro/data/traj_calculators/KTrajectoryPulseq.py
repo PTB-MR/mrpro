@@ -6,8 +6,8 @@ import pypulseq as pp
 import torch
 from einops import rearrange
 
-from mrpro.data import SpatialDimension
 from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
+from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 
 

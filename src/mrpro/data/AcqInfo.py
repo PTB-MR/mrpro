@@ -2,6 +2,7 @@
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import overload
 
 import ismrmrd
 import numpy as np
@@ -150,14 +151,31 @@ class AcqInfo(MoveDataMixin):
     user: UserValues
     """User defined float or int values"""
 
+    @overload
     @classmethod
-    def from_ismrmrd_acquisitions(cls, acquisitions: Sequence[ismrmrd.Acquisition]) -> Self:
+    def from_ismrmrd_acquisitions(
+        cls, acquisitions: Sequence[ismrmrd.Acquisition], *, additional_fields: None
+    ) -> Self: ...
+
+    @overload
+    @classmethod
+    def from_ismrmrd_acquisitions(
+        cls, acquisitions: Sequence[ismrmrd.Acquisition], *, additional_fields: Sequence[str]
+    ) -> tuple[Self, tuple[torch.Tensor, ...]]: ...
+
+    @classmethod
+    def from_ismrmrd_acquisitions(
+        cls, acquisitions: Sequence[ismrmrd.Acquisition], *, additional_fields: Sequence[str] | None = None
+    ) -> Self | tuple[Self, tuple[torch.Tensor, ...]]:
         """Read the header of a list of acquisition and store information.
 
         Parameters
         ----------
-        acquisitions:
+        acquisitions
             list of ismrmrd acquisistions to read from. Needs at least one acquisition.
+        additional_fields
+            if supplied, additional fields with these names will be from the ismrmrd acquisitions
+            and returned as tensors.
         """
         # Idea: create array of structs, then a struct of arrays,
         # convert it into tensors to store in our dataclass.
@@ -167,9 +185,9 @@ class AcqInfo(MoveDataMixin):
             raise ValueError('Acquisition list must not be empty.')
 
         # Creating the dtype first and casting to bytes
-        # is a workaround for a bug in cpython > 3.12 causing a warning
-        # is np.array(AcquisitionHeader) is called directly.
-        # also, this needs to check the dtyoe only once.
+        # is a workaround for a bug in cpython causing a warning
+        # if np.array(AcquisitionHeader) is called directly.
+        # also, this needs to check the dtype only once.
         acquisition_head_dtype = np.dtype(ismrmrd.AcquisitionHeader)
         headers = np.frombuffer(
             np.array([memoryview(a._head).cast('B') for a in acquisitions]),
@@ -266,4 +284,9 @@ class AcqInfo(MoveDataMixin):
             user=user,
             physiology_time_stamps=physiology_time_stamps,
         )
-        return acq_info
+
+        if additional_fields is None:
+            return acq_info
+        else:
+            additional_values = tuple(tensor_2d(headers[field]) for field in additional_fields)
+            return acq_info, additional_values

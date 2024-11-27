@@ -25,7 +25,7 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         self,
         *,
         n_k0: int,
-        k0_center: int,
+        k0_center: int | torch.Tensor,
         k1_idx: torch.Tensor,
         reversed_readout_mask: torch.Tensor | None = None,
         **_,

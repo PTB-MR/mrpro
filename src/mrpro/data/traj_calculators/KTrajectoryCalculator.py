@@ -17,11 +17,11 @@ class KTrajectoryCalculator(ABC):
         self,
         *,
         n_k0: int,
-        k0_center: int,
+        k0_center: int | torch.Tensor,
         k1_idx: torch.Tensor,
-        k1_center: int,
+        k1_center: int | torch.Tensor,
         k2_idx: torch.Tensor,
-        k2_center: int,
+        k2_center: int | torch.Tensor,
         encoding_matrix: SpatialDimension,
         reversed_readout_mask: torch.Tensor | None = None,
     ) -> KTrajectory | KTrajectoryRawShape:
@@ -59,7 +59,9 @@ class KTrajectoryCalculator(ABC):
 
         """
 
-    def _readout(self, n_k0: int, k0_center: int, reversed_readout_mask: torch.Tensor | None) -> torch.Tensor:
+    def _readout(
+        self, n_k0: int, k0_center: int | torch.Tensor, reversed_readout_mask: torch.Tensor | None
+    ) -> torch.Tensor:
         """Calculate the trajectory along one readout (k0 dimension).
 
         Parameters

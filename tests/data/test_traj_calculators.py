@@ -112,6 +112,7 @@ def test_KTrajectoryCartesian(valid_cartesian_kheader):
         k1_idx=torch.arange(n_k1)[None, None, :, None],
         k1_center=n_k1 // 2,
         k2_idx=torch.arange(n_k2)[None, :, None, None],
+        k2_center=n_k2 // 2,
     )
     assert trajectory.kz.shape == (1, n_k2, 1, 1)
     assert trajectory.ky.shape == (1, 1, n_k1, 1)
@@ -133,6 +134,7 @@ def test_KTrajectoryCartesian_bipolar(valid_cartesian_kheader_bipolar):
         k1_idx=torch.arange(n_k1)[None, None, :, None],
         k1_center=n_k1 // 2,
         k2_idx=torch.arange(n_k2)[None, :, None, None],
+        k2_center=n_k2 // 2,
         reversed_readout_mask=reversed_readout_mask,
     )
     torch.testing.assert_close(trajectory.kx[..., 0, :], torch.flip(trajectory.kx[..., 1, :], dims=(-1,)))
