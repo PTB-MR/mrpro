@@ -21,6 +21,7 @@ from mrpro.data._kdata.KDataSplitMixin import KDataSplitMixin
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
 from mrpro.data.AcqInfo import AcqInfo, rearrange_acq_info_fields
 from mrpro.data.EncodingLimits import Limits
+from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
@@ -238,7 +239,19 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             case KTrajectoryIsmrmrd():
                 ktrajectory_final = ktrajectory(acquisitions).sort_and_reshape(sort_idx, n_k2, n_k1)
             case KTrajectoryCalculator():
-                ktrajectory_or_rawshape = ktrajectory(kheader)
+                reversed_readout_mask = (kheader.acq_info.flags[..., 0] & AcqFlags.ACQ_IS_REVERSE.value).bool()
+
+                ktrajectory_or_rawshape = ktrajectory(
+                    n_k0=0,
+                    k0_center=0,
+                    k1_idx=kheader.acq_info.idx.k1,
+                    k1_center=0,
+                    k2_idx=kheader.acq_info.idx.k2,
+                    k2_center=0,
+                    reversed_readout_mask=reversed_readout_mask,
+                    encoding_matrix=kheader.encoding_matrix,
+                )
+
                 if isinstance(ktrajectory_or_rawshape, KTrajectoryRawShape):
                     ktrajectory_final = ktrajectory_or_rawshape.sort_and_reshape(sort_idx, n_k2, n_k1)
                 else:
