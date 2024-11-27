@@ -74,7 +74,7 @@ def test_l2_l1_identification2():
 
 def test_fourier_l2_l1_():
     """Set up the problem min_x 1/2*|| Fx - y||_2^2 + lambda * ||x||_1,
-    where F is the full FFT sampled on a Cartesian grid. Thus, again, the
+    where F is the full FFT and y is sampled on a Cartesian grid. Thus, again, the
     problem has a closed-form solution given by soft-thresholding.
     """
     random_generator = RandomGenerator(seed=0)
@@ -174,11 +174,15 @@ def test_callback():
     operator = None
     initial_values = (random_generator.complex64_tensor(size=(8,)),)
 
-    # callback function; should not be called since PDHG should exit
+    callback_was_called = False
+
+    # callback function that should be called to change the variable's value to True
     def callback(solution):
-        assert True
+        nonlocal callback_was_called
+        callback_was_called = True
 
     pdhg(f=f, g=g, operator=operator, initial_values=initial_values, max_iterations=1, callback=callback)
+    assert callback_was_called
 
 
 def test_stepsizes():
@@ -310,6 +314,7 @@ def test_pdhg_stopping_after_one_iteration():
     expected = torch.nn.functional.softshrink(data, regularization_parameter)
 
     # callback function that should not be called since pdhg should exit the for-loop
+    # beforehand
     def callback(solution):
         pytest.fail('PDHG did not exit before performing any iterations')
 
