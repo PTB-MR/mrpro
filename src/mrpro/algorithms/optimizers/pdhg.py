@@ -86,11 +86,9 @@ def pdhg(
     Parameters
     ----------
     f
-        tuple of proximable functionals interpreted as a separable sum;
-        if set to None, it is interpreted as the zero-functional
+        functional `f` in the problem definition. If set to None, it is interpreted as the zero-functional.
     g
-        tuple of proximable functionals interpreted as a separable sum;
-        if set to None, it is interpreted as the zero-functional
+        functional `g` in the problem definition. If set to None, it is interpreted as the zero-functional.
     operator
         linear operator or matrix of linear operators;
         if set to None, it is interpreted as the Identity-operator
