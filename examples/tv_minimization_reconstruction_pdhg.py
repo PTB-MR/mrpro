@@ -5,16 +5,26 @@
 # define zenodo URL of the example ismrmd data
 zenodo_url = 'https://zenodo.org/records/10854057/files/'
 fname = 'pulseq_radial_2D_402spokes_golden_angle_with_traj.h5'
-# %%
-# Download raw data
+
+# %% [markdown]
+# ##### Download and read-in the raw data
+
 import tempfile
 
+import mrpro
 import requests
 
+# Download data from zenodo
 data_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.h5')
 response = requests.get(zenodo_url + fname, timeout=30)
 data_file.write(response.content)
 data_file.flush()
+
+# Load in the data from the ISMRMRD file
+kdata = mrpro.data.KData.from_file(data_file.name, mrpro.data.traj_calculators.KTrajectoryIsmrmrd())
+kdata.header.recon_matrix.x = 256
+kdata.header.recon_matrix.y = 256
+
 
 # %% [markdown]
 # ### Image reconstruction
@@ -71,18 +81,6 @@ data_file.flush()
 # iteration. We will therefore use a way more efficient identification.
 #
 # In the following, we load 2D radial MR data and set up problem (2) to use PDHG to reconstruct the data.
-
-# %%
-import mrpro
-
-# %% [markdown]
-# ##### Read-in the raw data
-
-# %%
-# Load in the Data from the ISMRMRD file
-kdata = mrpro.data.KData.from_file(data_file.name, mrpro.data.traj_calculators.KTrajectoryIsmrmrd())
-kdata.header.recon_matrix.x = 256
-kdata.header.recon_matrix.y = 256
 
 # %% [markdown]
 # ### Set up the operator $A$
