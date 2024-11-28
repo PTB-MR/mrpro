@@ -330,6 +330,13 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         from mrpro.operators import PCACompressionOp
 
         coil_dim = -4 % self.data.ndim
+
+        if n_compressed_coils > (n_current_coils := self.data.shape[coil_dim]):
+            raise ValueError(
+                f'Number of compressed coils ({n_compressed_coils}) cannot be greater '
+                f'than the number of current coils ({n_current_coils}).'
+            )
+
         if batch_dims is not None and joint_dims is not Ellipsis:
             raise ValueError('Either batch_dims or joint_dims can be defined not both.')
 
@@ -347,22 +354,20 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
 
         # reshape to (*batch dimension, -1, coils)
         permute_order = (
-            batch_dims_normalized
-            + [i for i in range(self.data.ndim) if i != coil_dim and i not in batch_dims_normalized]
-            + [coil_dim]
+            *batch_dims_normalized,
+            *[i for i in range(self.data.ndim) if i != coil_dim and i not in batch_dims_normalized],
+            coil_dim,
         )
-        kdata_coil_compressed = self.data.permute(permute_order)
-        permuted_kdata_shape = kdata_coil_compressed.shape
-        kdata_coil_compressed = kdata_coil_compressed.flatten(
+        kdata_permuted = self.data.permute(permute_order)
+        kdata_flattened = kdata_permuted.flatten(
             start_dim=len(batch_dims_normalized), end_dim=-2
         )  # keep separate dimensions and coil
 
-        pca_compression_op = PCACompressionOp(data=kdata_coil_compressed, n_components=n_compressed_coils)
-        (kdata_coil_compressed,) = pca_compression_op(kdata_coil_compressed)
-
+        pca_compression_op = PCACompressionOp(data=kdata_flattened, n_components=n_compressed_coils)
+        (kdata_coil_compressed_flattened,) = pca_compression_op(kdata_flattened)
+        del kdata_flattened
         # reshape to original dimensions and undo permutation
         kdata_coil_compressed = torch.reshape(
-            kdata_coil_compressed, [*permuted_kdata_shape[:-1], n_compressed_coils]
+            kdata_coil_compressed_flattened, [*kdata_permuted.shape[:-1], n_compressed_coils]
         ).permute(*np.argsort(permute_order))
-
         return type(self)(self.header.clone(), kdata_coil_compressed, self.traj.clone())

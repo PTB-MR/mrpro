@@ -574,3 +574,10 @@ def test_KData_compress_coils_error_coil_dim(consistently_shaped_kdata):
 
     with pytest.raises(ValueError, match='Coil dimension must not'):
         consistently_shaped_kdata.compress_coils(n_compressed_coils=3, joint_dims=(-4,))
+
+
+def test_KData_compress_coils_error_n_coils(consistently_shaped_kdata):
+    """Test if error is raised if new coils would be larger than existing coils"""
+    existing_coils = consistently_shaped_kdata.data.shape[-4]
+    with pytest.raises(ValueError, match='greater'):
+        consistently_shaped_kdata.compress_coils(existing_coils + 1)
