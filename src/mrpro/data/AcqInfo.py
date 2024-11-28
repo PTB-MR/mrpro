@@ -2,6 +2,7 @@
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import overload
 
 import ismrmrd
 import numpy as np
@@ -83,6 +84,37 @@ class AcqIdx(MoveDataMixin):
 
 
 @dataclass(slots=True)
+class UserValues(MoveDataMixin):
+    """User Values used in AcqInfo."""
+
+    float1: torch.Tensor
+    float2: torch.Tensor
+    float3: torch.Tensor
+    float4: torch.Tensor
+    float5: torch.Tensor
+    float6: torch.Tensor
+    float7: torch.Tensor
+    float8: torch.Tensor
+    int1: torch.Tensor
+    int2: torch.Tensor
+    int3: torch.Tensor
+    int4: torch.Tensor
+    int5: torch.Tensor
+    int6: torch.Tensor
+    int7: torch.Tensor
+    int8: torch.Tensor
+
+
+@dataclass(slots=True)
+class PhysiologyTimestamps:
+    """Time stamps relative to physiological triggering, e.g. ECG. Not in s but in vendor-specific time units."""
+
+    timestamp1: torch.Tensor
+    timestamp2: torch.Tensor
+    timestamp3: torch.Tensor
+
+
+@dataclass(slots=True)
 class AcqInfo(MoveDataMixin):
     """Acquisition information for each readout."""
 
@@ -92,35 +124,11 @@ class AcqInfo(MoveDataMixin):
     acquisition_time_stamp: torch.Tensor
     """Clock time stamp. Not in s but in vendor-specific time units (e.g. 2.5ms for Siemens)"""
 
-    active_channels: torch.Tensor
-    """Number of active receiver coil elements."""
-
-    available_channels: torch.Tensor
-    """Number of available receiver coil elements."""
-
-    center_sample: torch.Tensor
-    """Index of the readout sample corresponding to k-space center (zero indexed)."""
-
-    channel_mask: torch.Tensor
-    """Bit mask indicating active coils (64*16 = 1024 bits)."""
-
-    discard_post: torch.Tensor
-    """Number of readout samples to be discarded at the end (e.g. if the ADC is active during gradient events)."""
-
-    discard_pre: torch.Tensor
-    """Number of readout samples to be discarded at the beginning (e.g. if the ADC is active during gradient events)"""
-
-    encoding_space_ref: torch.Tensor
-    """Indexed reference to the encoding spaces enumerated in the MRD (xml) header."""
-
     flags: torch.Tensor
     """A bit mask of common attributes applicable to individual acquisition readouts."""
 
     measurement_uid: torch.Tensor
     """Unique ID corresponding to the readout."""
-
-    number_of_samples: torch.Tensor
-    """Number of sample points per readout (readouts may have different number of sample points)."""
 
     orientation: Rotation
     """Rotation describing the orientation of the readout, phase and slice encoding direction."""
@@ -128,7 +136,7 @@ class AcqInfo(MoveDataMixin):
     patient_table_position: SpatialDimension[torch.Tensor]
     """Offset position of the patient table, in LPS coordinates [m]."""
 
-    physiology_time_stamp: torch.Tensor
+    physiology_time_stamps: PhysiologyTimestamps
     """Time stamps relative to physiological triggering, e.g. ECG. Not in s but in vendor-specific time units"""
 
     position: SpatialDimension[torch.Tensor]
@@ -140,26 +148,34 @@ class AcqInfo(MoveDataMixin):
     scan_counter: torch.Tensor
     """Zero-indexed incrementing counter for readouts."""
 
-    trajectory_dimensions: torch.Tensor  # =3. We only support 3D Trajectories: kz always exists.
-    """Dimensionality of the k-space trajectory vector."""
+    user: UserValues
+    """User defined float or int values"""
 
-    user_float: torch.Tensor
-    """User-defined float parameters."""
+    @overload
+    @classmethod
+    def from_ismrmrd_acquisitions(
+        cls, acquisitions: Sequence[ismrmrd.acquisition.Acquisition], *, additional_fields: None
+    ) -> Self: ...
 
-    user_int: torch.Tensor
-    """User-defined int parameters."""
-
-    version: torch.Tensor
-    """Major version number."""
+    @overload
+    @classmethod
+    def from_ismrmrd_acquisitions(
+        cls, acquisitions: Sequence[ismrmrd.acquisition.Acquisition], *, additional_fields: Sequence[str]
+    ) -> tuple[Self, tuple[torch.Tensor, ...]]: ...
 
     @classmethod
-    def from_ismrmrd_acquisitions(cls, acquisitions: Sequence[ismrmrd.Acquisition]) -> Self:
+    def from_ismrmrd_acquisitions(
+        cls, acquisitions: Sequence[ismrmrd.acquisition.Acquisition], *, additional_fields: Sequence[str] | None = None
+    ) -> Self | tuple[Self, tuple[torch.Tensor, ...]]:
         """Read the header of a list of acquisition and store information.
 
         Parameters
         ----------
-        acquisitions:
+        acquisitions
             list of ismrmrd acquisistions to read from. Needs at least one acquisition.
+        additional_fields
+            if supplied, additional fields with these names will be from the ismrmrd acquisitions
+            and returned as tensors.
         """
         # Idea: create array of structs, then a struct of arrays,
         # convert it into tensors to store in our dataclass.
@@ -169,9 +185,9 @@ class AcqInfo(MoveDataMixin):
             raise ValueError('Acquisition list must not be empty.')
 
         # Creating the dtype first and casting to bytes
-        # is a workaround for a bug in cpython > 3.12 causing a warning
-        # is np.array(AcquisitionHeader) is called directly.
-        # also, this needs to check the dtyoe only once.
+        # is a workaround for a bug in cpython causing a warning
+        # if np.array(AcquisitionHeader) is called directly.
+        # also, this needs to check the dtype only once.
         acquisition_head_dtype = np.dtype(ismrmrd.AcquisitionHeader)
         headers = np.frombuffer(
             np.array([memoryview(a._head).cast('B') for a in acquisitions]),
@@ -228,33 +244,49 @@ class AcqInfo(MoveDataMixin):
             user6=tensor(idx['user'][:, 6]),
             user7=tensor(idx['user'][:, 7]),
         )
-
+        user = UserValues(
+            tensor_2d(headers['user_float'][:, 0]),
+            tensor_2d(headers['user_float'][:, 1]),
+            tensor_2d(headers['user_float'][:, 2]),
+            tensor_2d(headers['user_float'][:, 3]),
+            tensor_2d(headers['user_float'][:, 4]),
+            tensor_2d(headers['user_float'][:, 5]),
+            tensor_2d(headers['user_float'][:, 6]),
+            tensor_2d(headers['user_float'][:, 7]),
+            tensor_2d(headers['user_int'][:, 0]),
+            tensor_2d(headers['user_int'][:, 1]),
+            tensor_2d(headers['user_int'][:, 2]),
+            tensor_2d(headers['user_int'][:, 3]),
+            tensor_2d(headers['user_int'][:, 4]),
+            tensor_2d(headers['user_int'][:, 5]),
+            tensor_2d(headers['user_int'][:, 6]),
+            tensor_2d(headers['user_int'][:, 7]),
+        )
+        physiology_time_stamps = PhysiologyTimestamps(
+            tensor_2d(headers['physiology_time_stamp'][:, 0]).double(),
+            tensor_2d(headers['physiology_time_stamp'][:, 1]).double(),
+            tensor_2d(headers['physiology_time_stamp'][:, 2]).double(),
+        )
         acq_info = cls(
             idx=acq_idx,
-            acquisition_time_stamp=tensor_2d(headers['acquisition_time_stamp']),
-            active_channels=tensor_2d(headers['active_channels']),
-            available_channels=tensor_2d(headers['available_channels']),
-            center_sample=tensor_2d(headers['center_sample']),
-            channel_mask=tensor_2d(headers['channel_mask']),
-            discard_post=tensor_2d(headers['discard_post']),
-            discard_pre=tensor_2d(headers['discard_pre']),
-            encoding_space_ref=tensor_2d(headers['encoding_space_ref']),
+            acquisition_time_stamp=tensor_2d(headers['acquisition_time_stamp']).double(),
             flags=tensor_2d(headers['flags']),
             measurement_uid=tensor_2d(headers['measurement_uid']),
-            number_of_samples=tensor_2d(headers['number_of_samples']),
             orientation=Rotation.from_directions(
                 spatialdimension_2d(headers['slice_dir']),
                 spatialdimension_2d(headers['phase_dir']),
                 spatialdimension_2d(headers['read_dir']),
             ),
             patient_table_position=spatialdimension_2d(headers['patient_table_position']).apply_(mm_to_m),
-            physiology_time_stamp=tensor_2d(headers['physiology_time_stamp']),
             position=spatialdimension_2d(headers['position']).apply_(mm_to_m),
             sample_time_us=tensor_2d(headers['sample_time_us']),
             scan_counter=tensor_2d(headers['scan_counter']),
-            trajectory_dimensions=tensor_2d(headers['trajectory_dimensions']).fill_(3),  # see above
-            user_float=tensor_2d(headers['user_float']),
-            user_int=tensor_2d(headers['user_int']),
-            version=tensor_2d(headers['version']),
+            user=user,
+            physiology_time_stamps=physiology_time_stamps,
         )
-        return acq_info
+
+        if additional_fields is None:
+            return acq_info
+        else:
+            additional_values = tuple(tensor_2d(headers[field]) for field in additional_fields)
+            return acq_info, additional_values

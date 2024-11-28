@@ -188,11 +188,11 @@ def random_kheader(request, random_full_ismrmrd_header, random_acq_info):
 @pytest.fixture
 def random_acq_info(random_acquisition):
     """Random (not necessarily valid) AcqInfo."""
-    acq_info = AcqInfo.from_ismrmrd_acquisitions([random_acquisition])
+    acq_info = AcqInfo.from_ismrmrd_acquisitions([random_acquisition])  # type:ignore[call-overload] # ismrmrd is not typed
     return acq_info
 
 
-@pytest.fixture(params=({'seed': 0, 'n_other': 10, 'n_k2': 40, 'n_k1': 20},))
+@pytest.fixture(params=({'seed': 0, 'n_other': 10, 'n_k2': 40, 'n_k1': 20, 'n_k0': 64, 'n_coils': 3},))
 def random_kheader_shape(request, random_acquisition, random_full_ismrmrd_header):
     """Random (not necessarily valid) KHeader with defined shape."""
     # Get dimensions
@@ -205,15 +205,16 @@ def random_kheader_shape(request, random_acquisition, random_full_ismrmrd_header
     generator = RandomGenerator(seed)
 
     # Generate acquisitions
-    random_acq_info = AcqInfo.from_ismrmrd_acquisitions([random_acquisition for _ in range(n_k1 * n_k2 * n_other)])
-    n_k0 = int(random_acq_info.number_of_samples[0])
-    n_coils = int(random_acq_info.active_channels[0])
+    random_acq_info = AcqInfo.from_ismrmrd_acquisitions([random_acquisition for _ in range(n_k1 * n_k2 * n_other)])  # type:ignore[call-overload]
 
     # Generate trajectory
+    n_k0 = int(request.param['n_k0'])
     ktraj = [generate_random_trajectory(generator, shape=(n_k0, 2)) for _ in range(n_k1 * n_k2 * n_other)]
 
     # Put it all together to a KHeader object
     kheader = KHeader.from_ismrmrd(random_full_ismrmrd_header, acq_info=random_acq_info, defaults={'trajectory': ktraj})
+    n_coils = int(request.param['n_coils'])
+
     return kheader, n_other, n_coils, n_k2, n_k1, n_k0
 
 
