@@ -73,16 +73,16 @@ def pdhg(
     as separable sums.
 
     Thus, the problem to be solved is
-            :math:`\min_{x=(x_1,\ldots,x_n)} \sum_{i=1}^m \sum_{j=1}^n g_j(x_j) + f_i(K_{i,j} x_{j})`.
+            :math:`\min_{x=(x_1,\ldots,x_n)} \sum_{i=1}^m \sum_{j=1}^n g_j(x_j) + f_i\big( (Kx)_j\big)`.
 
-    If neither primal nor dual step size are not supplied, they are both chosen as :math:`1/||K||_2`.
-    If one of them is supplied, the other is chosen such that
-        :math:`\tau sigma = 1/||K||_2`,
+    If neither primal nor dual step size are supplied, they are both chosen as :math:`1/||K||_2`.
+    If only one of them is supplied, the other is chosen such that
+        :math:`\tau \sigma = 1/||K||_2`,
 
-    where :math:`1/||A||_2` denotes the operator-norm of :math:`A`
+    where :math:`1/||K||_2` denotes the operator-norm of :math:`K`.
     Note that the computation of the operator-norm can be computationally expensive and
     that if no stepsizes are provided, the algorithm runs a power iteration to obtain the
-    upper bound of the stepsizes.
+    upper bound for the stepsizes.
 
     For a warm start, the initial relaxed primal and dual variables can be supplied.
     These might be obtained from the status object of a previous run.
