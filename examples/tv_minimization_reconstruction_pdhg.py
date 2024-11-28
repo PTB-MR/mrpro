@@ -9,6 +9,7 @@ fname = 'pulseq_radial_2D_402spokes_golden_angle_with_traj.h5'
 # %% [markdown]
 # ##### Download and read-in the raw data
 
+# %%
 import tempfile
 
 import mrpro
