@@ -59,23 +59,27 @@ def pdhg(
     PDHG is a primal-dual algorithm that performs the following steps
 
     :math:`z_{k+1} = \mathrm{prox}_{\sigma f^{\ast}}(z_k + \sigma K \bar{x}_k),`
+
     :math:`x_{k+1} = \mathrm{prox}_{\tau g}(x_k - \tau K^H z_{k+1}),`
+
     :math:`\bar{x}_{k+1} = x_{k+1} + \theta(x_{k+1} - x_k),`
 
-    where :math:`\mathrm{prox}` denotes the proximal operator and :math:`f^{\ast}`is the
+    where :math:`\mathrm{prox}` denotes the proximal operator and :math:`f^{\ast}` is the
     convex conjugate of the functional :math:`f`. Thereby, :math:`\tau` and :math:`\sigma`
     are the primal and dual step sizes, respectively (see further below) and :math:`\theta\in [0,1]`.
 
-    The operator is supplied as a LinearOperator or as a matrix (tuple of tuples) of linear operators,
-    f and g are supplied as tuples of proximable functionals interpreted as separable sums.
+    The operator is supplied as a LinearOperator or as a :math:`m\times n` -matrix (tuple of tuples) of
+    linear operators, :math:`f` and :math:`g` are supplied as tuples of proximable functionals interpreted
+    as separable sums.
 
     Thus, the problem to be solved is
-            :math:`\min_x \sum_i,j g_j(x_j) + f_i(A_ij x_j)`.
+            :math:`\min_{x=(x_1,\ldots,x_m)} \sum_{i=1}^n \sum_{j=1}^m g_j(x_j) + f_i(K_{i,j} x_{j})`.
 
-    If neither primal nor dual step size are not supplied, they are both chosen as :math:`1/||A||_{op}`.
+    If neither primal nor dual step size are not supplied, they are both chosen as :math:`1/||K||_2`.
     If one of them is supplied, the other is chosen such that
-        primal_stepsize*dual_stepsize = :math:`1/||A||_{op}^2`
+        :math:`\tau sigma = 1/||K||_2`,
 
+    where :math:`1/||A||_2` denotes the operator-norm of :math:`A`
     Note that the computation of the operator-norm can be computationally expensive and
     that if no stepsizes are provided, the algorithm runs a power iteration to obtain the
     upper bound of the stepsizes.
