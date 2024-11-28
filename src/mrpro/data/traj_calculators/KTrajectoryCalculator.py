@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 
 import torch
+from einops import repeat
 
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
@@ -78,10 +79,16 @@ class KTrajectoryCalculator(ABC):
             trajectory along one readout
 
         """
+        if isinstance(k0_center, int):
+            k0_center = repeat(torch.tensor(k0_center), '... -> ... other k2 k1 k0', other=1, k2=1, k1=1, k0=1)
+        elif k0_center.ndim < 4:
+            raise ValueError(f'Expected k0_center to have at least 4 dimensions, got {k0_center.ndim}.')
         k0 = torch.linspace(0, n_k0 - 1, n_k0, dtype=torch.float32) - k0_center
         # Data can be obtained with standard or reversed readout (e.g. bipolar readout).
         if reversed_readout_mask is not None:
-            k0, reversed_readout_mask = torch.broadcast_tensors(k0, reversed_readout_mask)
+            shape = torch.broadcast_shapes(k0.shape[:-1], reversed_readout_mask.shape)
+            k0 = k0.broadcast_to(*shape, k0.shape[-1]).contiguous()
+            reversed_readout_mask = reversed_readout_mask.broadcast_to(shape, k0.shape[-1])
             k0[reversed_readout_mask] = torch.flip(k0[reversed_readout_mask], (-1,))
         return k0
 

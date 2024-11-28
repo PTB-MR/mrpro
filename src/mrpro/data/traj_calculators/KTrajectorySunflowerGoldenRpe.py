@@ -13,7 +13,7 @@ GOLDEN_RATIO = 0.5 * (5**0.5 + 1)
 class KTrajectorySunflowerGoldenRpe(KTrajectoryCalculator):
     """Radial phase encoding trajectory with a sunflower pattern."""
 
-    def __init__(self, radial_undersampling_factor: float = 1.0) -> None:
+    def __init__(self) -> None:
         """Initialize KTrajectorySunflowerGoldenRpe.
 
         Parameters
@@ -22,9 +22,6 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryCalculator):
             undersampling factor along radial phase encoding direction.
         """
         self.angle = torch.pi * 0.618034
-
-        if radial_undersampling_factor != 1:
-            raise NotImplementedError('Radial undersampling is not yet implemented')
 
     def _apply_sunflower_shift_between_rpe_lines(
         self,
@@ -48,6 +45,8 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryCalculator):
         angles = angles.flatten()
         _, indices = np.unique(angles, return_index=True)
         shift_idx = np.argsort(indices)
+        k2_idx, radial = torch.broadcast_tensors(k2_idx, radial)
+        radial = radial.contiguous()
         for ind, shift in enumerate(shift_idx):
             radial[k2_idx == ind] += ((shift * GOLDEN_RATIO) % 1) - 0.5
         return radial
@@ -85,11 +84,12 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryCalculator):
             radial phase encoding trajectory for given KHeader
         """
         angles = repeat((k2_idx * self.angle) % torch.pi, '... k2 k1 -> ... k2 k1 k0', k0=1)
-        radial = repeat((k1_idx - k1_center).to(torch.float32), '... k2 k1 -> ... k2 k1 k0', k0=1)
-        radial = self._apply_sunflower_shift_between_rpe_lines(radial, angles, k2_idx)
 
+        radial = (k1_idx - k1_center).to(torch.float32)
+        radial = self._apply_sunflower_shift_between_rpe_lines(radial, angles, k2_idx)
         # Asymmetric k-space point is used to obtain a self-navigator signal, thus should be in k-space center
-        radial[k1_idx == 0] = 0
+        radial[(k1_idx == 0).broadcast_to(radial.shape)] = 0
+        radial = repeat(radial, '... k2 k1 -> ... k2 k1 k0', k0=1)
 
         kz = radial * torch.sin(angles)
         ky = radial * torch.cos(angles)

@@ -154,18 +154,18 @@ class AcqInfo(MoveDataMixin):
     @overload
     @classmethod
     def from_ismrmrd_acquisitions(
-        cls, acquisitions: Sequence[ismrmrd.Acquisition], *, additional_fields: None
+        cls, acquisitions: Sequence[ismrmrd.acquisition.Acquisition], *, additional_fields: None
     ) -> Self: ...
 
     @overload
     @classmethod
     def from_ismrmrd_acquisitions(
-        cls, acquisitions: Sequence[ismrmrd.Acquisition], *, additional_fields: Sequence[str]
+        cls, acquisitions: Sequence[ismrmrd.acquisition.Acquisition], *, additional_fields: Sequence[str]
     ) -> tuple[Self, tuple[torch.Tensor, ...]]: ...
 
     @classmethod
     def from_ismrmrd_acquisitions(
-        cls, acquisitions: Sequence[ismrmrd.Acquisition], *, additional_fields: Sequence[str] | None = None
+        cls, acquisitions: Sequence[ismrmrd.acquisition.Acquisition], *, additional_fields: Sequence[str] | None = None
     ) -> Self | tuple[Self, tuple[torch.Tensor, ...]]:
         """Read the header of a list of acquisition and store information.
 

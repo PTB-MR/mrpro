@@ -69,11 +69,12 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         .. [PRI2010] Prieto C, Schaeffter T (2010) 3D undersampled golden-radial phase encoding
         for DCE-MRA using inherently regularized iterative SENSE. MRM 64(2). https://doi.org/10.1002/mrm.22446
         """
-        # do not shift k-space center
-        not_center = ~torch.isclose(k_radial, torch.tensor(0))
-
+        k_radial, idx = torch.broadcast_tensors(k_radial, idx)
+        k_radial = k_radial.clone()
+        not_center = ~torch.isclose(k_radial, torch.tensor(0.0))
         for ind, shift in enumerate(self.shift_between_rpe_lines):
             current_mask = (idx % len(self.shift_between_rpe_lines)) == ind
+            # k-space center should not be shifted
             current_mask &= not_center
             k_radial[current_mask] += shift
 
