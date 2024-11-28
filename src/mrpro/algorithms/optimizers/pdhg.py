@@ -73,7 +73,7 @@ def pdhg(
     as separable sums.
 
     Thus, the problem to be solved is
-            :math:`\min_{x=(x_1,\ldots,x_n)} \sum_{i=1}^m \sum_{j=1}^n g_j(x_j) + f_i\big( (Kx)_j\big)`.
+            :math:`\min_{x=(x_1,\ldots,x_n)} \sum_{i=1}^m f_i\big( (Kx)_i\big) + \sum_{j=1}^n g_j(x_j)`.
 
     If neither primal nor dual step size are supplied, they are both chosen as :math:`1/||K||_2`.
     If only one of them is supplied, the other is chosen such that
