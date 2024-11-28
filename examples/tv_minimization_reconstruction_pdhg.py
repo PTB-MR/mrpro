@@ -1,11 +1,6 @@
 # %% [markdown]
 # # Total-variation (TV)-minimization reconstruction of 2D golden angle radial data
 
-# %%
-# define zenodo URL of the example ismrmd data
-zenodo_url = 'https://zenodo.org/records/10854057/files/'
-fname = 'pulseq_radial_2D_402spokes_golden_angle_with_traj.h5'
-
 # %% [markdown]
 # ##### Download and read-in the raw data
 
@@ -14,6 +9,10 @@ import tempfile
 
 import mrpro
 import requests
+
+# define zenodo URL of the example ismrmd data
+zenodo_url = 'https://zenodo.org/records/10854057/files/'
+fname = 'pulseq_radial_2D_402spokes_golden_angle_with_traj.h5'
 
 # Download the data from zenodo
 data_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.h5')
