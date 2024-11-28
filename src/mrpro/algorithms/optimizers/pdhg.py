@@ -53,8 +53,8 @@ def pdhg(
     r"""Primal-Dual Hybrid Gradient Algorithm (PDHG).
 
     Solves the minimization problem
-        :math:`\min_x g(x) + f(A x)`
-    with linear operator :math:`A` and proper, convex, lower-semicontinous functionals :math:`f` and :math:`g`.
+        :math:`\min_x f(K x) + g(x)`
+    with linear operator :math:`K` and proper, convex, lower-semicontinous functionals :math:`f` and :math:`g`.
 
     PDHG is a primal-dual algorithm that performs the following steps
 
@@ -72,7 +72,7 @@ def pdhg(
     linear operators, :math:`f` and :math:`g` are supplied as tuples of proximable functionals interpreted
     as separable sums.
 
-    Thus, the problem to be solved is
+    Thus, this implementation solves the problem
             :math:`\min_{x=(x_1,\ldots,x_n)} \sum_{i=1}^m f_i\big( (Kx)_i\big) + \sum_{j=1}^n g_j(x_j)`.
 
     If neither primal nor dual step size are supplied, they are both chosen as :math:`1/||K||_2`.
