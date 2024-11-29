@@ -1,7 +1,5 @@
 """MR raw data / k-space data header dataclass."""
 
-from __future__ import annotations
-
 import dataclasses
 import datetime
 import warnings

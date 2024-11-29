@@ -1,7 +1,5 @@
 """Density compensation data (DcfData) class."""
 
-from __future__ import annotations
-
 import dataclasses
 from functools import reduce
 from typing import TYPE_CHECKING
