@@ -51,25 +51,22 @@ def test_autodiff_inversion_recovery():
 
 @pytest.mark.cuda
 def test_inversion_recovery_cuda():
-    """Test the inversion recovery model works on a cuda device."""
-    # Create on cpu, transfer to GPU and run on GPU
+    """Test the inversion recovery model works on cuda devices."""
+    m0, t1 = create_parameter_tensor_tuples(parameter_shape=(2, 5, 10, 10, 10), number_of_tensors=2)
+
+    # Create on CPU, transfer to GPU and run on GPU
     model = InversionRecovery(ti=10)
     model.cuda()
-    m0, t1 = create_parameter_tensor_tuples(parameter_shape=(2, 5, 10, 10, 10), number_of_tensors=2)
     (signal,) = model(m0.cuda(), t1.cuda())
     assert signal.is_cuda
 
-    # Create on gpu and run on GPU
+    # Create on GPU and run on GPU
     model = InversionRecovery(ti=torch.as_tensor(10).cuda())
-    m0, t1 = create_parameter_tensor_tuples(parameter_shape=(2, 5, 10, 10, 10), number_of_tensors=2)
     (signal,) = model(m0.cuda(), t1.cuda())
     assert signal.is_cuda
 
-    # Create on gpu, transfer to CPU and run on CPU
+    # Create on GPU, transfer to CPU and run on CPU
     model = InversionRecovery(ti=torch.as_tensor(10).cuda())
     model.cpu()
-    m0, t1 = create_parameter_tensor_tuples(parameter_shape=(2, 5, 10, 10, 10), number_of_tensors=2)
     (signal,) = model(m0, t1)
     assert signal.is_cpu
-
-
