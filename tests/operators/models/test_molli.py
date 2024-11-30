@@ -52,3 +52,26 @@ def test_autodiff_molli():
     model = MOLLI(ti=10)
     a, b, t1 = create_parameter_tensor_tuples((2, 5, 10, 10, 10), number_of_tensors=3)
     autodiff_test(model, a, b, t1)
+
+
+@pytest.mark.cuda
+def test_molli_cuda():
+    """Test the molli model works on cuda devices."""
+    a, b, t1 = create_parameter_tensor_tuples((2, 5, 10, 10, 10), number_of_tensors=3)
+
+    # Create on CPU, transfer to GPU and run on GPU
+    model = MOLLI(ti=10)
+    model.cuda()
+    (signal,) = model(a.cuda(), b.cuda(), t1.cuda())
+    assert signal.is_cuda
+
+    # Create on GPU and run on GPU
+    model = MOLLI(ti=torch.as_tensor(10).cuda())
+    (signal,) = model(a.cuda(), b.cuda(), t1.cuda())
+    assert signal.is_cuda
+
+    # Create on GPU, transfer to CPU and run on CPU
+    model = MOLLI(ti=torch.as_tensor(10).cuda())
+    model.cpu()
+    (signal,) = model(a, b, t1)
+    assert signal.is_cpu
