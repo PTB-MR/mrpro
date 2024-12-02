@@ -1,10 +1,18 @@
 from dataclasses import dataclass
 from typing import Annotated
 
-import numpy as np
 import pytest
 import torch
-from mrpro.data.CheckDataMixin import Annotation, CheckDataMixin, ShapeError, SuspendDataChecks
+from mrpro.data.CheckDataMixin import (
+    Annotation,
+    CheckDataMixin,
+    ShapeError,
+    SuspendDataChecks,
+    _FixedDim,
+    _NamedDim,
+    _parse_string_to_shape_specification,
+    _shape_specification_to_string,
+)
 
 
 def tuple_to_regex(t: tuple) -> str:
@@ -15,6 +23,7 @@ def tuple_to_regex(t: tuple) -> str:
     return f'\\({elements}\\)'
 
 
+# Tests that these can be defined
 @dataclass
 class CheckedDataClass(CheckDataMixin):
     """A test dataclass."""
@@ -23,7 +32,6 @@ class CheckedDataClass(CheckDataMixin):
         torch.Tensor, Annotation(dtype=(torch.float32, torch.float64), shape='*#other coil #k2 #k1 #k0')
     ]
     int_tensor: Annotated[torch.Tensor, Annotation(dtype=(torch.int), shape='*#other #coil=1 #k2 #k1 k0=1')]
-    fixed_ndarray: Annotated[np.ndarray, Annotation(dtype=int, shape='k0')]
     string: str
 
 
@@ -54,7 +62,6 @@ def test_checked_dataclass_success():
     _ = CheckedDataClass(
         float_tensor=torch.ones(*n_other, n_coil, n_k2, n_k1, n_k0),
         int_tensor=torch.zeros(*(1,), 1, n_k2, 1, 1, dtype=torch.int),
-        fixed_ndarray=np.zeros(n_k0, dtype=int),
         string='test',
     )
 
@@ -74,7 +81,21 @@ def test_checked_dataclass_variadic_fail():
         _ = CheckedDataClass(
             float_tensor=torch.ones(*n_other, n_coil, n_k2, n_k1, n_k0),
             int_tensor=torch.zeros(*n_other_fail, 1, n_k2, 1, 1, dtype=torch.int),
-            fixed_ndarray=np.zeros(n_k0, dtype=int),
+            string='test',
+        )
+
+
+def test_checked_dataclass_fixed_fail():
+    n_coil = 2
+    n_k2 = 3
+    n_k1 = 3
+    n_k0 = 4
+    n_other = (1, 2, 3)
+    not_one = 17
+    with pytest.raises(ShapeError, match=f' the dimension size {not_one} does not equal 1'):
+        _ = CheckedDataClass(
+            float_tensor=torch.ones(*n_other, n_coil, n_k2, n_k1, n_k0),
+            int_tensor=torch.zeros(*n_other, 1, n_k2, 1, not_one, dtype=torch.int),
             string='test',
         )
 
@@ -93,13 +114,57 @@ def test_suspend_check_fail():
         _ = Slots(torch.zeros(1))
 
 
-# TODO:
-# string to size
-# no dtype, object not having dtype
-# no shape, object ithout shape
+def test_shape():
+    """Test the shape property"""
+    n_coil = 2
+    n_k2 = 3
+    n_k1 = 4
+    n_k0 = 5
+    n_other = (1, 2)
+    instance = CheckedDataClass(
+        float_tensor=torch.ones(n_coil, n_k2, n_k1, n_k0),
+        int_tensor=torch.zeros(*n_other, 1, n_k2, 1, 1, dtype=torch.int),
+        string='test',
+    )
+    assert instance.shape == (*n_other, n_coil, n_k2, n_k1, n_k0)
 
-# shape property
-# dtype property
+
+def test_dype():
+    """Test the dtype property"""
+    instance = CheckedDataClass(
+        float_tensor=torch.ones(3, 4, 5, 6, dtype=torch.float64),
+        int_tensor=torch.zeros(2, 1, 4, 1, 1, dtype=torch.int),
+        string='test',
+    )
+    # the result dtype of int and float64 is float54
+    assert instance.dtype == torch.float64
 
 
-# _ und ...
+@pytest.mark.parametrize(
+    ('string', 'expected'),
+    [
+        ('1 comment=2', ((_FixedDim('1', False), _FixedDim('2', False)), None)),
+        ('#name', ((_NamedDim('name', True),), None)),
+        ('_', (('_',), None)),
+        ('...', (('...',), 0)),
+    ],
+    ids=['fixed', 'named broadcastable', 'anonymous', 'anonymous variadic'],
+)
+def test_parse_shape(string: str, expected: tuple) -> None:
+    parsed = _parse_string_to_shape_specification(string)
+    assert parsed == expected
+
+
+@pytest.mark.parametrize(
+    ('expected', 'shape'),
+    [
+        ('1 2', ((_FixedDim('1', False), _FixedDim('2', False)))),
+        ('#name', ((_NamedDim('name', True),))),
+        ('_', (('_',))),
+        ('...', (('...',))),
+    ],
+    ids=['fixed', 'named broadcastable', 'anonymous', 'anonymous variadic'],
+)
+def test_to_string(expected: str, shape: tuple) -> None:
+    string = _shape_specification_to_string(shape)
+    assert string == expected

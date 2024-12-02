@@ -17,7 +17,7 @@ class DataclassInstance(Protocol):
     __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=True)
 class _Dim:
     """A dimension in a shape specification."""
 
@@ -154,9 +154,9 @@ def _shape_specification_to_string(dims: tuple[_DimType, ...]) -> str:
     for dim in dims:
         match dim:
             case _FixedDim(name, broadcastable):
-                string += f"{name}{'#' if broadcastable else ''} "
+                string += f"{'#' if broadcastable else ''}{name} "
             case _NamedDim(name, broadcastable):
-                string += f"{name}{'#' if broadcastable else ''} "
+                string += f"{'#' if broadcastable else ''}{name} "
             case _NamedVariadicDim(name, broadcastable):
                 string += f"*{name}{'#' if broadcastable else ''} "
             case _ if dim == _anonymous_dim:
