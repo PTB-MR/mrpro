@@ -47,6 +47,10 @@ class KTrajectoryIsmrmrd:
                 kx=ktraj_mrd[..., 0],
             )
         else:
-            ktraj = KTrajectoryRawShape(kz=ktraj_mrd[..., 2], ky=ktraj_mrd[..., 1], kx=ktraj_mrd[..., 0])
+            ktraj = KTrajectoryRawShape(
+                kz=ktraj_mrd[..., 2],
+                ky=ktraj_mrd[..., 1],
+                kx=ktraj_mrd[..., 0],
+            )
 
         return ktraj
