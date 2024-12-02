@@ -11,6 +11,7 @@ from mrpro.data.CheckDataMixin import (
     _FixedDim,
     _NamedDim,
     _parse_string_to_shape_specification,
+    _parse_string_to_size,
     _shape_specification_to_string,
 )
 
@@ -31,7 +32,7 @@ class CheckedDataClass(CheckDataMixin):
     float_tensor: Annotated[
         torch.Tensor, Annotation(dtype=(torch.float32, torch.float64), shape='*#other coil #k2 #k1 #k0')
     ]
-    int_tensor: Annotated[torch.Tensor, Annotation(dtype=(torch.int), shape='*#other #coil=1 #k2 #k1 k0=1')]
+    int_tensor: Annotated[torch.Tensor, Annotation(dtype=torch.int, shape='*#other #coil=1 #k2 #k1 k0=1')]
     string: str
 
 
@@ -39,18 +40,14 @@ class CheckedDataClass(CheckDataMixin):
 class Slots(CheckDataMixin):
     """A test dataclass with slots"""
 
-    float_tensor: Annotated[
-        torch.Tensor, Annotation(dtype=(torch.float32, torch.float64), shape='*#other coil #k2 #k1 #k0')
-    ]
+    tensor: Annotated[torch.Tensor, Annotation(shape='... _ 5 dim')]
 
 
 @dataclass(frozen=True)
 class Frozen(CheckDataMixin):
     """A frozen test dataclass"""
 
-    float_tensor: Annotated[
-        torch.Tensor, Annotation(dtype=(torch.float32, torch.float64), shape='*#other coil #k2 #k1 #k0')
-    ]
+    tensor: Annotated[torch.Tensor, Annotation(dtype=(torch.float32,))]
 
 
 def test_checked_dataclass_success():
@@ -105,7 +102,7 @@ def test_suspend_check_success():
     with SuspendDataChecks():
         instance = Slots(torch.zeros(1))
         # fix the shape
-        instance.float_tensor = torch.zeros(1, 1, 1, 1, 1)
+        instance.tensor = torch.zeros(2, 3, 4, 5, 6)
 
 
 def test_suspend_check_fail():
@@ -165,6 +162,15 @@ def test_parse_shape(string: str, expected: tuple) -> None:
     ],
     ids=['fixed', 'named broadcastable', 'anonymous', 'anonymous variadic'],
 )
-def test_to_string(expected: str, shape: tuple) -> None:
+def test_specification_to_string(expected: str, shape: tuple) -> None:
+    """Test conversion of parsed specification back to a string"""
     string = _shape_specification_to_string(shape)
     assert string == expected
+
+
+def test_string_to_shape():
+    """Test conversion of string to shape"""
+    instance = Frozen(torch.zeros(1, 2, 5, 2))  # has shape hint '... _ 5 dim'
+    instance.check_invariants()
+    shape = _parse_string_to_size('fixed=3 dim 1', instance._memo)  # type:ignore[attr-defined]
+    assert shape == (3, 2, 1)

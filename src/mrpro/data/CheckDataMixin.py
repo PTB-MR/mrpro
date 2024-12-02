@@ -425,11 +425,15 @@ class Annotation:
         """
         if shape is not None:
             self.shape, self.index_variadic = _parse_string_to_shape_specification(shape)
+        else:
+            self.shape = None
         if dtype is not None:
             if isinstance(dtype, Sequence):
                 self.dtype = tuple(dtype)
             else:
                 self.dtype = (dtype,)
+        else:
+            self.dtype = None
 
     def assert_dtype(self, obj: HasDtype) -> None:
         """Raise a DtypeError if the object does not have the expected dtype.
