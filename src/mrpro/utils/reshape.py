@@ -114,7 +114,7 @@ def _reshape_idx(old_shape: tuple[int, ...], new_shape: tuple[int, ...], old_str
         Will results in the groups (starting from the right):
             - old: 3     new: 3
             - old: 2, 2  new: 4
-            - old: 30    new: 6. 5
+            - old: 30    new: 6, 5
         Only the "old" groups are important.
         If all axes that are grouped together in an "old" group are stride 0 (=broadcasted)
         we can collapse them to singleton dimensions.
