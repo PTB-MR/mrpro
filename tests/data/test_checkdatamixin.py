@@ -170,7 +170,7 @@ def test_specification_to_string(expected: str, shape: tuple) -> None:
 
 def test_string_to_shape():
     """Test conversion of string to shape"""
-    instance = Frozen(torch.zeros(1, 2, 5, 2))  # has shape hint '... _ 5 dim'
+    instance = Slots(torch.zeros(1, 2, 5, 2))  # has shape hint '... _ 5 dim'
     instance.check_invariants()
     shape = _parse_string_to_size('fixed=3 dim 1', instance._memo)  # type:ignore[attr-defined]
     assert shape == (3, 2, 1)
