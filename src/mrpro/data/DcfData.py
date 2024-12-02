@@ -65,7 +65,7 @@ class DcfData(MoveDataMixin):
 
         return cls(data=dcf)
 
-    def as_operator(self) -> DensityCompensationOp:
+    def as_operator(self) -> 'DensityCompensationOp':
         """Create a density compensation operator using a copy of the DCF."""
         from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 
