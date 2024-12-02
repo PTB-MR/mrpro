@@ -1,12 +1,20 @@
 """Dtype and shape checking for dataclasses."""
 
+import weakref
 from collections.abc import Iterator, Mapping, Sequence
-from dataclasses import dataclass, fields
-from functools import lru_cache
-from typing import Annotated, Literal, TypeAlias, get_args, get_origin
+from dataclasses import Field, dataclass, fields
+from functools import lru_cache, reduce
+from types import TracebackType
+from typing import Annotated, Any, ClassVar, Literal, TypeAlias, get_args, get_origin
 
 import torch
 from typing_extensions import Protocol, Self, runtime_checkable
+
+
+class DataclassInstance(Protocol):
+    """An instance of a dataclass."""
+
+    __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
 
 
 @dataclass(frozen=True)
@@ -53,7 +61,35 @@ class FieldTypeError(RuntimeCheckError):
 
 @lru_cache
 def _parse_string_to_shape_specification(dim_str: str) -> tuple[tuple[_DimType, ...], int | None]:
-    """Parse a string representation of a shape specification."""
+    """
+    Parse a string representation of a shape specification into dimension types.
+
+    Parameters
+    ----------
+    dim_str
+        The string representation of the shape specification.
+        It should be a space-separated list of dimensions.
+        Each dimension can include modifiers:
+        - `'...'`: anonymous variadic dimension representing multiple axes.
+        - `'*'`: indicates a variadic dimension.
+        - `'#'`: indicates a broadcastable dimension.
+        - `'_'`: indicates an anonymous dimension.
+        - `'name=value'` or `value`: specifies a fixed dimension size. Here, `name` is ignored
+            and only serves as documentation.
+        - Combinations of these modifiers can be used to define complex shapes.
+
+    Returns
+    -------
+    dims
+        A tuple containing the parsed dimensions as `_Dim` instances.
+    index_variadic
+        The index of the variadic dimension in the shape specification if one exists; otherwise, `None`.
+
+    Raises
+    ------
+    SpecificationError
+        If the shape specification string is invalid or contains conflicting modifiers.
+    """
     if not isinstance(dim_str, str):
         raise SpecificationError('Shape specification must be a string.')
     dims: list[_DimType] = []
@@ -101,7 +137,19 @@ def _parse_string_to_shape_specification(dim_str: str) -> tuple[tuple[_DimType, 
 
 
 def _shape_specification_to_string(dims: tuple[_DimType, ...]) -> str:
-    """Convert a shape specification to a string."""
+    """Convert a shape specification to a string.
+
+    The inverse of `_parse_string_to_shape_specification`.
+
+    Parameters
+    ----------
+    dims
+        The shape specification as a tuple of `_Dim` instances.
+
+    Returns
+    -------
+    A string representation of the shape specification.
+    """
     string = ''
     for dim in dims:
         match dim:
@@ -121,7 +169,10 @@ def _shape_specification_to_string(dims: tuple[_DimType, ...]) -> str:
 
 
 class ShapeMemo(Mapping):
-    """Immutable memoization object for shapes of named dimensions."""
+    """Immutable memoization object for shapes of named dimensions.
+
+    The object is immutable and hashable, so it can be used as a key in a dictionary or cache.
+    """
 
     def __init__(self, *arg, **kwargs):
         """Initialize the memoization object."""
@@ -167,7 +218,27 @@ class ShapeMemo(Mapping):
 
 @lru_cache
 def _check_dim(memo: ShapeMemo, dim: _DimType, size: int) -> ShapeMemo:
-    """Check if a single dimension matches the memo. Return the updated memo."""
+    """Check if a single dimension matches the memo. Return the updated memo.
+
+    Parameters
+    ----------
+    memo
+        the memoization object storing the shape of named dimensions from previous checks
+    dim
+        the dimension to check
+    size
+        the current size of the dimension
+
+    Returns
+    -------
+        a new memoization object storing the shape of named dimensions from previous and the current
+        check
+
+    Raises
+    ------
+    ShapeError
+        If the size of the dimension does not match the memoization object
+    """
     if dim == _anonymous_variadic_dim:
         # should not happen?
         raise ShapeError('anonymous variadic dimensions should not be checked')
@@ -196,7 +267,27 @@ def _check_dim(memo: ShapeMemo, dim: _DimType, size: int) -> ShapeMemo:
 def _check_named_variadic_dim(
     memo: ShapeMemo, variadic_dim: _NamedVariadicDim, variadic_shape: tuple[int, ...]
 ) -> ShapeMemo:
-    """Check if named variadic dimension matches the memo. Return the updated memo."""
+    """Check if named variadic dimension matches the memo. Return the updated memo.
+
+    Parameters
+    ----------
+    memo
+        the memoization object storing the shape of named dimensions from previous checks
+    variadic_dim
+        the named variadic dimension to check
+    variadic_shape
+        the current shape of the variadic dimension
+
+    Returns
+    -------
+        a new memoization object storing the shape of named dimensions from previous and the current
+        check
+
+    Raises
+    ------
+    ShapeError
+        If the shape of the variadic dimension does not match the memoization object
+    """
     name = variadic_dim.name
     broadcastable = variadic_dim.broadcastable
     try:
@@ -208,19 +299,19 @@ def _check_named_variadic_dim(
     if prev_broadcastable or broadcastable:
         try:
             broadcast_shape = torch.broadcast_shapes(variadic_shape, prev_shape)
-        except ValueError:  # not broadcastable
+        except RuntimeError:  # not broadcastable
             raise ShapeError(
-                f"the shape of its variadic dimensions '*{variadic_dim.name}' is {variadic_shape}, "
-                f'which cannot be broadcast with the existing value of {prev_shape}'
+                f"the shape of its variadic dimensions '*{variadic_dim.name}' is {tuple(variadic_shape)}, "
+                f'which cannot be broadcast with the existing value of {tuple(prev_shape)}'
             ) from None
         if not broadcastable and broadcast_shape != variadic_shape:
             raise ShapeError(
-                f"the shape of its variadic dimensions '*{variadic_dim.name}' is {variadic_shape}, "
-                f'which the existing value of {prev_shape} cannot be broadcast to'
+                f"the shape of its variadic dimensions '*{variadic_dim.name}' is {tuple(variadic_shape)}, "
+                f'which the existing value of {tuple(prev_shape)} cannot be broadcast to'
             )
         if not prev_broadcastable and broadcast_shape != prev_shape:
             raise ShapeError(
-                f"the shape of its variadic dimensions '*{variadic_dim.name}' is {variadic_shape}, "
+                f"the shape of its variadic dimensions '*{variadic_dim.name}' is {tuple(variadic_shape)}, "
                 f'which cannot be broadcast to the existing value of {prev_shape}'
             )
         memo = ShapeMemo(memo, **{name: (variadic_shape, broadcastable)})
@@ -228,14 +319,28 @@ def _check_named_variadic_dim(
     if variadic_shape != prev_shape:
         raise ShapeError(
             f"the shape of its variadic dimensions '*{variadic_dim.name}' is {variadic_shape}, "
-            f'which does not equal the existing value of {prev_shape}'
+            f'which does not equal the existing value of {tuple(prev_shape)}'
         )
     return memo
 
 
 @lru_cache
 def _parse_string_to_size(shape_string: str, memo: ShapeMemo) -> tuple[int, ...]:
-    """Convert a string representation of a shape to a shape."""
+    """Convert a string representation of a shape to a shape.
+
+    Parameters
+    ----------
+    shape_string
+        The string representation of the shape.
+    memo
+        The memoization object storing the shape of named dimensions
+
+    Returns
+    -------
+    A shape that would pass a shape check with the memoization object and the shape string.
+    For broadcastable dimensions, the size is set to 1.
+
+    """
     shape: list[int] = []
     for dim in _parse_string_to_shape_specification(shape_string)[0]:
         if isinstance(dim, _FixedDim):
@@ -282,8 +387,13 @@ class Annotation:
     """A shape and dtype annotation for a tensor-like object."""
 
     dtype: tuple[torch.dtype, ...] | None = None
+    """The acceptable dtype(s) for the object."""
+
     shape: tuple[_DimType, ...] | None = None
+    """The parsed shape specification."""
+
     index_variadic: int | None = None
+    """The index of the variadic dimension in the shape specification if one exists; otherwise, `None`."""
 
     def __init__(self, dtype: torch.dtype | Sequence[torch.dtype] | None = None, shape: str | None = None) -> None:
         """Initialize the annotation.
@@ -316,9 +426,10 @@ class Annotation:
         if shape is not None:
             self.shape, self.index_variadic = _parse_string_to_shape_specification(shape)
         if dtype is not None:
-            if isinstance(dtype, torch.dtype):
-                dtype = (dtype,)
-            self.dtype = tuple(dtype)
+            if isinstance(dtype, Sequence):
+                self.dtype = tuple(dtype)
+            else:
+                self.dtype = (dtype,)
 
     def assert_dtype(self, obj: HasDtype) -> None:
         """Raise a DtypeError if the object does not have the expected dtype.
@@ -440,8 +551,7 @@ class Annotation:
 SpecialTensor = Annotated[torch.Tensor, Annotation(dtype=(torch.float32, torch.float64), shape='*#other 1 #k2 #k1 1')]
 
 
-@dataclass
-class CheckDataMixin:
+class CheckDataMixin(DataclassInstance):
     """A Mixin to provide shape and dtype checking to dataclasses.
 
     If fields in the dataclass are hinted with an annotated type, for example
@@ -463,28 +573,46 @@ class CheckDataMixin:
     @property
     def shape(self) -> tuple[int, ...]:
         """Shape of the dataclass."""
-        raise NotImplementedError
+        shapes = []
+        for elem in fields(self):
+            value = getattr(self, elem.name)
+            if isinstance(value, HasShape):
+                shapes.append(value.shape)
+        shape = torch.broadcast_shapes(*shapes)
+        return shape
 
     @property
     def dtype(self) -> torch.dtype:
         """Data type of the dataclass."""
-        raise NotImplementedError
+        dtypes = []
+        for elem in fields(self):
+            value = getattr(self, elem.name)
+            if isinstance(value, HasDtype):
+                dtypes.append(value.dtype)
+        dtype = reduce(torch.promote_types, dtypes)
+        return dtype
 
     __slots__ = ('_memo',)
 
-    def __init_subclass__(cls):
+    def __init_subclass__(cls, check_post_init: bool = True, **kwargs):
         """Initialize a checked data subclass."""
-        # inject the check_invariants method into post_init
-        original_post_init = vars(cls).get('__post_init__')
+        super().__init_subclass__(**kwargs)
+        if check_post_init:
+            # inject the check_invariants method into post_init
+            original_post_init = vars(cls).get('__post_init__')
 
-        def new_post_init(self: CheckDataMixin) -> None:
-            self.check_invariants()
-            if original_post_init:
-                original_post_init(self)
+            def new_post_init(self: CheckDataMixin) -> None:
+                if SuspendDataChecks.active:
+                    # delay the check until the end of the context
+                    SuspendDataChecks.active[-1](self)
+                else:
+                    self.check_invariants()
+                if original_post_init:
+                    original_post_init(self)
 
-        cls.__post_init__ = new_post_init  # type: ignore[attr-defined]
+            cls.__post_init__ = new_post_init  # type: ignore[attr-defined]
 
-    def check_invariants(self) -> None:
+    def check_invariants(self, recurse: bool = False) -> None:
         """Check that the dataclass invariants are satisfied."""
         memo = getattr(self, '_memo', ShapeMemo())
         for elem in fields(self):
@@ -510,17 +638,68 @@ class CheckDataMixin:
                         raise type(e)(
                             f'Dataclass invariant violated for {self.__class__.__name__}.{name}: {e}\n {annotation}.'
                         ) from None
+
+            if recurse and isinstance(value, CheckDataMixin):
+                value.check_invariants(recurse=True)
+
         object.__setattr__(self, '_memo', memo)  # works for frozen dataclasses
 
 
-if __name__ == '__main__':
-    # Test the CheckDataMixin
-    @dataclass
-    class Test(CheckDataMixin):
-        """A test dataclass."""
+class SuspendDataChecks:
+    """Context of delayed invariants checks."""
 
-        a: Annotated[torch.Tensor, Annotation(dtype=(torch.float32, torch.float64), shape='*#other 1 #k2 #k1 1')]
-        b: Annotated[torch.Tensor, Annotation(dtype=(torch.float32, torch.float64), shape='*#other 1 #k2 #k1 1')]
+    active: ClassVar[list['SuspendDataChecks']] = []
 
-    test1 = Test(torch.randn(1, 1, 1, 1), torch.randn(1, 1, 1, 1))
-    test2 = Test(torch.randn(1, 1, 1, 1), torch.randn(1, 1, 1, 2))
+    @classmethod
+    def register(cls, obj: CheckDataMixin) -> None:
+        """Register an object to be checked or check it now.
+
+        If inside a DelayCheck context, register obj to be checked on exit of the context.
+        Otherwise, perform the check now.
+
+        Parameters
+        ----------
+        obj
+            the data object to check invariants of
+        """
+        if cls.active:
+            cls.active[-1](obj)
+        else:
+            # not in a delayed check context
+            obj.check_invariants()
+
+    def __init__(self, check_on_exit: bool = True):
+        """Initialize DelayCheck context."""
+        self.data_to_check: weakref.WeakValueDictionary[int, CheckDataMixin] | None = (
+            weakref.WeakValueDictionary() if check_on_exit else None
+        )
+
+    def __enter__(self):
+        """Enter new context."""
+        self.active.append(self)
+
+    def __call__(self, obj: CheckDataMixin):
+        """Add to list of data objects to check on context exit."""
+        if self.data_to_check is not None:
+            # we store only a weakref to the object as the dict is a weakref dict
+            # we use id(obj) as the key to also allow for unhashable objects
+            # we only care for identity, not equality
+            self.data_to_check[id(obj)] = obj
+
+    def check(self) -> None:
+        """Perform all delayed checks."""
+        if self.data_to_check is not None:
+            for obj in self.data_to_check.values():
+                obj.check_invariants()
+            self.data_to_check.clear()
+
+    def __exit__(
+        self, _type: type[BaseException] | None, _value: BaseException | None, _traceback: TracebackType | None
+    ) -> None:
+        """Leave context and perform checks."""
+        if self.active.pop() is not self:
+            raise RuntimeError('Mismatched context manager. This should never happen.')
+        try:
+            self.check()
+        except RuntimeCheckError as e:
+            raise type(e)(e) from None
