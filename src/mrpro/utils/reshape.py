@@ -1,6 +1,7 @@
 """Tensor reshaping utilities."""
 
 from collections.abc import Sequence
+from functools import lru_cache
 
 import torch
 
@@ -102,7 +103,7 @@ def reduce_view(x: torch.Tensor, dim: int | Sequence[int] | None = None) -> torc
 
 @lru_cache
 def _reshape_idx(old_shape: tuple[int, ...], new_shape: tuple[int, ...], old_stride: tuple[int, ...]) -> list[slice]:
-    """Get reshape reduce index (Cached helper function for reshape_broadcasted)
+    """Get reshape reduce index (Cached helper function for reshape_broadcasted).
 
     This function tries to group axes from new_shape and old_shape into the smallest groups that have
     the same number of elements, starting from the right.
