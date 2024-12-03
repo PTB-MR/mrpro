@@ -56,10 +56,11 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
 
         def rescale_and_reshape_traj(k_traj: torch.Tensor, encoding_size: int):
             if encoding_size > 1 and torch.max(torch.abs(k_traj)) > 0:
-                scaling_factor = encoding_size / (2 * torch.max(torch.abs(k_traj)))
+                k_traj = k_traj * encoding_size / (2 * torch.max(torch.abs(k_traj)))
             else:
-                scaling_factor = 0
-            k_traj *= scaling_factor
+                # We force k_traj to be 0 if encoding_size = 1. This is typically the case for kz in 2D sequences.
+                # However, it happens that seq.calculate_kspace() returns values != 0 (numerical noise) in such cases.
+                k_traj = torch.zeros_like(k_traj)
             return rearrange(k_traj, '(other k0) -> other k0', k0=n_k0)
 
         # rearrange k-space trajectory to match MRpro convention
