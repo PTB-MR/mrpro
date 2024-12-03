@@ -101,6 +101,7 @@ def reduce_view(x: torch.Tensor, dim: int | Sequence[int] | None = None) -> torc
     ]
     return torch.as_strided(x, newsize, stride)
 
+
 @lru_cache
 def _reshape_idx(old_shape: tuple[int, ...], new_shape: tuple[int, ...], old_stride: tuple[int, ...]) -> list[slice]:
     """Get reshape reduce index (Cached helper function for reshape_broadcasted).
@@ -125,7 +126,7 @@ def _reshape_idx(old_shape: tuple[int, ...], new_shape: tuple[int, ...], old_str
     idx = []
     pointer_old, pointer_new = len(old_shape) - 1, len(new_shape) - 1  # start from the right
     while pointer_old >= 0:
-        product_new, product_old = 1, 1 # the number of elements in the current "new" and "old" group
+        product_new, product_old = 1, 1  # the number of elements in the current "new" and "old" group
         group: list[int] = []
         while product_old != product_new or not group:
             if product_old <= product_new:
@@ -146,7 +147,7 @@ def _reshape_idx(old_shape: tuple[int, ...], new_shape: tuple[int, ...], old_str
         else:
             # preserve dimension
             idx.extend([slice(None)] * len(group))
-    idx = idx[::-1] # we worked right to left, but our index should be left to right
+    idx = idx[::-1]  # we worked right to left, but our index should be left to right
     return idx
 
 
@@ -173,11 +174,11 @@ def reshape_broadcasted(tensor: torch.Tensor, *shape: int) -> torch.Tensor:
             raise ValueError('Cannot reshape tensor to target shape, number of elements must match') from None
         # most of the broadcasted dimensions can be preserved: only dimensions that are joined with non
         # broadcasted dimensions can not be preserved and must be made contiguous.
-        # all dimensions that can be preserved as broadcasted are first collapsed to singleton, 
+        # all dimensions that can be preserved as broadcasted are first collapsed to singleton,
         # such that contiguous does not create copies along these axes.
         idx = _reshape_idx(tensor.shape, shape, tensor.stride())
         # make contiguous only in dimensions in which broadcasting cannot be preserved
         semicontiguous = tensor[idx].contiguous()
-        # finally, we can expand the broadcasted dimensions to the reqested shape
+        # finally, we can expand the broadcasted dimensions to the requested shape
         semicontiguous = semicontiguous.expand(tensor.shape)
         return semicontiguous.view(shape)
