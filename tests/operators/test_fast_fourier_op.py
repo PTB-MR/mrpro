@@ -6,8 +6,7 @@ import torch
 from mrpro.data import SpatialDimension
 from mrpro.operators import FastFourierOp
 
-from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test
+from tests import RandomGenerator, dotproduct_adjointness_test
 
 
 @pytest.mark.parametrize(('npoints', 'a'), [(100, 20), (300, 20)])
@@ -28,7 +27,7 @@ def test_fast_fourier_op_forward(npoints, a):
 
     # Transform image to k-space
     ff_op = FastFourierOp(dim=(0,))
-    (igauss_fwd,) = ff_op.forward(igauss)
+    (igauss_fwd,) = ff_op(igauss)
 
     # Scaling to "undo" fft scaling
     igauss_fwd *= np.sqrt(npoints) / 2

@@ -92,6 +92,7 @@ jobs:
       image: ghcr.io/ptb-mr/mrpro_py311:latest
       options: --user root
     strategy:
+      fail-fast: false
       matrix:
         notebook: ${{ fromJson(needs.get_notebooks.outputs.notebooks) }}
     steps:
@@ -119,14 +120,14 @@ jobs:
         run: |
           notebook=${{ matrix.notebook }}
           echo "ARTIFACT_NAME=${notebook/.ipynb/}" >> $GITHUB_OUTPUT
-          echo "HTML_RESULT=${notebook/.ipynb/.html}" >> $GITHUB_OUTPUT
+          echo "IPYNB_EXECUTED=${notebook}" >> $GITHUB_OUTPUT
 
       - name: Upload notebook
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ${{ steps.artifact_names.outputs.ARTIFACT_NAME }}
-          path: ${{ github.workspace }}/nb-runner.out/${{ steps.artifact_names.outputs.HTML_RESULT }}
+          path: ${{ github.workspace }}/nb-runner.out/${{ steps.artifact_names.outputs.IPYNB_EXECUTED }}
         env:
           RUNNER: ${{ toJson(runner) }}
 
@@ -137,6 +138,9 @@ jobs:
     container:
       image: ghcr.io/ptb-mr/mrpro_py311:latest
       options: --user runner
+    permissions:
+      pull-requests: write
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -146,56 +150,64 @@ jobs:
       - name: Install mrpro and dependencies
         run: pip install --upgrade --upgrade-strategy "eager" .[docs]
 
-      - name: Download notebook html files
+      - name: Download executed notebook ipynb files
         id: download
         uses: actions/download-artifact@v4
         with:
-          path: ./docs/source/notebook_artifact/
-
-      - name: Copy notebook html files
-        run: |
-          mkdir ./docs/source/_notebooks
-          cd ./docs/source/notebook_artifact/
-          notebooks=$(grep -rl --include='*' './')
-          for nb in $notebooks
-          do
-            echo "current jupyter-notebook: $nb"
-            cp ./$nb ../_notebooks/
-          done
-
-      - name: List of notebooks
-        run: |
-          cd ./docs/source/_notebooks/
-          notebooks=$(grep -rl --include='*.html' './')
-          cd ../
-          echo "" >> examples.rst
-          for nb in $notebooks
-          do
-            echo "   notebook_${nb/.html/.rst}" >> examples.rst
-            notebook_description=$(grep '<h1 id=' ./_notebooks/$nb | sed 's/.*">\(.*\)<a class=.*/\1/')
-            echo $notebook_description
-            echo $notebook_description > "notebook_${nb/.html/.rst}"
-            echo "========" >> "notebook_${nb/.html/.rst}"
-            echo ".. raw:: html" >> "notebook_${nb/.html/.rst}"
-            echo "   :file: ./_notebooks/$nb" >> "notebook_${nb/.html/.rst}"
-          done
+          path: ./docs/source/_notebooks/
 
       - name: Build docs
-        run: sphinx-build -b html ./docs/source ./docs/build/html
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          publish_branch: github-pages
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/build/html
-        if: github.event_name != 'pull_request'
+        run: |
+          sphinx-build -b html ./docs/source ./docs/build/html
+          rm -rf ./docs/build/html/.doctrees
 
       - name: Save Documentation
+        id: save_docu
         uses: actions/upload-artifact@v4
         with:
           name: Documentation
           path: docs/build/html/
+
+      - run: echo 'Artifact url ${{ steps.save_docu.outputs.artifact-url }}'
+
+      - run: echo 'Event number ${{ github.event.number }}'
+
+      - run: echo 'Event name ${{github.event_name}}'
+
+      - name: Update PR with link to summary
+        if: github.event_name == 'pull_request'
+        uses: edumserrano/find-create-or-update-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: '<!-- documentation build ${{ github.event.number }} -->'
+          comment-author: 'github-actions[bot]'
+          body: |
+            <!-- documentation build ${{ github.event.number }} -->
+            ### :books: Documentation
+            :file_folder: [Download as zip](${{ steps.save_docu.outputs.artifact-url }})
+            :mag: [View online](https://zimf.de/zipserve/${{ steps.save_docu.outputs.artifact-url }}/)
+          edit-mode: replace
+
+      - name: Upload pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/build/html/
+        if: github.event_name != 'pull_request'
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    permissions:
+        pages: write
+        id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: create_documentation
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

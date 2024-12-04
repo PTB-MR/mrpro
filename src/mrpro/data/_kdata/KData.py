@@ -3,29 +3,31 @@
 import dataclasses
 import datetime
 import warnings
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Self
+from types import EllipsisType
 
 import h5py
 import ismrmrd
 import numpy as np
 import torch
 from einops import rearrange
+from typing_extensions import Self
+
 from mrpro.data._kdata.KDataRearrangeMixin import KDataRearrangeMixin
 from mrpro.data._kdata.KDataRemoveOsMixin import KDataRemoveOsMixin
 from mrpro.data._kdata.KDataSelectMixin import KDataSelectMixin
 from mrpro.data._kdata.KDataSplitMixin import KDataSplitMixin
-from mrpro.data.acq_filters import is_image_acquisition
-from mrpro.data.AcqInfo import AcqInfo
+from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
+from mrpro.data.AcqInfo import AcqInfo, rearrange_acq_info_fields
 from mrpro.data.EncodingLimits import Limits
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
 from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.Rotation import Rotation
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
-from mrpro.utils import modify_acq_info
 
 KDIM_SORT_LABELS = (
     'k1',
@@ -109,6 +111,29 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             modification_time = datetime.datetime.fromtimestamp(mtime)
 
         acquisitions = [acq for acq in acquisitions if acquisition_filter_criterion(acq)]
+
+        # we need the same number of receiver coils for all acquisitions
+        n_coils_available = {acq.data.shape[0] for acq in acquisitions}
+        if len(n_coils_available) > 1:
+            if (
+                ismrmrd_header.acquisitionSystemInformation is not None
+                and ismrmrd_header.acquisitionSystemInformation.receiverChannels is not None
+            ):
+                n_coils = int(ismrmrd_header.acquisitionSystemInformation.receiverChannels)
+            else:
+                # most likely, highest number of elements are the coils used for imaging
+                n_coils = int(max(n_coils_available))
+
+            warnings.warn(
+                f'Acquisitions with different number {n_coils_available} of receiver coil elements detected. '
+                f'Data with {n_coils} receiver coil elements will be used.',
+                stacklevel=1,
+            )
+            acquisitions = [acq for acq in acquisitions if has_n_coils(n_coils, acq)]
+
+        if not acquisitions:
+            raise ValueError('No acquisitions meeting the given filter criteria were found.')
+
         kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
 
         acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
@@ -199,10 +224,13 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         sort_idx = np.lexsort(acq_indices)  # torch does not have lexsort as of pytorch 2.2 (March 2024)
 
         # Finally, reshape and sort the tensors in acqinfo and acqinfo.idx, and kdata.
-        def sort_and_reshape_tensor_fields(input_tensor: torch.Tensor):
-            return rearrange(input_tensor[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=n_k1, k2=n_k2)
-
-        kheader.acq_info = modify_acq_info(sort_and_reshape_tensor_fields, kheader.acq_info)
+        kheader.acq_info.apply_(
+            lambda field: rearrange_acq_info_fields(
+                field[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=n_k1, k2=n_k2
+            )
+            if isinstance(field, torch.Tensor | Rotation)
+            else field
+        )
         kdata = rearrange(kdata[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=n_k1, k2=n_k2)
 
         # Calculate trajectory and check if it matches the kdata shape
@@ -234,3 +262,107 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             ) from None
 
         return cls(kheader, kdata, ktrajectory_final)
+
+    def __repr__(self):
+        """Representation method for KData class."""
+        traj = KTrajectory(self.traj.kz, self.traj.ky, self.traj.kx)
+        try:
+            device = str(self.device)
+        except RuntimeError:
+            device = 'mixed'
+        out = (
+            f'{type(self).__name__} with shape {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
+            f'Device: {device}\n'
+            f'{traj}\n'
+            f'{self.header}'
+        )
+        return out
+
+    def compress_coils(
+        self: Self,
+        n_compressed_coils: int,
+        batch_dims: None | Sequence[int] = None,
+        joint_dims: Sequence[int] | EllipsisType = ...,
+    ) -> Self:
+        """Reduce the number of coils based on a PCA compression.
+
+        A PCA is carried out along the coil dimension and the n_compressed_coils virtual coil elements are selected. For
+        more information on coil compression please see [BUE2007]_, [DON2008]_ and [HUA2008]_.
+
+        Returns a copy of the data.
+
+        Parameters
+        ----------
+        kdata
+            K-space data
+        n_compressed_coils
+            Number of compressed coils
+        batch_dims
+            Dimensions which are treated as batched, i.e. separate coil compression matrizes (e.g. different slices).
+            Default is to do one coil compression matrix for the entire k-space data. Only batch_dim or joint_dim can
+            be defined. If batch_dims is not None then joint_dims has to be ...
+        joint_dims
+            Dimensions which are combined to calculate single coil compression matrix (e.g. k0, k1, contrast). Default
+            is that all dimensions (except for the coil dimension) are joint_dims. Only batch_dim or joint_dim can
+            be defined. If joint_dims is not ... batch_dims has to be None
+
+        Returns
+        -------
+            Copy of K-space data with compressed coils.
+
+        Raises
+        ------
+        ValueError
+            If both batch_dims and joint_dims are defined.
+        Valuer Error
+            If coil dimension is part of joint_dims or batch_dims.
+
+        References
+        ----------
+        .. [BUE2007] Buehrer M, Pruessmann KP, Boesiger P, Kozerke S (2007) Array compression for MRI with large coil
+           arrays. MRM 57. https://doi.org/10.1002/mrm.21237
+        .. [DON2008] Doneva M, Boernert P (2008) Automatic coil selection for channel reduction in SENSE-based parallel
+           imaging. MAGMA 21. https://doi.org/10.1007/s10334-008-0110-x
+        .. [HUA2008] Huang F, Vijayakumar S, Li Y, Hertel S, Duensing GR (2008) A software channel compression
+           technique for faster reconstruction with many channels. MRM 26. https://doi.org/10.1016/j.mri.2007.04.010
+
+        """
+        from mrpro.operators import PCACompressionOp
+
+        coil_dim = -4 % self.data.ndim
+        if batch_dims is not None and joint_dims is not Ellipsis:
+            raise ValueError('Either batch_dims or joint_dims can be defined not both.')
+
+        if joint_dims is not Ellipsis:
+            joint_dims_normalized = [i % self.data.ndim for i in joint_dims]
+            if coil_dim in joint_dims_normalized:
+                raise ValueError('Coil dimension must not be in joint_dims')
+            batch_dims_normalized = [
+                d for d in range(self.data.ndim) if d not in joint_dims_normalized and d is not coil_dim
+            ]
+        else:
+            batch_dims_normalized = [] if batch_dims is None else [i % self.data.ndim for i in batch_dims]
+            if coil_dim in batch_dims_normalized:
+                raise ValueError('Coil dimension must not be in batch_dims')
+
+        # reshape to (*batch dimension, -1, coils)
+        permute_order = (
+            batch_dims_normalized
+            + [i for i in range(self.data.ndim) if i != coil_dim and i not in batch_dims_normalized]
+            + [coil_dim]
+        )
+        kdata_coil_compressed = self.data.permute(permute_order)
+        permuted_kdata_shape = kdata_coil_compressed.shape
+        kdata_coil_compressed = kdata_coil_compressed.flatten(
+            start_dim=len(batch_dims_normalized), end_dim=-2
+        )  # keep separate dimensions and coil
+
+        pca_compression_op = PCACompressionOp(data=kdata_coil_compressed, n_components=n_compressed_coils)
+        (kdata_coil_compressed,) = pca_compression_op(kdata_coil_compressed)
+
+        # reshape to original dimensions and undo permutation
+        kdata_coil_compressed = torch.reshape(
+            kdata_coil_compressed, [*permuted_kdata_shape[:-1], n_compressed_coils]
+        ).permute(*np.argsort(permute_order))
+
+        return type(self)(self.header.clone(), kdata_coil_compressed, self.traj.clone())

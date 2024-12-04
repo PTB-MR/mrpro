@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING
 
 import torch
+from typing_extensions import Self
 
 from mrpro.data.IData import IData
 from mrpro.data.QData import QData
@@ -22,7 +23,6 @@ class CsmData(QData):
         cls,
         idata: IData,
         smoothing_width: int | SpatialDimension[int] = 5,
-        power_iterations: int = 3,
         chunk_size_otherdim: int | None = None,
     ) -> Self:
         """Create csm object from image data using iterative Walsh method.
@@ -33,20 +33,18 @@ class CsmData(QData):
             IData object containing the images for each coil element.
         smoothing_width
             width of smoothing filter.
-        power_iterations
-            number of iterations used to determine dominant eigenvector
         chunk_size_otherdim:
             How many elements of the other dimensions should be processed at once.
             Default is None, which means that all elements are processed at once.
         """
-        from mrpro.algorithms.csm.iterative_walsh import iterative_walsh
+        from mrpro.algorithms.csm.walsh import walsh
 
         # convert smoothing_width to SpatialDimension if int
         if isinstance(smoothing_width, int):
             smoothing_width = SpatialDimension(smoothing_width, smoothing_width, smoothing_width)
 
         csm_fun = torch.vmap(
-            lambda img: iterative_walsh(img, smoothing_width, power_iterations),
+            lambda img: walsh(img, smoothing_width),
             chunk_size=chunk_size_otherdim,
         )
         csm_tensor = csm_fun(idata.data)

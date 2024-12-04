@@ -6,8 +6,8 @@ import pytest
 import torch
 from mrpro.data import CsmData, SpatialDimension
 
-from tests.algorithms.csm.test_iterative_walsh import multi_coil_image
-from tests.helper import relative_image_difference
+from tests import relative_image_difference
+from tests.algorithms.csm.test_walsh import multi_coil_image
 
 
 def test_CsmData_is_frozen_dataclass(random_test_data, random_kheader):
@@ -33,7 +33,7 @@ def test_CsmData_smoothing_width(csm_method, ellipse_phantom, random_kheader):
     assert torch.equal(csm_using_spatial_dimension.data, csm_using_int.data)
 
 
-@pytest.mark.cuda()
+@pytest.mark.cuda
 @pytest.mark.parametrize('csm_method', [CsmData.from_idata_walsh, CsmData.from_idata_inati])
 def test_CsmData_cuda(csm_method, ellipse_phantom, random_kheader):
     """CsmData obtained on GPU in CUDA memory."""

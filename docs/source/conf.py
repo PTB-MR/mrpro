@@ -13,7 +13,8 @@ import os
 import sys
 from sphinx_pyproject import SphinxConfig
 
-config = SphinxConfig('../../pyproject.toml', globalns=globals())
+from mrpro  import __version__ as project_version
+config = SphinxConfig("../../pyproject.toml", globalns=globals(), config_overrides = {"version": project_version})
 sys.path.insert(0, os.path.abspath('../../src'))  # Source code dir relative to this file
 
 # -- Project information -----------------------------------------------------
@@ -33,14 +34,23 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
+    'myst_nb',
+    'sphinx.ext.mathjax',
+    'sphinx-mathjax-offline'
 ]
 autosummary_generate = True
-autosummary_imported_members = True
-
+autosummary_imported_members = False
+autosummary_ignore_module_all = False
+autodoc_member_order = 'groupwise'
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 source_suffix = {'.rst': 'restructuredtext', '.txt': 'restructuredtext', '.md': 'markdown'}
 
+myst_enable_extensions = [
+    "amsmath",
+    "dollarmath",
+]
+nb_execution_mode = "off"
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -67,3 +77,7 @@ html_theme_options = {
         },
     ],
 }
+
+def setup(app):
+    # forces mathjax on all pages
+    app.set_html_assets_policy('always')
