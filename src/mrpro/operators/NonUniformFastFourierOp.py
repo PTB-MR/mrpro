@@ -78,6 +78,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             )
 
             self._kshape = traj.broadcasted_shape
+            self._im_size = recon_matrix
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """NUFFT from image space to k-space.

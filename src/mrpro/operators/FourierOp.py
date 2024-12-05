@@ -131,7 +131,7 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             coil k-space data with shape: (... coils k2 k1 k0)
         """
         # NUFFT Type 2 followed by FFT
-        return self._fast_fourier_op(self._non_uniform_fast_fourier_op(x)[0])
+        return self._cart_sampling_op(self._fast_fourier_op(self._non_uniform_fast_fourier_op(x)[0])[0])
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint operator mapping the coil k-space data to the coil images.
@@ -146,7 +146,9 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             coil image data with shape: (... coils z y x)
         """
         # FFT followed by NUFFT Type 1
-        return self._non_uniform_fast_fourier_op.adjoint(self._fast_fourier_op.adjoint(x)[0])
+        return self._non_uniform_fast_fourier_op.adjoint(
+            self._fast_fourier_op.adjoint(self._cart_sampling_op.adjoint(x)[0])[0]
+        )
 
     @property
     def gram(self) -> LinearOperator:
@@ -248,8 +250,8 @@ class FourierGramOp(LinearOperator):
 
         """
         super().__init__()
-        if fourier_op._nufft_dims and fourier_op._omega is not None:
-            weight = torch.ones_like(fourier_op._omega[..., :1, :, :, :])
+        if fourier_op._nufft_dims and fourier_op._non_uniform_fast_fourier_op._omega is not None:
+            weight = torch.ones_like(fourier_op._non_uniform_fast_fourier_op._omega[..., :1, :, :, :])
             keep_dims = [-4, *fourier_op._nufft_dims]  # -4 is coil
             permute = [i for i in range(-weight.ndim, 0) if i not in keep_dims] + keep_dims
             unpermute = np.argsort(permute)
@@ -257,15 +259,15 @@ class FourierGramOp(LinearOperator):
             weight_unflattend_shape = weight.shape
             weight = weight.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
             weight = weight + 0j
-            omega = fourier_op._omega.permute(*permute)
+            omega = fourier_op._non_uniform_fast_fourier_op._omega.permute(*permute)
             omega = omega.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
-            kernel = gram_nufft_kernel(weight, omega, fourier_op._nufft_im_size)
+            kernel = gram_nufft_kernel(weight, omega, fourier_op._non_uniform_fast_fourier_op._im_size)
             kernel = kernel.reshape(*weight_unflattend_shape[: -len(keep_dims)], *kernel.shape[-len(keep_dims) :])
             kernel = kernel.permute(*unpermute)
             fft = FastFourierOp(
                 dim=fourier_op._nufft_dims,
-                encoding_matrix=[2 * s for s in fourier_op._nufft_im_size],
-                recon_matrix=fourier_op._nufft_im_size,
+                encoding_matrix=[2 * s for s in fourier_op._non_uniform_fast_fourier_op._im_size],
+                recon_matrix=fourier_op._non_uniform_fast_fourier_op._im_size,
             )
             self.nufft_gram: None | LinearOperator = fft.H * kernel @ fft
         else:
