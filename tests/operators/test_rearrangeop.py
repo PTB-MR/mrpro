@@ -3,8 +3,7 @@
 import pytest
 from mrpro.operators.RearrangeOp import RearrangeOp
 
-from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test
+from tests import RandomGenerator, dotproduct_adjointness_test
 
 
 @pytest.mark.parametrize('dtype', ['float32', 'complex128'])
@@ -15,6 +14,7 @@ from tests.helper import dotproduct_adjointness_test
         ((2, 2, 4), '... a b->... (a b)', (2, 8), {'b': 4}),  # flatten
         ((2), '... (a b) -> ... a b', (2, 1), {'b': 1}),  # unflatten
     ],
+    ids=['swap_axes', 'flatten', 'unflatten'],
 )
 def test_einsum_op(input_shape, rule, output_shape, additional_info, dtype):
     """Test adjointness and shape."""

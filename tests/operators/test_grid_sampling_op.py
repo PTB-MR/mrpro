@@ -8,8 +8,7 @@ from mrpro.data import SpatialDimension
 from mrpro.operators import GridSamplingOp
 from torch.autograd.gradcheck import gradcheck
 
-from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test
+from tests import RandomGenerator, dotproduct_adjointness_test
 
 
 @pytest.mark.parametrize('dtype', ['float32', 'float64', 'complex64'])

@@ -4,8 +4,7 @@ import pytest
 import torch
 from mrpro.operators import ZeroPadOp
 
-from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test
+from tests import RandomGenerator, dotproduct_adjointness_test
 
 
 def test_zero_pad_op_content():

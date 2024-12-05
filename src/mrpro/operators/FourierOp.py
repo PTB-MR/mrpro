@@ -9,13 +9,14 @@ from mrpro.data._kdata.KData import KData
 from mrpro.data.enums import TrajType
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
+from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp
 from mrpro.operators.FastFourierOp import FastFourierOp
 from mrpro.operators.IdentityOp import IdentityOp
 from mrpro.operators.LinearOperator import LinearOperator
 from mrpro.operators.NonUniformFastFourierOp import NonUniformFastFourierOp
 
 
-class FourierOp(LinearOperator):
+class FourierOp(LinearOperator, adjoint_as_backward=True):
     """Fourier Operator class."""
 
     def __init__(
@@ -60,16 +61,20 @@ class FourierOp(LinearOperator):
             else:
                 self._nufft_dims.append(dim)
 
-        self._fast_fourier_op = (
-            FastFourierOp(
+        if self._fft_dims:
+            self._fast_fourier_op: FastFourierOp | IdentityOp = FastFourierOp(
                 dim=tuple(self._fft_dims),
                 recon_matrix=get_spatial_dims(recon_matrix, self._fft_dims),
                 encoding_matrix=get_spatial_dims(encoding_matrix, self._fft_dims),
             )
-            if self._fft_dims
-            else IdentityOp()
-        )
+            self._cart_sampling_op: CartesianSamplingOp | IdentityOp = CartesianSamplingOp(
+                encoding_matrix=encoding_matrix, traj=traj
+            )
+        else:
+            self._fast_fourier_op = IdentityOp()
+            self._cart_sampling_op = IdentityOp()
 
+        # Find dimensions which require NUFFT
         if self._nufft_dims:
             fft_dims_k210 = [
                 dim
@@ -83,17 +88,15 @@ class FourierOp(LinearOperator):
                     'k-space dimension, i.e. kx along k0, ky along k1 and kz along k2',
                 )
 
-        self._non_uniform_fast_fourier_op = (
-            NonUniformFastFourierOp(
+            self._non_uniform_fast_fourier_op: NonUniformFastFourierOp | IdentityOp = NonUniformFastFourierOp(
                 dim=tuple(self._nufft_dims),
                 recon_matrix=get_spatial_dims(recon_matrix, self._nufft_dims),
                 encoding_matrix=get_spatial_dims(encoding_matrix, self._nufft_dims),
                 traj=traj,
                 nufft_oversampling=nufft_oversampling,
             )
-            if self._nufft_dims
-            else IdentityOp()
-        )
+        else:
+            self._non_uniform_fast_fourier_op = IdentityOp()
 
     @classmethod
     def from_kdata(cls, kdata: KData, recon_shape: SpatialDimension[int] | None = None) -> Self:

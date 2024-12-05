@@ -102,7 +102,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         max_iterations: int = 20,
         relative_tolerance: float = 1e-4,
         absolute_tolerance: float = 1e-5,
-        callback: Callable | None = None,
+        callback: Callable[[torch.Tensor], None] | None = None,
     ) -> torch.Tensor:
         """Power iteration for computing the operator norm of the linear operator.
 
@@ -163,7 +163,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         # operator norm is a strictly positive number. This ensures that the first time the
         # change between the old and the new estimate of the operator norm is non-zero and
         # thus prevents the loop from exiting despite a non-correct estimate.
-        op_norm_old = torch.zeros(*tuple([1 for _ in range(vector.ndim)]))
+        op_norm_old = torch.zeros(*tuple([1 for _ in range(vector.ndim)]), device=vector.device)
 
         dim = tuple(dim) if dim is not None else dim
         for _ in range(max_iterations):
@@ -294,6 +294,20 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         else:
             return NotImplemented  # type: ignore[unreachable]
 
+    def __and__(self, other: LinearOperator) -> mrpro.operators.LinearOperatorMatrix:
+        """Vertical stacking of two LinearOperators."""
+        if not isinstance(other, LinearOperator):
+            return NotImplemented  # type: ignore[unreachable]
+        operators = [[self], [other]]
+        return mrpro.operators.LinearOperatorMatrix(operators)
+
+    def __or__(self, other: LinearOperator) -> mrpro.operators.LinearOperatorMatrix:
+        """Horizontal stacking of two LinearOperators."""
+        if not isinstance(other, LinearOperator):
+            return NotImplemented  # type: ignore[unreachable]
+        operators = [[self, other]]
+        return mrpro.operators.LinearOperatorMatrix(operators)
+
     @property
     def gram(self) -> LinearOperator:
         """Gram operator.
@@ -401,9 +415,4 @@ class AdjointLinearOperator(LinearOperator):
     @property
     def H(self) -> LinearOperator:  # noqa: N802
         """Adjoint of adjoint operator, i.e. original LinearOperator."""
-        return self.operator
-
-    @property
-    def gram(self) -> LinearOperator:
-        """Gram operator."""
-        return self._operator.gram.H
+        return self._operator
