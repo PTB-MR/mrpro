@@ -130,8 +130,8 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
         -------
             coil k-space data with shape: (... coils k2 k1 k0)
         """
-        # FFT followed by NUFFT Type 2
-        return self._non_uniform_fast_fourier_op(self._fast_fourier_op(x)[0])
+        # NUFFT Type 2 followed by FFT
+        return self._fast_fourier_op(self._non_uniform_fast_fourier_op(x)[0])
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint operator mapping the coil k-space data to the coil images.
@@ -145,8 +145,13 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
         -------
             coil image data with shape: (... coils z y x)
         """
-        # NUFFT Type 1 followed by FFT
-        return self._fast_fourier_op.adjoint(self._non_uniform_fast_fourier_op.adjoint(x)[0])
+        # FFT followed by NUFFT Type 1
+        return self._non_uniform_fast_fourier_op.adjoint(self._fast_fourier_op.adjoint(x)[0])
+
+    @property
+    def gram(self) -> LinearOperator:
+        """Return the gram operator."""
+        return FourierGramOp(self)
 
 
 def symmetrize(kernel: torch.Tensor, rank: int) -> torch.Tensor:
