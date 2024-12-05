@@ -92,7 +92,7 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
                 )
 
             self._non_uniform_fast_fourier_op: NonUniformFastFourierOp | IdentityOp = NonUniformFastFourierOp(
-                dim=tuple(self._nufft_dims),
+                direction=tuple(self._nufft_dims),
                 recon_matrix=get_spatial_dims(recon_matrix, self._nufft_dims),
                 encoding_matrix=get_spatial_dims(encoding_matrix, self._nufft_dims),
                 traj=traj,

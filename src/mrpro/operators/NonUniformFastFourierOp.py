@@ -1,12 +1,15 @@
 """Non-Uniform Fast Fourier Operator."""
 
 from collections.abc import Sequence
+from dataclasses import astuple
+from typing import Literal
 
 import numpy as np
 import torch
 from torchkbnufft import KbNufft, KbNufftAdjoint
 
 from mrpro.data.KTrajectory import KTrajectory
+from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
 
 
@@ -15,9 +18,9 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
 
     def __init__(
         self,
-        dim: Sequence[int],
-        recon_matrix: Sequence[int],
-        encoding_matrix: Sequence[int],
+        direction: Sequence[Literal['x', 'y', 'z', -3, -2, -1]],
+        recon_matrix: SpatialDimension[int] | Sequence[int],
+        encoding_matrix: SpatialDimension[int] | Sequence[int],
         traj: KTrajectory,
         nufft_oversampling: float = 2.0,
         nufft_numpoints: int = 6,
@@ -27,12 +30,14 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
 
         Parameters
         ----------
-        dim
-            dimension along which non-uniform FFT is applied
+        direction
+            direction along which non-uniform FFT is applied
         recon_matrix
-            dimension of the reconstructed image corresponding to dim
+            Dimension of the reconstructed image. If this is SpatialDimension only values of directions will be used.
+            Otherwise, it should be a Sequence of the same length as direction.
         encoding_matrix
-            dimension of the encoded k-space corresponding to dim
+            Dimension of the encoded k-space. If this is SpatialDimension only values of directions will be used.
+            Otherwise, it should be a Sequence of the same length as direction.
         traj
             the k-space trajectories where the frequencies are sampled
         nufft_oversampling
@@ -44,18 +49,38 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         """
         super().__init__()
 
-        self._nufft_dims = dim
-        if len(dim):
+        # Convert to negative indexing
+        direction_dict = {'z': -3, 'y': -2, 'x': -1, -3: -3, -2: -2, -1: -1}
+        self._nufft_direction: Sequence[int] = [direction_dict[d] for d in direction]
 
-            def get_traj(traj: KTrajectory, dims: Sequence[int]):
-                return [k for k, i in zip((traj.kz, traj.ky, traj.kx), (-3, -2, -1), strict=True) if i in dims]
+        if len(self._nufft_direction) != len(set(self._nufft_direction)):
+            raise ValueError(f'Directions must be unique. Normalized directions are {self._nufft_direction}')
 
-            grid_size = [int(size * nufft_oversampling) for size in recon_matrix]
+        self._nufft_dims = self._nufft_direction
+        if len(self._nufft_direction):
+            if isinstance(recon_matrix, SpatialDimension):
+                im_size: Sequence[int] = [int(astuple(recon_matrix)[d]) for d in self._nufft_direction]
+            else:
+                if (n_recon_matrix := len(recon_matrix)) != (n_nufft_dir := len(self._nufft_direction)):
+                    raise ValueError(f'recon_matrix should have {n_nufft_dir} entries but has {n_recon_matrix}')
+                im_size = recon_matrix
+
+            if isinstance(encoding_matrix, SpatialDimension):
+                k_size: Sequence[int] = [int(astuple(encoding_matrix)[d]) for d in self._nufft_direction]
+            else:
+                if (n_enc_matrix := len(encoding_matrix)) != (n_nufft_dir := len(self._nufft_direction)):
+                    raise ValueError(f'encoding_matrix should have {n_nufft_dir} entries but has {n_enc_matrix}')
+                k_size = encoding_matrix
+
+            def get_traj(traj: KTrajectory, direction: Sequence[int]):
+                return [k for k, i in zip((traj.kz, traj.ky, traj.kx), (-3, -2, -1), strict=True) if i in direction]
+
+            grid_size = [int(size * nufft_oversampling) for size in im_size]
             omega = [
                 k * 2 * torch.pi / ks
                 for k, ks in zip(
-                    get_traj(traj, dim),
-                    encoding_matrix,
+                    get_traj(traj, self._nufft_direction),
+                    k_size,
                     strict=True,
                 )
             ]
@@ -63,22 +88,22 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             # Broadcast shapes not always needed but also does not hurt
             omega = [k.expand(*np.broadcast_shapes(*[k.shape for k in omega])) for k in omega]
             self.register_buffer('_omega', torch.stack(omega, dim=-4))  # use the 'coil' dim for the direction
-            numpoints = [min(img_size, nufft_numpoints) for img_size in recon_matrix]
+            numpoints = [min(size, nufft_numpoints) for size in im_size]
             self._fwd_nufft_op = KbNufft(
-                im_size=recon_matrix,
+                im_size=im_size,
                 grid_size=grid_size,
                 numpoints=numpoints,
                 kbwidth=nufft_kbwidth,
             )
             self._adj_nufft_op = KbNufftAdjoint(
-                im_size=recon_matrix,
+                im_size=im_size,
                 grid_size=grid_size,
                 numpoints=numpoints,
                 kbwidth=nufft_kbwidth,
             )
 
             self._kshape = traj.broadcasted_shape
-            self._im_size = recon_matrix
+            self._im_size = im_size
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """NUFFT from image space to k-space.
