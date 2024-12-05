@@ -70,7 +70,7 @@ def test_non_uniform_fast_fourier_op_equal_to_fft(ismrmrd_cart):
     assert relative_image_difference(reconstructed_img[0, 0, 0, ...], ismrmrd_cart.img_ref) <= 0.05
 
 
-def test_non_uniform_fast_fourier_op_empgy_dims():
+def test_non_uniform_fast_fourier_op_empty_dims():
     """Empty dims do not change the input."""
     nk = [1, 1, 1, 1, 1]
     traj = create_traj(nk, nkx=nk, nky=nk, nkz=nk, sx='nuf', sy='nuf', sz='nuf')
