@@ -11,13 +11,13 @@ from tests.conftest import create_traj
 from tests.helper import dotproduct_adjointness_test, relative_image_difference
 
 
-def create_data(im_shape, k_shape, nkx, nky, nkz, sx, sy, sz):
+def create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
     random_generator = RandomGenerator(seed=0)
 
     # generate random image
     img = random_generator.complex64_tensor(size=im_shape)
     # create random trajectories
-    trajectory = create_traj(k_shape, nkx, nky, nkz, sx, sy, sz)
+    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
     return img, trajectory
 
 
@@ -31,7 +31,9 @@ def test_non_uniform_fast_fourier_op_fwd_adj_property(dim):
 
     # generate random traj
     nk = [kdata_shape[d] if d in dim else 1 for d in (-5, -3, -2, -1)]  # skip coil dimension
-    traj = create_traj(kdata_shape, nkx=nk, nky=nk, nkz=nk, sx='nuf', sy='nuf', sz='nuf')
+    traj = create_traj(
+        kdata_shape, nkx=nk, nky=nk, nkz=nk, type_kx='non-uniform', type_ky='non-uniform', type_kz='non-uniform'
+    )
 
     # create operator
     nufft_op = NonUniformFastFourierOp(
@@ -73,7 +75,7 @@ def test_non_uniform_fast_fourier_op_equal_to_fft(ismrmrd_cart):
 def test_non_uniform_fast_fourier_op_empty_dims():
     """Empty dims do not change the input."""
     nk = [1, 1, 1, 1, 1]
-    traj = create_traj(nk, nkx=nk, nky=nk, nkz=nk, sx='nuf', sy='nuf', sz='nuf')
+    traj = create_traj(nk, nkx=nk, nky=nk, nkz=nk, type_kx='non-uniform', type_ky='non-uniform', type_kz='non-uniform')
     nufft_op = NonUniformFastFourierOp(dim=(), recon_matrix=(), encoding_matrix=(), traj=traj)
 
     random_generator = RandomGenerator(seed=0)
