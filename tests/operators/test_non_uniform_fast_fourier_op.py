@@ -75,7 +75,7 @@ def test_non_uniform_fast_fourier_op_equal_to_fft(ismrmrd_cart):
 
 def test_non_uniform_fast_fourier_op_empty_dims():
     """Empty dims do not change the input."""
-    nk = [1, 1, 1, 1, 1]
+    nk = (1, 1, 1, 1, 1)
     traj = create_traj(nk, nkx=nk, nky=nk, nkz=nk, type_kx='non-uniform', type_ky='non-uniform', type_kz='non-uniform')
     nufft_op = NonUniformFastFourierOp(direction=(), recon_matrix=(), encoding_matrix=(), traj=traj)
 
@@ -87,11 +87,11 @@ def test_non_uniform_fast_fourier_op_empty_dims():
 def test_non_uniform_fast_fourier_op_not_aligned_dim_directions():
     """Test case where directions and k-space dimensions are not alined."""
 
-    kdata_shape = [1, 3, 20, 30, 40]
-    img_shape = [2, 3, 20, 20, 30]
-    nkx = [1, 1, 30, 40]
-    nky = [1, 20, 1, 1]  # Cartesian ky dimension defined along k2 rather than k1
-    nkz = [1, 1, 30, 40]
+    kdata_shape = (1, 3, 20, 30, 40)
+    img_shape = (2, 3, 20, 20, 30)
+    nkx = (1, 1, 30, 40)
+    nky = (1, 20, 1, 1)  # Cartesian ky dimension defined along k2 rather than k1
+    nkz = (1, 1, 30, 40)
 
     # generate random traj and image
     img, traj = create_data(
@@ -113,18 +113,17 @@ def test_non_uniform_fast_fourier_op_not_aligned_dim_directions():
         traj=traj,
     )
 
-    assert nufft_op(img)
+    assert nufft_op.adjoint(nufft_op(img)[0])[0].shape == img_shape
 
 
 def test_non_uniform_fast_fourier_op_directions():
     """Test different direction specifiers of non-uniform fast Fourier operator."""
 
-    kdata_shape = [2, 3, 20, 30, 40]
-    recon_matrix = [20, 20, 30]
-    img_shape = [2, 3, 20, 20, 30]
+    kdata_shape = (1, 3, 20, 30, 40)
+    img_shape = (2, 3, 20, 20, 30)
 
     # generate random traj and image
-    nk = [2, 20, 30, 40]
+    nk = [2, 1, 30, 40]
     img, traj = create_data(
         img_shape,
         kdata_shape,
@@ -137,18 +136,17 @@ def test_non_uniform_fast_fourier_op_directions():
     )
 
     # create operator
-    dim = [-2, -1]
     nufft_op_12 = NonUniformFastFourierOp(
         direction=(-2, -1),
-        recon_matrix=[recon_matrix[d] for d in dim],
-        encoding_matrix=[kdata_shape[d] for d in dim],
+        recon_matrix=SpatialDimension[int](z=img_shape[-3], y=img_shape[-2], x=img_shape[-1]),
+        encoding_matrix=SpatialDimension[int](z=kdata_shape[-3], y=kdata_shape[-2], x=kdata_shape[-1]),
         traj=traj,
     )
 
     nufft_op_yx = NonUniformFastFourierOp(
         direction=('y', 'x'),
-        recon_matrix=[recon_matrix[d] for d in dim],
-        encoding_matrix=[kdata_shape[d] for d in dim],
+        recon_matrix=SpatialDimension[int](z=img_shape[-3], y=img_shape[-2], x=img_shape[-1]),
+        encoding_matrix=SpatialDimension[int](z=kdata_shape[-3], y=kdata_shape[-2], x=kdata_shape[-1]),
         traj=traj,
     )
     torch.testing.assert_close(nufft_op_12(img)[0], nufft_op_yx(img)[0])
