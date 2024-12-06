@@ -417,7 +417,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
         '2d_cartesian_irregular_sampling',
         '2d_single_shot_spiral',
         '3d_nonuniform_4_coils_2_other',
-        '2d_nnonuniform_cine_mri_8_cardiac_phases_5_coils',
+        '2d_nonuniform_cine_mri_8_cardiac_phases_5_coils',
         '2d_cartesian_cine_9_cardiac_phases_6_coils',
         'radial_phase_encoding_8_coils_with_oversampling',
         'radial_phase_encoding_8_coils_non_cartesian_sampling',
