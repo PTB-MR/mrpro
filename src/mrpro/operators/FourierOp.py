@@ -126,6 +126,7 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             self._fwd_nufft_op = None
             self._adj_nufft_op = None
         self._kshape = traj.broadcasted_shape
+        self._nufft_scale = torch.tensor(get_spatial_dims(encoding_matrix, self._nufft_dims)).prod().sqrt().reciprocal()
 
     @classmethod
     def from_kdata(cls, kdata: KData, recon_shape: SpatialDimension[int] | None = None) -> Self:
@@ -164,7 +165,6 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             keep_dims = [-4, *self._nufft_dims]  # -4 is always coil
             permute = [i for i in range(-x.ndim, 0) if i not in keep_dims] + keep_dims
             unpermute = np.argsort(permute)
-
             x = x.permute(*permute)
             permuted_x_shape = x.shape
             x = x.flatten(end_dim=-len(keep_dims) - 1)
@@ -174,16 +174,18 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             omega = omega.broadcast_to(*permuted_x_shape[: -len(keep_dims)], *omega.shape[-len(keep_dims) :])
             omega = omega.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
 
-            x = self._fwd_nufft_op(x, omega, norm='ortho')
+            x = self._fwd_nufft_op(x, omega, norm=None)
 
             shape_nufft_dims = [self._kshape[i] for i in self._nufft_dims]
             x = x.reshape(*permuted_x_shape[: -len(keep_dims)], -1, *shape_nufft_dims)  # -1 is coils
             x = x.permute(*unpermute)
 
+            # manual scaling instead of ortho to be independent of oversampling ratio
+            x = x * self._nufft_scale
+
         if self._fast_fourier_op is not None and self._cart_sampling_op is not None:
             # FFT
             (x,) = self._cart_sampling_op(self._fast_fourier_op(x)[0])
-
         return (x,)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
@@ -209,7 +211,6 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             keep_dims = [-4, *self._nufft_dims]  # -4 is coil
             permute = [i for i in range(-x.ndim, 0) if i not in keep_dims] + keep_dims
             unpermute = np.argsort(permute)
-
             x = x.permute(*permute)
             permuted_x_shape = x.shape
             x = x.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
@@ -218,11 +219,13 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             omega = omega.broadcast_to(*permuted_x_shape[: -len(keep_dims)], *omega.shape[-len(keep_dims) :])
             omega = omega.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
 
-            x = self._adj_nufft_op(x, omega, norm='ortho')
+            x = self._adj_nufft_op(x, omega, norm=None)
 
             x = x.reshape(*permuted_x_shape[: -len(keep_dims)], *x.shape[-len(keep_dims) :])
             x = x.permute(*unpermute)
 
+            # manual scaling instead of ortho to be independent of oversampling ratio
+            x = x * self._nufft_scale
         return (x,)
 
     @property
