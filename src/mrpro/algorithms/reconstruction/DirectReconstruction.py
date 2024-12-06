@@ -3,12 +3,12 @@
 from collections.abc import Callable
 
 from mrpro.algorithms.reconstruction.Reconstruction import Reconstruction
+from mrpro.data import KTrajectory
 from mrpro.data._kdata.KData import KData
 from mrpro.data.CsmData import CsmData
 from mrpro.data.DcfData import DcfData
 from mrpro.data.IData import IData
 from mrpro.data.KNoise import KNoise
-from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.LinearOperator import LinearOperator
 
 
@@ -18,11 +18,12 @@ class DirectReconstruction(Reconstruction):
     def __init__(
         self,
         kdata: KData | None = None,
+        *,
         fourier_op: LinearOperator | None = None,
         csm: Callable[[IData], CsmData] | CsmData | None = CsmData.from_idata_walsh,
         noise: KNoise | None = None,
-        dcf: DcfData | None = None,
-    ):
+        dcf: Callable[[KTrajectory], DcfData] | DcfData | None = DcfData.from_traj_voronoi,
+    ) -> None:
         """Initialize DirectReconstruction.
 
         Parameters
@@ -52,14 +53,16 @@ class DirectReconstruction(Reconstruction):
         if fourier_op is None:
             if kdata is None:
                 raise ValueError('Either kdata or fourier_op needs to be defined.')
-            self.fourier_op = FourierOp.from_kdata(kdata)
+            self.recalculate_fourierop(kdata)
         else:
             self.fourier_op = fourier_op
 
-        if kdata is not None and dcf is None:
-            self.dcf = DcfData.from_traj_voronoi(kdata.traj)
-        else:
+        if dcf is None or isinstance(dcf, DcfData):
             self.dcf = dcf
+        else:
+            if kdata is None:
+                raise ValueError('kdata needs to be defined to calculate the density compensation.')
+            self.recalculate_dcf(kdata.traj, dcf)
 
         self.noise = noise
 
@@ -82,4 +85,4 @@ class DirectReconstruction(Reconstruction):
         -------
             the reconstruced image.
         """
-        return self.direct_reconstruction(kdata)
+        return self._direct_reconstruction(kdata)
