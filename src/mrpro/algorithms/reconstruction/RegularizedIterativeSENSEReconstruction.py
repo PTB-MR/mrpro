@@ -9,10 +9,10 @@ import torch
 from mrpro.algorithms.optimizers.cg import cg
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
 from mrpro.algorithms.reconstruction.DirectReconstruction import DirectReconstruction
-from mrpro.data._kdata.KData import KData
 from mrpro.data.CsmData import CsmData
 from mrpro.data.DcfData import DcfData
 from mrpro.data.IData import IData
+from mrpro.data.KData import KData
 from mrpro.data.KNoise import KNoise
 from mrpro.operators.IdentityOp import IdentityOp
 from mrpro.operators.LinearOperator import LinearOperator
