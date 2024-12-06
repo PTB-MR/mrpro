@@ -54,13 +54,18 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
             raise ValueError('We currently only support constant number of samples')
         n_k0 = int(n_samples.item())
 
-        def reshape_pulseq_traj(k_traj: torch.Tensor, encoding_size: int):
-            k_traj *= encoding_size / (2 * torch.max(torch.abs(k_traj)))
+        def rescale_and_reshape_traj(k_traj: torch.Tensor, encoding_size: int):
+            if encoding_size > 1 and torch.max(torch.abs(k_traj)) > 0:
+                k_traj = k_traj * encoding_size / (2 * torch.max(torch.abs(k_traj)))
+            else:
+                # We force k_traj to be 0 if encoding_size = 1. This is typically the case for kz in 2D sequences.
+                # However, it happens that seq.calculate_kspace() returns values != 0 (numerical noise) in such cases.
+                k_traj = torch.zeros_like(k_traj)
             return rearrange(k_traj, '(other k0) -> other k0', k0=n_k0)
 
         # rearrange k-space trajectory to match MRpro convention
-        kx = reshape_pulseq_traj(k_traj_adc[0], kheader.encoding_matrix.x)
-        ky = reshape_pulseq_traj(k_traj_adc[1], kheader.encoding_matrix.y)
-        kz = reshape_pulseq_traj(k_traj_adc[2], kheader.encoding_matrix.z)
+        kx = rescale_and_reshape_traj(k_traj_adc[0], kheader.encoding_matrix.x)
+        ky = rescale_and_reshape_traj(k_traj_adc[1], kheader.encoding_matrix.y)
+        kz = rescale_and_reshape_traj(k_traj_adc[2], kheader.encoding_matrix.z)
 
         return KTrajectoryRawShape(kz, ky, kx, self.repeat_detection_tolerance)
