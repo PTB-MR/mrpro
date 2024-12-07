@@ -6,170 +6,166 @@ import numpy as np
 import torch
 
 from mrpro.operators.SignalModel import SignalModel
+from mrpro.utils import unsqueeze_right
 
 
-class EpgRfPulse:
-    """Mixing of EPG configuration states due to RF pulse."""
+def epg_rf_rotation_matrix(
+    flip_angle: float | torch.Tensor,
+    phase: float | torch.Tensor,
+    b1_scaling_factor: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Initialize the rotation matrix describing the RF pulse.
 
-    def __init__(
-        self,
-        flip_angle: float | torch.Tensor,
-        phase: float | torch.Tensor,
-        b1_scaling_factor: torch.Tensor | None = None,
-    ):
-        """Initialise the rotation matrix describing the RF pulse.
+    Parameters
+    ----------
+    flip_angle
+        Flip angle of the RF pulse in rad
+    phase
+        Phase of the RF pulse
+    b1_scaling_factor
+        Scaling of flip angle due to B1 inhomogeneities
 
-        Parameters
-        ----------
-        flip_angle
-            Flip angle of the RF pulse in rad
-        phase
-            Phase of the RF pulse
-        b1_scaling_factor
-            Scaling of flip angle due to B1 inhomogeneities
-        """
-        flip_angle = torch.as_tensor(flip_angle)
-        phase = torch.as_tensor(phase)
-        if b1_scaling_factor is not None:
-            flip_angle = flip_angle * b1_scaling_factor[None, ...]
-        cosa = torch.cos(flip_angle)
-        sina = torch.sin(flip_angle)
-        cosa2 = (cosa + 1) / 2
-        sina2 = 1 - cosa2
+    Returns
+    -------
+        Matrix describing the mixing of the EPG configuration states due to an RF pulse.
+    """
+    flip_angle = torch.as_tensor(flip_angle)
+    phase = torch.as_tensor(phase)
+    if b1_scaling_factor is not None:
+        flip_angle = flip_angle * b1_scaling_factor[None, ...]
+    cosa = torch.cos(flip_angle)
+    sina = torch.sin(flip_angle)
+    cosa2 = (cosa + 1) / 2
+    sina2 = 1 - cosa2
 
-        ejp = torch.exp(1j * phase)
-        inv_ejp = 1 / ejp
+    ejp = torch.exp(1j * phase)
+    inv_ejp = 1 / ejp
 
-        self.rf_rotation_matrix: torch.Tensor = torch.stack(
-            [
-                cosa2 + 0j,
-                ejp**2 * sina2,
-                -1j * ejp * sina,
-                inv_ejp**2 * sina2,
-                cosa2 + 0j,
-                1j * inv_ejp * sina,
-                -1j / 2.0 * inv_ejp * sina,
-                1j / 2.0 * ejp * sina,
-                cosa + 0j,
-            ],
+    return torch.stack(
+        [
+            cosa2 + 0j,
+            ejp**2 * sina2,
+            -1j * ejp * sina,
+            inv_ejp**2 * sina2,
+            cosa2 + 0j,
+            1j * inv_ejp * sina,
+            -1j / 2.0 * inv_ejp * sina,
+            1j / 2.0 * ejp * sina,
+            cosa + 0j,
+        ],
+        -1,
+    ).reshape(*flip_angle.shape, 3, 3)
+
+
+def epg_rf_rotation(epg_configuration_states: torch.Tensor, rf_rotation_matrix: torch.Tensor) -> torch.Tensor:
+    """Propagate EPG states through an RF rotation.
+
+    Parameters
+    ----------
+    epg_configuration_states
+        EPG configuration states Fplus, Fminus, Z
+    rf_rotation_matrix
+        Matrix describing the mixing of the EPG configuration states due to an RF pulse.
+
+    Returns
+    -------
+        EPG configuration states after RF pulse
+    """
+    return torch.matmul(rf_rotation_matrix, epg_configuration_states)
+
+
+def epg_gradient_dephasing(
+    epg_configuration_states: torch.Tensor, keep_fixed_number_of_states: bool = False
+) -> torch.Tensor:
+    """Propagate EPG states through a "unit" gradient.
+
+    Parameters
+    ----------
+    epg_configuration_states
+        EPG configuration states Fplus, Fminus, Z
+    keep_fixed_number_of_states
+        True to NOT add any higher-order states - assume that they just go to zero.  Be careful - this speeds up
+        simulations, but may compromise accuracy!
+
+    Returns
+    -------
+        EPG configuration states after gradient
+    """
+    zero = torch.zeros(
+        *epg_configuration_states.shape[:-2],
+        1,
+        device=epg_configuration_states.device,
+        dtype=epg_configuration_states.dtype,
+    )
+    if keep_fixed_number_of_states:
+        f_plus = torch.cat(
+            (
+                epg_configuration_states[..., 1, 1:2].conj() if epg_configuration_states.shape[-1] > 1 else zero,
+                epg_configuration_states[..., 0, :-1],
+            ),
             -1,
-        ).reshape(*flip_angle.shape, 3, 3)
-
-    def apply(self, epg_configuration_states: torch.Tensor) -> torch.Tensor:
-        """Propagate EPG states through an RF rotation.
-
-        Parameters
-        ----------
-        epg_configuration_states
-            EPG configuration states Fplus, Fminus, Z
-
-        Returns
-        -------
-            EPG configuration states after RF pulse
-        """
-        return torch.matmul(self.rf_rotation_matrix, epg_configuration_states)
-
-
-class EpgGradient:
-    """Dephasing and Rephasing due to gradient."""
-
-    def __init__(self, keep_fixed_number_of_states: bool = False):
-        """Gradient de- and rephasing.
-
-        Parameters
-        ----------
-        keep_fixed_number_of_states
-            True to NOT add any higher-order states - assume that they just go to zero.  Be careful - this speeds up
-            simulations, but may compromise accuracy!
-        """
-        self.keep_fixed_number_of_states: bool = keep_fixed_number_of_states
-
-    def apply(self, epg_configuration_states: torch.Tensor) -> torch.Tensor:
-        """Propagate EPG states through a gradient.
-
-        Parameters
-        ----------
-        epg_configuration_states
-            EPG configuration states Fplus, Fminus, Z
-
-        Returns
-        -------
-            EPG configuration states after gradient
-        """
-        zero = torch.zeros(
-            *epg_configuration_states.shape[:-2],
-            1,
-            device=epg_configuration_states.device,
-            dtype=epg_configuration_states.dtype,
         )
-        if self.keep_fixed_number_of_states:
-            f_plus = torch.cat(
-                (
-                    epg_configuration_states[..., 1, 1:2].conj() if epg_configuration_states.shape[-1] > 1 else zero,
-                    epg_configuration_states[..., 0, :-1],
-                ),
-                -1,
-            )
-            f_minus = torch.cat((epg_configuration_states[..., 1, 1:], zero), -1)
-            z = epg_configuration_states[..., 2, :]
-        else:
-            f_plus = torch.cat(
-                (
-                    epg_configuration_states[..., 1, 1:2].conj() if epg_configuration_states.shape[-1] > 1 else zero,
-                    epg_configuration_states[..., 0, :],
-                ),
-                -1,
-            )
-            f_minus = torch.cat((epg_configuration_states[..., 1, 1:], zero, zero), -1)
-            z = torch.cat((epg_configuration_states[..., 2, :], zero), -1)
-        return torch.stack((f_plus, f_minus, z), -2)
+        f_minus = torch.cat((epg_configuration_states[..., 1, 1:], zero), -1)
+        z = epg_configuration_states[..., 2, :]
+    else:
+        f_plus = torch.cat(
+            (
+                epg_configuration_states[..., 1, 1:2].conj() if epg_configuration_states.shape[-1] > 1 else zero,
+                epg_configuration_states[..., 0, :],
+            ),
+            -1,
+        )
+        f_minus = torch.cat((epg_configuration_states[..., 1, 1:], zero, zero), -1)
+        z = torch.cat((epg_configuration_states[..., 2, :], zero), -1)
+    return torch.stack((f_plus, f_minus, z), -2)
 
 
-class EpgRelaxation:
-    """Relaxation (i.e. reduction of population levels) of EPG states."""
+def epg_relaxation_matrix(relaxation_time: float | torch.Tensor, t1: torch.Tensor, t2: torch.Tensor) -> torch.Tensor:
+    """Calculate relaxation matrix.
 
-    def __init__(
-        self, relaxation_time: float | torch.Tensor, t1: torch.Tensor, t2: torch.Tensor, t1_recovery: bool = True
-    ):
-        """Relaxation of EPG states.
+    Parameters
+    ----------
+    relaxation_time
+        relaxation time
+    t1
+        longitudinal relaxation time
+    t2
+        transversal relaxation time
 
-        Parameters
-        ----------
-        relaxation_time
-            relaxation time
-        t1
-            longitudinal relaxation time
-        t2
-            transversal relaxation time
-        t1_recovery
-            recovery of longitudinal EPG states
-        """
-        relaxation_time = torch.as_tensor(relaxation_time)
-        exp_t2 = torch.exp(-relaxation_time / t2)
-        exp_t1 = torch.exp(-relaxation_time / t1)
-        exp_t1, exp_t2 = torch.broadcast_tensors(exp_t1, exp_t2)
-        self.relaxation_matrix: torch.Tensor = torch.stack([exp_t2, exp_t2, exp_t1], dim=-1)
-        self.t1_recovery: bool = t1_recovery
+    Returns
+    -------
+        matrix describing EPG relaxation
+    """
+    relaxation_time = torch.as_tensor(relaxation_time)
+    exp_t2 = torch.exp(-relaxation_time / t2)
+    exp_t1 = torch.exp(-relaxation_time / t1)
+    exp_t1, exp_t2 = torch.broadcast_tensors(exp_t1, exp_t2)
+    return torch.stack([exp_t2, exp_t2, exp_t1], dim=-1)
 
-    def apply(self, epg_configuration_states: torch.Tensor) -> torch.Tensor:
-        """Propagate EPG states through a period of relaxation and recovery.
 
-        Parameters
-        ----------
-        epg_configuration_states
-            EPG configuration states Fplus, Fminus, Z
+def epg_relaxation(
+    epg_configuration_states: torch.Tensor, relaxation_matrix: torch.Tensor, t1_recovery: bool = True
+) -> torch.Tensor:
+    """Propagate EPG states through a period of relaxation and recovery.
 
-        Returns
-        -------
-            EPG configuration states after relaxation and recovery
-        """
-        epg_configuration_states = self.relaxation_matrix[..., None] * epg_configuration_states
+    Parameters
+    ----------
+    epg_configuration_states
+        EPG configuration states Fplus, Fminus, Z
+    relaxation_matrix
+        matrix describing EPG relaxation
+    t1_recovery
+        recovery of longitudinal EPG states
 
-        if self.t1_recovery:
-            epg_configuration_states[..., 2, 0] = epg_configuration_states[..., 2, 0] + (
-                1 - self.relaxation_matrix[..., -1]
-            )
-        return epg_configuration_states
+    Returns
+    -------
+        EPG configuration states after relaxation and recovery
+    """
+    epg_configuration_states = relaxation_matrix[..., None] * epg_configuration_states
+
+    if t1_recovery:
+        epg_configuration_states[..., 2, 0] = epg_configuration_states[..., 2, 0] + (1 - relaxation_matrix[..., -1])
+    return epg_configuration_states
 
 
 class EpgMrfFispWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
@@ -343,10 +339,10 @@ class EpgMrfFispWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Te
             with shape (time ... other, coils, z, y, x)
         """
         delta_ndim = m0.ndim - (self.flip_angles.ndim - 1)  # -1 for time
-        flip_angles = self.flip_angles[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.flip_angles
-        rf_phases = self.rf_phases[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.rf_phases
-        te = self.te[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.te
-        tr = self.tr[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.tr
+        flip_angles = unsqueeze_right(self.flip_angles, delta_ndim)
+        rf_phases = unsqueeze_right(self.rf_phases, delta_ndim)
+        te = unsqueeze_right(self.te, delta_ndim)
+        tr = unsqueeze_right(self.tr, delta_ndim)
 
         signal = torch.zeros(flip_angles.shape[0], *m0.shape, dtype=torch.cfloat, device=m0.device)
         epg_configuration_states = torch.zeros((*m0.shape, 3, 1), dtype=torch.cfloat, device=m0.device)
@@ -365,38 +361,55 @@ class EpgMrfFispWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Te
             # Preparation pulse
             if inv_prep_ti is not None:
                 # 180° inversion pulse -> relaxation
-                epg_configuration_states = EpgRfPulse(torch.pi, 0).apply(epg_configuration_states)
-                epg_configuration_states = EpgRelaxation(inv_prep_ti, t1, t2).apply(epg_configuration_states)
+                epg_configuration_states = epg_rf_rotation(
+                    epg_configuration_states, epg_rf_rotation_matrix(torch.pi, 0)
+                )
+                epg_configuration_states = epg_relaxation(
+                    epg_configuration_states, epg_relaxation_matrix(inv_prep_ti, t1, t2)
+                )
             elif t2_prep_te is not None:
-                # 90° pulse -> relaxation during TE -> -90° pulse
-                epg_configuration_states = EpgRfPulse(torch.pi / 2, 0).apply(epg_configuration_states)
-                epg_configuration_states = EpgRelaxation(t2_prep_te, t1, t2).apply(epg_configuration_states)
-                epg_configuration_states = EpgRfPulse(torch.pi / 2, -torch.pi).apply(epg_configuration_states)
+                # 90° pulse -> relaxation during TE/2 -> 180° pulse -> relaxation during TE/2 -> -90° pulse
+                epg_configuration_states = epg_rf_rotation(
+                    epg_configuration_states, epg_rf_rotation_matrix(torch.pi / 2, 0)
+                )
+                epg_configuration_states = epg_relaxation(
+                    epg_configuration_states, epg_relaxation_matrix(t2_prep_te / 2, t1, t2)
+                )
+                epg_configuration_states = epg_rf_rotation(
+                    epg_configuration_states, epg_rf_rotation_matrix(torch.pi, torch.pi / 2)
+                )
+                epg_configuration_states = epg_relaxation(
+                    epg_configuration_states, epg_relaxation_matrix(t2_prep_te / 2, t1, t2)
+                )
+                epg_configuration_states = epg_rf_rotation(
+                    epg_configuration_states, epg_rf_rotation_matrix(torch.pi / 2, -torch.pi)
+                )
                 # Spoiler
-                gradient_dephasing = EpgGradient(epg_configuration_states.shape[-1] >= self.max_n_configuration_states)
-                epg_configuration_states = gradient_dephasing.apply(epg_configuration_states)
+                epg_configuration_states = epg_gradient_dephasing(
+                    epg_configuration_states, epg_configuration_states.shape[-1] >= self.max_n_configuration_states
+                )
 
             # RF-pulse -> relaxation during TE -> get signal -> gradient -> relaxation during TR-TE
             last_idx_of_previous_block = np.int64(np.sum(self.n_rf_pulses_per_block[:block_idx]))
             for idx_in_block in range(n_rf_pulses_per_block):
                 idx_in_total_acq = last_idx_of_previous_block + idx_in_block
-                rf_pulse = EpgRfPulse(flip_angles[idx_in_total_acq, ...], rf_phases[idx_in_total_acq, ...])
-                te_relaxation = EpgRelaxation(te[idx_in_total_acq, ...], t1, t2)
-                tr_relaxation = EpgRelaxation((tr - te)[idx_in_total_acq, ...], t1, t2)
-                if idx_in_total_acq == 0 or epg_configuration_states.shape[0] >= self.max_n_configuration_states:
-                    gradient_dephasing = EpgGradient(
-                        epg_configuration_states.shape[-1] >= self.max_n_configuration_states
-                    )
+                rf_pulse = epg_rf_rotation_matrix(flip_angles[idx_in_total_acq, ...], rf_phases[idx_in_total_acq, ...])
+                te_relaxation = epg_relaxation_matrix(te[idx_in_total_acq, ...], t1, t2)
+                tr_relaxation = epg_relaxation_matrix((tr - te)[idx_in_total_acq, ...], t1, t2)
 
-                epg_configuration_states = rf_pulse.apply(epg_configuration_states)
-                epg_configuration_states = te_relaxation.apply(epg_configuration_states)
+                epg_configuration_states = epg_rf_rotation(epg_configuration_states, rf_pulse)
+                epg_configuration_states = epg_relaxation(epg_configuration_states, te_relaxation)
                 signal[idx_in_total_acq, ...] = m0 * epg_configuration_states[..., 0, 0]
-                epg_configuration_states = gradient_dephasing.apply(epg_configuration_states)
-                epg_configuration_states = tr_relaxation.apply(epg_configuration_states)
+                epg_configuration_states = epg_gradient_dephasing(
+                    epg_configuration_states, epg_configuration_states.shape[-1] >= self.max_n_configuration_states
+                )
+                epg_configuration_states = epg_relaxation(epg_configuration_states, tr_relaxation)
 
             # Time of no acquisition between blocks
             if delay_after_block > 0:
-                epg_configuration_states = EpgRelaxation(delay_after_block, t1, t2).apply(epg_configuration_states)
+                epg_configuration_states = epg_relaxation(
+                    epg_configuration_states, epg_relaxation_matrix(delay_after_block, t1, t2)
+                )
 
         return (signal,)
 
@@ -488,15 +501,15 @@ class EpgTse(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
             Signal of a TSE acquisition
         """
         delta_ndim = m0.ndim - (self.flip_angles.ndim - 1)  # -1 for time
-        flip_angles = self.flip_angles[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.flip_angles
-        rf_phases = self.rf_phases[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.rf_phases
-        te = self.te[..., *[None] * (delta_ndim)] if delta_ndim > 0 else self.te
+        flip_angles = unsqueeze_right(self.flip_angles, delta_ndim)
+        rf_phases = unsqueeze_right(self.rf_phases, delta_ndim)
+        te = unsqueeze_right(self.te, delta_ndim)
 
         signal = torch.zeros(flip_angles.shape[0] * len(self.tr), *m0.shape, dtype=torch.cfloat, device=m0.device)
         epg_configuration_states = torch.zeros((*m0.shape, 3, 1), dtype=torch.cfloat, device=m0.device)
 
         # Define 90° excitation pulse
-        rf_excitation_pulse = EpgRfPulse(
+        rf_excitation_pulse = epg_rf_rotation_matrix(
             torch.as_tensor([torch.pi / 2], device=flip_angles.device),
             torch.as_tensor([torch.pi / 2], device=flip_angles.device),
         )
@@ -506,27 +519,27 @@ class EpgTse(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         # 90° excitation pulse -> echo train (see below) -> relaxation during TR - (sum over all TEs)
         for j in range(len(self.tr)):
             if j == 0 or self.tr[j] != self.tr[j - 1]:
-                tr_relaxation = EpgRelaxation((self.tr[j] - torch.sum(te)), t1, t2)
-            epg_configuration_states = rf_excitation_pulse.apply(epg_configuration_states)
+                tr_relaxation = epg_relaxation_matrix((self.tr[j] - torch.sum(te)), t1, t2)
+            epg_configuration_states = epg_rf_rotation(epg_configuration_states, rf_excitation_pulse)
             # Go through refocusing pulses (i.e one echo train)
             # relaxation during TE/2 -> gradient -> refocusing pulse -> gradient -> relaxation during TE/2 -> get signal
             for i in range(flip_angles.shape[0]):
-                rf_refocusing_pulse = EpgRfPulse(flip_angles[i, ...], rf_phases[i, ...], b1_scaling_factor)
-                te_half_relaxation = EpgRelaxation(te[i, ...] / 2, t1, t2)
-                if i == 0 or epg_configuration_states.shape[0] >= self.max_n_configuration_states:
-                    gradient_dephasing = EpgGradient(
-                        epg_configuration_states.shape[-1] >= self.max_n_configuration_states
-                    )
+                rf_refocusing_pulse = epg_rf_rotation_matrix(flip_angles[i, ...], rf_phases[i, ...], b1_scaling_factor)
+                te_half_relaxation = epg_relaxation_matrix(te[i, ...] / 2, t1, t2)
 
-                epg_configuration_states = te_half_relaxation.apply(epg_configuration_states)
-                epg_configuration_states = gradient_dephasing.apply(epg_configuration_states)
-                epg_configuration_states = rf_refocusing_pulse.apply(epg_configuration_states)
-                epg_configuration_states = gradient_dephasing.apply(epg_configuration_states)
-                epg_configuration_states = te_half_relaxation.apply(epg_configuration_states)
+                epg_configuration_states = epg_relaxation(epg_configuration_states, te_half_relaxation)
+                epg_configuration_states = epg_gradient_dephasing(
+                    epg_configuration_states, epg_configuration_states.shape[-1] >= self.max_n_configuration_states
+                )
+                epg_configuration_states = epg_rf_rotation(epg_configuration_states, rf_refocusing_pulse)
+                epg_configuration_states = epg_gradient_dephasing(
+                    epg_configuration_states, epg_configuration_states.shape[-1] >= self.max_n_configuration_states
+                )
+                epg_configuration_states = epg_relaxation(epg_configuration_states, te_half_relaxation)
                 signal[i + j * flip_angles.shape[0], ...] = m0 * epg_configuration_states[..., 0, 0]
 
             if j < len(self.tr) - 1:
-                epg_configuration_states = tr_relaxation.apply(epg_configuration_states)
+                epg_configuration_states = epg_relaxation(epg_configuration_states, tr_relaxation)
 
         return (signal,)
 

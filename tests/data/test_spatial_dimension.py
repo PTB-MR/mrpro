@@ -93,7 +93,7 @@ def test_spatial_dimension_broadcasting():
 
 
 def test_spatial_dimension_apply_():
-    """Test apply_ (inplace)"""
+    """Test apply_ (in place)"""
 
     def conversion(x: torch.Tensor) -> torch.Tensor:
         assert isinstance(x, torch.Tensor), 'The argument to the conversion function should be a tensor'
@@ -124,7 +124,7 @@ def test_spatial_dimension_apply():
 
     xyz = RandomGenerator(0).float32_tensor((1, 2, 3))
     spatial_dimension = SpatialDimension.from_array_xyz(xyz.numpy())
-    spatial_dimension_outofplace = spatial_dimension.apply().apply(conversion)
+    spatial_dimension_outofplace = spatial_dimension.apply(conversion)
 
     assert spatial_dimension_outofplace is not spatial_dimension
 
@@ -136,6 +136,11 @@ def test_spatial_dimension_apply():
     assert torch.equal(spatial_dimension_outofplace.x, x)
     assert torch.equal(spatial_dimension_outofplace.y, y)
     assert torch.equal(spatial_dimension_outofplace.z, z)
+
+    x, y, z = xyz.unbind(-1)  # original should be unmodified
+    assert torch.equal(spatial_dimension.x, x)
+    assert torch.equal(spatial_dimension.y, y)
+    assert torch.equal(spatial_dimension.z, z)
 
 
 def test_spatial_dimension_zyx():
