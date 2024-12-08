@@ -15,6 +15,7 @@ from mrpro.data.traj_calculators import (
     KTrajectorySunflowerGoldenRpe,
 )
 
+from tests import RandomGenerator
 from tests.data import IsmrmrdRawTestData, PulseqRadialTestSeq
 
 
@@ -64,6 +65,28 @@ def test_KTrajectoryRadial2D_golden(valid_rad2d_kheader):
     assert trajectory.kx.shape == valid_shape[2]
     assert trajectory.ky.shape == valid_shape[1]
     assert trajectory.kz.shape == valid_shape[0]
+
+
+def create_radial2Dtraj_manually(generator: RandomGenerator):
+    """parameters for manual KTrajectoryRadial2D creation."""
+    angle = torch.pi * generator.float32(low=0.0, high=1.0)
+    n_spokes = generator.uint16(low=1, high=1000)
+    n_k0 = generator.uint16(low=1, high=1000)
+    initial_angle = torch.pi * generator.float32(low=0.0, high=1.0)
+
+    return angle, n_spokes, n_k0, initial_angle
+
+
+def test_KTrajectoryRadial2D_manual_creation():
+    """Calculate Radial 2D trajectory with golden angle."""
+    generator = RandomGenerator(42)
+    angle, n_spokes, n_k0, initial_angle = create_radial2Dtraj_manually(generator=generator)
+    trajectory_init = KTrajectoryRadial2D(angle=angle)
+    trajectory = trajectory_init.create_manually(n_spokes=n_spokes, n_k0=n_k0, initial_angle=initial_angle)
+
+    assert trajectory.kx.shape == torch.Size([1, 1, n_spokes, n_k0])
+    assert trajectory.ky.shape == torch.Size([1, 1, n_spokes, n_k0])
+    assert trajectory.kz.shape == torch.zeros(1, 1, 1, 1).shape
 
 
 @pytest.fixture
