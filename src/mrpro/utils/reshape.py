@@ -2,7 +2,7 @@
 
 from collections.abc import Sequence
 from functools import lru_cache
-
+from math import prod
 import torch
 
 
@@ -174,17 +174,19 @@ def reshape_broadcasted(tensor: torch.Tensor, *shape: int) -> torch.Tensor:
 
         # -1 means infer size, i.e. the remaining elements of the input not already covered by the other axes.
         negative_ones = shape.count(-1)
+        size = tensor.shape.numel()
         if not negative_ones:
             if prod(shape) != size:
-                raise RuntimeError(f"shape '{list(shape)}' is invalid for input of size {size}")  # same as pytorch
+                # use same exception as pytorch
+                raise RuntimeError(f"shape '{list(shape)}' is invalid for input of size {size}") from None
         elif negative_ones > 1:
-            raise RuntimeError('only one dimension can be inferred')  # same as pytorch
+            raise RuntimeError('only one dimension can be inferred') from None
         elif negative_ones == 1:
             # we need to figure out the size of the "-1" dimension
             known_size = -prod(shape)  # negative, is it includes the -1
             if size % known_size:
                 # non integer result. no possible size of the -1 axis exists.
-                raise RuntimeError(f"shape '{list(shape)}' is invalid for input of size {size}")  # same as pytorch
+                raise RuntimeError(f"shape '{list(shape)}' is invalid for input of size {size}") from None
             shape = tuple(size // known_size if s == -1 else s for s in shape)
 
         # most of the broadcasted dimensions can be preserved: only dimensions that are joined with non
