@@ -174,7 +174,7 @@ def reshape_broadcasted(tensor: torch.Tensor, *shape: int) -> torch.Tensor:
         
         # -1 means infer size, i.e. the remaining elements of the input not already covered by the other axes.
         negative_ones = shape.count(-1)
-        if not negative_ones
+        if not negative_ones:
             if prod(shape)!=size:
                 raise RuntimeError(f"shape '{list(shape)}' is invalid for input of size {size}")  # same as pytorch
         elif negative_ones > 1:
