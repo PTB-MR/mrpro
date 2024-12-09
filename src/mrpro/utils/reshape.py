@@ -185,7 +185,7 @@ def reshape_broadcasted(tensor: torch.Tensor, *shape: int) -> torch.Tensor:
             if size % known_size:
                 # non integer result. no possible size of the -1 axis exists.
                 raise RuntimeError(f"shape '{list(shape)}' is invalid for input of size {size}")  # same as pytorch
-            shape = [size//known_size if s==-1 else s for s in shape]
+            shape = tuple(size//known_size if s==-1 else s for s in shape)
 
         # most of the broadcasted dimensions can be preserved: only dimensions that are joined with non
         # broadcasted dimensions can not be preserved and must be made contiguous.
