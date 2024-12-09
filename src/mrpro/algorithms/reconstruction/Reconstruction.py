@@ -8,6 +8,7 @@ import torch
 from typing_extensions import Self
 
 from mrpro.algorithms.prewhiten_kspace import prewhiten_kspace
+from mrpro.data import KTrajectory
 from mrpro.data._kdata.KData import KData
 from mrpro.data.CsmData import CsmData
 from mrpro.data.DcfData import DcfData
@@ -52,7 +53,22 @@ class Reconstruction(torch.nn.Module, ABC):
             KData to determine trajectory and recon/encoding matrix from.
         """
         self.fourier_op = FourierOp.from_kdata(kdata)
-        self.dcf = DcfData.from_traj_voronoi(kdata.traj)
+        return self
+
+    def recalculate_dcf(
+        self, ktraj: KTrajectory, dcf_calculation: Callable[[KTrajectory], DcfData] = DcfData.from_traj_voronoi
+    ) -> Self:
+        """Update (in place) the DCF from a Trajectory.
+
+        Parameters
+        ----------
+        ktraj
+            Trajectory to calculate the DCF from.
+        dcf_calculation
+            Function to calculate dcf expecting ktraj as input and returning dcfdata. For examples have a look at the
+            DcfData class e.g. from_traj_voronoi.
+        """
+        self.dcf = dcf_calculation(ktraj)
         return self
 
     def recalculate_csm(
@@ -66,7 +82,7 @@ class Reconstruction(torch.nn.Module, ABC):
         Parameters
         ----------
         kdata
-            KData used for adjoint reconstruction (including DCF-weighting if available), which is then used for
+            KData used for adjoint reconstruction (including DCF-weighting), which is then used for
             CSM estimation.
         csm_calculation
             Function to calculate csm expecting idata as input and returning csmdata. For examples have a look at the
@@ -82,11 +98,11 @@ class Reconstruction(torch.nn.Module, ABC):
         elif noise is None:
             noise = self.noise
         recon = type(self)(fourier_op=self.fourier_op, dcf=self.dcf, noise=noise, csm=None)
-        image = recon.direct_reconstruction(kdata)
+        image = recon._direct_reconstruction(kdata)
         self.csm = csm_calculation(image)
         return self
 
-    def direct_reconstruction(self, kdata: KData) -> IData:
+    def _direct_reconstruction(self, kdata: KData) -> IData:
         """Direct reconstruction of the MR acquisition.
 
         Here we use S^H F^H W to calculate the image data using the coil sensitivity operator S, the Fourier operator F
