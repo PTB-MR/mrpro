@@ -1,6 +1,7 @@
 """Class for Density Compensation Operator."""
 
 import torch
+from typing_extensions import Self
 
 from mrpro.data.DcfData import DcfData
 from mrpro.operators.EinsumOp import EinsumOp
@@ -25,3 +26,9 @@ class DensityCompensationOp(EinsumOp):
         else:
             dcf_tensor = dcf
         super().__init__(dcf_tensor, '... k2 k1 k0 ,... coil k2 k1 k0 ->... coil k2 k1 k0')
+
+    def __pow__(self, exponent: float) -> Self:
+        """Raise the operator to a power."""
+        if not exponent > 0:
+            raise NotImplementedError('Can only raise to positive powers')
+        return type(self)(dcf=self.matrix**exponent)
