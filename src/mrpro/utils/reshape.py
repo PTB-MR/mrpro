@@ -171,21 +171,21 @@ def reshape_broadcasted(tensor: torch.Tensor, *shape: int) -> torch.Tensor:
         return tensor.view(shape)
     except RuntimeError:
         # we cannot do a view, we need to do more work:
-        
+
         # -1 means infer size, i.e. the remaining elements of the input not already covered by the other axes.
         negative_ones = shape.count(-1)
         if not negative_ones:
-            if prod(shape)!=size:
+            if prod(shape) != size:
                 raise RuntimeError(f"shape '{list(shape)}' is invalid for input of size {size}")  # same as pytorch
         elif negative_ones > 1:
-            raise RuntimeError("only one dimension can be inferred")  # same as pytorch
+            raise RuntimeError('only one dimension can be inferred')  # same as pytorch
         elif negative_ones == 1:
             # we need to figure out the size of the "-1" dimension
-            known_size = -prod(shape) # negative, is it includes the -1
+            known_size = -prod(shape)  # negative, is it includes the -1
             if size % known_size:
                 # non integer result. no possible size of the -1 axis exists.
                 raise RuntimeError(f"shape '{list(shape)}' is invalid for input of size {size}")  # same as pytorch
-            shape = tuple(size//known_size if s==-1 else s for s in shape)
+            shape = tuple(size // known_size if s == -1 else s for s in shape)
 
         # most of the broadcasted dimensions can be preserved: only dimensions that are joined with non
         # broadcasted dimensions can not be preserved and must be made contiguous.
