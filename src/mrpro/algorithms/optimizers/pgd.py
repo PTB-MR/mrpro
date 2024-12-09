@@ -50,8 +50,8 @@ def pgd(
                 l2 = L2NormSquared(target=kspace_data)
                 f = l2 @ fft
                 g = L1Norm()
-                fft_norm = 1.
-                stepsize = 0.85 * 1 / fft_norm
+                operator_norm = 1.
+                stepsize = 0.85 * 1 / operator_norm
                 initial_value = torch.ones(image_space_shape)
                 pgd_image_solution = pgd(
                     f=f,
@@ -69,7 +69,7 @@ def pgd(
     f
         convex, differentiable functional
     g
-        convex, non-smooth functional with computable proximal map
+        convex, possibly non-smooth functional with computable proximal map
     initial_value
         initial value for the solution of the algorithm
     stepsize
@@ -114,7 +114,6 @@ def pgd(
     )
     for iteration in range(max_iterations):
         while stepsize > 1e-30:
-            # calculate the proximal gradient step
             gradient, f_y = grad_and_value_f(y)
             x = g_sum.prox(
                 *[yi - stepsize * gi for yi, gi in zip(y, gradient, strict=True)], sigma=reg_parameter * stepsize
@@ -142,17 +141,14 @@ def pgd(
             else:
                 raise RuntimeError('Stepsize to small.')
 
-        # update timestep t
         t = (1 + math.sqrt(1 + 4 * t_old**2)) / 2
 
-        # update the solution
         y = tuple(xi + (t_old - 1.0) / t * (xi - xi_old) for xi, xi_old in zip(x, x_old, strict=True))
 
-        # update x and  t
         x_old = x
         t_old = t
 
         if callback is not None:
             callback(PGDStatus(solution=y, iteration_number=iteration, stepsize=stepsize))
 
-    return y
+    return x
