@@ -112,7 +112,7 @@ def _reshape_idx(old_shape: tuple[int, ...], new_shape: tuple[int, ...], old_str
 
     Example:
         old_shape = (30, 2, 2, 3)
-        new_shape = (6. 5, 4, 3)
+        new_shape = (6, 5, 4, 3)
         Will results in the groups (starting from the right):
             - old: 3     new: 3
             - old: 2, 2  new: 4
@@ -159,7 +159,7 @@ def reshape_broadcasted(tensor: torch.Tensor, *shape: int) -> torch.Tensor:
     tensor
         The input tensor to reshape.
     shape
-        The target shape for the tensor.
+        The target shape for the tensor. One of the values can be `-1` and its size will be inferred.
 
     Returns
     -------
@@ -170,8 +170,23 @@ def reshape_broadcasted(tensor: torch.Tensor, *shape: int) -> torch.Tensor:
         # if we can view the tensor directly, it will preserve broadcasting
         return tensor.view(shape)
     except RuntimeError:
-        if tensor.shape.numel() != torch.Size(shape).numel():
-            raise ValueError('Cannot reshape tensor to target shape, number of elements must match') from None
+        # we cannot do a view, we need to do more work:
+        
+        # -1 means infer size, i.e. the remaining elements of the input not already covered by the other axes.
+        negative_ones = shape.count(-1)
+        if not negative_ones
+            if prod(shape)!=size:
+                raise RuntimeError(f"shape '{list(shape)}' is invalid for input of size {size}")  # same as pytorch
+        elif negative_ones > 1:
+            raise RuntimeError("only one dimension can be inferred")  # same as pytorch
+        elif negative_ones == 1:
+            # we need to figure out the size of the "-1" dimension
+            known_size = -prod(shape) # negative, is it includes the -1
+            if size % known_size:
+                # non integer result. no possible size of the -1 axis exists.
+                raise RuntimeError(f"shape '{list(shape)}' is invalid for input of size {size}")  # same as pytorch
+            shape = [size//known_size if s==-1 else s for s in shape]
+
         # most of the broadcasted dimensions can be preserved: only dimensions that are joined with non
         # broadcasted dimensions can not be preserved and must be made contiguous.
         # all dimensions that can be preserved as broadcasted are first collapsed to singleton,

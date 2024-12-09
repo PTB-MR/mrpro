@@ -60,7 +60,7 @@ def test_reduce_view():
         ((1, 2, 3, 1, 1), (1, 2, 3, 4, 5), (0, 2, 1, 3, 4), (1, 6, 2, 2, 5), (6, 1, 0, 0, 0)),
         ((1, 2, 1), (100, 2, 2), (0, 1, 2), (100, 4), (0, 1)),
         ((1, 1, 1, 1), (2, 3, 4, 5), (2, 3, 0, 1), (1, 2, 6, 10, 1), (0, 0, 0, 0, 0)),
-        ((1, 2, 3), (1, 2, 3), (0, 1, 2), (6,), (1,)),
+        ((1, 2, 3), (1, -1, 3), (0, 1, 2), (6,), (1,)),
     ],
 )
 def test_reshape_broadcasted(shape, expand_shape, permute, final_shape, expected_stride):
@@ -77,5 +77,9 @@ def test_reshape_broadcasted(shape, expand_shape, permute, final_shape, expected
 def test_reshape_broadcasted_fail():
     """Test reshape_broadcasted with invalid input"""
     a = torch.ones(2)
-    with pytest.raises(ValueError, match='number of elements must match'):
+    with pytest.raises(RuntimeError, match='invalid'):
         reshape_broadcasted(a, 3)
+    with pytest.raises(RuntimeError, match='invalid'):
+        reshape_broadcasted(a, -1, -3)
+    with pytest.raises(RuntimeError, match='only one dimension'):
+        reshape_broadcasted(a, -1, -1)
