@@ -66,14 +66,16 @@ repos:
     rev: v1.16.4
     hooks:
      - id: jupytext
-       name: sync .py and .ipynb
+       name: convert .py to .ipynb
        args:
-         - --sync
+         - --update
+         - --to
+         - "../notebooks//ipynb"
          - --update-metadata
-         - '{"kernelspec": {"display_name": "Python 3 (ipykernel)","language": "python","name": "python3"}}'
-         - --set-formats
-         - examples/notebooks//ipynb,examples/scripts//py:percent
-       files: '^examples/(notebooks/.*\.ipynb|scripts/.*\.py)$'
+         - '{"accelerator": "GPU","colab": {"gpuType": "T4","provenance": []},"kernelspec": {"display_name": "Python 3 (ipykernel)","language": "python","name": "python3"}}'
+         - examples/scripts/*.py
+       always_run: true
+       pass_filenames: false
 ci:
   autofix_commit_msg: |
     [pre-commit] auto fixes from pre-commit hooks
