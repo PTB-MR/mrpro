@@ -23,14 +23,15 @@ jobs:
 
       - id: set-matrix
         run: |
-          cd ./examples/notebooks
-          echo "notebooks=$(ls *.ipynb | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+          notebooks_paths=$(find examples/notebooks -type f -name '*.ipynb' | jq -R -s -c 'split("\n")[:-1]')
+          echo "notebook paths: $notebook_paths"
+          echo "notebook_paths=$notebooks_paths" >> $GITHUB_OUTPUT
 
       - name: Notebook overview
         run: |
-          echo "jupyter-notebooks: ${{ steps.set-matrix.outputs.notebooks }}"
+          echo "jupyter-notebooks: ${{ steps.set-matrix.outputs.notebook_paths }}"
     outputs:
-      notebooks: ${{ steps.set-matrix.outputs.notebooks }}
+      notebook_paths: ${{ steps.set-matrix.outputs.notebook_paths }}
 
   run_notebook:
     name: Run notebook
@@ -45,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        notebook: ${{ fromJson(needs.get_notebooks.outputs.notebooks) }}
+        notebook_path: ${{ fromJson(needs.get_notebooks.outputs.notebook_paths) }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -55,21 +56,21 @@ jobs:
 
       - name: Notebook name
         run: |
-          echo "current jupyter-notebook: ${{ matrix.notebook }}"
+          echo "current jupyter-notebook: ${{ matrix.notebook_path }}"
 
       - name: Run notebook
         uses: fzimmermann89/run-notebook@v3
         env:
           RUNNER: ${{ toJson(runner) }}
         with:
-          notebook: ./examples/notebooks/${{ matrix.notebook }}
+          notebook: ${{ matrix.notebook_path }}
 
       - name: Get artifact names
         id: artifact_names
         run: |
-          notebook=${{ matrix.notebook }}
-          echo "ARTIFACT_NAME=${notebook/.ipynb/}" >> $GITHUB_OUTPUT
-          echo "IPYNB_EXECUTED=${notebook}" >> $GITHUB_OUTPUT
+          notebook_name=$(basename ${{ matrix.notebook_path }})
+          echo "ARTIFACT_NAME=${notebook_name/.ipynb/}" >> $GITHUB_OUTPUT
+          echo "IPYNB_EXECUTED=$notebook_name" >> $GITHUB_OUTPUT
 
       - name: Upload notebook
         uses: actions/upload-artifact@v4
