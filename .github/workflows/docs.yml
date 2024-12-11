@@ -113,6 +113,28 @@ jobs:
         run: |
           echo "current jupyter-notebook: ${{ matrix.notebook }}"
 
+      - name: Add colab and download badges
+        run: |
+          # get name of the notebook
+          notebook=${{ matrix.notebook }}
+          # get github repo like "username/reponame"
+          gh_repo="$GITHUB_REPOSITORY"
+          gh_ref=""
+          # if pull request - take the SHA of the commit
+          # regular reference to the pull_request is not possible
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+              gh_ref=$GITHUB_SHA
+          # if push in the repository - take the branch name
+          elif [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+              gh_ref=$(basename $GITHUB_REF)
+          fi
+          # in the pr #537 the $notebook variable would have the full path to the file, the "examples" folder should be deleted here
+          colab_url="https://colab.research.google.com/github/$gh_repo/blob/$gh_ref/examples/$notebook")
+          # and the for the myst only the basene for File: reference need to be taken
+          badges_md="[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]($colab_url) [![Download notebook](https://img.shields.io/badge/jupyter-notebook-blue?logo=jupyter)](File:$notebook)"
+          python_command="from nbformat as nbf; nb = nbf.read(open('examples/$notebook'), as_version=4); nb['cells'].insert(0, nbf.v4.new_markdown_cell($badges_md); nbf.write(nb, open('examples/$notebook', 'w'))"
+          python -c "$python_command"
+
       - name: Run notebook
         uses: fzimmermann89/run-notebook@v3
         env:

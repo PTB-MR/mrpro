@@ -1,7 +1,6 @@
 # %% [markdown]
 # # Direct Reconstruction of 2D golden angle radial data
 # Here we use the DirectReconstruction class to reconstruct images from ISMRMRD 2D radial data
-
 # %%
 # define zenodo URL of the example ismrmd data
 zenodo_url = 'https://zenodo.org/records/10854057/files/'
