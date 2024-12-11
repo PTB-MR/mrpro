@@ -5,7 +5,7 @@ from copy import deepcopy
 import torch
 from einops import einsum, parse_shape, rearrange
 
-from mrpro.data._kdata.KData import KData
+from mrpro.data.KData import KData
 from mrpro.data.KNoise import KNoise
 
 
