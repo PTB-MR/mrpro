@@ -7,8 +7,7 @@ import torch
 from mrpro.operators import LinearOperator, Operator
 from typing_extensions import Any, assert_type
 
-from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test
+from tests import RandomGenerator, dotproduct_adjointness_test
 
 
 class DummyOperator(Operator[torch.Tensor, tuple[torch.Tensor,]]):
@@ -336,6 +335,12 @@ def test_sum_operator_multiple_adjoint():
     u = rng.complex64_tensor(10)
     v = rng.complex64_tensor(3)
     dotproduct_adjointness_test(linear_op_sum, u, v)
+
+
+def test_adjoint_of_adjoint():
+    """Test that the adjoint of the adjoint is the original operator"""
+    a = DummyLinearOperator(RandomGenerator(7).complex64_tensor((3, 10)))
+    assert a.H.H is a
 
 
 def test_gram_shortcuts():

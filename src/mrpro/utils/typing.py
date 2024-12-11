@@ -28,4 +28,4 @@ else:
     NestedSequence: TypeAlias = Any
     NumpyIndexerType: TypeAlias = Any
 
-__all__ = ['TorchIndexerType', 'NumpyIndexerType', 'NestedSequence']
+__all__ = ['NestedSequence', 'NumpyIndexerType', 'TorchIndexerType']
