@@ -79,4 +79,15 @@ Data objects can be indexed similarly to NumPy arrays or tensors.
        [mask.nonzero(as_tuple=True)[k] if mask.shape[k] != 1 else slice(None) for k in range(mask.ndim)]
 
    - Indexing with a single non-singleton dimension will not introduce new axes or change the shape of the singleton dimensions.
-   - Indexing with more than one non-singleton dimension introduces a new zeroth dimension and results in two singleton dimensions in the data.
+   - Indexing with a mask with more than one non-singleton dimension introduces a new zeroth dimension and results in singleton dimensions in the data.
+  Example: 
+        data.shape=(5,4,3) 
+        mask.shape=(5,1,3)
+        data[mask].shape==N,1,4,1 
+        with N determined by the number of True values o the mask.
+
+9. ellipses and slice(None)
+     an indexing expression can contain a single ellipsis, which will be expanded to [slice(None)]*(data.ndim-sum(index_dims)). Here, index_dims in 1 for each slice and integer indices and mask.ndim for boolean indices.
+
+10. None
+ using None in an index is not supported. Use the rearrange pattern to introduce new axes.
