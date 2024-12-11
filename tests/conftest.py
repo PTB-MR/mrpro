@@ -370,7 +370,20 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'non-uniform',  # type_k2
         ),
-        (  # (8) 2d non-uniform cine with 8 cardiac phases, 5 coils
+        (  # (8) 2d non-uniform cine with 8 cardiac phases, 5 coils, same traj for each phase
+            (8, 5, 1, 64, 64),  # im_shape
+            (8, 5, 1, 18, 128),  # k_shape
+            (1, 1, 18, 128),  # nkx
+            (1, 1, 18, 128),  # nky
+            (1, 1, 1, 1),  # nkz
+            'non-uniform',  # type_kx
+            'non-uniform',  # type_ky
+            'zero',  # type_kz
+            'non-uniform',  # type_k0
+            'non-uniform',  # type_k1
+            'zero',  # type_k2
+        ),
+        (  # (9) 2d non-uniform cine with 8 cardiac phases, 5 coils
             (8, 5, 1, 64, 64),  # im_shape
             (8, 5, 1, 18, 128),  # k_shape
             (8, 1, 18, 128),  # nkx
@@ -383,7 +396,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'zero',  # type_k2
         ),
-        (  # (9) 2d cartesian cine with 9 cardiac phases, 6 coils
+        (  # (10) 2d cartesian cine with 9 cardiac phases, 6 coils
             (9, 6, 1, 96, 128),  # im_shape
             (9, 6, 1, 128, 192),  # k_shape
             (9, 1, 1, 192),  # nkx
@@ -396,7 +409,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'uniform',  # type_k1
             'zero',  # type_k2
         ),
-        (  # (10) radial phase encoding (RPE), 8 coils, with oversampling in both FFT and non-uniform directions
+        (  # (11) radial phase encoding (RPE), 8 coils, with oversampling in both FFT and non-uniform directions
             (2, 8, 64, 32, 48),  # im_shape
             (2, 8, 8, 64, 96),  # k_shape
             (2, 1, 1, 96),  # nkx
@@ -409,7 +422,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'non-uniform',  # type_k2
         ),
-        (  # (11) radial phase encoding (RPE), 8 coils with non-Cartesian sampling along readout
+        (  # (12) radial phase encoding (RPE), 8 coils with non-Cartesian sampling along readout
             (2, 8, 64, 32, 48),  # im_shape
             (2, 8, 8, 64, 96),  # k_shape
             (2, 1, 1, 96),  # nkx
@@ -422,7 +435,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'non-uniform',  # type_k2
         ),
-        (  # (12) stack of stars, 5 other, 3 coil, oversampling in both FFT and non-uniform directions
+        (  # (13) stack of stars, 5 other, 3 coil, oversampling in both FFT and non-uniform directions
             (5, 3, 48, 16, 32),  # im_shape
             (5, 3, 96, 18, 64),  # k_shape
             (5, 1, 18, 64),  # nkx
@@ -445,6 +458,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
         '3d_single_shot_stack_of_spirals',
         '3d_single_shot_spiral',
         '3d_nonuniform_4_coils_2_other',
+        '2d_nonuniform_cine_mri_8_cardiac_phases_5_coils_same_traj',
         '2d_nonuniform_cine_mri_8_cardiac_phases_5_coils',
         '2d_cartesian_cine_9_cardiac_phases_6_coils',
         'radial_phase_encoding_8_coils_with_oversampling',

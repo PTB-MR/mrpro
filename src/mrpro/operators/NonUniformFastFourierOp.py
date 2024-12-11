@@ -141,15 +141,16 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             # we need to move the nufft-dimensions to the end and flatten all other dimensions
             # so the new shape will be (... non_nufft_dims) coils nufft_dims
             # we could move the permute to __init__ but then we still would need to prepend if len(other)>1
-            keep_dims_img = [-4, *self._nufft_directions]  # -4 is always coil
-            permute_img = [i for i in range(-x.ndim, 0) if i not in keep_dims_img] + keep_dims_img
+            joint_dims_img = [d for d in range(-x.ndim, 0) if self._omega.shape[d]==1 and d not in self._nufft_directions and d != -4]
+            sep_dims_img = [d for d in range(-x.ndim, 0) if d not in joint_dims_img and d not in self._nufft_directions and d != -4]
+            permute_img = [*sep_dims_img, *joint_dims_img, -4, *self._nufft_directions] # -4 is always coil
             keep_dims_k = [-4, *self._nufft_dims]  # -4 is always coil
             permute_k = [i for i in range(-x.ndim, 0) if i not in keep_dims_k] + keep_dims_k
             unpermute_k = np.argsort(permute_k)
 
             x = x.permute(*permute_img)
-            unflatten_other_shape = x.shape[: -len(keep_dims_img)]
-            x = x.flatten(end_dim=-len(keep_dims_img) - 1)
+            unflatten_other_shape = x.shape[: -len(joint_dims_img + sep_dims_img)]
+            x = x.flatten(start_dim=len(sep_dims_img), end_dim=len(joint_dims_img)+len(sep_dims_img)).flatten(end_dim=len(sep_dims_img))
 
             # omega should be (... non_nufft_dims) n_nufft_dims (nufft_dims)
             # TODO: consider moving the broadcast along fft dimensions to __init__ (independent of x shape).
