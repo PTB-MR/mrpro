@@ -337,6 +337,12 @@ def test_sum_operator_multiple_adjoint():
     dotproduct_adjointness_test(linear_op_sum, u, v)
 
 
+def test_adjoint_of_adjoint():
+    """Test that the adjoint of the adjoint is the original operator"""
+    a = DummyLinearOperator(RandomGenerator(7).complex64_tensor((3, 10)))
+    assert a.H.H is a
+
+
 def test_gram_shortcuts():
     """Test that .gram for composition and scalar multiplication results in shortcuts."""
 
