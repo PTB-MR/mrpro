@@ -320,7 +320,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
         ),
         (  # (4) 2d single shot spiral
             (1, 2, 1, 96, 128),  # im_shape
-            (1, 1, 1, 1, 192),  # k_shape
+            (1, 2, 1, 1, 192),  # k_shape
             (1, 1, 1, 192),  # nkx
             (1, 1, 1, 192),  # nky
             (1, 1, 1, 1),  # nkz
@@ -409,6 +409,47 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'uniform',  # type_k2
         ),
+        pytest.param(
+            # (11) RPE with cartesian ky in k2
+            (5, 3, 48, 16, 32),  # im_shape
+            (5, 3, 96, 18, 64),  # k_shape
+            (5, 1, 18, 64),  # nkx
+            (5, 96, 1, 1),  # nky - Cartesian ky dimension defined along k2 rather than k1
+            (5, 1, 18, 64),  # nkz
+            'non-uniform',  # type_kx
+            'uniform',  # type_ky
+            'non-uniform',  # type_kz
+            'non-uniform',  # type_k0
+            'non-uniform',  # type_k1
+            'uniform',  # type_k2
+            marks=pytest.mark.skip('Not implemented yet'),
+        ),
+        (  # (12) 3d stack of single shot spiral
+            (3, 2, 8, 96, 128),  # im_shape
+            (3, 2, 8, 1, 192),  # k_shape
+            (1, 1, 1, 192),  # nkx
+            (1, 1, 1, 192),  # nky
+            (1, 8, 1, 1),  # nkz
+            'non-uniform',  # type_kx
+            'non-uniform',  # type_ky
+            'uniform',  # type_kz
+            'non-uniform',  # type_k0
+            'zero',  # type_k1
+            'uniform',  # type_k2
+        ),
+        (  # (13) 2d with k0=ky and k1=kx
+            (1, 1, 1, 32, 64),  # im_shape
+            (1, 1, 1, 64, 32),  # k_shape
+            (1, 1, 64, 1),  # nkx
+            (1, 1, 1, 32),  # nky
+            (1, 1, 1, 1),  # nkz
+            'uniform',  # type_kx
+            'uniform',  # type_ky
+            'zero',  # type_kz
+            'uniform',  # type_k0
+            'uniform',  # type_k1
+            'zero',  # type_k2
+        ),
     ],
     ids=[
         '2d_cartesian_1_coil_no_oversampling',
@@ -417,10 +458,13 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
         '2d_cartesian_irregular_sampling',
         '2d_single_shot_spiral',
         '3d_nonuniform_4_coils_2_other',
-        '2d_nnonuniform_cine_mri_8_cardiac_phases_5_coils',
+        '2d_nonuniform_cine_mri_8_cardiac_phases_5_coils',
         '2d_cartesian_cine_9_cardiac_phases_6_coils',
         'radial_phase_encoding_8_coils_with_oversampling',
         'radial_phase_encoding_8_coils_non_cartesian_sampling',
         'stack_of_stars_5_other_3_coil_with_oversampling',
+        'rpe_with_ky_in_k2',
+        'stack_of_single_shot_spiral',
+        '2d_cartesian_mixed_dims',
     ],
 )
