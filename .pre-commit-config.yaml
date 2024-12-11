@@ -14,22 +14,22 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.7.2
+    rev: v0.8.1
     hooks:
       - id: ruff # linter
         args: [--fix]
       - id: ruff-format # formatter
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.27.0
+    rev: typos-dict-v0.11.37
     hooks:
       - id: typos
 
   - repo: https://github.com/fzimmermann89/check_all
-    rev: v1.0
+    rev: v1.1
     hooks:
       - id: check-init-all
-        args: [--double-quotes]
+        args: [--double-quotes, --fix]
         exclude: ^tests/
 
   - repo: https://github.com/pre-commit/mirrors-mypy
