@@ -1,52 +1,82 @@
-## indexing rules
+Indexing Rules
+==============
 
-the data objects can be indexed, similiar to numpy arrays or tensors
+Data objects can be indexed similarly to NumPy arrays or tensors.
 
+1. **Indexing as tuples**
 
-1. as in numpy, an index is always a tuple of indices. if not, is is converted to a tuple. the elements the tuple are matched to the dimensions of the data left to right.
-   example:
-	data[0,1] is the same as data[(0,1)], as the index is converted to a tuple
-        data[(0,1),] is not the same as  data[(0,1)], but data[((0,1),)]
-2. all indexing operations are perfomred on the fields of a dataclass as the sequence of 
-    broadcasting to the dataclasses shape -> indexing -> replacing stride 0 dimensions by singletons as good as possible.
-    this means each dataobject can be indexed as if all fields had the shape returend by dataobject.shape, even if the fields
-    are only broadcastable to this shape (example: acqidx are singleton in k0)
+   - As in NumPy, an index is always a tuple of indices. If it is not, it is converted to a tuple. The elements of the tuple are matched to the dimensions of the data from left to right.
 
-3. two data objects with the same shape property indexed by the same indexer will result in the same shape property.
-     this explicitly does not mean that all fields of the data class have the same shape after indexing. 
-     only that the fields can be broadcasted to the common shape
+   - Example::
 
-4. slice indexing
-	indexing with a slice object or colon synax, e.g. 0:3 will select a slice of the data
-	it does a view along that dimension if the stride is positive.
-	a[slice1,slice2]=a[slice1,:][:,slice2]=a[:,slice1][slice1,:]
-    as the underlying torch.tensor does not support negative strides, a copy will be performed for negative strides.
-    this is differnet from numpy which always returns a view for slices and from torch, which errors with negative strides.
+       data[0, 1] == data[(0, 1)]  # The index is converted to a tuple
+       data[(0, 1), ] != data[(0, 1)] 
+	   data[(0, 1), ] == data[((0, 1), )]
 
-5. integer indexing
-	integer indexing is the same as indexing with slice index:index+1.
-	thus, it does not remove dimensions. this is different than numpy or pytorch.
-	use squeeze to remove remaining singleton dimensions if requiered.
-	integer indexing always results in a view.
+2. **Broadcasting**
 
-6. advanced indexing with sequences of ints
-	if a single indexer is a sequence of ints, example data[:,(0,5)] 
-	for each value in the sequence indexing will be performed and the result will be conatenated along the indexing dimension.
-	thus, data[:,(0,5)].shape[1]==2.
+   - Indexing operations are performed on the fields of a dataclass in the following sequence:
 
-7. vectorized indexing
-	using more than one integer sequence as index will is done by looping over the values in the sequences, performing
-	indexing and stacking along a new dimension at position 0.
-	example: data[(0,5),:,(2,3)] will result in the same as if one would do stack([data[0,:,2],data[5,:,3],dim=0).
-	perticaulary, at the position of the indexed dimensions a singelton dimenion will remain.  	(different than numpy)
-	this rulke applies irregedless of wheatrher the indexed dimensions are next to each other or not (different than numpy)
+     1. Broadcasting to the dataclass's shape.
+     2. Indexing.
+     3. Replacing stride-0 dimensions with singletons wherever possible.
 
-8. indexing with bolean mask
-        the boolean mask will first be broadcasted to the shape of the indexed object.
-	thus, even though acqidx always are singelton in k0, kdata.header.acqinfo.idx.slice=1 can be used to index kdata.
-	the result is the same as indexing with [mask.nonzero(as_tuple=True)[k] if mask.shape[k]!=1 else slice(None) for k in range(mask.ndim)]
-	in particular, indexing with a single non singleton dimension will not introduce new axes nor change the shape of the data in the singleton axes.
-	but indexing with more than one non-singleton dimension will introduce a new zeroth dimension and result in two singleton dimensins in the data.
-	
-	
-	
+   - This means each data object can be indexed as if all fields had the shape returned by ``dataobject.shape``, even if the fields are only broadcastable to this shape.
+
+   - Example: ``acqidx`` is singleton in ``k0``. But the parent kdata object can be indexed along k0.
+
+3. **Consistency of shapes after indexing**
+
+   - Two data objects with the same shape property, indexed by the same indexer, will result in the same shape property.
+   - This does *not* mean that all fields of the data class have the same shape after indexing, but rather that the fields can be broadcasted to the common shape.
+
+4. **Slice indexing**
+
+   - Indexing with a slice object or colon syntax (e.g., ``0:3``) selects a slice of the data.
+   - A view along the dimension is returned if the stride is positive.
+
+   - Example::
+
+       a[slice1, slice2] == a[slice1, :][:, slice2] == a[:, slice1][slice1, :]
+
+   - For negative strides, a copy is performed because the underlying ``torch.Tensor`` does not support negative strides. This differs from NumPy, which always returns a view, and PyTorch, which raises an error for negative strides.
+
+5. **Integer indexing**
+
+   - Integer indexing is equivalent to slicing with ``index:index+1``, so it does not remove dimensions.
+   - This differs from NumPy and PyTorch. Use ``squeeze`` to remove remaining singleton dimensions if needed.
+   - Integer indexing always results in a view.
+
+6. **Advanced indexing with sequences of integers**
+
+   - If a single indexer is a sequence of integers (e.g., ``data[:, (0, 5)]``), indexing is performed for each value in the sequence, and the results are concatenated along the indexing dimension.
+
+   - Example::
+
+       data[:, (0, 5)].shape[1] == 2
+
+7. **Vectorized indexing**
+
+   - Using more than one sequence of integers as indices results in vectorized indexing by looping over the values in the sequences, performing indexing, and stacking along a new dimension at position 0.
+
+   - Example::
+
+       data[(0, 5), :, (2, 3)] == stack([data[0, :, 2], data[5, :, 3]], dim=0)
+
+   - At the position of the indexed dimensions, a singleton dimension will remain (unlike NumPy).
+   - This rule applies regardless of whether the indexed dimensions are adjacent (unlike NumPy).
+
+8. **Indexing with a boolean mask**
+
+   - The boolean mask is first broadcasted to the shape of the indexed object.
+
+   - Example::
+
+       kdata.header.acqinfo.idx.slice == 1  # Can be used to index `kdata`
+
+   - The result is the same as::
+
+       [mask.nonzero(as_tuple=True)[k] if mask.shape[k] != 1 else slice(None) for k in range(mask.ndim)]
+
+   - Indexing with a single non-singleton dimension will not introduce new axes or change the shape of the singleton dimensions.
+   - Indexing with more than one non-singleton dimension introduces a new zeroth dimension and results in two singleton dimensions in the data.
