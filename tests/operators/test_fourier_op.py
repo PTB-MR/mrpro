@@ -1,6 +1,5 @@
 """Tests for Fourier operator."""
 
-import pytest
 import torch
 from mrpro.data import KData, KTrajectory, SpatialDimension
 from mrpro.data.traj_calculators import KTrajectoryCartesian

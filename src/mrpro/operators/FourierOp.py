@@ -60,10 +60,10 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
         self._nufft_kzyx: list[int] = []
         """Directions in which nufft will be performed"""
 
-        self._singelton_k210: list[int] = []
+        self._singleton_k210: list[int] = []
         """Dimensions in k-space data that do not need to be transformed"""
 
-        self._singelton__kzyx: list[int] = []
+        self._singleton__kzyx: list[int] = []
         """Directions that do not need to be transformed"""
 
         trajectory_types = traj.type_matrix
@@ -72,14 +72,14 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
 
         for dim_zyx, trajectory_type in zip((-3, -2, -1), type_along_kzyx, strict=True):
             if trajectory_type & TrajType.SINGLEVALUE.value:
-                self._singelton__kzyx.append(dim_zyx)
+                self._singleton__kzyx.append(dim_zyx)
             elif trajectory_type & TrajType.ONGRID.value:
                 self._fft_kzyx.append(dim_zyx)
             else:
                 self._nufft_kzyx.append(dim_zyx)
         for dim_210, trajectory_type in zip((-3, -2, -1), type_along_k210, strict=True):
             if trajectory_type & TrajType.SINGLEVALUE.value:
-                self._singelton_k210.append(dim_210)
+                self._singleton_k210.append(dim_210)
             elif trajectory_type & TrajType.ONGRID.value:
                 self._fft_k210.append(dim_210)
             else:
@@ -90,8 +90,8 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
                 encoding_matrix=encoding_matrix, traj=traj
             )
             self._fast_fourier_op: FastFourierOp | None = FastFourierOp(
-                dim=self._fft_k210,
-                recon_matrix=[recon_matrix.zyx[d] for d in self._fft_k210],
+                dim=self._fft_kzyx,
+                recon_matrix=[recon_matrix.zyx[d] for d in self._fft_kzyx],
                 encoding_matrix=[encoding_matrix.zyx[d] for d in self._fft_kzyx],
             )
         else:

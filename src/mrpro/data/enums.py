@@ -1,6 +1,6 @@
 """All acquisition enums."""
 
-from enum import Enum, IntFlag, auto, Flag
+from enum import Enum, Flag, IntFlag, auto
 
 
 class AcqFlags(Flag):

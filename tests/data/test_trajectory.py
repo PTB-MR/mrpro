@@ -186,10 +186,10 @@ def test_ktype_along_k210(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, ty
     type_along_k210 = np.bitwise_and.reduce(trajectory.type_matrix, 0)
 
     # check dimensions which are of shape 1 and do not need any transform
-    assert all(type_along_k210[dim] & TrajType.SINGLEVALUE.value for dim in single_value_dims)
+    assert all(type_along_k210[dim] & TrajType.SINGLEVALUE for dim in single_value_dims)
 
     # Check dimensions which are on a grid and require FFT
-    assert all(type_along_k210[dim] & TrajType.ONGRID.value for dim in on_grid_dims)
+    assert all(type_along_k210[dim] & TrajType.ONGRID for dim in on_grid_dims)
 
     # Check dimensions which are not on a grid and require NUFFT
-    assert all(~(type_along_k210[dim] & (TrajType.SINGLEVALUE | TrajType.ONGRID).value) for dim in not_on_grid_dims)
+    assert all(~(type_along_k210[dim] & (TrajType.SINGLEVALUE | TrajType.ONGRID)) for dim in not_on_grid_dims)

@@ -61,7 +61,7 @@ class CartesianSamplingOp(LinearOperator):
             kz_idx = repeat(torch.arange(sorted_grid_shape.z), 'k2->other k2 k1 k0', other=1, k1=1, k0=1)
 
         # 1D indices into a flattened tensor.
-        kidx = kz_idx * sorted_grid_shape.z * sorted_grid_shape.y + ky_idx * sorted_grid_shape.x + kx_idx
+        kidx = kz_idx * sorted_grid_shape.x * sorted_grid_shape.y + ky_idx * sorted_grid_shape.x + kx_idx
         kidx = rearrange(kidx, '... k1 k2 k0 -> ... 1 (k1 k2 k0)')
 
         # check that all points are inside the encoding matrix
