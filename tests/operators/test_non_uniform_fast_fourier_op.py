@@ -53,35 +53,6 @@ def test_fourier_op_fwd_adj_property(
     dotproduct_adjointness_test(nufft_op, u, v)
 
 
-@pytest.mark.parametrize('dim', [(-1,), (-1, -2), (-1, -2, -3), (-2, -3), (-3, -1)])
-def test_non_uniform_fast_fourier_op_fwd_adj_property(dim):
-    """Test adjoint property of non-uniform fast Fourier operator."""
-
-    kdata_shape = [2, 3, 20, 30, 40]
-    recon_matrix = [20, 20, 30]
-    img_shape = kdata_shape[:2] + [recon_matrix[d] if d in dim else kdata_shape[d] for d in (-3, -2, -1)]
-
-    # generate random traj
-    nk = [kdata_shape[d] if d in dim else 1 for d in (-5, -3, -2, -1)]  # skip coil dimension
-    traj = create_traj(
-        kdata_shape, nkx=nk, nky=nk, nkz=nk, type_kx='non-uniform', type_ky='non-uniform', type_kz='non-uniform'
-    )
-
-    # create operator
-    nufft_op = NonUniformFastFourierOp(
-        direction=dim,
-        recon_matrix=[recon_matrix[d] for d in dim],
-        encoding_matrix=[kdata_shape[d] for d in dim],
-        traj=traj,
-    )
-
-    # test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v
-    random_generator = RandomGenerator(seed=0)
-    u = random_generator.complex64_tensor(size=img_shape)
-    v = random_generator.complex64_tensor(size=kdata_shape)
-    dotproduct_adjointness_test(nufft_op, u, v)
-
-
 def test_non_uniform_fast_fourier_op_equal_to_fft(ismrmrd_cart):
     """Eval result of non-uniform fourier transform for Cartesian data."""
     kdata = KData.from_file(ismrmrd_cart.filename, KTrajectoryIsmrmrd())
