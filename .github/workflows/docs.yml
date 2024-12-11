@@ -44,10 +44,6 @@ jobs:
               jupytext --set-kernel "python3" --update --output ${script//.py/.ipynb} $script
           done
 
-      - name: Add/Update badges
-        id: badges
-        uses: trsvchn/colab-badge-action@v4
-
       - name: Check if any notebooks have been changed
         uses: tj-actions/verify-changed-files@v20
         id: verify-changed-notebooks
