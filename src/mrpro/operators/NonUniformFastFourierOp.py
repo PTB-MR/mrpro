@@ -186,25 +186,36 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             coil image data with shape: (... coils z y x)
         """
         if len(self._nufft_directions):
+            # we rearrange x into (sep_dims, joint_dims, nufft_directions) where sep_dims are dimensions along which
+            # trajectory changes and joint_dims are dimensions along which trajectory does not change. Then we combine
+            # all of the sep_dims and all of the joint_dims.
+            joint_dims_210 = []
+            sep_dims_210 = []
+            for d in range(-x.ndim, 0):
+                if d not in self._nufft_dims and d != -4: # treat -4 = coil separately
+                    if d % x.ndim >= self._omega.ndim or self._omega.shape[d]==1:
+                        joint_dims_210.append(d)
+                    else:
+                        sep_dims_210.append(d)
+            joint_dims_210 = [*joint_dims_210, -4] # -4 is always coil, add it last to allow for -1 during unflatten
+            permute_210 = [*sep_dims_210, *joint_dims_210, *self._nufft_dims]
 
-            # we need to move the nufft-dimensions to the end, flatten them and flatten all other dimensions
-            # so the new shape will be (... non_nufft_dims) coils (nufft_dims)
             keep_dims_xyz = [-4, *self._nufft_directions]  # -4 is always coil
             permute_xyz = [i for i in range(-x.ndim, 0) if i not in keep_dims_xyz] + keep_dims_xyz
             unpermute_xyz = np.argsort(permute_xyz)
-            keep_dims_210 = [-4, *self._nufft_dims]  # -4 is always coil
-            permute_k = [i for i in range(-x.ndim, 0) if i not in keep_dims_210] + keep_dims_210
 
-            x = x.permute(*permute_k)
-            unflatten_other_shape = x.shape[: -len(keep_dims_xyz)]
-            x = x.flatten(end_dim=-len(keep_dims_210) - 1).flatten(start_dim=-len(keep_dims_210) + 1)
+            x = x.permute(*permute_210)
+            unflatten_other_shape = x.shape[: -len(self._nufft_dims)-1] # -1 for coil
+            # combine sep_dims
+            x = x.flatten(end_dim=len(sep_dims_210)-1) if len(sep_dims_210) else x[None,:]
+            # combine joint_dims and nufft_dims
+            x = x.flatten(start_dim=1, end_dim=len(joint_dims_210)).flatten(start_dim=2)
 
-            omega = self._omega.permute(*permute_k)
-            omega = omega.broadcast_to(*unflatten_other_shape, *omega.shape[-len(keep_dims_210) :])
-            omega = omega.flatten(end_dim=-len(keep_dims_210) - 1).flatten(start_dim=-len(keep_dims_210) + 1)
+            omega = self._omega.permute(*permute_210)
+            omega = omega.flatten(start_dim=-len(self._nufft_dims)).flatten(end_dim=-3)
 
             x = self._adj_nufft_op(x, omega, norm='ortho')
 
-            x = x.reshape(*unflatten_other_shape, *x.shape[-len(keep_dims_xyz) :])
+            x = x.reshape(*unflatten_other_shape, -1, *x.shape[-len(self._nufft_directions) :])
             x = x.permute(*unpermute_xyz)
         return (x,)
