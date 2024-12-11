@@ -6,7 +6,12 @@ from mrpro.data import KData, KTrajectory, SpatialDimension
 from mrpro.data.traj_calculators import KTrajectoryCartesian
 from mrpro.operators import FourierOp
 
-from tests import RandomGenerator, dotproduct_adjointness_test
+from tests import (
+    RandomGenerator,
+    dotproduct_adjointness_test,
+    forward_mode_autodiff_of_linear_operator_test,
+    gradient_of_linear_operator_test,
+)
 from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
 
 
@@ -20,12 +25,8 @@ def create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
     return img, trajectory
 
 
-@COMMON_MR_TRAJECTORIES
-def test_fourier_op_fwd_adj_property(
-    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
-):
-    """Test adjoint property of Fourier operator."""
-
+def create_fourier_op_and_range_domain(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
+    """Create a fourier operator and an element from domain and range."""
     # generate random images and k-space trajectories
     img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
@@ -37,15 +38,41 @@ def test_fourier_op_fwd_adj_property(
         int(trajectory.kx.max() - trajectory.kx.min() + 1),
     )
     fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
-
     # apply forward operator
     (kdata,) = fourier_op(img)
-
     # test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v
     random_generator = RandomGenerator(seed=0)
     u = random_generator.complex64_tensor(size=img.shape)
     v = random_generator.complex64_tensor(size=kdata.shape)
-    dotproduct_adjointness_test(fourier_op, u, v)
+    return fourier_op, u, v
+
+
+@COMMON_MR_TRAJECTORIES
+def test_fourier_fwd_adj_property(
+    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
+):
+    """Test adjoint property of Fourier operator."""
+    dotproduct_adjointness_test(
+        *create_fourier_op_and_range_domain(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    )
+
+
+@COMMON_MR_TRAJECTORIES
+def test_fourier_op_grad(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2):
+    """Test gradient of Fourier operator."""
+    gradient_of_linear_operator_test(
+        *create_fourier_op_and_range_domain(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    )
+
+
+@COMMON_MR_TRAJECTORIES
+def test_fourier_op_forward_mode_autodiff(
+    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
+):
+    """Test forward-mode autodiff of Fourier operator."""
+    forward_mode_autodiff_of_linear_operator_test(
+        *create_fourier_op_and_range_domain(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    )
 
 
 @COMMON_MR_TRAJECTORIES
