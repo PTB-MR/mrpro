@@ -126,8 +126,8 @@ jobs:
           fi
           # in the pr #537 the $notebook variable would have the full path to the file, the "examples" folder should be deleted here
           colab_url="https://colab.research.google.com/github/$gh_repo/blob/$gh_ref/examples/$notebook"
-          # and the for the myst only the basene for File: reference need to be taken
-          badges_md="[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]($colab_url) [![Download notebook](https://img.shields.io/badge/jupyter-notebook-blue?logo=jupyter)](File:$notebook)"
+          # and the for the myst only the basename for path: reference need to be taken
+          badges_md="[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]($colab_url) [![Download notebook](https://img.shields.io/badge/jupyter-notebook-blue?logo=jupyter)](path:$notebook)"
           python_command="import nbformat as nbf; nb = nbf.read(open('examples/$notebook'), as_version=4); nb['cells'].insert(0, nbf.v4.new_markdown_cell('$badges_md')); nbf.write(nb, open('examples/$notebook', 'w'))"
           python -c "$python_command"
 
