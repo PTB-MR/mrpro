@@ -8,7 +8,7 @@ from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.operators import NonUniformFastFourierOp
 
 from tests import RandomGenerator
-from tests.conftest import create_traj
+from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
 from tests.helper import dotproduct_adjointness_test, relative_image_difference
 
 
@@ -20,6 +20,37 @@ def create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
     # create random trajectories
     trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
     return img, trajectory
+
+
+@COMMON_MR_TRAJECTORIES
+def test_fourier_op_fwd_adj_property(
+    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
+):
+    """Test adjoint property of Fourier operator."""
+
+    # generate random images and k-space trajectories
+    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+
+    # create operator
+    recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
+    encoding_matrix = SpatialDimension(
+        int(trajectory.kz.max() - trajectory.kz.min() + 1),
+        int(trajectory.ky.max() - trajectory.ky.min() + 1),
+        int(trajectory.kx.max() - trajectory.kx.min() + 1),
+    )
+    direction = [d for d, e in zip(('z', 'y', 'x'), encoding_matrix.zyx, strict=False) if e > 1]
+    nufft_op = NonUniformFastFourierOp(
+        direction=direction, recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory
+    )
+
+    # apply forward operator
+    (kdata,) = nufft_op(img)
+
+    # test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v
+    random_generator = RandomGenerator(seed=0)
+    u = random_generator.complex64_tensor(size=img.shape)
+    v = random_generator.complex64_tensor(size=kdata.shape)
+    dotproduct_adjointness_test(nufft_op, u, v)
 
 
 @pytest.mark.parametrize('dim', [(-1,), (-1, -2), (-1, -2, -3), (-2, -3), (-3, -1)])

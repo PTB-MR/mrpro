@@ -71,6 +71,16 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
                         self._nufft_dims.append(dim)
                         break  # one case where nufft is needed is enough for each dimension
 
+            # For e.g. single shot acquisitions the number of dimensions do not necessarily match the number of
+            # directions. This leads to a mismatch between reconstructed and expected dimensions. To avoid this we try
+            # to find the most logical solution, i.e. add another singleton direction
+            if len(self._nufft_directions) > len(self._nufft_dims):
+                for dim in (-1, -2, -3):
+                    if dim not in self._nufft_dims and ks.shape[dim] == 1:
+                        self._nufft_dims.append(dim)
+                    if len(self._nufft_directions) == len(self._nufft_dims):
+                        break
+
             if isinstance(recon_matrix, SpatialDimension):
                 im_size: Sequence[int] = [int(astuple(recon_matrix)[d]) for d in self._nufft_directions]
             else:
@@ -79,9 +89,9 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
                 im_size = recon_matrix
 
             if isinstance(encoding_matrix, SpatialDimension):
-                k_size: Sequence[int] = [int(astuple(encoding_matrix)[d]) for d in self._nufft_dims]
+                k_size: Sequence[int] = [int(astuple(encoding_matrix)[d]) for d in self._nufft_directions]
             else:
-                if (n_enc_matrix := len(encoding_matrix)) != (n_nufft_dir := len(self._nufft_dims)):
+                if (n_enc_matrix := len(encoding_matrix)) != (n_nufft_dir := len(self._nufft_directions)):
                     raise ValueError(f'encoding_matrix should have {n_nufft_dir} entries but has {n_enc_matrix}')
                 k_size = encoding_matrix
 
@@ -138,7 +148,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             unpermute_k = np.argsort(permute_k)
 
             x = x.permute(*permute_img)
-            unflatten_other_shape = x.shape[: -len(keep_dims_k)]
+            unflatten_other_shape = x.shape[: -len(keep_dims_img)]
             x = x.flatten(end_dim=-len(keep_dims_img) - 1)
 
             # omega should be (... non_nufft_dims) n_nufft_dims (nufft_dims)
@@ -176,7 +186,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             permute_k = [i for i in range(-x.ndim, 0) if i not in keep_dims_k] + keep_dims_k
 
             x = x.permute(*permute_k)
-            unflatten_other_shape = x.shape[: -len(keep_dims_k)]
+            unflatten_other_shape = x.shape[: -len(keep_dims_img)]
             x = x.flatten(end_dim=-len(keep_dims_k) - 1).flatten(start_dim=-len(keep_dims_k) + 1)
 
             omega = self._omega.permute(*permute_k)
