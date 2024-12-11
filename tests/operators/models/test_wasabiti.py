@@ -85,3 +85,27 @@ def test_autodiff_WASABITI():
     trec = torch.ones_like(offset) * t1
     wasabiti_model = WASABITI(offsets=offset, trec=trec)
     autodiff_test(wasabiti_model, b0_shift, rb1, t1)
+
+
+@pytest.mark.cuda
+def test_wasabiti_cuda():
+    """Test the WASABITI model works on cuda devices."""
+    offset, b0_shift, rb1, t1 = create_data(offset_max=300, n_offsets=2)
+    trec = torch.ones_like(offset) * t1
+
+    # Create on CPU, transfer to GPU and run on GPU
+    model = WASABITI(offset, trec)
+    model.cuda()
+    (signal,) = model(b0_shift.cuda(), rb1.cuda(), t1.cuda())
+    assert signal.is_cuda
+
+    # Create on GPU and run on GPU
+    model = WASABITI(offset.cuda(), trec)
+    (signal,) = model(b0_shift.cuda(), rb1.cuda(), t1.cuda())
+    assert signal.is_cuda
+
+    # Create on GPU, transfer to CPU and run on CPU
+    model = WASABITI(offset.cuda(), trec)
+    model.cpu()
+    (signal,) = model(b0_shift, rb1, t1)
+    assert signal.is_cpu
