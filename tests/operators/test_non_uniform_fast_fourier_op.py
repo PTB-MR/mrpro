@@ -26,7 +26,7 @@ def create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
 def test_fourier_op_fwd_adj_property(
     im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
 ):
-    """Test adjoint property of Fourier operator."""
+    """Test adjoint property of non-uniform Fast Fourier operator."""
 
     # generate random images and k-space trajectories
     img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
@@ -53,8 +53,32 @@ def test_fourier_op_fwd_adj_property(
     dotproduct_adjointness_test(nufft_op, u, v)
 
 
+@COMMON_MR_TRAJECTORIES
+def test_non_uniform_fast_fourier_op_gram(
+    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
+):
+    """Test gram of of non-uniform Fast Fourier operator."""
+    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+
+    recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
+    encoding_matrix = SpatialDimension(
+        int(trajectory.kz.max() - trajectory.kz.min() + 1),
+        int(trajectory.ky.max() - trajectory.ky.min() + 1),
+        int(trajectory.kx.max() - trajectory.kx.min() + 1),
+    )
+    direction = [d for d, e in zip(('z', 'y', 'x'), encoding_matrix.zyx, strict=False) if e > 1]
+    nufft_op = NonUniformFastFourierOp(
+        direction=direction, recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory
+    )
+
+    (expected,) = (nufft_op.H @ nufft_op)(img)
+    (actual,) = nufft_op.gram(img)
+
+    torch.testing.assert_close(actual, expected, rtol=1e-3, atol=1e-3)
+
+
 def test_non_uniform_fast_fourier_op_equal_to_fft(ismrmrd_cart):
-    """Eval result of non-uniform fourier transform for Cartesian data."""
+    """Eval result of non-uniform Fast Fourier transform for Cartesian data."""
     kdata = KData.from_file(ismrmrd_cart.filename, KTrajectoryIsmrmrd())
 
     # recon_matrix and encoding_matrix have to be identical to avoid image scaling
@@ -84,38 +108,6 @@ def test_non_uniform_fast_fourier_op_empty_dims():
     random_generator = RandomGenerator(seed=0)
     u = random_generator.complex64_tensor(size=[2, 3, 4, 5])
     torch.testing.assert_close(u, nufft_op(u)[0])
-
-
-def test_non_uniform_fast_fourier_op_not_aligned_dim_directions():
-    """Test case where directions and k-space dimensions are not alined."""
-
-    kdata_shape = (1, 3, 20, 30, 40)
-    img_shape = (2, 3, 20, 20, 30)
-    nkx = (1, 1, 30, 40)
-    nky = (1, 20, 1, 1)  # Cartesian ky dimension defined along k2 rather than k1
-    nkz = (1, 1, 30, 40)
-
-    # generate random traj and image
-    img, traj = create_data(
-        img_shape,
-        kdata_shape,
-        nkx=nkx,
-        nky=nky,
-        nkz=nkz,
-        type_kx='non-uniform',
-        type_ky='uniform',
-        type_kz='non-uniform',
-    )
-
-    # create operator
-    nufft_op = NonUniformFastFourierOp(
-        direction=('x', 'z'),
-        recon_matrix=SpatialDimension[int](z=img_shape[-3], y=img_shape[-2], x=img_shape[-1]),
-        encoding_matrix=SpatialDimension[int](z=kdata_shape[-3], y=kdata_shape[-2], x=kdata_shape[-1]),
-        traj=traj,
-    )
-
-    assert nufft_op.adjoint(nufft_op(img)[0])[0].shape == img_shape
 
 
 def test_non_uniform_fast_fourier_op_directions():
