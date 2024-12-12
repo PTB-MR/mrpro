@@ -108,7 +108,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             # Broadcast shapes not always needed but also does not hurt
             omega_list = [k.expand(*np.broadcast_shapes(*[k.shape for k in omega_list])) for k in omega_list]
             omega = torch.stack(omega_list, dim=-4)  # use the 'coil' dim for the direction
-            self._omega_full_shape = omega.shape
+            self._traj_broadcast_shape = omega.shape
             numpoints = [min(size, nufft_numpoints) for size in im_size]
             nufft_op = KbNufft(
                 im_size=im_size,
@@ -135,9 +135,6 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             # Cartesian -> non-Cartesian
             self._nufft_type2 = lambda x: nufft_op(x, omega, norm='ortho')
 
-            self._kshape = traj.broadcasted_shape
-            self._im_size = im_size
-
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """NUFFT from image space to k-space.
 
@@ -158,7 +155,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             sep_dims_xyz = []
             for d in range(-x.ndim, 0):
                 if d not in self._nufft_directions and d != -4:  # treat -4 = coil separately
-                    if d % x.ndim >= len(self._omega_full_shape) or self._omega_full_shape[d] == 1:
+                    if d % x.ndim >= len(self._traj_broadcast_shape) or self._traj_broadcast_shape[d] == 1:
                         joint_dims_xyz.append(d)
                     else:
                         sep_dims_xyz.append(d)
@@ -177,7 +174,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
 
             x = self._nufft_type2(x)
 
-            shape_nufft_dims = [self._kshape[i] for i in self._nufft_dims]
+            shape_nufft_dims = [self._traj_broadcast_shape[i] for i in self._nufft_dims]
             x = x.reshape(*unflatten_other_shape, -1, *shape_nufft_dims)  # -1 is coils
             x = x.permute(*unpermute_210)
         return (x,)
@@ -202,7 +199,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             sep_dims_210 = []
             for d in range(-x.ndim, 0):
                 if d not in self._nufft_dims and d != -4:  # treat -4 = coil separately
-                    if d % x.ndim >= len(self._omega_full_shape) or self._omega_full_shape[d] == 1:
+                    if d % x.ndim >= len(self._traj_broadcast_shape) or self._traj_broadcast_shape[d] == 1:
                         joint_dims_210.append(d)
                     else:
                         sep_dims_210.append(d)
