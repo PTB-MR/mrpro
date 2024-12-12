@@ -83,6 +83,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
                         self._nufft_dims.append(dim)
                     if len(self._nufft_directions) == len(self._nufft_dims):
                         break
+                self._nufft_dims.sort()
 
             if isinstance(recon_matrix, SpatialDimension):
                 im_size: Sequence[int] = [int(astuple(recon_matrix)[d]) for d in self._nufft_directions]
@@ -337,8 +338,6 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
     def __init__(self, nufft_op: NonUniformFastFourierOp) -> None:
         """Initialize the gram operator.
 
-        If density compensation weights are provided, the operator F.H@dcf@F is calculated.
-
         Parameters
         ----------
         nufft_op
@@ -350,16 +349,23 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
             shape_weight = list(nufft_op._traj_broadcast_shape)
             shape_weight[-4] = 1
             weight = torch.ones(shape_weight, dtype=nufft_op._omega.dtype)
-            keep_dims = [-4, *nufft_op._nufft_dims]  # -4 is coil
-            permute = [i for i in range(-weight.ndim, 0) if i not in keep_dims] + keep_dims
-            unpermute = np.argsort(permute)
-            weight = weight.permute(*permute)
-            weight_unflattend_shape = weight.shape
-            weight = weight.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
-            weight = weight + 0j
-            kernel = gram_nufft_kernel(weight, nufft_op._omega, nufft_op._im_size)
-            kernel = kernel.reshape(*weight_unflattend_shape[: -len(keep_dims)], *kernel.shape[-len(keep_dims) :])
-            kernel = kernel.permute(*unpermute)
+
+            # We rearrange weight into (sep_dims, joint_dims, nufft_dims)
+            _, permute_xyz, sep_dims_210, permute_210 = nufft_op._separate_joint_dimensions(weight.ndim)
+            unpermute_xyz = np.argsort(permute_xyz)
+
+            weight = weight.permute(*permute_210)
+            unflatten_other_shape = weight.shape[: -len(nufft_op._nufft_dims) - 1]  # -1 for coil
+            # combine sep_dims
+            weight = weight.flatten(end_dim=len(sep_dims_210) - 1) if len(sep_dims_210) else weight[None, :]
+            # combine joint_dims and nufft_dims
+            weight = weight.flatten(start_dim=1, end_dim=-len(nufft_op._nufft_dims) - 1).flatten(start_dim=2)
+
+            kernel = gram_nufft_kernel(weight + 0j, nufft_op._omega, nufft_op._im_size)
+
+            kernel = kernel.reshape(*unflatten_other_shape, -1, *kernel.shape[-len(nufft_op._nufft_directions) :])
+            kernel = kernel.permute(*unpermute_xyz)
+
             fft = FastFourierOp(
                 dim=nufft_op._nufft_dims,
                 encoding_matrix=[2 * s for s in nufft_op._im_size],

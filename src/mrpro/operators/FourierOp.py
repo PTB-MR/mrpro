@@ -1,11 +1,8 @@
 """Fourier Operator."""
 
 from collections.abc import Sequence
-from itertools import product
 
-import numpy as np
 import torch
-from torchkbnufft import KbNufftAdjoint
 from typing_extensions import Self
 
 from mrpro.data._kdata.KData import KData
@@ -79,18 +76,6 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
 
         # Find dimensions which require NUFFT
         if self._nufft_dims:
-            fft_dims_k210 = [
-                dim
-                for dim in (-3, -2, -1)
-                if (traj.type_along_k210[dim] & TrajType.ONGRID)
-                and not (traj.type_along_k210[dim] & TrajType.SINGLEVALUE)
-            ]
-            if self._fft_dims != fft_dims_k210:
-                raise NotImplementedError(
-                    'If both FFT and NUFFT dims are present, Cartesian FFT dims need to be aligned with the '
-                    'k-space dimension, i.e. kx along k0, ky along k1 and kz along k2',
-                )
-
             self._non_uniform_fast_fourier_op: NonUniformFastFourierOp | IdentityOp = NonUniformFastFourierOp(
                 direction=tuple(self._nufft_dims),
                 recon_matrix=get_spatial_dims(recon_matrix, self._nufft_dims),
@@ -156,69 +141,6 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
         return FourierGramOp(self)
 
 
-def symmetrize(kernel: torch.Tensor, rank: int) -> torch.Tensor:
-    """Enforce hermitian symmetry on the kernel. Returns only half of the kernel."""
-    flipped = kernel.clone()
-    for d in range(-rank, 0):
-        flipped = flipped.index_select(d, -1 * torch.arange(flipped.shape[d], device=flipped.device) % flipped.size(d))
-    kernel = (kernel + flipped.conj()) / 2
-    last_len = kernel.shape[-1]
-    return kernel[..., : last_len // 2 + 1]
-
-
-def gram_nufft_kernel(weight: torch.Tensor, trajectory: torch.Tensor, recon_shape: Sequence[int]) -> torch.Tensor:
-    """Calculate the convolution kernel for the NUFFT gram operator.
-
-    Parameters
-    ----------
-    weight
-        either ones or density compensation weights
-    trajectory
-        k-space trajectory
-    recon_shape
-        shape of the reconstructed image
-
-    Returns
-    -------
-    kernel
-        real valued convolution kernel for the NUFFT gram operator, already in Fourier space
-    """
-    rank = trajectory.shape[-2]
-    if rank != len(recon_shape):
-        raise ValueError('Rank of trajectory and image size must match.')
-    # Instead of doing one adjoint nufft with double the recon size in all dimensions,
-    # we do two adjoint nuffts per dimensions, saving a lot of memory.
-    adjnufft_ob = KbNufftAdjoint(im_size=recon_shape, n_shift=[0] * rank).to(trajectory)
-
-    kernel = adjnufft_ob(weight, trajectory)  # this will be the top left ... corner block
-    pad = []
-    for s in kernel.shape[: -rank - 1 : -1]:
-        pad.extend([0, s])
-    kernel = torch.nn.functional.pad(kernel, pad)  # twice the size in all dimensions
-
-    for flips in list(product([1, -1], repeat=rank)):
-        if all(flip == 1 for flip in flips):
-            # top left ... block already processed before padding
-            continue
-        flipped_trajectory = trajectory * torch.tensor(flips).to(trajectory).unsqueeze(-1)
-        kernel_part = adjnufft_ob(weight, flipped_trajectory)
-        slices = []  # which part of the kernel to is currently being processed
-        for dim, flip in zip(range(-rank, 0), flips, strict=True):
-            if flip > 0:  # first half in the dimension
-                slices.append(slice(0, kernel_part.size(dim)))
-            else:  # second half in the dimension
-                slices.append(slice(kernel_part.size(dim) + 1, None))
-                kernel_part = kernel_part.index_select(dim, torch.arange(kernel_part.size(dim) - 1, 0, -1))  # flip
-
-        kernel[[..., *slices]] = kernel_part
-
-    kernel = symmetrize(kernel, rank)
-    kernel = torch.fft.hfftn(kernel, dim=list(range(-rank, 0)), norm='backward')
-    kernel /= kernel.shape[-rank:].numel()
-    kernel = torch.fft.fftshift(kernel, dim=list(range(-rank, 0)))
-    return kernel
-
-
 class FourierGramOp(LinearOperator):
     """Gram operator for the Fourier operator.
 
@@ -250,26 +172,8 @@ class FourierGramOp(LinearOperator):
 
         """
         super().__init__()
-        if fourier_op._nufft_dims and fourier_op._non_uniform_fast_fourier_op._omega is not None:
-            weight = torch.ones_like(fourier_op._non_uniform_fast_fourier_op._omega[..., :1, :, :, :])
-            keep_dims = [-4, *fourier_op._nufft_dims]  # -4 is coil
-            permute = [i for i in range(-weight.ndim, 0) if i not in keep_dims] + keep_dims
-            unpermute = np.argsort(permute)
-            weight = weight.permute(*permute)
-            weight_unflattend_shape = weight.shape
-            weight = weight.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
-            weight = weight + 0j
-            omega = fourier_op._non_uniform_fast_fourier_op._omega.permute(*permute)
-            omega = omega.flatten(end_dim=-len(keep_dims) - 1).flatten(start_dim=-len(keep_dims) + 1)
-            kernel = gram_nufft_kernel(weight, omega, fourier_op._non_uniform_fast_fourier_op._im_size)
-            kernel = kernel.reshape(*weight_unflattend_shape[: -len(keep_dims)], *kernel.shape[-len(keep_dims) :])
-            kernel = kernel.permute(*unpermute)
-            fft = FastFourierOp(
-                dim=fourier_op._nufft_dims,
-                encoding_matrix=[2 * s for s in fourier_op._non_uniform_fast_fourier_op._im_size],
-                recon_matrix=fourier_op._non_uniform_fast_fourier_op._im_size,
-            )
-            self.nufft_gram: None | LinearOperator = fft.H * kernel @ fft
+        if fourier_op._nufft_dims:
+            self.nufft_gram: None | LinearOperator = fourier_op._non_uniform_fast_fourier_op.gram
         else:
             self.nufft_gram = None
 
