@@ -448,6 +448,19 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'uniform',  # type_k2
         ),
+        (  # (14) stack of stars, (2,2,4) other, 3 coil, trajetory is different along second other dimension
+            (2, 2, 4, 3, 48, 16, 32),  # im_shape
+            (2, 2, 4, 3, 96, 18, 64),  # k_shape
+            (2, 1, 1, 18, 64),  # nkx
+            (2, 1, 1, 18, 64),  # nky
+            (2, 1, 96, 1, 1),  # nkz
+            'non-uniform',  # type_kx
+            'non-uniform',  # type_ky
+            'uniform',  # type_kz
+            'non-uniform',  # type_k0
+            'non-uniform',  # type_k1
+            'uniform',  # type_k2
+        ),
     ],
     ids=[
         '2d_cartesian_1_coil_no_oversampling',
@@ -464,5 +477,6 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
         'radial_phase_encoding_8_coils_with_oversampling',
         'radial_phase_encoding_8_coils_non_cartesian_sampling',
         'stack_of_stars_5_other_3_coil_with_oversampling',
+        'stack_of_stars_2_2_4_other',
     ],
 )

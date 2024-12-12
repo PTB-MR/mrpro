@@ -109,21 +109,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             omega_list = [k.expand(*np.broadcast_shapes(*[k.shape for k in omega_list])) for k in omega_list]
             omega = torch.stack(omega_list, dim=-4)  # use the 'coil' dim for the direction
             self._traj_broadcast_shape = omega.shape
-            numpoints = [min(size, nufft_numpoints) for size in im_size]
-            nufft_op = KbNufft(
-                im_size=im_size,
-                grid_size=grid_size,
-                numpoints=numpoints,
-                kbwidth=nufft_kbwidth,
-            )
-            adj_nufft_op = KbNufftAdjoint(
-                im_size=im_size,
-                grid_size=grid_size,
-                numpoints=numpoints,
-                kbwidth=nufft_kbwidth,
-            )
 
-            # Prepare nufft functions
             keep_dims_210 = [-4, *self._nufft_dims]  # -4 is always coil
             permute_210 = [i for i in range(-omega.ndim, 0) if i not in keep_dims_210] + keep_dims_210
             # omega should be (sep_dims, 1, 2 or 3, nufft_dimensions)
@@ -131,9 +117,71 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             omega = omega.flatten(end_dim=-len(keep_dims_210) - 1).flatten(start_dim=-len(keep_dims_210) + 1)
 
             # non-Cartesian -> Cartesian
+            numpoints = [min(size, nufft_numpoints) for size in im_size]
+            adj_nufft_op = KbNufftAdjoint(
+                im_size=im_size,
+                grid_size=grid_size,
+                numpoints=numpoints,
+                kbwidth=nufft_kbwidth,
+            )
             self._nufft_type1 = lambda x: adj_nufft_op(x, omega, norm='ortho')
+
             # Cartesian -> non-Cartesian
+            nufft_op = KbNufft(
+                im_size=im_size,
+                grid_size=grid_size,
+                numpoints=numpoints,
+                kbwidth=nufft_kbwidth,
+            )
             self._nufft_type2 = lambda x: nufft_op(x, omega, norm='ortho')
+
+            # we want to rearrange everything into (sep_dims)(joint_dims)(nufft_dims) where sep_dims are dimension
+            # where the traj changes, joint_dims are dimensions where the traj does not change and nufft_dims are the
+            # dimensions along which the nufft is applied. We have to do this for the (z-y-x) and (k2-k1-k0) space
+            # separately. If we know two of the three dimensions we can infer the rest. We cannot do the other
+            # dimensions here because they might be different between data and trajectory.
+            self._joint_dims_210 = [
+                d for d in [-3, -2, -1] if d not in self._nufft_dims and self._traj_broadcast_shape[d] == 1
+            ]
+            self._joint_dims_210.append(-4)  # -4 is always coil and always a joint dimension
+            # TODO self._traj_broadcast_shape[d] is wrong...
+            self._joint_dims_zyx = [
+                d for d in [-3, -2, -1] if d not in self._nufft_directions and self._traj_broadcast_shape[d] == 1
+            ]
+            self._joint_dims_zyx.append(-4)  # -4 is always coil and always a joint dimension
+
+    def _separate_joint_dimensions(
+        self, data_ndim: int
+    ) -> tuple[Sequence[int], Sequence[int], Sequence[int], Sequence[int]]:
+        """Get the separate and joint dimensions for the current data.
+
+        Parameters
+        ----------
+        data_ndim
+            number of dimensions of the data
+
+        Returns
+        -------
+            ((sep dims along zyx), (permute for zyx), (sep dims along 210), (permute for 210))
+
+        """
+        # We did most in _init_ and here we only have to check the other dimensions.
+        joint_dims_other = []
+        for d in range(-data_ndim, -4):
+            if abs(d) > len(self._traj_broadcast_shape) or self._traj_broadcast_shape[d] == 1:
+                joint_dims_other.append(d)
+
+        sep_dims_xyz = [
+            d
+            for d in range(-data_ndim, 0)
+            if d not in [*joint_dims_other, *self._joint_dims_zyx, *self._nufft_directions]
+        ]
+        permute_xyz = [*sep_dims_xyz, *joint_dims_other, *self._joint_dims_zyx, *self._nufft_directions]
+        sep_dims_210 = [
+            d for d in range(-data_ndim, 0) if d not in [*joint_dims_other, *self._joint_dims_210, *self._nufft_dims]
+        ]
+        permute_210 = [*sep_dims_210, *joint_dims_other, *self._joint_dims_210, *self._nufft_dims]
+        return sep_dims_xyz, permute_xyz, sep_dims_210, permute_210
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """NUFFT from image space to k-space.
@@ -148,34 +196,21 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             coil k-space data with shape: (... coils k2 k1 k0)
         """
         if len(self._nufft_directions):
-            # we rearrange x into (sep_dims, joint_dims, nufft_directions) where sep_dims are dimensions along which
-            # trajectory changes and joint_dims are dimensions along which trajectory does not change. Then we combine
-            # all of the sep_dims and all of the joint_dims.
-            joint_dims_xyz = []
-            sep_dims_xyz = []
-            for d in range(-x.ndim, 0):
-                if d not in self._nufft_directions and d != -4:  # treat -4 = coil separately
-                    if d % x.ndim >= len(self._traj_broadcast_shape) or self._traj_broadcast_shape[d] == 1:
-                        joint_dims_xyz.append(d)
-                    else:
-                        sep_dims_xyz.append(d)
-            joint_dims_xyz = [*joint_dims_xyz, -4]  # -4 is always coil, add it last to allow for -1 during unflatten
-            permute_xyz = [*sep_dims_xyz, *joint_dims_xyz, *self._nufft_directions]
-            keep_dims_210 = [-4, *self._nufft_dims]  # -4 is always coil
-            permute_210 = [i for i in range(-x.ndim, 0) if i not in keep_dims_210] + keep_dims_210
+            # We rearrange x into (sep_dims, joint_dims, nufft_directions)
+            sep_dims_xyz, permute_xyz, _, permute_210 = self._separate_joint_dimensions(x.ndim)
             unpermute_210 = np.argsort(permute_210)
 
             x = x.permute(*permute_xyz)
-            unflatten_other_shape = x.shape[: len(joint_dims_xyz + sep_dims_xyz) - 1]  # -1 for coil
+            unflatten_shape = x.shape[: -len(self._nufft_directions)]
             # combine sep_dims
             x = x.flatten(end_dim=len(sep_dims_xyz) - 1) if len(sep_dims_xyz) else x[None, :]
             # combine joint_dims
-            x = x.flatten(start_dim=1, end_dim=len(joint_dims_xyz))
+            x = x.flatten(start_dim=1, end_dim=-len(self._nufft_directions) - 1)
 
             x = self._nufft_type2(x)
 
             shape_nufft_dims = [self._traj_broadcast_shape[i] for i in self._nufft_dims]
-            x = x.reshape(*unflatten_other_shape, -1, *shape_nufft_dims)  # -1 is coils
+            x = x.reshape(*unflatten_shape, *shape_nufft_dims)
             x = x.permute(*unpermute_210)
         return (x,)
 
@@ -192,22 +227,8 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             coil image data with shape: (... coils z y x)
         """
         if len(self._nufft_directions):
-            # we rearrange x into (sep_dims, joint_dims, nufft_directions) where sep_dims are dimensions along which
-            # trajectory changes and joint_dims are dimensions along which trajectory does not change. Then we combine
-            # all of the sep_dims and all of the joint_dims.
-            joint_dims_210 = []
-            sep_dims_210 = []
-            for d in range(-x.ndim, 0):
-                if d not in self._nufft_dims and d != -4:  # treat -4 = coil separately
-                    if d % x.ndim >= len(self._traj_broadcast_shape) or self._traj_broadcast_shape[d] == 1:
-                        joint_dims_210.append(d)
-                    else:
-                        sep_dims_210.append(d)
-            joint_dims_210 = [*joint_dims_210, -4]  # -4 is always coil, add it last to allow for -1 during unflatten
-            permute_210 = [*sep_dims_210, *joint_dims_210, *self._nufft_dims]
-
-            keep_dims_xyz = [-4, *self._nufft_directions]  # -4 is always coil
-            permute_xyz = [i for i in range(-x.ndim, 0) if i not in keep_dims_xyz] + keep_dims_xyz
+            # We rearrange x into (sep_dims, joint_dims, nufft_directions)
+            _, permute_xyz, sep_dims_210, permute_210 = self._separate_joint_dimensions(x.ndim)
             unpermute_xyz = np.argsort(permute_xyz)
 
             x = x.permute(*permute_210)
@@ -215,7 +236,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             # combine sep_dims
             x = x.flatten(end_dim=len(sep_dims_210) - 1) if len(sep_dims_210) else x[None, :]
             # combine joint_dims and nufft_dims
-            x = x.flatten(start_dim=1, end_dim=len(joint_dims_210)).flatten(start_dim=2)
+            x = x.flatten(start_dim=1, end_dim=-len(self._nufft_dims) - 1).flatten(start_dim=2)
 
             x = self._nufft_type1(x)
 
