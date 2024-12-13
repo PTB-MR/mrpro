@@ -435,7 +435,20 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'non-uniform',  # type_k2
         ),
-        (  # (13) stack of stars, 5 other, 3 coil, oversampling in both FFT and non-uniform directions
+        (  # (13) radial phase encoding, cartesian FFT dimension not aligned with corresponding k2, k1, k0 dimensions
+            (2, 3, 48, 16, 32),  # im_shape
+            (2, 3, 96, 18, 64),  # k_shape
+            (2, 1, 18, 64),  # nkx
+            (2, 96, 1, 1),  # nky - Cartesian ky dimension defined along k2 rather than k1
+            (2, 1, 18, 64),  # nkz
+            'non-uniform',  # type_kx
+            'uniform',  # type_ky
+            'non-uniform',  # type_kz
+            'non-uniform',  # type_k0
+            'non-uniform',  # type_k1
+            'uniform',  # type_k2
+        ),
+        (  # (14) stack of stars, 5 other, 3 coil, oversampling in both FFT and non-uniform directions
             (5, 3, 48, 16, 32),  # im_shape
             (5, 3, 96, 18, 64),  # k_shape
             (5, 1, 18, 64),  # nkx
@@ -448,7 +461,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'uniform',  # type_k2
         ),
-        (  # (14) stack of stars, (2,2,4) other, 3 coil, trajectory is different along second other dimension
+        (  # (15) stack of stars, (2,2,4) other, 3 coil, trajectory is different along second other dimension
             (2, 2, 4, 3, 48, 16, 32),  # im_shape
             (2, 2, 4, 3, 96, 18, 64),  # k_shape
             (2, 1, 1, 18, 64),  # nkx
@@ -476,6 +489,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
         '2d_cartesian_cine_9_cardiac_phases_6_coils',
         'radial_phase_encoding_8_coils_with_oversampling',
         'radial_phase_encoding_8_coils_non_cartesian_sampling',
+        'radial_phase_encoding_not_aligned_cartesian',
         'stack_of_stars_5_other_3_coil_with_oversampling',
         'stack_of_stars_2_2_4_other',
     ],
