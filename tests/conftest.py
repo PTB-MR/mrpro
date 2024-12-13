@@ -320,7 +320,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
         ),
         (  # (4) 2d single shot spiral
             (1, 2, 1, 96, 128),  # im_shape
-            (1, 1, 1, 1, 192),  # k_shape
+            (1, 2, 1, 1, 192),  # k_shape
             (1, 1, 1, 192),  # nkx
             (1, 1, 1, 192),  # nky
             (1, 1, 1, 1),  # nkz
@@ -332,8 +332,8 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'zero',  # type_k2
         ),
         (  # (5) 3d single shot stack of spiral
-            (1, 2, 4, 96, 128),  # im_shape
-            (1, 1, 4, 1, 192),  # k_shape
+            (1, 2, 96, 4, 128),  # im_shape
+            (1, 2, 4, 1, 192),  # k_shape
             (1, 1, 1, 192),  # nkx
             (1, 4, 1, 1),  # nky
             (1, 1, 1, 192),  # nkz
@@ -448,7 +448,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'uniform',  # type_k2
         ),
-        (  # (14) stack of stars, (2,2,4) other, 3 coil, trajetory is different along second other dimension
+        (  # (14) stack of stars, (2,2,4) other, 3 coil, trajectory is different along second other dimension
             (2, 2, 4, 3, 48, 16, 32),  # im_shape
             (2, 2, 4, 3, 96, 18, 64),  # k_shape
             (2, 1, 1, 18, 64),  # nkx

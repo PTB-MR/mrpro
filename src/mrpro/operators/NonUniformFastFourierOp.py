@@ -79,11 +79,16 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             # to find the most logical solution, i.e. add another singleton direction
             if len(self._nufft_directions) > len(self._nufft_dims):
                 for dim in (-1, -2, -3):
-                    if dim not in self._nufft_dims and ks.shape[dim] == 1:
+                    if dim not in self._nufft_dims and all(ks.shape[dim] == 1 for ks in (traj.kz, traj.ky, traj.kx)):
                         self._nufft_dims.append(dim)
                     if len(self._nufft_directions) == len(self._nufft_dims):
                         break
                 self._nufft_dims.sort()
+
+            if len(self._nufft_directions) != len(self._nufft_dims):
+                raise ValueError(
+                    f'Mismatch between number of nufft directions {self._nufft_directions} and dims {self._nufft_dims}'
+                )
 
             if isinstance(recon_matrix, SpatialDimension):
                 im_size: Sequence[int] = [int(astuple(recon_matrix)[d]) for d in self._nufft_directions]
