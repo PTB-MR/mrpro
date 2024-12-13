@@ -347,15 +347,15 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
         (  # (6) 3d single shot spiral, 4 coils, 2 other
             (2, 4, 16, 32, 64),  # im_shape
             (2, 4, 1, 1, 64),  # k_shape
-            (2, 1, 1, 64),  # nkx
-            (2, 1, 1, 64),  # nky
-            (2, 1, 1, 64),  # nkz
+            (2, 1, 64, 1),  # nkx
+            (2, 1, 64, 1),  # nky
+            (2, 1, 64, 1),  # nkz
             'non-uniform',  # type_kx
             'non-uniform',  # type_ky
             'non-uniform',  # type_kz
-            'non-uniform',  # type_k0
+            'zero',  # type_k0
             'non-uniform',  # type_k1
-            'non-uniform',  # type_k2
+            'zero',  # type_k2
         ),
         (  # (7) 3d non-uniform, 4 coils, 2 other
             (2, 4, 16, 32, 64),  # im_shape
@@ -384,14 +384,14 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'zero',  # type_k2
         ),
         (  # (9) 2d non-uniform cine with 8 cardiac phases, 5 coils
-            (8, 5, 1, 64, 64),  # im_shape
+            (8, 5, 64, 1, 64),  # im_shape
             (8, 5, 1, 18, 128),  # k_shape
             (8, 1, 18, 128),  # nkx
-            (8, 1, 18, 128),  # nky
-            (8, 1, 1, 1),  # nkz
+            (8, 1, 1, 1),  # nky
+            (8, 1, 18, 128),  # nkz
             'non-uniform',  # type_kx
-            'non-uniform',  # type_ky
-            'zero',  # type_kz
+            'zero',  # type_ky
+            'non-uniform',  # type_kz
             'non-uniform',  # type_k0
             'non-uniform',  # type_k1
             'zero',  # type_k2
