@@ -23,7 +23,7 @@ def create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
 
 
 @COMMON_MR_TRAJECTORIES
-def test_fourier_op_fwd_adj_property(
+def test_non_uniform_fast_fourier_op_fwd_adj_property(
     im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
 ):
     """Test adjoint property of non-uniform Fast Fourier operator."""
@@ -43,13 +43,10 @@ def test_fourier_op_fwd_adj_property(
         direction=direction, recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory
     )
 
-    # apply forward operator
-    (kdata,) = nufft_op(img)
-
     # test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v
     random_generator = RandomGenerator(seed=0)
-    u = random_generator.complex64_tensor(size=img.shape)
-    v = random_generator.complex64_tensor(size=kdata.shape)
+    u = random_generator.complex64_tensor(size=im_shape)
+    v = random_generator.complex64_tensor(size=k_shape)
     dotproduct_adjointness_test(nufft_op, u, v)
 
 
