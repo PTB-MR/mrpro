@@ -121,7 +121,7 @@ class MoveDataMixin:
         ) -> parsedType:
             return device, dtype, non_blocking, copy, memory_format
 
-        if args and isinstance(args[0], torch.Tensor) or 'tensor' in kwargs:
+        if (args and isinstance(args[0], torch.Tensor)) or 'tensor' in kwargs:
             # overload 3 ("tensor" specifies the dtype and device)
             device, dtype, non_blocking, copy, memory_format = parse3(*args, **kwargs)
         elif args and isinstance(args[0], torch.dtype):
