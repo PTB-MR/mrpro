@@ -11,7 +11,6 @@ from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp
 from mrpro.operators.FastFourierOp import FastFourierOp
-from mrpro.operators.IdentityOp import IdentityOp
 from mrpro.operators.LinearOperator import LinearOperator
 from mrpro.operators.NonUniformFastFourierOp import NonUniformFastFourierOp
 
@@ -62,17 +61,17 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
                 self._nufft_dims.append(dim)
 
         if self._fft_dims:
-            self._fast_fourier_op: FastFourierOp | IdentityOp = FastFourierOp(
+            self._fast_fourier_op: FastFourierOp | None = FastFourierOp(
                 dim=tuple(self._fft_dims),
                 recon_matrix=get_spatial_dims(recon_matrix, self._fft_dims),
                 encoding_matrix=get_spatial_dims(encoding_matrix, self._fft_dims),
             )
-            self._cart_sampling_op: CartesianSamplingOp | IdentityOp = CartesianSamplingOp(
+            self._cart_sampling_op: CartesianSamplingOp | None = CartesianSamplingOp(
                 encoding_matrix=encoding_matrix, traj=traj
             )
         else:
-            self._fast_fourier_op = IdentityOp()
-            self._cart_sampling_op = IdentityOp()
+            self._fast_fourier_op = None
+            self._cart_sampling_op = None
 
         # Find dimensions which require NUFFT
         if self._nufft_dims:
@@ -88,15 +87,15 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
                     'k-space dimension, i.e. kx along k0, ky along k1 and kz along k2.',
                 )
 
-            self._non_uniform_fast_fourier_op: NonUniformFastFourierOp | IdentityOp = NonUniformFastFourierOp(
-                direction=tuple(self._nufft_dims),
+            self._non_uniform_fast_fourier_op: NonUniformFastFourierOp | None = NonUniformFastFourierOp(
+                direction=tuple(self._nufft_dims),  # type: ignore[arg-type]
                 recon_matrix=get_spatial_dims(recon_matrix, self._nufft_dims),
                 encoding_matrix=get_spatial_dims(encoding_matrix, self._nufft_dims),
                 traj=traj,
                 nufft_oversampling=nufft_oversampling,
             )
         else:
-            self._non_uniform_fast_fourier_op = IdentityOp()
+            self._non_uniform_fast_fourier_op = None
 
     @classmethod
     def from_kdata(cls, kdata: KData, recon_shape: SpatialDimension[int] | None = None) -> Self:
@@ -128,7 +127,12 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             coil k-space data with shape: (... coils k2 k1 k0)
         """
         # NUFFT Type 2 followed by FFT
-        return self._cart_sampling_op(self._fast_fourier_op(self._non_uniform_fast_fourier_op(x)[0])[0])
+        if self._non_uniform_fast_fourier_op:
+            (x,) = self._non_uniform_fast_fourier_op(x)
+
+        if self._fast_fourier_op and self._cart_sampling_op:
+            (x,) = self._cart_sampling_op(self._fast_fourier_op(x)[0])
+        return (x,)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint operator mapping the coil k-space data to the coil images.
@@ -143,9 +147,13 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             coil image data with shape: (... coils z y x)
         """
         # FFT followed by NUFFT Type 1
-        return self._non_uniform_fast_fourier_op.adjoint(
-            self._fast_fourier_op.adjoint(self._cart_sampling_op.adjoint(x)[0])[0]
-        )
+        if self._fast_fourier_op and self._cart_sampling_op:
+            (x,) = self._fast_fourier_op.adjoint(self._cart_sampling_op.adjoint(x)[0])
+
+        if self._non_uniform_fast_fourier_op:
+            (x,) = self._non_uniform_fast_fourier_op.adjoint(x)
+
+        return (x,)
 
     @property
     def gram(self) -> LinearOperator:
@@ -184,12 +192,12 @@ class FourierGramOp(LinearOperator):
 
         """
         super().__init__()
-        if fourier_op._nufft_dims:
+        if fourier_op._non_uniform_fast_fourier_op:
             self.nufft_gram: None | LinearOperator = fourier_op._non_uniform_fast_fourier_op.gram
         else:
             self.nufft_gram = None
 
-        if fourier_op._fast_fourier_op is not None and fourier_op._cart_sampling_op is not None:
+        if fourier_op._fast_fourier_op and fourier_op._cart_sampling_op:
             self.fast_fourier_gram: None | LinearOperator = (
                 fourier_op._fast_fourier_op.H @ fourier_op._cart_sampling_op.gram @ fourier_op._fast_fourier_op
             )
@@ -204,10 +212,10 @@ class FourierGramOp(LinearOperator):
         x
             input tensor, shape (..., coils, z, y, x)
         """
-        if self.nufft_gram is not None:
+        if self.nufft_gram:
             (x,) = self.nufft_gram(x)
 
-        if self.fast_fourier_gram is not None:
+        if self.fast_fourier_gram:
             (x,) = self.fast_fourier_gram(x)
         return (x,)
 

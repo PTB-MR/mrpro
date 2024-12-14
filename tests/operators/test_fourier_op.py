@@ -27,7 +27,7 @@ def test_fourier_op_fwd_adj_property(
     """Test adjoint property of Fourier operator."""
 
     # generate random images and k-space trajectories
-    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    _, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # create operator
     recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
@@ -38,13 +38,10 @@ def test_fourier_op_fwd_adj_property(
     )
     fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
 
-    # apply forward operator
-    (kdata,) = fourier_op(img)
-
     # test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v
     random_generator = RandomGenerator(seed=0)
-    u = random_generator.complex64_tensor(size=img.shape)
-    v = random_generator.complex64_tensor(size=kdata.shape)
+    u = random_generator.complex64_tensor(size=im_shape)
+    v = random_generator.complex64_tensor(size=k_shape)
     dotproduct_adjointness_test(fourier_op, u, v)
 
 

@@ -371,14 +371,14 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'zero',  # type_k2
         ),
         (  # (8) 2d non-uniform cine with 8 cardiac phases, 5 coils
-            (8, 5, 64, 1, 64),  # im_shape
+            (8, 5, 1, 64, 64),  # im_shape
             (8, 5, 1, 18, 128),  # k_shape
             (8, 1, 18, 128),  # nkx
-            (8, 1, 1, 1),  # nky
-            (8, 1, 18, 128),  # nkz
+            (8, 1, 18, 128),  # nky
+            (8, 1, 1, 1),  # nkz
             'non-uniform',  # type_kx
-            'zero',  # type_ky
-            'non-uniform',  # type_kz
+            'non-uniform',  # type_ky
+            'zero',  # type_kz
             'non-uniform',  # type_k0
             'non-uniform',  # type_k1
             'zero',  # type_k2
@@ -448,6 +448,19 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'uniform',  # type_k2
         ),
+        (  # (14) 2d non-uniform not aligned in kzyx and k210, similar to 3d single shot spiral but with singleton dim
+            (8, 5, 64, 1, 64),  # im_shape
+            (8, 5, 1, 18, 128),  # k_shape
+            (8, 1, 18, 128),  # nkx
+            (8, 1, 1, 1),  # nky
+            (8, 1, 18, 128),  # nkz
+            'non-uniform',  # type_kx
+            'zero',  # type_ky
+            'non-uniform',  # type_kz
+            'non-uniform',  # type_k0
+            'non-uniform',  # type_k1
+            'zero',  # type_k2
+        ),
     ],
     ids=[
         '2d_cartesian_1_coil_no_oversampling',
@@ -464,5 +477,6 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
         'radial_phase_encoding_8_coils_non_cartesian_sampling',
         'stack_of_stars_5_other_3_coil_with_oversampling',
         'stack_of_stars_2_2_4_other',
+        '2d_nonuniform_kzyx_k210_not_aligned',
     ],
 )
