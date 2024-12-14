@@ -76,6 +76,18 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
 
         # Find dimensions which require NUFFT
         if self._nufft_dims:
+            fft_dims_k210 = [
+                dim
+                for dim in (-3, -2, -1)
+                if (traj.type_along_k210[dim] & TrajType.ONGRID)
+                and not (traj.type_along_k210[dim] & TrajType.SINGLEVALUE)
+            ]
+            if self._fft_dims != fft_dims_k210:
+                raise NotImplementedError(
+                    'If both FFT and NUFFT dims are present, Cartesian FFT dims need to be aligned with the '
+                    'k-space dimension, i.e. kx along k0, ky along k1 and kz along k2.',
+                )
+
             self._non_uniform_fast_fourier_op: NonUniformFastFourierOp | IdentityOp = NonUniformFastFourierOp(
                 direction=tuple(self._nufft_dims),
                 recon_matrix=get_spatial_dims(recon_matrix, self._nufft_dims),

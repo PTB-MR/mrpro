@@ -1,5 +1,6 @@
 """Tests for Fourier operator."""
 
+import pytest
 import torch
 from mrpro.data import KData, KTrajectory, SpatialDimension
 from mrpro.data.traj_calculators import KTrajectoryCartesian
@@ -83,3 +84,46 @@ def test_fourier_op_cartesian_sorting(ismrmrd_cart):
     (img_unsorted,) = ff_op_unsorted.adjoint(kdata_unsorted.data)
 
     torch.testing.assert_close(img, img_unsorted)
+
+
+@pytest.mark.parametrize(
+    ('im_shape', 'k_shape', 'nkx', 'nky', 'nkz', 'type_kx', 'type_ky', 'type_kz'),  # parameter names
+    [
+        (  # 3d single shot stack of spiral
+            (1, 2, 96, 4, 128),  # im_shape
+            (1, 2, 4, 1, 192),  # k_shape
+            (1, 1, 1, 192),  # nkx
+            (1, 4, 1, 1),  # nky
+            (1, 1, 1, 192),  # nkz
+            'non-uniform',  # type_kx
+            'uniform',  # type_ky
+            'non-uniform',  # type_kz
+        ),
+        (  # radial phase encoding, cartesian FFT dimension not aligned with corresponding k2, k1, k0 dimensions
+            (2, 3, 48, 16, 32),  # im_shape
+            (2, 3, 96, 18, 64),  # k_shape
+            (2, 1, 18, 64),  # nkx
+            (2, 96, 1, 1),  # nky - Cartesian ky dimension defined along k2 rather than k1
+            (2, 1, 18, 64),  # nkz
+            'non-uniform',  # type_kx
+            'uniform',  # type_ky
+            'non-uniform',  # type_kz
+        ),
+    ],
+    ids=['3d_single_shot_stack_of_spirals', 'cartesian_fft_dims_not_aligned_with_k2_k1_k0_dims'],
+)
+def test_fourier_op_not_supported_traj(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
+    """Test trajectory not supported by Fourier operator."""
+
+    # generate random images and k-space trajectories
+    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+
+    # create operator
+    recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
+    encoding_matrix = SpatialDimension(
+        int(trajectory.kz.max() - trajectory.kz.min() + 1),
+        int(trajectory.ky.max() - trajectory.ky.min() + 1),
+        int(trajectory.kx.max() - trajectory.kx.min() + 1),
+    )
+    with pytest.raises(NotImplementedError, match='Cartesian FFT dims need to be aligned'):
+        FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
