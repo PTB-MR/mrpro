@@ -101,7 +101,7 @@ class KTrajectory(MoveDataMixin):
         
         kz, ky, kx = (tensor.narrow(stack_dim, start=axes_order.index(axis), length=1) for axis in "zyx")
         
-        def normalize(k, encoding_size):
+        def normalize(k:torch.Tenso, encoding_size:int)->torch.Tensor:
             max_abs_range = 2 * k.max().abs()
             if encoding_size == 1 or max_abs_range < 1e-6:
                 # a single encoding point should be at zero
