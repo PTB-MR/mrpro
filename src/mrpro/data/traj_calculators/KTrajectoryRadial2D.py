@@ -35,11 +35,11 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         Parameters
         ----------
         n_k0
-            number of samples in k0
+            number of samples in k0 (radial readout)
         k0_center
             position of k-space center in k0
         k1_idx
-            indices of k1
+            indices of k1 (angle)
         reversed_readout_mask
             boolean tensor indicating reversed readout
 

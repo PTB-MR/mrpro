@@ -16,7 +16,6 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryCalculator):
     def __init__(self) -> None:
         """Initialize KTrajectorySunflowerGoldenRpe.
 
-        Parameters
         ----------
         radial_undersampling_factor
             undersampling factor along radial phase encoding direction.
@@ -71,11 +70,11 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryCalculator):
         k0_center
             position of k-space center in k0
         k1_idx
-            indices of k1
+            indices of k1 (radial)
         k1_center
             position of k-space center in k1
         k2_idx
-            indices of k2
+            indices of k2 (angle)
         reversed_readout_mask
             boolean tensor indicating reversed readout
 
