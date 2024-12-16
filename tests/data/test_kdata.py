@@ -260,8 +260,8 @@ def test_KData_to_complex128_header(ismrmrd_cart):
     """Change KData dtype complex128: test header"""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     kdata_complex128 = kdata.to(dtype=torch.complex128)
-    assert kdata_complex128.header.acq_info.user_float.dtype == torch.float64
-    assert kdata_complex128.header.acq_info.user_int.dtype == torch.int32
+    assert kdata_complex128.header.acq_info.user.float1.dtype == torch.float64
+    assert kdata_complex128.header.acq_info.user.int1.dtype == torch.int32
 
 
 @pytest.mark.cuda
@@ -285,7 +285,7 @@ def test_KData_cuda(ismrmrd_cart):
     assert kdata_cuda.traj.kz.is_cuda
     assert kdata_cuda.traj.ky.is_cuda
     assert kdata_cuda.traj.kx.is_cuda
-    assert kdata_cuda.header.acq_info.user_int.is_cuda
+    assert kdata_cuda.header.acq_info.user.int1.is_cuda
     assert kdata_cuda.device == torch.device(torch.cuda.current_device())
     assert kdata_cuda.header.acq_info.device == torch.device(torch.cuda.current_device())
     assert kdata_cuda.is_cuda
@@ -301,7 +301,7 @@ def test_KData_cpu(ismrmrd_cart):
     assert kdata_cpu.traj.kz.is_cpu
     assert kdata_cpu.traj.ky.is_cpu
     assert kdata_cpu.traj.kx.is_cpu
-    assert kdata_cpu.header.acq_info.user_int.is_cpu
+    assert kdata_cpu.header.acq_info.user.int1.is_cpu
     assert kdata_cpu.device == torch.device('cpu')
     assert kdata_cpu.header.acq_info.device == torch.device('cpu')
 
@@ -451,21 +451,12 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader):
     n_k0 = 240
     n_k1 = 240
     n_k0_oversampled = 320
-    discard_pre = 10
-    discard_post = 20
 
     random_generator = RandomGenerator(seed=0)
-
-    # List of k1 indices in the shape
-    idx_k1 = repeat(torch.arange(n_k1, dtype=torch.int32), 'k1 -> other k2 k1', other=1, k2=1)
 
     # Set parameters need in remove_os
     monkeypatch.setattr(random_kheader.encoding_matrix, 'x', n_k0_oversampled)
     monkeypatch.setattr(random_kheader.recon_matrix, 'x', n_k0)
-    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + n_k0_oversampled // 2)
-    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + n_k0_oversampled)
-    monkeypatch.setattr(random_kheader.acq_info, 'discard_pre', torch.tensor(discard_pre, dtype=torch.int32))
-    monkeypatch.setattr(random_kheader.acq_info, 'discard_post', torch.tensor(discard_post, dtype=torch.int32))
 
     # Create kspace and image with oversampling
     phantom_os = EllipsePhantomTestData(n_y=n_k1, n_x=n_k0_oversampled)
@@ -514,7 +505,7 @@ def test_modify_acq_info(random_kheader_shape):
     )
 
     # Verify shape
-    assert kheader.acq_info.center_sample.shape == (n_other, n_k2, n_k1, 1)
+    assert kheader.acq_info.scan_counter.shape == (n_other, n_k2, n_k1, 1)
     assert kheader.acq_info.idx.k1.shape == (n_other, n_k2, n_k1)
     assert kheader.acq_info.orientation.shape == (n_other, n_k2, n_k1, 1)
     assert kheader.acq_info.position.z.shape == (n_other, n_k2, n_k1, 1)
@@ -555,7 +546,7 @@ def test_KData_compress_coils(ismrmrd_cart):
 )
 def test_KData_compress_coils_diff_batch_joint_dims(consistently_shaped_kdata, batch_dims, joint_dims):
     """Test that all of these options work and yield the same shape."""
-    n_compressed_coils = 4
+    n_compressed_coils = 2
     orig_kdata_shape = consistently_shaped_kdata.data.shape
     kdata = consistently_shaped_kdata.compress_coils(n_compressed_coils, batch_dims, joint_dims)
     assert kdata.data.shape == (*orig_kdata_shape[:-4], n_compressed_coils, *orig_kdata_shape[-3:])
