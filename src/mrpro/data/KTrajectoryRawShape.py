@@ -66,7 +66,7 @@ class KTrajectoryRawShape(MoveDataMixin):
         kz, ky, kx = (ks[axes_order.index(axis)] for axis in 'zyx')
 
         def normalize(k: torch.Tensor, encoding_size: int) -> torch.Tensor:
-            max_abs_range = 2 * k.max().abs()
+            max_abs_range = 2 * k.abs().max()
             if encoding_size == 1 or max_abs_range < 1e-6:
                 # a single encoding point should be at zero
                 # avoid division by zero
