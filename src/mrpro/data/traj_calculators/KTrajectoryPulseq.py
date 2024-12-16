@@ -52,6 +52,11 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         n_samples = torch.unique(n_samples)
         if len(n_samples) > 1:
             raise ValueError('We currently only support constant number of samples')
-        
+
         k_traj_reshaped = rearrange(k_traj_adc, 'xyz (other k0) -> xyz other k0', k0=int(n_samples.item()))
-        return KTrajectoryRawShape.from_tensor(k_traj_reshaped, axes_order="xyz", encoding_matrix=kheader.enoding_matrix, repeat_detection_tolerance=self.repeat_detection_tolerance)
+        return KTrajectoryRawShape.from_tensor(
+            k_traj_reshaped,
+            axes_order='xyz',
+            encoding_matrix=kheader.enoding_matrix,
+            repeat_detection_tolerance=self.repeat_detection_tolerance,
+        )
