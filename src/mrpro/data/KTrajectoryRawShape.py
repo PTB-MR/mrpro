@@ -1,15 +1,16 @@
 """KTrajectoryRawShape dataclass."""
 
 from dataclasses import dataclass
+from typing import Literal
 
 import numpy as np
 import torch
 from einops import rearrange
+from typing_extensions import Self
 
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
-from typing_extensions import Literal, Self
 
 
 @dataclass(slots=True, frozen=True)
