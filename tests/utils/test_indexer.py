@@ -4,7 +4,7 @@ from mrpro.utils.indexing import Indexer
 
 
 @pytest.mark.parametrize(
-    'shape, broadcast_shape, index, expected_shape',
+    ('shape', 'broadcast_shape', 'index', 'expected_shape'),
     [
         ((1, 6, 7), (5, 6, 7), (slice(None), torch.ones(4, 5).int(), slice(None)), (4, 5, 1, 1, 7)),  # array index
         ((1, 6, 7), (5, 6, 7), (slice(None), slice(None), slice(None)), (1, 6, 7)),  # nothing
@@ -16,7 +16,6 @@ from mrpro.utils.indexing import Indexer
         ((1, 6, 1), (5, 6, 7), (slice(None), [0, 2]), (1, 2, 1)),  # integer list
         ((1, 1, 1), (5, 6, 7), (torch.tensor([0, 2]), slice(None), slice(None)), (1, 1, 1)),  # array index broadcast
         ((5, 1, 1), (5, 6, 7), (torch.tensor([0, 2]), slice(None), (0, 2)), (2, 1, 1, 1)),  # two array indicces
-        ((1, 1, 1), (5, 6, 7), (torch.tensor([0, 2]), slice(None), slice(None)), (1, 1, 1)),  # array index broadcast
         ((5, 6, 7), (5, 6, 7), (slice(None), torch.tensor([1, 3]), slice(None)), (5, 2, 7)),
         ((5, 6, 7), (5, 6, 7), (slice(None), slice(None), torch.tensor([0, 5])), (5, 6, 2)),
         ((5, 6, 7), (5, 6, 7), (torch.tensor([True, False, True, False, True]), slice(None), slice(None)), (3, 6, 7)),

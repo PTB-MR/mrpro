@@ -1,5 +1,6 @@
+"""Indexer class for custom indexing with broadcasting."""
+
 from collections.abc import Sequence
-from re import S
 from typing import cast
 
 import torch
@@ -15,7 +16,7 @@ class Indexer:
     This class  is used to index tensors in a way that is consistent
     with the shape invariants of the data objects.
 
-    On creation, an index and a shape are requiered.
+    On creation, an index and a shape are required.
     When calling the Indexer with a tensor, the tensor is first broadcasted to the shape,
     then the index is applied to the tensor.
 
@@ -28,15 +29,16 @@ class Indexer:
 
     The index can contain slices, integers, boolean masks, sequences of integers, and integer tensors:
     - Indexing with a slice
-        Behaves like in numpy, always returns a view. Negative step sizes are not supported and will raise an IndexError.
+        Behaves like in numpy, always returns a view.
+        Negative step sizes are not supported and will raise an IndexError.
         slice(None), i.e. :, means selecting the whole axis.
     - Indexing with an integer
         If the index in bounds of the broadcasted shape, indexing behaves like slicing with index:index+1.
         Otherwise, an IndexError is raised.
         Always returns a view.
     - Indexing with a boolean mask
-        Singelton dimensions in the mask are interpreted as full slices. This matches broadcasting of the mask the respective
-        axes of the tensor.
+        Singleton dimensions in the mask are interpreted as full slices. This matches broadcasting of the mask to
+        the size of the respective axes of the tensor.
         If the mask has more than one non-singleton dimension, a new dimension is added at the beginning of the tensor,
         with length equal to the number of True values in the mask.
         At the indexed axes, singleton dimensions are kept.
@@ -53,7 +55,7 @@ class Indexer:
         New axes can be added to the front of tensor by using None in the index.
         This is only allowed at the beginning of the index.
     - Ellipsis
-        An indexing expression can contain a single ellipsis, which will be expaneded to slice(None)
+        An indexing expression can contain a single ellipsis, which will be expanded to slice(None)
         for all axes that are not indexed.
 
     Implementation details:
@@ -122,9 +124,9 @@ class Indexer:
                 expanded_index.extend([slice(None)] * (len(shape) - covered_axes))
             elif isinstance(idx_, torch.Tensor | int | slice | None):
                 expanded_index.append(idx_)
-            else:  # Sequence[int]
+            else:  # must be Sequence[int], checked above
                 # for consistency, we convert all non-tensor sequences of integers to tuples
-                expanded_index.append(cast(tuple[int, ...], tuple(idx_)))
+                expanded_index.append(tuple(cast(Sequence[int], idx_)))
 
         if not has_ellipsis:
             # if there is not ellipsis, we interpret the index as if it was followed by ellipsis
@@ -274,7 +276,7 @@ class Indexer:
             fancy_index = new_fancy_index
 
         elif vectorized_shape is not None and len(vectorized_shape) != 1:
-            # for a single nd vectorized index, torch would insert it at the same position
+            # for a single and vectorized index, torch would insert it at the same position
             # this would shift the other axes, potentially causing violations of the shape invariants.
             # thus, we move the inserted axis to the beginning of the tensor, after axes inserted by None
             move_source_start = next(i for i, idx in enumerate(fancy_index) if isinstance(idx, torch.Tensor))
@@ -335,7 +337,7 @@ class Indexer:
         tensor = tensor[fancy_index]
 
         if self.move_axes[0]:
-            # handle the special case of a single nd integer index, where we need to move the new
+            # handle the special case of a single and integer index, where we need to move the new
             # axis to the beginning of the tensor
             tensor = tensor.moveaxis(self.move_axes[0], self.move_axes[1])
 
