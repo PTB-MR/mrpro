@@ -70,7 +70,7 @@ class KTrajectoryRawShape(MoveDataMixin):
             if encoding_size == 1 or max_abs_range < 1e-6:
                 # a single encoding point should be at zero
                 # avoid division by zero
-                return k.new_zeros()
+                return torch.zeros_like(k)
             return k * (encoding_size / max_abs_range)
 
         if encoding_matrix is not None:
