@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import pypulseq as pp
 import torch
 from einops import rearrange
 
@@ -40,8 +39,10 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         -------
             trajectory of type KTrajectoryRawShape
         """
+        from pypulseq import Sequence
+
         # create PyPulseq Sequence object and read .seq file
-        seq = pp.Sequence()
+        seq = Sequence()
         seq.read(file_path=str(self.seq_path))
 
         # calculate k-space trajectory using PyPulseq
