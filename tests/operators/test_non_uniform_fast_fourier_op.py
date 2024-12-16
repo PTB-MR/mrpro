@@ -116,8 +116,8 @@ def test_non_uniform_fast_fourier_op_empty_dims():
 def test_non_uniform_fast_fourier_op_directions():
     """Test different direction specifiers of non-uniform fast Fourier operator."""
 
-    kdata_shape = (1, 3, 20, 30, 40)
-    img_shape = (2, 3, 20, 20, 30)
+    kdata_shape = (1, 3, 1, 30, 40)
+    img_shape = (2, 3, 1, 20, 30)
 
     # generate random traj and image
     nk = [2, 1, 30, 40]

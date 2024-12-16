@@ -135,6 +135,8 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             )
             self._nufft_type1 = lambda x: adj_nufft_op(x, omega, norm='ortho')
 
+            self._nufft_type1_gram = lambda x, traj: adj_nufft_op(x, traj, norm='ortho')
+
             # Cartesian -> non-Cartesian
             nufft_op = KbNufft(
                 im_size=im_size,
@@ -153,10 +155,14 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
                 d for d in [-3, -2, -1] if d not in self._nufft_dims and self._traj_broadcast_shape[d] == 1
             ]
             self._joint_dims_210.append(-4)  # -4 is always coil and always a joint dimension
-            # TODO self._traj_broadcast_shape[d] is wrong...
-            self._joint_dims_zyx = [
-                d for d in [-3, -2, -1] if d not in self._nufft_directions and self._traj_broadcast_shape[d] == 1
-            ]
+
+            traj_shape = torch.as_tensor([k.shape[-3:] for k in (traj.kz, traj.ky, traj.kx)])
+            self._joint_dims_zyx = []
+            for dzyx in [-3, -2, -1]:
+                if dzyx not in self._nufft_directions:
+                    dim210_non_singleton = [d210 for d210 in [-3, -2, -1] if traj_shape[dzyx, d210] > 1]
+                    if all(all(traj_shape[self._nufft_directions, d] == 1) for d in dim210_non_singleton):
+                        self._joint_dims_zyx.append(dzyx)
             self._joint_dims_zyx.append(-4)  # -4 is always coil and always a joint dimension
 
             self._im_size = im_size
