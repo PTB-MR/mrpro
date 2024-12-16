@@ -8,6 +8,8 @@ from einops import rearrange
 
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.SpatialDimension import SpatialDimension
+from typing_extensions import Literal, Self
 
 
 @dataclass(slots=True, frozen=True)
@@ -60,7 +62,7 @@ class KTrajectoryRawShape(MoveDataMixin):
             if an encoding matrix is supplied, the trajectory is rescaled to fit
             within the matrix. Otherwise, it is left as-is.
         """
-        kz, ky, kx = (tensor.narrow(stack_dim, start=ks[axes_order.index(axis)], length=1) for axis in 'zyx')
+        kz, ky, kx = (tensor.narrow(stack_dim, start=axes_order.index(axis), length=1) for axis in 'zyx')
 
         def normalize(k, encoding_size):
             max_abs_range = 2 * k.max().abs()
