@@ -99,7 +99,7 @@ class KTrajectory(MoveDataMixin):
             within the matrix. Otherwise, it is left as-is.
         """
         
-        kz, ky, kx = (tensor.narrow(stack_dim, start=ks[axes_order.index(axis), length=1) for axis in "zyx")
+        kz, ky, kx = (tensor.narrow(stack_dim, start=ks[axes_order.index(axis)], length=1) for axis in "zyx")
         
         def normalize(k, encoding_size):
             max_abs_range = 2 * k.max().abs()
