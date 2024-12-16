@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import torch
-from typing_extensions import Self
+from typing_extensions import Self, Literal
 
 from mrpro.data.enums import TrajType
 from mrpro.data.MoveDataMixin import MoveDataMixin
@@ -69,8 +69,10 @@ class KTrajectory(MoveDataMixin):
         cls,
         tensor: torch.Tensor,
         stack_dim: int = 0,
-        repeat_detection_tolerance: float | None = 1e-8,
+        axes_order: Literal["zxy", "zyx", "yxz", "yzx", "xyz", "xzy"] = "zyx"
+        repeat_detection_tolerance: float | None = 1e-6,
         grid_detection_tolerance: float = 1e-3,
+        encoding_matrix: SpatialDimension|None = None
     ) -> Self:
         """Create a KTrajectory from a tensor representation of the trajectory.
 
@@ -85,13 +87,33 @@ class KTrajectory(MoveDataMixin):
             This should be a 5-dim tensor, with (kz,ky,kx) stacked in this order along stack_dim
         stack_dim
             The dimension in the tensor the directions have been stacked along.
+        axes_order
+            Order of the axes in the tensor. Our convention usually is zyx order.
         repeat_detection_tolerance
             detects if broadcasting can be used, i.e. if dimensions are repeated.
             Set to None to disable.
         grid_detection_tolerance
             tolerance to detect if trajectory points are on integer grid positions
+        encoding_matrix
+            if an encoding matrix is supplied, the trajectory is rescaled to fit
+            within the matrix. Otherwise, it is left as-is.
         """
-        kz, ky, kx = torch.unbind(tensor, dim=stack_dim)
+        
+        kz, ky, kx = (tensor.narrow(stack_dim, start=ks[axes_order.index(axis), length=1) for axis in "zyx")
+        
+        def normalize(k, encoding_size):
+            max_abs_range = 2 * k.max().abs()
+            if encoding_size == 1 or max_abs_range < 1e-6:
+                # a single encoding point should be at zero
+                # avoid division by zero
+                return k.new_zeros()
+            return  k * (encoding_size / max_abs_range)
+
+        if encoding_matrix is not None:
+            kz = normalize(kz, encoding_matrix.z)
+            ky = normalize(ky, encoding_matrix.y)
+            kx = normalize(kx, encoding_matrix.x)
+
         return cls(
             kz,
             ky,
