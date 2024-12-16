@@ -56,7 +56,7 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         Parameters
         ----------
         k_radial
-            k-space positions along each phase encoding line, to be shifted
+            k-space positions along each phase encoding line, zo be shifted
         idx
             indices used for shift calculation
 

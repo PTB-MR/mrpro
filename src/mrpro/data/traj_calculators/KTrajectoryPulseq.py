@@ -42,7 +42,7 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         n_k0
             number of samples in k0
         encoding_matrix
-            encoding matrix
+            encoding matrix, describing the extend of the k-space coordinates
 
         Returns
         -------

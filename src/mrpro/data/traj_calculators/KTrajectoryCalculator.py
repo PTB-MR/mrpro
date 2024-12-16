@@ -37,20 +37,20 @@ class KTrajectoryCalculator(ABC):
         ----------
         n_k0
             number of samples in k0
-        k0_center
-            position of k-space center in k0
         k1_idx
             indices of k1
-        k1_center
-            position of k-space center in k1
         k2_idx
             indices of k2
+        k0_center
+            position of k-space center in k0
+        k1_center
+            position of k-space center in k1
         k2_center
             position of k-space center in k2
         reversed_readout_mask
-            boolean tensor indicating reversed readout
+            boolean tensor indicating reversed redout
         encoding_matrix
-            encoding matrix
+            encoding matrix, describing the extend of the k-space coordinates
 
 
 
