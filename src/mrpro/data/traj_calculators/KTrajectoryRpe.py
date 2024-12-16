@@ -38,7 +38,7 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         self.angle: float = angle
         self.shift_between_rpe_lines: torch.Tensor = torch.as_tensor(shift_between_rpe_lines)
 
-    def _apply_shifts_between_rpe_lines(self, k_radial: torch.Tensor, idx: torch.Tensor) -> torch.Tensor:
+    def _apply_shifts_between_rpe_lines(self, radial: torch.Tensor, idx: torch.Tensor) -> torch.Tensor:
         """Shift radial phase encoding lines relative to each other.
 
         Example: shift_between_rpe_lines = [0, 0.5, 0.25, 0.75] leads to a shift of the 0th line by 0,
@@ -55,30 +55,30 @@ class KTrajectoryRpe(KTrajectoryCalculator):
 
         Parameters
         ----------
-        k_radial
-            k-space positions along each phase encoding line, zo be shifted
+        radial
+            k-space positions along each phase encoding line, to be shifted
         idx
             indices used for shift calculation
 
         Returns
         -------
-        shifted radial k-space positions
+            shifted radial k-space positions
 
         References
         ----------
         .. [PRI2010] Prieto C, Schaeffter T (2010) 3D undersampled golden-radial phase encoding
         for DCE-MRA using inherently regularized iterative SENSE. MRM 64(2). https://doi.org/10.1002/mrm.22446
         """
-        k_radial, idx = torch.broadcast_tensors(k_radial, idx)
-        k_radial = k_radial.clone()
-        not_center = ~torch.isclose(k_radial, torch.tensor(0.0))
+        radial, idx = torch.broadcast_tensors(radial, idx)
+        radial = radial.clone()
+        not_center = ~torch.isclose(radial, torch.tensor(0.0))
         for ind, shift in enumerate(self.shift_between_rpe_lines):
             current_mask = (idx % len(self.shift_between_rpe_lines)) == ind
             # k-space center should not be shifted
             current_mask &= not_center
-            k_radial[current_mask] += shift
+            radial[current_mask] += shift
 
-        return k_radial
+        return radial
 
     def __call__(
         self,

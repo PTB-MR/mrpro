@@ -1,8 +1,8 @@
 """Acquisition information dataclass."""
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import overload
+from typing import Literal, TypeAlias, overload
 
 import ismrmrd
 import numpy as np
@@ -25,6 +25,25 @@ def rearrange_acq_info_fields(field: object, pattern: str, **axes_lengths: dict[
         return rearrange(field, pattern, **axes_lengths)
 
     return field
+
+
+_convert_time_stamp_type: TypeAlias = Callable[
+    [
+        torch.Tensor,
+        Literal[
+            'acquisition_time_stamp', 'physiology_time_stamp_1', 'physiology_time_stamp_2', 'physiology_time_stamp_3'
+        ],
+    ],
+    torch.Tensor,
+]
+
+
+def convert_time_stamp_siemens(
+    timestamp: torch.Tensor,
+    _: str,
+) -> torch.Tensor:
+    """Convert Siemens time stamp to seconds."""
+    return timestamp.double() * 2.5e-3
 
 
 @dataclass(slots=True)
@@ -122,7 +141,7 @@ class AcqInfo(MoveDataMixin):
     """Indices describing acquisitions (i.e. readouts)."""
 
     acquisition_time_stamp: torch.Tensor
-    """Clock time stamp. Not in s but in vendor-specific time units (e.g. 2.5ms for Siemens)"""
+    """Clock time stamp. Usually in seconds (Siemens: seconds since midnight)"""
 
     flags: torch.Tensor
     """A bit mask of common attributes applicable to individual acquisition readouts."""
@@ -154,18 +173,30 @@ class AcqInfo(MoveDataMixin):
     @overload
     @classmethod
     def from_ismrmrd_acquisitions(
-        cls, acquisitions: Sequence[ismrmrd.acquisition.Acquisition], *, additional_fields: None
+        cls,
+        acquisitions: Sequence[ismrmrd.acquisition.Acquisition],
+        *,
+        additional_fields: None,
+        convert_time_stamp: _convert_time_stamp_type = convert_time_stamp_siemens,
     ) -> Self: ...
 
     @overload
     @classmethod
     def from_ismrmrd_acquisitions(
-        cls, acquisitions: Sequence[ismrmrd.acquisition.Acquisition], *, additional_fields: Sequence[str]
+        cls,
+        acquisitions: Sequence[ismrmrd.acquisition.Acquisition],
+        *,
+        additional_fields: Sequence[str],
+        convert_time_stamp: _convert_time_stamp_type = convert_time_stamp_siemens,
     ) -> tuple[Self, tuple[torch.Tensor, ...]]: ...
 
     @classmethod
     def from_ismrmrd_acquisitions(
-        cls, acquisitions: Sequence[ismrmrd.acquisition.Acquisition], *, additional_fields: Sequence[str] | None = None
+        cls,
+        acquisitions: Sequence[ismrmrd.acquisition.Acquisition],
+        *,
+        additional_fields: Sequence[str] | None = None,
+        convert_time_stamp: _convert_time_stamp_type = convert_time_stamp_siemens,
     ) -> Self | tuple[Self, tuple[torch.Tensor, ...]]:
         """Read the header of a list of acquisition and store information.
 
@@ -174,8 +205,10 @@ class AcqInfo(MoveDataMixin):
         acquisitions
             list of ismrmrd acquisistions to read from. Needs at least one acquisition.
         additional_fields
-            if supplied, additional fields with these names will be from the ismrmrd acquisitions
-            and returned as tensors.
+            if supplied, additional information from fields with these names will be extracted from the
+            ismrmrd acquisitions and returned as tensors.
+        convert_time_stamp
+            function used to convert the raw time stamps to seconds.
         """
         # Idea: create array of structs, then a struct of arrays,
         # convert it into tensors to store in our dataclass.
@@ -204,7 +237,7 @@ class AcqInfo(MoveDataMixin):
                     data = data.astype(np.int32)
                 case np.uint32 | np.uint64:
                     data = data.astype(np.int64)
-            # Remove any uncessary dimensions
+            # Remove any unnecessary dimensions
             return torch.tensor(np.squeeze(data))
 
         def tensor_2d(data: np.ndarray) -> torch.Tensor:
@@ -263,13 +296,15 @@ class AcqInfo(MoveDataMixin):
             tensor_2d(headers['user_int'][:, 7]),
         )
         physiology_time_stamps = PhysiologyTimestamps(
-            tensor_2d(headers['physiology_time_stamp'][:, 0]).double(),
-            tensor_2d(headers['physiology_time_stamp'][:, 1]).double(),
-            tensor_2d(headers['physiology_time_stamp'][:, 2]).double(),
+            convert_time_stamp(tensor_2d(headers['physiology_time_stamp'][:, 0]), 'physiology_time_stamp_1'),
+            convert_time_stamp(tensor_2d(headers['physiology_time_stamp'][:, 1]), 'physiology_time_stamp_2'),
+            convert_time_stamp(tensor_2d(headers['physiology_time_stamp'][:, 2]), 'physiology_time_stamp_3'),
         )
         acq_info = cls(
             idx=acq_idx,
-            acquisition_time_stamp=tensor_2d(headers['acquisition_time_stamp']).double(),
+            acquisition_time_stamp=convert_time_stamp(
+                tensor_2d(headers['acquisition_time_stamp']), 'acquisition_time_stamp'
+            ),
             flags=tensor_2d(headers['flags']),
             measurement_uid=tensor_2d(headers['measurement_uid']),
             orientation=Rotation.from_directions(
