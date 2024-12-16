@@ -100,7 +100,8 @@ class KTrajectory(MoveDataMixin):
             if an encoding matrix is supplied, the trajectory is rescaled to fit
             within the matrix. Otherwise, it is left as-is.
         """
-        kz, ky, kx = (tensor.narrow(stack_dim, start=axes_order.index(axis), length=1) for axis in 'zyx')
+        ks = tensor.unbind(dim=stack_dim)
+        kz, ky, kx = (ks[axes_order.index(axis)] for axis in 'zyx')
 
         def normalize(k: torch.Tensor, encoding_size: int) -> torch.Tensor:
             max_abs_range = 2 * k.max().abs()
