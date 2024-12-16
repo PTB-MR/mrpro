@@ -153,6 +153,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: ./docs/source/_notebooks/
+          merge-multiple: true
 
       - name: Build docs
         run: |
