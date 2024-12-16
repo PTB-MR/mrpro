@@ -298,7 +298,7 @@ class Indexer:
         except RuntimeError:
             raise IndexError('Tensor cannot be broadcasted to the desired shape') from None
 
-        tensor = tensor[*self.normal_index]  # will always be a view
+        tensor = tensor[self.normal_index]  # will always be a view
 
         if not self.fancy_index:
             # nothing more to do
