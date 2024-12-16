@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 from typing_extensions import Self, Literal
-
+from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.enums import TrajType
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.utils import remove_repeat
