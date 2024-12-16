@@ -174,7 +174,7 @@ class AcqInfo(MoveDataMixin):
         acquisitions
             list of ismrmrd acquisistions to read from. Needs at least one acquisition.
         additional_fields
-            if supplied, additional fields with these names will be from the ismrmrd acquisitions
+            if supplied, additional information from the fields with these names will be extracted from the ismrmrd acquisitions
             and returned as tensors.
         """
         # Idea: create array of structs, then a struct of arrays,
