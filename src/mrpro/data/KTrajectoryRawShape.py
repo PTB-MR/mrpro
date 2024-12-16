@@ -42,7 +42,6 @@ class KTrajectoryRawShape(MoveDataMixin):
         stack_dim: int = 0,
         axes_order: Literal['zxy', 'zyx', 'yxz', 'yzx', 'xyz', 'xzy'] = 'zyx',
         repeat_detection_tolerance: float | None = 1e-6,
-        grid_detection_tolerance: float = 1e-3,
         encoding_matrix: SpatialDimension | None = None,
     ) -> Self:
         """Create a KTrajectoryRawShape from a tensor representation of the trajectory.
@@ -65,7 +64,7 @@ class KTrajectoryRawShape(MoveDataMixin):
         """
         kz, ky, kx = (tensor.narrow(stack_dim, start=axes_order.index(axis), length=1) for axis in 'zyx')
 
-        def normalize(k, encoding_size):
+        def normalize(k:torch.Tenso, encoding_size:int)->torch.Tensor:
             max_abs_range = 2 * k.max().abs()
             if encoding_size == 1 or max_abs_range < 1e-6:
                 # a single encoding point should be at zero
