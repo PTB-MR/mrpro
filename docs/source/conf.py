@@ -60,9 +60,10 @@ html_title = name
 html_show_sphinx = False
 html_static_path = ['_static']
 html_css_files = ['custom.css']
+html_logo = '_static/logo_transparent.png'
 html_sidebars = {'**': ['search-field', 'sidebar-nav-bs']}
 html_theme_options = {
-    'logo': {'text': name},
+    'logo_only': True,
     'pygment_light_style': 'default',
     'pygment_dark_style': 'github-dark',
     'show_toc_level': 3,

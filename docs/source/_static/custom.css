@@ -7,3 +7,8 @@ html {
 .wy-nav-content {
     max-width: 75% !important;
 }
+
+/* Color of the top left box */
+.wy-side-nav-search {
+    background-color: #aaaaaa !important;
+}
