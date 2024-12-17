@@ -1,0 +1,52 @@
+name: Report PyTest
+
+on:
+  workflow_run:
+    workflows:
+      - PyTest
+    types:
+      - completed
+
+permissions:
+  actions: read
+  issues: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  coverage_report:
+    name: Coverage report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: pytest-report
+
+      - name: Parse pytest_data.json
+        run: |
+          echo "pr-number=$(jq -r '.pr_number' docs_data.json)" >> $GITHUB_ENV
+          echo "event-name=$(jq -r '.event_name' docs_data.json)" >> $GITHUB_ENV
+          echo "ref=$(jq -r '.ref' docs_data.json)" >> $GITHUB_ENV
+
+      - name: Post PyTest Coverage Comment
+        id: coverageComment
+        uses: MishaKav/pytest-coverage-comment@v1.1.53
+        with:
+          issue-number: ${{ env.pr-number }}
+          pytest-coverage-path: pytest-coverage.txt
+          junitxml-path: pytest.xml
+
+      - name: Create Coverage Badge on Main Branch Push
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        if: ${{ env.event_name == 'push' }} && ${{ env.ref }} == 'refs/heads/main'
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: 48e334a10caf60e6708d7c712e56d241
+          filename: coverage.json
+          label: Coverage Report
+          message: ${{ steps.coverageComment.outputs.coverage }}
+          color: ${{ steps.coverageComment.outputs.color }}
+          namedLogo: python

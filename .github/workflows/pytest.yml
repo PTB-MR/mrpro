@@ -85,31 +85,42 @@ jobs:
             exit 1
           fi
 
-      - name: Post PyTest Coverage Comment
-        id: coverageComment
-        uses: MishaKav/pytest-coverage-comment@v1.1.53
-        with:
-          pytest-coverage-path: ./pytest-coverage.txt
-          junitxml-path: ./pytest.xml
+      - name: Read test failures and errors
+        run: |
+          python -c "
+          import os
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('pytest.xml')
+          root = tree.getroot()
+          testsuite = root.find('testsuite') if root.tag != 'testsuite' else root
+          failures = testsuite.attrib.get('failures', 0)
+          errors = testsuite.attrib.get('errors', 0)
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write(f'FAILURES={failures}\n')
+              f.write(f'ERRORS={errors}\n')
+          "
 
-      - name: Create Coverage Badge on Main Branch Push
-        uses: schneegans/dynamic-badges-action@v1.7.0
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Dump PR number, event_name and ref to pytest_data.json
+        run: |
+          echo '{"pr_number": "${{ github.event.number }}","event_name": "${{ github.event_name }}","ref": "${{ github.ref }}"}' > pytest_data.json
+
+      - name: Upload PyTest Coverage Report
+        uses: actions/upload-artifact@v4
         with:
-          auth: ${{ secrets.GIST_SECRET }}
-          gistID: 48e334a10caf60e6708d7c712e56d241
-          filename: coverage.json
-          label: Coverage Report
-          message: ${{ steps.coverageComment.outputs.coverage }}
-          color: ${{ steps.coverageComment.outputs.color }}
-          namedLogo: python
+          name: pytest-report
+          path: |
+            pytest-coverage.txt
+            pytest.xml
+            pytest_data.json
+          if-no-files-found: error
+          overwrite: true
 
       - name: Set Pipeline Status Based on Test Results
-        if: steps.coverageComment.outputs.errors != 0 || steps.coverageComment.outputs.failures != 0
+        if: ${{ env.ERRORS }} != 0 || ${{ env.FAILURES }} != 0
         uses: actions/github-script@v7
         with:
           script: |
-            core.setFailed("PyTest workflow failed with ${{ steps.coverageComment.outputs.errors }} errors and ${{ steps.coverageComment.outputs.failures }} failures.")
+            core.setFailed("PyTest workflow failed with ${{ env.ERRORS }} errors and ${{ env.FAILURES }} failures.")
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
