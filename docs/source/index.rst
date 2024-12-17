@@ -1,5 +1,10 @@
 .. MRpro documentation
 
+.. image:: _static/logo.svg
+   :align: center
+   :width: 400
+|
+
 Welcome to MRpro's documentation!
 =================================
 

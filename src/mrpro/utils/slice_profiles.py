@@ -8,6 +8,8 @@ import numpy as np
 import torch
 from torch import Tensor
 
+__all__ = ['SliceGaussian', 'SliceInterpolate', 'SliceProfileBase', 'SliceSmoothedRectangular']
+
 
 class SliceProfileBase(abc.ABC, torch.nn.Module):
     """Base class for slice profiles."""

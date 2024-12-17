@@ -5,4 +5,5 @@ lint.extend-ignore = [
     "T20",    #print
     "E402",   #module-import-not-at-top-of-file
     "S101",   #assert
+    "SIM115", #context manager for opening files
 ]

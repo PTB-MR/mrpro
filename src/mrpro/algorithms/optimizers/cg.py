@@ -81,13 +81,8 @@ def cg(
     if torch.vdot(residual.flatten(), residual.flatten()) == 0:
         return solution
 
-    # squared tolerance;
-    # (we will check ||residual||^2 < tolerance^2 instead of ||residual|| < tol
-    # to avoid the computation of the root for the norm)
-    tolerance_squared = tolerance**2
-
     # dummy value. new value will be set in loop before first usage
-    residual_norm_squared_previous = None
+    residual_norm_squared_previous: torch.Tensor | None = None
 
     for iteration in range(max_iterations):
         # calculate the square norm of the residual
@@ -95,18 +90,18 @@ def cg(
         residual_norm_squared = torch.vdot(residual_flat, residual_flat).real
 
         # check if the solution is already accurate enough
-        if tolerance != 0 and (residual_norm_squared < tolerance_squared):
+        if tolerance != 0 and (residual_norm_squared < tolerance**2):
             return solution
 
-        if iteration > 0:
+        if residual_norm_squared_previous is not None:  # not first iteration
             beta = residual_norm_squared / residual_norm_squared_previous
             conjugate_vector = residual + beta * conjugate_vector
 
         # update estimates of the solution and the residual
         (operator_conjugate_vector,) = operator(conjugate_vector)
         alpha = residual_norm_squared / (torch.vdot(conjugate_vector.flatten(), operator_conjugate_vector.flatten()))
-        solution += alpha * conjugate_vector
-        residual -= alpha * operator_conjugate_vector
+        solution = solution + alpha * conjugate_vector
+        residual = residual - alpha * operator_conjugate_vector
 
         residual_norm_squared_previous = residual_norm_squared
 

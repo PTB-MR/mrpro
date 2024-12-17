@@ -3,11 +3,11 @@
 import dataclasses
 from collections.abc import Callable
 from pathlib import Path
-from typing import Self
 
 import ismrmrd
 import torch
 from einops import repeat
+from typing_extensions import Self
 
 from mrpro.data.acq_filters import is_noise_acquisition
 from mrpro.data.MoveDataMixin import MoveDataMixin

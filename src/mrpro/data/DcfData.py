@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import dataclasses
 from functools import reduce
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING
 
 import torch
+from typing_extensions import Self
 
 from mrpro.algorithms.dcf.dcf_voronoi import dcf_1d, dcf_2d3d_voronoi
 from mrpro.data.KTrajectory import KTrajectory
@@ -55,7 +56,7 @@ class DcfData(MoveDataMixin):
 
         if ks_needing_voronoi:
             # Handle full dimensions needing voronoi
-            dcfs.append(smap(dcf_2d3d_voronoi, torch.stack(list(ks_needing_voronoi), -4), 4))
+            dcfs.append(smap(dcf_2d3d_voronoi, torch.stack(torch.broadcast_tensors(*ks_needing_voronoi), -4), 4))
 
         if dcfs:
             # Multiply all dcfs together

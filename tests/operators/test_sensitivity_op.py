@@ -5,8 +5,7 @@ import torch
 from mrpro.data import CsmData, QHeader, SpatialDimension
 from mrpro.operators import SensitivityOp
 
-from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test
+from tests import RandomGenerator, dotproduct_adjointness_test
 
 
 def test_sensitivity_op_adjointness():
@@ -90,7 +89,7 @@ def test_sensitivity_op_other_dim_compatibility_fail(n_other_csm, n_other_img):
     # Apply to n_other_img shape
     u = random_generator.complex64_tensor(size=(n_other_img, 1, *n_zyx))
     with pytest.raises(RuntimeError, match='The size of tensor'):
-        sensitivity_op.forward(u)
+        sensitivity_op(u)
 
     v = random_generator.complex64_tensor(size=(n_other_img, n_coils, *n_zyx))
     with pytest.raises(RuntimeError, match='The size of tensor'):
