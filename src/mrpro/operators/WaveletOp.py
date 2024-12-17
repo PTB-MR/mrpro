@@ -3,7 +3,6 @@
 from collections.abc import Sequence
 from typing import Literal
 
-import numpy as np
 import torch
 from ptwt.conv_transform import wavedec, waverec
 from ptwt.conv_transform_2 import wavedec2, waverec2
@@ -366,7 +365,7 @@ class WaveletOp(LinearOperator):
             3D: [aaa, aad_n, ada_n, add_n, ..., ..., aad_1, ada_1, add_1, ...]
         """
         coefficients = torch.split(
-            coefficients_stack, [int(np.prod(shape)) for shape in self.coefficients_shape], dim=-1
+            coefficients_stack, [int(torch.prod(torch.as_tensor(shape))) for shape in self.coefficients_shape], dim=-1
         )
         return [
             torch.reshape(coeff, (*coeff.shape[:-1], *shape))
