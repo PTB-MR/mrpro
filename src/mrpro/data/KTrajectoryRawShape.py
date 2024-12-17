@@ -42,7 +42,7 @@ class KTrajectoryRawShape(MoveDataMixin):
         stack_dim: int = 0,
         axes_order: Literal['zxy', 'zyx', 'yxz', 'yzx', 'xyz', 'xzy'] = 'zyx',
         repeat_detection_tolerance: float | None = 1e-6,
-        encoding_matrix: SpatialDimension | None = None,
+        scaling_matrix: SpatialDimension | None = None,
     ) -> Self:
         """Create a KTrajectoryRawShape from a tensor representation of the trajectory.
 
@@ -50,17 +50,18 @@ class KTrajectoryRawShape(MoveDataMixin):
         ----------
         tensor
             The tensor representation of the trajectory.
-            This should be a 5-dim tensor, with (kz,ky,kx) stacked in this order along stack_dim
+            This should be a 5-dim tensor, with (kz, ky, kx) stacked in this order along `stack_dim`.
         stack_dim
-            The dimension in the tensor the directions have been stacked along.
+            The dimension in the tensor along which the directions are stacked.
         axes_order
-            Order of the axes in the tensor. Our convention usually is zyx order.
+            The order of the axes in the tensor. The MRpro convention is 'zyx'.
         repeat_detection_tolerance
-            detects if broadcasting can be used, i.e. if dimensions are repeated.
-            Set to None to disable.
-        encoding_matrix
-            if an encoding matrix is supplied, the trajectory is rescaled to fit
-            within the matrix. Otherwise, it is left as-is.
+            Tolerance for detecting repeated dimensions (broadcasting).
+            If trajectory points differ by less than this value, they are considered identical.
+            Set to None to disable this feature.
+        scaling_matrix
+            If a scaling matrix is provided, the trajectory is rescaled to fit within
+            the dimensions of the matrix. If not provided, the trajectory remains unchanged.
         """
         ks = tensor.unbind(dim=stack_dim)
         kz, ky, kx = (ks[axes_order.index(axis)] for axis in 'zyx')
@@ -73,17 +74,12 @@ class KTrajectoryRawShape(MoveDataMixin):
                 return torch.zeros_like(k)
             return k * (encoding_size / max_abs_range)
 
-        if encoding_matrix is not None:
-            kz = normalize(kz, encoding_matrix.z)
-            ky = normalize(ky, encoding_matrix.y)
-            kx = normalize(kx, encoding_matrix.x)
+        if scaling_matrix is not None:
+            kz = normalize(kz, scaling_matrix.z)
+            ky = normalize(ky, scaling_matrix.y)
+            kx = normalize(kx, scaling_matrix.x)
 
-        return cls(
-            kz,
-            ky,
-            kx,
-            repeat_detection_tolerance=repeat_detection_tolerance,
-        )
+        return cls(kz, ky, kx, repeat_detection_tolerance=repeat_detection_tolerance)
 
     def sort_and_reshape(
         self,

@@ -58,6 +58,6 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         return KTrajectoryRawShape.from_tensor(
             k_traj_reshaped,
             axes_order='xyz',
-            encoding_matrix=kheader.encoding_matrix,
+            scaling_matrix=kheader.encoding_matrix,
             repeat_detection_tolerance=self.repeat_detection_tolerance,
         )

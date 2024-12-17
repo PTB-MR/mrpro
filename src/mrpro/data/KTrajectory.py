@@ -74,33 +74,30 @@ class KTrajectory(MoveDataMixin):
         axes_order: Literal['zxy', 'zyx', 'yxz', 'yzx', 'xyz', 'xzy'] = 'zyx',
         repeat_detection_tolerance: float | None = 1e-6,
         grid_detection_tolerance: float = 1e-3,
-        encoding_matrix: SpatialDimension | None = None,
+        scaling_matrix: SpatialDimension | None = None,
     ) -> Self:
         """Create a KTrajectory from a tensor representation of the trajectory.
 
-        Reduces repeated dimensions to singletons if repeat_detection_tolerance
-        is not set to None.
-
+        Reduces repeated dimensions to singletons if repeat_detection_tolerance is not set to None.
 
         Parameters
         ----------
         tensor
             The tensor representation of the trajectory.
-            This should be a 5-dim tensor, with (kz,ky,kx) stacked in this order along stack_dim
+            This should be a 5-dim tensor, with (kz, ky, kx) stacked in this order along `stack_dim`.
         stack_dim
-            The dimension in the tensor the directions have been stacked along.
+            The dimension in the tensor along which the directions are stacked.
         axes_order
-            Order of the axes in the tensor. Our convention usually is zyx order.
+            The order of the axes in the tensor. The MRpro convention is 'zyx'.
         repeat_detection_tolerance
             Tolerance for detecting repeated dimensions (broadcasting).
-            If trajectory points differ by less than this value, they are considered
-            identical. Set to None to disable this feature.
+            If trajectory points differ by less than this value, they are considered identical.
+            Set to None to disable this feature.
         grid_detection_tolerance
-            Tolerance for detecting whether trajectory points align with integer 
-            grid positions. This tolerance is applied after rescaling if 
-            `scaling_matrix` is provided.
+            Tolerance for detecting whether trajectory points align with integer grid positions.
+            This tolerance is applied after rescaling if `scaling_matrix` is provided.
         scaling_matrix
-            If a scaling matrix is provided, the trajectory is rescaled to fit within 
+            If a scaling matrix is provided, the trajectory is rescaled to fit within
             the dimensions of the matrix. If not provided, the trajectory remains unchanged.
 
         """
