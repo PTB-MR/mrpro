@@ -49,3 +49,26 @@ def test_autodiff_aturation_recovery():
     model = SaturationRecovery(ti=10)
     m0, t1 = create_parameter_tensor_tuples((2, 5, 10, 10, 10), number_of_tensors=2)
     autodiff_test(model, m0, t1)
+
+
+@pytest.mark.cuda
+def test_saturation_recovery_cuda():
+    """Test the saturation recovery model works on cuda devices."""
+    m0, t1 = create_parameter_tensor_tuples(parameter_shape=(2, 5, 10, 10, 10), number_of_tensors=2)
+
+    # Create on CPU, transfer to GPU and run on GPU
+    model = SaturationRecovery(ti=10)
+    model.cuda()
+    (signal,) = model(m0.cuda(), t1.cuda())
+    assert signal.is_cuda
+
+    # Create on GPU and run on GPU
+    model = SaturationRecovery(ti=torch.as_tensor(10).cuda())
+    (signal,) = model(m0.cuda(), t1.cuda())
+    assert signal.is_cuda
+
+    # Create on GPU, transfer to CPU and run on CPU
+    model = SaturationRecovery(ti=torch.as_tensor(10).cuda())
+    model.cpu()
+    (signal,) = model(m0, t1)
+    assert signal.is_cpu
