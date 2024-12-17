@@ -66,18 +66,18 @@ class KTrajectoryRawShape(MoveDataMixin):
         ks = tensor.unbind(dim=stack_dim)
         kz, ky, kx = (ks[axes_order.index(axis)] for axis in 'zyx')
 
-        def normalize(k: torch.Tensor, encoding_size: int) -> torch.Tensor:
+        def rescale(k: torch.Tensor, size: float) -> torch.Tensor:
             max_abs_range = 2 * k.abs().max()
-            if encoding_size == 1 or max_abs_range < 1e-6:
+            if size < 2 or max_abs_range < 1e-6:
                 # a single encoding point should be at zero
                 # avoid division by zero
                 return torch.zeros_like(k)
-            return k * (encoding_size / max_abs_range)
+            return k * (size / max_abs_range)
 
         if scaling_matrix is not None:
-            kz = normalize(kz, scaling_matrix.z)
-            ky = normalize(ky, scaling_matrix.y)
-            kx = normalize(kx, scaling_matrix.x)
+            kz = rescale(kz, scaling_matrix.z)
+            ky = rescale(ky, scaling_matrix.y)
+            kx = rescale(kx, scaling_matrix.x)
 
         return cls(kz, ky, kx, repeat_detection_tolerance=repeat_detection_tolerance)
 
