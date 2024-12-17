@@ -116,7 +116,7 @@ jobs:
           overwrite: true
 
       - name: Set Pipeline Status Based on Test Results
-        if: ${{ env.ERRORS }} != 0 || ${{ env.FAILURES }} != 0
+        if: ${{ env.ERRORS != 0 || env.FAILURES != 0 }}
         uses: actions/github-script@v7
         with:
           script: |
