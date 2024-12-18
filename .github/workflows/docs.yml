@@ -113,13 +113,18 @@ jobs:
           notebook_name=$(basename $notebook)
           # and the for the myst only the basename for path: reference need to be taken
           download_badge_md="[![Download notebook](https://img.shields.io/badge/jupyter-notebook-blue?logo=jupyter)](path:$notebook_name)"
-          python_command="import nbformat as nbf;\
-          nb = nbf.read(open('$notebook'), as_version=4);\
-          # if there is no markdown cell at the beginning with the colab label - create an empty markdown cell\
-          nb['cells'].insert(0, nbf.v4.new_markdown_cell(' ')) if 'colab' not in nb['cells'][0]['source'].lower() else None;\
-          nb['cells'][0]['source'] += '$download_badge_md';\
+          python_command="import nbformat as nbf\n\
+          nb = nbf.read(open('$notebook'), as_version=4)\n\
+          # if there there is no cell with colab badge - create an empty md cell\n\
+          if 'colab' not in nb['cells'][0]['source'].lower():\n\
+              nb['cells'].insert(0, nbf.v4.new_markdown_cell())\n\
+          # if there is a colab badge - add a space\n\
+          else:\n\
+              nb['cells'][0]['source'] += ' '\n\
+          nb['cells'][0]['source'] += '$download_badge_md'\n\
           nbf.write(nb, open('$notebook', 'w'))"
-          python -c "$python_command"
+
+          python -c "exec (\"$python_command\")"
 
       - name: Run notebook
         uses: fzimmermann89/run-notebook@v3
