@@ -16,7 +16,7 @@ from tests import RandomGenerator, dotproduct_adjointness_test
     ],
     ids=['swap_axes', 'flatten', 'unflatten'],
 )
-def test_einsum_op(input_shape, rule, output_shape, additional_info, dtype):
+def test_rearrange_op_adjointness(input_shape, rule, output_shape, additional_info, dtype):
     """Test adjointness and shape."""
     generator = RandomGenerator(seed=0)
     generate_tensor = getattr(generator, f'{dtype}_tensor')
@@ -26,7 +26,7 @@ def test_einsum_op(input_shape, rule, output_shape, additional_info, dtype):
     dotproduct_adjointness_test(operator, u, v)
 
 
-def test_einsum_op_invalid():
+def test_rearrange_op_invalid():
     """Test with invalid rule."""
     with pytest.raises(ValueError, match='pattern should match'):
         RearrangeOp('missing arrow')
