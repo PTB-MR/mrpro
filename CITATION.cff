@@ -13,21 +13,33 @@ authors:
       given-names: Patrick
       orcid: 0000-0002-3179-4830
     - affiliation: Physikalisch-Technische Bundesanstalt
-      family-names: Kofler
-      given-names: Andreas
-      orcid: 0000-0002-7416-4433
+      family-names: Brahma
+      given-names: Sherine
+      orcid: 0000-0003-4340-6513
     - affiliation: Physikalisch-Technische Bundesanstalt
       family-names: Guastini
       given-names: Mara
     - affiliation: Physikalisch-Technische Bundesanstalt
-      family-names: Johannes Hammacher
+      family-names: Hammacher
+      given-names: Johannes
     - affiliation: Physikalisch-Technische Bundesanstalt
-      family-names: Martin
-      given-names: Stefan
+      family-names: Kofler
+      given-names: Andreas
+      orcid: 0000-0002-7416-4433
+    - affiliation: Physikalisch-Technische Bundesanstalt
+      family-names: Kranich Redshaw
+      given-names: Catarina
     - affiliation: Physikalisch-Technische Bundesanstalt
       family-names: Lunin
       given-names: Leonid
       orcid: 0000-0001-6469-5532
+    - affiliation: Physikalisch-Technische Bundesanstalt
+      family-names: Martin
+      given-names: Stefan
+    - affiliation: Physikalisch-Technische Bundesanstalt
+      family-names: Schote
+      given-names: David
+      orcid: 0000-0003-3468-0676
     - affiliation: Physikalisch-Technische Bundesanstalt
       family-names: Kolbitsch
       given-names: Christoph
