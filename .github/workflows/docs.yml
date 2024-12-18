@@ -106,7 +106,7 @@ jobs:
         run: |
           echo "current jupyter-notebook: ${{ matrix.notebook }}"
 
-      - name: Add mb-nyst download badge
+      - name: Add nb-myst download badge
         run: |
           notebook=${{ matrix.notebook }}
           notebook_name=$(basename $notebook)
