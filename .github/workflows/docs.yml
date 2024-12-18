@@ -108,19 +108,17 @@ jobs:
 
       - name: Add mb-nyst download badge
         run: |
-          # get name of the notebook
           notebook=${{ matrix.notebook }}
           notebook_name=$(basename $notebook)
-          # and the for the myst only the basename for path: reference need to be taken
           download_badge_md="[![Download notebook](https://img.shields.io/badge/Download-notebook-blue?logo=jupyter)](path:$notebook_name)"
           python_command="import nbformat as nbf\n\
           nb = nbf.read(open('$notebook'), as_version=4)\n\
-          # if there there is no cell with colab badge - create an empty md cell\n\
-          if 'colab' not in nb['cells'][0]['source'].lower():\n\
-              nb['cells'].insert(0, nbf.v4.new_markdown_cell())\n\
-          # if there is a colab badge - add a space\n\
-          else:\n\
+          # if the 1st cell is md and has colab text => add space after\n\
+          if nb['cells'][0]['cell_type'] == 'markdown' and 'colab' in nb['cells'][0]['source'].lower():\n\
               nb['cells'][0]['source'] += ' '\n\
+          # if there is no md cell with colab => create empty md cell on top\n\
+          else:\n\
+              nb['cells'].insert(0, nbf.v4.new_markdown_cell())\n\
           nb['cells'][0]['source'] += '$download_badge_md'\n\
           nbf.write(nb, open('$notebook', 'w'))"
 
