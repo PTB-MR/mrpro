@@ -192,7 +192,7 @@ def random_acq_info(random_acquisition):
     return acq_info
 
 
-@pytest.fixture(params=({'seed': 0, 'n_other': 10, 'n_k2': 40, 'n_k1': 20},))
+@pytest.fixture(params=({'seed': 0, 'n_other': 4, 'n_k2': 12, 'n_k1': 12},))
 def random_kheader_shape(request, random_acquisition, random_full_ismrmrd_header):
     """Random (not necessarily valid) KHeader with defined shape."""
     # Get dimensions
@@ -256,6 +256,20 @@ def ismrmrd_cart(ellipse_phantom, tmp_path_factory):
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
     ismrmrd_kdata = IsmrmrdRawTestData(
         filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        phantom=ellipse_phantom.phantom,
+    )
+    return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_high_res(ellipse_phantom, tmp_path_factory):
+    """Fully sampled cartesian data set."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart_high_res.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        matrix_size=256,
         noise_level=0.0,
         repetitions=3,
         phantom=ellipse_phantom.phantom,
