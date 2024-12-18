@@ -24,13 +24,13 @@ class KTrajectoryRawShape(MoveDataMixin):
     """
 
     kz: torch.Tensor
-    """(other,k2,k1,k0), phase encoding direction k2 if Cartesian."""
+    """(...other,k2,k1,k0), phase encoding direction k2 if Cartesian."""
 
     ky: torch.Tensor
-    """(other,k2,k1,k0), phase encoding direction k1 if Cartesian."""
+    """(...other,k2,k1,k0), phase encoding direction k1 if Cartesian."""
 
     kx: torch.Tensor
-    """(other,k2,k1,k0), frequency encoding direction k0 if Cartesian."""
+    """(...other,k2,k1,k0), frequency encoding direction k0 if Cartesian."""
 
     repeat_detection_tolerance: None | float = 1e-3
     """tolerance for repeat detection. Set to None to disable."""
