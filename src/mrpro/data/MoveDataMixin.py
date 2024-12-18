@@ -121,7 +121,7 @@ class MoveDataMixin:
         ) -> parsedType:
             return device, dtype, non_blocking, copy, memory_format
 
-        if args and isinstance(args[0], torch.Tensor) or 'tensor' in kwargs:
+        if (args and isinstance(args[0], torch.Tensor)) or 'tensor' in kwargs:
             # overload 3 ("tensor" specifies the dtype and device)
             device, dtype, non_blocking, copy, memory_format = parse3(*args, **kwargs)
         elif args and isinstance(args[0], torch.dtype):
@@ -237,6 +237,24 @@ class MoveDataMixin:
 
         # manual recursion allows us to do the copy only once
         new.apply_(_convert, memo=memo, recurse=False)
+        return new
+
+    def apply(
+        self: Self,
+        function: Callable[[Any], Any] | None = None,
+        *,
+        recurse: bool = True,
+    ) -> Self:
+        """Apply a function to all children. Returns a new object.
+
+        Parameters
+        ----------
+        function
+            The function to apply to all fields. None is interpreted as a no-op.
+        recurse
+            If True, the function will be applied to all children that are MoveDataMixin instances.
+        """
+        new = self.clone().apply_(function, recurse=recurse)
         return new
 
     def apply_(

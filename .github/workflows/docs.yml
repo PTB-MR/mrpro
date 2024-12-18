@@ -23,9 +23,7 @@ jobs:
 
       - id: set-matrix
         run: |
-          notebooks_paths=$(find examples/notebooks -type f -name '*.ipynb' | jq -R -s -c 'split("\n")[:-1]')
-          echo "notebook paths: $notebook_paths"
-          echo "notebook_paths=$notebooks_paths" >> $GITHUB_OUTPUT
+          echo "notebooks=$(find examples/notebooks -type f -name '*.ipynb' | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
       - name: Notebook overview
         run: |
@@ -63,14 +61,14 @@ jobs:
         env:
           RUNNER: ${{ toJson(runner) }}
         with:
-          notebook: ${{ matrix.notebook_path }}
+          notebook: ${{ matrix.notebook }}
 
       - name: Get artifact names
         id: artifact_names
         run: |
-          notebook_name=$(basename ${{ matrix.notebook_path }})
-          echo "ARTIFACT_NAME=${notebook_name/.ipynb/}" >> $GITHUB_OUTPUT
-          echo "IPYNB_EXECUTED=$notebook_name" >> $GITHUB_OUTPUT
+          notebook=${{ matrix.notebook }}
+          echo "ARTIFACT_NAME=$(basename ${notebook/.ipynb})" >> $GITHUB_OUTPUT
+          echo "IPYNB_EXECUTED=$(basename $notebook)" >> $GITHUB_OUTPUT
 
       - name: Upload notebook
         uses: actions/upload-artifact@v4
@@ -103,6 +101,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: ./docs/source/_notebooks/
+          merge-multiple: true
 
       - name: Build docs
         run: |
