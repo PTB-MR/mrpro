@@ -7,16 +7,15 @@ on:
     types:
       - completed
 
-permissions:
-  actions: read
-  issues: write
-  contents: write
-  pull-requests: write
-
 jobs:
   coverage_report:
     name: Coverage report
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      issues: write
+      contents: write
+      pull-requests: write
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -32,7 +31,7 @@ jobs:
           echo "ref=$(jq -r '.ref' docs_data.json)" >> $GITHUB_ENV
 
       - name: Post PyTest Coverage Comment
-        id: coverageComment
+        id: coverage_comment
         uses: MishaKav/pytest-coverage-comment@v1.1.53
         with:
           issue-number: ${{ env.pr-number }}
@@ -47,6 +46,6 @@ jobs:
           gistID: 48e334a10caf60e6708d7c712e56d241
           filename: coverage.json
           label: Coverage Report
-          message: ${{ steps.coverageComment.outputs.coverage }}
-          color: ${{ steps.coverageComment.outputs.color }}
+          message: ${{ steps.coverage_comment.outputs.coverage }}
+          color: ${{ steps.coverage_comment.outputs.color }}
           namedLogo: python

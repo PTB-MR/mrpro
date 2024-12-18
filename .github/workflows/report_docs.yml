@@ -7,22 +7,20 @@ on:
     types:
       - completed
 
-permissions:
-  actions: read
-  issues: write
-  contents: write
-  pull-requests: write
-
 jobs:
   docs_report:
     name: Docs report
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+      pull-requests: write
     outputs:
-      artifact-url: ${{ steps.docs.outputs.artifact-url }}
-      pr-number: ${{ steps.docs.outputs.pr-number }}
-      event-number: ${{ steps.docs.outputs.event-number }}
-      event-name: ${{ steps.docs.outputs.event-name }}
-      ref: ${{ steps.docs.outputs.ref }}
+      artifact-url: ${{ steps.docs_data.outputs.artifact-url }}
+      pr-number: ${{ steps.docs_data.outputs.pr-number }}
+      event-number: ${{ steps.docs_data.outputs.event-number }}
+      event-name: ${{ steps.docs_data.outputs.event-name }}
+      ref: ${{ steps.docs_data.outputs.ref }}
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -70,6 +68,7 @@ jobs:
     # maybe should be test that the parent workflow was successful...
     if: needs.docs_report.outputs.event-name == 'push' && needs.docs_report.outputs.ref == 'refs/heads/main'
     permissions:
+        actions: read
         pages: write
         id-token: write
     environment:
