@@ -47,7 +47,7 @@ SHAPE_VARIATIONS_SIGNAL_MODELS = pytest.mark.parametrize(
 
 
 def create_parameter_tensor_tuples(
-    parameter_shape=(10, 5, 100, 100, 100), number_of_tensors=2
+    parameter_shape=(10, 5, 12, 14, 16), number_of_tensors=2
 ) -> tuple[torch.Tensor, ...]:
     """Create tuples of tensors as input to operators."""
     random_generator = RandomGenerator(seed=0)

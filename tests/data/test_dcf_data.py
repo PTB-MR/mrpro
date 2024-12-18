@@ -53,11 +53,9 @@ def test_dcf_spiral_traj_voronoi(n_kr, n_ki, n_ka):
 def test_dcf_spiral_traj_voronoi_singlespiral():
     """For three z-stacked spirals in the x,y plane, the center spiral should
     be the same as a single 2D spiral.
-
-    Issue #84
     """
-    n_kr = 100  # points along each spiral ar
-    n_ki = 5  # turns per spiral arm spirals nka spiral arms
+    n_kr = 30  # points along each spiral arm
+    n_ki = 5  # turns per spiral arm
     trajectory_single = example_traj_spiral_2d(n_kr, n_ki, 1)
 
     # A new trajectroy with three spirals stacked in z direction.
