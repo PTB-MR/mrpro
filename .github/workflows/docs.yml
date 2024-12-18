@@ -160,7 +160,7 @@ jobs:
           sphinx-build -b html ./docs/source ./docs/build/html
           rm -rf ./docs/build/html/.doctrees
 
-      - name: Save Documentation
+      - name: Upload documentation artifact
         id: save_docu
         uses: actions/upload-artifact@v4
         with:
@@ -173,40 +173,20 @@ jobs:
 
       - run: echo 'Event name ${{github.event_name}}'
 
-      - name: Update PR with link to summary
-        if: github.event_name == 'pull_request'
-        uses: edumserrano/find-create-or-update-comment@v3
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body-includes: '<!-- documentation build ${{ github.event.number }} -->'
-          comment-author: 'github-actions[bot]'
-          body: |
-            <!-- documentation build ${{ github.event.number }} -->
-            ### :books: Documentation
-            :file_folder: [Download as zip](${{ steps.save_docu.outputs.artifact-url }})
-            :mag: [View online](https://zimf.de/zipserve/${{ steps.save_docu.outputs.artifact-url }}/)
-          edit-mode: replace
+      - name: Dump documentation info
+        run: |
+          echo '{"pr_number": "${{ github.event.pull_request.number }}",' > docs_data.json
+          echo '"event_number": "${{ github.event.number }}",' >> docs_data.json
+          echo '"event_name": "${{ github.event_name }}",' >> docs_data.json
+          echo '"ref": "${{ github.ref }}",' >> docs_data.json
+          echo '"artifact_url": "${{ steps.save_docu.outputs.artifact-url }}"}' >> docs_data.json
 
-      - name: Upload pages
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload docs-data artifact
+        uses: actions/upload-artifact@v4
         with:
-          path: docs/build/html/
-        if: github.event_name != 'pull_request'
-
-  deploy:
-    if: github.ref == 'refs/heads/main'
-    permissions:
-        pages: write
-        id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: create_documentation
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          name: docs-data
+          path: docs_data.json
+          if-no-files-found: error
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
