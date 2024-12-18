@@ -112,7 +112,7 @@ jobs:
           notebook=${{ matrix.notebook }}
           notebook_name=$(basename $notebook)
           # and the for the myst only the basename for path: reference need to be taken
-          download_badge_md="[![Download notebook](https://img.shields.io/badge/jupyter-notebook-blue?logo=jupyter)](path:$notebook_name)"
+          download_badge_md="[![Download notebook](https://img.shields.io/badge/Download-notebook-blue?logo=jupyter)](path:$notebook_name)"
           python_command="import nbformat as nbf\n\
           nb = nbf.read(open('$notebook'), as_version=4)\n\
           # if there there is no cell with colab badge - create an empty md cell\n\
