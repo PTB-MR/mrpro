@@ -69,6 +69,8 @@ repos:
        name: convert .py to .ipynb
        args:
          - --update
+         - --pipe
+         - "python examples/add_badge_in_pipe.py {}"
          - --to
          - "../notebooks//ipynb"
          - --update-metadata
@@ -76,6 +78,7 @@ repos:
          - examples/scripts/*.py
        always_run: true
        pass_filenames: false
+
 ci:
   autofix_commit_msg: |
     [pre-commit] auto fixes from pre-commit hooks
