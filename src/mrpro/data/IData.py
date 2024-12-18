@@ -76,7 +76,7 @@ class IData(Data):
         Parameters
         ----------
         data
-            torch.Tensor containing image data with dimensions (broadcastable to) (other, coils, z, y, x).
+            torch.Tensor containing image data with dimensions (broadcastable to) (...other, coils, z, y, x).
         kheader
             MR raw data header (KHeader) containing required meta data for the image header (IHeader).
         """

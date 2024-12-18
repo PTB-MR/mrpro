@@ -66,6 +66,7 @@ def test_IData_from_dcm_files(dcm_multi_echo_times_multi_folders):
 def test_IData_from_kheader_and_tensor(random_kheader, random_test_data):
     """IData from KHeader and data tensor."""
     idata = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
+    assert idata.data.shape == random_test_data.shape
     assert idata.header.te == random_kheader.te
 
 
