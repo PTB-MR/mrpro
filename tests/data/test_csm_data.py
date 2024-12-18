@@ -33,11 +33,28 @@ def test_CsmData_smoothing_width(csm_method, ellipse_phantom, random_kheader):
     assert torch.equal(csm_using_spatial_dimension.data, csm_using_int.data)
 
 
+@pytest.mark.parametrize('csm_method', [CsmData.from_idata_walsh, CsmData.from_idata_inati])
+def test_CsmData_cpu(csm_method, ellipse_phantom, random_kheader):
+    """CsmData obtained on CPU."""
+    idata, csm_ref = multi_coil_image(
+        n_coils=4, ph_ellipse=ellipse_phantom, random_kheader=random_kheader, n_other=(2, 1)
+    )
+
+    # Estimate coil sensitivity maps
+    smoothing_width = SpatialDimension(z=1, y=5, x=5)
+    csm = csm_method(idata, smoothing_width)
+
+    # Phase is only relative in csm calculation, therefore only the abs values are compared.
+    assert relative_image_difference(torch.abs(csm.data), torch.abs(csm_ref)) <= 0.01
+
+
 @pytest.mark.cuda
 @pytest.mark.parametrize('csm_method', [CsmData.from_idata_walsh, CsmData.from_idata_inati])
 def test_CsmData_cuda(csm_method, ellipse_phantom, random_kheader):
     """CsmData obtained on GPU in CUDA memory."""
-    idata, csm_ref = multi_coil_image(n_coils=4, ph_ellipse=ellipse_phantom, random_kheader=random_kheader)
+    idata, csm_ref = multi_coil_image(
+        n_coils=4, ph_ellipse=ellipse_phantom, random_kheader=random_kheader, n_other=(2, 1)
+    )
 
     # Estimate coil sensitivity maps
     smoothing_width = SpatialDimension(z=1, y=5, x=5)
