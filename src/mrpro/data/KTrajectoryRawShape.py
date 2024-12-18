@@ -24,13 +24,13 @@ class KTrajectoryRawShape(MoveDataMixin):
     """
 
     kz: torch.Tensor
-    """(other,k2,k1,k0), phase encoding direction k2 if Cartesian."""
+    """(...other,k2,k1,k0), phase encoding direction k2 if Cartesian."""
 
     ky: torch.Tensor
-    """(other,k2,k1,k0), phase encoding direction k1 if Cartesian."""
+    """(...other,k2,k1,k0), phase encoding direction k1 if Cartesian."""
 
     kx: torch.Tensor
-    """(other,k2,k1,k0), frequency encoding direction k0 if Cartesian."""
+    """(...other,k2,k1,k0), frequency encoding direction k0 if Cartesian."""
 
     repeat_detection_tolerance: None | float = 1e-3
     """tolerance for repeat detection. Set to None to disable."""
@@ -105,8 +105,8 @@ class KTrajectoryRawShape(MoveDataMixin):
             KTrajectory with kx, ky and kz each in the shape (other k2 k1 k0).
         """
         # Resort and reshape
-        kz = rearrange(self.kz[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=n_k1, k2=n_k2)
-        ky = rearrange(self.ky[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=n_k1, k2=n_k2)
-        kx = rearrange(self.kx[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=n_k1, k2=n_k2)
+        kz = rearrange(self.kz[sort_idx, ...], '... (other k2 k1) k0 -> ... other k2 k1 k0', k1=n_k1, k2=n_k2)
+        ky = rearrange(self.ky[sort_idx, ...], '... (other k2 k1) k0 -> ... other k2 k1 k0', k1=n_k1, k2=n_k2)
+        kx = rearrange(self.kx[sort_idx, ...], '... (other k2 k1) k0 -> ... other k2 k1 k0', k1=n_k1, k2=n_k2)
 
         return KTrajectory(kz, ky, kx, repeat_detection_tolerance=self.repeat_detection_tolerance)

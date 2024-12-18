@@ -76,7 +76,7 @@ class IData(Data):
         Parameters
         ----------
         data
-            torch.Tensor containing image data with dimensions (broadcastable to) (other, coils, z, y, x).
+            torch.Tensor containing image data with dimensions (broadcastable to) (...other, coils, z, y, x).
         kheader
             MR raw data header (KHeader) containing required meta data for the image header (IHeader).
         """
@@ -129,7 +129,7 @@ class IData(Data):
             raise ValueError('Only dicoms with the same orientation can be read in.')
         # stack required due to mypy: einops rearrange list[tensor]->tensor not recognized
         idata = torch.stack([_dcm_pixelarray_to_tensor(ds) for ds in dataset_list])
-        idata = repeat(idata, 'other y x -> other coils z y x', coils=1, z=1)
+        idata = repeat(idata, '... y x -> ... coils z y x', coils=1, z=1)
 
         header = IHeader.from_dicom_list(dataset_list)
         return cls(data=idata, header=header)

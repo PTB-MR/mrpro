@@ -96,3 +96,14 @@ def test_dcf_broadcast():
     trajectory = KTrajectory(kz, ky, kx)
     dcf = DcfData.from_traj_voronoi(trajectory)
     assert dcf.data.shape == trajectory.broadcasted_shape
+
+
+def test_dcf_multi_other():
+    """Test voronoi dcf calculation for multiple other dimensions."""
+    rng = RandomGenerator(0)
+    kx = rng.float32_tensor((2, 3, 1, 4, 4))
+    ky = rng.float32_tensor((2, 3, 1, 4, 4))
+    kz = torch.zeros(2, 3, 1, 1, 1)
+    trajectory = KTrajectory(kz, ky, kx)
+    dcf = DcfData.from_traj_voronoi(trajectory)
+    assert dcf.data.shape == trajectory.broadcasted_shape

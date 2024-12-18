@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import torch
+from einops import rearrange
 from typing_extensions import Self
 
 from mrpro.data.IData import IData
@@ -47,8 +48,8 @@ class CsmData(QData):
             lambda img: walsh(img, smoothing_width),
             chunk_size=chunk_size_otherdim,
         )
-        csm_tensor = csm_fun(idata.data)
-        csm = cls(header=idata.header, data=csm_tensor)
+        csm_tensor = csm_fun(rearrange(idata.data, '... coils z y x->(...) coils z y x'))
+        csm = cls(header=idata.header, data=csm_tensor.reshape(idata.data.shape))
         return csm
 
     @classmethod
@@ -73,8 +74,8 @@ class CsmData(QData):
         from mrpro.algorithms.csm.inati import inati
 
         csm_fun = torch.vmap(lambda img: inati(img, smoothing_width), chunk_size=chunk_size_otherdim)
-        csm_tensor = csm_fun(idata.data)
-        csm = cls(header=idata.header, data=csm_tensor)
+        csm_tensor = csm_fun(rearrange(idata.data, '... coils z y x->(...) coils z y x'))
+        csm = cls(header=idata.header, data=csm_tensor.reshape(idata.data.shape))
         return csm
 
     def as_operator(self) -> SensitivityOp:
