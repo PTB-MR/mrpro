@@ -2,7 +2,7 @@ Examples
 ========
 
 Notebooks with examples of how you can use MRpro.
-All of the notebooks can directly be run via binder or colab from the repo.
+All the notebooks can be launched in Colab using the badge.
 
 .. toctree::
    :maxdepth: 1

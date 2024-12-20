@@ -6,7 +6,7 @@ MRpro is a MR image reconstruction and processing framework specifically develop
 The data classes utilize torch tensors for storing data such as MR raw data or reconstructed image data.
 Where possible batch parallelisation of pytorch is utilized to speed up image reconstruction.
 
-MRpro is designed to work directly from MR raw data using the  `MRD <https://ismrmrd.readthedocs.io/en/latest/>`_ data format.
+MRpro is designed to work directly from MR raw data using the `MRD <https://ismrmrd.readthedocs.io/en/latest/>`_ data format.
 
 A basic pipeline would contain the following steps:
 
@@ -17,7 +17,7 @@ A basic pipeline would contain the following steps:
 
 The following provides some basic information about these steps.
 For more detailed information please have a look at the notebooks in the *examples* folder.
-You can easily start a binder session via the badge in the *README* and give the notebooks a try without having to
+You can easily launch notebooks via the Colab badge in the *README* and give the notebooks a try without having to
 install anything.
 
 Reading in raw data
