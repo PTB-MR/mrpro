@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
@@ -14,15 +14,16 @@ from typing_extensions import Self
 
 from mrpro.data import enums
 from mrpro.data.AcqInfo import AcqInfo
-from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 from mrpro.utils.unit_conversion import mm_to_m, ms_to_s
 
+from .traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
+
 if TYPE_CHECKING:
     # avoid circular imports by importing only when type checking
-    from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
+    pass
 
 UNKNOWN = 'unknown'
 
@@ -37,28 +38,25 @@ class KHeader(MoveDataMixin):
     is not guaranteed to be correct or tested.
     """
 
-    trajectory: KTrajectoryCalculator
-    """Function to calculate the k-space trajectory."""
-
-    encoding_limits: EncodingLimits
-    """K-space encoding limits."""
-
     recon_matrix: SpatialDimension[int]
     """Dimensions of the reconstruction matrix."""
-
-    recon_fov: SpatialDimension[float]
-    """Field-of-view of the reconstructed image [m]."""
 
     encoding_matrix: SpatialDimension[int]
     """Dimensions of the encoded k-space matrix."""
 
+    recon_fov: SpatialDimension[float]
+    """Field-of-view of the reconstructed image [m]."""
+
     encoding_fov: SpatialDimension[float]
     """Field of view of the image encoded by the k-space trajectory [m]."""
 
-    acq_info: AcqInfo
+    acq_info: AcqInfo = field(default_factory=AcqInfo)
     """Information of the acquisitions (i.e. readout lines)."""
 
-    lamor_frequency_proton: float
+    trajectory: KTrajectoryCalculator | None = None
+    """Function to calculate the k-space trajectory."""
+
+    lamor_frequency_proton: float | None = None
     """Lamor frequency of hydrogen nuclei [Hz]."""
 
     datetime: datetime.datetime | None = None
@@ -94,12 +92,6 @@ class KHeader(MoveDataMixin):
     protocol_name: str = UNKNOWN
     """Name of the acquisition protocol."""
 
-    calibration_mode: enums.CalibrationMode = enums.CalibrationMode.OTHER
-    """Mode of how calibration data is acquired. """
-
-    interleave_dim: enums.InterleavingDimension = enums.InterleavingDimension.OTHER
-    """Interleaving dimension."""
-
     trajectory_type: enums.TrajectoryType = enums.TrajectoryType.OTHER
     """Type of trajectory."""
 
@@ -109,7 +101,7 @@ class KHeader(MoveDataMixin):
     patient_name: str = UNKNOWN
     """Name of the patient."""
 
-    _misc: dict = dataclasses.field(default_factory=dict)  # do not use {} here!
+    _misc: dict = field(default_factory=dict)
     """Dictionary with miscellaneous parameters. These parameters are for information purposes only. Reconstruction
     algorithms should not rely on them."""
 
@@ -185,20 +177,8 @@ class KHeader(MoveDataMixin):
             )
             parameters['encoding_matrix'] = SpatialDimension[int].from_xyz(enc.encodedSpace.matrixSize)
 
-        if enc.encodingLimits is not None:
-            parameters['encoding_limits'] = EncodingLimits.from_ismrmrd_encoding_limits_type(enc.encodingLimits)
-
         if enc.echoTrainLength is not None:
             parameters['echo_train_length'] = enc.echoTrainLength
-
-        if enc.parallelImaging is not None:
-            if enc.parallelImaging.calibrationMode is not None:
-                parameters['calibration_mode'] = enums.CalibrationMode(enc.parallelImaging.calibrationMode.value)
-
-            if enc.parallelImaging.interleavingDimension is not None:
-                parameters['interleave_dim'] = enums.InterleavingDimension(
-                    enc.parallelImaging.interleavingDimension.value,
-                )
 
         if enc.trajectory is not None:
             parameters['trajectory_type'] = enums.TrajectoryType(enc.trajectory.value)

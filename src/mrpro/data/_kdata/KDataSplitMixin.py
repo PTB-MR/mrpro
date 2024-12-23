@@ -8,7 +8,6 @@ from typing_extensions import Self
 
 from mrpro.data._kdata.KDataProtocol import _KDataProtocol
 from mrpro.data.AcqInfo import rearrange_acq_info_fields
-from mrpro.data.EncodingLimits import Limits
 from mrpro.data.Rotation import Rotation
 
 RotationOrTensor = TypeVar('RotationOrTensor', bound=torch.Tensor | Rotation)
@@ -47,10 +46,6 @@ class KDataSplitMixin(_KDataProtocol):
         """
         # Number of other
         n_other = split_idx.shape[0]
-
-        # Verify that the specified label of the other dimension is unused
-        if getattr(self.header.encoding_limits, other_label).length > 1:
-            raise ValueError(f'{other_label} is already used to encode different parts of the scan.')
 
         # Set-up splitting
         if split_dir == 'k1':
@@ -104,9 +99,6 @@ class KDataSplitMixin(_KDataProtocol):
             if isinstance(field, Rotation | torch.Tensor)
             else field
         )
-
-        # Update other label limits and acquisition info
-        setattr(kheader.encoding_limits, other_label, Limits(min=0, max=n_other - 1, center=0))
 
         # acq_info for new other dimensions
         acq_info_other_split = repeat(
