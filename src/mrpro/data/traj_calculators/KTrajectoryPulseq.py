@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import pypulseq as pp
 import torch
 from einops import rearrange
 
@@ -48,28 +47,18 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         -------
             trajectory of type KTrajectoryRawShape
         """
-        # create PyPulseq Sequence object and read .seq file
-        seq = pp.Sequence()
-        seq.read(file_path=str(self.seq_path))
+        from pypulseq import Sequence
 
         # calculate k-space trajectory using PyPulseq
-        k_traj_adc_numpy, _, _, _, _ = seq.calculate_kspace()
+        seq = Sequence()
+        seq.read(file_path=str(self.seq_path))
+        k_traj_adc_numpy = seq.calculate_kspace()[0]
         k_traj_adc = torch.tensor(k_traj_adc_numpy, dtype=torch.float32)
+        k_traj_reshaped = rearrange(k_traj_adc, 'xyz (other k0) -> xyz other k0', k0=n_k0)
 
-        def reshape(k_traj: torch.Tensor, encoding_size: int) -> torch.Tensor:
-            max_value_range = 2 * torch.max(torch.abs(k_traj))
-            if max_value_range > 1e-9 and encoding_size > 1:
-                k_traj = k_traj * encoding_size / max_value_range
-            else:
-                # If encoding matrix is 1, we force k_traj to be 0. We assume here that the values are
-                # numerical noise returned by pulseq, not real trajectory values
-                # even if pulseq returned some numerical noise. Also we avoid division by zero.
-                k_traj = torch.zeros_like(k_traj)
-            return rearrange(k_traj, '(other k0) -> other k0', k0=n_k0)
-
-        # rearrange k-space trajectory to match MRpro convention
-        kx = reshape(k_traj_adc[0], encoding_matrix.x)
-        ky = reshape(k_traj_adc[1], encoding_matrix.y)
-        kz = reshape(k_traj_adc[2], encoding_matrix.z)
-
-        return KTrajectoryRawShape(kz, ky, kx, self.repeat_detection_tolerance)
+        return KTrajectoryRawShape.from_tensor(
+            k_traj_reshaped,
+            axes_order='xyz',
+            scaling_matrix=encoding_matrix,
+            repeat_detection_tolerance=self.repeat_detection_tolerance,
+        )
