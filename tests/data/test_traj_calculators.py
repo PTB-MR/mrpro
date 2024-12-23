@@ -193,11 +193,11 @@ def test_KTrajectoryPulseq(pulseq_example_rad_seq):
         n_k0=pulseq_example_rad_seq.n_k0, encoding_matrix=pulseq_example_rad_seq.encoding_matrix
     )
 
-    kx_test = pulseq_example_rad_seq.traj_analytical.kx.squeeze(0).squeeze(0)
-    kx_test *= pulseq_example_rad_seq.encoding_matrix.x / (2 * torch.max(torch.abs(kx_test)))
+    kx_test = pulseq_example_rad_seq.traj_analytical.kx.squeeze()
+    kx_test = kx_test * pulseq_example_rad_seq.encoding_matrix.x / (2 * kx_test.abs().max())
 
-    ky_test = pulseq_example_rad_seq.traj_analytical.ky.squeeze(0).squeeze(0)
-    ky_test *= pulseq_example_rad_seq.encoding_matrix.y / (2 * torch.max(torch.abs(ky_test)))
+    ky_test = pulseq_example_rad_seq.traj_analytical.ky.squeeze()
+    ky_test = ky_test * pulseq_example_rad_seq.encoding_matrix.y / (2 * ky_test.abs().max())
 
     torch.testing.assert_close(trajectory.kx.to(torch.float32), kx_test.to(torch.float32), atol=1e-2, rtol=1e-3)
     torch.testing.assert_close(trajectory.ky.to(torch.float32), ky_test.to(torch.float32), atol=1e-2, rtol=1e-3)

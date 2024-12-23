@@ -1,6 +1,8 @@
-# MRpro
+<h1 align="center">
+<img src="docs/source/_static/logo.svg" alt="MRpro logo" width="50%">
+</h1><br>
 
-![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)
+![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Coverage Bagde](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ckolbPTB/48e334a10caf60e6708d7c712e56d241/raw/coverage.json)
 
@@ -84,5 +86,3 @@ We are looking forward to your contributions via Pull-Requests.
 4. Setup pre-commit hook: ``` pre-commit install ```
 
 Please look at our [contributor guide](https://ptb-mr.github.io/mrpro/contributor_guide.html) for more information on the repository structure, naming conventions, and other useful information.
-
-

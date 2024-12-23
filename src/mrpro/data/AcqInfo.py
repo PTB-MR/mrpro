@@ -1,7 +1,7 @@
 """Acquisition information dataclass."""
 
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal, TypeAlias, overload
 
 import ismrmrd
@@ -46,59 +46,76 @@ def convert_time_stamp_siemens(
     return timestamp.double() * 2.5e-3
 
 
+def _int_factory() -> torch.Tensor:
+    # TODO: check dtype
+    return torch.zeros(1, 1, 1, 1, dtype=torch.int64)
+
+
+def _float_factory() -> torch.Tensor:
+    return torch.zeros(1, 1, 1, 1, dtype=torch.float)
+
+
+def _position_factory() -> SpatialDimension[torch.Tensor]:
+    return SpatialDimension(
+        torch.zeros(1, 1, 1, 1, dtype=torch.float),
+        torch.zeros(1, 1, 1, 1, dtype=torch.float),
+        torch.zeros(1, 1, 1, 1, dtype=torch.float),
+    )
+
+
 @dataclass(slots=True)
 class AcqIdx(MoveDataMixin):
     """Acquisition index for each readout."""
 
-    k1: torch.Tensor
+    k1: torch.Tensor = field(default_factory=_int_factory)
     """First phase encoding."""
 
-    k2: torch.Tensor
+    k2: torch.Tensor = field(default_factory=_int_factory)
     """Second phase encoding."""
 
-    average: torch.Tensor
+    average: torch.Tensor = field(default_factory=_int_factory)
     """Signal average."""
 
-    slice: torch.Tensor
+    slice: torch.Tensor = field(default_factory=_int_factory)
     """Slice number (multi-slice 2D)."""
 
-    contrast: torch.Tensor
+    contrast: torch.Tensor = field(default_factory=_int_factory)
     """Echo number in multi-echo."""
 
-    phase: torch.Tensor
+    phase: torch.Tensor = field(default_factory=_int_factory)
     """Cardiac phase."""
 
-    repetition: torch.Tensor
+    repetition: torch.Tensor = field(default_factory=_int_factory)
     """Counter in repeated/dynamic acquisitions."""
 
-    set: torch.Tensor
+    set: torch.Tensor = field(default_factory=_int_factory)
     """Sets of different preparation, e.g. flow encoding, diffusion weighting."""
 
-    segment: torch.Tensor
+    segment: torch.Tensor = field(default_factory=_int_factory)
     """Counter for segmented acquisitions."""
 
-    user0: torch.Tensor
+    user0: torch.Tensor = field(default_factory=_int_factory)
     """User index 0."""
 
-    user1: torch.Tensor
+    user1: torch.Tensor = field(default_factory=_int_factory)
     """User index 1."""
 
-    user2: torch.Tensor
+    user2: torch.Tensor = field(default_factory=_int_factory)
     """User index 2."""
 
-    user3: torch.Tensor
+    user3: torch.Tensor = field(default_factory=_int_factory)
     """User index 3."""
 
-    user4: torch.Tensor
+    user4: torch.Tensor = field(default_factory=_int_factory)
     """User index 4."""
 
-    user5: torch.Tensor
+    user5: torch.Tensor = field(default_factory=_int_factory)
     """User index 5."""
 
-    user6: torch.Tensor
+    user6: torch.Tensor = field(default_factory=_int_factory)
     """User index 6."""
 
-    user7: torch.Tensor
+    user7: torch.Tensor = field(default_factory=_int_factory)
     """User index 7."""
 
 
@@ -106,68 +123,62 @@ class AcqIdx(MoveDataMixin):
 class UserValues(MoveDataMixin):
     """User Values used in AcqInfo."""
 
-    float1: torch.Tensor
-    float2: torch.Tensor
-    float3: torch.Tensor
-    float4: torch.Tensor
-    float5: torch.Tensor
-    float6: torch.Tensor
-    float7: torch.Tensor
-    float8: torch.Tensor
-    int1: torch.Tensor
-    int2: torch.Tensor
-    int3: torch.Tensor
-    int4: torch.Tensor
-    int5: torch.Tensor
-    int6: torch.Tensor
-    int7: torch.Tensor
-    int8: torch.Tensor
+    float1: torch.Tensor = field(default_factory=_float_factory)
+    float2: torch.Tensor = field(default_factory=_float_factory)
+    float3: torch.Tensor = field(default_factory=_float_factory)
+    float4: torch.Tensor = field(default_factory=_float_factory)
+    float5: torch.Tensor = field(default_factory=_float_factory)
+    float6: torch.Tensor = field(default_factory=_float_factory)
+    float7: torch.Tensor = field(default_factory=_float_factory)
+    float8: torch.Tensor = field(default_factory=_float_factory)
+    int1: torch.Tensor = field(default_factory=_int_factory)
+    int2: torch.Tensor = field(default_factory=_int_factory)
+    int3: torch.Tensor = field(default_factory=_int_factory)
+    int4: torch.Tensor = field(default_factory=_int_factory)
+    int5: torch.Tensor = field(default_factory=_int_factory)
+    int6: torch.Tensor = field(default_factory=_int_factory)
+    int7: torch.Tensor = field(default_factory=_int_factory)
+    int8: torch.Tensor = field(default_factory=_int_factory)
 
 
 @dataclass(slots=True)
 class PhysiologyTimestamps:
     """Time stamps relative to physiological triggering, e.g. ECG. Not in s but in vendor-specific time units."""
 
-    timestamp1: torch.Tensor
-    timestamp2: torch.Tensor
-    timestamp3: torch.Tensor
+    timestamp1: torch.Tensor = field(default_factory=_float_factory)
+    timestamp2: torch.Tensor = field(default_factory=_float_factory)
+    timestamp3: torch.Tensor = field(default_factory=_float_factory)
 
 
 @dataclass(slots=True)
 class AcqInfo(MoveDataMixin):
     """Acquisition information for each readout."""
 
-    idx: AcqIdx
+    idx: AcqIdx = field(default_factory=AcqIdx)
     """Indices describing acquisitions (i.e. readouts)."""
 
-    acquisition_time_stamp: torch.Tensor
+    acquisition_time_stamp: torch.Tensor = field(default_factory=_float_factory)
     """Clock time stamp. Usually in seconds (Siemens: seconds since midnight)"""
-
-    flags: torch.Tensor
+    # TODO: check dtype
+    flags: torch.Tensor = field(default_factory=_int_factory)
     """A bit mask of common attributes applicable to individual acquisition readouts."""
 
-    measurement_uid: torch.Tensor
-    """Unique ID corresponding to the readout."""
-
-    orientation: Rotation
+    orientation: Rotation = field(default_factory=lambda: Rotation.identity((1, 1, 1, 1)))
     """Rotation describing the orientation of the readout, phase and slice encoding direction."""
 
-    patient_table_position: SpatialDimension[torch.Tensor]
+    patient_table_position: SpatialDimension[torch.Tensor] = field(default_factory=_position_factory)
     """Offset position of the patient table, in LPS coordinates [m]."""
 
-    physiology_time_stamps: PhysiologyTimestamps
+    physiology_time_stamps: PhysiologyTimestamps = field(default_factory=PhysiologyTimestamps)
     """Time stamps relative to physiological triggering, e.g. ECG. Not in s but in vendor-specific time units"""
 
-    position: SpatialDimension[torch.Tensor]
+    position: SpatialDimension[torch.Tensor] = field(default_factory=_position_factory)
     """Center of the excited volume, in LPS coordinates relative to isocenter [m]."""
 
-    sample_time_us: torch.Tensor
+    sample_time_us: torch.Tensor = field(default_factory=_float_factory)
     """Readout bandwidth, as time between samples [us]."""
 
-    scan_counter: torch.Tensor
-    """Zero-indexed incrementing counter for readouts."""
-
-    user: UserValues
+    user: UserValues = field(default_factory=UserValues)
     """User defined float or int values"""
 
     @overload
@@ -306,7 +317,6 @@ class AcqInfo(MoveDataMixin):
                 tensor_2d(headers['acquisition_time_stamp']), 'acquisition_time_stamp'
             ),
             flags=tensor_2d(headers['flags']),
-            measurement_uid=tensor_2d(headers['measurement_uid']),
             orientation=Rotation.from_directions(
                 spatialdimension_2d(headers['slice_dir']),
                 spatialdimension_2d(headers['phase_dir']),
@@ -315,7 +325,6 @@ class AcqInfo(MoveDataMixin):
             patient_table_position=spatialdimension_2d(headers['patient_table_position']).apply_(mm_to_m),
             position=spatialdimension_2d(headers['position']).apply_(mm_to_m),
             sample_time_us=tensor_2d(headers['sample_time_us']),
-            scan_counter=tensor_2d(headers['scan_counter']),
             user=user,
             physiology_time_stamps=physiology_time_stamps,
         )

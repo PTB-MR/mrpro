@@ -19,8 +19,8 @@ from mrpro.data._kdata.KDataRemoveOsMixin import KDataRemoveOsMixin
 from mrpro.data._kdata.KDataSelectMixin import KDataSelectMixin
 from mrpro.data._kdata.KDataSplitMixin import KDataSplitMixin
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
-from mrpro.data.AcqInfo import AcqInfo, rearrange_acq_info_fields
-from mrpro.data.EncodingLimits import Limits
+from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_siemens, rearrange_acq_info_fields
+from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
@@ -135,11 +135,29 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
         if not acquisitions:
             raise ValueError('No acquisitions meeting the given filter criteria were found.')
 
-        kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
+        if (
+            ismrmrd_header.acquisitionSystemInformation is not None
+            and ismrmrd_header.acquisitionSystemInformation.vendor == 'Siemens'
+        ):
+            convert_time_stamp = convert_time_stamp_siemens  # 2.5ms time steps
+        # Here we could include more vendors
+        else:
+            vendor = (
+                'UNKNOWN'
+                if ismrmrd_header.acquisitionSystemInformation is None
+                else ismrmrd_header.acquisitionSystemInformation.vendor
+            )
+            warnings.warn(
+                f'Unknown vendor {vendor}. Assuming Siemens time stamp format.'
+                'If this is wrong, consider opening an Issue',
+                stacklevel=1,
+            )
+            convert_time_stamp = convert_time_stamp_siemens
 
         acq_info, (k0_center, n_k0_tensor, discard_pre, discard_post) = AcqInfo.from_ismrmrd_acquisitions(
             acquisitions,
             additional_fields=('center_sample', 'number_of_samples', 'discard_pre', 'discard_post'),
+            convert_time_stamp=convert_time_stamp,
         )
 
         if len(torch.unique(acq_info.idx.user5)) > 1:
@@ -158,6 +176,24 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
                 stacklevel=1,
             )
 
+        shapes = (torch.as_tensor([len(acq.data) for acq in acquisitions]) - discard_pre - discard_post).unique()
+
+        if len(shapes) > 1:
+            if discard_pre.any() or discard_post.any():
+                note = 'discard_pre and post were applied.'
+            else:
+                note = 'discard_pre and discard_post were empty.'
+                warnings.warn(
+                    f'Acquisitions have different shape. Got {list(shapes)}. '
+                    f'Keeping only acquisistions with {shapes[-1]} data samples. '
+                    f'Note: {note} '
+                    'Please open an issue of you need to handle this kind of data.',
+                    stacklevel=1,
+                )
+        kdata = torch.stack(
+            [torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions if len(acq) == shapes[-1]]
+        )
+
         # Raises ValueError if required fields are missing in the header
         kheader = KHeader.from_ismrmrd(
             ismrmrd_header,
@@ -168,16 +204,6 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
             },
             overwrite=header_overwrites,
         )
-
-        # Fill k0 limits if they were set to zero / not set in the header
-        if kheader.encoding_limits.k0.length == 1:
-            # The encodig limits should describe the encoded space of all readout lines. If we have two readouts with
-            # (number_of_samples, center_sample) of (100, 20) (e.g. partial Fourier in the negative k0 direction) and
-            # (100, 80) (e.g. partial Fourier in the positive k0 direction) then this should lead to encoding limits of
-            # [min=0, max=159, center=80]
-            max_center_sample = int(torch.max(k0_center))
-            max_positive_k0_extend = int(torch.max(n_k0_tensor - k0_center))
-            kheader.encoding_limits.k0 = Limits(0, max_center_sample + max_positive_k0_extend - 1, max_center_sample)
 
         # Sort and reshape the kdata and the acquisistion info according to the indices.
         # within "other", the aquisistions are sorted in the order determined by KDIM_SORT_LABELS.
@@ -250,13 +276,14 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
                         'Trajectory can only be calculated for constant number of readout samples.\n'
                         f'Got unique values {list(n_k0_unique)}'
                     )
+                encoding_limits = EncodingLimits.from_ismrmrd_header(ismrmrd_header)
                 ktrajectory_or_rawshape = ktrajectory(
                     n_k0=int(n_k0_unique[0]),
                     k0_center=k0_center,
                     k1_idx=kheader.acq_info.idx.k1,
-                    k1_center=kheader.encoding_limits.k1.center,
+                    k1_center=encoding_limits.k1.center,
                     k2_idx=kheader.acq_info.idx.k2,
-                    k2_center=kheader.encoding_limits.k2.center,
+                    k2_center=encoding_limits.k2.center,
                     reversed_readout_mask=reversed_readout_mask,
                     encoding_matrix=kheader.encoding_matrix,
                 )
