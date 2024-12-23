@@ -188,7 +188,7 @@ class AcqInfo(MoveDataMixin):
                     data = data.astype(np.int32)
                 case np.uint32 | np.uint64:
                     data = data.astype(np.int64)
-            # Remove any uncessary dimensions
+            # Remove any unnecessary dimensions
             return torch.tensor(np.squeeze(data))
 
         def tensor_2d(data: np.ndarray) -> torch.Tensor:
