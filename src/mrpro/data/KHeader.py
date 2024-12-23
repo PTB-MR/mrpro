@@ -19,11 +19,9 @@ from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 from mrpro.utils.unit_conversion import mm_to_m, ms_to_s
 
-from .traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
-
 if TYPE_CHECKING:
     # avoid circular imports by importing only when type checking
-    pass
+    from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 
 UNKNOWN = 'unknown'
 
