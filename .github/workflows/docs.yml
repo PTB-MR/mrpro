@@ -71,9 +71,7 @@ jobs:
 
       - id: set-matrix
         run: |
-          cd ./examples/
-          ls
-          echo "notebooks=$(ls *.ipynb | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+          echo "notebooks=$(find examples -type f -name '*.ipynb' | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
       - name: Notebook overview
         run: |
@@ -113,14 +111,14 @@ jobs:
         env:
           RUNNER: ${{ toJson(runner) }}
         with:
-          notebook: ./examples/${{ matrix.notebook }}
+          notebook: ./${{ matrix.notebook }}
 
       - name: Get artifact names
         id: artifact_names
         run: |
           notebook=${{ matrix.notebook }}
-          echo "ARTIFACT_NAME=${notebook/.ipynb/}" >> $GITHUB_OUTPUT
-          echo "IPYNB_EXECUTED=${notebook}" >> $GITHUB_OUTPUT
+          echo "ARTIFACT_NAME=$(basename ${notebook/.ipynb})" >> $GITHUB_OUTPUT
+          echo "IPYNB_EXECUTED=$(basename $notebook)" >> $GITHUB_OUTPUT
 
       - name: Upload notebook
         uses: actions/upload-artifact@v4
