@@ -1,8 +1,10 @@
 Examples
 ========
+.. |colab-badge| image:: https://colab.research.google.com/assets/colab-badge.svg
+    :target: https://colab.research.google.com/github/PTB-MR/mrpro
 
 Notebooks with examples of how you can use MRpro.
-All the notebooks can be launched in Colab using the badge.
+Each notebook can be launched in Colab |colab-badge|.
 
 .. toctree::
    :maxdepth: 1
