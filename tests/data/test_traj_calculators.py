@@ -3,13 +3,14 @@
 import pytest
 import torch
 from einops import rearrange
-from mrpro.data import KData
+from mrpro.data import KData, SpatialDimension
 from mrpro.data.traj_calculators import (
     KTrajectoryCartesian,
     KTrajectoryIsmrmrd,
     KTrajectoryPulseq,
     KTrajectoryRadial2D,
     KTrajectoryRpe,
+    KTrajectorySpiral2D,
     KTrajectorySunflowerGoldenRpe,
 )
 
@@ -229,3 +230,14 @@ def test_KTrajectoryCartesian_random_edgecases(acceleration: int, n_k=128) -> No
 
     for center_idx in range(-4, 4):
         assert center_idx in traj.ky.ravel()
+
+
+def test_KTrajectorySpiral():
+    """Test the generation of a 2D spiral trajectory"""
+    trajectory_calculator = KTrajectorySpiral2D()
+    trajectory = trajectory_calculator(
+        n_k0=1024, k1_idx=torch.arange(4)[None, None, :], encoding_matrix=SpatialDimension(1, 256, 256)
+    )
+    assert trajectory.kz.shape == (1, 1, 1, 1)
+    assert trajectory.ky.shape == (1, 1, 4, 1024)
+    assert trajectory.kx.shape == (1, 1, 4, 1024)

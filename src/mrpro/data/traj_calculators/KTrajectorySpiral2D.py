@@ -1,25 +1,28 @@
+"""Spiral trajectory calculator."""
+
 import torch
 
-from mrpro.data import SpatialDimension
 from mrpro.data.KTrajectory import KTrajectory
+from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 
 
-class KTrajectorySpiral(KTrajectoryCalculator):
+class KTrajectorySpiral2D(KTrajectoryCalculator):
     """A Spiral variable density trajectory.
 
     Implements the spiral trajectory calculation as described in
-    Simple Analytic Variable Density Spiral Design by Kim et al., MRM 2003"""
+    Simple Analytic Variable Density Spiral Design by Kim et al., MRM 2003
+    """
 
     def __init__(
         self,
-        max_gradient: float,
-        max_slewrate: float,
-        fov: SpatialDimension | float,
-        angle: float,
-        acceleration_per_interleave: float = 1.0,
+        fov: SpatialDimension | float = 0.5,
+        angle: float = 2.39996,
+        acceleration_per_interleave: float = 20.0,
         density_factor: float = 1.0,
         gamma: float = 42577478,
+        max_gradient: float = 0.1,
+        max_slewrate: float = 100,
     ):
         """Create a spiral trajectory calculator.
 
@@ -105,9 +108,7 @@ class KTrajectorySpiral(KTrajectoryCalculator):
         )  # eq. 10
         max_angle = 2 * torch.pi * n_turns
         end_time_amplitude = (lam * max_angle) / (self.max_gradient_gamma * (self.density_factor + 1))  # eq. 5, Tes
-        end_time_slew = torch.sqrt(lam * max_angle**2 / (self.max_slewrate_gamma)) / (
-            self.density_factor / 2 + 1
-        )  # eq. 8, Tea
+        end_time_slew = (lam / self.max_slewrate_gamma) ** 0.5 * max_angle / (self.density_factor / 2 + 1)  # eq. 8, Tea
 
         transition_time_slew_to_amplitude = (
             end_time_slew ** ((self.density_factor + 1) / (self.density_factor / 2 + 1))
@@ -120,7 +121,7 @@ class KTrajectorySpiral(KTrajectoryCalculator):
         end_time = end_time_amplitude if has_amplitude_phase else end_time_slew
 
         def tau(t: torch.Tensor) -> torch.Tensor:
-            """Normalized time function."""
+            """Convert to normalized time."""
             # eq. 11
             slew_phase = (t / end_time_slew) ** (1 / (self.density_factor / 2 + 1))
             slew_phase = slew_phase * ((t >= 0) * (t <= transition_time_slew_to_amplitude))
@@ -133,7 +134,7 @@ class KTrajectorySpiral(KTrajectoryCalculator):
         t = torch.linspace(0, end_time, n_k0)
         tau_t = tau(t)
         k = lam * tau_t**self.density_factor * torch.exp(1j * max_angle * tau_t)  # eq. 2
-        phase_rotation = torch.exp(self.angle * k1_idx)
-        k = k[None, :] * phase_rotation[:, None]
+        phase_rotation = torch.exp(1j * self.angle * k1_idx)
+        k = k[None, :] * phase_rotation[..., None]
         trajectory = KTrajectory(kx=k.real, ky=k.imag, kz=torch.zeros_like(k.real))
         return trajectory
