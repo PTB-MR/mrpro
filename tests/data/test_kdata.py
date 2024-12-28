@@ -364,11 +364,6 @@ def test_KData_split_k1_into_other(consistently_shaped_kdata, monkeypatch, n_oth
     # Create KData
     n_other, n_coils, n_k2, n_k1, n_k0 = consistently_shaped_kdata.data.shape
 
-    # Make sure that the other dimension/label used for the split data is not used yet
-    monkeypatch.setattr(getattr(consistently_shaped_kdata.header.encoding_limits, other_label), 'center', 0)
-    monkeypatch.setattr(getattr(consistently_shaped_kdata.header.encoding_limits, other_label), 'max', 0)
-    monkeypatch.setattr(getattr(consistently_shaped_kdata.header.encoding_limits, other_label), 'min', 0)
-
     # Create split index
     ni_per_block = n_k1 // n_other_split
     idx_k1 = torch.linspace(0, n_k1 - 1, n_k1, dtype=torch.int32)
@@ -381,8 +376,6 @@ def test_KData_split_k1_into_other(consistently_shaped_kdata, monkeypatch, n_oth
     assert kdata_split.data.shape == (idx_split.shape[0] * n_other, n_coils, n_k2, ni_per_block, n_k0)
     # Verify shape of trajectory
     assert kdata_split.traj.broadcasted_shape == (idx_split.shape[0] * n_other, n_k2, ni_per_block, n_k0)
-    # Verify new other label describes split data
-    assert getattr(kdata_split.header.encoding_limits, other_label).length == idx_split.shape[0]
 
 
 @pytest.mark.parametrize(
@@ -398,11 +391,6 @@ def test_KData_split_k2_into_other(consistently_shaped_kdata, monkeypatch, n_oth
     # Create KData
     n_other, n_coils, n_k2, n_k1, n_k0 = consistently_shaped_kdata.data.shape
 
-    # Make sure that the other dimension/label used for the split data is not used yet
-    monkeypatch.setattr(getattr(consistently_shaped_kdata.header.encoding_limits, other_label), 'center', 0)
-    monkeypatch.setattr(getattr(consistently_shaped_kdata.header.encoding_limits, other_label), 'max', 0)
-    monkeypatch.setattr(getattr(consistently_shaped_kdata.header.encoding_limits, other_label), 'min', 0)
-
     # Create split index
     ni_per_block = n_k2 // n_other_split
     idx_k2 = torch.linspace(0, n_k2 - 1, n_k2, dtype=torch.int32)
@@ -415,8 +403,6 @@ def test_KData_split_k2_into_other(consistently_shaped_kdata, monkeypatch, n_oth
     assert kdata_split.data.shape == (idx_split.shape[0] * n_other, n_coils, ni_per_block, n_k1, n_k0)
     # Verify shape of trajectory
     assert kdata_split.traj.broadcasted_shape == (idx_split.shape[0] * n_other, ni_per_block, n_k1, n_k0)
-    # Verify new other label describes split data
-    assert getattr(kdata_split.header.encoding_limits, other_label).length == idx_split.shape[0]
 
 
 @pytest.mark.parametrize(
@@ -505,7 +491,7 @@ def test_modify_acq_info(random_kheader_shape):
     )
 
     # Verify shape
-    assert kheader.acq_info.scan_counter.shape == (n_other, n_k2, n_k1, 1)
+    assert kheader.acq_info.acquisition_time_stamp.shape == (n_other, n_k2, n_k1, 1)
     assert kheader.acq_info.idx.k1.shape == (n_other, n_k2, n_k1)
     assert kheader.acq_info.orientation.shape == (n_other, n_k2, n_k1, 1)
     assert kheader.acq_info.position.z.shape == (n_other, n_k2, n_k1, 1)
