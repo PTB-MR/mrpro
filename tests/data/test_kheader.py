@@ -1,22 +1,16 @@
 """Tests for KHeader class."""
 
-import pytest
 import torch
 from mrpro.data import KHeader
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 
 
-def test_kheader_fail_from_mandatory_ismrmrd_header(random_mandatory_ismrmrd_header, random_acq_info):
-    """KHeader cannot be created only from ismrmrd header because trajectory is missing."""
-    with pytest.raises(ValueError, match='Could not create Header'):
-        _ = KHeader.from_ismrmrd(random_mandatory_ismrmrd_header, random_acq_info)
-
-
 def test_kheader_overwrite_missing_parameter(random_mandatory_ismrmrd_header, random_acq_info):
     """KHeader can be created if trajectory is provided."""
     overwrite = {'trajectory': DummyTrajectory()}
-    kheader = KHeader.from_ismrmrd(random_mandatory_ismrmrd_header, random_acq_info, overwrite=overwrite)
+    kheader = KHeader.from_ismrmrd(random_mandatory_ismrmrd_header, random_acq_info)
     assert kheader is not None
+    assert kheader.trajectory is overwrite['trajectory']
 
 
 def test_kheader_set_missing_defaults(random_mandatory_ismrmrd_header, random_acq_info):
@@ -24,6 +18,7 @@ def test_kheader_set_missing_defaults(random_mandatory_ismrmrd_header, random_ac
     defaults = {'trajectory': DummyTrajectory()}
     kheader = KHeader.from_ismrmrd(random_mandatory_ismrmrd_header, random_acq_info, defaults=defaults)
     assert kheader is not None
+    assert kheader.trajectory is defaults['trajectory']
 
 
 def test_kheader_verify_None(random_mandatory_ismrmrd_header, random_acq_info):
