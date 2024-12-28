@@ -137,19 +137,20 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
 
         if (
             ismrmrd_header.acquisitionSystemInformation is not None
-            and ismrmrd_header.acquisitionSystemInformation.vendor == 'Siemens'
+            and isinstance(ismrmrd_header.acquisitionSystemInformation.systemVendor, str)
+            and ismrmrd_header.acquisitionSystemInformation.systemVendor.lower() == 'siemens'
         ):
             convert_time_stamp = convert_time_stamp_siemens  # 2.5ms time steps
         # Here we could include more vendors
+        elif (
+            ismrmrd_header.acquisitionSystemInformation is None
+            or ismrmrd_header.acquisitionSystemInformation.systemVendor is None
+        ):
+            warnings.warn('No vendor information found. Assuming Siemens time stamp format.', stacklevel=1)
         else:
-            vendor = (
-                'UNKNOWN'
-                if ismrmrd_header.acquisitionSystemInformation is None
-                else ismrmrd_header.acquisitionSystemInformation.vendor
-            )
             warnings.warn(
-                f'Unknown vendor {vendor}. Assuming Siemens time stamp format.'
-                'If this is wrong, consider opening an Issue',
+                f'Unknown vendor {ismrmrd_header.acquisitionSystemInformation.systemVendor}. '
+                'Assuming Siemens time stamp format. If this is wrong, consider opening an Issue',
                 stacklevel=1,
             )
             convert_time_stamp = convert_time_stamp_siemens
@@ -176,8 +177,7 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
                 stacklevel=1,
             )
 
-        shapes = (torch.as_tensor([len(acq.data) for acq in acquisitions]) - discard_pre - discard_post).unique()
-
+        shapes = (torch.as_tensor([acq.data.shape[-1] for acq in acquisitions]) - discard_pre - discard_post).unique()
         if len(shapes) > 1:
             if discard_pre.any() or discard_post.any():
                 note = 'discard_pre and post were applied.'
@@ -191,7 +191,11 @@ class KData(KDataSplitMixin, KDataRearrangeMixin, KDataSelectMixin, KDataRemoveO
                     stacklevel=1,
                 )
         kdata = torch.stack(
-            [torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions if len(acq) == shapes[-1]]
+            [
+                torch.as_tensor(acq.data[..., pre : acq.data.shape[-1] - post], dtype=torch.complex64)
+                for acq, pre, post in zip(acquisitions, discard_pre, discard_post, strict=True)
+                if acq.data.shape[-1] - pre - post == shapes[-1]
+            ]
         )
 
         # Raises ValueError if required fields are missing in the header
