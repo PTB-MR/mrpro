@@ -8,7 +8,7 @@ from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 def test_kheader_overwrite_missing_parameter(random_mandatory_ismrmrd_header, random_acq_info):
     """KHeader can be created if trajectory is provided."""
     overwrite = {'trajectory': DummyTrajectory()}
-    kheader = KHeader.from_ismrmrd(random_mandatory_ismrmrd_header, random_acq_info)
+    kheader = KHeader.from_ismrmrd(random_mandatory_ismrmrd_header, random_acq_info, overwrite=overwrite)
     assert kheader is not None
     assert kheader.trajectory is overwrite['trajectory']
 
