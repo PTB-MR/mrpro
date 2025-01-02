@@ -4,8 +4,8 @@ import weakref
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import Field, dataclass, fields
 from functools import lru_cache, reduce
-from types import TracebackType
-from typing import Annotated, Any, ClassVar, Literal, TypeAlias, get_args, get_origin
+from types import TracebackType, UnionType
+from typing import Annotated, Any, ClassVar, Literal, TypeAlias, Union, get_args, get_origin
 
 import torch
 from typing_extensions import Protocol, Self, runtime_checkable
@@ -99,7 +99,7 @@ def _parse_string_to_shape_specification(dim_str: str) -> tuple[tuple[_DimType, 
             if elem != '...':
                 raise SpecificationError("Anonymous multiple axes '...' must be used on its own; " f'got {elem}')
             if index_variadic is not None:
-                raise SpecificationError('Cannot use variadic specifiers (`*name` or `...`) ' 'more than once.')
+                raise SpecificationError('Cannot use variadic specifiers (`*name` or `...`) more than once.')
             index_variadic = index
             dims.append(_anonymous_variadic_dim)
             continue
@@ -118,7 +118,7 @@ def _parse_string_to_shape_specification(dim_str: str) -> tuple[tuple[_DimType, 
         elif variadic:
             dims.append(_NamedVariadicDim(elem, broadcastable))
             if index_variadic is not None:
-                raise SpecificationError('Cannot use variadic specifiers (`*name` or `...`) ' 'more than once.')
+                raise SpecificationError('Cannot use variadic specifiers (`*name` or `...`) more than once.')
             index_variadic = index
         elif anonymous:
             dims.append(_anonymous_dim)
@@ -179,10 +179,10 @@ class ShapeMemo(Mapping):
         self._d = dict(*arg, **kwargs)
 
     def __getitem__(self, key: str) -> tuple[tuple[int, ...], bool]:
-        """Get the shape of a named dimension."""
+        """Get the shape and if it can be broadcasted of a named dimension."""
         value = self._d[key]
         if isinstance(value, int):
-            return (value,), False
+            return (value,), False  # Default to non-broadcastable
         return value
 
     def __len__(self) -> int:
@@ -414,7 +414,7 @@ class Annotation:
             were the string will be ignored and only serves as documentation.
 
             Example:
-               `*#batch channel=2 depth #height #width` indicates that the object has at least  dimensions.
+               `*#batch channel=2 depth #height #width` indicates that the object has at least dimensions.
                The last two dimensions are named `height` and `width`.
                These must be broadcastable for all objects using the same memoization object.
                The depth dimensions must match exactly for all objects using the same memoization object.
@@ -627,7 +627,9 @@ class CheckDataMixin(DataclassInstance):
                 expected_type, *annotations = get_args(expected_type)
             else:
                 annotations = []
-            if not isinstance(expected_type, type):
+            if get_origin(expected_type) is Union:
+                expected_type = reduce(lambda a, b: a | b, get_args(expected_type))
+            if not isinstance(expected_type, type | UnionType):
                 raise TypeError(
                     f'Expected a type, got {type(expected_type)}. This could be caused by __future__.annotations'
                 )
@@ -637,7 +639,7 @@ class CheckDataMixin(DataclassInstance):
                 # there could be other annotations not related to the shape and dtype
                 if isinstance(annotation, Annotation):
                     try:
-                        memo = annotation.check(value, memo=memo, strict=True)
+                        memo = annotation.check(value, memo=memo, strict=False)
                     except RuntimeCheckError as e:
                         raise type(e)(
                             f'Dataclass invariant violated for {self.__class__.__name__}.{name}: {e}\n {annotation}.'
