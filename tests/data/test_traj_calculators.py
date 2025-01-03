@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import torch
 from einops import repeat
-from mrpro.data import KData
+from mrpro.data import KData, SpatialDimension
 from mrpro.data.enums import AcqFlags
 from mrpro.data.traj_calculators import (
     KTrajectoryCartesian,
@@ -17,7 +17,6 @@ from mrpro.data.traj_calculators import (
 )
 
 from tests.data import IsmrmrdRawTestData, PulseqRadialTestSeq
-from mrpro.data import SpatialDimension
 
 
 @pytest.fixture
