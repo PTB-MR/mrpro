@@ -104,12 +104,10 @@ def _parse_string_to_shape_specification(dim_str: str) -> tuple[tuple[_DimType, 
             dims.append(_anonymous_variadic_dim)
             continue
 
-        broadcastable = '#' in elem
-        elem = elem.replace('#', '')
-        variadic = '*' in elem
-        elem = elem.replace('*', '')
-        anonymous = '_' in elem
-        elem = elem.replace('_', '')
+        prefix, elem = elem[: len(elem) - len(elem.lstrip('#*_'))], elem.lstrip('#*_')
+        broadcastable = '#' in prefix
+        variadic = '*' in prefix
+        anonymous = '_' in prefix
         elem = elem.split('=')[-1]
         fixed = len(elem) != 0 and not elem.isidentifier()
 
