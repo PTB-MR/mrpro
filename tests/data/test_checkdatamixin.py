@@ -7,16 +7,16 @@ from mrpro.data.CheckDataMixin import (
     Annotation,
     CheckDataMixin,
     DtypeError,
-    FieldTypeError,
+    RuntimeCheckError,
     ShapeError,
     ShapeMemo,
     SpecificationError,
     SuspendDataChecks,
     _FixedDim,
     _NamedDim,
-    _parse_string_to_shape_specification,
-    _parse_string_to_size,
-    _shape_specification_to_string,
+    string_to_shape_specification,
+    string_to_size,
+    shape_specification_to_string,
 )
 
 
@@ -70,6 +70,17 @@ class WithOptional(CheckDataMixin):
         Union[None, torch.Tensor], Annotation(dtype=(torch.float32, torch.float64), shape='*#other coil #k2 #k1 #k0')  # noqa: UP007
     ] = None
     integer: int | None = None
+    outer_or_tensor: (
+        Annotated[torch.Tensor, Annotation(dtype=(torch.float32, torch.float64), shape='*#other coil #k2 #k1 #k0')]
+        | None
+    ) = None
+    outer_optional_tensor: Optional[  # noqa: UP007
+        Annotated[torch.Tensor, Annotation(dtype=(torch.float32, torch.float64), shape='*#other coil #k2 #k1 #k0')]
+    ] = None
+    outer_union_tensor: Union[  # noqa: UP007
+        None,
+        Annotated[torch.Tensor, Annotation(dtype=(torch.float32, torch.float64), shape='*#other coil #k2 #k1 #k0')],
+    ] = None
 
 
 def test_slots() -> None:
@@ -87,19 +98,49 @@ def test_frozen() -> None:
 def test_optional() -> None:
     """Test dataclass with None-able attributes"""
     WithOptional()
-    WithOptional(torch.ones(1, 1, 1, 1), torch.ones(1, 1, 1, 1), torch.ones(1, 1, 1, 1), torch.ones(1, 1, 1, 1), 1)
+    WithOptional(
+        torch.ones(1, 1, 1, 1),
+        torch.ones(1, 1, 1, 1),
+        torch.ones(1, 1, 1, 1),
+        torch.ones(1, 1, 1, 1),
+        1,
+        torch.ones(1, 1, 1, 1),
+        torch.ones(1, 1, 1, 1),
+        torch.ones(1, 1, 1, 1),
+    )
 
 
 def test_optional_fail() -> None:
     """Test exceptions with dataclass with None-able attributes"""
-    with pytest.raises(ShapeError):
+    with pytest.raises(RuntimeCheckError):
         WithOptional(None, torch.ones(1))
-    with pytest.raises(ShapeError):
+    with pytest.raises(RuntimeCheckError):
         WithOptional(None, None, torch.ones(1))
-    with pytest.raises(ShapeError):
+    with pytest.raises(RuntimeCheckError):
         WithOptional(None, None, None, torch.ones(1))
-    with pytest.raises(FieldTypeError):
+    with pytest.raises(RuntimeCheckError):
+        WithOptional(None, None, None, None, None, torch.ones(1))
+    with pytest.raises(RuntimeCheckError):
+        WithOptional(None, None, None, None, None, None, torch.ones(1))
+    with pytest.raises(RuntimeCheckError):
+        WithOptional(None, None, None, None, None, None, None, torch.ones(1))
+
+    with pytest.raises(RuntimeCheckError):
+        WithOptional('not a tensor')  # type:ignore[arg-type]
+    with pytest.raises(RuntimeCheckError):
+        WithOptional(None, 'not a tensor')  # type:ignore[arg-type]
+    with pytest.raises(RuntimeCheckError):
+        WithOptional(None, None, 'not a tensor')  # type:ignore[arg-type]
+    with pytest.raises(RuntimeCheckError):
+        WithOptional(None, None, None, 'not a tensor')  # type:ignore[arg-type]
+    with pytest.raises(RuntimeCheckError):
         WithOptional(None, None, None, None, 'not an integer')  # type:ignore[arg-type]
+    with pytest.raises(RuntimeCheckError):
+        WithOptional(None, None, None, None, None, 'not a tensor')  # type:ignore[arg-type]
+    with pytest.raises(RuntimeCheckError):
+        WithOptional(None, None, None, None, None, None, 'not a tensor')  # type:ignore[arg-type]
+    with pytest.raises(RuntimeCheckError):
+        WithOptional(None, None, None, None, None, None, None, 'not a tensor')  # type:ignore[arg-type]
 
 
 def test_checked_dataclass_success() -> None:
@@ -221,7 +262,7 @@ def test_dype_fail() -> None:
 )
 def test_parse_shape(string: str, expected: tuple) -> None:
     """Test parsing of shape string"""
-    parsed = _parse_string_to_shape_specification(string)
+    parsed = string_to_shape_specification(string)
     assert parsed == expected
 
 
@@ -237,7 +278,7 @@ def test_parse_shape(string: str, expected: tuple) -> None:
 )
 def test_specification_to_string(expected: str, shape: tuple) -> None:
     """Test conversion of parsed specification back to a string"""
-    string = _shape_specification_to_string(shape)
+    string = shape_specification_to_string(shape)
     assert string == expected
 
 
@@ -248,12 +289,12 @@ def test_string_to_shape() -> None:
     memo = instance._memo  # type:ignore[attr-defined]
     memo = memo | {'fromdict': 8}
     memo = memo | ShapeMemo(frommemo=9)
-    shape = _parse_string_to_size('fromdict frommemo fixed=3 dim 1', memo)
+    shape = string_to_size('fromdict frommemo fixed=3 dim 1', memo)
     assert shape == (8, 9, 3, 2, 1)
 
     with pytest.raises(KeyError):
-        _parse_string_to_size('doesnotexist', memo)
+        string_to_size('doesnotexist', memo)
     with pytest.raises(KeyError):
-        _parse_string_to_size('*doesnotexist', memo)
+        string_to_size('*doesnotexist', memo)
     with pytest.raises(SpecificationError):
-        _parse_string_to_size('...', memo)
+        string_to_size('...', memo)
