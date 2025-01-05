@@ -391,7 +391,7 @@ class MoveDataMixin:
 
         Looks at each field of a dataclass implementing a device attribute,
         such as torch.Tensors or MoveDataMixin instances. If the devices
-        of the fields differ, an InconsistentDeviceError is raised, otherwise
+        of the fields iffer, an InconsistentDeviceError is raised, otherwise
         the device is returned. If no field implements a device attribute,
         None is returned.
 

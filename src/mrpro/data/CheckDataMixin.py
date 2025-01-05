@@ -60,7 +60,7 @@ class FieldTypeError(RuntimeCheckError):
 
 
 @lru_cache
-def _parse_string_to_shape_specification(dim_str: str) -> tuple[tuple[_DimType, ...], int | None]:
+def string_to_shape_specification(dim_str: str) -> tuple[tuple[_DimType, ...], int | None]:
     """
     Parse a string representation of a shape specification into dimension types.
 
@@ -134,10 +134,10 @@ def _parse_string_to_shape_specification(dim_str: str) -> tuple[tuple[_DimType, 
     return tuple(dims), index_variadic
 
 
-def _shape_specification_to_string(dims: tuple[_DimType, ...]) -> str:
+def shape_specification_to_string(dims: tuple[_DimType, ...]) -> str:
     """Convert a shape specification to a string.
 
-    The inverse of `_parse_string_to_shape_specification`.
+    The inverse of `string_to_shape_specification`.
 
     Parameters
     ----------
@@ -323,7 +323,7 @@ def _check_named_variadic_dim(
 
 
 @lru_cache
-def _parse_string_to_size(shape_string: str, memo: ShapeMemo) -> tuple[int, ...]:
+def string_to_size(shape_string: str, memo: ShapeMemo) -> tuple[int, ...]:
     """Convert a string representation of a shape to a shape.
 
     Parameters
@@ -340,7 +340,7 @@ def _parse_string_to_size(shape_string: str, memo: ShapeMemo) -> tuple[int, ...]
 
     """
     shape: list[int] = []
-    for dim in _parse_string_to_shape_specification(shape_string)[0]:
+    for dim in string_to_shape_specification(shape_string)[0]:
         if isinstance(dim, _FixedDim):
             shape.append(int(dim.name))
         elif isinstance(dim, _NamedDim):
@@ -422,7 +422,7 @@ class Annotation:
             For more information, see `jaxtyping <https://docs.kidger.site/jaxtyping/api/array/>`__
         """
         if shape is not None:
-            self.shape, self.index_variadic = _parse_string_to_shape_specification(shape)
+            self.shape, self.index_variadic = string_to_shape_specification(shape)
         else:
             self.shape = None
         if dtype is not None:
@@ -452,7 +452,7 @@ class Annotation:
         """Get a string representation of the annotation."""
         arguments = []
         if self.shape is not None:
-            arguments.append(f"shape='{_shape_specification_to_string(self.shape) }'")
+            arguments.append(f"shape='{shape_specification_to_string(self.shape) }'")
         if self.dtype is not None:
             arguments.append(f'dtype={self.dtype}')
         representation = f"Annotation({', '.join(arguments)})"
@@ -621,28 +621,7 @@ class CheckDataMixin(DataclassInstance):
             name = elem.name
             expected_type = elem.type
             value = getattr(self, name)
-            if get_origin(expected_type) is Annotated:
-                expected_type, *annotations = get_args(expected_type)
-            else:
-                annotations = []
-            if get_origin(expected_type) is Union:
-                expected_type = reduce(lambda a, b: a | b, get_args(expected_type))
-            if not isinstance(expected_type, type | UnionType):
-                raise TypeError(
-                    f'Expected a type, got {type(expected_type)}. This could be caused by __future__.annotations'
-                )
-            if not isinstance(value, expected_type):
-                raise FieldTypeError(f'Expected {expected_type} for {name}, got {type(value)}')
-            for annotation in annotations:
-                # there could be other annotations not related to the shape and dtype
-                if isinstance(annotation, Annotation):
-                    try:
-                        memo = annotation.check(value, memo=memo, strict=False)
-                    except RuntimeCheckError as e:
-                        raise type(e)(
-                            f'Dataclass invariant violated for {self.__class__.__name__}.{name}: {e}\n {annotation}.'
-                        ) from None
-
+            memo = runtime_check(value, expected_type, memo)
             if recurse and isinstance(value, CheckDataMixin):
                 value.check_invariants(recurse=True)
 
@@ -707,3 +686,71 @@ class SuspendDataChecks:
             self.check()
         except RuntimeCheckError as e:
             raise type(e)(e) from None
+
+
+def runtime_check(value: object, type_hint: type | str | UnionType, memo: ShapeMemo | None = None) -> ShapeMemo | None:
+    """Perform runtime type, dtype and shape checks on a value.
+
+    Parameters
+    ----------
+    value
+        the object to check
+    type_hint
+        the type hint to check against
+    memo
+        a memoization object storing the shape of named dimensions
+        from previous checks. Will not be modified.
+
+    Returns
+    -------
+    memo
+        a new memoization object storing the shape of named dimensions from
+        previous and the current check.
+
+    Raises
+    ------
+    TypeError
+        If the type hint is not a type or string that can be evaluated to a type.
+    FieldTypeError
+        If the value does not match the type hint.
+    DtypeError
+        If the value does not match the dtype hint.
+    ShapeError
+        If the value does not match the shape hint.
+    RuntimeCheckError
+        On union types, if all options failed. Contains a list of the exceptions
+        that were raised for the options.
+    """
+    if isinstance(type_hint, str):  # stringified type hint
+        try:
+            type_hint = eval(type_hint)  # noqa: S307
+        except:  # noqa: E722
+            raise TypeError(
+                f'Cannot evaluate type hint string {type_hint}. Consider removing stringified type annotations.'
+            ) from None
+
+    if get_origin(type_hint) is Union or isinstance(type_hint, UnionType):
+        exceptions = []
+        for option in get_args(type_hint):
+            try:
+                # recursive call to check the value against the option
+                # if an option matches, we exit
+                return runtime_check(value, option, memo)
+            except RuntimeCheckError as e:
+                exceptions.append((option, e))
+        raise RuntimeCheckError(
+            'None of the options matched:\n'
+            + '\n'.join(f'  - {t} failed due to an {e.__class__.__name__}: {e}' for t, e in exceptions)
+        )
+    if get_origin(type_hint) is Annotated:
+        type_hint, *annotations = get_args(type_hint)
+        memo = runtime_check(value, type_hint, memo)
+        for annotation in annotations:
+            if isinstance(annotation, Annotation):  # there might be other annotations
+                memo = annotation.check(value, memo=memo)
+        return memo
+    if not isinstance(type_hint, type):
+        raise TypeError(f'Expected a type, got {type(type_hint)}')
+    if not isinstance(value, type_hint):
+        raise FieldTypeError(f'Expected {type_hint.__name__}, got {type(value).__name__}')
+    return memo
