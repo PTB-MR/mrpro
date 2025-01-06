@@ -11,7 +11,7 @@ MR image reconstruction and processing package specifically developed for PyTorc
 - **Source code:** <https://github.com/PTB-MR/mrpro>
 - **Documentation:** <https://ptb-mr.github.io/mrpro/>
 - **Bug reports:** <https://github.com/PTB-MR/mrpro/issues>
-- **Try it out:** [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/PTB-MR/mrpro.git/main?labpath=examples)
+- **Try it out:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/PTB-MR/mrpro)
 
 ## Awards
 
