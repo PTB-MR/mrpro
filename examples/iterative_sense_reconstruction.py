@@ -24,18 +24,16 @@ data_file.flush()
 # Let's assume we have obtained the k-space data $y$ from an image $x$ with an acquisition model (Fourier transforms,
 # coil sensitivity maps...) $A$ then we can formulate the forward problem as:
 #
-# $ y = Ax + n $
+# $ y = Ax + \eta $
 #
-# where $n$ describes complex Gaussian noise. The image $x$ can be obtained by minimizing the functional $F$
+# where $\eta$ describes complex Gaussian noise. The image $x$ can be obtained by minimizing the functional $F$
 #
-# $ F(x) = ||W^{\frac{1}{2}}(Ax - y)||_2^2 $
+# $ F(x) = ||(Ax - y)||_2^2 $
 #
-# where $W^\frac{1}{2}$ is the square root of the density compensation function (which corresponds to a diagonal
-# operator).
 #
 # Setting the derivative of the functional $F$ to zero and rearranging yields
 #
-# $ A^H W A x = A^H W y$
+# $ A^H A x = A^H y$
 #
 # which is a linear system $Hx = b$ that needs to be solved for $x$.
 # %%
@@ -57,7 +55,7 @@ kdata.header.recon_matrix.y = 256
 
 # %%
 # For comparison we can carry out a direct reconstruction
-direct_reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
+direct_reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata=kdata)
 img_direct = direct_reconstruction(kdata)
 
 # %% [markdown]
@@ -66,7 +64,7 @@ img_direct = direct_reconstruction(kdata)
 # %%
 # We can use the direct reconstruction to obtain the coil maps.
 iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
-    kdata, csm=direct_reconstruction.csm, n_iterations=4
+    kdata=kdata, csm=direct_reconstruction.csm, n_iterations=4
 )
 img = iterative_sense_reconstruction(kdata)
 
@@ -91,24 +89,24 @@ fourier_operator = mrpro.operators.FourierOp.from_kdata(kdata)
 # Calculate coil maps
 # Note that operators return a tuple of tensors, so we need to unpack it,
 # even though there is only one tensor returned from adjoint operator.
-img_coilwise = mrpro.data.IData.from_tensor_and_kheader(*fourier_operator.H(*dcf_operator(kdata.data)), kdata.header)
+img_coilwise = mrpro.data.IData.from_tensor_and_kheader(*(fourier_operator.H @ dcf_operator)(kdata.data), kdata.header)
 csm_operator = mrpro.data.CsmData.from_idata_walsh(img_coilwise).as_operator()
 
 # Create the acquisition operator A
 acquisition_operator = fourier_operator @ csm_operator
 
 # %% [markdown]
-# ##### Calculate the right-hand-side of the linear system $b = A^H W y$
+# ##### Calculate the right-hand-side of the linear system $b = A^H y$
 
 # %%
-(right_hand_side,) = acquisition_operator.H(dcf_operator(kdata.data)[0])
+(right_hand_side,) = acquisition_operator.H(kdata.data)
 
 
 # %% [markdown]
-# ##### Set-up the linear self-adjoint operator $H = A^H W A$
+# ##### Set-up the linear self-adjoint gram operator $H = A^H A$
 
 # %%
-operator = acquisition_operator.H @ dcf_operator @ acquisition_operator
+operator = acquisition_operator.gram
 
 # %% [markdown]
 # ##### Run conjugate gradient
