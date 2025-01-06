@@ -23,11 +23,13 @@ from mrpro.operators.SliceProjectionOp import SliceProjectionOp
 from mrpro.operators.WaveletOp import WaveletOp
 from mrpro.operators.ZeroPadOp import ZeroPadOp
 from mrpro.operators.ZeroOp import ZeroOp
+from mrpro.operators.DictionaryMatchOp import DictionaryMatchOp
 
 __all__ = [
     "CartesianSamplingOp",
     "ConstraintsOp",
     "DensityCompensationOp",
+    "DictionaryMatchOp",
     "EinsumOp",
     "ElementaryFunctional",
     "ElementaryProximableFunctional",
