@@ -3,21 +3,21 @@
 
 # %%
 # Imports
+import shutil
 import tempfile
 import zipfile
-from collections.abc import Callable
 from pathlib import Path
 
-import einops
 import matplotlib.pyplot as plt
 import torch
 import zenodo_get
 from einops import rearrange
+from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore [import-untyped]
+from mrpro.algorithms.optimizers import adam
 from mrpro.data import IData
-from mrpro.operators import MagnitudeOp, Operator
+from mrpro.operators import MagnitudeOp, DictionaryMatchOp
 from mrpro.operators.functionals import MSEDataDiscrepancy
 from mrpro.operators.models import InversionRecovery
-from typing_extensions import Self, TypeVarTuple, Unpack
 
 # %% [markdown]
 # ### Overview
@@ -98,70 +98,66 @@ functional = mse @ model
 
 # %%
 # Define 100 T1 values between 100 and 3000 ms
-t1_dictionary = torch.linspace(0.1, 3, 100).double()
-
-
-# Calculate the signal corresponding to each of these T1 values. We set M0 to 1, but this is arbitrary because M0 is
-# just a scaling factor and we are going to normalize the signal curves.
-(signal_dictionary,) = model(torch.ones(1), t1_dictionary)
-signal_dictionary = signal_dictionary + 0j
-# signal_dictionary = signal_dictionary.to(dtype=torch.complex128)
-vector_norm = torch.linalg.vector_norm(signal_dictionary, dim=0)
-signal_dictionary /= vector_norm
-
-# Calculate the dot-product and select for each voxel the T1 values that correspond to the maximum of the dot-product
-n_y, n_x = idata_multi_ti.data.shape[-2:]
-data = idata_multi_ti.data.to(torch.complex128)
-dot_product = torch.mm(rearrange(data, 'other 1 z y x->(z y x) other'), signal_dictionary)
-# print(signal_dictionary)
-idx_best_match = torch.argmax(torch.abs(dot_product), dim=1)
-# print(torch.abs(dot_product))
-t1_start = rearrange(t1_dictionary[idx_best_match], '(y x)->1 1 y x', y=n_y, x=n_x)
-
-
-Tin = TypeVarTuple('Tin')
-
-
-class DictionaryMatchOp(Operator[torch.Tensor, tuple[*Tin]]):
-    def __init__(self, generating_function: Callable[[Unpack[Tin]], tuple[torch.Tensor,]]):
-        super().__init__()
-        self._f = generating_function
-        self.x: list[torch.Tensor] = []
-        self.y = torch.tensor([])
-
-    def append(self, *x: Unpack[Tin]) -> Self:
-        (newy,) = self._f(*x)
-        newy = newy / torch.linalg.norm(newy, dim=0, keepdim=True)
-        newy = newy.flatten(start_dim=1)
-        newx = [x.flatten() for x in torch.broadcast_tensors(*x)]
-        if not self.x:
-            self.x = newx
-            self.y = newy
-            return self
-        self.x = [torch.cat(old, new) for old, new in zip(self.x, newx, strict=True)]
-        self.y = torch.cat((self.y, newy))
-        return
-
-    def forward(self, input_signal: torch.Tensor) -> tuple[Unpack[Tin]]:
-        similar = einops.einsum(input_signal, self.y, 't ..., t idx -> idx ...')
-        idx = torch.argmax(similar, dim=0)
-        match = [x[idx] for x in self.x]
-        return match
-
-
+t1_dictionary = torch.linspace(100, 3000, 100)
+# Dictionary Matching
 dict_match_op = DictionaryMatchOp(model)
 dictionary = dict_match_op.append(torch.ones(1), t1_dictionary)
-t1_start_new = dict_match_op.forward(idata_multi_ti.rss().double())[1]
-(t1_start == t1_start_new).all()
+t1_start = dict_match_op.forward(idata_multi_ti.data)[1]
 # %%
+# The image with the longest inversion time is a good approximation of the equilibrium magnetization
+m0_start = torch.abs(idata_multi_ti.data[torch.argmax(idata_multi_ti.header.ti), ...])
+
+# %%
+# Visualize the starting values
+fig, axes = plt.subplots(1, 2, figsize=(8, 2), squeeze=False)
+colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05) for ax in axes[0, :]]
+im = axes[0, 0].imshow(m0_start[0, 0, ...])
+axes[0, 0].set_title('M0 start values')
+fig.colorbar(im, cax=colorbar_ax[0])
+im = axes[0, 1].imshow(t1_start[0, 0, ...], vmin=0, vmax=2500)
+axes[0, 1].set_title('T1 start values')
+fig.colorbar(im, cax=colorbar_ax[1])
+
+# %% [markdown]
+# ### Carry out fit
+
+# %%
+# Hyperparameters for optimizer
+max_iter = 2000
+lr = 1e0
+
+# Run optimization
+params_result = adam(functional, [m0_start, t1_start], max_iter=max_iter, lr=lr)
+m0, t1 = (p.detach() for p in params_result)
+m0[torch.isnan(t1)] = 0
+t1[torch.isnan(t1)] = 0
+
+# %% [markdown]
+# ### Visualize the final results
+# To get an impression of how well the fit has worked, we are going to calculate the relative error between
+#
+# $E_{relative} = \sum_{TI}\frac{|(q(M_0, T1, TI) - x)|}{|x|}$
+#
+# on a voxel-by-voxel basis
+
+# %%
+img_mult_te_abs_sum = torch.sum(torch.abs(idata_multi_ti.data), dim=0)
+relative_absolute_error_old = torch.sum(torch.abs(model(m0, t1)[0] - idata_multi_ti.data), dim=0) / (
+    img_mult_te_abs_sum + 1e-9
+)
+fig, axes = plt.subplots(1, 3, figsize=(10, 2), squeeze=False)
+colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05) for ax in axes[0, :]]
+im = axes[0, 0].imshow(m0[0, 0, ...])
+axes[0, 0].set_title('M0')
+fig.colorbar(im, cax=colorbar_ax[0])
+im = axes[0, 1].imshow(t1[0, 0, ...], vmin=0, vmax=2500)
+axes[0, 1].set_title('T1')
+fig.colorbar(im, cax=colorbar_ax[1])
+im = axes[0, 2].imshow(relative_absolute_error_old[0, 0, ...], vmin=0, vmax=1.0)
+axes[0, 2].set_title('Relative error')
+fig.colorbar(im, cax=colorbar_ax[2])
 
 
 # %%
-import matplotlib.pyplot as plt
-
-plt.matshow(t1_start.real.squeeze())
-# %%
-import matplotlib.pyplot as plt
-
-plt.matshow(t1_start_new.real.squeeze())
-# %%
+# Clean-up by removing temporary directory
+shutil.rmtree(data_folder)
