@@ -2,16 +2,27 @@
 # # TV-regularized reconstruction
 
 # %%
+# Imports
+import shutil
+import tempfile
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import torch
-from mrpro.algorithms.reconstruction import DirectReconstruction, TotalVariationRegularizedReconstruction, TotalVariationDenoising, RegularizedIterativeSENSEReconstruction
-from mrpro.data import CsmData, KData, IData
+import zenodo_get
+from mrpro.algorithms.reconstruction import (
+    DirectReconstruction,
+    RegularizedIterativeSENSEReconstruction,
+    TotalVariationDenoising,
+    TotalVariationRegularizedReconstruction,
+)
+from mrpro.data import CsmData, IData, KData
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.utils import split_idx
 
-
 # %% [markdown]
 # We define a plotting function to look at some of the dynamic frames and also a plot along the time dimension.
+
 
 # %%
 def show_dynamic_images(img: torch.Tensor, vmin: float = 0, vmax: float = 0.8) -> None:
@@ -41,13 +52,16 @@ def show_dynamic_images(img: torch.Tensor, vmin: float = 0, vmax: float = 0.8) -
 # sensitivity maps. Finally, split the data into different dynamics.
 
 # %%
-# Load in the data from the ISMRMRD file
-from pathlib import Path
+# Download raw data in ISMRMRD format from zenodo into a temporary directory
+data_folder = Path(tempfile.mkdtemp())
+dataset = '13207352'
+zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 
-fname = Path('/Users/kolbit01/Documents/PTB/Data/mrpro/raw/2D_GRad_map_t1_traj_2s.h5')
-kdata = KData.from_file(fname, KTrajectoryIsmrmrd())
-kdata.header.recon_matrix.x = 128
-kdata.header.recon_matrix.y = 128
+
+# %%
+# Read raw data and trajectory
+kdata = KData.from_file(data_folder / '2D_GRad_map_t1.h5', KTrajectoryIsmrmrd())
+
 
 # Calculate coil maps
 reconstruction = DirectReconstruction(kdata, csm=None)
@@ -74,8 +88,8 @@ show_dynamic_images(img_direct.rss())
 #
 # using PDHG.
 #
-# Because we have 2D dynamic images we can apply the TV-regularisation along x,y and time.
-# For this we set the regularisation weight along dimensions -1 (x), -2 (y) and -5 (time).
+# Because we have 2D dynamic images we can apply the TV-regularization along x,y and time.
+# For this we set the regularization weight along dimensions -1 (x), -2 (y) and -5 (time).
 #
 # For more information on this reconstruction method have a look at the tv_minimization_reconstruction_pdhg example.
 
@@ -114,27 +128,35 @@ show_dynamic_images(img_tv.rss())
 
 # %%
 data_weight = 0.5
-tv_denoising = TotalVariationDenoising(regularization_weight=(0.1/data_weight, 0, 0, 0.1/data_weight, 0.1/data_weight), n_iterations=100)
-regularised_iterative_sense = RegularizedIterativeSENSEReconstruction(kdata_dynamic, csm=csm, n_iterations=10, regularization_weight=data_weight)
 n_adam_iterations = 4
+regularization_weight = 0.1 / (data_weight * n_adam_iterations)
+tv_denoising = TotalVariationDenoising(
+    regularization_weight=(regularization_weight, 0, 0, regularization_weight, regularization_weight), n_iterations=100
+)
+regularized_iterative_sense = RegularizedIterativeSENSEReconstruction(
+    kdata_dynamic, csm=csm, n_iterations=10, regularization_weight=data_weight
+)
 img_z = img_direct.clone()
+img_x = img_direct.clone()
 img_u = torch.zeros_like(img_direct.data)
 for _ in range(n_adam_iterations):
     # Denoising
+    tv_denoising.initial_image = img_x.data
     img_x = tv_denoising(IData(img_z.data - img_u, img_direct.header))
-    show_dynamic_images(img_x.rss())
 
-    # Iterative SENSE
-    regularised_iterative_sense.regularization_data = img_x.data + img_u
-    img_z = regularised_iterative_sense(kdata_dynamic)
-    show_dynamic_images(img_z.rss())
+    # Regularized iterative SENSE
+    regularized_iterative_sense.regularization_data = img_x.data + img_u
+    img_z = regularized_iterative_sense(kdata_dynamic)
 
     # Update u
     img_u = img_u + img_x.data - img_z.data
-    show_dynamic_images(img_u[:,0,...].abs())
 
 
 # %%
 show_dynamic_images(img_x.rss())
 show_dynamic_images(img_z.rss())
-show_dynamic_images(img_u[:,0,...].abs())
+show_dynamic_images(img_u[:, 0, ...].abs())
+
+# %%
+# Clean-up by removing temporary directory
+shutil.rmtree(data_folder)
