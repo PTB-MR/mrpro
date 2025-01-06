@@ -92,11 +92,11 @@ print(img.shape)
 
 # %% [markdown]
 # We can see that the second dimension, which is the coil dimension, is 16. This means we still have a coil resolved
-# dataset (i.e. one image for each coil element). We can use a simply root-sum-of-squares approach to combine them into one. Later, we will do something a bit
-# more sophisticated. We can also see that the x-dimension is 512. This is because in MRI we commonly oversample the
-# readout direction by a factor 2 leading to a FOV twice as large as we actually need. We can either remove this
-# oversampling along the readout direction or we can simply tell the `FastFourierOp` to crop the image by providing the
-# correct output matrix size (recon_matrix).
+# dataset (i.e. one image for each coil element). We can use a simply root-sum-of-squares approach to combine them into
+# one. Later, we will do something a bit more sophisticated. We can also see that the x-dimension is 512. This is
+# because in MRI we commonly oversample the readout direction by a factor 2 leading to a FOV twice as large as we
+# actually need. We can either remove this oversampling along the readout direction or we can simply tell the
+# `FastFourierOp` to crop the image by providing the correct output matrix size (recon_matrix).
 
 # %%
 # Create FFT-operator with correct output matrix size
