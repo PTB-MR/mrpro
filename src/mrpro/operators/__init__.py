@@ -25,6 +25,7 @@ from mrpro.operators.WaveletOp import WaveletOp
 from mrpro.operators.ZeroPadOp import ZeroPadOp
 from mrpro.operators.ZeroOp import ZeroOp
 
+
 __all__ = [
     "CartesianSamplingOp",
     "ConstraintsOp",
@@ -43,6 +44,7 @@ __all__ = [
     "LinearOperatorMatrix",
     "MagnitudeOp",
     "MultiIdentityOp",
+    "MatchingOp"
     "Operator",
     "PCACompressionOp",
     "PhaseOp",
