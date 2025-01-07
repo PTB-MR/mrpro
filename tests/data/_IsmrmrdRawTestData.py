@@ -147,6 +147,7 @@ class IsmrmrdRawTestData:
         # Acquisition System Information
         sys = ismrmrd.xsd.acquisitionSystemInformationType()
         sys.receiverChannels = self.n_coils
+        sys.systemVendor = 'Siemens'
         header.acquisitionSystemInformation = sys
 
         # Sequence Information
