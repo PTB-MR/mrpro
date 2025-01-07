@@ -10,11 +10,14 @@ from mrpro.utils.smap import smap
 from mrpro.utils.split_idx import split_idx
 from mrpro.utils.reshape import broadcast_right, unsqueeze_left, unsqueeze_right, reduce_view, reshape_broadcasted
 from mrpro.utils.zero_pad_or_crop import zero_pad_or_crop
+from mrpro.utils.getnested import getnestedattr, getnesteditem
 
 __all__ = [
     "Indexer",
     "broadcast_right",
     "fill_range_",
+    "getnestedattr",
+    "getnesteditem",
     "reduce_view",
     "remove_repeat",
     "reshape_broadcasted",
