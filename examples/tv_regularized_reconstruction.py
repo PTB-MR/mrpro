@@ -41,7 +41,9 @@ def show_dynamic_images(img: torch.Tensor, vmin: float = 0, vmax: float = 0.8) -
     img = img / img.max()
     for jnd in range(4):
         if jnd == 3:
-            ax[0, jnd].imshow(torch.squeeze(img[..., 64]), vmin=vmin, vmax=vmax, cmap='gray', aspect='auto')
+            ax[0, jnd].imshow(
+                torch.squeeze(img[..., img.shape[-1] // 2]), vmin=vmin, vmax=vmax, cmap='gray', aspect='auto'
+            )
         else:
             ax[0, jnd].imshow(torch.squeeze(img[jnd, ...]), vmin=vmin, vmax=vmax, cmap='gray')
 
