@@ -3,10 +3,10 @@
 from collections.abc import Callable
 
 from mrpro.algorithms.reconstruction.Reconstruction import Reconstruction
-from mrpro.data._kdata.KData import KData
 from mrpro.data.CsmData import CsmData
 from mrpro.data.DcfData import DcfData
 from mrpro.data.IData import IData
+from mrpro.data.KData import KData
 from mrpro.data.KNoise import KNoise
 from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.LinearOperator import LinearOperator
