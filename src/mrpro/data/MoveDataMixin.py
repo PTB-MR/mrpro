@@ -62,21 +62,21 @@ class MoveDataMixin:
     def to(self, *args, **kwargs) -> Self:
         """Perform dtype and/or device conversion of data.
 
-        A torch.dtype and torch.device are inferred from the arguments
+        A :py:class:`torch.dtype` and :py:class:`torch.device` are inferred from the arguments
         args and kwargs. Please have a look at the
-        documentation of torch.Tensor.to() for more details.
+        documentation of :py:class:`torch.Tensor.to()` for more details.
 
         A new instance of the dataclass will be returned.
 
         The conversion will be applied to all Tensor- or Module
         fields of the dataclass, and to all fields that implement
-        the MoveDataMixin.
+        the :py:class:`MoveDataMixin`.
 
         The dtype-type, i.e. float or complex will always be preserved,
         but the precision of floating point dtypes might be changed.
 
         Example:
-        If called with dtype=torch.float32 OR dtype=torch.complex64:
+        If called with ``dtype=torch.float32`` OR ``dtype=torch.complex64``:
 
         - A complex128 tensor will be converted to complex64
         - A float64 tensor will be converted to float32
@@ -156,10 +156,10 @@ class MoveDataMixin:
     ) -> Self:
         """Move data to device and convert dtype if necessary.
 
-        This method is called by .to(),  .cuda(),  .cpu(), .double(), and so on.
-        It should not be called directly.
+        This method is called by :py:func:`.to()`, :py:func:`.cuda()`, :py:func:`.cpu()`,
+        :py:func:`.double()`, and so on. It should not be called directly.
 
-        See .to() for more details.
+        See :py:func:`.to()` for more details.
 
         Parameters
         ----------
@@ -397,7 +397,7 @@ class MoveDataMixin:
 
         Raises
         ------
-        InconsistentDeviceError:
+        `Inconsistent   DeviceError`:
             If the devices of different fields differ.
 
         Returns
