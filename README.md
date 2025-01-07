@@ -5,13 +5,14 @@
 ![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Coverage Bagde](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ckolbPTB/48e334a10caf60e6708d7c712e56d241/raw/coverage.json)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14509598.svg)](https://doi.org/10.5281/zenodo.14509598)
 
 MR image reconstruction and processing package specifically developed for PyTorch.
 
 - **Source code:** <https://github.com/PTB-MR/mrpro>
 - **Documentation:** <https://ptb-mr.github.io/mrpro/>
 - **Bug reports:** <https://github.com/PTB-MR/mrpro/issues>
-- **Try it out:** [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/PTB-MR/mrpro.git/main?labpath=examples)
+- **Try it out:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/PTB-MR/mrpro)
 
 ## Awards
 
