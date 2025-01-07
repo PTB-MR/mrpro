@@ -372,6 +372,7 @@ class KData(
         kdata_coil_compressed = torch.reshape(
             kdata_coil_compressed_flattened, [*kdata_permuted.shape[:-1], n_compressed_coils]
         ).permute(*np.argsort(permute_order))
+
         return type(self)(self.header.clone(), kdata_coil_compressed, self.traj.clone())
 
     def rearrange_k2_k1_into_k1(self: Self) -> Self:
