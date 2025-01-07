@@ -98,7 +98,7 @@ Please check how your new additions render in the documentation before requestin
 
 Adding new Examples
 ===================
-New exciting applications of MRpro can be added in ```examples``` as only ```.py``` files with code-cells. These can, for example, be used in VSCode with the python extension, or in JupyterLab with the `jupytext <https://jupytext.readthedocs.io/en/latest/install.html>`_ extension.
+New exciting applications of MRpro can be added in ```examples``` as only ```.py``` files with code-cells. These can, for example, be used in VSCode with the python extension, or in JupyterLab with the `jupytext <https://jupytext.readthedocs.io/en/latest/>`_ extension.
 An automatic workflow at github will create notebooks and pages in the documentation based on the python scripts.
 The data to run the examples should be publicly available and hosted externally, for example at zenodo.
 Please be careful not to add any binary files to your commits.

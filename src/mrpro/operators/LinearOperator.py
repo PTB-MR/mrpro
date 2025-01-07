@@ -104,26 +104,25 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         absolute_tolerance: float = 1e-5,
         callback: Callable[[torch.Tensor], None] | None = None,
     ) -> torch.Tensor:
-        """Power iteration for computing the operator norm of the linear operator.
+        """Power iteration for computing the operator norm of the operator.
 
         Parameters
         ----------
         initial_value
-            initial value to start the iteration; if the initial value contains a zero-vector for
-            one of the considered problems, the function throws an value error.
+            initial value to start the iteration; must be element of the domain.
+            if the initial value contains a zero-vector for one of the considered problems,
+            the function throws an `ValueError`.
         dim
-            the dimensions of the tensors on which the operator operates.
-            For example, for a matrix-vector multiplication example, a batched matrix tensor with shape (4,30,80,160),
-            input tensors of shape (4,30,160) to be multiplied, and dim = None, it is understood that the
-            matrix representation of the operator corresponds to a block diagonal operator (with 4*30 matrices)
-            and thus the algorithm returns a tensor of shape (1,1,1) containing one single value.
-            In contrast, if for example, dim=(-1,), the algorithm computes a batched operator
-            norm and returns a tensor of shape (4,30,1) corresponding to the operator norms of the respective
-            matrices in the diagonal of the block-diagonal operator (if considered in matrix representation).
-            In any case, the output of the algorithm has the same number of dimensions as the elements of the
-            domain of the considered operator (whose dimensionality is implicitly defined by choosing dim), such that
-            the pointwise multiplication of the operator norm and elements of the domain (to be for example used
-            in a Landweber iteration) is well-defined.
+            The dimensions of the tensors on which the operator operates. The choice of `dim` determines how
+            the operator norm is inperpreted.
+            For example, for a matrix-vector multiplication with a batched matrix tensor of shape
+            `(batch1, batch2, row, column)` and a batched input tensor of shape `(batch1, batch2, row)`:
+            - If `dim=None`, the operator is considered as a block diagonal matrix with batch1*batch2 blocks
+              and the result is a tensor containing a single norm value (shape `(1, 1, 1)`).
+            - If `dim=(-1)`, `batch1*batch2` matrices are considered, and for each a separate operator norm is computed.
+            - If `dim=(-1,-2)`, `batch1` matrices with `batch2` blocks are considered, and for each matrix a
+              separate operator norm is computed.
+            Thus, the choice of `dim` determines implicitly determines the domain of the operator.
         max_iterations
             maximum number of iterations
         relative_tolerance
@@ -139,7 +138,10 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
         Returns
         -------
-            an estimaton of the operator norm
+            an estimaton of the operator norm. Shape corresponds to the shape of the input tensor `initial_value`
+            with the dimensions specified in `dim` reduced to a single value.
+            The pointwise multiplication of `initial_value` with the result of the operator norm will always
+            be well-defined.
         """
         if max_iterations < 1:
             raise ValueError('The number of iterations should be larger than zero.')

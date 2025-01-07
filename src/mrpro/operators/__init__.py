@@ -17,6 +17,7 @@ from mrpro.operators.MultiIdentityOp import MultiIdentityOp
 from mrpro.operators.PCACompressionOp import PCACompressionOp
 from mrpro.operators.PhaseOp import PhaseOp
 from mrpro.operators.ProximableFunctionalSeparableSum import ProximableFunctionalSeparableSum
+from mrpro.operators.RearrangeOp import RearrangeOp
 from mrpro.operators.SensitivityOp import SensitivityOp
 from mrpro.operators.SignalModel import SignalModel
 from mrpro.operators.SliceProjectionOp import SliceProjectionOp
@@ -46,6 +47,7 @@ __all__ = [
     "PhaseOp",
     "ProximableFunctional",
     "ProximableFunctionalSeparableSum",
+    "RearrangeOp",
     "ScaledFunctional",
     "ScaledProximableFunctional",
     "SensitivityOp",

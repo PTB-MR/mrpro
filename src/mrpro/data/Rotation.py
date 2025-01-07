@@ -391,7 +391,7 @@ class Rotation(torch.nn.Module):
     - not all features are implemented. Notably, mrp, davenport, and reduce are missing.
     - arbitrary number of batching dimensions
     - support for improper rotations (rotoinversion), i.e., rotations with an coordinate inversion
-        or a reflection about a plane perpendicular to the rotation axis.
+      or a reflection about a plane perpendicular to the rotation axis.
     """
 
     def __init__(
@@ -404,7 +404,7 @@ class Rotation(torch.nn.Module):
     ) -> None:
         """Initialize a new Rotation.
 
-        Instead of calling this method, also consider the different ``from_*`` class methods to construct a Rotation.
+        Instead of calling this method, also consider the different `from_*` class methods to construct a Rotation.
 
         Parameters
         ----------
@@ -572,7 +572,7 @@ class Rotation(torch.nn.Module):
         References
         ----------
         .. [ROTa] Rotation matrix https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
-        .. [ROTb] Rotation matrix https://en.wikipedia.org/wiki/Improper_rotation
+        .. [ROTb] Improper Rotation https://en.wikipedia.org/wiki/Improper_rotation
         .. [MAR2008] Landis Markley F (2008) Unit Quaternion from Rotation Matrix, Journal of guidance, control, and
            dynamics 31(2),440-442.
         """
@@ -831,7 +831,7 @@ class Rotation(torch.nn.Module):
 
         Active rotations in 3 dimensions can be represented using unit norm
         quaternions [QUAb]_. The mapping from quaternions to rotations is
-        two-to-one, i.e. quaternions ``q`` and ``-q``, where ``-q`` simply
+        two-to-one, i.e. quaternions `q` and `-q`, where `-q` simply
         reverses the sign of each component, represent the same spatial
         rotation. The returned value is in scalar-last (x, y, z, w) format.
 
@@ -906,7 +906,7 @@ class Rotation(torch.nn.Module):
         """Represent as rotation matrix.
 
         3D rotations can be represented using rotation matrices, which
-        are 3 x 3 real orthogonal matrices with determinant equal to +1 [ROTb]_
+        are 3 x 3 real orthogonal matrices with determinant equal to +1 [ROTa]_
         for proper rotations and -1 for improper rotations.
 
         Returns
@@ -916,7 +916,7 @@ class Rotation(torch.nn.Module):
 
         References
         ----------
-        .. [ROTb] Rotation matrix https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
+        .. [ROTa] Rotation matrix https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
         """
         quaternions = self._quaternions
         matrix = _quaternion_to_matrix(quaternions)
@@ -1155,10 +1155,11 @@ class Rotation(torch.nn.Module):
     ) -> torch.Tensor | SpatialDimension[torch.Tensor] | Self:
         """Either apply a function to the Rotation module or apply the rotation to a vector.
 
-        This is a hybrid method that matches the signature of both `torch.nn.Module.apply` and
-        `scipy.spatial.transform.Rotation.apply`.
+        This is a hybrid method that matches the signature of both :py:func:`torch.nn.Module.apply` and
+        :py:func:`scipy.spatial.transform.Rotation.apply`.
         If a callable is passed, it is assumed to be a function that will be applied to the Rotation module.
-        For applying the rotation to a vector, consider using `Rotation(vector)` instead of `Rotation.apply(vector)`.
+        For applying the rotation to a vector, consider using :py:func:`rotation(vector)` instead of
+        :py:func:`rotation.apply(vector)`.
         """
         if callable(fn):
             # torch.nn.Module.apply
@@ -1200,7 +1201,7 @@ class Rotation(torch.nn.Module):
           components are expressed in the original frame before and after the rotation.
 
         In terms of rotation matrices, this application is the same as
-        ``self.as_matrix() @ vectors``.
+        `self.as_matrix() @ vectors`.
 
         Parameters
         ----------
@@ -1221,9 +1222,9 @@ class Rotation(torch.nn.Module):
 
                 - If object contains a single rotation (as opposed to a stack
                   with a single rotation) and a single vector is specified with
-                  shape ``(3,)``, then `rotated_vectors` has shape ``(3,)``.
-                - In all other cases, `rotated_vectors` has shape ``(..., 3)``,
-                  where ``...`` is determined by broadcasting.
+                  shape `(3,)`, then `rotated_vectors` has shape `(3,)`.
+                - In all other cases, `rotated_vectors` has shape `(..., 3)`,
+                  where `...` is determined by broadcasting.
         """
         matrix = self.as_matrix()
         if inverse:
@@ -1278,23 +1279,23 @@ class Rotation(torch.nn.Module):
         Parameters
         ----------
         num
-            Number of random rotations to generate. If None (default), then a
+            Number of random rotations to generate. If `None`, then a
             single rotation is generated.
         random_state
-            If `random_state` is None, the `numpy.random.RandomState`
+            If `random_state` is `None`, the :py:class:`~numpy.random.RandomState`
             singleton is used.
-            If `random_state` is an int, a new ``RandomState`` instance is used,
+            If `random_state` is an int, a new `RandomState` instance is used,
             seeded with `random_state`.
-            If `random_state` is already a ``Generator`` or ``RandomState`` instance
+            If `random_state` is already a  :py:class:`Generator` or :py:class:`RandomState` instance
             then that instance is used.
         improper
-            if True, only improper rotations are generated. If False, only proper rotations are generated.
+            if `True`, only improper rotations are generated. If False, only proper rotations are generated.
             if "random", then a random mix of proper and improper rotations are generated.
 
         Returns
         -------
         random_rotation
-            Contains a single rotation if `num` is None. Otherwise contains a
+            Contains a single rotation if `num` is `None`. Otherwise contains a
             stack of `num` rotations.
         """
         generator: np.random.RandomState = check_random_state(random_state)
@@ -1341,7 +1342,7 @@ class Rotation(torch.nn.Module):
             Standard deviation (radians) of the 2pi-wrapped Gaussian distribution used to sample the rotation angle.
             Use `math.inf` if a uniform distribution is desired.
         num
-            number of samples to generate. If None, a single rotation is generated.
+            number of samples to generate. If `None`, a single rotation is generated.
 
         Returns
         -------
@@ -1371,14 +1372,14 @@ class Rotation(torch.nn.Module):
         If `p` and `q` are two rotations, then the composition of 'q followed
         by p' is equivalent to `p * q`. In terms of rotation matrices,
         the composition can be expressed as
-        ``p.as_matrix() @ q.as_matrix()``.
+        `p.as_matrix() @ q.as_matrix()`.
 
         Parameters
         ----------
         other
             Object containing the rotations to be composed with this one. Note
-            that rotation compositions are not commutative, so ``p * q`` is
-            generally different from ``q * p``.
+            that rotation compositions are not commutative, so `p * q` is
+            generally different from `q * p`.
 
         Returns
         -------
@@ -1386,12 +1387,12 @@ class Rotation(torch.nn.Module):
             This function supports composition of multiple rotations at a time.
             The following cases are possible:
 
-            - Either ``p`` or ``q`` contains a single rotation. In this case
+            - Either `p` or `q` contains a single rotation. In this case
               `composition` contains the result of composing each rotation in
               the other object with the single rotation.
-            - Both ``p`` and ``q`` contain ``N`` rotations. In this case each
-              rotation ``p[i]`` is composed with the corresponding rotation
-              ``q[i]`` and `output` contains ``N`` rotations.
+            - Both `p` and `q` contain `N` rotations. In this case each
+              rotation `p[i]` is composed with the corresponding rotation
+              `q[i]` and `output` contains `N` rotations.
         """
         if not isinstance(other, Rotation):
             return NotImplemented  # type: ignore[unreachable]
@@ -1410,14 +1411,14 @@ class Rotation(torch.nn.Module):
     def __pow__(self, n: float, modulus: None = None):
         """Compose this rotation with itself `n` times.
 
-        Composition of a rotation ``p`` with itself can be extended to
-        non-integer ``n`` by considering the power ``n`` to be a scale factor
+        Composition of a rotation `p` with itself can be extended to
+        non-integer `n` by considering the power `n` to be a scale factor
         applied to the angle of rotation about the rotation's fixed axis. The
-        expression ``q = p ** n`` can also be expressed as
-        ``q = Rotation.from_rotvec(n * p.as_rotvec())``.
+        expression `q = p ** n` can also be expressed as
+        `q = Rotation.from_rotvec(n * p.as_rotvec())`.
 
-        If ``n`` is negative, then the rotation is inverted before the power
-        is applied. In other words, ``p ** -abs(n) == p.inv() ** abs(n)``.
+        If `n` is negative, then the rotation is inverted before the power
+        is applied. In other words, `p ** -abs(n) == p.inv() ** abs(n)`.
 
         Parameters
         ----------
@@ -1425,22 +1426,22 @@ class Rotation(torch.nn.Module):
             The number of times to compose the rotation with itself.
         modulus
             This overridden argument is not applicable to Rotations and must be
-            ``None``.
+            `None`.
 
         Returns
         -------
-        power : `Rotation` instance
-            If the input Rotation ``p`` contains ``N`` multiple rotations, then
-            the output will contain ``N`` rotations where the ``i`` th rotation
-            is equal to ``p[i] ** n``
+        power
+            If the input Rotation `p` contains `N` multiple rotations, then
+            the output will contain `N` rotations where the `i` th rotation
+            is equal to `p[i] ** n`
 
         Notes
         -----
         For example, a power of 2 will double the angle of rotation, and a
         power of 0.5 will halve the angle. There are three notable cases: if
-        ``n == 1`` then the original rotation is returned, if ``n == 0``
-        then the identity rotation is returned, and if ``n == -1`` then
-        ``p.inv()`` is returned.
+        `n == 1` then the original rotation is returned, if `n == 0`
+        then the identity rotation is returned, and if `n == -1` then
+        `p.inv()` is returned.
 
         For improper rotations, the power of a rotation with a reflection is
         equivalent to the power of the rotation without the reflection, followed
@@ -1449,9 +1450,9 @@ class Rotation(torch.nn.Module):
         This means that, for example a 0.5 power of a rotation with a reflection
         applied twice will result in a rotation without a reflection.
 
-        Note that fractional powers ``n`` which effectively take a root of
+        Note that fractional powers `n` which effectively take a root of
         rotation, do so using the shortest path smallest representation of that
-        angle (the principal root). This means that powers of ``n`` and ``1/n``
+        angle (the principal root). This means that powers of `n` and `1/n`
         are not necessarily inverses of each other. For example, a 0.5 power of
         a +240 degree rotation will be calculated as the 0.5 power of a -120
         degree rotation, with the result being a rotation of -60 rather than
@@ -1569,7 +1570,7 @@ class Rotation(torch.nn.Module):
             considered equal.
         degrees
             If True and `atol` is given, then `atol` is measured in degrees. If
-            False (default), then atol is measured in radians.
+            False, then atol is measured in radians.
 
         Returns
         -------
@@ -1596,11 +1597,11 @@ class Rotation(torch.nn.Module):
 
         Returns
         -------
-        rotation
+        The extracted rotation(s).
 
         Raises
         ------
-        TypeError if the instance was created as a single rotation.
+        `TypeError` if the instance was created as a single rotation.
         """
         if self._single:
             raise TypeError('Single rotation is not subscriptable.')
@@ -1678,7 +1679,7 @@ class Rotation(torch.nn.Module):
 
         Raises
         ------
-        TypeError if the instance was created as a single rotation.
+        `TypeError` if the instance was created as a single rotation.
         """
         if self._single:
             raise TypeError('Single rotation is not subscriptable.')
@@ -1703,12 +1704,12 @@ class Rotation(torch.nn.Module):
         Parameters
         ----------
         shape
-            Number of identity rotations to generate. If None (default), then a
+            Number of identity rotations to generate. If `None`, then a
             single rotation is generated.
 
         Returns
         -------
-        identity : Rotation object
+        identity
             The identity rotation.
         """
         match shape:
@@ -1762,9 +1763,7 @@ class Rotation(torch.nn.Module):
         function is minimized to solve for the rotation matrix :math:`R`:
 
         .. math::
-
-            L(R) = \\frac{1}{2} \\sum_{i = 1}^{n} w_i \\lVert \\mathbf{a}_i -
-            R \\mathbf{b}_i \\rVert^2 ,
+            L(R) = \frac{1}{2} \sum_{i = 1}^{n} w_i \| a_i - R b_i \|^2 ,
 
         where :math:`w_i`'s are the `weights` corresponding to each vector.
 
@@ -1799,13 +1798,13 @@ class Rotation(torch.nn.Module):
             denotes a vector.
         weights
             Weights describing the relative importance of the vector
-            observations. If None (default), then all values in `weights` are
+            observations. If `None`, then all values in `weights` are
             assumed to be 1. One and only one weight may be infinity, and
             weights must be positive.
         return_sensitivity
             Whether to return the sensitivity matrix.
         allow_improper
-            If True, allow improper rotations to be returned. If False (default),
+            If True, allow improper rotations to be returned. If False,
             then the rotation is restricted to be proper.
 
         Returns
@@ -1895,14 +1894,14 @@ class Rotation(torch.nn.Module):
         r"""Get the mean of the rotations.
 
         The mean used is the chordal L2 mean (also called the projected or
-        induced arithmetic mean) [HAR2013]_. If ``A`` is a set of rotation matrices,
-        then the mean ``M`` is the rotation matrix that minimizes the
+        induced arithmetic mean) [HAR2013]_. If `A` is a set of rotation matrices,
+        then the mean `M` is the rotation matrix that minimizes the
         following loss function:
-        :math:`L(M) = \sum_{i = 1}^{n} w_i \lVert \mathbf{A}_i - \mathbf{M} \rVert^2`,
+        :math:`L(M) = \sum_{i = 1}^{n} w_i \| A_i - M \|^2`,
 
         where :math:`w_i`'s are the `weights` corresponding to each matrix.
 
-        Optionally, if A is a set of Rotation matrices with multiple batch dimensions,
+        Optionally, if `A` is a set of Rotation matrices with multiple batch dimensions,
         the dimensions to reduce over can be specified.
 
         If the rotations contains improper, the mean will be computed without
@@ -1914,17 +1913,17 @@ class Rotation(torch.nn.Module):
         ----------
         weights
             Weights describing the relative importance of the rotations. If
-            None (default), then all values in `weights` are assumed to be
+            `None`, then all values in `weights` are assumed to be
             equal.
         dim
-            Batch Dimensions to reduce over. None will always return a single Rotation.
+            Batch Dimensions to reduce over. `None` will always return a single Rotation.
         keepdim
             Keep reduction dimensions as length-1 dimensions.
 
 
         Returns
         -------
-        mean : `Rotation` instance
+        mean
             Object containing the mean of the rotations in the current
             instance.
 

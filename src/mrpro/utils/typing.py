@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
     import torch
     from numpy import ndarray
-    from torch._C import _NestedSequence as NestedSequence
+    from numpy._typing import _NestedSequence as NestedSequence
     from typing_extensions import SupportsIndex
 
     # This matches the torch.Tensor indexer typehint
@@ -24,8 +24,15 @@ if TYPE_CHECKING:
 
 
 else:
+    from numpy._typing import _NestedSequence
+
     TorchIndexerType: TypeAlias = Any
-    NestedSequence: TypeAlias = Any
+    """Torch indexer type."""
+
+    NestedSequence: TypeAlias = _NestedSequence
+    """A nested sequence type."""
+
     NumpyIndexerType: TypeAlias = Any
+    """Numpy indexer type."""
 
 __all__ = ['NestedSequence', 'NumpyIndexerType', 'TorchIndexerType']

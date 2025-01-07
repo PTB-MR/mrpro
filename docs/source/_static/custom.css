@@ -7,3 +7,9 @@ html {
 .wy-nav-content {
     max-width: 75% !important;
 }
+
+
+dl.py.property {
+    /* new line after each property */
+    display: block !important;
+}
