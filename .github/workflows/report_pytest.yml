@@ -23,12 +23,12 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           name: pytest-report
-
-      - name: Parse pytest_data.json
+      # pytest_data is set in pytest.yml as A=value\nB=value\n...
+      - name: Set vars from pytest_data
         run: |
-          echo "pr-number=$(jq -r '.pr_number' docs_data.json)" >> $GITHUB_ENV
-          echo "event-name=$(jq -r '.event_name' docs_data.json)" >> $GITHUB_ENV
-          echo "ref=$(jq -r '.ref' docs_data.json)" >> $GITHUB_ENV
+          while IFS= read -r line; do
+            echo "$line" >> $GITHUB_ENV
+          done < pytest_data
 
       - name: Post PyTest Coverage Comment
         id: coverage_comment

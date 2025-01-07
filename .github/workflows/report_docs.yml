@@ -11,6 +11,8 @@ jobs:
   docs_report:
     name: Docs report
     runs-on: ubuntu-latest
+    # proceed only if the Sphinx Docs workflow run was successful
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     permissions:
       actions: read
       contents: write
@@ -29,23 +31,16 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           name: docs-data
 
-      - name: Parse docs data docs_data.json to outputs
-        id: parse_docs_data
-        run: |
-          echo "artifact-url=$(jq -r '.artifact_url' docs_data.json)" >> $GITHUB_ENV
-          echo "pr-number=$(jq -r '.pr_number' docs_data.json)" >> $GITHUB_ENV
-          echo "event-number=$(jq -r '.event_number' docs_data.json)" >> $GITHUB_ENV
-          echo "event-name=$(jq -r '.event_name' docs_data.json)" >> $GITHUB_ENV
-          echo "ref=$(jq -r '.ref' docs_data.json)" >> $GITHUB_ENV
-
-      - name: Set outputs
+      # docs_data is set in docs.yml as A=value\nB=value\n...
+      - name: Set vars from docs_data
         id: docs_data
         run: |
-          echo "artifact-url=${{ env.artifact-url }}" >> $GITHUB_OUTPUT
-          echo "pr-number=${{ env.pr-number }}" >> $GITHUB_OUTPUT
-          echo "event-number=${{ env.event-number }}" >> $GITHUB_OUTPUT
-          echo "event-name=${{ env.event-name }}" >> $GITHUB_OUTPUT
-          echo "ref=${{ env.ref }}" >> $GITHUB_OUTPUT
+          while IFS= read -r line; do
+            # for this job
+            echo "$line" >> $GITHUB_ENV
+            # for the next job
+            echo "$line" >> $GITHUB_OUTPUT
+          done < docs_data
 
       - name: Update PR with link to summary
         if: env.event-name == 'pull_request'
@@ -65,7 +60,6 @@ jobs:
     name: Deploy docs
     runs-on: ubuntu-latest
     needs: docs_report
-    # maybe should be test that the parent workflow was successful...
     if: needs.docs_report.outputs.event-name == 'push' && needs.docs_report.outputs.ref == 'refs/heads/main'
     permissions:
         actions: read

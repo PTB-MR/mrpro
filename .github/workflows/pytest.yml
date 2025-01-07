@@ -91,8 +91,7 @@ jobs:
           import os
           import xml.etree.ElementTree as ET
           tree = ET.parse('pytest.xml')
-          root = tree.getroot()
-          testsuite = root.find('testsuite') if root.tag != 'testsuite' else root
+          testsuite = tree.getroot().find(\".//testsuite[@name='pytest']\")
           failures = testsuite.attrib.get('failures', 0)
           errors = testsuite.attrib.get('errors', 0)
           with open(os.environ['GITHUB_ENV'], 'a') as f:
@@ -100,9 +99,11 @@ jobs:
               f.write(f'ERRORS={errors}\n')
           "
 
-      - name: Dump PR number, event_name and ref to pytest_data.json
+      - name: Dump PR number, event name and ref to pytest_data file
         run: |
-          echo '{"pr_number": "${{ github.event.number }}","event_name": "${{ github.event_name }}","ref": "${{ github.ref }}"}' > pytest_data.json
+          echo "pr-number=${{ github.event.number }}" > pytest_data
+          echo "event-name=${{ github.event_name }}" >> pytest_data
+          echo "ref=${{ github.ref }}" >> pytest_data
 
       - name: Upload PyTest Coverage Report
         uses: actions/upload-artifact@v4
@@ -111,7 +112,7 @@ jobs:
           path: |
             pytest-coverage.txt
             pytest.xml
-            pytest_data.json
+            pytest_data
           if-no-files-found: error
           overwrite: true
 
