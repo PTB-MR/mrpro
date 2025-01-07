@@ -31,10 +31,10 @@ class KTrajectory(MoveDataMixin):
     """Trajectory in z direction / phase encoding direction k2 if Cartesian. Shape `(*other,k2,k1,k0)`"""
 
     ky: torch.Tensor
-    """Trajectory in y direction / phase encoding direction k1 if Cartesian. Shape (*other,k2,k1,k0)"""
+    """Trajectory in y direction / phase encoding direction k1 if Cartesian. Shape `(*other,k2,k1,k0)`"""
 
     kx: torch.Tensor
-    """Trajectory in x direction / phase encoding direction k0 if Cartesian. Shape (*other,k2,k1,k0)"""
+    """Trajectory in x direction / phase encoding direction k0 if Cartesian. Shape `(*other,k2,k1,k0)`"""
 
     grid_detection_tolerance: float = 1e-3
     """tolerance of how close trajectory positions have to be to integer grid points."""

@@ -906,7 +906,7 @@ class Rotation(torch.nn.Module):
         """Represent as rotation matrix.
 
         3D rotations can be represented using rotation matrices, which
-        are 3 x 3 real orthogonal matrices with determinant equal to +1 [ROTa]_
+        are 3 x 3 real orthogonal matrices with determinant equal to +1 [ROT]_
         for proper rotations and -1 for improper rotations.
 
         Returns
@@ -916,7 +916,7 @@ class Rotation(torch.nn.Module):
 
         References
         ----------
-        .. [ROTa] Rotation matrix https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
+        .. [ROT] Rotation matrix https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
         """
         quaternions = self._quaternions
         matrix = _quaternion_to_matrix(quaternions)

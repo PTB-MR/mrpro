@@ -114,14 +114,14 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
             the function throws an `ValueError`.
         dim
             The dimensions of the tensors on which the operator operates. The choice of `dim` determines how
-            the operator norm is inperpreted.
-            For example, for a matrix-vector multiplication with a batched matrix tensor of shape
-            `(batch1, batch2, row, column)` and a batched input tensor of shape `(batch1, batch2, row)`:
+            the operator norm is inperpreted. For example, for a matrix-vector multiplication with a batched matrix
+            tensor of shape `(batch1, batch2, row, column)` and a batched input tensor of shape `(batch1, batch2, row)`:
             - If `dim=None`, the operator is considered as a block diagonal matrix with batch1*batch2 blocks
-              and the result is a tensor containing a single norm value (shape `(1, 1, 1)`).
+            and the result is a tensor containing a single norm value (shape `(1, 1, 1)`).
             - If `dim=(-1)`, `batch1*batch2` matrices are considered, and for each a separate operator norm is computed.
             - If `dim=(-1,-2)`, `batch1` matrices with `batch2` blocks are considered, and for each matrix a
-              separate operator norm is computed.
+            separate operator norm is computed.
+
             Thus, the choice of `dim` determines implicitly determines the domain of the operator.
         max_iterations
             maximum number of iterations
