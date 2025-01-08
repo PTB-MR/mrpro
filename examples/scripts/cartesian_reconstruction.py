@@ -2,10 +2,8 @@
 # # Basics of MRpro and Cartesian Reconstructions
 # Here, we are going to have a look at a few basics of MRpro and reconstruct data acquired with a Cartesian sampling
 # pattern.
-
 # %% [markdown]
 # ## Overview
-#
 # In this notebook, we are going to explore the MRpro KData object and the included header parameters. We will then use
 # a FFT-operator in order to reconstruct data acquired with a Cartesian sampling scheme. We will also reconstruct data
 # acquired on a Cartesian grid but with partial echo and partial Fourier acceleration. Finally, we will reconstruct a
@@ -23,31 +21,27 @@ data_folder = Path(tempfile.mkdtemp())
 dataset = '14173489'
 zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 
-print('Downloaded files:')
-for f in data_folder.iterdir():
-    print(f.name)
-
 # %% [markdown]
 # We have three different scans obtained from the same object with the same FOV and resolution, saved as ISMRMRD
-# raw data files (*.mrd):
+# raw data files (*.mrd or *.h5):
 #
-# - cart_t1.mrd is a fully sampled Cartesian acquisition
+# - ``cart_t1.mrd`` is a fully sampled Cartesian acquisition
 #
-# - cart_t1_msense_integrated.mrd is accelerated using regular undersampling and self-calibrated SENSE
+# - ``cart_t1_msense_integrated.mrd`` is accelerated using regular undersampling and self-calibrated SENSE
 #
-# - cart_t1_partial_echo_partial_fourier.mrd is accelerated using partial echo and partial Fourier
+# - ``cart_t1_partial_echo_partial_fourier.mrd`` is accelerated using partial echo and partial Fourier
 
 
 # %% [markdown]
 # ## Read in raw data and explore header
 #
-# To read in an ISMRMRD raw data file (*.mrd), we can simply pass on the file name to a {py:class}`KData` object.
+# To read in an ISMRMRD file, we can simply pass on the file name to a {py:class}`~mrpro.data.KData` object.
 # Additionally, we need to provide information about the trajectory. In MRpro, this is done using trajectory
 # calculators. These are functions that calculate the trajectory based on the acquisition information and additional
 # parameters provided to the calculators (e.g. the angular step for a radial acquisition).
 #
 # In this case, we have a Cartesian acquisition. This means that we only need to provide a Cartesian trajectory
-# calculator (called `KTrajectoryCartesian` in MRpro) without any further parameters.
+# calculator (called {py:class}`~mrpro.data.traj_calculator.KTrajectoryCartesian`) without any further parameters.
 
 # %%
 from mrpro.data import KData
@@ -57,9 +51,9 @@ kdata = KData.from_file(data_folder / 'cart_t1.mrd', KTrajectoryCartesian())
 
 # %% [markdown]
 # Now we can explore this data object.
-# Simply calling ``print(kdata)`` gives us a basic overview of the `KData` object.
+# Simply printing ``kdata`` gives us a basic overview of the `KData` object.
 
-# %%
+# %% tags=["show-output"]
 print(kdata)
 
 
@@ -74,9 +68,10 @@ print('Lamor Frequency:', kdata.header.lamor_frequency_proton)
 #
 # For the reconstruction of a fully sampled Cartesian acquisition, we can use a simple Fast Fourier Transform (FFT).
 #
-# Let's create an FFT-operator (called `FastFourierOp` in MRpro) and apply it to our `KData` object. Please note that
-# all MRpro operators currently only work on PyTorch tensors and not on the MRpro objects directly. Therefore, we have
-# to call the operator on kdata.data. One other important feature of MRpro operators is that they always return a
+# Let's create an FFT-operator ({py:class}`~mrpro.operator.FastFourierOp` in MRpro) and apply it to our
+# {py:class}`~mrpro.data.KData` object.
+# Please note thatall MRpro operator work on PyTorch tensors and not on the MRpro objects directly. Therefore, we have
+# to call the operator on kdata.data. One other important property of MRpro operators is that they always return a
 # tuple of PyTorch tensors, even if the output is only a single tensor. This is why we use the `(img,)` syntax below.
 
 # %%
@@ -123,7 +118,7 @@ import torch
 img_fully_sampled = img.abs().square().sum(dim=-4).sqrt().squeeze()
 
 # plot the image
-
+plt.imshow(img_fully_sampled)
 # %% [markdown]
 # Great! That was very easy! Let's try to reconstruct the next dataset.
 
@@ -185,8 +180,8 @@ plt.show()
 # between encoding and recon matrix needs to be zero-padded symmetrically.
 #
 # To take the asymmetric acquisition into account and sort the data correctly into a matrix where we can apply the
-# FFT-operator to, we have got the `CartesianSamplingOp` in MRpro. This operator calculates a sorting index based on the
-# k-space trajectory and the dimensions of the encoding k-space.
+# FFT-operator to, we have got the {py:class}`~mrpro.operators.CartesianSamplingOp` in MRpro. This operator performs
+# sorting based on the k-space trajectory and the dimensions of the encoding k-space.
 #
 # Let's try it out!
 
@@ -216,7 +211,7 @@ ax[0, 1].imshow(img_pe_pf)
 # The issue is that we combined the data from the different coils using a root-sum-of-squares approach.
 # While it's simple, it's not the ideal method. Typically, coil sensitivity maps are calculated to combine the data
 # from different coils. In MRpro, you can do this by calculating coil sensitivity data and then creating a
-# `SensitivityOp` to combine the data after image reconstruction.
+# {py:class}`~mrpro.operators.SensitivityOp` to combine the data after image reconstruction.
 
 
 # %% [markdown]
@@ -267,12 +262,12 @@ ax[0, 1].imshow(img_pe_pf)
 # different operators and chain them together. Wouldn't it be nice if this could be done automatically?
 #
 # That is why we also included some top-level reconstruction algorithms in MRpro. For this whole steps from above,
-# we can simply call a `DirectReconstruction`. A `DirectReconstruction` object can be created from only the information
-# in the `KData` object.
+# we can simply call a `{py:class}`~mrpro.algorithnms.reconstruction.DirectReconstruction`.
+# Reconstruction algorithms can be instantiated from only the information in the `KData` object.
 #
 # In contrast to operators, top-level reconstruction algorithms operate on the data objects of MRpro, i.e. the input is
-# a `KData` object and the output is an image data (called `IData` in MRpro) object. To get the tensor content of the
-# `IData` object, we can call its `rss` method.
+# a `{py:class}`~mrpro.data.KData` object and the output is an `{py:class}`~mrpro.data.IData` object containing
+# the reconstructed image data. To get its magnitude as tensor, we can call the {py:meth}`~mrpro.data.IData.rss` method.
 
 # %%
 from mrpro.algorithms.reconstruction import DirectReconstruction

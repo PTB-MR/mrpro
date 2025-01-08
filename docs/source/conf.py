@@ -1,14 +1,4 @@
 # Configuration file for the Sphinx documentation builder.
-#
-# For the full list of built-in configuration values, see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
-
-# -- Path setup --------------------------------------------------------------
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-
 import ast
 import dataclasses
 import inspect
@@ -16,17 +6,17 @@ import os
 import shutil
 import sys
 from pathlib import Path
+from typing import get_overloads
 
+from sphinx.ext.autodoc import AttributeDocumenter, ClassDocumenter, MethodDocumenter, PropertyDocumenter
+from sphinx.util.inspect import isclassmethod, isstaticmethod, signature, stringify_signature
 from sphinx_pyproject import SphinxConfig
-
-from sphinx_pyproject import SphinxConfig
-from sphinx.ext.autodoc import ClassDocumenter, MethodDocumenter, AttributeDocumenter, PropertyDocumenter
-from sphinx.util.inspect import isstaticmethod, isclassmethod
 
 from mrpro import __version__ as project_version
 
-config = SphinxConfig('../../pyproject.toml', globalns=globals(), config_overrides={'version': project_version})
 sys.path.insert(0, os.path.abspath('../../src'))  # Source code dir relative to this file
+
+config = SphinxConfig('../../pyproject.toml', globalns=globals(), config_overrides={'version': project_version})
 
 
 project = name
@@ -81,6 +71,8 @@ myst_enable_extensions = [
     'dollarmath',
 ]
 nb_execution_mode = 'off'
+nb_output_stderr ='remove'
+nb_output_stdout = 'remove'
 html_theme = 'sphinx_rtd_theme'
 html_title = name
 html_show_sphinx = False
@@ -97,8 +89,7 @@ html_context = {
     'github_user': 'PTB-MR',
     'github_repo': 'mrpro',
     'github_version': 'main',
-    'github_url' : 'https://github.com/PTB-MR/mrpro/main'
-
+    'github_url': 'https://github.com/PTB-MR/mrpro/main',
 }
 linkcode_blob = html_context['github_version']
 
@@ -109,6 +100,7 @@ def get_lambda_source(obj):
     for node in ast.walk(ast.parse(source.strip())):
         if isinstance(node, ast.Lambda):
             return ast.unparse(node.body)
+
 
 class DefaultValue:
     """Used to store default values of dataclass fields with default factory."""
@@ -142,35 +134,54 @@ def rewrite_dataclass_init_default_factories(app, obj, bound_method) -> None:
                 defaults[field.name] = DefaultValue(get_lambda_source(field.default_factory))
             else:
                 defaults[field.name] = DefaultValue(field.default_factory.__name__ + '()')
-    new_defaults = tuple(defaults.get(name, param.default) for name, param in parameters.items() if param.default != inspect._empty)
+    new_defaults = tuple(
+        defaults.get(name, param.default) for name, param in parameters.items() if param.default != inspect._empty
+    )
     obj.__defaults__ = new_defaults
 
 
-class CustomClassDocumenter(ClassDocumenter):
-    """
-    Custom Documenter to reorder class members
-    """
+def autodoc_inherit_overload(app, what, name, obj, options, sig, ret_ann):
+    """Create overloaded signatures."""
+    if what in ('function', 'method') and callable(obj):
+        try:
+            overloads = get_overloads(obj)
+        except:
+            return (sig, ret_ann)
+        if overloads:
+            kwargs = {}
+            if app.config.autodoc_typehints in ('none', 'description'):
+                kwargs['show_annotation'] = False
+            if app.config.autodoc_typehints_format == 'short':
+                kwargs['unqualified_typehints'] = True
+            type_aliases = app.config.autodoc_type_aliases
+            bound_method = what == 'method'
+            sigs = []
+            for overload in overloads:
+                if hasattr(overload, '__func__'):
+                    overload = overload.__func__  # classmethod or staticmethod
+                overload_sig = signature(overload, bound_method=bound_method, type_aliases=type_aliases)
+                sigs.append(stringify_signature(overload_sig, **kwargs))
+            return '\n'.join(sigs), None
 
-    def sort_members(
-        self, documenters: list[tuple['Documenter', bool]], order: str
-    ) -> list[tuple['Documenter', bool]]:
-        """
-        Sort the given member list with custom logic for `groupwise` ordering.
-        """
-        if order == "groupwise":
+
+class CustomClassDocumenter(ClassDocumenter):
+    """Custom Documenter to reorder class members."""
+
+    def sort_members(self, documenters: list[tuple['Documenter', bool]], order: str) -> list[tuple['Documenter', bool]]:
+        """Sort the given member list with custom logic for `groupwise` ordering."""
+        if order == 'groupwise':
             if not self.parse_name() or not self.import_object():
                 return documenters
             # Split members into groups (non-inherited,inherited)
-            static_methods = [],[]
-            class_methods = [],[]
-            special_methods = [],[]
-            instance_methods = [],[]
-            attributes = [],[]
-            properties = [],[]
-            other=[],[]
+            static_methods = [], []
+            class_methods = [], []
+            special_methods = [], []
+            instance_methods = [], []
+            attributes = [], []
+            properties = [], []
+            other = [], []
             others_methods = []
             init_method = []
-
 
             for documenter in documenters:
                 doc = documenter[0]
@@ -180,15 +191,15 @@ class CustomClassDocumenter(ClassDocumenter):
                     attributes[inherited].append(documenter)
                 elif isinstance(doc, PropertyDocumenter):
                     properties[inherited].append(documenter)
-                elif isinstance(doc,MethodDocumenter):
+                elif isinstance(doc, MethodDocumenter):
                     if not parsed:
                         others_methods.append(documenter)
                         continue
-                    if doc.object_name == "__init__":
+                    if doc.object_name == '__init__':
                         init_method.append(documenter)
-                    elif dataclasses.is_dataclass(self.object) and doc.object_name=="__new__":
+                    elif dataclasses.is_dataclass(self.object) and doc.object_name == '__new__':
                         ...
-                    elif doc.object_name[:2]=="__":
+                    elif doc.object_name[:2] == '__':
                         special_methods[inherited].append(documenter)
                     elif isclassmethod(doc.object):
                         class_methods[inherited].append(documenter)
@@ -201,18 +212,31 @@ class CustomClassDocumenter(ClassDocumenter):
                     continue
             # Combine groups in the desired order
             constructors = init_method + class_methods[0] + class_methods[1]
-            methods = instance_methods[0] + instance_methods[1] + others_methods + static_methods[0] + static_methods[1] + special_methods[0] + special_methods[1]
-            return constructors+ attributes[0]+attributes[1] + properties[0]+properties[1]+methods + other[0]+other[1]
+            methods = (
+                instance_methods[0]
+                + instance_methods[1]
+                + others_methods
+                + static_methods[0]
+                + static_methods[1]
+                + special_methods[0]
+                + special_methods[1]
+            )
+            return (
+                constructors
+                + attributes[0]
+                + attributes[1]
+                + properties[0]
+                + properties[1]
+                + methods
+                + other[0]
+                + other[1]
+            )
         else:
             return super().sort_members(documenters, order)
 
 
-
-
 def sync_notebooks(source_folder, dest_folder):
-    """
-    Synchronize files from the source to the destination folder, copying only new or updated files.
-    """
+    """Synchronize files from the source to the destination folder, copying only new or updated files."""
     dest = Path(dest_folder)
     dest.mkdir(parents=True, exist_ok=True)
     for src_file in Path(source_folder).iterdir():
@@ -221,9 +245,10 @@ def sync_notebooks(source_folder, dest_folder):
             if not dest_file.exists() or src_file.stat().st_mtime > dest_file.stat().st_mtime:
                 shutil.copy2(src_file, dest_file)
 
-def setup(app):
-    app.set_html_assets_policy('always') # forces mathjax on all pages
-    app.connect('autodoc-before-process-signature', rewrite_dataclass_init_default_factories)
-    app.add_autodocumenter(CustomClassDocumenter)
-    sync_notebooks(app.srcdir.parent.parent/'examples'/'notebooks', app.srcdir/'_notebooks')
 
+def setup(app):
+    app.set_html_assets_policy('always')  # forces mathjax on all pages
+    app.connect('autodoc-before-process-signature', rewrite_dataclass_init_default_factories)
+    app.connect('autodoc-process-signature', autodoc_inherit_overload, 0)
+    app.add_autodocumenter(CustomClassDocumenter)
+    sync_notebooks(app.srcdir.parent.parent / 'examples' / 'notebooks', app.srcdir / '_notebooks')
