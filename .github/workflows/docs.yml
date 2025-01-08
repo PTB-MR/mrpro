@@ -71,9 +71,7 @@ jobs:
 
       - id: set-matrix
         run: |
-          cd ./examples/
-          ls
-          echo "notebooks=$(ls *.ipynb | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+          echo "notebooks=$(find examples -type f -name '*.ipynb' | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
       - name: Notebook overview
         run: |
@@ -108,19 +106,37 @@ jobs:
         run: |
           echo "current jupyter-notebook: ${{ matrix.notebook }}"
 
+      - name: Add nb-myst download badge
+        run: |
+          notebook=${{ matrix.notebook }}
+          notebook_name=$(basename $notebook)
+          download_badge_md="[![Download notebook](https://img.shields.io/badge/Download-notebook-blue?logo=jupyter)](path:$notebook_name)"
+          python_command="import nbformat as nbf\n\
+          nb = nbf.read(open('$notebook'), as_version=4)\n\
+          # if the 1st cell is md and has colab text => add space after\n\
+          if nb['cells'][0]['cell_type'] == 'markdown' and 'colab' in nb['cells'][0]['source'].lower():\n\
+              nb['cells'][0]['source'] += ' '\n\
+          # if there is no md cell with colab => create empty md cell on top\n\
+          else:\n\
+              nb['cells'].insert(0, nbf.v4.new_markdown_cell())\n\
+          nb['cells'][0]['source'] += '$download_badge_md'\n\
+          nbf.write(nb, open('$notebook', 'w'))"
+
+          python -c "exec (\"$python_command\")"
+
       - name: Run notebook
         uses: fzimmermann89/run-notebook@v3
         env:
           RUNNER: ${{ toJson(runner) }}
         with:
-          notebook: ./examples/${{ matrix.notebook }}
+          notebook: ./${{ matrix.notebook }}
 
       - name: Get artifact names
         id: artifact_names
         run: |
           notebook=${{ matrix.notebook }}
-          echo "ARTIFACT_NAME=${notebook/.ipynb/}" >> $GITHUB_OUTPUT
-          echo "IPYNB_EXECUTED=${notebook}" >> $GITHUB_OUTPUT
+          echo "ARTIFACT_NAME=$(basename ${notebook/.ipynb})" >> $GITHUB_OUTPUT
+          echo "IPYNB_EXECUTED=$(basename $notebook)" >> $GITHUB_OUTPUT
 
       - name: Upload notebook
         uses: actions/upload-artifact@v4
@@ -155,6 +171,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: ./docs/source/_notebooks/
+          merge-multiple: true
 
       - name: Build docs
         run: |
