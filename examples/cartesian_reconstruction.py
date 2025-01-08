@@ -11,8 +11,6 @@
 # acquired on a Cartesian grid but with partial echo and partial Fourier acceleration. Finally, we will reconstruct a
 # Cartesian scan with regular undersampling using iterative SENSE.
 
-# %% [markdown]
-# ## Import MRpro and download data
 
 # %% tags=["hide-cell"]
 # Get the raw data from zenodo
@@ -30,7 +28,8 @@ for f in data_folder.iterdir():
     print(f.name)
 
 # %% [markdown]
-# We have three different scans obtained from the same object with the same FOV and resolution:
+# We have three different scans obtained from the same object with the same FOV and resolution, saved as ISMRMRD
+# raw data files (*.mrd):
 #
 # - cart_t1.mrd is a fully sampled Cartesian acquisition
 #
@@ -42,7 +41,7 @@ for f in data_folder.iterdir():
 # %% [markdown]
 # ## Read in raw data and explore header
 #
-# To read in an ISMRMRD raw data file (*.mrd), we can simply pass on the file name to a `KData` object.
+# To read in an ISMRMRD raw data file (*.mrd), we can simply pass on the file name to a {py:class}`KData` object.
 # Additionally, we need to provide information about the trajectory. In MRpro, this is done using trajectory
 # calculators. These are functions that calculate the trajectory based on the acquisition information and additional
 # parameters provided to the calculators (e.g. the angular step for a radial acquisition).
@@ -58,7 +57,7 @@ kdata = KData.from_file(data_folder / 'cart_t1.mrd', KTrajectoryCartesian())
 
 # %% [markdown]
 # Now we can explore this data object.
-# Simply calling ``print(kdata)``` gives us a basic overview of the KData object.
+# Simply calling ``print(kdata)`` gives us a basic overview of the `KData` object.
 
 # %%
 print(kdata)
@@ -167,7 +166,6 @@ print(kdata.traj)
 # We see that the trajectory has kz, ky, and kx components. Kx and ky only vary along one dimension.
 # This is because MRpro saves the trajectory in the most efficient way.
 # To get the full trajectory as a tensor, we can just call as_tensor().
-
 
 # %%
 # Plot the fully sampled trajectory (in blue)
