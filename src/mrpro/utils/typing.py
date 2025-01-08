@@ -1,8 +1,8 @@
 """Some type hints that are used in multiple places in the codebase but not part of mrpro's public API."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeAlias
 
-from typing_extensions import Any, Generic, Protocol, TypeAlias, TypeVar
+from typing_extensions import Any, Protocol, TypeVar
 
 if TYPE_CHECKING:
     from types import EllipsisType
