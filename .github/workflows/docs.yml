@@ -161,32 +161,28 @@ jobs:
           rm -rf ./docs/build/html/.doctrees
 
       - name: Upload documentation artifact
-        id: save_docu
+        id: upload_docs
         uses: actions/upload-artifact@v4
         with:
           name: Documentation
           path: docs/build/html/
 
-      - run: echo 'Artifact url ${{ steps.save_docu.outputs.artifact-url }}'
-
-      - run: echo 'Event number ${{ github.event.number }}'
-
-      - run: echo 'Event name ${{github.event_name}}'
-
+      # if the one of above steps fails the "artifact-url" will be an empty string
       - name: Dump documentation info
+        if: always()
         run: |
-          echo "artifact-url=${{ steps.save_docu.outputs.artifact-url }}" > docs_data
-          echo "pr-number=${{ github.event.pull_request.number }}" >> docs_data
-          echo "event-number=${{ github.event.number }}" >> docs_data
-          echo "event-name=${{ github.event_name }}" >> docs_data
-          echo "ref=${{ github.ref }}" >> docs_data
+          echo "artifact-url=${{ steps.upload_docs.outputs.artifact-url }}" > docs_metadata
+          echo "pr-number=${{ github.event.pull_request.number }}" >> docs_metadata
+          echo "event-number=${{ github.event.number }}" >> docs_metadata
+          echo "event-name=${{ github.event_name }}" >> docs_metadata
+          echo "ref=${{ github.ref }}" >> docs_metadata
 
-      - name: Upload docs-data artifact
+      - name: Upload docs-metadata artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: docs-data
-          path: docs_data
-          if-no-files-found: error
+          name: docs-metadata
+          path: docs_metadata
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

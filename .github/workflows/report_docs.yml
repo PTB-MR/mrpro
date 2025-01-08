@@ -11,10 +11,9 @@ jobs:
   docs_report:
     name: Docs report
     runs-on: ubuntu-latest
-    # proceed only if the Sphinx Docs workflow run was successful
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     permissions:
       actions: read
+      issues: write
       contents: write
       pull-requests: write
     outputs:
@@ -29,7 +28,7 @@ jobs:
         with:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          name: docs-data
+          name: docs-metadata
 
       # docs_data is set in docs.yml as A=value\nB=value\n...
       - name: Set vars from docs_data
@@ -40,10 +39,11 @@ jobs:
             echo "$line" >> $GITHUB_ENV
             # for the next job
             echo "$line" >> $GITHUB_OUTPUT
-          done < docs_data
+          done < docs_metadata
 
+      # if the build of docs was successful the "artifact-url" will be non-empty
       - name: Update PR with link to summary
-        if: env.event-name == 'pull_request'
+        if: ${{ env.artifact-url != '' && env.event-name == 'pull_request' }}
         uses: edumserrano/find-create-or-update-comment@v3
         with:
           issue-number: ${{ env.pr-number }}
@@ -54,6 +54,20 @@ jobs:
             ### :books: Documentation
             :file_folder: [Download as zip](${{ env.artifact-url }})
             :mag: [View online](https://zimf.de/zipserve/${{ env.artifact-url }}/)
+          edit-mode: replace
+
+      # if the build of docs failed the "artifact-url" will be an empty string
+      - name: Report failure of docs build
+        if: ${{ env.artifact-url == '' && env.event-name == 'pull_request' }}
+        uses: edumserrano/find-create-or-update-comment@v3
+        with:
+          issue-number: ${{ env.pr-number }}
+          body-includes: '<!-- documentation build ${{ env.event-number }} -->'
+          comment-author: 'github-actions[bot]'
+          body: |
+            <!-- documentation build ${{ env.event-number }} -->
+            ### :books: Documentation
+            :x: Documentation build failed. Check the Sphinx Docs workflow.
           edit-mode: replace
 
   deploy:
