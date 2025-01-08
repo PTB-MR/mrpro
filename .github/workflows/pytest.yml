@@ -78,6 +78,24 @@ jobs:
           pytest -n 4 -m "not cuda" --junitxml=pytest.xml \
           --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
 
+      - name: Dump PR number, event name and ref to pytest_data file
+        run: |
+          echo "pr-number=${{ github.event.number }}" > pytest_metadata
+          echo "event-name=${{ github.event_name }}" >> pytest_metadata
+          echo "ref=${{ github.ref }}" >> pytest_metadata
+
+      - name: Upload PyTest Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report
+          path: |
+            pytest_metadata
+            pytest-coverage.txt
+            pytest.xml
+          # upload the artifact even if no coverage files are found
+          if-no-files-found: warn
+          overwrite: true
+
       - name: Verify PyTest XML Output
         run: |
           if [ ! -f pytest.xml ]; then
@@ -99,24 +117,7 @@ jobs:
               f.write(f'ERRORS={errors}\n')
           "
 
-      - name: Dump PR number, event name and ref to pytest_data file
-        run: |
-          echo "pr-number=${{ github.event.number }}" > pytest_data
-          echo "event-name=${{ github.event_name }}" >> pytest_data
-          echo "ref=${{ github.ref }}" >> pytest_data
-
-      - name: Upload PyTest Coverage Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: pytest-report
-          path: |
-            pytest-coverage.txt
-            pytest.xml
-            pytest_data
-          if-no-files-found: error
-          overwrite: true
-
-      - name: Set Pipeline Status Based on Test Results
+      - name: Set Pipeline Status Based on PyTest Output
         if: ${{ env.ERRORS != 0 || env.FAILURES != 0 }}
         uses: actions/github-script@v7
         with:
