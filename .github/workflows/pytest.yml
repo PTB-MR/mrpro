@@ -74,19 +74,10 @@ jobs:
         run: pip install pytest-github-actions-annotate-failures
 
       - name: Run PyTest and Generate Coverage Report
+        # with the "set -o pipefail" the "pytest" exit code won't be supressed by "tee" command
         run: |
-          pytest -n 4 -m "not cuda" --junitxml=pytest.xml \
-          --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
-          python -c "
-          import os, sys
-          import xml.etree.ElementTree as ET
-          tree = ET.parse('pytest.xml')
-          testsuite = tree.getroot().find(\".//testsuite[@name='pytest']\")
-          failures = int(testsuite.attrib.get('failures', 0))
-          errors = int(testsuite.attrib.get('errors', 0))
-          if failures or errors:
-              sys.exit('PyTest failed with %d failures and %d errors' % (failures, errors))
-          "
+          (set -o pipefail && pytest -n 4 -m "not cuda" --junitxml=pytest.xml \
+          --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt)
 
       - name: Dump PR number, event name and ref to pytest_data file
         if: always()
