@@ -67,7 +67,9 @@ jobs:
           body: |
             <!-- documentation build ${{ env.event-number }} -->
             ### :books: Documentation
-            :x: Documentation build failed. Check the Sphinx Docs workflow.
+            :x: Documentation build failed
+
+            Check the Sphinx Docs Workflow
           edit-mode: replace
 
   deploy:

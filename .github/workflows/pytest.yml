@@ -77,14 +77,26 @@ jobs:
         run: |
           pytest -n 4 -m "not cuda" --junitxml=pytest.xml \
           --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
+          python -c "
+          import os, sys
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('pytest.xml')
+          testsuite = tree.getroot().find(\".//testsuite[@name='pytest']\")
+          failures = testsuite.attrib.get('failures', 0)
+          errors = testsuite.attrib.get('errors', 0)
+          if failures or errors:
+              sys.exit('PyTest failed with %s failures and %s errors' % (failures, errors))
+          "
 
       - name: Dump PR number, event name and ref to pytest_data file
+        if: always()
         run: |
           echo "pr-number=${{ github.event.number }}" > pytest_metadata
           echo "event-name=${{ github.event_name }}" >> pytest_metadata
           echo "ref=${{ github.ref }}" >> pytest_metadata
 
       - name: Upload PyTest Coverage Report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pytest-report
@@ -92,37 +104,7 @@ jobs:
             pytest_metadata
             pytest-coverage.txt
             pytest.xml
-          # upload the artifact even if no coverage files are found
-          if-no-files-found: warn
           overwrite: true
-
-      - name: Verify PyTest XML Output
-        run: |
-          if [ ! -f pytest.xml ]; then
-            echo "PyTest XML report not found. Please check the previous 'Run PyTest' step for errors."
-            exit 1
-          fi
-
-      - name: Read test failures and errors
-        run: |
-          python -c "
-          import os
-          import xml.etree.ElementTree as ET
-          tree = ET.parse('pytest.xml')
-          testsuite = tree.getroot().find(\".//testsuite[@name='pytest']\")
-          failures = testsuite.attrib.get('failures', 0)
-          errors = testsuite.attrib.get('errors', 0)
-          with open(os.environ['GITHUB_ENV'], 'a') as f:
-              f.write(f'FAILURES={failures}\n')
-              f.write(f'ERRORS={errors}\n')
-          "
-
-      - name: Set Pipeline Status Based on PyTest Output
-        if: ${{ env.ERRORS != 0 || env.FAILURES != 0 }}
-        uses: actions/github-script@v7
-        with:
-          script: |
-            core.setFailed("PyTest workflow failed with ${{ env.ERRORS }} errors and ${{ env.FAILURES }} failures.")
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
