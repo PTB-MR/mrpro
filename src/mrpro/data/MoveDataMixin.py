@@ -397,7 +397,7 @@ class MoveDataMixin:
 
         Raises
         ------
-        `Inconsistent   DeviceError`:
+        InconsistentDeviceError
             If the devices of different fields differ.
 
         Returns

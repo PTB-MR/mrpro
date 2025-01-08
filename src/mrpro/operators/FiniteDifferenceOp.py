@@ -13,7 +13,7 @@ class FiniteDifferenceOp(LinearOperator):
     """Finite Difference Operator."""
 
     @staticmethod
-    def finite_difference_kernel(mode: str) -> torch.Tensor:
+    def finite_difference_kernel(mode: Literal['central', 'forward', 'backward']) -> torch.Tensor:
         """Finite difference kernel.
 
         Parameters

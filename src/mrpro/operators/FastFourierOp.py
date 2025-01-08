@@ -20,10 +20,14 @@ class FastFourierOp(LinearOperator):
     forward and adjoint [FFT]_.
 
     Remark regarding the fftshift/ifftshift:
+
     fftshift shifts the zero-frequency point to the center of the data, ifftshift undoes this operation.
-    The input to both forward and ajoint assumes that the zero-frequency is in the center of the data.
-    Torch.fft.fftn and torch.fft.ifftn expect the zero-frequency to be the first entry in the tensor.
-    Therefore for forward and ajoint first ifftshift needs to be applied, then fftn or ifftn and then ifftshift.
+    The input to both :py:func:`~FastFourierOp.forward` and :py:func:`~FastFourierOp.adjoint`
+    are assumed to have the zero-frequency is in the center of the data. :py:func:`torch.fft.fftn`
+    and :py:func:`torch.fft.ifftn` expect the zero-frequency to be the first entry in the tensor.
+    Therefore in :py:func:`~FastFourierOp.forward` and :py:func:`~FastFourierOp.adjoint`,
+    first :py:func:`torch.fft.ifftshift`, then :py:func:`torch.fft.fftn` or :py:func:`torch.fft.ifftn`,
+    finally :py:func:`torch.fft.ifftshift` is applied.
 
     References
     ----------
