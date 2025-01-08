@@ -16,22 +16,19 @@ import os
 import sys
 
 from sphinx_pyproject import SphinxConfig
+from sphinx.ext.autodoc import ClassDocumenter, MethodDocumenter, AttributeDocumenter, PropertyDocumenter
+from sphinx.util.inspect import isstaticmethod, isclassmethod
 
 from mrpro import __version__ as project_version
 
 config = SphinxConfig('../../pyproject.toml', globalns=globals(), config_overrides={'version': project_version})
 sys.path.insert(0, os.path.abspath('../../src'))  # Source code dir relative to this file
 
-# -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = name
 copyright = '2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin'
 author = author
 version = version
-
-# -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
     'sphinx.ext.doctest',
@@ -80,10 +77,6 @@ myst_enable_extensions = [
     'dollarmath',
 ]
 nb_execution_mode = 'off'
-
-# -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
 html_theme = 'sphinx_rtd_theme'
 html_title = name
 html_show_sphinx = False
@@ -111,7 +104,6 @@ def get_lambda_source(obj):
         if isinstance(node, ast.Lambda):
             return ast.unparse(node.body)
 
-
 class DefaultValue:
     """Used to store default values of dataclass fields with default factory."""
 
@@ -124,6 +116,7 @@ class DefaultValue:
 
 
 def rewrite_dataclass_init_default_factories(app, obj, bound_method) -> None:
+    """Replace default fields in dataclass.__init__."""
     if (
         not 'init' in str(obj)
         or not getattr(obj, '__defaults__', None)
@@ -146,8 +139,6 @@ def rewrite_dataclass_init_default_factories(app, obj, bound_method) -> None:
     new_defaults = tuple(defaults.get(name, param.default) for name, param in parameters.items() if param.default != inspect._empty)
     obj.__defaults__ = new_defaults
 
-from sphinx.ext.autodoc import ClassDocumenter, MethodDocumenter, AttributeDocumenter, PropertyDocumenter
-from sphinx.util.inspect import isstaticmethod, isclassmethod
 
 class CustomClassDocumenter(ClassDocumenter):
     """
@@ -163,18 +154,18 @@ class CustomClassDocumenter(ClassDocumenter):
         if order == "groupwise":
             if not self.parse_name() or not self.import_object():
                 return documenters
-            if 'KHeader' in self.object_name:
-                 import ipdb; ipdb.set_trace()
-            # Split members into groups
+            # Split members into groups (non-inherited,inherited)
             static_methods = [],[]
             class_methods = [],[]
             special_methods = [],[]
             instance_methods = [],[]
-            others_methods = []
             attributes = [],[]
             properties = [],[]
-            init_method = []
             other=[],[]
+            others_methods = []
+            init_method = []
+
+
             for documenter in documenters:
                 doc = documenter[0]
                 parsed = doc.parse_name() and doc.import_object()
@@ -205,17 +196,13 @@ class CustomClassDocumenter(ClassDocumenter):
             # Combine groups in the desired order
             constructors = init_method + class_methods[0] + class_methods[1]
             methods = instance_methods[0] + instance_methods[1] + others_methods + static_methods[0] + static_methods[1] + special_methods[0] + special_methods[1]
-            properties_and_attributes = properties[0]+properties[1]+attributes[0]+attributes[1]
-            return constructors+properties_and_attributes+methods + other[0]+other[1]
+            return constructors+ attributes[0]+attributes[1] + properties[0]+properties[1]+methods + other[0]+other[1]
         else:
             return super().sort_members(documenters, order)
 
 
 def setup(app):
-    # forces mathjax on all pages
-    app.set_html_assets_policy('always')
-    # rewrite dataclass init signature
-
+    app.set_html_assets_policy('always') # forces mathjax on all pages
     app.connect('autodoc-before-process-signature', rewrite_dataclass_init_default_factories)
     app.add_autodocumenter(CustomClassDocumenter)
 

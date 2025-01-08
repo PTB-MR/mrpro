@@ -2,67 +2,21 @@ API
 ===
 
 This is the MRpro Application Programming Interface (API) documentation.
+It is designed to assist developers and researchers in understanding and utilizing the core functionalities of MRpro effectively.
+Each module includes detailed descriptions and function signatures to guide you through their usage.
+This documentation is generated from the docstrings, which are also available in your IDE.
 
-MRpro Algorithms
-----------------
-
-Reconstruction algorithms, optimizers, and coil sensitivity maps estimation.
+Navigate through the sections below for more information about each module and its capabilities.
 
 .. autosummary::
    :toctree: _autosummary
    :template: module_template.rst
    :recursive:
+
 
    mrpro.algorithms
-
-
-MRpro Data
-----------
-
-Classes for storing and handling MR data.
-
-.. autosummary::
-   :toctree: _autosummary
-   :template: module_template.rst
-   :recursive:
-
    mrpro.data
-
-
-MRpro Operators
----------------
-
-Linear operators and MR signal models.
-
-.. autosummary::
-   :toctree: _autosummary
-   :template: module_template.rst
-   :recursive:
-
    mrpro.operators
-
-
-MRpro Phantoms
---------------
-
-Numerical phantoms useful to evaluate reconstruction algorithms.
-
-.. autosummary::
-   :toctree: _autosummary
-   :template: module_template.rst
-   :recursive:
-
    mrpro.phantoms
-
-
-MRpro Utilities
----------------
-
-Utilities for tensor handling, unit conversion, and more.
-
-.. autosummary::
-   :toctree: _autosummary
-   :template: module_template.rst
-   :recursive:
-
    mrpro.utils
+

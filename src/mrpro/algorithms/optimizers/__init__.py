@@ -1,3 +1,5 @@
+"""Optimizers."""
+
 from mrpro.algorithms.optimizers.OptimizerStatus import OptimizerStatus
 from mrpro.algorithms.optimizers.adam import adam
 from mrpro.algorithms.optimizers.cg import cg

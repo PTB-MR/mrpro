@@ -1,3 +1,5 @@
+"""Data containers, loading and saving data."""
+
 from mrpro.data import enums, traj_calculators, acq_filters
 from mrpro.data.AcqInfo import AcqIdx, AcqInfo
 from mrpro.data.CsmData import CsmData

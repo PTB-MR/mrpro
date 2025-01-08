@@ -1,3 +1,5 @@
+"""Linear operators (such as FourierOp), functionals/loss functions, and qMRI signal models."""
+
 from mrpro.operators.Operator import Operator
 from mrpro.operators.LinearOperator import LinearOperator
 from mrpro.operators.Functional import Functional, ProximableFunctional, ElementaryFunctional, ElementaryProximableFunctional, ScaledFunctional, ScaledProximableFunctional
