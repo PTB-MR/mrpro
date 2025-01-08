@@ -152,6 +152,7 @@ img_pe_pf = torch.sqrt(torch.sum(img_pe_pf**2, dim=-4)).abs().squeeze()
 fig, ax = plt.subplots(1, 2, squeeze=False)
 ax[0, 0].imshow(img_fully_sampled)
 ax[0, 1].imshow(img_pe_pf)
+plt.show()
 # %% [markdown]
 # Well, we got an image, but when we compare it to the previous result, it seems like the head has shrunk.
 # Since that's extremely unlikely, there's probably a mistake in our reconstruction.
@@ -176,7 +177,7 @@ plt.plot(kdata.traj.as_tensor()[2, 0, 0, :, :].flatten(), kdata.traj.as_tensor()
 plt.plot(
     kdata_pe_pf.traj.as_tensor()[2, 0, 0, :, :].flatten(), kdata_pe_pf.traj.as_tensor()[1, 0, 0, :, :].flatten(), '+r'
 )
-
+plt.show()
 # %% [markdown]
 # We see that for the fully sampled acquisition, the k-space is covered symmetrically from -256 to 255 along the
 # readout direction and from -128 to 127 along the phase encoding direction. For the acquisition with partial Fourier
