@@ -1,5 +1,11 @@
 <h1 align="center">
-<img src="docs/source/_static/logo.svg" alt="MRpro logo" width="50%">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/source/_static/logo_white.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/source/_static/logo.svg">
+  <img src="docs/source/_static/logo.svg" alt="MRpro logo" width="50%">
+</picture>
+
 </h1><br>
 
 ![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)
