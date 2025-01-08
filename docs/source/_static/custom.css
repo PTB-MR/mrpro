@@ -8,8 +8,13 @@ html {
     max-width: 75% !important;
 }
 
-
+/* new line after each property */
 dl.py.property {
-    /* new line after each property */
     display: block !important;
+}
+
+/* example notebooks outputs */
+.output>.highlight {
+    background: inherit !important;
+    color: inherit !important;
 }

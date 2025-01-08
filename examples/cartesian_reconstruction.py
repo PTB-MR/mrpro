@@ -14,7 +14,7 @@
 # %% [markdown]
 # ## Import MRpro and download data
 
-# %%
+# %% tags=["hide-cell"]
 # Get the raw data from zenodo
 import tempfile
 from pathlib import Path
@@ -25,8 +25,7 @@ data_folder = Path(tempfile.mkdtemp())
 dataset = '14173489'
 zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 
-# %%
-# List the downloaded files
+print('Downloaded files:')
 for f in data_folder.iterdir():
     print(f.name)
 
@@ -59,14 +58,17 @@ kdata = KData.from_file(data_folder / 'cart_t1.mrd', KTrajectoryCartesian())
 
 # %% [markdown]
 # Now we can explore this data object.
+# Simply calling ``print(kdata)``` gives us a basic overview of the KData object.
 
 # %%
-# Start with simply calling print(kdata), whichs gives us a nice overview of the KData object.
 print(kdata)
 
-# %%
+
+# %% [markdown]
 # We can also have a look at more specific header information like the 1H Lamor frequency
-print(kdata.header.lamor_frequency_proton)
+
+# %%
+print('Lamor Frequency:', kdata.header.lamor_frequency_proton)
 
 # %% [markdown]
 # ## Reconstruction of fully sampled acquisition
@@ -88,7 +90,7 @@ fft_op = FastFourierOp(dim=(-2, -1))
 # Let's have a look at the shape of the obtained tensor.
 
 # %%
-print(img.shape)
+print('Shape:', img.shape)
 
 # %% [markdown]
 # We can see that the second dimension, which is the coil dimension, is 16. This means we still have a coil resolved
@@ -107,7 +109,7 @@ fft_op = FastFourierOp(
 )
 
 (img,) = fft_op.adjoint(kdata.data)
-print(img.shape)
+print('Shape:', img.shape)
 
 # %% [markdown]
 # Now, we have an image which is 256 x 256 voxel as we would expect. Let's combine the data from the different receiver
@@ -119,10 +121,9 @@ import matplotlib.pyplot as plt
 import torch
 
 # Combine data from different coils
-img_fully_sampled = torch.sqrt(torch.sum(img**2, dim=-4)).abs().squeeze()
+img_fully_sampled = img.abs().square().sum(dim=-4).sqrt().squeeze()
 
 # plot the image
-plt.imshow(img_fully_sampled)
 
 # %% [markdown]
 # Great! That was very easy! Let's try to reconstruct the next dataset.
@@ -130,7 +131,7 @@ plt.imshow(img_fully_sampled)
 # %% [markdown]
 # ## Reconstruction of acquisition with partial echo and partial Fourier
 
-# %%
+# %% inputHidden=true outputHidden=true tags=["remove-output"]
 # Read in the data
 kdata_pe_pf = KData.from_file(data_folder / 'cart_t1_partial_echo_partial_fourier.mrd', KTrajectoryCartesian())
 
@@ -151,8 +152,6 @@ img_pe_pf = torch.sqrt(torch.sum(img_pe_pf**2, dim=-4)).abs().squeeze()
 fig, ax = plt.subplots(1, 2, squeeze=False)
 ax[0, 0].imshow(img_fully_sampled)
 ax[0, 1].imshow(img_pe_pf)
-
-
 # %% [markdown]
 # Well, we got an image, but when we compare it to the previous result, it seems like the head has shrunk.
 # Since that's extremely unlikely, there's probably a mistake in our reconstruction.

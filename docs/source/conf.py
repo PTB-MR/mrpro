@@ -93,6 +93,8 @@ html_context = {
     'github_user': 'PTB-MR',
     'github_repo': 'mrpro',
     'github_version': 'main',
+    'github_url' : 'https://github.com/PTB-MR/mrpro/main'
+
 }
 linkcode_blob = html_context['github_version']
 
