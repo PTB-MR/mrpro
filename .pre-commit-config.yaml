@@ -70,7 +70,7 @@ repos:
        args:
          - --update
          - --pipe
-         - "python examples/add_badge_in_pipe.py {}"
+         - "python .precommit/add_notebook_preemble.py {}"
          - --to
          - "../notebooks//ipynb"
          - --update-metadata
