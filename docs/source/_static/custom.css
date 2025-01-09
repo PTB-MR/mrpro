@@ -15,6 +15,6 @@ dl.py.property {
 
 /* example notebooks outputs */
 .output>.highlight {
-    background: inherit !important;
+    background: #efefef !important;
     color: inherit !important;
 }
