@@ -13,7 +13,11 @@ import ast
 import dataclasses
 import inspect
 import os
+import shutil
 import sys
+from pathlib import Path
+
+from sphinx_pyproject import SphinxConfig
 
 from sphinx_pyproject import SphinxConfig
 from sphinx.ext.autodoc import ClassDocumenter, MethodDocumenter, AttributeDocumenter, PropertyDocumenter
@@ -203,8 +207,23 @@ class CustomClassDocumenter(ClassDocumenter):
             return super().sort_members(documenters, order)
 
 
+
+
+def sync_notebooks(source_folder, dest_folder):
+    """
+    Synchronize files from the source to the destination folder, copying only new or updated files.
+    """
+    dest = Path(dest_folder)
+    dest.mkdir(parents=True, exist_ok=True)
+    for src_file in Path(source_folder).iterdir():
+        if src_file.is_file():
+            dest_file = dest / src_file.name
+            if not dest_file.exists() or src_file.stat().st_mtime > dest_file.stat().st_mtime:
+                shutil.copy2(src_file, dest_file)
+
 def setup(app):
     app.set_html_assets_policy('always') # forces mathjax on all pages
     app.connect('autodoc-before-process-signature', rewrite_dataclass_init_default_factories)
     app.add_autodocumenter(CustomClassDocumenter)
+    sync_notebooks(app.srcdir.parent.parent/'examples'/'notebooks', app.srcdir/'_notebooks')
 
