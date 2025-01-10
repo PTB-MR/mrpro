@@ -35,7 +35,7 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 # %% [markdown]
 # ## Read in raw data and explore header
 #
-# To read in an ISMRMRD file, we can simply pass on the file name to a `~mrpro.data.KData` object.
+# To read in an ISMRMRD file, we can simply pass on the file name to a `mrpro.data.KData` object.
 # Additionally, we need to provide information about the trajectory. In MRpro, this is done using trajectory
 # calculators. These are functions that calculate the trajectory based on the acquisition information and additional
 # parameters provided to the calculators (e.g. the angular step for a radial acquisition).
@@ -58,7 +58,7 @@ print(kdata)
 
 
 # %% [markdown]
-# AAA We can also have a look at more specific header information like the 1H Lamor frequency
+# We can also have a look at more specific header information like the 1H Lamor frequency
 
 # %%
 print('Lamor Frequency:', kdata.header.lamor_frequency_proton)

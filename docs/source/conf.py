@@ -253,8 +253,8 @@ def replace_patterns_in_markdown(app, docname, source):
     notebook = nbformat.reads(source[0], as_version=4)
     for cell in notebook.cells:
         if cell["cell_type"] == "markdown":
-            # Replace with `text` with {any}`text`. leave ``text`` as is.
-            cell["source"] = re.sub(r"(?<!`)`([^`]+)`(?!`)", r"{any}`\1`", cell["source"])
+            # Replace with `text` with {py:obj}`text`. leave ``text`` as is.
+            cell["source"] = re.sub(r"(?<!`)`([^`]+)`(?!`)", r"{py:obj}`\1`", cell["source"])
 
     source[0] = nbformat.writes(notebook)
 
@@ -277,6 +277,5 @@ def setup(app):
     app.connect('autodoc-before-process-signature', rewrite_dataclass_init_default_factories)
     app.connect('autodoc-process-signature', autodoc_inherit_overload, 0)
     app.connect("source-read", replace_patterns_in_markdown)
-
     app.add_autodocumenter(CustomClassDocumenter, True)
     sync_notebooks(app.srcdir.parent.parent / 'examples' / 'notebooks', app.srcdir / '_notebooks')
