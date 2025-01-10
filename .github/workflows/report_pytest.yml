@@ -17,12 +17,13 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - name: Download PyTest report artifact
+      # use the results of python 3.12, consider this as target platform
+      - name: Download PyTest report artifact for mrpro_py312
         uses: actions/download-artifact@v4
         with:
+          name: pytest-report-mrpro_py312
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          name: pytest-report
 
       # pytest_metadata is set in pytest.yml as A=value\nB=value\n...
       - name: Set vars from pytest_metadata
