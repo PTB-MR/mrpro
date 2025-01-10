@@ -58,7 +58,7 @@ jobs:
 
       - name: Add nb-myst download badge
         run: |
-          notebook=${{ matrix.notebook }}
+          notebook=${{ matrix.notebook_path }}
           notebook_name=$(basename $notebook)
           download_badge_md="[![Download notebook](https://img.shields.io/badge/Download-notebook-blue?logo=jupyter)](path:$notebook_name)"
           python_command="import nbformat as nbf\n\
