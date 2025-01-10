@@ -6,7 +6,7 @@ from mrpro.data.DcfData import DcfData
 from mrpro.data.EncodingLimits import EncodingLimits, Limits
 from mrpro.data.IData import IData
 from mrpro.data.IHeader import IHeader
-from mrpro.data._kdata.KData import KData
+from mrpro.data.KData import KData
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KNoise import KNoise
 from mrpro.data.KTrajectory import KTrajectory
