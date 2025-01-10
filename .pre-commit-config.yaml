@@ -32,26 +32,6 @@ repos:
         args: [--double-quotes, --fix]
         exclude: ^tests/
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.13.0
-    hooks:
-      - id: mypy
-        pass_filenames: false
-        always_run: true
-        args: [src, tests, examples]
-        additional_dependencies:
-          - numpy
-          - torch>=2.4.0
-          - types-requests
-          - typing-extensions
-          - einops
-          - pydicom
-          - matplotlib
-          - pytest
-          - xsdata
-          - "--index-url=https://download.pytorch.org/whl/cpu"
-          - "--extra-index-url=https://pypi.python.org/simple"
-
   - repo: https://github.com/kynan/nbstripout
     rev: 0.8.0
     hooks:
@@ -78,6 +58,26 @@ repos:
          - examples/scripts/*.py
        always_run: true
        pass_filenames: false
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        pass_filenames: false
+        always_run: true
+        args: [src, tests, examples]
+        additional_dependencies:
+          - numpy
+          - torch>=2.4.0
+          - types-requests
+          - typing-extensions
+          - einops
+          - pydicom
+          - matplotlib
+          - pytest
+          - xsdata
+          - "--index-url=https://download.pytorch.org/whl/cpu"
+          - "--extra-index-url=https://pypi.python.org/simple"
 
 ci:
   autofix_commit_msg: |
