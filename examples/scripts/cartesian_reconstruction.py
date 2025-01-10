@@ -251,18 +251,18 @@ from mrpro.algorithms.csm import walsh
 from mrpro.operators import SensitivityOp
 
 # Calculate coil sensitivity maps
-(magnitude_pe_pf,) = fft_op.adjoint(cart_sampling_op.adjoint(kdata_pe_pf.data)[0])
+(img_pe_pf,) = fft_op.adjoint(*cart_sampling_op.adjoint(kdata_pe_pf.data))
 
 # This algorithms is designed to calculate coil sensitivity maps for each other dimension.
-csm_data = walsh(magnitude_pe_pf[0, ...], smoothing_width=5)[None, ...]
+csm_data = walsh(img_pe_pf[0, ...], smoothing_width=5)[None, ...]
 
 # Create SensitivityOp
 csm_op = SensitivityOp(csm_data)
 
 # Reconstruct coil-combined image
-(img_pe_pf,) = csm_op.adjoint(*fourier_op.adjoint(img_pe_pf))
-magnitude_pe_pf = magnitude_pe_pf.abs().squeeze()
-show_images(magnitude_fully_sampled, magnitude_pe_pf, titles=['fully sampled', 'PF & PE'])
+(img_walsh_combined,) = csm_op.adjoint(*fourier_op.adjoint(kdata_pe_pf.data))
+magnitude_walsh_combined = img_walsh_combined.abs().squeeze()
+show_images(magnitude_pe_pf, magnitude_walsh_combined, titles=['RSS', 'Adaptive Combination'])
 
 
 # %% [markdown]
