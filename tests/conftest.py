@@ -384,7 +384,20 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'zero',  # type_k2
         ),
-        (  # (8) 2d cartesian cine with 2 cardiac phases, 3 coils
+        (  # (8) 2d non-uniform cine with 2 cardiac phases, 3 coils
+            (2, 3, 1, 64, 64),  # im_shape
+            (2, 3, 1, 18, 128),  # k_shape
+            (2, 1, 18, 128),  # nkx
+            (2, 1, 18, 128),  # nky
+            (2, 1, 1, 1),  # nkz
+            'non-uniform',  # type_kx
+            'non-uniform',  # type_ky
+            'zero',  # type_kz
+            'non-uniform',  # type_k0
+            'non-uniform',  # type_k1
+            'zero',  # type_k2
+        ),
+        (  # (9) 2d cartesian cine with 2 cardiac phases, 3 coils
             (2, 3, 1, 96, 128),  # im_shape
             (2, 3, 1, 128, 192),  # k_shape
             (2, 1, 1, 192),  # nkx
@@ -397,7 +410,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'uniform',  # type_k1
             'zero',  # type_k2
         ),
-        (  # (9) radial phase encoding (RPE), 3 coils, with oversampling in both FFT and non-uniform directions
+        (  # (10) radial phase encoding (RPE), 3 coils, with oversampling in both FFT and non-uniform directions
             (2, 3, 12, 14, 16),  # im_shape
             (2, 3, 8, 10, 12),  # k_shape
             (2, 1, 1, 12),  # nkx
@@ -410,12 +423,12 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'non-uniform',  # type_k2
         ),
-        (  # (10) radial phase encoding (RPE), 2 coils with non-Cartesian sampling along readout
+        (  # (11) radial phase encoding (RPE), 2 coils with non-Cartesian sampling along readout
             (2, 2, 12, 14, 16),  # im_shape
             (2, 2, 8, 10, 12),  # k_shape
-            (2, 2, 1, 12),  # nkx
-            (2, 2, 10, 1),  # nky
-            (2, 2, 10, 1),  # nkz
+            (2, 1, 1, 12),  # nkx
+            (2, 8, 10, 1),  # nky
+            (2, 8, 10, 1),  # nkz
             'non-uniform',  # type_kx
             'non-uniform',  # type_ky
             'non-uniform',  # type_kz
@@ -423,12 +436,12 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'non-uniform',  # type_k2
         ),
-        (  # (11) stack of stars, 3 other, 2 coil, oversampling in both FFT and non-uniform directions
-            (3, 2, 24, 16, 32),  # im_shape
-            (3, 2, 48, 12, 14),  # k_shape
-            (3, 1, 12, 14),  # nkx
-            (3, 1, 12, 14),  # nky
-            (3, 48, 1, 1),  # nkz
+        (  # (12) stack of stars, 3 other, 2 coil, oversampling in both FFT and non-uniform directions
+            (3, 2, 16, 16, 24),  # im_shape
+            (3, 2, 12, 6, 10),  # k_shape
+            (3, 1, 6, 10),  # nkx
+            (3, 1, 6, 10),  # nky
+            (3, 12, 1, 1),  # nkz
             'non-uniform',  # type_kx
             'non-uniform',  # type_ky
             'uniform',  # type_kz
@@ -436,12 +449,12 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'uniform',  # type_k2
         ),
-        (  # (12) stack of stars, (2,2,4) other, 3 coil, trajectory is different along second other dimension
-            (2, 2, 4, 3, 48, 16, 32),  # im_shape
-            (2, 2, 4, 3, 96, 18, 64),  # k_shape
-            (2, 1, 1, 18, 64),  # nkx
-            (2, 1, 1, 18, 64),  # nky
-            (2, 1, 96, 1, 1),  # nkz
+        (  # (13) stack of stars, (2,2,4) other, 3 coil, trajectory is different along second other dimension
+            (2, 2, 4, 3, 16, 18, 20),  # im_shape
+            (2, 2, 4, 3, 12, 6, 10),  # k_shape
+            (2, 1, 1, 6, 10),  # nkx
+            (2, 1, 1, 6, 10),  # nky
+            (2, 1, 12, 1, 1),  # nkz
             'non-uniform',  # type_kx
             'non-uniform',  # type_ky
             'uniform',  # type_kz
@@ -449,7 +462,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'uniform',  # type_k2
         ),
-        (  # (13) 2d non-uniform not aligned in kzyx and k210, similar to 3d single shot spiral but with singleton dim
+        (  # (14) 2d non-uniform not aligned in kzyx and k210, similar to 3d single shot spiral but with singleton dim
             (8, 5, 64, 1, 64),  # im_shape
             (8, 5, 1, 18, 128),  # k_shape
             (8, 1, 18, 128),  # nkx

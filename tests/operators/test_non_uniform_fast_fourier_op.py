@@ -80,9 +80,9 @@ def test_non_uniform_fast_fourier_op_gram(
     torch.testing.assert_close(actual, expected, rtol=1e-3, atol=1e-3)
 
 
-def test_non_uniform_fast_fourier_op_equal_to_fft(ismrmrd_cart):
+def test_non_uniform_fast_fourier_op_equal_to_fft(ismrmrd_cart_high_res):
     """Eval result of non-uniform Fast Fourier transform for Cartesian data."""
-    kdata = KData.from_file(ismrmrd_cart.filename, KTrajectoryIsmrmrd())
+    kdata = KData.from_file(ismrmrd_cart_high_res.filename, KTrajectoryIsmrmrd())
 
     # recon_matrix and encoding_matrix have to be identical to avoid image scaling
     # oversampling > 1 leads to a scaling of the image, the object of the images are far away from the edge so there
@@ -99,7 +99,7 @@ def test_non_uniform_fast_fourier_op_equal_to_fft(ismrmrd_cart):
     # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
     # differences along the edges of the elliptic objects.
-    assert relative_image_difference(reconstructed_img[0, 0, 0, ...], ismrmrd_cart.img_ref) <= 0.05
+    assert relative_image_difference(reconstructed_img[0, 0, 0, ...], ismrmrd_cart_high_res.img_ref) <= 0.05
 
 
 def test_non_uniform_fast_fourier_op_empty_dims():

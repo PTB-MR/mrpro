@@ -1,6 +1,6 @@
 """Non-Uniform Fast Fourier Operator."""
 
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from dataclasses import astuple
 from itertools import product
 from typing import Literal
@@ -134,10 +134,6 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
                 kbwidth=nufft_kbwidth,
             )
             self._nufft_type1 = lambda x: adj_nufft_op(x, omega, norm='ortho')
-
-            # non-Cartesian -> Cartesian for gram operator
-            adj_nufft_op_gram = KbNufftAdjoint(im_size=im_size, n_shift=[0] * len(im_size))
-            self._nufft_type1_gram = lambda x, traj: adj_nufft_op_gram(x, traj)
 
             # Cartesian -> non-Cartesian
             nufft_op = KbNufft(
@@ -280,9 +276,7 @@ def symmetrize(kernel: torch.Tensor, rank: int) -> torch.Tensor:
     return kernel[..., : last_len // 2 + 1]
 
 
-def gram_nufft_kernel(
-    weight: torch.Tensor, trajectory: torch.Tensor, nufft_type1: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
-) -> torch.Tensor:
+def gram_nufft_kernel(weight: torch.Tensor, trajectory: torch.Tensor, recon_shape: Sequence[int]) -> torch.Tensor:
     """Calculate the convolution kernel for the NUFFT gram operator.
 
     Parameters
@@ -291,8 +285,8 @@ def gram_nufft_kernel(
         either ones or density compensation weights
     trajectory
         k-space trajectory
-    nufft_type1
-        transformation from non-Cartesian to Cartesian k-space
+    recon_shape
+        shape of the reconstructed image
 
     Returns
     -------
@@ -302,8 +296,9 @@ def gram_nufft_kernel(
     rank = trajectory.shape[-2]
     # Instead of doing one adjoint nufft with double the recon size in all dimensions,
     # we do two adjoint nuffts per dimensions, saving a lot of memory.
+    adjnufft_ob = KbNufftAdjoint(im_size=recon_shape, n_shift=[0] * rank).to(trajectory)
 
-    kernel = nufft_type1(weight, trajectory)  # this will be the top left ... corner block
+    kernel = adjnufft_ob(weight, trajectory)  # this will be the top left ... corner block
     pad = []
     for s in kernel.shape[: -rank - 1 : -1]:
         pad.extend([0, s])
@@ -314,7 +309,7 @@ def gram_nufft_kernel(
             # top left ... block already processed before padding
             continue
         flipped_trajectory = trajectory * torch.tensor(flips).to(trajectory).unsqueeze(-1)
-        kernel_part = nufft_type1(weight, flipped_trajectory)
+        kernel_part = adjnufft_ob(weight, flipped_trajectory)
         slices = []  # which part of the kernel to is currently being processed
         for dim, flip in zip(range(-rank, 0), flips, strict=True):
             if flip > 0:  # first half in the dimension
@@ -374,7 +369,7 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
             # combine joint_dims and nufft_dims
             weight = weight.flatten(start_dim=1, end_dim=-len(nufft_op._nufft_dims) - 1).flatten(start_dim=2)
 
-            kernel = gram_nufft_kernel(weight + 0j, nufft_op._omega, nufft_op._nufft_type1_gram)
+            kernel = gram_nufft_kernel(weight + 0j, nufft_op._omega, nufft_op._im_size)
 
             kernel = kernel.reshape(*unflatten_other_shape, -1, *kernel.shape[-len(nufft_op._nufft_directions) :])
             kernel = kernel.permute(*unpermute_zyx)
