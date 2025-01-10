@@ -217,7 +217,7 @@ def random_kheader_shape(request, random_acquisition, random_full_ismrmrd_header
     return kheader, n_other, n_coils, n_k2, n_k1, n_k0
 
 
-def create_uniform_traj(nk, k_shape):
+def create_uniform_traj(nk):
     """Create a tensor of uniform points with predefined shape nk."""
     kidx = torch.where(torch.tensor(nk[1:]) > 1)[0]
     if len(kidx) > 1:
@@ -225,8 +225,7 @@ def create_uniform_traj(nk, k_shape):
     if len(kidx) >= 1:
         # kidx+1 because we searched in nk[1:]
         n_kpoints = nk[kidx + 1]
-        # kidx+2 because k_shape also includes coils dimensions
-        k = torch.linspace(-k_shape[kidx + 2] // 2, k_shape[kidx + 2] // 2 - 1, n_kpoints, dtype=torch.float32)
+        k = torch.linspace(-n_kpoints // 2, n_kpoints // 2 - 1, n_kpoints, dtype=torch.float32)
         views = [1 if i != n_kpoints else -1 for i in nk]
         k = k.view(*views).expand(list(nk))
     else:
@@ -242,7 +241,7 @@ def create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
         if spacing == 'non-uniform':
             k = random_generator.float32_tensor(size=nk, low=-1, high=1) * max(nk)
         elif spacing == 'uniform':
-            k = create_uniform_traj(nk, k_shape=k_shape)
+            k = create_uniform_traj(nk)
         elif spacing == 'zero':
             k = torch.zeros(nk)
         k_list.append(k)
