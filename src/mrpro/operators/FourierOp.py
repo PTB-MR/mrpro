@@ -27,7 +27,7 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
     It also includes padding/cropping to the reconstruction matrix size.
 
     The operator can directly be constructed from a :py:class:`KData` object to match its
-    trajectory and header information, see :py:func:`FouruerOp.from_kdata`
+    trajectory and header information, see :py:func:`FourierOp.from_kdata`
 
     """
 

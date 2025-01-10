@@ -92,7 +92,7 @@ html_context = {
     'github_url': 'https://github.com/PTB-MR/mrpro/main',
 }
 linkcode_blob = html_context['github_version']
-
+default_role = 'any'
 
 def get_lambda_source(obj):
     """Convert lambda to source code."""
@@ -244,11 +244,25 @@ def sync_notebooks(source_folder, dest_folder):
             dest_file = dest / src_file.name
             if not dest_file.exists() or src_file.stat().st_mtime > dest_file.stat().st_mtime:
                 shutil.copy2(src_file, dest_file)
+import nbformat
+import re
+def replace_patterns_in_markdown(app, docname, source):
+    """Replace patterns like `module.class` with {any}`module.class` in Markdown cells."""
+    if not '_notebooks' in docname:
+        return
+    notebook = nbformat.reads(source[0], as_version=4)
+    for cell in notebook.cells:
+        if cell["cell_type"] == "markdown":
+            # Replace with `text` with {any}`text`. leave ``text`` as is.
+            cell["source"] = re.sub(r"(?<!`)`([^`]+)`(?!`)", r"{any}`\1`", cell["source"])
 
+    source[0] = nbformat.writes(notebook)
 
 def setup(app):
     app.set_html_assets_policy('always')  # forces mathjax on all pages
     app.connect('autodoc-before-process-signature', rewrite_dataclass_init_default_factories)
     app.connect('autodoc-process-signature', autodoc_inherit_overload, 0)
-    app.add_autodocumenter(CustomClassDocumenter)
+    app.connect("source-read", replace_patterns_in_markdown)
+
+    app.add_autodocumenter(CustomClassDocumenter, True)
     sync_notebooks(app.srcdir.parent.parent / 'examples' / 'notebooks', app.srcdir / '_notebooks')
