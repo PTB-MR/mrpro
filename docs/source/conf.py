@@ -3,13 +3,17 @@ import ast
 import dataclasses
 import inspect
 import os
+import re
 import shutil
 import sys
 from pathlib import Path
 from typing import get_overloads
 
-from sphinx.ext.autodoc import AttributeDocumenter, ClassDocumenter, MethodDocumenter, PropertyDocumenter
-from sphinx.util.inspect import isclassmethod, isstaticmethod, signature, stringify_signature
+import nbformat
+from sphinx.ext.autodoc import (AttributeDocumenter, ClassDocumenter,
+                                MethodDocumenter, PropertyDocumenter)
+from sphinx.util.inspect import (isclassmethod, isstaticmethod, signature,
+                                 stringify_signature)
 from sphinx_pyproject import SphinxConfig
 
 from mrpro import __version__ as project_version
@@ -243,12 +247,13 @@ def sync_notebooks(source_folder, dest_folder):
             dest_file = dest / src_file.name
             if not dest_file.exists() or src_file.stat().st_mtime > dest_file.stat().st_mtime:
                 shutil.copy2(src_file, dest_file)
-import nbformat
-import re
+
 def replace_patterns_in_markdown(app, docname, source):
     """Replace patterns like `module.class` with {any}`module.class` in Markdown cells."""
     if not '_notebooks' in docname:
         return
+    import ipdb
+    ipdb.set_trace()
     notebook = nbformat.reads(source[0], as_version=4)
     for cell in notebook.cells:
         if cell["cell_type"] == "markdown":
