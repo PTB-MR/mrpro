@@ -85,11 +85,10 @@ html_theme_options = {
     'collapse_navigation': False,
 }
 html_context = {
-    'display_github': True,
+    'display_github': False,
     'github_user': 'PTB-MR',
     'github_repo': 'mrpro',
     'github_version': 'main',
-    'github_url': 'https://github.com/PTB-MR/mrpro/main',
 }
 linkcode_blob = html_context['github_version']
 default_role = 'any'
