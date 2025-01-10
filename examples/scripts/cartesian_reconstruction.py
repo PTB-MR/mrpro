@@ -58,7 +58,7 @@ print(kdata)
 
 
 # %% [markdown]
-# We can also have a look at more specific header information like the 1H Lamor frequency
+# AAA We can also have a look at more specific header information like the 1H Lamor frequency
 
 # %%
 print('Lamor Frequency:', kdata.header.lamor_frequency_proton)
@@ -66,9 +66,17 @@ print('Lamor Frequency:', kdata.header.lamor_frequency_proton)
 # %% [markdown]
 # ## Reconstruction of fully sampled acquisition
 #
-# For the reconstruction of a fully sampled Cartesian acquisition, we can use a simple Fast Fourier Transform (FFT).
+# For the reconstruction of a fully sampled Cartesian acquisition, we can either use a general
+# `~mrpro.operators.FourierOp` or manually set up a Fast Fourier Transform (FFT).
+# For demonstration purposes, we first show the manual approach.
 #
-# Let's create an FFT-operator `mrpro.operator.FastFourierOp` and apply it to our `~mrpro.data.KData` object.
+# ```{note}
+#  Most of the time, you will use the `~mrpro.operators.FourierOp` operator, which automatically takes care
+# of choosing  whether to use a FFT or a non-uniform FFT (NUFFT) based on the trajectory.
+# It optionally can be created from a `~mrpro.data.KData` object without any further information.
+# ```
+#
+# Let's create an FFT-operator `mrpro.operators.FastFourierOp` and apply it to our `~mrpro.data.KData` object.
 # Please note that all MRpro operator work on PyTorch tensors and not on the MRpro objects directly. Therefore, we have
 # to call the operator on kdata.data. One other important property of MRpro operators is that they always return a
 # tuple of PyTorch tensors, even if the output is only a single tensor. This is why we use the ``(img,)`` syntax below.
@@ -168,10 +176,12 @@ print(kdata.traj)
 
 # %% [markdown]
 # We see that the trajectory has ``kz``, ``ky``, and ``kx`` components. ``kx`` and ``ky`` only vary along one dimension.
+# ```{note}
 # This is because MRpro saves meta data such as trajectories in an efficient way, where dimensions in which the data
 # does not change are often collapsed. The original shape can be obtained by
 # [broadcasting](https://numpy.org/doc/stable/user/basics.broadcasting.html).
-# Here, to get the full trajectory as a tensor, we can also just call `~mrpro.data.KTrajectory.as_tensor()`:
+# ```
+# To get the full trajectory as a tensor, we can also just call `~mrpro.data.KTrajectory.as_tensor()`:
 
 # %%
 # Plot the fully sampled trajectory (in blue)
@@ -215,8 +225,8 @@ show_images(magnitude_fully_sampled, magnitude_pe_pf, titles=['fully sampled', '
 # Voila! We've got the same brains, and they're the same size!
 
 # %% [markdown]
-## More about operators
-### The Fourier Operator
+# ## More about operators
+# ### The Fourier Operator
 # In MRpro, we have a smart `~mrpro.operators.FourierOp` operator, that automatically does the resorting and can
 # handle non-cartesian data as well. For cartesian data, it internally does exactly the two steps we just did manually.
 # The operator can be also be created from an existing `~mrpro.data.KData` object
@@ -242,7 +252,7 @@ show_images(magnitude_fully_sampled, magnitude_pe_pf, titles=['fully sampled', '
 
 
 # %% [markdown]
-### Sensitivity Operator
+# ### Sensitivity Operator
 # We have different options for calculating coil sensitivity maps from the image data of the various coils.
 # Here, we're going to use the Walsh method.
 
@@ -266,7 +276,7 @@ show_images(magnitude_pe_pf, magnitude_walsh_combined, titles=['RSS', 'Adaptive 
 
 
 # %% [markdown]
-# Tada! The "hole" is gone, and the image looks much better.
+# Tada! The "hole" is gone, and the image looks much better 🎉.
 #
 # When we reconstructed the image, we called the adjoint method of several different operators one after the other. That
 # was a bit cumbersome. To make our life easier, MRpro allows to combine the operators first, get the adjoint
@@ -321,6 +331,9 @@ show_images(idat_pe_pf.rss().squeeze(), idat_us.rss().squeeze(), titles=['PE & P
 # As expected, we can see undersampling artifacts in the image. In order to get rid of them, we can use an iterative
 # SENSE algorithm. As you might have guessed, this is also included in MRpro.
 
-# Similarly to the `~mrpro.algorithms.reconstruction.DirectReconstruction`,
-# we can use an `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`.
+# Instead of the `~mrpro.algorithms.reconstruction.DirectReconstruction`,
+# we can also use more sophisticated reconstructions such as
+# `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`.
 # For more information, see <project:iterative_sense_reconstruction>
+
+# %%
