@@ -215,6 +215,8 @@ show_images(magnitude_fully_sampled, magnitude_pe_pf, titles=['fully sampled', '
 # Voila! We've got the same brains, and they're the same size!
 
 # %% [markdown]
+## More about operators
+### The Fourier Operator
 # In MRpro, we have a smart `~mrpro.operators.FourierOp` operator, that automatically does the resorting and can
 # handle non-cartesian data as well. For cartesian data, it internally does exactly the two steps we just did manually.
 # The operator can be also be created from an existing `~mrpro.data.KData` object
@@ -240,6 +242,7 @@ show_images(magnitude_fully_sampled, magnitude_pe_pf, titles=['fully sampled', '
 
 
 # %% [markdown]
+### Sensitivity Operator
 # We have different options for calculating coil sensitivity maps from the image data of the various coils.
 # Here, we're going to use the Walsh method.
 
@@ -266,11 +269,11 @@ show_images(magnitude_fully_sampled, magnitude_pe_pf, titles=['fully sampled', '
 # Tada! The "hole" is gone, and the image looks much better.
 #
 # When we reconstructed the image, we called the adjoint method of several different operators one after the other. That
-# was a bit cumbersome. To make our life easier, MRpro allows to combine the operators first and then call the adjoint
-# of the composite operator. We have to keep in mind that we have to put them in the order of the forward method of the
-# operators. By calling the adjoint, the order will be automatically reversed.
+# was a bit cumbersome. To make our life easier, MRpro allows to combine the operators first, get the adjoint
+# of the composite operator and then later call this adjoint composite operator.
 
 # %%
+### Operator Composition
 # Create composite operator
 adjoint_operator = (fourier_op @ csm_op).H
 (magnitude_pe_pf,) = adjoint_operator(kdata_pe_pf.data)
