@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import pypulseq as pp
 import torch
 from einops import rearrange
 
@@ -40,8 +39,10 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         -------
             trajectory of type KTrajectoryRawShape
         """
+        from pypulseq import Sequence
+
         # create PyPulseq Sequence object and read .seq file
-        seq = pp.Sequence()
+        seq = Sequence()
         seq.read(file_path=str(self.seq_path))
 
         # calculate k-space trajectory using PyPulseq
@@ -52,20 +53,11 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         n_samples = torch.unique(n_samples)
         if len(n_samples) > 1:
             raise ValueError('We currently only support constant number of samples')
-        n_k0 = int(n_samples.item())
 
-        def rescale_and_reshape_traj(k_traj: torch.Tensor, encoding_size: int):
-            if encoding_size > 1 and torch.max(torch.abs(k_traj)) > 0:
-                k_traj = k_traj * encoding_size / (2 * torch.max(torch.abs(k_traj)))
-            else:
-                # We force k_traj to be 0 if encoding_size = 1. This is typically the case for kz in 2D sequences.
-                # However, it happens that seq.calculate_kspace() returns values != 0 (numerical noise) in such cases.
-                k_traj = torch.zeros_like(k_traj)
-            return rearrange(k_traj, '(other k0) -> other k0', k0=n_k0)
-
-        # rearrange k-space trajectory to match MRpro convention
-        kx = rescale_and_reshape_traj(k_traj_adc[0], kheader.encoding_matrix.x)
-        ky = rescale_and_reshape_traj(k_traj_adc[1], kheader.encoding_matrix.y)
-        kz = rescale_and_reshape_traj(k_traj_adc[2], kheader.encoding_matrix.z)
-
-        return KTrajectoryRawShape(kz, ky, kx, self.repeat_detection_tolerance)
+        k_traj_reshaped = rearrange(k_traj_adc, 'xyz (other k0) -> xyz other k0', k0=int(n_samples.item()))
+        return KTrajectoryRawShape.from_tensor(
+            k_traj_reshaped,
+            axes_order='xyz',
+            scaling_matrix=kheader.encoding_matrix,
+            repeat_detection_tolerance=self.repeat_detection_tolerance,
+        )

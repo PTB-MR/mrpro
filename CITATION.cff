@@ -1,0 +1,54 @@
+abstract:
+    <p>MRpro is a MR image reconstruction and processing framework specifically
+    developed to work well with PyTorch. The data classes utilize torch tensors for
+    storing data such as MR raw data or reconstructed image data. Where possible batch
+    parallelisation of PyTorch is utilized to speed up image reconstruction.</p>
+authors:
+    - affiliation: Physikalisch-Technische Bundesanstalt
+      family-names: Zimmermann
+      given-names: Felix Frederik
+      orcid: 0000-0002-0862-8973
+    - affiliation: Physikalisch-Technische Bundesanstalt
+      family-names: Schuenke
+      given-names: Patrick
+      orcid: 0000-0002-3179-4830
+    - affiliation: Physikalisch-Technische Bundesanstalt
+      family-names: Brahma
+      given-names: Sherine
+      orcid: 0000-0003-4340-6513
+    - affiliation: Physikalisch-Technische Bundesanstalt
+      family-names: Guastini
+      given-names: Mara
+    - affiliation: Physikalisch-Technische Bundesanstalt
+      family-names: Hammacher
+      given-names: Johannes
+    - affiliation: Physikalisch-Technische Bundesanstalt
+      family-names: Kofler
+      given-names: Andreas
+      orcid: 0000-0002-7416-4433
+    - affiliation: Physikalisch-Technische Bundesanstalt
+      family-names: Kranich Redshaw
+      given-names: Catarina
+    - affiliation: Physikalisch-Technische Bundesanstalt
+      family-names: Lunin
+      given-names: Leonid
+      orcid: 0000-0001-6469-5532
+    - affiliation: Physikalisch-Technische Bundesanstalt
+      family-names: Martin
+      given-names: Stefan
+    - affiliation: Physikalisch-Technische Bundesanstalt
+      family-names: Schote
+      given-names: David
+      orcid: 0000-0003-3468-0676
+    - affiliation: Physikalisch-Technische Bundesanstalt
+      family-names: Kolbitsch
+      given-names: Christoph
+      orcid: 0000-0002-4355-8368
+cff-version: 1.2.0
+date-released: "2024-12-17"
+doi: 10.5281/zenodo.14509598
+license: Apache-2.0
+repository-code: https://github.com/PTB-MR/mrpro/
+title: MRpro - PyTorch-based MR image reconstruction and processing package
+type: software
+url: https://doi.org/10.5281/zenodo.14509598
