@@ -10,10 +10,8 @@ from pathlib import Path
 from typing import get_overloads
 
 import nbformat
-from sphinx.ext.autodoc import (AttributeDocumenter, ClassDocumenter,
-                                MethodDocumenter, PropertyDocumenter)
-from sphinx.util.inspect import (isclassmethod, isstaticmethod, signature,
-                                 stringify_signature)
+from sphinx.ext.autodoc import AttributeDocumenter, ClassDocumenter, MethodDocumenter, PropertyDocumenter
+from sphinx.util.inspect import isclassmethod, isstaticmethod, signature, stringify_signature
 from sphinx_pyproject import SphinxConfig
 
 from mrpro import __version__ as project_version
@@ -75,7 +73,7 @@ myst_enable_extensions = [
     'dollarmath',
 ]
 nb_execution_mode = 'off'
-nb_output_stderr ='remove'
+nb_output_stderr = 'remove'
 nb_output_stdout = 'remove'
 html_theme = 'sphinx_rtd_theme'
 html_title = name
@@ -96,6 +94,7 @@ html_context = {
 }
 linkcode_blob = html_context['github_version']
 default_role = 'any'
+
 
 def get_lambda_source(obj):
     """Convert lambda to source code."""
@@ -248,20 +247,21 @@ def sync_notebooks(source_folder, dest_folder):
             if not dest_file.exists() or src_file.stat().st_mtime > dest_file.stat().st_mtime:
                 shutil.copy2(src_file, dest_file)
 
+
 def replace_patterns_in_markdown(app, docname, source):
     """Replace patterns like `module.class` with {any}`module.class` in Markdown cells."""
-    if not '_notebooks' in docname:
+    if '_notebooks' not in docname:
         return
     import ipdb
+
     ipdb.set_trace()
     notebook = nbformat.reads(source[0], as_version=4)
     for cell in notebook.cells:
-        if cell["cell_type"] == "markdown":
+        if cell['cell_type'] == 'markdown':
             # Replace with `text` with {py:obj}`text`. leave ``text`` as is.
-            cell["source"] = re.sub(r"(?<!`)`([^`]+)`(?!`)", r"{py:obj}`\1`", cell["source"])
+            cell['source'] = re.sub(r'(?<!`)`([^`]+)`(?!`)', r'{py:obj}`\1`', cell['source'])
 
     source[0] = nbformat.writes(notebook)
-
 
 
 def sync_notebooks(source_folder, dest_folder):
@@ -276,10 +276,11 @@ def sync_notebooks(source_folder, dest_folder):
             if not dest_file.exists() or src_file.stat().st_mtime > dest_file.stat().st_mtime:
                 shutil.copy2(src_file, dest_file)
 
+
 def setup(app):
     app.set_html_assets_policy('always')  # forces mathjax on all pages
     app.connect('autodoc-before-process-signature', rewrite_dataclass_init_default_factories)
     app.connect('autodoc-process-signature', autodoc_inherit_overload, 0)
-    app.connect("source-read", replace_patterns_in_markdown)
+    app.connect('source-read', replace_patterns_in_markdown)
     app.add_autodocumenter(CustomClassDocumenter, True)
     sync_notebooks(app.srcdir.parent.parent / 'examples' / 'notebooks', app.srcdir / '_notebooks')
