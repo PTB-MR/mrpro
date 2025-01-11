@@ -173,7 +173,7 @@ def tv_admm(img_initial, kdata, csm, dcf, reg_weight=0.2, data_weight=0.1, tv_it
 kdata = KData.from_file(fname.replace('.mrd', '_pf.mrd'), KTrajectoryRpe(angle=torch.pi * 0.618034, shift_between_rpe_lines=[0,]))
 
 # Display slices
-showz, showy, showx = [50, 96, 50] if kdata.header.recon_matrix.y == 192 else [50, 96, 28] 
+showz, showy, showx = [50, 96, 120] if kdata.header.recon_matrix.y == 192 else [50, 96, 28] 
 
 # Set the matrix sizes which are not encoded correctly in the pulseq sequence
 kdata.header.encoding_matrix.z = kdata.header.encoding_matrix.y
@@ -198,7 +198,7 @@ if flag_plot:
 # Calculate coil maps
 avg_recon = DirectReconstruction(kdata, csm = None)
 avg_im = avg_recon(kdata)
-csm_maps = CsmData.from_idata_walsh(avg_im, smoothing_width = 9)
+csm_maps = CsmData.from_idata_inati(avg_im, smoothing_width = 9)
 
 if flag_plot:
     fig, ax = plt.subplots(5,1)
@@ -304,12 +304,12 @@ kdata_resp_resolved = kdata.split_k1_into_other(resp_idx, other_label='repetitio
 
 # %% Motion-resolved reconstruction
 tstart = time.time()
-direct_recon_resp_resolved = DirectReconstruction(kdata_resp_resolved, csm=itSENSE_recon.csm)
+direct_recon_resp_resolved = DirectReconstruction(kdata_resp_resolved, csm=csm_maps)
 img_direct_resp_resolved = direct_recon_resp_resolved.forward(kdata_resp_resolved)
 print(f'Dynamic reco direct {(time.time()-tstart)/60}min')
 
 tstart = time.time()
-itSENSE_recon_resp_resolved = IterativeSENSEReconstruction(kdata_resp_resolved, csm=itSENSE_recon.csm, n_iterations=10)
+itSENSE_recon_resp_resolved = IterativeSENSEReconstruction(kdata_resp_resolved, csm=csm_maps, n_iterations=10)
 img_itSENSE_resp_resolved = itSENSE_recon_resp_resolved.forward(kdata_resp_resolved)
 print(f'Dynamic reco itSENSE {(time.time()-tstart)/60}min')
 
