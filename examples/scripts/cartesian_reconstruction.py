@@ -334,6 +334,6 @@ show_images(idat_pe_pf.rss().squeeze(), idat_us.rss().squeeze(), titles=['PE & P
 # Instead of the `~mrpro.algorithms.reconstruction.DirectReconstruction`,
 # we can also use more sophisticated reconstructions such as
 # `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`.
-# For more information, see <project:iterative_sense_reconstruction>
+# For more information, see <project:iterative_sense_reconstruction.ipynb>.
 
 # %%

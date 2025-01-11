@@ -78,6 +78,7 @@ nb_output_stdout = 'remove'
 html_theme = 'sphinx_rtd_theme'
 html_title = name
 html_show_sphinx = False
+html_show_sourcelink = False
 html_static_path = ['_static']
 html_css_files = ['custom.css']
 html_logo = '_static/logo_white.svg'
