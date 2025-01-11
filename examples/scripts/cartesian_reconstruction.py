@@ -17,8 +17,10 @@ from pathlib import Path
 
 import zenodo_get
 
-data_folder = Path(tempfile.mkdtemp())
 dataset = '14173489'
+
+tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
+data_folder = Path(tmp.name)
 zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 
 # %% [markdown]
@@ -328,12 +330,11 @@ idat_us = direct_recon_us(kdata_us)
 show_images(idat_pe_pf.rss().squeeze(), idat_us.rss().squeeze(), titles=['PE & PF', 'Undersampled'])
 
 # %% [markdown]
-# As expected, we can see undersampling artifacts in the image. In order to get rid of them, we can use an iterative
-# SENSE algorithm. As you might have guessed, this is also included in MRpro.
-
+# As expected, we can see undersampling artifacts in the image. In order to get rid of them,
+# we try can a more sophiisticated reconstruction method, such as the iterative SENSE algorithm.
+# As you might have guessed, these are also included in MRpro:
 # Instead of the `~mrpro.algorithms.reconstruction.DirectReconstruction`,
-# we can also use more sophisticated reconstructions such as
-# `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`.
-# For more information, see <project:iterative_sense_reconstruction.ipynb>.
+# we can use `mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`, which is explained in
+# the example <project:iterative_sense_reconstruction.ipynb>.
 
 # %%
