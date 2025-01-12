@@ -176,7 +176,7 @@ acquisition_operator = fourier_operator @ csm_operator
 regularization_weight = 1.0
 regularization_image = img_iterative_sense.data
 
-right_hand_side = (acquisition_operator.H @ dcf_operator)(kdata_undersampled.data)
+(right_hand_side,) = (acquisition_operator.H @ dcf_operator)(kdata_undersampled.data)
 right_hand_side = right_hand_side + regularization_weight * regularization_image
 
 # %% [markdown]
