@@ -94,7 +94,7 @@ img_iterative_sense = iterative_sense_reconstruction(kdata_fullysampled)
 
 # %% [markdown]
 # ##### Image $x$ from undersampled data
-# We now reconstruct the undersampled image using the fully sampled image first wthout regularization,
+# We now reconstruct the undersampled image using the fully sampled image first without regularization,
 # and with with an regularization image.
 
 # %%
@@ -202,7 +202,7 @@ img_manual = mrpro.algorithms.optimizers.cg(
 # %%
 show_images(
     img_us_regularized_iterative_sense.rss()[0, 0],
-    img_manual.abs()[0, 0],
+    img_manual.abs()[0, 0, 0],
     titles=['Regularized Iterative SENSE R=20', '"Manual" Regularized Iterative SENSE R=20'],
 )
 # %% [markdown]
