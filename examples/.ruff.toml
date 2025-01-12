@@ -1,4 +1,5 @@
 extend = "../pyproject.toml"
+exclude = ["notebooks/*.ipynb"]
 
 lint.extend-ignore = [
     "D100",   #undocumented-public-module
