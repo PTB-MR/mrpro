@@ -46,10 +46,12 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 # calculator `~mrpro.data.traj_calculators.KTrajectoryCartesian` without any further parameters.
 
 # %%
-from mrpro.data import KData
-from mrpro.data.traj_calculators import KTrajectoryCartesian
+import mrpro
 
-kdata = KData.from_file(data_folder / 'cart_t1.mrd', KTrajectoryCartesian())
+kdata = mrpro.data.KData.from_file(
+    data_folder / 'cart_t1.mrd',
+    mrpro.data.traj_calculators.KTrajectoryCartesian(),
+)
 
 # %% [markdown]
 # Now we can explore this data object.
@@ -84,9 +86,7 @@ print('Lamor Frequency:', kdata.header.lamor_frequency_proton)
 # tuple of PyTorch tensors, even if the output is only a single tensor. This is why we use the ``(img,)`` syntax below.
 
 # %%
-from mrpro.operators import FastFourierOp
-
-fft_op = FastFourierOp(dim=(-2, -1))
+fft_op = mrpro.operators.FastFourierOp(dim=(-2, -1))
 (img,) = fft_op.adjoint(kdata.data)
 
 # %% [markdown]
@@ -105,7 +105,7 @@ print('Shape:', img.shape)
 
 # %%
 # Create FFT-operator with correct output matrix size
-fft_op = FastFourierOp(
+fft_op = mrpro.operators.FastFourierOp(
     dim=(-2, -1),
     recon_matrix=kdata.header.recon_matrix,
     encoding_matrix=kdata.header.encoding_matrix,
@@ -124,7 +124,6 @@ import matplotlib.pyplot as plt
 import torch
 
 
-# plot the image
 def show_images(*images: torch.Tensor, titles: list[str] | None = None) -> None:
     """Plot images."""
     n_images = len(images)
@@ -149,10 +148,13 @@ show_images(magnitude_fully_sampled)
 
 # %% tags=["remove-output"]
 # Read in the data
-kdata_pe_pf = KData.from_file(data_folder / 'cart_t1_partial_echo_partial_fourier.mrd', KTrajectoryCartesian())
+kdata_pe_pf = mrpro.data.KData.from_file(
+    data_folder / 'cart_t1_partial_echo_partial_fourier.mrd',
+    mrpro.data.traj_calculators.KTrajectoryCartesian(),
+)
 
 # Create FFT-operator with correct output matrix size
-fft_op = FastFourierOp(
+fft_op = mrpro.operators.FastFourierOp(
     dim=(-2, -1),
     recon_matrix=kdata.header.recon_matrix,
     encoding_matrix=kdata.header.encoding_matrix,
@@ -210,9 +212,9 @@ plt.show()
 # Let's try it out!
 
 # %%
-from mrpro.operators import CartesianSamplingOp
-
-cart_sampling_op = CartesianSamplingOp(encoding_matrix=kdata_pe_pf.header.encoding_matrix, traj=kdata_pe_pf.traj)
+cart_sampling_op = mrpro.operators.CartesianSamplingOp(
+    encoding_matrix=kdata_pe_pf.header.encoding_matrix, traj=kdata_pe_pf.traj
+)
 
 # %% [markdown]
 # Now, we first apply the adjoint CartesianSamplingOp and then call the adjoint FFT-operator.
@@ -235,9 +237,9 @@ show_images(magnitude_fully_sampled, magnitude_pe_pf, titles=['fully sampled', '
 # This is the recommended way to transform k-space data.
 
 # %%
-from mrpro.operators import FourierOp
 
-fourier_op = FourierOp.from_kdata(kdata_pe_pf)
+fourier_op = mrpro.operators.FourierOp.from_kdata(kdata_pe_pf)
+# no need for and explicit CartesianSamplingOp anymore!
 (img_pe_pf,) = fourier_op.adjoint(kdata_pe_pf.data)
 magnitude_pe_pf = img_pe_pf.abs().square().sum(dim=-4).sqrt().squeeze()
 show_images(magnitude_fully_sampled, magnitude_pe_pf, titles=['fully sampled', 'PF & PE'])
@@ -259,17 +261,14 @@ show_images(magnitude_fully_sampled, magnitude_pe_pf, titles=['fully sampled', '
 # Here, we're going to use the Walsh method.
 
 # %%
-from mrpro.algorithms.csm import walsh
-from mrpro.operators import SensitivityOp
-
 # Calculate coil sensitivity maps
 (img_pe_pf,) = fft_op.adjoint(*cart_sampling_op.adjoint(kdata_pe_pf.data))
 
 # This algorithms is designed to calculate coil sensitivity maps for each other dimension.
-csm_data = walsh(img_pe_pf[0, ...], smoothing_width=5)[None, ...]
+csm_data = mrpro.algorithms.csm.walsh(img_pe_pf[0, ...], smoothing_width=5)[None, ...]
 
 # Create SensitivityOp
-csm_op = SensitivityOp(csm_data)
+csm_op = mrpro.operators.SensitivityOp(csm_data)
 
 # Reconstruct coil-combined image
 (img_walsh_combined,) = csm_op.adjoint(*fourier_op.adjoint(kdata_pe_pf.data))
@@ -305,10 +304,9 @@ show_images(magnitude_pe_pf, titles=['PF & PE'])
 # the reconstructed image data. To get its magnitude, we can call the `~mrpro.data.IData.rss` method.
 
 # %%
-from mrpro.algorithms.reconstruction import DirectReconstruction
 
 # Create DirectReconstruction object from KData object
-direct_recon_pe_pf = DirectReconstruction(kdata_pe_pf)
+direct_recon_pe_pf = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_pe_pf)
 
 # Reconstruct image by calling the DirectReconstruction object
 idat_pe_pf = direct_recon_pe_pf(kdata_pe_pf)
@@ -323,8 +321,11 @@ idat_pe_pf = direct_recon_pe_pf(kdata_pe_pf)
 # ## Reconstruction of undersampled data
 
 # %%
-kdata_us = KData.from_file(data_folder / 'cart_t1_msense_integrated.mrd', KTrajectoryCartesian())
-direct_recon_us = DirectReconstruction(kdata_us)
+kdata_us = mrpro.data.KData.from_file(
+    data_folder / 'cart_t1_msense_integrated.mrd',
+    mrpro.data.traj_calculators.KTrajectoryCartesian(),
+)
+direct_recon_us = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_us)
 idat_us = direct_recon_us(kdata_us)
 
 show_images(idat_pe_pf.rss().squeeze(), idat_us.rss().squeeze(), titles=['PE & PF', 'Undersampled'])

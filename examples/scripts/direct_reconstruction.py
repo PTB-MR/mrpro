@@ -114,8 +114,11 @@ csm_operator = mrpro.data.CsmData.from_idata_walsh(img_coilwise).as_operator()
 
 # %% [markdown]
 # ### Perform Direct Reconstruction
-# Finally, the direct reconstruction is performed.
+# Finally, the direct reconstruction is performed and an `mrpro.data.IData` object with the reconstructed
+# image is returned.
+# %%
 adjoint_operator = (fourier_operator @ csm_operator).H
+
 img_manual = mrpro.data.IData.from_tensor_and_kheader(*adjoint_operator(kdata.data), kdata.header)
 
 # %% [markdown]
@@ -130,7 +133,7 @@ fourier_operator = mrpro.operators.FourierOp(
     traj=kdata.traj,
 )
 
-# Calculate dcf from the trajectory using the voronoi method
+# Calculate 2D dcf from the trajectory using the voronoi method
 kykx = torch.stack((kdata.traj.ky[0, 0], kdata.traj.kx[0, 0]))
 dcf_tensor = mrpro.algorithms.dcf.dcf_2d3d_voronoi(kykx)
 
