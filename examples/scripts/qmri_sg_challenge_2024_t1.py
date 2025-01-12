@@ -1,26 +1,6 @@
 # %% [markdown]
 # # QMRI Challenge ISMRM 2024 - $T_1$ mapping
-
-# %%
-# Imports
-import shutil
-import tempfile
-import zipfile
-from pathlib import Path
-
-import matplotlib.pyplot as plt
-import torch
-import zenodo_get
-from einops import rearrange
-from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore [import-untyped]
-from mrpro.algorithms.optimizers import adam
-from mrpro.data import IData
-from mrpro.operators import MagnitudeOp
-from mrpro.operators.functionals import MSE
-from mrpro.operators.models import InversionRecovery
-
-# %% [markdown]
-# ### Overview
+# In the 2024 ISMRM QMRI Challenge, the goal is to estimate $T_1$ maps from a set of inversion recovery images.
 # The dataset consists of images obtained at 10 different inversion times using a turbo spin echo sequence. Each
 # inversion time is saved in a separate DICOM file. In order to obtain a $T_1$ map, we are going to:
 # - download the data from Zenodo
@@ -28,32 +8,78 @@ from mrpro.operators.models import InversionRecovery
 # - define a signal model and data loss (mean-squared error) function
 # - find good starting values for each pixel
 # - carry out a fit using ADAM from PyTorch
+# %%
+# # Imports
+# import shutil
+# import tempfile
+# import zipfile
+# from pathlib import Path
+
+# import matplotlib.pyplot as plt
+# import torch
+# import zenodo_get
+# from einops import rearrange
+# from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore [import-untyped]
+# from mrpro.algorithms.optimizers import adam
+# from mrpro.data import IData
+# from mrpro.operators import MagnitudeOp
+# from mrpro.operators.functionals import MSE
+# from mrpro.operators.models import InversionRecovery
 
 # %% [markdown]
 # ### Get data from Zenodo
 
-# %%
-data_folder = Path(tempfile.mkdtemp())
+# %% tags=["hide-output"]
+import tempfile
+import zipfile
+from pathlib import Path
+
+import zenodo_get
+
 dataset = '10868350'
+
+tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
+data_folder = Path(tmp.name)
 zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 with zipfile.ZipFile(data_folder / Path('T1 IR.zip'), 'r') as zip_ref:
     zip_ref.extractall(data_folder)
 
 # %% [markdown]
 # ### Create image data (IData) object with different inversion times
+# We read in the DICOM files and combine them in an `mrpro.data.IData` object.
+# The inversion times are stored in the DICOM files are available in the header of the `~mrpro.data.IData` object.
 # %%
+import mrpro
+
 ti_dicom_files = data_folder.glob('**/*.dcm')
-idata_multi_ti = IData.from_dicom_files(ti_dicom_files)
+idata_multi_ti = mrpro.data.IData.from_dicom_files(ti_dicom_files)
 
 if idata_multi_ti.header.ti is None:
     raise ValueError('Inversion times need to be defined in the DICOM files.')
 
+# %% tags=["hide-cell"]
+import matplotlib.pyplot as plt
+import torch
+
+
+def show_images(*images: torch.Tensor, titles: list[str] | None = None) -> None:
+    """Plot images."""
+    n_images = len(images)
+    _, axes = plt.subplots(1, n_images, squeeze=False, figsize=(n_images * 3, 3))
+    for i in range(n_images):
+        axes[0][i].imshow(images[i], cmap='gray')
+        axes[0][i].axis('off')
+        if titles:
+            axes[0][i].set_title(titles[i])
+    plt.show()
+
+
 # %%
 # Let's have a look at some of the images
-fig, axes = plt.subplots(1, 3, squeeze=False)
-for idx, ax in enumerate(axes.flatten()):
-    ax.imshow(torch.abs(idata_multi_ti.data[idx, 0, 0, :, :]))
-    ax.set_title(f'TI = {idata_multi_ti.header.ti[idx]:.3f}s')
+show_images(
+    *idata_multi_ti.data[:, 0, 0].abs(),
+    titles=[f'TI = {ti:.3f}s' for ti in idata_multi_ti.header.ti.squeeze()],
+)
 
 # %% [markdown]
 # ### Signal model and loss function
@@ -65,13 +91,13 @@ for idx, ax in enumerate(axes.flatten()):
 # images only contain the magnitude of the signal. Therefore, we need $|q(TI)|$:
 
 # %%
-model = MagnitudeOp() @ InversionRecovery(ti=idata_multi_ti.header.ti)
+model = mrpro.operators.MagnitudeOp() @ mrpro.operators.models.InversionRecovery(ti=idata_multi_ti.header.ti)
 
 # %% [markdown]
 # As a loss function for the optimizer, we calculate the mean-squared error between the image data $x$ and our signal
 # model $q$.
 # %%
-mse = MSE(idata_multi_ti.data.abs())
+mse = mrpro.operators.functionals.MSE(idata_multi_ti.data.abs())
 
 # %% [markdown]
 # Now we can simply combine the two into a functional to solve
@@ -104,29 +130,37 @@ t1_dictionary = torch.linspace(0.1, 3.0, 100)
 # just a scaling factor and we are going to normalize the signal curves.
 (signal_dictionary,) = model(torch.ones(1), t1_dictionary)
 signal_dictionary = signal_dictionary.to(dtype=torch.complex64)
-vector_norm = torch.linalg.vector_norm(signal_dictionary, dim=0)
-signal_dictionary /= vector_norm
+signal_dictionary /= torch.linalg.vector_norm(signal_dictionary, dim=0)
 
 # Calculate the dot-product and select for each voxel the T1 values that correspond to the maximum of the dot-product
-n_y, n_x = idata_multi_ti.data.shape[-2:]
-dot_product = torch.mm(rearrange(idata_multi_ti.data, 'other 1 z y x->(z y x) other'), signal_dictionary)
-idx_best_match = torch.argmax(torch.abs(dot_product), dim=1)
-t1_start = rearrange(t1_dictionary[idx_best_match], '(y x)->1 1 y x', y=n_y, x=n_x)
+import einops
+
+dot_product = einops.einsum(
+    idata_multi_ti.data,
+    signal_dictionary,
+    'ti ..., ti t1 -> t1 ...',
+)
+idx_best_match = dot_product.abs().argmax(dim=0)
+t1_start = t1_dictionary[idx_best_match]
 
 # %%
 # The maximum absolute value observed is a good approximation for m0
-m0_start = torch.amax(torch.abs(idata_multi_ti.data), 0)
+m0_start = idata_multi_ti.data.abs().amax(dim=0)
 
 # %%
 # Visualize the starting values
-fig, axes = plt.subplots(1, 2, figsize=(8, 2), squeeze=False)
-colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05) for ax in axes[0, :]]
-im = axes[0, 0].imshow(m0_start[0, 0, ...])
+fig, axes = plt.subplots(1, 2, figsize=(6, 2), squeeze=False)
+
+im = axes[0, 0].imshow(m0_start[0, 0])
 axes[0, 0].set_title('$M_0$ start values')
-fig.colorbar(im, cax=colorbar_ax[0])
-im = axes[0, 1].imshow(t1_start[0, 0, ...], vmin=0, vmax=2.5)
+axes[0, 0].set_axis_off()
+fig.colorbar(im, ax=axes[0, 0], label='a.u.')
+
+im = axes[0, 1].imshow(t1_start[0, 0], vmin=0, vmax=2.5, cmap='magma')
 axes[0, 1].set_title('$T_1$ start values')
-fig.colorbar(im, cax=colorbar_ax[1], label='s')
+axes[0, 1].set_axis_off()
+fig.colorbar(im, ax=axes[0, 1], label='s')
+
 
 # %% [markdown]
 # ### Carry out fit
@@ -137,10 +171,8 @@ max_iter = 2000
 lr = 1e-1
 
 # Run optimization
-params_result = adam(functional, [m0_start, t1_start], max_iter=max_iter, lr=lr)
+params_result = mrpro.algorithms.optimizers.adam(functional, [m0_start, t1_start], max_iter=max_iter, lr=lr)
 m0, t1 = (p.detach() for p in params_result)
-m0[torch.isnan(t1)] = 0
-t1[torch.isnan(t1)] = 0
 
 # %% [markdown]
 # ### Visualize the final results
@@ -149,25 +181,29 @@ t1[torch.isnan(t1)] = 0
 # $E_{relative} = \sum_{TI}\frac{|(q(M_0, T_1, TI) - x)|}{|x|}$
 #
 # on a voxel-by-voxel basis
+# We also mask out the background by thresholding on $M_0$.
 
 # %%
-img_mult_te_abs_sum = torch.sum(torch.abs(idata_multi_ti.data), dim=0)
-relative_absolute_error = torch.sum(torch.abs(model(m0, t1)[0] - idata_multi_ti.data), dim=0) / (
-    img_mult_te_abs_sum + 1e-9
-)
+error = model(m0, t1)[0] - idata_multi_ti.data
+relative_absolute_error = error.abs().sum(dim=0) / (idata_multi_ti.data.abs().sum(dim=0) + 1e-9)
 fig, axes = plt.subplots(1, 3, figsize=(10, 2), squeeze=False)
-colorbar_ax = [make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05) for ax in axes[0, :]]
-im = axes[0, 0].imshow(m0[0, 0, ...])
+
+mask = torch.isnan(t1) | (m0 < 500)
+m0[mask] = 0
+t1[mask] = 0
+relative_absolute_error[mask] = 0
+
+im = axes[0, 0].imshow(m0[0, 0])
 axes[0, 0].set_title('$M_0$')
-fig.colorbar(im, cax=colorbar_ax[0])
-im = axes[0, 1].imshow(t1[0, 0, ...], vmin=0, vmax=2.5)
+axes[0, 0].set_axis_off()
+fig.colorbar(im, ax=axes[0, 0], label='a.u.')
+
+im = axes[0, 1].imshow(t1[0, 0], vmin=0, vmax=2.5)
 axes[0, 1].set_title('$T_1$')
-fig.colorbar(im, cax=colorbar_ax[1], label='s')
-im = axes[0, 2].imshow(relative_absolute_error[0, 0, ...], vmin=0, vmax=1.0)
+axes[0, 1].set_axis_off()
+fig.colorbar(im, ax=axes[0, 1], label='s')
+
+im = axes[0, 2].imshow(relative_absolute_error[0, 0], vmin=0, vmax=1.0)
 axes[0, 2].set_title('Relative error')
-fig.colorbar(im, cax=colorbar_ax[2])
-
-
-# %%
-# Clean-up by removing temporary directory
-shutil.rmtree(data_folder)
+axes[0, 2].set_axis_off()
+fig.colorbar(im, ax=axes[0, 2])

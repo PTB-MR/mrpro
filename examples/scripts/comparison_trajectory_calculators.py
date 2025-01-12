@@ -1,6 +1,6 @@
 # %% [markdown]
 # # Different ways to obtain the Trajectory
-# This example builds upon the <project:direct_reconstruction> example and demonstrates three ways
+# This example builds upon the <project:direct_reconstruction.ipynb> example and demonstrates three ways
 # to obtain the trajectory information required for image reconstruction:
 # - using the trajectory that is stored in the ISMRMRD file
 # - calculating the trajectory using the radial 2D trajectory calculator
@@ -45,7 +45,7 @@ reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
 img_using_ismrmrd_traj = reconstruction(kdata)
 
 # %% [markdown]
-# ### Using KTrajectoryRadial2D - Trajectory
+# ### Using KTrajectoryRadial2D - Specific trajectory calculator
 # For some common trajectories, we provide specific trajectory calculators.
 # These calculators often require only a few parameters to be specified,
 # such as the angle between spokes in the radial trajectory. Other parameters
@@ -69,7 +69,7 @@ reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
 img_using_rad2d_traj = reconstruction(kdata)
 
 # %% [markdown]
-# ### Using KTrajectoryPulseq
+# ### Using KTrajectoryPulseq - Trajectory from pulseq sequence file
 # This will calculate the trajectory from the pulseq sequence file
 # using the PyPulseq trajectory calculator. This method
 # requires the pulseq sequence file that was used to acquire the data.
@@ -115,7 +115,7 @@ show_images(
     titles=['KTrajectoryIsmrmrd', 'KTrajectoryRadial2D', 'KTrajectoryPulseq'],
 )
 
-# %%
+# %% [markdown]
 # Tada! We have successfully reconstructed images using three different trajectory calculators.
 # ```{note}
 # Which of these three methods is the best depends on the specific use case:
@@ -123,3 +123,5 @@ show_images(
 # If a pulseq sequence file is available, the trajectory can be calculated using the PyPulseq trajectory calculator.
 # Otherwise, a trajectory calculator needs to be implemented for the specific trajectory used.
 # ```
+
+# %%

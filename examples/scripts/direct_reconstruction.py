@@ -6,7 +6,6 @@
 import tempfile
 from pathlib import Path
 
-import mrpro.algorithms.dcf
 import zenodo_get
 
 dataset = '14617082'
@@ -39,12 +38,13 @@ kdata = mrpro.data.KData.from_file(data_folder / 'radial2D_402spokes_golden_angl
 # %% [markdown]
 ### Setup the DirectReconstruction instance
 # We create a `~mrpro.algorithms.reconstruction.DirectReconstruction` and supply ``kdata``.
-# `~mrpro.algorithms.reconstruction.DirectReconstruction` uses the information in `kdata` to
+# `~mrpro.algorithms.reconstruction.DirectReconstruction` uses the information in ``kdata`` to
 #  setup a Fourier transfrm, density compensation factors, and estimate coil sensitivity maps.
 # (See the *Behind the scenes* section for more details.)
 #
 # ```{note}
-# You can also directly set the Fourier operator, coil sensitivity maps, dcf, etc. of the reconstruction instance.
+# You can also directly set the Fourier operator, coil sensitivity maps, density compensation factors, etc.
+# of the reconstruction instance.
 # ```
 
 # %%

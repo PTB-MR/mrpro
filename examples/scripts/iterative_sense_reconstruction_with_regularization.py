@@ -52,31 +52,17 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 # only parts of it ($x$)). This of course is an unrealistic case but it will allow us to study the effect of the
 # regularization.
 
-# %%
-# %% [markdown]
-# ##### Read-in the raw data
-# %%
-# %% tags=["hide-cell"]
-# Download raw data from Zenodo
-import tempfile
-from pathlib import Path
-
-import mrpro
-import torch
-import zenodo_get
-
-dataset = '14617082'
-
-tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
-data_folder = Path(tmp.name)
-zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 
 # %% [markdown]
 # ### Reading of both fully sampled and undersampled data
-# This will use the trajectory that is stored in the ISMRMRD file.
+# We read the raw data and the trajectory from the ISMRMRD file.
+# We load both, the fully sampled and the undersampled data.
+# The fully sampled data will be used to estimate the coil sensitivity maps and as a regularization image.
+# The undersampled data will be used to reconstruct the image.
 
 # %%
 # Read the raw data and the trajectory from ISMRMRD file
+import mrpro
 
 kdata_fullysampled = mrpro.data.KData.from_file(
     data_folder / 'radial2D_402spokes_golden_angle_with_traj.h5',
@@ -108,10 +94,11 @@ img_iterative_sense = iterative_sense_reconstruction(kdata_fullysampled)
 
 # %% [markdown]
 # ##### Image $x$ from undersampled data
-
+# We now reconstruct the undersampled image using the fully sampled image first wthout regularization,
+# and with with an regularization image.
 
 # %%
-# unregularized iterative SENSE reconstruction of the undersampled data
+# Unregularized iterative SENSE reconstruction of the undersampled data
 iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
     kdata_undersampled, csm=csm, n_iterations=6
 )
@@ -131,8 +118,11 @@ img_us_regularized_iterative_sense = regularized_iterative_sense_reconstruction(
 
 # %% [markdown]
 # ##### Display the results
+# Besides the fully sampled image, we display two undersampled images:
+# The first one is obtained by unregularized iterative SENSE, the second one using regularization.
 # %% tags=["hide-cell"]
 import matplotlib.pyplot as plt
+import torch
 
 
 def show_images(*images: torch.Tensor, titles: list[str] | None = None) -> None:
@@ -157,11 +147,14 @@ show_images(
 
 # %% [markdown]
 # ### Behind the scenes
+# We now investigate the steps that are done in the regularized iterative SENSE reconstruction and
+# perform them manually. This also demonstrates how to use the `mrpro` operators and algorithms
+# to build your own reconstruction pipeline.
 
 # %% [markdown]
 # ##### Set-up the density compensation operator $W$ and acquisition model $A$
 #
-# This is very similar to <project:iterative_sense_reconstruction.ipynb>.
+# This is very similar to <project:iterative_sense_reconstruction.ipynb> .
 # For more details, please refer to that notebook.
 # %%
 dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata_undersampled.traj).as_operator()
@@ -170,7 +163,9 @@ csm_operator = csm.as_operator()
 acquisition_operator = fourier_operator @ csm_operator
 
 # %% [markdown]
-# ##### Calculate the right-hand-side of the linear system $b = A^H W y + l x_{reg}$
+# ##### Calculate the right-hand-side of the linear system
+# We calculated $b = A^H W y + l x_{reg}$.
+# Here, we make use of operator composition using ``@``.
 
 # %%
 regularization_weight = 1.0
@@ -180,23 +175,29 @@ regularization_image = img_iterative_sense.data
 right_hand_side = right_hand_side + regularization_weight * regularization_image
 
 # %% [markdown]
-# ##### Set-up the linear self-adjoint operator $H = A^H W A + l$
+# ##### Set-up the linear self-adjoint operator $H$
+# We define $H= A^H W A + l$. We use the `~mrpro.operators.IdentityOp` and make
+# use of operator composition using ``@``, addition using ``+`` and multiplication using ``*``.
+# The resulting operator is a `~mrpro.operators.LinearOperator` object.
 
 # %%
-
 operator = (
     acquisition_operator.H @ dcf_operator @ acquisition_operator + mrpro.operators.IdentityOp() * regularization_weight
 )
 
 # %% [markdown]
 # ##### Run conjugate gradient
-
+# We solve the linear system $Hx = b$ using the conjugate gradient method.
+# Here, we use early stopping after 8 iterations. Instead, we could also use a tolerance to stop the iterations when
+# the residual is small enough.
 # %%
 img_manual = mrpro.algorithms.optimizers.cg(
     operator, right_hand_side, initial_value=right_hand_side, max_iterations=8, tolerance=0.0
 )
 # %% [markdown]
 # #####  Display the reconstructed image
+# We can now compare our 'manual' reconstruction with the regularized iterative SENSE reconstruction
+# obtained using `~mrpro.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction`.
 
 # %%
 show_images(
@@ -205,11 +206,9 @@ show_images(
     titles=['Regularized Iterative SENSE R=20', '"Manual" Regularized Iterative SENSE R=20'],
 )
 # %% [markdown]
-# ### Check for equal results
-# The two versions should result in the same image data.
-
+# We can also check if the results are equal by comparing the actual image data.
+# If the assert statement does not raise an exception, the results are equal.
 # %%
-# If the assert statement did not raise an exception, the results are equal.
 assert torch.allclose(img_us_regularized_iterative_sense.data, img_manual)
 
 # %% [markdown]
@@ -219,5 +218,3 @@ assert torch.allclose(img_us_regularized_iterative_sense.data, img_manual)
 # we would not have that. One option is to apply a low-pass filter to the undersampled k-space data to try to reduce the
 # streaking artifacts and use that as a regularization image. Try that and see if you can also improve the image quality
 # compared to the unregularised images.
-
-# %%
