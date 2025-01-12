@@ -237,18 +237,6 @@ class CustomClassDocumenter(ClassDocumenter):
         else:
             return super().sort_members(documenters, order)
 
-
-def sync_notebooks(source_folder, dest_folder):
-    """Synchronize files from the source to the destination folder, copying only new or updated files."""
-    dest = Path(dest_folder)
-    dest.mkdir(parents=True, exist_ok=True)
-    for src_file in Path(source_folder).iterdir():
-        if src_file.is_file():
-            dest_file = dest / src_file.name
-            if not dest_file.exists() or src_file.stat().st_mtime > dest_file.stat().st_mtime:
-                shutil.copy2(src_file, dest_file)
-
-
 def replace_patterns_in_markdown(app, docname, source):
     """Replace patterns like `module.class` with {any}`module.class` in Markdown cells."""
     if '_notebooks' not in docname:
@@ -275,10 +263,10 @@ def sync_notebooks(source_folder, dest_folder):
             dest_file = dest / src_file.name
             if not dest_file.exists() or src_file.stat().st_mtime > dest_file.stat().st_mtime:
                 shutil.copy2(src_file, dest_file)
-        print(f"Copied {src_file} to {dest_file}. Setting execution mode to 'force'.")
-        content = nbformat.read(dest_file, as_version=nbformat.NO_CONVERT)
-        content.metadata['mystnb'] = {'execution_mode':'force'}
-        nbformat.write(content, dest_file)
+                print(f"Copied {src_file} to {dest_file}. Setting execution mode to 'force'.")
+                content = nbformat.read(dest_file, as_version=nbformat.NO_CONVERT)
+                content.metadata['mystnb'] = {'execution_mode':'force'}
+                nbformat.write(content, dest_file)
 
 def setup(app):
     app.set_html_assets_policy('always')  # forces mathjax on all pages
