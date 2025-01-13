@@ -10,8 +10,21 @@ import torch
 from typing_extensions import Any, Protocol, Self, TypeVar, overload, runtime_checkable
 
 
-class InconsistentDeviceError(ValueError):  # noqa: D101
-    def __init__(self, *devices):  # noqa: D107
+class InconsistentDeviceError(ValueError):
+    """Raised if the devices of different fields differ.
+
+    There is no single device that all fields are on, thus
+    the overall device of the object cannot be determined.
+    """
+
+    def __init__(self, *devices):
+        """Initialize.
+
+        Parameters
+        ----------
+        devices
+            The devices of the fields that differ.
+        """
         super().__init__(f'Inconsistent devices found, found at least {", ".join(str(d) for d in devices)}')
 
 
@@ -391,13 +404,13 @@ class MoveDataMixin:
 
         Looks at each field of a dataclass implementing a device attribute,
         such as torch.Tensors or MoveDataMixin instances. If the devices
-        of the fields differ, an InconsistentDeviceError is raised, otherwise
+        of the fields differ, an :py:exc:`~mrpro.data.InconsistentDeviceError` is raised, otherwise
         the device is returned. If no field implements a device attribute,
         None is returned.
 
         Raises
         ------
-        InconsistentDeviceError
+        :py:exc:`InconsistentDeviceError`
             If the devices of different fields differ.
 
         Returns

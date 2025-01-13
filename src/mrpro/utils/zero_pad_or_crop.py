@@ -19,8 +19,8 @@ def normalize_index(ndim: int, index: int) -> int:
 
     Raises
     ------
-    IndexError
-        if index is outside [-ndim,ndim)
+    `IndexError`
+        if index is outside ``[-ndim,ndim)``
     """
     if 0 < index < ndim:
         return index

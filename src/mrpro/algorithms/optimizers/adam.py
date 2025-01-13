@@ -21,7 +21,45 @@ def adam(
     decoupled_weight_decay: bool = False,
     callback: Callable[[OptimizerStatus], None] | None = None,
 ) -> tuple[torch.Tensor, ...]:
-    """Adam for non-linear minimization problems.
+    r"""Adam for non-linear minimization problems.
+
+    Adam [KING2015]_ (Adaptive Moment Estimation) is a first-order optimization algorithm that adapts learning rates
+    for each parameter using estimates of the first and second moments of the gradients.
+
+    The parameter update rule is:
+
+    .. math::
+
+        m_t &= \beta_1 m_{t-1} + (1 - \beta_1) g_t \\
+        v_t &= \beta_2 v_{t-1} + (1 - \beta_2) g_t^2 \\
+        \hat{m}_t &= \frac{m_t}{1 - \beta_1^t}, \quad \hat{v}_t = \frac{v_t}{1 - \beta_2^t} \\
+        \theta_{t+1} &= \theta_t - \frac{\eta}{\sqrt{\hat{v}_t} + \epsilon} \hat{m}_t
+
+    where:
+    - :math:`g_t` is the gradient at step :math:`t`,
+    - :math:`m_t` and :math:`v_t` are biased estimates of the first and second moments,
+    - :math:`\hat{m}_t` and :math:`\hat{v}_t` are bias-corrected estimates,
+    - :math:`\eta` is the learning rate,
+    - :math:`\epsilon` is a small constant for numerical stability,
+    - :math:`\beta_1` and :math:`\beta_2` are decay rates for the moment estimates.
+
+    Steps of the Adam algorithm:
+
+    1. Initialize parameters and moment estimates (:math:`m_0`, :math:`v_0`).
+    2. Compute the gradient of the objective function.
+    3. Compute biased corrected estimates of the moments :math:`\hat{m}_t` and :math:`\hat{v}_t`.
+    4. Update parameters using the adaptive step size.
+
+    The AdamW [LOS2019]_ variant improves generalization by decoupling weight decay from gradient-based updates.
+    This function wraps PyTorch's :class:`torch.optim.Adam` and :class:`torch.optim.AdamW` implementations,
+    supporting both standard Adam and decoupled weight decay regularization (AdamW) [LOS2019]_
+
+    References
+    ----------
+    .. [KING2015] Kingma DP, Ba J (2015) Adam: A Method for Stochastic Optimization. ICLR.
+    https://doi.org/10.48550/arXiv.1412.6980
+    .. [LOS2019] Loshchilov I, Hutter F (2019) Decoupled Weight Decay Regularization. ICLR.
+    https://doi.org/10.48550/arXiv.1711.05101
 
     Parameters
     ----------

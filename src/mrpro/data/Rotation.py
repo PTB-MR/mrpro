@@ -1155,11 +1155,11 @@ class Rotation(torch.nn.Module):
     ) -> torch.Tensor | SpatialDimension[torch.Tensor] | Self:
         """Either apply a function to the Rotation module or apply the rotation to a vector.
 
-        This is a hybrid method that matches the signature of both :py:func:`torch.nn.Module.apply` and
-        :py:func:`scipy.spatial.transform.Rotation.apply`.
+        This is a hybrid method that matches the signature of both `torch.nn.Module.apply` and
+        `scipy.spatial.transform.Rotation.apply`.
         If a callable is passed, it is assumed to be a function that will be applied to the Rotation module.
-        For applying the rotation to a vector, consider using :py:func:`rotation(vector)` instead of
-        :py:func:`rotation.apply(vector)`.
+        For applying the rotation to a vector, consider using ``rotation(vector)`` instead of
+        ``rotation.apply(vector)``.
         """
         if callable(fn):
             # torch.nn.Module.apply
@@ -1282,11 +1282,11 @@ class Rotation(torch.nn.Module):
             Number of random rotations to generate. If `None`, then a
             single rotation is generated.
         random_state
-            If `random_state` is `None`, the :py:class:`~numpy.random.RandomState`
+            If `random_state` is `None`, the `~numpy.random.RandomState`
             singleton is used.
             If `random_state` is an int, a new `RandomState` instance is used,
             seeded with `random_state`.
-            If `random_state` is already a  :py:class:`Generator` or :py:class:`RandomState` instance
+            If `random_state` is already a  `Generator` or `RandomState` instance
             then that instance is used.
         improper
             if `True`, only improper rotations are generated. If False, only proper rotations are generated.

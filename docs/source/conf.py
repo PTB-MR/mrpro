@@ -72,7 +72,7 @@ myst_enable_extensions = [
     'amsmath',
     'dollarmath',
 ]
-nb_execution_mode = 'off'
+nb_execution_mode = 'auto'
 nb_output_stderr = 'remove'
 nb_output_stdout = 'remove'
 nb_execution_timeout = 120
@@ -95,6 +95,7 @@ html_context = {
     'github_version': 'main',
 }
 linkcode_blob = html_context['github_version']
+linkcode_link_text = '[source]'
 default_role = 'py:obj'
 
 
@@ -120,7 +121,7 @@ class DefaultValue:
 def rewrite_dataclass_init_default_factories(app, obj, bound_method) -> None:
     """Replace default fields in dataclass.__init__."""
     if (
-        not 'init' in str(obj)
+        'init' not in str(obj)
         or not getattr(obj, '__defaults__', None)
         or not any(isinstance(d, dataclasses._HAS_DEFAULT_FACTORY_CLASS) for d in obj.__defaults__)
     ):
@@ -132,12 +133,14 @@ def rewrite_dataclass_init_default_factories(app, obj, bound_method) -> None:
     defaults = {}
     for field in dataclasses.fields(class_ref):
         if field.default_factory is not dataclasses.MISSING:
-            if not field.name in parameters:
+            if field.name not in parameters:
                 continue
-            if field.default_factory.__name__ == '<lambda>':
+            if hasattr(field.default_factory, '__name__') and field.default_factory.__name__ == '<lambda>':
                 defaults[field.name] = DefaultValue(get_lambda_source(field.default_factory))
-            else:
+            elif hasattr(field.default_factory, '__name__'):
                 defaults[field.name] = DefaultValue(field.default_factory.__name__ + '()')
+            else:
+                continue
     new_defaults = tuple(
         defaults.get(name, param.default) for name, param in parameters.items() if param.default != inspect._empty
     )
@@ -238,6 +241,7 @@ class CustomClassDocumenter(ClassDocumenter):
         else:
             return super().sort_members(documenters, order)
 
+
 def replace_patterns_in_markdown(app, docname, source):
     """Replace patterns like `module.class` with {any}`module.class` in Markdown cells."""
     if '_notebooks' not in docname:
@@ -252,10 +256,10 @@ def replace_patterns_in_markdown(app, docname, source):
 
 
 def sync_notebooks(source_folder, dest_folder):
-    """ Sync notebooks from source to destination folder.
+    """Sync notebooks from source to destination folder.
 
     Copy only new or updated files.
-    Set execution mode to 'force' for all copied files.
+    Set execution mode to 'cache' for all copied files.
     """
     dest = Path(dest_folder)
     dest.mkdir(parents=True, exist_ok=True)
@@ -264,10 +268,13 @@ def sync_notebooks(source_folder, dest_folder):
             dest_file = dest / src_file.name
             if not dest_file.exists() or src_file.stat().st_mtime > dest_file.stat().st_mtime:
                 shutil.copy2(src_file, dest_file)
-                print(f"Copied {src_file} to {dest_file}. Setting execution mode to 'force'.")
+                print(f'Copied {src_file} to {dest_file}')
+            else:
+                print(f'Existing {dest_file}. Skipping execution.')
                 content = nbformat.read(dest_file, as_version=nbformat.NO_CONVERT)
-                content.metadata['mystnb'] = {'execution_mode':'force'}
+                content.metadata['mystnb'] = {'execution_mode': 'off'}
                 nbformat.write(content, dest_file)
+
 
 def setup(app):
     app.set_html_assets_policy('always')  # forces mathjax on all pages

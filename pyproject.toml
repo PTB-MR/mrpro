@@ -211,6 +211,7 @@ iy = "iy"
 daa = "daa"       # required for wavelet operator
 gaus = "gaus"     # required for wavelet operator
 arange = "arange" # torch.arange
+Ba = "Ba"
 
 [tool.typos.files]
 extend-exclude = [
