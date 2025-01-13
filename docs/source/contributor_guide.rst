@@ -28,32 +28,26 @@ This repository uses a *pyproject.toml* file to specify all the requirements.
 
     All output cells in the notebooks are automatically cleared, and only cleared notebooks should be added to the repository.
 
-**mrpro/src**
-    Main code for this package
-
 **tests**
     Tests which are automatically run by pytest.
     The subfolder structure should follow the same structure as in *mrpro/src*.
 
-
-src/mrpro structure
-===================
-**algorithms**
+**src/mrpro/algorithms**
     Everything which does something with the data, e.g. prewhiten k-space or remove oversampling.
 
-**data**
+**src/mrpro/data**
     All the data classes such as ``KData``, ``ImageData`` or ``CsmData``.
     As the name suggestions these should mainly contain data and meta information.
     Any functionality beyond what is absolutely required for the classes should be put as separate functions.
 
-**operators**
+**src/mrpro/operators**
     Linear and non-linear algorithms describing e.g. the transformation from image to k-space (``FourierOp``), the
     effect of receiver coils (``SensitivityOp``) or MR signal models.
 
-**phantoms**
+**src/mrpro/phantoms**
     Numerical phantoms useful to evaluate reconstruction algorithms.
 
-**utils**
+**src/mrpro/utils**
     Utilities such as spatial filters and also more basic functionality such as applying functions serially along the
     batch dimension (``smap``).
 

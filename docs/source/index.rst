@@ -4,6 +4,9 @@
    :align: center
    :width: 300
 
+.. |colab-badge| image:: https://colab.research.google.com/assets/colab-badge.svg
+    :target: https://colab.research.google.com/github/PTB-MR/mrpro
+
 Welcome to MRpro's documentation!
 =================================
 
@@ -11,13 +14,13 @@ MR image reconstruction and processing package for PyTorch
 
 | **Source code:** `<https://github.com/PTB-MR/mrpro>`_
 | **Bug reports:** `<https://github.com/PTB-MR/mrpro/issues>`_
-| **Try it out:** `Open in Colab <https://colab.research.google.com/github/PTB-MR/mrpro>`_
+| **Try it out:** |colab-badge|
 | **See our examples:** :doc:`examples`
 
 Main Features
 -------------
-- **ISMRMRD support**
-  MRpro supports the ISMRMRD format for MR raw data.
+- **Standard file formats**
+  MRpro supports the ISMRMRD format for MR raw data and DICOM for image data
 
 - **PyTorch integration**
   All data containers utilize PyTorch tensors to ensure easy integration with PyTorch-based network schemes.

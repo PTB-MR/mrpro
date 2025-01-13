@@ -49,7 +49,7 @@ Reading in raw data from a MRD file works by creating a `mrpro.data.KData` objec
 To ensure the trajectory is calculated correctly, a `~mrpro.data.traj_calculators.KTrajectoryCalculator` needs to be provided.
 The trajectory can either be calculated based on MRpro functionality (e.g. for a 2D radial sampling scheme), read out
 from MRD or calculated from a `pulseq <http://pulseq.github.io/>`_ file. See `~mrpro.data.traj_calculators`
-for available trajectory calculators.
+for available trajectory calculators and :doc:`_notebooks/comparison_trajectory_calculators` an example.
 
 
 .. note::
@@ -97,7 +97,7 @@ See for examples  :doc:`_notebooks/cartesian_reconstruction`, :doc:`_notebooks/d
 Image processing
 ----------------
 Further processing of the reconstructed data such as quantitative parameter estimation is available.
-Our examples contain a notebooks showing how to read in DICOM images and perform qMRI paramter estimation using
+Our examples contain a notebook showing how to read in DICOM images and perform qMRI parameter estimation using
 a non-linear optimizer: :doc:`_notebooks/qmri_sg_challenge_2024_t1`,
 
 
