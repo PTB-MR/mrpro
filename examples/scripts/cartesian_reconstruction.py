@@ -336,6 +336,6 @@ show_images(idat_pe_pf.rss().squeeze(), idat_us.rss().squeeze(), titles=['PE & P
 # As you might have guessed, these are also included in MRpro:
 # Instead of the `~mrpro.algorithms.reconstruction.DirectReconstruction`,
 # we can use `mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`, which is explained in
-# the example <project:iterative_sense_reconstruction.ipynb>.
+# the example <project:iterative_sense_reconstruction_radial2D.ipynb>.
 
 # %%

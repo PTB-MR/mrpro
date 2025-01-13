@@ -154,7 +154,7 @@ show_images(
 # %% [markdown]
 # ##### Set-up the density compensation operator $W$ and acquisition model $A$
 #
-# This is very similar to <project:iterative_sense_reconstruction.ipynb> .
+# This is very similar to <project:iterative_sense_reconstruction_radial2D.ipynb> .
 # For more details, please refer to that notebook.
 # %%
 dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata_undersampled.traj).as_operator()

@@ -94,7 +94,7 @@ html_context = {
     'github_version': 'main',
 }
 linkcode_blob = html_context['github_version']
-default_role = 'any'
+default_role = 'py:obj'
 
 
 def get_lambda_source(obj):
