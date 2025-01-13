@@ -11,8 +11,10 @@ import mrpro
 import requests
 
 # define zenodo URL of the example ismrmd data
-zenodo_url = 'https://zenodo.org/records/10854057/files/'
-fname = 'pulseq_radial_2D_402spokes_golden_angle_with_traj.h5'
+# choose number of spokes; either 24, 96402
+n_spokes = 24
+zenodo_url = 'https://zenodo.org/records/14617082/files/'
+fname = f'radial2D_{n_spokes}spokes_golden_angle_with_traj.h5'
 
 # Download the data from zenodo
 data_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.h5')
@@ -140,7 +142,7 @@ from mrpro.operators import LinearOperatorMatrix, ProximableFunctionalSeparableS
 from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared, ZeroFunctional
 
 # Regularization parameter for the $\ell_1$-norm
-regularization_parameter = 0.1
+regularization_parameter = 1.0
 
 # Set up the problem by using the previously described identification
 l2 = 0.5 * L2NormSquared(target=kdata.data, divide_by_n=True)
@@ -179,7 +181,7 @@ def callback(optimizer_status: PDHGStatus) -> None:
 import matplotlib.pyplot as plt
 
 fig, ax = plt.subplots(1, 3, squeeze=False)
-clim = [0, 1e-3]
+clim = [0, 6e-4]
 ax[0, 0].set_title('Adjoint (direct) Recon', fontsize=10)
 ax[0, 0].imshow(img_direct.data.abs()[0, 0, 0, :, :], clim=clim)
 ax[0, 1].set_title('Iterative SENSE', fontsize=10)
