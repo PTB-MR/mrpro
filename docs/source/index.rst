@@ -12,7 +12,7 @@ MR image reconstruction and processing package for PyTorch
 | **Source code:** `<https://github.com/PTB-MR/mrpro>`_
 | **Bug reports:** `<https://github.com/PTB-MR/mrpro/issues>`_
 | **Try it out:** `Open in Colab <https://colab.research.google.com/github/PTB-MR/mrpro>`_
-| **See our examples: ** :doc:`examples`
+| **See our examples:** :doc:`examples`
 
 Main Features
 -------------
