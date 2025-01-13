@@ -85,10 +85,10 @@ html_theme_options = {
 
 
 def sync_notebooks(source_folder, dest_folder):
-    """ Sync notebooks from source to destination folder.
+    """Sync notebooks from source to destination folder.
 
     Copy only new or updated files.
-    Set execution mode to 'force' for all copied files.
+    Set execution mode to 'force' for all copied files and 'off' for all existing files.
     """
     dest = Path(dest_folder)
     dest.mkdir(parents=True, exist_ok=True)
@@ -97,10 +97,14 @@ def sync_notebooks(source_folder, dest_folder):
             dest_file = dest / src_file.name
             if not dest_file.exists() or src_file.stat().st_mtime > dest_file.stat().st_mtime:
                 shutil.copy2(src_file, dest_file)
-                print(f"Copied {src_file} to {dest_file}. Setting execution mode to 'force'.")
-                content = nbformat.read(dest_file, as_version=nbformat.NO_CONVERT)
-                content.metadata['mystnb'] = {'execution_mode':'force'}
-                nbformat.write(content, dest_file)
+                print(f'Copied {src_file} to {dest_file}. Setting execution mode to "force".')
+                mode = 'force'
+            else:
+                print(f'Existing {dest_file}. Skipping execution.')
+                mode = 'off'
+            content = nbformat.read(dest_file, as_version=nbformat.NO_CONVERT)
+            content.metadata['mystnb'] = {'execution_mode': mode}
+            nbformat.write(content, dest_file)
 
 def setup(app):
     # forces mathjax on all pages
