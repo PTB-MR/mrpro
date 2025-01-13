@@ -164,7 +164,7 @@ max_iterations = 128
 
 # call backfunction to track the value of the objective functional f(K(x)) + g(x)
 def callback(optimizer_status: PDHGStatus) -> None:
-    """Print the value of the objective functional every 8th iteration."""
+    """Print the value of the objective functional every 16th iteration."""
     iteration = optimizer_status['iteration_number']
     solution = optimizer_status['solution']
     if iteration % 16 == 0:
