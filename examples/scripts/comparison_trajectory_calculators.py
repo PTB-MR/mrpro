@@ -52,8 +52,8 @@ img_using_ismrmrd_traj = reconstruction(kdata)
 # will be taken from the ISMRMRD file.
 # This will calculate the trajectory using the radial 2D trajectory calculator.
 # ```{note}
-# TYou can also implement your own trajectory calculator by subclassing
-# `~mrpro.data.traj_calculators.KTrajectory`.
+# You can also implement your own trajectory calculator by subclassing
+# `~mrpro.data.traj_calculators.KTrajectoryCalculator`.
 # ```
 
 # %%
