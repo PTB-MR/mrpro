@@ -19,7 +19,8 @@ class KTrajectory(MoveDataMixin):
     """K-space trajectory.
 
     Order of directions is always kz, ky, kx
-    Shape of each of kx, ky, kz is `(other,k2,k1,k0)`
+    Shape of each of kx, ky, kz is `(*other,k2,k1,k0)`,
+    where other can span multiple dimensions
 
     Example for 2D-Cartesian Trajectories:
         kx changes along k0 and is Frequency Encoding
@@ -40,7 +41,7 @@ class KTrajectory(MoveDataMixin):
     """tolerance of how close trajectory positions have to be to integer grid points."""
 
     repeat_detection_tolerance: float | None = 1e-3
-    """tolerance for repeat detection. Set to None to disable."""
+    """tolerance for repeat detection. Set to `None` to disable."""
 
     def __post_init__(self) -> None:
         """Reduce repeated dimensions to singletons."""

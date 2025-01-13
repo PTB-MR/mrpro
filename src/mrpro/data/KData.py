@@ -314,9 +314,9 @@ class KData(
 
         Raises
         ------
-        ValueError
+        `ValueError`
             If both batch_dims and joint_dims are defined.
-        Valuer Error
+        `ValuerError`
             If coil dimension is part of joint_dims or batch_dims.
 
         References
@@ -419,7 +419,7 @@ class KData(
 
         Raises
         ------
-        ValueError
+        `ValueError`
             If the recon matrix along x is larger than the encoding matrix along x.
 
         References
@@ -487,7 +487,7 @@ class KData(
 
         Raises
         ------
-        ValueError
+        `ValueError`
             If the subset indices are not available in the data
         """
         # Make a copy such that the original kdata.header remains the same
@@ -541,7 +541,7 @@ class KData(
 
         Raises
         ------
-        ValueError
+        `ValueError`
             Already existing "other_label" can only be of length 1
         """
         # Number of other

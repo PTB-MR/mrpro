@@ -27,7 +27,7 @@ class FiniteDifferenceOp(LinearOperator):
 
         Raises
         ------
-        ValueError
+        `ValueError`
             If mode is not central, forward, backward or doublecentral
         """
         if mode == 'central':
@@ -97,7 +97,7 @@ class FiniteDifferenceOp(LinearOperator):
 
         Raises
         ------
-        ValueError
+        `ValueError`
             If the first dimension of y is to the same as the number of dimensions along which the finite differences
             are calculated
         """

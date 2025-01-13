@@ -41,7 +41,7 @@ class DirectReconstruction(Reconstruction):
             If `None`, set up based on `kdata`.
         csm
             Sensitivity maps for coil combination. If `None`, no coil combination is carried out, i.e. images for each
-            coil are returned. If a callable is provided, coil images are reconstructed using the adjoint of the
+            coil are returned. If a `Callable` is provided, coil images are reconstructed using the adjoint of the
             `~mrpro.operators.FourierOperator` (including density compensation) and then sensitivity maps are calculated
             using the callable. For this, `kdata` needs also to be provided.
             For examples have a look at the `~mrpro.data.CsmData` class e.g. `~mrpro.data.CsmData.from_idata_walsh`
@@ -54,7 +54,7 @@ class DirectReconstruction(Reconstruction):
         Raises
         ------
         `ValueError`
-            If the kdata and fourier_op are None or if csm is a Callable but kdata is None.
+            If the `kdata` and `fourier_op` are `None` or if `csm` is a `Callable` but `kdata` is None.
         """
         super().__init__()
         if fourier_op is None:

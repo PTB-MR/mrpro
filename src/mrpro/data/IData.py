@@ -144,7 +144,7 @@ class IData(Data):
             path to folder with DICOM files.
         suffix
             file extension (without period/full stop) to identify the DICOM files.
-            If None, then all files in the folder are read in.
+            If `None`, then all files in the folder are read in.
         """
         # Get files
         file_paths = list(Path(foldername).glob('*')) if suffix is None else list(Path(foldername).glob('*.' + suffix))

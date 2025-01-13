@@ -92,7 +92,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         Raises
         ------
         `ValueError`
-            If the kdata and fourier_op are None or if csm is a Callable but kdata is None.
+            If the `kdata` and `fourier_op` are `None` or if `csm` is a `Callable` but `kdata` is None.
         """
         super().__init__(kdata, fourier_op, csm, noise, dcf)
         self.n_iterations = n_iterations

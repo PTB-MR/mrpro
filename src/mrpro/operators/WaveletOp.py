@@ -69,11 +69,11 @@ class WaveletOp(LinearOperator):
 
         Raises
         ------
-        ValueError
+        `ValueError`
             If wavelets are calculated for more than three dimensions.
-        ValueError
+        `ValueError`
             If wavelet dimensions and domain shape do not match.
-        NotImplementedError
+        `NotImplementedError`
             If any dimension of the domain shape is odd. Adjoint will lead to the wrong domain shape.
         """
         super().__init__()
