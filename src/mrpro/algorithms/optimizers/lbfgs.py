@@ -34,7 +34,7 @@ def lbfgs(
 
     .. math::
 
-    \theta_{k+1} = \theta_k - \alpha_k H_k \nabla f(\theta_k),
+        \theta_{k+1} = \theta_k - \alpha_k H_k \nabla f(\theta_k),
 
     where :math:`H_k` is a limited-memory approximation of the inverse Hessian,
     and :math:`\alpha_k` is the step size determined via line search (e.g., strong Wolfe conditions).
@@ -48,16 +48,16 @@ def lbfgs(
     5. Store the latest gradient and update information.
 
     This implementation wraps PyTorch's `torch.optim.LBFGS` class.
-    For more information, see [WIKI_LBFGS]_., [NOC1980]_, and [LIU1989]_.
+    For more information, see [WIKI]_, [NOC1980]_, and [LIU1989]_.
 
     References
     ----------
     .. [NOC1980] Nocedal, J. (1980). "Updating quasi-Newton matrices with limited storage."
-       *Mathematics of Computation*, 35(151), 773-782. DOI:10.1090/S0025-5718-1980-0572855-7
-       https://doi.org/10.1090/S0025-5718-1980-0572855-7
+       *Mathematics of Computation*, 35(151), 773-782.
+       `10.1090/S0025-5718-1980-0572855-7`<https://doi.org/10.1090/S0025-5718-1980-0572855-7>_
     .. [LIU1989] Liu, D. C., & Nocedal, J. (1989). "On the limited memory BFGS method for large scale optimization."
-       *Mathematical Programming*, 45(1-3), 503-528. DOI:10.1007/BF01589116 https://doi.org/10.1007/BF01589116
-    .. [WIKI_LBFGS] Wikipedia: `LBFGS <https://en.wikipedia.org/wiki/Limited-memory_BFGS>`_
+       *Mathematical Programming*, 45(1-3), 503-528. `10.1007/BF01589116`<https://doi.org/10.1007/BF01589116>_
+    .. [WIKI] Wikipedia: `Limited-memory_BFGS <https://en.wikipedia.org/wiki/Limited-memory_BFGS>`_
 
 
     Parameters

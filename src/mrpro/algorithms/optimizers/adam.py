@@ -50,7 +50,6 @@ def adam(
     3. Compute biased corrected estimates of the moments :math:`\hat{m}_t` and :math:`\hat{v}_t`.
     4. Update parameters using the adaptive step size.
 
-    The AdamW [LOS2019]_ variant improves generalization by decoupling weight decay from gradient-based updates.
     This function wraps PyTorch's :class:`torch.optim.Adam` and :class:`torch.optim.AdamW` implementations,
     supporting both standard Adam and decoupled weight decay regularization (AdamW) [LOS2019]_
 
