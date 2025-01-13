@@ -18,17 +18,15 @@ This repository uses a *pyproject.toml* file to specify all the requirements.
 
 **examples**
     Python scripts showcasing how MRpro can be used. Any data needed has to be available from
-    an online repository (e.g. zenodo) such that it can be automatically downloaded. The scripts
-    are automatically translated to jupyter notebooks using GitHub
-    actions. Individual cells should be indicated with ``# %%``. For markdown cells use ``# %% [markdown]``.
-    The translation from python script to jupyter notebook is done using
-    `jupytext <https://jupytext.readthedocs.io/en/latest/>`_ . See their documentation for more details.
+    an online repository (e.g. zenodo) such that it can be automatically downloaded.
+    Individual cells should be indicated with ``# %%``. For markdown cells use ``# %% [markdown]``.
+    The translation from python script to jupyter notebook is done in pre-commit (locally and and on GitHub)
+    using `jupytext <https://jupytext.readthedocs.io/en/latest/>`_ . See their documentation for more details.
 
     After translating the scripts to notebooks, the notebooks are run and their output is converted to html and added
     to this documentation in the *Examples* section.
 
-    We are not using notebooks directly because if contributors forget to clear all cells prior to committing then the
-    content of the notebook is also version controlled with git which makes things very messy.
+    All output cells in the notebooks are automatically cleared, and only cleared notebooks should be added to the repository.
 
 **mrpro/src**
     Main code for this package
@@ -99,7 +97,7 @@ Please check how your new additions render in the documentation before requestin
 Adding new Examples
 ===================
 New exciting applications of MRpro can be added in ```examples``` as only ```.py``` files with code-cells. These can, for example, be used in VSCode with the python extension, or in JupyterLab with the `jupytext <https://jupytext.readthedocs.io/en/latest/>`_ extension.
-An automatic workflow at github will create notebooks and pages in the documentation based on the python scripts.
+A pre-commit action will convert the scripts to notebooks. Our documetantion build will pick up these notebooks, run them, and include them with outputs in the documentation.
 The data to run the examples should be publicly available and hosted externally, for example at zenodo.
 Please be careful not to add any binary files to your commits.
 

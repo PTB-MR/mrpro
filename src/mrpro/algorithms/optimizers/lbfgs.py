@@ -48,6 +48,7 @@ def lbfgs(
     5. Store the latest gradient and update information.
 
     This implementation wraps PyTorch's `torch.optim.LBFGS` class.
+    For more information, see [WIKI_LBFGS]_., [NOC1980]_, and [LIU1989]_.
 
     References
     ----------
@@ -56,7 +57,6 @@ def lbfgs(
        https://doi.org/10.1090/S0025-5718-1980-0572855-7
     .. [LIU1989] Liu, D. C., & Nocedal, J. (1989). "On the limited memory BFGS method for large scale optimization."
        *Mathematical Programming*, 45(1-3), 503-528. DOI:10.1007/BF01589116 https://doi.org/10.1007/BF01589116
-    .. [PYTORCH] PyTorch Documentation: :class:`torch.optim.LBFGS <https://pytorch.org/docs/stable/generated/torch.optim.LBFGS.html>`_
     .. [WIKI_LBFGS] Wikipedia: `LBFGS <https://en.wikipedia.org/wiki/Limited-memory_BFGS>`_
 
 

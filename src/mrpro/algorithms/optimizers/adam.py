@@ -57,9 +57,9 @@ def adam(
     References
     ----------
     .. [KING2015] Kingma DP, Ba J (2015) Adam: A Method for Stochastic Optimization. ICLR.
-    https://doi.org/10.48550/arXiv.1412.6980
+       https://doi.org/10.48550/arXiv.1412.6980
     .. [LOS2019] Loshchilov I, Hutter F (2019) Decoupled Weight Decay Regularization. ICLR.
-    https://doi.org/10.48550/arXiv.1711.05101
+       https://doi.org/10.48550/arXiv.1711.05101
 
     Parameters
     ----------

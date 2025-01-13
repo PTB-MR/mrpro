@@ -37,7 +37,10 @@ extensions = [
     'sphinx-mathjax-offline',
     'sphinx.ext.intersphinx',
     'sphinx_autodoc_typehints',
+    'sphinx.ext.autosectionlabel',
 ]
+
+
 intersphinx_mapping = {
     'torch': ('https://pytorch.org/docs/stable/', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
@@ -52,6 +55,7 @@ intersphinx_mapping = {
     'typing-extensions': ('https://typing-extensions.readthedocs.io/en/latest/', None),
 }
 
+autosectionlabel_prefix_document = True
 napoleon_use_param = True
 napoleon_use_rtype = False
 typehints_defaults = 'comma'
