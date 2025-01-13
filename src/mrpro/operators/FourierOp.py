@@ -26,8 +26,8 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
     For non-Cartesian data, a NUFFT with regridding is used.
     It also includes padding/cropping to the reconstruction matrix size.
 
-    The operator can directly be constructed from a :py:class:`KData` object to match its
-    trajectory and header information, see :py:func:`FourierOp.from_kdata`
+    The operator can directly be constructed from a `~mrpro.data.KData` object to match its
+    trajectory and header information, see `FourierOp.from_kdata`
 
     """
 

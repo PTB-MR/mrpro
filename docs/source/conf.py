@@ -208,8 +208,6 @@ class CustomClassDocumenter(ClassDocumenter):
                         continue
                     if doc.object_name == '__init__':
                         init_method.append(documenter)
-                    elif dataclasses.is_dataclass(self.object) and doc.object_name == '__new__':
-                        ...
                     elif doc.object_name[:2] == '__':
                         special_methods[inherited].append(documenter)
                     elif isclassmethod(doc.object):

@@ -58,14 +58,31 @@ class _AutogradWrapper(torch.autograd.Function):
 class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     """General Linear Operator.
 
-    LinearOperators have exactly one input and one output,
-    and fulfill f(a*x + b*y) = a*f(x) + b*f(y)
-    with a,b scalars and x,y tensors.
+    LinearOperators have exactly one input tensors and one output tensor,
+    and fulfill :math:`f(a*x + b*y) = a*f(x) + b*f(y)`
+    with `a`,`b` scalars and `x`,`y` tensors.
+
+    LinearOperators can be composed, added, multiplied, applied to tensors.
+    LinearOperators have an `~LinearOperator.H` property that returns the adjoint operator,
+    and a `~LinearOperator.gram` property that returns the Gram operator.
+
+    Subclasses must implement the forward and adjoint methods.
+    When subclassing, the `adjoint_as_backward` class attribute can be set to `True`::
+
+            class MyOperator(LinearOperator, adjoint_as_backward=True):
+                ...
+
+    This will make pytorch use the adjoint method as the backward method of the forward,
+    and the forward method as the backward method of the adjoint, avoiding the need to
+    have differentiable forward and adjoint methods.
     """
 
     @no_type_check
     def __init_subclass__(cls, adjoint_as_backward: bool = False, **kwargs: Any) -> None:  # noqa: ANN401
         """Wrap the forward and adjoint functions for autograd.
+
+        This will  wrap the forward and adjoint functions for autograd,
+        and use the adjoint function as the backward function of the forward and vice versa.
 
         Parameters
         ----------
@@ -209,7 +226,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     ) -> Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator:
         """Operator composition.
 
-        Returns lambda x: self(other(x))
+        Returns ``lambda x: self(other(x))``
         """
         if isinstance(other, mrpro.operators.IdentityOp):
             # neutral element of composition
@@ -227,7 +244,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     def __radd__(self, other: torch.Tensor) -> LinearOperator:
         """Operator addition.
 
-        Returns lambda self(x) + other*x
+        Returns ``lambda x: self(x) + other*x``
         """
         return self + other
 
@@ -244,8 +261,8 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     ) -> Operator[torch.Tensor, tuple[torch.Tensor,]] | LinearOperator:
         """Operator addition.
 
-        Returns lambda x: self(x) + other(x) if other is a operator,
-        lambda x: self(x) + other if other is a tensor
+        Returns ``lambda x: self(x) + other(x)`` if other is a operator,
+        ``lambda x: self(x) + other`` if other is a tensor
         """
         if isinstance(other, torch.Tensor):
             # tensor addition
@@ -268,7 +285,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     def __mul__(self, other: torch.Tensor | complex) -> LinearOperator:
         """Operator elementwise left multiplication with tensor/scalar.
 
-        Returns lambda x: self(x*other)
+        Returns ``lambda x: self(x*other)``
         """
         if isinstance(other, complex | float | int):
             if other == 0:
@@ -285,7 +302,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     def __rmul__(self, other: torch.Tensor | complex) -> LinearOperator:
         """Operator elementwise right multiplication with tensor/scalar.
 
-        Returns lambda x: other*self(x)
+        Returns ``lambda x: other*self(x)``
         """
         if isinstance(other, complex | float | int):
             if other == 0:
@@ -300,14 +317,24 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
             return NotImplemented  # type: ignore[unreachable]
 
     def __and__(self, other: LinearOperator) -> mrpro.operators.LinearOperatorMatrix:
-        """Vertical stacking of two LinearOperators."""
+        """Vertical stacking of two LinearOperators.
+
+        ``A&B`` is a `~mrpro.operators.LinearOperatorMatrix` with two rows,
+        with ``(A&B)(x) == (A(x), B(x))``.
+        See `mrpro.operators.LinearOperatorMatrix` for more information.
+        """
         if not isinstance(other, LinearOperator):
             return NotImplemented  # type: ignore[unreachable]
         operators = [[self], [other]]
         return mrpro.operators.LinearOperatorMatrix(operators)
 
     def __or__(self, other: LinearOperator) -> mrpro.operators.LinearOperatorMatrix:
-        """Horizontal stacking of two LinearOperators."""
+        """Horizontal stacking of two LinearOperators.
+
+        ``A|B`` is a `~mrpro.operators.LinearOperatorMatrix` with two columns,
+        with ``(A|B)(x1,x2) == A(x1)+B(x2)``.
+        See `mrpro.operators.LinearOperatorMatrix` for more information.
+        """
         if not isinstance(other, LinearOperator):
             return NotImplemented  # type: ignore[unreachable]
         operators = [[self, other]]

@@ -169,10 +169,10 @@ class MoveDataMixin:
     ) -> Self:
         """Move data to device and convert dtype if necessary.
 
-        This method is called by :py:func:`.to()`, :py:func:`.cuda()`, :py:func:`.cpu()`,
-        :py:func:`.double()`, and so on. It should not be called directly.
+        This method is called by `.to()`, `.cuda()`, `.cpu()`,
+        `.double()`, and so on. It should not be called directly.
 
-        See :py:func:`.to()` for more details.
+        See `MoveDataMixin.to()` for more details.
 
         Parameters
         ----------
