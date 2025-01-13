@@ -38,7 +38,7 @@ A basic pipeline would contain the following steps:
     :target: https://colab.research.google.com/github/PTB-MR/mrpro
 
 The following provides some basic information about these steps.
-For more detailed information please have a look at the :ref:`examples`.
+For more detailed information please have a look at the :doc:`examples`.
 You can easily launch notebooks via the |colab-badge| badge and give the notebooks a try without having to
 install anything.
 
@@ -97,7 +97,7 @@ See for examples  :doc:`_notebooks/cartesian_reconstruction`, :doc:`_notebooks/d
 Image processing
 ----------------
 Further processing of the reconstructed data such as quantitative parameter estimation is available.
-Our examples contain a notebooks showing how to read in DICOM images and perform qMRI parameter estimation using
+Our examples contain a notebooks showing how to read in DICOM images and perform qMRI paramter estimation using
 a non-linear optimizer: :doc:`_notebooks/qmri_sg_challenge_2024_t1`,
 
 
