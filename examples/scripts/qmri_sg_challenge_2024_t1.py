@@ -8,28 +8,11 @@
 # - define a signal model and data loss (mean-squared error) function
 # - find good starting values for each pixel
 # - carry out a fit using ADAM from PyTorch
-# %%
-# # Imports
-# import shutil
-# import tempfile
-# import zipfile
-# from pathlib import Path
-
-# import matplotlib.pyplot as plt
-# import torch
-# import zenodo_get
-# from einops import rearrange
-# from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore [import-untyped]
-# from mrpro.algorithms.optimizers import adam
-# from mrpro.data import IData
-# from mrpro.operators import MagnitudeOp
-# from mrpro.operators.functionals import MSE
-# from mrpro.operators.models import InversionRecovery
 
 # %% [markdown]
 # ### Get data from Zenodo
 
-# %% tags=["hide-output"]
+# %%
 import tempfile
 import zipfile
 from pathlib import Path
@@ -198,7 +181,7 @@ axes[0, 0].set_title('$M_0$')
 axes[0, 0].set_axis_off()
 fig.colorbar(im, ax=axes[0, 0], label='a.u.')
 
-im = axes[0, 1].imshow(t1[0, 0], vmin=0, vmax=2.5)
+im = axes[0, 1].imshow(t1[0, 0], vmin=0, vmax=2.5, cmap='magma')
 axes[0, 1].set_title('$T_1$')
 axes[0, 1].set_axis_off()
 fig.colorbar(im, ax=axes[0, 1], label='s')
@@ -207,3 +190,5 @@ im = axes[0, 2].imshow(relative_absolute_error[0, 0], vmin=0, vmax=1.0)
 axes[0, 2].set_title('Relative error')
 axes[0, 2].set_axis_off()
 fig.colorbar(im, ax=axes[0, 2])
+
+# %%

@@ -75,6 +75,7 @@ myst_enable_extensions = [
 nb_execution_mode = 'off'
 nb_output_stderr = 'remove'
 nb_output_stdout = 'remove'
+nb_execution_timeout = 120
 html_theme = 'sphinx_rtd_theme'
 html_title = name
 html_show_sphinx = False
