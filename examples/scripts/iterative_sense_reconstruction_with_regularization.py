@@ -203,13 +203,13 @@ img_manual = mrpro.algorithms.optimizers.cg(
 show_images(
     img_us_regularized_iterative_sense.rss()[0, 0],
     img_manual.abs()[0, 0, 0],
-    titles=['Regularized Iterative SENSE R=20', '"Manual" Regularized Iterative SENSE R=20'],
+    titles=['RegularizedIterativeSense', 'Manual'],
 )
 # %% [markdown]
 # We can also check if the results are equal by comparing the actual image data.
 # If the assert statement does not raise an exception, the results are equal.
 # %%
-assert torch.allclose(img_us_regularized_iterative_sense.data, img_manual)
+torch.testing.assert_close(img_us_regularized_iterative_sense.data, img_manual)
 
 # %% [markdown]
 # ### Next steps
