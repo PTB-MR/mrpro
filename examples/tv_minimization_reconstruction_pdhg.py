@@ -192,4 +192,4 @@ plt.setp(ax, xticks=[], yticks=[])
 
 # %% [markdown]
 # ### Next steps
-# Play around with the regularization weight and the number of iterations to see how they effect the final image.
+# Play around with the regularization weight and the number of iterations to see how they affect the final image.
