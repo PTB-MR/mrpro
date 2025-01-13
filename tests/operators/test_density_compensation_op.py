@@ -4,26 +4,44 @@ import torch
 from mrpro.data import DcfData
 from mrpro.operators import DensityCompensationOp
 
-from tests import RandomGenerator, dotproduct_adjointness_test
+from tests import (
+    RandomGenerator,
+    dotproduct_adjointness_test,
+    forward_mode_autodiff_of_linear_operator_test,
+    gradient_of_linear_operator_test,
+)
 
 
-def test_density_compensation_op_adjointness():
-    """Test density operator adjoint property."""
+def create_density_compensation_op_and_range_domain():
+    """Create a density compensation operator and an element from domain and range."""
     random_generator = RandomGenerator(seed=0)
 
     n_zyx = (2, 3, 4)
     n_other = (5, 6, 7)
     n_coils = 8
-
     # Generate random dcf and operator
     random_tensor = random_generator.complex64_tensor(size=(*n_other, *n_zyx))
     random_dcf = DcfData(data=random_tensor)
     dcf_op = DensityCompensationOp(random_dcf)
 
-    # Check adjoint property
     u = random_generator.complex64_tensor(size=(*n_other, n_coils, *n_zyx))
     v = random_generator.complex64_tensor(size=(*n_other, n_coils, *n_zyx))
-    dotproduct_adjointness_test(dcf_op, u, v)
+    return dcf_op, u, v
+
+
+def test_density_compensation_op_adjointness():
+    """Test density operator adjoint property."""
+    dotproduct_adjointness_test(*create_density_compensation_op_and_range_domain())
+
+
+def test_density_compensation_op_grad():
+    """Test the gradient of the density compensation operator."""
+    gradient_of_linear_operator_test(*create_density_compensation_op_and_range_domain())
+
+
+def test_density_compensation_op_forward_mode_autodiff():
+    """Test forward-mode autodiff of the density compensation operator."""
+    forward_mode_autodiff_of_linear_operator_test(*create_density_compensation_op_and_range_domain())
 
 
 def test_density_compensation_op_dcfdata_tensor():
