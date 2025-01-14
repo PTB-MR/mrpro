@@ -38,7 +38,8 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx_autodoc_typehints',
     'sphinx.ext.autosectionlabel',
-    'sphinx-copybutton'
+    'sphinx_copybutton',
+    'sphinx_last_updated_by_git',
 ]
 
 
@@ -92,6 +93,8 @@ html_sidebars = {'**': ['search-field', 'sidebar-nav-bs']}
 html_theme_options = {
     'logo_only': True,
     'collapse_navigation': False,
+    'navigation_depth': -1
+
 }
 html_context = {
     'display_github': False,

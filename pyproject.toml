@@ -89,6 +89,7 @@ docs = [
     "sphinx_github_style",
     "sphinx-autodoc-typehints",
     "sphinx-copybutton",
+    "sphinx-last-updated-by-git",
 
 ]
 notebook = [

@@ -42,11 +42,10 @@ Content
 =======
 .. toctree::
    :maxdepth: 2
-
-    user_guide
-    examples
-    contributor_guide
-    api
-    faq
+   user_guide
+   examples
+   contributor_guide
+   api
+   faq
 
 
