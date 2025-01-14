@@ -15,22 +15,22 @@ from mrpro.data.SpatialDimension import SpatialDimension
 
 @dataclass(slots=True, frozen=True)
 class KTrajectoryRawShape(MoveDataMixin):
-    """K-space trajectory shaped ((other*k2*k1),k0).
+    """K-space trajectory shaped `((other*k2*k1), k0)`.
 
-    Order of directions is always kz, ky, kx
-    Shape of each of kx,ky,kz is `((other,k2,k1),k0)` this means that e.g. slices, averages... have not yet been
-    separated from the phase and slice encoding dimensions. The trajectory is in the same shape as the raw data in the
-    raw data file.
+    Contains the k-space trajectory, i.e. a description of where in k-space each data point was acquired,
+    in the raw shape as it is read from the data file, before any reshaping or sorting by indices is applied.
+    The shape of each of `kx`, `ky`,` kz` is `((other*k2*k1), k0)`,
+    this means that e.g. slices, averages... have not yet been separated from the phase and slice encoding dimensions.
     """
 
     kz: torch.Tensor
-    """`(other,k2,k1,k0)`, phase encoding direction k2 if Cartesian."""
+    """`(other*k2*k1,k0)`, phase encoding direction k2 if Cartesian."""
 
     ky: torch.Tensor
-    """`(other,k2,k1,k0)`, phase encoding direction k1 if Cartesian."""
+    """`(other*k2*k1,k0)`, phase encoding direction k1 if Cartesian."""
 
     kx: torch.Tensor
-    """`(other,k2,k1,k0),` frequency encoding direction k0 if Cartesian."""
+    """`(other*k2*k1,k0),` frequency encoding direction k0 if Cartesian."""
 
     repeat_detection_tolerance: None | float = 1e-3
     """tolerance for repeat detection. Set to `None` to disable."""
@@ -88,6 +88,9 @@ class KTrajectoryRawShape(MoveDataMixin):
         n_k1: int,
     ) -> KTrajectory:
         """Resort and reshape the raw trajectory to KTrajectory.
+
+        This function is used to sort the raw trajectory and reshape it to an `mrpro.daa.KTrajectory`
+        by separating the combined dimension (other k2 k1) into three separate dimensions.
 
         Parameters
         ----------

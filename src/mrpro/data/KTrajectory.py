@@ -18,24 +18,27 @@ from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 class KTrajectory(MoveDataMixin):
     """K-space trajectory.
 
-    Order of directions is always kz, ky, kx
-    Shape of each of kx, ky, kz is `(*other,k2,k1,k0)`,
-    where other can span multiple dimensions
+    Contains the trajectory in k-space along the three dimensions `kz`, `ky`, `kx`,
+    i.e. describes where in k-space each data point was acquired.
 
-    Example for 2D-Cartesian Trajectories:
-        kx changes along k0 and is Frequency Encoding
-        ky changes along k2 and is Phase Encoding
-        kz is zero `(1,1,1,1)`
+    The shape of each of `kx`, `ky`, `kz` is `(*other, k2, k1, k0)`,
+    where other can span multiple dimensions.
+
+    Example for 2D-Cartesian trajectories:
+
+        - `kx` changes along `k0` and is frequency encoding,
+        - `ky` changes along `k1` and is phase encoding
+        - `kz` is zero with shape `(1,1,1,1)`
     """
 
     kz: torch.Tensor
-    """Trajectory in z direction / phase encoding direction k2 if Cartesian. Shape `(*other,k2,k1,k0)`"""
+    """Trajectory in z direction / phase encoding direction k2 if Cartesian. Shape `(*other, k2, k1, k0)`"""
 
     ky: torch.Tensor
-    """Trajectory in y direction / phase encoding direction k1 if Cartesian. Shape `(*other,k2,k1,k0)`"""
+    """Trajectory in y direction / phase encoding direction k1 if Cartesian. Shape `(*other, k2, k1, k0)`"""
 
     kx: torch.Tensor
-    """Trajectory in x direction / phase encoding direction k0 if Cartesian. Shape `(*other,k2,k1,k0)`"""
+    """Trajectory in x direction / phase encoding direction k0 if Cartesian. Shape `(*other, k2, k1, k0)`"""
 
     grid_detection_tolerance: float = 1e-3
     """tolerance of how close trajectory positions have to be to integer grid points."""
@@ -79,13 +82,13 @@ class KTrajectory(MoveDataMixin):
     ) -> Self:
         """Create a KTrajectory from a tensor representation of the trajectory.
 
-        Reduces repeated dimensions to singletons if repeat_detection_tolerance is not set to None.
+        Reduces repeated dimensions to singletons if repeat_detection_tolerance is not set to `None`.
 
         Parameters
         ----------
         tensor
             The tensor representation of the trajectory.
-            This should be a 5-dim tensor, with (kz, ky, kx) stacked in this order along `stack_dim`.
+            This should be a 5-dim tensor, with (`kz`, `ky`, `kx`) stacked in this order along `stack_dim`.
         stack_dim
             The dimension in the tensor along which the directions are stacked.
         axes_order
@@ -154,8 +157,8 @@ class KTrajectory(MoveDataMixin):
         """Calculate the trajectory type along kzkykx and k2k1k0.
 
         Checks if the entries of the trajectory along certain dimensions
-            - are of shape 1 -> TrajType.SINGLEVALUE
-            - lie on a Cartesian grid -> TrajType.ONGRID
+            - are of shape 1 -> `TrajType.SINGLEVALUE`
+            - lie on a Cartesian grid -> `TrajType.ONGRID`
 
         Parameters
         ----------
@@ -164,7 +167,7 @@ class KTrajectory(MoveDataMixin):
 
         Returns
         -------
-            ((types along kz,ky,kx),(types along k2,k1,k0))
+            (`(types along kz,ky,kx)`,`(types along k2,k1,k0)`)
 
         # TODO: consider non-integer positions that are on a grid, e.g. (0.5, 1, 1.5, ....)
         """

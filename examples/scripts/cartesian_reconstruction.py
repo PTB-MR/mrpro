@@ -331,11 +331,52 @@ idat_us = direct_recon_us(kdata_us)
 show_images(idat_pe_pf.rss().squeeze(), idat_us.rss().squeeze(), titles=['PE & PF', 'Undersampled'])
 
 # %% [markdown]
-# As expected, we can see undersampling artifacts in the image. In order to get rid of them,
-# we try can a more sophiisticated reconstruction method, such as the iterative SENSE algorithm.
+
+# We used the same data for coil sensitivity calculation as for image reconstruction (*auto-calibration*)
+# Another approach is to acquire a few calibration lines in the center of k-space to create a low-resolution,
+# fully sampled image. In our example data from Siemens scanners, these lines are part of the dataset.
+# As they aren't meant to be used for image reconstruction, only for calibration, i.e., coil sensitivity calculation,
+# and are labeled in the data as such, they are ignored by the default `acquisition_filter_criterion` of
+# `~mrpro.data.KData.from_file`.
+# However, we can change the filter criterion to `is_coil_calibration_acquisition` to read in only these acquisitions.
+#
+# ```{note}
+# There are already some other filter criteria available, see `mrpro.data.acq_filters`. You can also implement your own
+# function returning whether to include an acquisition
+# ```
+#
+# %%
+kdata_calib_lines = mrpro.data.KData.from_file(
+    data_folder / 'cart_t1_msense_integrated.mrd',
+    mrpro.data.traj_calculators.KTrajectoryCartesian(),
+    acquisition_filter_criterion=mrpro.data.acq_filters.is_coil_calibration_acquisition,
+)
+
+direct_recon_calib_lines = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_calib_lines)
+idat_calib_lines = direct_recon_calib_lines(kdata_calib_lines)
+# %% [markdown]
+# If we look at the reconstructed image, we see it is low resolution..
+# %%
+show_images(idat_calib_lines.rss().squeeze(), titles=['Calibration Image'])
+# %% [markdown]
+# ..but it is good enough to calculate coil sensitivity maps, which we can use when creating the reconstruction object:
+# %%
+# The coil sensitivity maps
+assert direct_recon_calib_lines.csm is not None
+show_images(
+    *direct_recon_calib_lines.csm.data[0].abs(),
+    titles=[f'|CSM {i}|' for i in range(len(direct_recon_calib_lines.csm.data.size(-4)))],
+)
+# reusing the CSMs
+direct_recon_us_csm = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_us, csm=direct_recon_calib_lines.csm)
+idat_us_csm = direct_recon_us_csm(kdata_us)
+show_images(idat_us.rss().squeeze(), idat_us_csm.rss().squeeze(), titles=['Autocalibration', 'Calibration Lines'])
+
+
+# %% [markdown]
+# As expected, we still see undersampling artifacts in the image. In order to get rid of them,
+# we try can a more sophiisticated reconstruction method, such as the *iterative SENSE algorithm*.
 # As you might have guessed, these are also included in MRpro:
 # Instead of the `~mrpro.algorithms.reconstruction.DirectReconstruction`,
 # we can use `mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`, which is explained in
 # the example <project:iterative_sense_reconstruction_radial2D.ipynb>.
-
-# %%

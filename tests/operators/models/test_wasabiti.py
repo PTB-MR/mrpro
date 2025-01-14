@@ -17,7 +17,7 @@ def create_data(
 def test_WASABITI_symmetry():
     """Test symmetry property of complete WASABITI spectra."""
     offsets, b0_shift, rb1, t1 = create_data()
-    wasabiti_model = WASABITI(offsets=offsets, trec=torch.ones_like(offsets))
+    wasabiti_model = WASABITI(offsets=offsets, recovery_time=torch.ones_like(offsets))
     (signal,) = wasabiti_model(b0_shift, rb1, t1)
 
     # check that all values are symmetric around the center
@@ -28,7 +28,7 @@ def test_WASABITI_symmetry_after_shift():
     """Test symmetry property of shifted WASABITI spectra."""
     offsets_shifted, b0_shift, rb1, t1 = create_data(b0_shift=100)
     trec = torch.ones_like(offsets_shifted)
-    wasabiti_model = WASABITI(offsets=offsets_shifted, trec=trec)
+    wasabiti_model = WASABITI(offsets=offsets_shifted, recovery_time=trec)
     (signal_shifted,) = wasabiti_model(b0_shift, rb1, t1)
 
     lower_index = int((offsets_shifted == -300).nonzero()[0][0])
@@ -44,7 +44,7 @@ def test_WASABITI_asymmetry_for_non_unique_trec():
     # set first half of trec values to 2.0
     trec[: len(offsets_unshifted) // 2] = 2.0
 
-    wasabiti_model = WASABITI(offsets=offsets_unshifted, trec=trec)
+    wasabiti_model = WASABITI(offsets=offsets_unshifted, recovery_time=trec)
     (signal,) = wasabiti_model(b0_shift, rb1, t1)
 
     assert not torch.allclose(signal, signal.flipud(), rtol=1e-8), 'Result should not be symmetric around center'
@@ -55,7 +55,7 @@ def test_WASABITI_relaxation_term(t1):
     """Test relaxation term (Mzi) of WASABITI model."""
     offset, b0_shift, rb1, t1 = create_data(offset_max=50000, n_offsets=1, t1=t1)
     trec = torch.ones_like(offset) * t1
-    wasabiti_model = WASABITI(offsets=offset, trec=trec)
+    wasabiti_model = WASABITI(offsets=offset, recovery_time=trec)
     sig = wasabiti_model(b0_shift, rb1, t1)
 
     assert torch.isclose(sig[0], torch.FloatTensor([1 - torch.exp(torch.FloatTensor([-1]))]), rtol=1e-8)
@@ -66,7 +66,7 @@ def test_WASABITI_offsets_trec_mismatch():
     offsets = torch.ones((1, 2))
     trec = torch.ones((1,))
     with pytest.raises(ValueError, match='Shape of trec'):
-        WASABITI(offsets=offsets, trec=trec)
+        WASABITI(offsets=offsets, recovery_time=trec)
 
 
 @SHAPE_VARIATIONS_SIGNAL_MODELS
@@ -83,5 +83,5 @@ def test_autodiff_WASABITI():
     """Test autodiff works for WASABITI model."""
     offset, b0_shift, rb1, t1 = create_data(offset_max=300, n_offsets=2)
     trec = torch.ones_like(offset) * t1
-    wasabiti_model = WASABITI(offsets=offset, trec=trec)
+    wasabiti_model = WASABITI(offsets=offset, recovery_time=trec)
     autodiff_test(wasabiti_model, b0_shift, rb1, t1)

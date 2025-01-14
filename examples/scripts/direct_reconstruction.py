@@ -51,16 +51,6 @@ kdata = mrpro.data.KData.from_file(data_folder / 'radial2D_402spokes_golden_angl
 reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
 
 # %% [markdown]
-# All reconstruction algorithms in mrpro are implemented as PyTorch modules and can be moved to the GPU.
-# In general, both the data and the reconstruction module must be moved to the same device.
-
-# %%
-if torch.cuda.is_available():
-    # Move the data to the GPU if available
-    reconstruction = reconstruction.cuda()
-    kdata = kdata.cuda()
-
-# %% [markdown]
 ### Perform the reconstruction
 # The reconstruction is performed by calling the passing the k-space data.
 # ```{note}
@@ -82,7 +72,7 @@ img = reconstruction(kdata)
 import matplotlib.pyplot as plt
 
 # If there are multiple slices, ..., only the first one is selected
-first_img = img.rss().cpu()[0, 0]  #  images, z, y, x
+first_img = img.rss()[0, 0]  #  images, z, y, x
 plt.imshow(first_img, cmap='gray')
 plt.axis('off')
 plt.show()

@@ -34,11 +34,12 @@ def cg(
      1. Initialize the residual :math:`r_0 = b - Hx_0` (with :math:`x_0` as the initial guess).
      2. Set the search direction :math:`p_0 = r_0`.
      3. For each iteration :math:`k = 0, 1, 2, ...`:
-     - Compute :math:`\alpha_k = \frac{r_k^T r_k}{p_k^T H p_k}`.
-     - Update the solution: :math:`x_{k+1} = x_k + \alpha_k p_k`.
-     - Compute the new residual: :math:`r_{k+1} = r_k - \alpha_k H p_k`.
-     - Update the search direction: :math:`\beta_k = \frac{r_{k+1}^T r_{k+1}}{r_k^T r_k}`,
-         then :math:`p_{k+1} = r_{k+1} + \beta_k p_k`.
+
+        - Compute :math:`\alpha_k = \frac{r_k^T r_k}{p_k^T H p_k}`.
+        - Update the solution: :math:`x_{k+1} = x_k + \alpha_k p_k`.
+        - Compute the new residual: :math:`r_{k+1} = r_k - \alpha_k H p_k`.
+        - Update the search direction: :math:`\beta_k = \frac{r_{k+1}^T r_{k+1}}{r_k^T r_k}`,
+            then :math:`p_{k+1} = r_{k+1} + \beta_k p_k`.
 
     This implementation assumes that :math:`H` is self-adjoint and does not verify this condition.
 
@@ -70,7 +71,7 @@ def cg(
     .. [Hestenes1952] Hestenes, M. R., & Stiefel, E. (1952). Methods of conjugate gradients for solving linear systems.
        *Journal of Research of the National Bureau of Standards*, 49(6), 409-436
     .. [Nocedal2006] Nocedal, J. (2006). *Numerical Optimization* (2nd ed.). Springer.
-    .. [WikipediaCG] Wikipedia: Conjugate Gradient`<https://en.wikipedia.org/wiki/Conjugate_gradient>_
+    .. [WikipediaCG] `Wikipedia: Conjugate Gradient`<https://en.wikipedia.org/wiki/Conjugate_gradient>_
     """
     if initial_value is not None and (initial_value.shape != right_hand_side.shape):
         raise ValueError(

@@ -10,7 +10,7 @@
 Welcome to MRpro's documentation!
 =================================
 
-MR image reconstruction and processing package for PyTorch
+MR image reconstruction and processing for PyTorch
 
 | **Source code:** `<https://github.com/PTB-MR/mrpro>`_
 | **Bug reports:** `<https://github.com/PTB-MR/mrpro/issues>`_
@@ -43,15 +43,10 @@ Content
 .. toctree::
    :maxdepth: 2
 
-   api
-   examples
-   user_guide
-   contributor_guide
-   faq
+    user_guide
+    examples
+    contributor_guide
+    api
+    faq
 
-Indices and tables
-==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

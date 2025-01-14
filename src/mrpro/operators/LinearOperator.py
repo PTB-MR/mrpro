@@ -60,7 +60,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
     LinearOperators have exactly one input tensors and one output tensor,
     and fulfill :math:`f(a*x + b*y) = a*f(x) + b*f(y)`
-    with `a`,`b` scalars and `x`,`y` tensors.
+    with :math:`a`, :math:`b` scalars and :math:`x`, :math:`y` tensors.
 
     LinearOperators can be composed, added, multiplied, applied to tensors.
     LinearOperators have an `~LinearOperator.H` property that returns the adjoint operator,

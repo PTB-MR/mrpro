@@ -88,6 +88,7 @@ docs = [
     "sphinx-mathjax-offline",
     "sphinx_github_style",
     "sphinx-autodoc-typehints",
+    "sphinx-copybutton",
 
 ]
 notebook = [

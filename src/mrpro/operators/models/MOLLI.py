@@ -40,17 +40,17 @@ class MOLLI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         ----------
         a
             parameter a in MOLLI signal model
-            with shape (... other, coils, z, y, x)
+            with shape `(*other, coils, z, y, x)`
         c
             parameter c = b/a in MOLLI signal model
-            with shape (... other, coils, z, y, x)
+            with shape `(*other, coils, z, y, x)`
         t1
             longitudinal relaxation time T1
-            with shape (... other, coils, z, y, x)
+            with shape `(*other, coils, z, y, x)`
 
         Returns
         -------
-            signal with shape (time ... other, coils, z, y, x)
+            signal with shape `(time *other, coils, z, y, x)`
         """
         ti = unsqueeze_right(self.ti, a.ndim - (self.ti.ndim - 1))  # -1 for time
         signal = a * (1 - c * torch.exp(ti / t1 * (1 - c)))
