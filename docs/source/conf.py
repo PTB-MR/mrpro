@@ -38,6 +38,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx_autodoc_typehints',
     'sphinx.ext.autosectionlabel',
+    'sphinx-copybutton'
 ]
 
 

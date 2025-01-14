@@ -39,8 +39,7 @@ A basic pipeline would contain the following steps:
 
 The following provides some basic information about these steps.
 For more detailed information please have a look at the :doc:`examples`.
-You can easily launch notebooks via the |colab-badge| badge and give the notebooks a try without having to
-install anything.
+You can easily launch notebooks via the |colab-badge| badge and give the notebooks a try -
 
 Reading in raw data
 -------------------

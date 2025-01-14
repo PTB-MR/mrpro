@@ -84,13 +84,13 @@ You can use VSCode's test panel to discover and run tests. All tests must pass b
 
 Building the Documentation
 ==========================
-You can build the documentation locally via running ```make html``` in the docs folder. The documentation will also be build in each PR and can be viewed online.
+You can build the documentation locally via running ``make html`` in the docs folder. The documentation will also be build in each PR and can be viewed online.
 Please check how your new additions render in the documentation before requesting a PR review.
 
 
 Adding new Examples
 ===================
-New exciting applications of MRpro can be added in ```examples``` as only ```.py``` files with code-cells. These can, for example, be used in VSCode with the python extension, or in JupyterLab with the `jupytext <https://jupytext.readthedocs.io/en/latest/>`_ extension.
+New exciting applications of MRpro can be added in ``examples`` as only ``.py`` files with code-cells. These can, for example, be used in VSCode with the python extension, or in JupyterLab with the `jupytext <https://jupytext.readthedocs.io/en/latest/>`_ extension.
 A pre-commit action will convert the scripts to notebooks. Our documetantion build will pick up these notebooks, run them, and include them with outputs in the documentation.
 The data to run the examples should be publicly available and hosted externally, for example at zenodo.
 Please be careful not to add any binary files to your commits.

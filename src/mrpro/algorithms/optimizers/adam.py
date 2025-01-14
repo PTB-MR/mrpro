@@ -35,13 +35,13 @@ def adam(
         \hat{m}_t &= \frac{m_t}{1 - \beta_1^t}, \quad \hat{v}_t = \frac{v_t}{1 - \beta_2^t} \\
         \theta_{t+1} &= \theta_t - \frac{\eta}{\sqrt{\hat{v}_t} + \epsilon} \hat{m}_t
 
-    where:
-    - :math:`g_t` is the gradient at step :math:`t`,
-    - :math:`m_t` and :math:`v_t` are biased estimates of the first and second moments,
-    - :math:`\hat{m}_t` and :math:`\hat{v}_t` are bias-corrected estimates,
-    - :math:`\eta` is the learning rate,
-    - :math:`\epsilon` is a small constant for numerical stability,
-    - :math:`\beta_1` and :math:`\beta_2` are decay rates for the moment estimates.
+    where
+    :math:`g_t` is the gradient at step :math:`t`,
+    :math:`m_t` and :math:`v_t` are biased estimates of the first and second moments,
+    :math:`\hat{m}_t` and :math:`\hat{v}_t` are bias-corrected estimates,
+    :math:`\eta` is the learning rate,
+    :math:`\epsilon` is a small constant for numerical stability,
+    :math:`\beta_1` and :math:`\beta_2` are decay rates for the moment estimates.
 
     Steps of the Adam algorithm:
 
