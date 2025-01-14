@@ -658,9 +658,10 @@ class KData(
         kdata
             K-space data `(other coils k2 k1 k0)`
         split_idx
-            2D index describing the k2 points in each block to be moved to other dimension  `(other_split, k2_per_split)`
+            2D index describing the k2 points in each block to be moved to *other* dimension
+            `(other_split, k2_per_split)`
         other_label
-            Label of other dimension, e.g. repetition, phase
+            Label of *other* dimension, e.g. repetition, phase
 
         Returns
         -------
