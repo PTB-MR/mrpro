@@ -137,7 +137,7 @@ def show_images(*images: torch.Tensor, titles: list[str] | None = None) -> None:
 
 
 # %%
-# Combine data from different coils and show magntiude image
+# Combine data from different coils and show magnitude image
 magnitude_fully_sampled = img.abs().square().sum(dim=-4).sqrt().squeeze()
 show_images(magnitude_fully_sampled)
 # %% [markdown]

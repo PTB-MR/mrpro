@@ -20,7 +20,7 @@ This repository uses a *pyproject.toml* file to specify all the requirements.
     Python scripts showcasing how MRpro can be used. Any data needed has to be available from
     an online repository (e.g. zenodo) such that it can be automatically downloaded.
     Individual cells should be indicated with ``# %%``. For markdown cells use ``# %% [markdown]``.
-    The translation from python script to jupyter notebook is done in pre-commit (locally and and on GitHub)
+    The translation from python script to jupyter notebook is done in pre-commit (locally and on GitHub)
     using `jupytext <https://jupytext.readthedocs.io/en/latest/>`_ . See its documentation for more details.
 
     After translating the scripts to notebooks, the notebooks are run and their output is converted to html and added

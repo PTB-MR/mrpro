@@ -49,14 +49,14 @@ Reading in raw data from a MRD file works by creating a `mrpro.data.KData` objec
 To ensure the trajectory is calculated correctly, a `~mrpro.data.traj_calculators.KTrajectoryCalculator` needs to be provided.
 The trajectory can either be calculated based on MRpro functionality (e.g. for a 2D radial sampling scheme), read out
 from MRD or calculated from a `pulseq <http://pulseq.github.io/>`_ file. See `~mrpro.data.traj_calculators`
-for available trajectory calculators and :doc:`_notebooks/comparison_trajectory_calculators` an example.
+for available trajectory calculators and :doc:`_notebooks/comparison_trajectory_calculators` for an example.
 
 
 .. note::
     In MRpro, we use the convention ``(z, y, x)`` for spatial dimensions and ``(k2, k1, k0)`` for k-space dimensions.
     Here, `k0` is the readout direction, `k1` and `k2` are phase encoding directions.
-    The full shape of a 2D k-space data, for example, is ``(other, coil, 1, k1, k0)``.
-    Here, `other` will be the different slices. In general, `other` can be any number of additional dimensions.
+    The full shape of a multi-slice 2D k-space data, for example, is ``(other, coil, 1, k1, k0)`` where `other` will be the different slices.
+    In general, `other` can be any number of additional dimensions.
 
 .. note::
     The trajectory is expected to be defined within the space of the `encoding_matrix`, e.g. if the
