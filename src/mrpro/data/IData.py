@@ -59,12 +59,13 @@ class IData(Data):
         Parameters
         ----------
         keepdim
-            if True, the output tensor has the same number of dimensions as the data tensor, and the coil dimension is
-            kept as a singleton dimension. If False, the coil dimension is removed.
+            if `True`, the output tensor has the same number of dimensions as the data tensor, and the coil dimension is
+            kept as a singleton dimension. If `False`, the coil dimension is removed.
 
         Returns
         -------
-            image data tensor with shape (..., 1, z, y, x) if keepdim is True or (..., z, y, x) if keepdim is False.
+            image data tensor with shape `(..., 1, z, y, x)` if `keepdim` is `True`
+            or `(..., z, y, x)` if keepdim is `False`.
         """
         coildim = -4
         return self.data.abs().square().sum(dim=coildim, keepdim=keepdim).sqrt()
@@ -76,9 +77,9 @@ class IData(Data):
         Parameters
         ----------
         data
-            torch.Tensor containing image data with dimensions (broadcastable to) `(other, coils, z, y, x)`.
+            image data with dimensions (broadcastable to) `(other, coils, z, y, x)`.
         kheader
-            MR raw data header containing required meta data for the image header (`mrpro.data.IHeader`).
+            MR raw data header containing required meta data for the image header.
         """
         header = IHeader.from_kheader(kheader)
         return cls(header=header, data=data)
