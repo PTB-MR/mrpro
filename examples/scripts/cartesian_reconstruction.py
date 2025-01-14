@@ -364,8 +364,8 @@ show_images(idat_calib_lines.rss().squeeze(), titles=['Calibration Image'])
 # The coil sensitivity maps
 assert direct_recon_calib_lines.csm is not None
 show_images(
-    *direct_recon_calib_lines.csm.data[0].abs(),
-    titles=[f'|CSM {i}|' for i in range(len(direct_recon_calib_lines.csm.data.size(-4)))],
+    *direct_recon_calib_lines.csm.data[0].abs().squeeze(),
+    titles=[f'|CSM {i}|' for i in range(direct_recon_calib_lines.csm.data.size(-4))],
 )
 # reusing the CSMs
 direct_recon_us_csm = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_us, csm=direct_recon_calib_lines.csm)
