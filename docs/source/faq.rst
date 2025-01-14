@@ -10,7 +10,7 @@ The data was acquired with partial Fourier along the readout and the readout (k0
 direction. In addition the acquired resolution along the phase encoding direction was lower than for the final image.
 I.e the highest sampled k-space frequency along k1 was lower than required based on the desired image resolution.
 
-.. image:: _static/encoded_recon_space.png
+.. image:: _static/encoded_recon_space.svg
    :alt: Relationship between acquired data, encoding-space, recon-space and image
    :align: center
 
