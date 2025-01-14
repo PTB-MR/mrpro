@@ -54,7 +54,7 @@ repos:
         jupytext
         --update
         --pipe
-        "python .precommit/add_notebook_preemble.py {}"
+        "python .precommit/add_notebook_preamble.py {}"
         --to
         "../notebooks//ipynb"
         --update-metadata
