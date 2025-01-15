@@ -31,7 +31,13 @@ class Operator(Generic[Unpack[Tin], Tout], ABC, torch.nn.Module):
         ...
 
     def __call__(self, *args: Unpack[Tin]) -> Tout:
-        """Apply the forward operator."""
+        """Apply the forward operator.
+
+        For more information, see `forward`.
+
+        Note: Prefer using ``operator_instance(*parameters)``, i.e. using
+        `__call__` over using `forward`.
+        """
         return super().__call__(*args)
 
     def __matmul__(

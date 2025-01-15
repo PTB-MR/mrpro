@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import functools
 import operator
 from abc import abstractmethod
 from collections.abc import Callable, Sequence
-from functools import reduce
 from typing import cast, no_type_check
 
 import torch
@@ -94,11 +94,17 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         """
         if adjoint_as_backward and not hasattr(cls, '_saved_forward'):
             cls._saved_forward, cls._saved_adjoint = cls.forward, cls.adjoint
-            cls.forward = lambda self, x: (
-                _AutogradWrapper.apply(lambda x: self._saved_forward(x)[0], lambda x: self._saved_adjoint(x)[0], x),
+            cls.forward = functools.update_wrapper(
+                lambda self, x: (
+                    _AutogradWrapper.apply(lambda x: self._saved_forward(x)[0], lambda x: self._saved_adjoint(x)[0], x),
+                ),
+                cls.forward,
             )
-            cls.adjoint = lambda self, x: (
-                _AutogradWrapper.apply(lambda x: self._saved_adjoint(x)[0], lambda x: self._saved_forward(x)[0], x),
+            cls.adjoint = functools.update_wrapper(
+                lambda self, x: (
+                    _AutogradWrapper.apply(lambda x: self._saved_adjoint(x)[0], lambda x: self._saved_forward(x)[0], x),
+                ),
+                cls.adjoint,
             )
         super().__init_subclass__(**kwargs)
 
@@ -109,7 +115,13 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
     @property
     def H(self) -> LinearOperator:  # noqa: N802
-        """Adjoint operator."""
+        """Adjoint operator.
+
+        Obtains the adjoint of an instance of this operator as an `AdjointLinearOperator`,
+        which itself is a an `LinearOperator` that can be applied to tensors.
+
+        Note: ``linear_operator.H.H == linear_operator``
+        """
         return AdjointLinearOperator(self)
 
     def operator_norm(
@@ -378,7 +390,7 @@ class LinearOperatorSum(LinearOperator, OperatorSum[torch.Tensor, tuple[torch.Te
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the operator addition."""
         # (A+B)^H = A^H + B^H
-        return (reduce(operator.add, (op.adjoint(x)[0] for op in self._operators)),)
+        return (functools.reduce(operator.add, (op.adjoint(x)[0] for op in self._operators)),)
 
 
 class LinearOperatorElementwiseProductRight(
