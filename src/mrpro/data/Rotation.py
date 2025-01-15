@@ -516,15 +516,16 @@ class Rotation(torch.nn.Module):
         i.e. rotations with reflection with respect to the plane perpendicular to the rotation axis
         or inversion of the coordinate system.
 
-        Note: If inversion != reflection, the rotation will be improper and save as a rotation followed by an inversion.
-        containing an inversion of the coordinate system.
+        .. note::
+            If ``inversion != reflection``, the rotation will be improper and saved
+            as a rotation followed by an inversion inversion of the coordinate system.
 
         Parameters
         ----------
         quaternions
-            shape (..., 4)
+            shape `(..., 4)`
             Each row is a (possibly non-unit norm) quaternion representing an
-            active rotation, in scalar-last (x, y, z, w) format. Each
+            active rotation, in scalar-last `(x, y, z, w)` format. Each
             quaternion will be normalized to unit norm.
         inversion
             if the rotation should contain an inversion of the coordinate system, i.e. a reflection
@@ -558,7 +559,7 @@ class Rotation(torch.nn.Module):
         Parameters
         ----------
         matrix
-            A single matrix or a stack of matrices, shape (..., 3, 3)
+            A single matrix or a stack of matrices, shape `(..., 3, 3)`
         allow_improper
             If true, the rotation is considered as improper if the determinant of the matrix is negative.
             If false, an ValueError is raised if the determinant is negative.
@@ -611,7 +612,7 @@ class Rotation(torch.nn.Module):
             3 Basis vectors of the new coordinate system, i.e. the columns of the rotation matrix
         allow_improper
             If true, the rotation is considered as improper if the determinant of the matrix is negative
-            and the sign will be preserved. If false, a ValueError is raised if the determinant is negative.
+            and the sign will be preserved. If false, a `ValueError` is raised if the determinant is negative.
 
 
         Returns
@@ -635,7 +636,7 @@ class Rotation(torch.nn.Module):
         """Represent as the basis vectors of the new coordinate system as SpatialDimensions.
 
         Returns the three basis vectors of the new coordinate system after rotation,
-        i.e. the columns of the rotation matrix, as SpatialDimensions.
+        i.e. the columns of the rotation matrix, as `~mrpro.data.SpatialDimensions`.
 
         Returns
         -------
@@ -666,7 +667,7 @@ class Rotation(torch.nn.Module):
         Parameters
         ----------
         rotvec
-            shape (..., 3), the rotation vectors.
+            shape `(..., 3)`, the rotation vectors.
         degrees
             If True, then the given angles are assumed to be in degrees,
             otherwise radians.
@@ -860,9 +861,9 @@ class Rotation(torch.nn.Module):
         Returns
         -------
         quaternions
-            shape (..., 4,), depends on shape of inputs used for initialization.
+            shape `(..., 4,)`, depends on shape of inputs used for initialization.
         (optional) reflection (if improper is 'reflection') or inversion (if improper is 'inversion')
-            boolean tensor of shape (...,), indicating if the rotation is improper
+            boolean tensor of shape `(...,)`, indicating if the rotation is improper
             and if a reflection or inversion should be performed after the rotation.
 
         References
@@ -912,7 +913,7 @@ class Rotation(torch.nn.Module):
         Returns
         -------
         matrix
-            shape (..., 3, 3), depends on shape of inputs used for initialization.
+            shape `(..., 3, 3)`, depends on shape of inputs used for initialization.
 
         References
         ----------
@@ -967,9 +968,9 @@ class Rotation(torch.nn.Module):
         Returns
         -------
         rotvec
-            Shape (..., 3), depends on shape of inputs used for initialization.
+            Shape `(..., 3)`, depends on shape of inputs used for initialization.
         (optional) reflection (if improper is 'reflection') or inversion (if improper is 'inversion')
-            boolean tensor of shape (...,), indicating if the rotation is improper
+            boolean tensor of shape `(...,)`, indicating if the rotation is improper
             and if a reflection or inversion should be performed after the rotation.
 
 
@@ -1056,15 +1057,15 @@ class Rotation(torch.nn.Module):
         Returns
         -------
         angles
-            shape (3,) or (..., 3), depending on shape of inputs used to initialize object.
+            shape `(3,)` or `(..., 3)`, depending on shape of inputs used to initialize object.
             The returned angles are in the range:
 
-            - First angle belongs to [-180, 180] degrees (both inclusive)
-            - Third angle belongs to [-180, 180] degrees (both inclusive)
+            - First angle belongs to`` [-180, 180]`` degrees (both inclusive)
+            - Third angle belongs to ``[-180, 180]`` degrees (both inclusive)
             - Second angle belongs to:
 
-             + [-90, 90] degrees if all axes are different (like xyz)
-             + [0, 180] degrees if first and third axes are the same (like zxz)
+             + ``[-90, 90]`` degrees if all axes are different (like xyz)
+             + ``[0, 180]`` degrees if first and third axes are the same (like zxz)
 
         References
         ----------
@@ -1201,7 +1202,7 @@ class Rotation(torch.nn.Module):
           components are expressed in the original frame before and after the rotation.
 
         In terms of rotation matrices, this application is the same as
-        `self.as_matrix() @ vectors`.
+        ``self.as_matrix() @ vectors``.
 
         Parameters
         ----------
@@ -1333,7 +1334,7 @@ class Rotation(torch.nn.Module):
         Parameters
         ----------
         mean_axis
-            shape (..., 3,), the mean axis of the von Mises-Fisher distribution.
+            shape `(..., 3,)`, the mean axis of the von Mises-Fisher distribution.
         kappa
             The concentration parameter of the von Mises-Fisher distribution.
             small kappa results in a uniform distribution, large kappa results in a peak around the mean axis.
@@ -1370,16 +1371,16 @@ class Rotation(torch.nn.Module):
         """Compose this rotation with the other.
 
         If `p` and `q` are two rotations, then the composition of 'q followed
-        by p' is equivalent to `p * q`. In terms of rotation matrices,
+        by p' is equivalent to ``p @ q``. In terms of rotation matrices,
         the composition can be expressed as
-        `p.as_matrix() @ q.as_matrix()`.
+        ``p.as_matrix() @ q.as_matrix()``.
 
         Parameters
         ----------
         other
             Object containing the rotations to be composed with this one. Note
-            that rotation compositions are not commutative, so `p * q` is
-            generally different from `q * p`.
+            that rotation compositions are not commutative, so ``p @ q`` is
+            generally different from ``q @ p``.
 
         Returns
         -------
@@ -1414,11 +1415,11 @@ class Rotation(torch.nn.Module):
         Composition of a rotation `p` with itself can be extended to
         non-integer `n` by considering the power `n` to be a scale factor
         applied to the angle of rotation about the rotation's fixed axis. The
-        expression `q = p ** n` can also be expressed as
-        `q = Rotation.from_rotvec(n * p.as_rotvec())`.
+        expression ``q = p ** n`` can also be expressed as
+        ``q = Rotation.from_rotvec(n * p.as_rotvec())``.
 
         If `n` is negative, then the rotation is inverted before the power
-        is applied. In other words, `p ** -abs(n) == p.inv() ** abs(n)`.
+        is applied. In other words, ``p ** -abs(n) == p.inv() ** abs(n)``.
 
         Parameters
         ----------
@@ -1441,7 +1442,7 @@ class Rotation(torch.nn.Module):
         power of 0.5 will halve the angle. There are three notable cases: if
         `n == 1` then the original rotation is returned, if `n == 0`
         then the identity rotation is returned, and if `n == -1` then
-        `p.inv()` is returned.
+        ``p.inv()`` is returned.
 
         For improper rotations, the power of a rotation with a reflection is
         equivalent to the power of the rotation without the reflection, followed
@@ -1524,9 +1525,9 @@ class Rotation(torch.nn.Module):
         Converts a proper rotation to an improper one, or vice versa
         by inversion of the coordinate system.
 
-        Note:
-        This is not the same as the inverse of the rotation.
-        See `inv` for that.
+        .. note::
+           This is not the same as the inverse of the rotation.
+           See `inv` an inverse.
 
         Returns
         -------
@@ -1546,7 +1547,7 @@ class Rotation(torch.nn.Module):
         Returns
         -------
         magnitude
-            Angles in radians. The magnitude will always be in the range [0, pi].
+            Angles in radians. The magnitude will always be in the range ``[0, pi]``.
         """
         angles = 2 * torch.atan2(
             torch.linalg.vector_norm(self._quaternions[..., :3], dim=-1), torch.abs(self._quaternions[..., 3])
