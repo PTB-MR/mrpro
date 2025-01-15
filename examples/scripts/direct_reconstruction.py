@@ -16,7 +16,7 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 
 # %% [markdown]
 # ## Image reconstruction
-# We use the `mrpro.algorithms.reconstruction.DirectReconstruction` class to reconstruct images from 2D radial data.
+# We use the `~mrpro.algorithms.reconstruction.DirectReconstruction` class to reconstruct images from 2D radial data.
 # `~mrpro.algorithms.reconstruction.DirectReconstruction` estimates CSMs, DCFs,
 # and performs an adjoint Fourier transform.
 # This the simplest reconstruction method in our high-level interface to the reconstruction pipeline.
@@ -65,7 +65,7 @@ img = reconstruction(kdata)
 
 # %% [markdown]
 # ### Display the reconstructed image
-# We now got in `mrpro.data.IData` object containing a header and the image tensor.
+# We now got in `~mrpro.data.IData` object containing a header and the image tensor.
 # We display the reconstructed image using matplotlib.
 
 # %%
@@ -104,7 +104,7 @@ csm_operator = mrpro.data.CsmData.from_idata_walsh(img_coilwise).as_operator()
 
 # %% [markdown]
 # ### Perform Direct Reconstruction
-# Finally, the direct reconstruction is performed and an `mrpro.data.IData` object with the reconstructed
+# Finally, the direct reconstruction is performed and an `~mrpro.data.IData` object with the reconstructed
 # image is returned.
 # %%
 adjoint_operator = (fourier_operator @ csm_operator).H

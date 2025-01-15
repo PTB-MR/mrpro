@@ -29,7 +29,7 @@ with zipfile.ZipFile(data_folder / Path('T1 IR.zip'), 'r') as zip_ref:
 
 # %% [markdown]
 # ### Create image data (IData) object with different inversion times
-# We read in the DICOM files and combine them in an `mrpro.data.IData` object.
+# We read in the DICOM files and combine them in an `~mrpro.data.IData` object.
 # The inversion times are stored in the DICOM files are available in the header of the `~mrpro.data.IData` object.
 # %%
 import mrpro

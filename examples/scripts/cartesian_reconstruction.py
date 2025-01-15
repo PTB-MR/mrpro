@@ -4,7 +4,7 @@
 # pattern.
 # %% [markdown]
 # ## Overview
-# In this notebook, we are going to explore the `mrpro.data.KData` object and the included header parameters.
+# In this notebook, we are going to explore the `~mrpro.data.KData` object and the included header parameters.
 # We will then use a FFT-operator in order to reconstruct data acquired with a Cartesian sampling scheme.
 # We will also reconstruct data  acquired on a Cartesian grid but with partial echo and partial Fourier acceleration.
 # Finally, we will reconstruct a Cartesian scan with regular undersampling.
@@ -37,7 +37,7 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 # %% [markdown]
 # ## Read in raw data and explore header
 #
-# To read in an ISMRMRD file, we can simply pass on the file name to a `mrpro.data.KData` object.
+# To read in an ISMRMRD file, we can simply pass on the file name to a `~mrpro.data.KData` object.
 # Additionally, we need to provide information about the trajectory. In MRpro, this is done using trajectory
 # calculators. These are functions that calculate the trajectory based on the acquisition information and additional
 # parameters provided to the calculators (e.g. the angular step for a radial acquisition).
@@ -80,7 +80,7 @@ print('Lamor Frequency:', kdata.header.lamor_frequency_proton)
 # It optionally can be created from a `~mrpro.data.KData` object without any further information.
 # ```
 #
-# Let's create an FFT-operator `mrpro.operators.FastFourierOp` and apply it to our `~mrpro.data.KData` object.
+# Let's create an FFT-operator `~mrpro.operators.FastFourierOp` and apply it to our `~mrpro.data.KData` object.
 # Please note that all MRpro operator work on PyTorch tensors and not on the MRpro objects directly. Therefore, we have
 # to call the operator on kdata.data. One other important property of MRpro operators is that they always return a
 # tuple of PyTorch tensors, even if the output is only a single tensor. This is why we use the ``(img,)`` syntax below.
@@ -252,7 +252,7 @@ show_images(magnitude_fully_sampled, magnitude_pe_pf, titles=['fully sampled', '
 # The issue is that we combined the data from the different coils using a root-sum-of-squares approach.
 # While it's simple, it's not the ideal method. Typically, coil sensitivity maps are calculated to combine the data
 # from different coils. In MRpro, you can do this by calculating coil sensitivity data and then creating a
-# `mrpro.operators.SensitivityOp` to combine the data after image reconstruction.
+# `~mrpro.operators.SensitivityOp` to combine the data after image reconstruction.
 
 
 # %% [markdown]
@@ -296,7 +296,7 @@ show_images(magnitude_pe_pf, titles=['PF & PE'])
 # different operators and chain them together. Wouldn't it be nice if this could be done automatically?
 #
 # That is why we also included some top-level reconstruction algorithms in MRpro. For this whole steps from above,
-# we can simply use a `mrpro.algorithnms.reconstruction.DirectReconstruction`.
+# we can simply use a `~mrpro.algorithnms.reconstruction.DirectReconstruction`.
 # Reconstruction algorithms can be instantiated from only the information in the `~mrpro.data.KData` object.
 #
 # In contrast to operators, top-level reconstruction algorithms operate on the data objects of MRpro, i.e. the input is
@@ -378,5 +378,5 @@ show_images(idat_us.rss().squeeze(), idat_us_csm.rss().squeeze(), titles=['Autoc
 # we try can a more sophiisticated reconstruction method, such as the *iterative SENSE algorithm*.
 # As you might have guessed, these are also included in MRpro:
 # Instead of the `~mrpro.algorithms.reconstruction.DirectReconstruction`,
-# we can use `mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`, which is explained in
+# we can use `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`, which is explained in
 # the example <project:iterative_sense_reconstruction_radial2D.ipynb>.

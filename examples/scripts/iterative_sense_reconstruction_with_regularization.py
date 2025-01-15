@@ -1,6 +1,6 @@
 # %% [markdown]
 # # Regularized Iterative SENSE Reconstruction of 2D golden angle radial data
-# Here we use the `mrpro.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction` class to reconstruct
+# Here we use the `~mrpro.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction` class to reconstruct
 # undersampled images from 2D radial data.
 # %% tags=["hide-cell"]
 # Download raw data from Zenodo
@@ -148,7 +148,7 @@ show_images(
 # %% [markdown]
 # ### Behind the scenes
 # We now investigate the steps that are done in the regularized iterative SENSE reconstruction and
-# perform them manually. This also demonstrates how to use the `mrpro` operators and algorithms
+# perform them manually. This also demonstrates how to use the `~mrpro` operators and algorithms
 # to build your own reconstruction pipeline.
 
 # %% [markdown]
