@@ -1,0 +1,52 @@
+name: Run Tests with Minimum Dependencies
+
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [3.11, 3.12]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Create temporary requirements-min.txt
+      run: |
+        python -m pip install --upgrade pip
+        pip install toml setuptools
+
+        # Generate requirements-min.txt
+        python - <<EOF
+        import toml
+
+        with open('pyproject.toml', 'r') as f:
+            pyproject = toml.load(f)
+
+        dependencies = pyproject.get('project', {}).get('dependencies', [])
+
+        with open('requirements-min.txt', 'w') as f:
+            for dep in dependencies:
+                dep = dep.replace('>=', '==').split(',')[0]
+                f.write(f"{dep}\n")
+        EOF
+
+    - name: Install minimum dependencies
+      run: pip install -r requirements-min.txt
+
+    - name: Install the package
+      run: pip install .[test]
+
+    - name: Run tests
+      run: pytest -n 4 -m "not cuda"
+
+    - name: Cleanup
+      run: rm requirements-min.txt
