@@ -82,13 +82,13 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
             signal with shape `(offsets *other, coils, z, y, x)`
         """
         offsets = unsqueeze_right(self.offsets, b0_shift.ndim - (self.offsets.ndim - 1))  # -1 for offset
-        delta_b = offsets - b0_shift
+        delta_b0 = offsets - b0_shift
         b1 = self.b1_nominal * relative_b1
 
         signal = (
             c
             - d
             * (torch.pi * b1 * self.gamma * self.rf_duration) ** 2
-            * torch.sinc(self.rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + delta_b**2)) ** 2
+            * torch.sinc(self.rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + delta_b0**2)) ** 2
         )
         return (signal,)
