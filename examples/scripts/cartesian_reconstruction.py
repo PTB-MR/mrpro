@@ -101,7 +101,7 @@ print('Shape:', img.shape)
 # one. Later, we will do something a bit more sophisticated. We can also see that the x-dimension is 512. This is
 # because in MRI we commonly oversample the readout direction by a factor 2 leading to a FOV twice as large as we
 # actually need. We can either remove this oversampling along the readout direction or we can simply tell the
-# `~mrpro.operatoers.FastFourierOp` to crop the image by providing the correct output matrix size ``recon_matrix``.
+# `~mrpro.operators.FastFourierOp` to crop the image by providing the correct output matrix size ``recon_matrix``.
 
 # %%
 # Create FFT-operator with correct output matrix size
