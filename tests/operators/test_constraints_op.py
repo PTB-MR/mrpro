@@ -6,7 +6,8 @@ from mrpro.operators import ConstraintsOp
 
 from tests import RandomGenerator, autodiff_test
 
-@pytest.mark.parametrize('beta',[1, 0.5, 2])
+
+@pytest.mark.parametrize('beta', [1, 0.5, 2])
 @pytest.mark.parametrize(
     'bounds',
     [
@@ -39,6 +40,7 @@ def test_constraints_operator_bounds(bounds):
     elif a is None and b is not None:  # case (-infty, b)
         torch.testing.assert_close(cx.max(), torch.tensor(b))
 
+
 @pytest.mark.parametrize('beta', [1, 0.5, 2])
 @pytest.mark.parametrize(
     'bounds',
@@ -67,6 +69,7 @@ def test_constraints_operator_inverse(bounds, beta):
     # reverse transformation and check for equality
     (xx,) = constraints_op.inverse(cx)
     torch.testing.assert_close(xx, x)
+
 
 @pytest.mark.parametrize('beta', [1, 0.5, 2])
 @pytest.mark.parametrize(
