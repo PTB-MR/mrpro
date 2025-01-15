@@ -386,8 +386,8 @@ sense_recon_us = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
     n_iterations=8,
 )
 idat_us_sense = sense_recon_us(kdata_us)
-show_images(idat_us.rss().squeeze(), idat_us_sense.rss().squeeze(), titles=['Direct Reconstruction', 'Iterative SENSE'])
+show_images(idat_us_sense.rss().squeeze(), titles=['Iterative SENSE'])
 # %% [markdown]
-# More information about the iterative SENSE reconstruction and its implementation in MRpro can be found in the examples
-# <project:iterative_sense_reconstruction_radial2D.ipynb> and
+# This looks better! More information about the iterative SENSE reconstruction and its implementation in MRpro
+# can be found in the examples <project:iterative_sense_reconstruction_radial2D.ipynb> and
 # <project:iterative_sense_reconstruction_with_regularization.ipynb>.

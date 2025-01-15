@@ -106,7 +106,7 @@ html_context = {
 linkcode_blob = html_context['github_version']
 linkcode_link_text = '[source]'
 default_role = 'py:obj'
-
+pygments_style = 'default'
 
 def get_lambda_source(obj):
     """Convert lambda to source code."""
@@ -284,6 +284,9 @@ def sync_notebooks(source_folder, dest_folder):
                 mode = 'force'
             else:
                 print(f'Existing {dest_file}. Skipping execution.')
+                mode = 'off'
+            if os.environ.get('NORUN') == '1':
+                print("NORUN: Skipping execution.")
                 mode = 'off'
             content = nbformat.read(dest_file, as_version=nbformat.NO_CONVERT)
             content.metadata['mystnb'] = {'execution_mode': mode}
