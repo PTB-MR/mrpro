@@ -133,6 +133,8 @@ m0_start = idata_multi_ti.data.abs().amax(dim=0)
 
 # %% [markdown]
 # #### Visualize the starting values
+# Let's have a look at the starting values for $M_0$ and $T_1$:
+# %%
 fig, axes = plt.subplots(1, 2, figsize=(6, 2), squeeze=False)
 
 im = axes[0, 0].imshow(m0_start[0, 0])
@@ -170,6 +172,7 @@ m0, t1 = (p.detach().cpu() for p in result)
 
 # %% [markdown]
 # ### Visualize the final results
+#
 # To get an impression of how well the fit has worked, we are going to calculate the relative error between
 #
 # $E_{relative} = \sum_{TI}\frac{|(q(M_0, T_1, TI) - x)|}{|x|}$
