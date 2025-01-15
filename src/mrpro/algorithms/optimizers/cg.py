@@ -69,9 +69,9 @@ def cg(
     References
     ----------
     .. [Hestenes1952] Hestenes, M. R., & Stiefel, E. (1952). Methods of conjugate gradients for solving linear systems.
-       *Journal of Research of the National Bureau of Standards*, 49(6), 409-436
+       Journal of Research of the National Bureau of Standards , 49(6), 409-436
     .. [Nocedal2006] Nocedal, J. (2006). *Numerical Optimization* (2nd ed.). Springer.
-    .. [WikipediaCG] `Wikipedia: Conjugate Gradient`<https://en.wikipedia.org/wiki/Conjugate_gradient>_
+    .. [WikipediaCG] `Wikipedia: Conjugate Gradient<https://en.wikipedia.org/wiki/Conjugate_gradient>_`
     """
     if initial_value is not None and (initial_value.shape != right_hand_side.shape):
         raise ValueError(

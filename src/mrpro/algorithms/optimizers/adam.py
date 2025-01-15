@@ -59,6 +59,8 @@ def adam(
        https://doi.org/10.48550/arXiv.1412.6980
     .. [LOS2019] Loshchilov I, Hutter F (2019) Decoupled Weight Decay Regularization. ICLR.
        https://doi.org/10.48550/arXiv.1711.05101
+    .. [REDDI2019] Sashank J. Reddi, Satyen Kale, Sanjiv Kumar (2019) On the Convergence of Adam and Beyond. ICLR.
+       https://doi.org/10.48550/arXiv.1904.09237
 
     Parameters
     ----------
@@ -77,24 +79,17 @@ def adam(
     eps
         term added to the denominator to improve numerical stability
     weight_decay
-        weight decay (L2 penalty if decoupled_weight_decay is False)
+        weight decay (L2 penalty if `decoupled_weight_decay` is False)
     amsgrad
-        whether to use the AMSGrad variant of this algorithm from the paper
-        `On the Convergence of Adam and Beyond`
+        whether to use the AMSGrad variant [REDDI2019]_
     decoupled_weight_decay
-        whether to use Adam (default) or AdamW (if set to true) [LOS2019]_
+        whether to use Adam (default) or AdamW (if set to `True`) [LOS2019]_
     callback
         function to be called after each iteration
-
 
     Returns
     -------
         list of optimized parameters
-
-    References
-    ----------
-    .. [LOS2019] Loshchilov I, Hutter F (2019) Decoupled Weight Decay Regularization. ICLR
-       https://doi.org/10.48550/arXiv.1711.05101
     """
     parameters = tuple(p.detach().clone().requires_grad_(True) for p in initial_parameters)
 

@@ -72,7 +72,7 @@ class KData(
     """Header information for k-space data"""
 
     data: torch.Tensor
-    """K-space data. Shape (*other coils k2 k1 k0)"""
+    """K-space data. Shape `(*other coils k2 k1 k0)`"""
 
     traj: KTrajectory
     """K-space trajectory along kz, ky and kx. Shape `(*other k2 k1 k0)`"""
