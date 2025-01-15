@@ -9,7 +9,7 @@
 # data can be divided into different dynamic time frames, each corresponding to a different inversion time. A signal
 # model can then be fitted to this data to obtain a $T_1$ map.
 #
-# More information can be found in:
+# More information can be found in:\
 # Kerkering KM, Schulz-Menger J, Schaeffter T, Kolbitsch C (2023). Motion-corrected model-based reconstruction for 2D
 # myocardial $T_1$ mapping. *Magnetic Resonance in Medicine*, 90(3):1086-1100, [10.1002/mrm.29699](https://doi.org/10.1002/mrm.29699)
 
@@ -127,7 +127,7 @@ plt.show()
 # ### Signal model
 # We use a three parameter signal model $q(M_0, T_1, \alpha)$.
 #
-# The model needs information about the time $t$ (``sampling_time``) in Eq. (1) since the inversion pulse.
+# The model needs information about the time $t$, `sampling_time`, in Eq. (1) since the inversion pulse.
 # This can be calculated from the `acquisition_time_stamp`. If we average the `acquisition_time_stamp`-values for each
 # dynamic image and subtract the first `acquisition_time_stamp`, we get the mean time since the inversion pulse for each
 # dynamic. Note: The time taken by the spoiler gradient is taken into consideration in the
@@ -181,12 +181,13 @@ magnitude_model_op = mrpro.operators.MagnitudeOp() @ model_op
 # and 3 s. Further, we can constrain $\alpha$. Although the effective flip angle can vary, it can only vary by a
 # certain percentage relative to the nominal flip angle. Here, we chose a maximum deviation from the nominal flip angle
 # of 50%.
-
+# We use a `~mrpro.operators.ConstraintsOp` to define these constraints. It maps unconstrained parameters to constrained
+# parameters, such that the optimizer can work with unconstrained parameters
 # %%
 if kdata_dynamic.header.fa is None:
     raise ValueError('Nominal flip angle needs to be defined.')
-else:
-    nominal_flip_angle = float(kdata_dynamic.header.fa[0])
+
+nominal_flip_angle = float(kdata_dynamic.header.fa[0])
 
 constraints_op = mrpro.operators.ConstraintsOp(
     bounds=(
@@ -215,21 +216,29 @@ functional = mse_loss @ magnitude_model_op @ constraints_op
 # %% [markdown]
 # ### Carry out fit
 # We use an LBFGS optimizer to minimize the loss function. We start with the following initial values:
+# - The intensity at shortest echo time as a good approximation for the equilibrium magnetization $M_0$,
+# - 1 s for $T_1$, and
+# - nominal flip angle for the actual flip angle.
 # %%
-# The shortest echo time is a good approximation for the equilibrium magnetization
 m0_start = img_rss_dynamic[0]
-# 1 s a good starting value for T1
 t1_start = torch.ones_like(m0_start)
-# and the nominal flip angle a good starting value for the actual flip angle
 flip_angle_start = torch.ones_like(m0_start) * kdata_dynamic.header.fa
-
-
+# %% [markdown]
+# If we use a `~mrpro.operators.ConstraintsOp`, the start values must be transformed to the
+# unconstrained space before the optimization and back to the original space after the optimization.
 # %%
-params_result = mrpro.algorithms.optimizers.lbfgs(functional, initial_parameters=[m0_start, t1_start, flip_angle_start])
-# We need to transform the constrained parameters back to the original space
-params_result = constraints_op(*params_result)
-m0, t1, flip_angle = (p.detach().cpu().squeeze() for p in params_result)
-
+initial_parameters = constraints_op.inverse(m0_start, t1_start, flip_angle_start)
+# %% [markdown]
+# Now we can run the optimizer in the unconstrained space.
+# %%
+result = mrpro.algorithms.optimizers.lbfgs(functional, initial_parameters=initial_parameters)
+# %% [markdown]
+# Transforming the parameters back to the original space, we get the final $M_0$, $T_1$, and flip angle:
+# %%
+m0, t1, flip_angle = (p.detach().cpu().squeeze() for p in constraints_op(*result))
+# %% [markdown]
+# ## Visualize results
+# Finally, we can take a look at the estimated $M_0$, $T_1$, and flip angle maps:
 # %%
 # Visualize parametric maps
 fig, axes = plt.subplots(1, 3, figsize=(10, 2), squeeze=False)
@@ -239,7 +248,7 @@ axes[0, 0].set_title('$|M_0|$')
 axes[0, 0].set_axis_off()
 fig.colorbar(im, ax=axes[0, 0])
 
-im = axes[0, 1].imshow(t1, vmin=0, vmax=2)
+im = axes[0, 1].imshow(t1, vmin=0, vmax=2, cmap='magma')
 axes[0, 1].set_title('$T_1$ (s)')
 axes[0, 1].set_axis_off()
 fig.colorbar(im, ax=axes[0, 1])
@@ -250,13 +259,12 @@ axes[0, 2].set_axis_off()
 fig.colorbar(im, ax=axes[0, 2])
 
 plt.show()
-
 # %% [markdown]
+# Great! We have successfully estimated the $T_1$ map from the dynamic images!
+#
 # ### Next steps
 # The quality of the final $T_1$ maps depends on the quality of the individual dynamic images. Using more advanced image
 # reconstruction methods, we can improve the image quality and hence the quality of the maps.
-#
 # Try to exchange `~mrpro.algorithms.reconstruction.DirectReconstruction` above with
 # `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`
 # or try a different optimizer such as `~mrpro.algorithms.optimizers.adam`.
-# %%
