@@ -183,6 +183,7 @@ cython_debug/
 
 # Documentation
 **/_autosummary
+**/_notebooks
 
 # Ignore Conda environment directories:
 .conda
