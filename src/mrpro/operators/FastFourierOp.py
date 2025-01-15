@@ -36,7 +36,7 @@ class FastFourierOp(LinearOperator):
 
     References
     ----------
-    .. [FFT] FFT https://numpy.org/doc/stable/reference/routines.fft.html
+    .. [FFT] `numpy: FFT <https://numpy.org/doc/stable/reference/routines.fft.html>_`
 
     """
 
