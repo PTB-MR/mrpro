@@ -28,8 +28,8 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 # when loading the data tells the `~mrpro.data.KData` object to use the trajectory
 # that is stored in the ISMRMRD file.
 # ```{note}
-# Often the trajectory iinformation has not been stored in the ISMRMRD file,
-# in which case loading the this way will raise an error.
+# Often the trajectory information has not been stored in the ISMRMRD file,
+# in which case loading the trajectory this way will raise an error.
 # ```
 
 # %%
