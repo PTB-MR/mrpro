@@ -197,6 +197,7 @@ class CustomClassDocumenter(ClassDocumenter):
             other = [], []
             others_methods = []
             init_method = []
+            call_methods = []
 
             for documenter in documenters:
                 doc = documenter[0]
@@ -212,6 +213,8 @@ class CustomClassDocumenter(ClassDocumenter):
                         continue
                     if doc.object_name == '__init__':
                         init_method.append(documenter)
+                    elif doc.object_name in ('__call__', 'forward', 'adjoint'):
+                        call_methods.append(documenter)
                     elif doc.object_name[:2] == '__':
                         special_methods[inherited].append(documenter)
                     elif isclassmethod(doc.object):
@@ -225,8 +228,10 @@ class CustomClassDocumenter(ClassDocumenter):
                     continue
             # Combine groups in the desired order
             constructors = init_method + class_methods[0] + class_methods[1]
+            call_methods = sorted(call_methods, key=lambda x: x[0].object_name)
             methods = (
-                instance_methods[0]
+                call_methods
+                + instance_methods[0]
                 + instance_methods[1]
                 + others_methods
                 + static_methods[0]
