@@ -11,6 +11,7 @@ direction. In addition the acquired resolution along the phase encoding directio
 I.e the highest sampled k-space frequency along k1 was lower than required based on the desired image resolution.
 
 .. image:: _static/encoded_recon_space.svg
+   :scale: 150%
    :alt: Relationship between acquired data, encoding-space, recon-space and image
    :align: center
 
