@@ -48,30 +48,31 @@ class FastFourierOp(LinearOperator):
     ) -> None:
         """Initialize a Fast Fourier Operator.
 
-        If both recon_matrix and encoding_matrix are set, the operator will perform padding/cropping before and
-        after the transforms to match the shape in image space (recon_matrix) and k-shape (encoding_matrix).
+        If both `recon_matrix` and `encoding_matrix` are set, the operator will perform padding/cropping before and
+        after the transforms to match the shape in image space (`recon_matrix`) and k-shape (`encoding_matrix`).
         If both are set to None, no padding or cropping will be performed.
         If these are SpatialDimension, the transform dimensions must be within the last three dimensions,
-        typically corresponding to the (k2,k1,k0) and (z,y,x) axes of KData and IData, respectively.
+        typically corresponding to the `(k2,k1,k0)` and `(z,y,x)` axes of `~mrpro.data.KData`
+        and `~mrpro.data.IData`, respectively.
 
 
         Parameters
         ----------
         dim
-            dim along which FFT and IFFT are applied, by default last three dimensions (-3, -2, -1),
-            as these correspond to k2, k1, and k0 of KData.
+            dim along which FFT and IFFT are applied, by default last three dimensions,
+            as these correspond to k2, k1, and k0 of k-space data.
         encoding_matrix
-            shape of encoded k-data along the axes in dim. Must be set if recon_matrix is set.
-            If encoding_matrix and recon_matrix are None, no padding or cropping will be performed.
-            If all values in dim are -3, -2 or -1, this can also be a SpatialDimension describing the
-            k-space shape in all 3 dimensions (k2, k1, k0), but only values in the dimensions in dim will be used.
-            Otherwise, it should be a Sequence of the same length as dim.
+            shape of encoded k-data along the axes in `dim`. Must be set if `recon_matrix` is set.
+            If `encoding_matrix` and `recon_matrix` are `None`, no padding or cropping will be performed.
+            If all values in dim are -3, -2 or -1, this can also be a `~mrpro.data.SpatialDimension` describing the
+            k-space shape in all 3 dimensions `(k2, k1, k0)`, but only values in the dimensions in dim will be used.
+            Otherwise, it should be a `Sequence` of the same length as `dim`.
         recon_matrix
-            shape of reconstructed image data. Must be set if encoding_matrix is set.
-            If encoding_matrix and recon_matrix are None, no padding or cropping will be performed.
-            If all values in dim are -3, -2 or -1, this can also be a SpatialDimension describing the
-            image-space shape in all 3 dimensions (z,y,x), but only values in the dimensions in dim will be used.
-            Otherwise, it should be a Sequence of the same length as dim.
+            shape of reconstructed image data. Must be set if `encoding_matrix` is set.
+            If `encoding_matrix` and `recon_matrix` are `None`, no padding or cropping will be performed.
+            If all values in dim are -3, -2 or -1, this can also be a `~mrpro.data.SpatialDimension` describing the
+            image-space shape in all 3 dimensions `(z, y, x)`, but only values in the dimensions in dim will be used.
+            Otherwise, it should be a `Sequence` of the same length as `dim`.
         """
         super().__init__()
         self._dim = tuple(dim)
