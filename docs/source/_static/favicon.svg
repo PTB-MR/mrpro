@@ -21,7 +21,7 @@
      fill: #0073aa;
 	 stroke: #ffffff;
    }
-   #rect-1-5-8 {
+   #rect1-5-8 {
      fill: #0073aa;
 	 stroke: #ffffff;
    }
@@ -40,7 +40,7 @@
      fill: white;
 	 stroke: black;
    }
-   #rect-1-5-8 {
+   #rect1-5-8 {
      fill: white;
 	 stroke: black;
    }
