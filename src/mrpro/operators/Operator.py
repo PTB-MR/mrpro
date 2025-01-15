@@ -35,8 +35,9 @@ class Operator(Generic[Unpack[Tin], Tout], ABC, torch.nn.Module):
 
         For more information, see `forward`.
 
-        Note: Prefer using ``operator_instance(*parameters)``, i.e. using
-        `__call__` over using `forward`.
+        .. note::
+           Prefer using ``operator_instance(*parameters)``, i.e. using
+           `__call__` over using `forward`.
         """
         return super().__call__(*args)
 

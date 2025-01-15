@@ -358,7 +358,8 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
         For a LinearOperator :math:`A`, the self-adjoint Gram operator is defined as :math:`A^H A`.
 
-        Note: This is the inherited default implementation.
+        .. note::
+           This is the inherited default implementation.
         """
         return self.H @ self
 
