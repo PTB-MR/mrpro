@@ -237,7 +237,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
     def from_diagonal(cls, *operators: LinearOperator):
         """Create a diagonal LinearOperatorMatrix.
 
-        Create a square LinearOperatorMatrix with the given Linear Operators on the diagonal,
+        Construct a square LinearOperatorMatrix with the given Linear Operators on the diagonal,
         resulting in a block-diagonal linear operator.
 
         Parameters

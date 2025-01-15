@@ -33,9 +33,9 @@ def split_idx(idx: torch.Tensor, np_per_block: int, np_overlap: int = 0, cyclic:
 
     Raises
     ------
-    ValueError
+    `ValueError`
         If the provided idx is not 1D
-    ValueError
+    `ValueError`
         If the overlap is smaller than the number of points per block
     """
     # Make sure idx is 1D

@@ -27,7 +27,7 @@ class L2NormSquared(ElementaryProximableFunctional):
     ) -> tuple[torch.Tensor]:
         """Forward method.
 
-        Compute the squared L2-norm of the input.
+        Compute the squared L2 norm of the input.
 
         Parameters
         ----------
@@ -36,7 +36,7 @@ class L2NormSquared(ElementaryProximableFunctional):
 
         Returns
         -------
-            squared l2 norm of the input tensor
+            squared L2 norm of the input tensor
         """
         value = (self.weight * (x - self.target)).abs().square()
 
@@ -52,7 +52,7 @@ class L2NormSquared(ElementaryProximableFunctional):
     ) -> tuple[torch.Tensor]:
         """Proximal Mapping of the squared L2 Norm.
 
-        Apply the proximal mapping of the squared L2-norm.
+        Apply the proximal mapping of the squared L2 norm.
 
         Parameters
         ----------
@@ -81,7 +81,7 @@ class L2NormSquared(ElementaryProximableFunctional):
     ) -> tuple[torch.Tensor]:
         """Convex conjugate of squared L2 Norm.
 
-        Apply the proximal mapping of the convex conjugate of the squared L2-norm.
+        Apply the proximal mapping of the convex conjugate of the squared L2 norm.
 
         Parameters
         ----------

@@ -36,7 +36,7 @@ class KTrajectoryCalculator(ABC):
 
         Raises
         ------
-        ValueError
+        `ValueError`
             Number of samples have to be the same for each readout
         """
         n_samples = torch.unique(kheader.acq_info.number_of_samples)

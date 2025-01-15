@@ -57,26 +57,28 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
     ) -> None:
         """Initialize RegularizedIterativeSENSEReconstruction.
 
-        For a unregularized version of the iterative SENSE algorithm the regularization_weight can be set to 0 or
-        IterativeSENSEReconstruction algorithm can be used.
+        For a unregularized version of the iterative SENSE algorithm the regularization_weight can be set to ``0``
+        or `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` algorithm can be used.
 
         Parameters
         ----------
         kdata
-            KData. If kdata is provided and fourier_op or dcf are None, then fourier_op and dcf are estimated based on
-            kdata. Otherwise fourier_op and dcf are used as provided.
+            If `kdata` is provided and `fourier_op` or `dcf` are `None`, then `fourier_op` and `dcf` are estimated
+            based on `kdata`. Otherwise `fourier_op` and `dcf` are used as provided.
         fourier_op
-            Instance of the FourierOperator used for reconstruction. If None, set up based on kdata.
+            Instance of the `~mrpro.operators.FourierOperator` used for reconstruction.
+            If `None`, set up based on `kdata`.
         csm
-            Sensitivity maps for coil combination. If None, no coil combination is carried out, i.e. images for each
+            Sensitivity maps for coil combination. If `None`, no coil combination is carried out, i.e. images for each
             coil are returned. If a callable is provided, coil images are reconstructed using the adjoint of the
-            FourierOperator (including density compensation) and then sensitivity maps are calculated using the
-            callable. For this, kdata needs also to be provided. For examples have a look at the CsmData class
-            e.g. from_idata_walsh or from_idata_inati.
+            `~mrpro.operators.FourierOperator` (including density compensation) and then sensitivity maps are calculated
+            using the callable. For this, `kdata` needs also to be provided.
+            For examples have a look at the `mrpro.data.CsmData` class e.g. `~mrpro.data.CsmData.from_idata_walsh`
+            or `~mrpro.data.from_idata_inati`.
         noise
-            KNoise used for prewhitening. If None, no prewhitening is performed
+            Noise used for prewhitening. If `None`, no prewhitening is performed
         dcf
-            K-space sampling density compensation. If None, set up based on kdata.
+            K-space sampling density compensation. If `None`, set up based on `kdata`.
         n_iterations
             Number of CG iterations
         regularization_data
@@ -87,11 +89,10 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
             Linear operator :math:`B` applied to the current estimate in the regularization term. If None, nothing is
             applied to the current estimate.
 
-
         Raises
         ------
-        ValueError
-            If the kdata and fourier_op are None or if csm is a Callable but kdata is None.
+        `ValueError`
+            If the `kdata` and `fourier_op` are `None` or if `csm` is a `Callable` but `kdata` is None.
         """
         super().__init__(kdata, fourier_op, csm, noise, dcf)
         self.n_iterations = n_iterations

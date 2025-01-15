@@ -16,11 +16,11 @@ class SliceProfileBase(abc.ABC, torch.nn.Module):
 
     @abc.abstractmethod
     def forward(self, x: Tensor) -> Tensor:
-        """Evaluate the slice profile at a position x."""
+        """Evaluate the slice profile at a position."""
         raise NotImplementedError
 
     def random_sample(self, size: Sequence[int]) -> Tensor:
-        """Sample n random positions from the profile.
+        """Sample `n` random positions from the profile.
 
         Use the profile as a probability density function to sample positions.
 

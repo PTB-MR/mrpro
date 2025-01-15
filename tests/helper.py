@@ -59,9 +59,9 @@ def dotproduct_adjointness_test(
 
     Raises
     ------
-    AssertionError
+    `AssertionError`
         if the adjointness property does not hold
-    AssertionError
+    `AssertionError`
         if the shape of operator(u) and v does not match
         if the shape of u and operator.H(v) does not match
 

@@ -1,3 +1,5 @@
+"""Functions for tensor shaping, unit conversion, typing, etc."""
+
 import mrpro.utils.slice_profiles
 import mrpro.utils.typing
 import mrpro.utils.unit_conversion

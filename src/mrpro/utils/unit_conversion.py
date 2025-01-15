@@ -18,7 +18,7 @@ __all__ = [
 ]
 
 GYROMAGNETIC_RATIO_PROTON = 42.58 * 1e6
-r"""The gyromagnetic ratio :math:`\frac{\gamma}{2\pi}` of 1H in H20 in Hz/T"""
+r"""The gyromagnetic ratio :math:`\frac{\gamma}{2\pi}` of 1H in H2O in Hz/T"""
 
 # Conversion functions for units
 T = TypeVar('T', float, torch.Tensor)

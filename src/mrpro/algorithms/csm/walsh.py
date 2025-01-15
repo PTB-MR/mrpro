@@ -9,12 +9,30 @@ from mrpro.utils.filters import uniform_filter
 def walsh(coil_images: torch.Tensor, smoothing_width: SpatialDimension[int] | int) -> torch.Tensor:
     """Calculate a coil sensitivity map (csm) using an iterative version of the Walsh method.
 
-    This is for a single set of coil images. The input should be a tensor with dimensions
-    (coils, z, y, x). The output will have the same dimensions.
-    Either apply this function individually to each set of coil images,
-    or see CsmData.from_idata_walsh which performs this operation on a whole dataset [WAL2000]_.
+    This function computes CSMs from a set of complex coil images assuming spatially
+    slowly changing sensitivity maps using Walsh's method [WAL2000]_.
 
-    This function is inspired by https://github.com/ismrmrd/ismrmrd-python-tools.
+    The algorithm follows these steps:
+
+    1. **Compute Pointwise Covariance**:
+       Calculate the covariance matrix of the coil images at each voxel to capture inter-coil signal relationships.
+
+    2. **Apply Smoothing Filter**:
+       Smooth the covariance matrices across spatial dimensions using a uniform filter of specified width
+       to reduce noise and enforce spatial consistency.
+
+    3. **Dominant Eigenvector Estimation via Power Iteration**:
+       Perform power iterations to approximate the dominant eigenvector of the covariance matrix at each voxel,
+       representing the principal component of the signal.
+
+    4. **Normalize Sensitivity Maps**:
+       Normalize the resulting eigenvectors to produce the final CSMs.
+
+    This function works on a single set of coil images. The input should be a tensor with dimensions
+    (coils, z, y, x). The output will have the same dimensions. Either apply this function individually to each set of
+    coil images, or see CsmData.from_idata_walsh which performs this operation on a whole dataset [WAL2000]_.
+
+    This implementation is inspired by `ismrmrd-python-tools <https://github.com/ismrmrd/ismrmrd-python-tools>`_.
 
     Parameters
     ----------

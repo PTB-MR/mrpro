@@ -29,14 +29,14 @@ class MonoExponentialDecay(SignalModel[torch.Tensor, torch.Tensor]):
         ----------
         m0
             equilibrium signal / proton density
-            with shape (... other, coils, z, y, x)
+            with shape `(*other, coils, z, y, x)`
         decay_constant
             exponential decay constant (e.g. T2, T2* or T1rho)
-            with shape (... other, coils, z, y, x)
+            with shape `(*other, coils, z, y, x)`
 
         Returns
         -------
-            signal with shape (time ... other, coils, z, y, x)
+            signal with shape `(time *other, coils, z, y, x)`
         """
         decay_time = unsqueeze_right(self.decay_time, m0.ndim - (self.decay_time.ndim - 1))  # -1 for time
         signal = m0 * torch.exp(-(decay_time / decay_constant))
