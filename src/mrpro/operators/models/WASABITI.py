@@ -51,7 +51,7 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
 
         if recovery_time.shape != offsets.shape:
             raise ValueError(
-                f'Shape of trec ({recovery_time.shape}) and offsets ({offsets.shape}) needs to be the same.'
+                f'Shape of recovery_time ({recovery_time.shape}) and offsets ({offsets.shape}) needs to be the same.'
             )
 
         # nn.Parameters allow for grad calculation
@@ -83,11 +83,11 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         """
         delta_ndim = b0_shift.ndim - (self.offsets.ndim - 1)  # -1 for offset
         offsets = unsqueeze_right(self.offsets, delta_ndim)
-        trec = unsqueeze_right(self.recovery_time, delta_ndim)
+        recovery_time = unsqueeze_right(self.recovery_time, delta_ndim)
 
         b1 = self.b1_nominal * relative_b1
         da = offsets - b0_shift
-        mz_initial = 1.0 - torch.exp(-trec / t1)
+        mz_initial = 1.0 - torch.exp(-recovery_time / t1)
 
         signal = mz_initial * (
             1
