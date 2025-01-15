@@ -375,8 +375,19 @@ show_images(idat_us.rss().squeeze(), idat_us_csm.rss().squeeze(), titles=['Autoc
 
 # %% [markdown]
 # As expected, we still see undersampling artifacts in the image. In order to get rid of them,
-# we try can a more sophiisticated reconstruction method, such as the *iterative SENSE algorithm*.
+# we try can a more sophisticated reconstruction method, such as the *iterative SENSE algorithm*.
 # As you might have guessed, these are also included in MRpro:
 # Instead of the `~mrpro.algorithms.reconstruction.DirectReconstruction`,
-# we can use `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`, which is explained in
-# the example <project:iterative_sense_reconstruction_radial2D.ipynb>.
+# we can use `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`:
+# %%
+sense_recon_us = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
+    kdata_us,
+    csm=direct_recon_calib_lines.csm,
+    n_iterations=8,
+)
+idat_us_sense = sense_recon_us(kdata_us)
+show_images(idat_us.rss().squeeze(), idat_us_sense.rss().squeeze(), titles=['Direct Reconstruction', 'Iterative SENSE'])
+# %% [markdown]
+# More information about the iterative SENSE reconstruction and its implementation in MRpro can be found in the examples
+# <project:iterative_sense_reconstruction_radial2D.ipynb> and
+# <project:iterative_sense_reconstruction_with_regularization>.
