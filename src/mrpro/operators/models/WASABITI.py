@@ -86,13 +86,13 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         recovery_time = unsqueeze_right(self.recovery_time, delta_ndim)
 
         b1 = self.b1_nominal * relative_b1
-        da = offsets - b0_shift
+        delta_b0 = offsets - b0_shift
         mz_initial = 1.0 - torch.exp(-recovery_time / t1)
 
         signal = mz_initial * (
             1
             - 2
             * (torch.pi * b1 * self.gamma * self.rf_duration) ** 2
-            * torch.sinc(self.rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + da**2)) ** 2
+            * torch.sinc(self.rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + delta_b0**2)) ** 2
         )
         return (signal,)
