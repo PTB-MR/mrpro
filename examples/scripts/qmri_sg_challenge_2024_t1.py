@@ -126,12 +126,13 @@ dot_product = einops.einsum(
 idx_best_match = dot_product.abs().argmax(dim=0)
 t1_start = t1_dictionary[idx_best_match]
 
-# %%
+# %% [markdown]
 # The maximum absolute value observed is a good approximation for m0
+# %%
 m0_start = idata_multi_ti.data.abs().amax(dim=0)
 
-# %%
-# Visualize the starting values
+# %% [markdown]
+# #### Visualize the starting values
 fig, axes = plt.subplots(1, 2, figsize=(6, 2), squeeze=False)
 
 im = axes[0, 0].imshow(m0_start[0, 0])
@@ -144,18 +145,28 @@ axes[0, 1].set_title('$T_1$ start values')
 axes[0, 1].set_axis_off()
 fig.colorbar(im, ax=axes[0, 1], label='s')
 
+plt.show()
 
 # %% [markdown]
 # ### Carry out fit
+# We are now ready to carry out the fit. We are going to use the `~mrpro.algorithms.optimizers.adam` optimizer.
+# If there is a GPU available, we can use it ny moving both the data and the model to the GPU.
 
 # %%
+# Move initial values and model to GPU if available
+if torch.cuda.is_available():
+    print('Using GPU')
+    functional.cuda()
+    m0_start = m0_start.cuda()
+    t1_start = t1_start.cuda()
+
 # Hyperparameters for optimizer
 max_iter = 2000
 lr = 1e-1
 
 # Run optimization
-params_result = mrpro.algorithms.optimizers.adam(functional, [m0_start, t1_start], max_iter=max_iter, lr=lr)
-m0, t1 = (p.detach() for p in params_result)
+result = mrpro.algorithms.optimizers.adam(functional, [m0_start, t1_start], max_iter=max_iter, lr=lr)
+m0, t1 = (p.detach().cpu() for p in result)
 
 # %% [markdown]
 # ### Visualize the final results
@@ -191,4 +202,4 @@ axes[0, 2].set_title('Relative error')
 axes[0, 2].set_axis_off()
 fig.colorbar(im, ax=axes[0, 2])
 
-# %%
+plt.show()
