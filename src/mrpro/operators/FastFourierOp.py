@@ -29,6 +29,11 @@ class FastFourierOp(LinearOperator):
     first `torch.fft.ifftshift`, then `torch.fft.fftn` or `torch.fft.ifftn`,
     finally `torch.fft.ifftshift` is applied.
 
+    .. note::
+       See also `~mrpro.operators.FourierOp` for a Fourier operator that handles
+       automatic sorting of the k-space data based on a trajectory.
+
+
     References
     ----------
     .. [FFT] FFT https://numpy.org/doc/stable/reference/routines.fft.html
