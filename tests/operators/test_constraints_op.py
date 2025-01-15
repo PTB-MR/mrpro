@@ -17,7 +17,7 @@ from tests import RandomGenerator, autodiff_test
         ((-torch.inf, torch.inf),),  # case (-5, 5)
     ],
 )
-def test_constraints_operator_bounds(bounds):
+def test_constraints_operator_bounds(bounds, beta):
     random_generator = RandomGenerator(seed=0)
 
     # random tensor with arbitrary values
@@ -82,7 +82,7 @@ def test_constraints_operator_inverse(bounds, beta):
         ((-1.0, None),),  # case (1, \infty)
     ],
 )
-def test_constraints_operator_no_nans(bounds):
+def test_constraints_operator_no_nans(bounds, beta):
     """Tests if the operator always returns valid values, never nans."""
 
     random_generator = RandomGenerator(seed=0)
