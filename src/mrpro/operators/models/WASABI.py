@@ -18,7 +18,7 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         gamma: float | torch.Tensor = 42.5764,
         larmor_frequency: float | torch.Tensor = 127.7292,
     ) -> None:
-        """Initialize `WASABI` signal model for mapping of B0 and B1 [SCHU2016]_.
+        """Initialize WASABI signal model for mapping of B0 and B1 [SCHU2016]_.
 
         Parameters
         ----------

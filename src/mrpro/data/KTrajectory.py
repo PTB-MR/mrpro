@@ -22,7 +22,7 @@ class KTrajectory(MoveDataMixin):
     i.e. describes where in k-space each data point was acquired.
 
     The shape of each of `kx`, `ky`, `kz` is `(*other, k2, k1, k0)`,
-    where other can span multiple dimensions.
+    where `other` can span multiple dimensions.
 
     Example for 2D-Cartesian trajectories:
 

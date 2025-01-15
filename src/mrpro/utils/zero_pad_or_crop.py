@@ -43,8 +43,9 @@ def zero_pad_or_crop(
         data
     new_shape
         desired shape of data
-    dim:
-        dimensions the new_shape corresponds to. None (default) is interpreted as last len(new_shape) dimensions.
+    dim
+        dimensions the `new_shape` corresponds to.
+        `None` (default) is interpreted as last ``len(new_shape)`` dimensions.
 
     Returns
     -------

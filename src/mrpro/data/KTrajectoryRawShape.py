@@ -17,7 +17,7 @@ from mrpro.data.SpatialDimension import SpatialDimension
 class KTrajectoryRawShape(MoveDataMixin):
     """K-space trajectory shaped `((other*k2*k1), k0)`.
 
-    Contains the k-space trajectory, i.e. a description of where in k-space each data point was acquired,
+    Contains the k-space trajectory, i.e. a description of where data point was acquired in k-space,
     in the raw shape as it is read from the data file, before any reshaping or sorting by indices is applied.
     The shape of each of `kx`, `ky`,` kz` is `((other*k2*k1), k0)`,
     this means that e.g. slices, averages... have not yet been separated from the phase and slice encoding dimensions.
@@ -89,15 +89,14 @@ class KTrajectoryRawShape(MoveDataMixin):
     ) -> KTrajectory:
         """Resort and reshape the raw trajectory to KTrajectory.
 
-        This function is used to sort the raw trajectory and reshape it to an `mrpro.daa.KTrajectory`
-        by separating the combined dimension (other k2 k1) into three separate dimensions.
+        This function is used to sort the raw trajectory and reshape it to an `mrpro.data.KTrajectory`
+        by separating the combined dimension `(other k2 k1)` into three separate dimensions.
 
         Parameters
         ----------
         sort_idx
-            Index which defines how combined dimension (other k2 k1) needs to be sorted such that it can be separated
-            into three separate dimensions using simple reshape operation. This information needs to be provided from
-            kheader.acq_info.
+            Index which defines how combined dimension `(other k2 k1)` needs to be sorted such that it can be separated
+            into three separate dimensions using a reshape operation.
         n_k2
             number of k2 points.
         n_k1
@@ -105,7 +104,7 @@ class KTrajectoryRawShape(MoveDataMixin):
 
         Returns
         -------
-            KTrajectory with kx, ky and kz each in the shape (other k2 k1 k0).
+            KTrajectory with kx, ky and kz each in the shape `(other k2 k1 k0)`.
         """
         # Resort and reshape
         kz = rearrange(self.kz[sort_idx, ...], '(other k2 k1) k0 -> other k2 k1 k0', k1=n_k1, k2=n_k2)
