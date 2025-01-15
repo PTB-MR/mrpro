@@ -390,4 +390,4 @@ show_images(idat_us.rss().squeeze(), idat_us_sense.rss().squeeze(), titles=['Dir
 # %% [markdown]
 # More information about the iterative SENSE reconstruction and its implementation in MRpro can be found in the examples
 # <project:iterative_sense_reconstruction_radial2D.ipynb> and
-# <project:iterative_sense_reconstruction_with_regularization>.
+# <project:iterative_sense_reconstruction_with_regularization.ipynb>.
