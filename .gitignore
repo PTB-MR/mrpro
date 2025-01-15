@@ -92,7 +92,6 @@ instance/
 # Sphinx documentation
 docs/_build/
 docs/source/_notebooks/*
-!docs/source/_static/favicon/*.png
 
 # PyBuilder
 .pybuilder/
