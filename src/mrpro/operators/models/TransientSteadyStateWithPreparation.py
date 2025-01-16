@@ -101,7 +101,7 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
 
         Returns
         -------
-            signal with shape `(time *other, coils, z, y, x)`
+            signal with shape `(time, *other, coils, z, y, x)`
         """
         m0_ndim = m0.ndim
 
