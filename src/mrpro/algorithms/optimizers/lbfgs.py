@@ -53,11 +53,10 @@ def lbfgs(
     References
     ----------
     .. [NOC1980] Nocedal, J. (1980). "Updating quasi-Newton matrices with limited storage."
-       *Mathematics of Computation*, 35(151), 773-782.
-       `10.1090/S0025-5718-1980-0572855-7<https://doi.org/10.1090/S0025-5718-1980-0572855-7>_`
+       *Mathematics of Computation*, 35(151), 773-782. https://doi.org/10.1090/S0025-5718-1980-0572855-7
     .. [LIU1989] Liu, D. C., & Nocedal, J. (1989). "On the limited memory BFGS method for large scale optimization."
-       *Mathematical Programming*, 45(1-3), 503-528. `10.1007/BF01589116<https://doi.org/10.1007/BF01589116>_`
-    .. [WIKI] Wikipedia: `Limited-memory_BFGS <https://en.wikipedia.org/wiki/Limited-memory_BFGS>`_
+       *Mathematical Programming*, 45(1-3), 503-528. https://doi.org/10.1007/BF01589116
+    .. [WIKI] Wikipedia: Limited-memory_BFGS https://en.wikipedia.org/wiki/Limited-memory_BFGS
 
 
     Parameters
