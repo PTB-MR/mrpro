@@ -19,7 +19,7 @@ def dcf_1d(traj: torch.Tensor) -> torch.Tensor:
     """Calculate sample density compensation function for 1D trajectory.
 
     This function operators on a single `other` sample.
-    See also `~mrpro.data.DCFData` and `mrpro.utils.smap`
+    See also `~mrpro.data.DcfData` and `mrpro.utils.smap`
 
     Parameters
     ----------
@@ -72,7 +72,7 @@ def dcf_2d3d_voronoi(traj: torch.Tensor) -> torch.Tensor:
     DCF is then computed based on the inverse of the area of these regions.
 
     This function operators on a single `other` sample.
-    See also `~mrpro.data.DCFData` and `mrpro.utils.smap`
+    See also `~mrpro.data.DcfData` and `mrpro.utils.smap`
 
     Parameters
     ----------
