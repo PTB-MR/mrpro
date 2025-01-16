@@ -44,6 +44,9 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 #
 # In this case, we have a Cartesian acquisition. This means that we only need to provide a Cartesian trajectory
 # calculator `~mrpro.data.traj_calculators.KTrajectoryCartesian` without any further parameters.
+#
+# See <project:comparison_trajectory_calculators.ipynb> for more information about different ways to
+# define the trajectory.
 
 # %%
 import mrpro
