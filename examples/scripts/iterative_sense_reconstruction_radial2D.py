@@ -110,7 +110,7 @@ img = iterative_sense_reconstruction(kdata)
 # %% [markdown]
 # ## Set up density compensation operator $W$
 # We create a density compensation operator $W$ for weighting the loss. We use
-# Voronoi tesselation of the trajectory to calculate the `~mrpro.data.DcfData`.
+# Voronoi tessellation of the trajectory to calculate the `~mrpro.data.DcfData`.
 #
 # ```{note}
 # Using a weighted loss in iterative SENSE is not necessary, and there has been some discussion about

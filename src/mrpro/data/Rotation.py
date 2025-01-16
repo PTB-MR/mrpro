@@ -1768,8 +1768,8 @@ class Rotation(torch.nn.Module):
 
         where :math:`w_i`'s are the `weights` corresponding to each vector.
 
-        The rotation is estimated with Kabsch algorithm [1]_, and solves what
-        is known as the "pointing problem", or "Wahba's problem" [2]_.
+        The rotation is estimated with Kabsch algorithm [KAB]_, and solves what
+        is known as the "pointing problem", or "Wahba's problem" [WAH]_.
 
         There are two special cases. The first is if a single vector is given
         for `a` and `b`, in which the shortest distance rotation that aligns
@@ -1781,7 +1781,7 @@ class Rotation(torch.nn.Module):
         of these two rotations. The result via this process is the same as the
         Kabsch algorithm as the corresponding weight approaches infinity in
         the limit. For a single secondary vector this is known as the
-        "align-constrain" algorithm [3]_.
+        "align-constrain" algorithm [MAG2018]_.
 
         For both special cases (single vectors or an infinite weight), the
         sensitivity matrix does not have physical meaning and an error will be
@@ -1822,12 +1822,10 @@ class Rotation(torch.nn.Module):
 
         References
         ----------
-        .. [1] https://en.wikipedia.org/wiki/Kabsch_algorithm
-        .. [2] https://en.wikipedia.org/wiki/Wahba%27s_problem
-        .. [3] Magner, Robert,
-                "Extending target tracking capabilities through trajectory and
-                momentum setpoint optimization." Small Satellite Conference,
-                2018.
+        .. [KAB] https://en.wikipedia.org/wiki/Kabsch_algorithm
+        .. [WAH] https://en.wikipedia.org/wiki/Wahba%27s_problem
+        .. [MAG2018] Magner R (2018), Extending target tracking capabilities through trajectory and momentum setpoint
+           optimization. Small Satellite Conference.
         """
         a_tensor = torch.stack([torch.as_tensor(el) for el in a]) if isinstance(a, Sequence) else torch.as_tensor(a)
         b_tensor = torch.stack([torch.as_tensor(el) for el in b]) if isinstance(b, Sequence) else torch.as_tensor(b)
