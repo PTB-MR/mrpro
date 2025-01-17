@@ -24,7 +24,7 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
 
     - Part B: Commonly after an inversion pulse a strong spoiler gradient is played out to compensate for non-perfect
       inversion. During this time the magnetization :math:`M_z(t)` follows the signal model:
-      :math:`M_z(t) = M_0 + (s * M_0 - M_0)e^{(-t / T1)}` where :math:`s` is ``m0_scaling_preparation``.
+      :math:`M_z(t) = M_0 + (s * M_0 - M_0)e^{(-t / T1)}` where :math:`s` is `m0_scaling_preparation`.
 
     - Part C: After the spoiler gradient the data acquisition starts and the magnetization :math:`M_z(t)` can be
       described by the signal model: :math:`M_z(t) = M_0^* + (M_{init} - M_0^*)e^{(-t / T1^*)}`
@@ -101,7 +101,7 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
 
         Returns
         -------
-            signal with shape `(time *other, coils, z, y, x)`
+            signal with shape `(time, *other, coils, z, y, x)`
         """
         m0_ndim = m0.ndim
 

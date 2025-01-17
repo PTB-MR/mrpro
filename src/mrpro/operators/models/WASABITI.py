@@ -79,7 +79,7 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
 
         Returns
         -------
-            signal with shape `(offsets *other, coils, z, y, x)`
+            signal with shape `(offsets, *other, coils, z, y, x)`
         """
         delta_ndim = b0_shift.ndim - (self.offsets.ndim - 1)  # -1 for offset
         offsets = unsqueeze_right(self.offsets, delta_ndim)
