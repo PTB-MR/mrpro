@@ -181,8 +181,7 @@ def callback(optimizer_status: PDHGStatus) -> None:
         print(f"Iteration {iteration: >3}: Objective = {optimizer_status['objective'](*solution).item():.3e}")
 
 
-# %%
-# %%
+# %% tags=["scroll-output"]
 (img_pdhg_24,) = mrpro.algorithms.optimizers.pdhg(
     f=f,
     g=g,
@@ -195,6 +194,7 @@ def callback(optimizer_status: PDHGStatus) -> None:
 # %%
 # ### Compare the results
 # %% tags=["hide-cell"]
+# mystnb={"code_prompt_show": "Import Python libraries"}
 import matplotlib.pyplot as plt
 import torch
 
