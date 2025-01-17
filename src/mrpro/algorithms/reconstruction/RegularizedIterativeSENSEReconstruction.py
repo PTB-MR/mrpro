@@ -125,9 +125,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
 
         # Add regularization
         if not torch.all(self.regularization_weight == 0):
-            operator = operator + IdentityOp() @ (
-                self.regularization_weight * self.regularization_op.H @ self.regularization_op
-            )
+            operator = operator + self.regularization_weight * self.regularization_op.H @ self.regularization_op
             right_hand_side += self.regularization_weight * self.regularization_op.H(self.regularization_data)[0]
 
         img_tensor = cg(
