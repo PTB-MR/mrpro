@@ -1,4 +1,4 @@
-"""Regularized Iterative SENSE Reconstruction by adjoint Fourier transform."""
+"""Regularized Iterative SENSE Reconstruction."""
 
 from __future__ import annotations
 
@@ -22,11 +22,11 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
     r"""Regularized iterative SENSE reconstruction.
 
     This algorithm solves the problem :math:`min_x \frac{1}{2}||W^\frac{1}{2} (Ax - y)||_2^2 +
-    \frac{1}{2}L||Bx - x_0||_2^2`
+    \frac{1}{2}l||Bx - x_0||_2^2`
     by using a conjugate gradient algorithm to solve
-    :math:`H x = b` with :math:`H = A^H W A + L B` and :math:`b = A^H W y + L x_0` where :math:`A`
+    :math:`H x = b` with :math:`H = A^H W A + l B^H B` and :math:`b = A^H W y + l B^H x_0` where :math:`A`
     is the acquisition model (coil sensitivity maps, Fourier operator, k-space sampling), :math:`y` is the acquired
-    k-space data, :math:`W` describes the density compensation, :math:`L` is the strength of the regularization and
+    k-space data, :math:`W` describes the density compensation, :math:`l` is the strength of the regularization and
     :math:`x_0` is the regularization image (i.e. the prior). :math:`B` is a linear operator applied to :math:`x`.
     """
 
@@ -37,7 +37,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
     """Regularization data (i.e. prior) :math:`x_0`."""
 
     regularization_weight: torch.Tensor
-    """Strength of the regularization :math:`L`."""
+    """Strength of the regularization :math:`l`."""
 
     regularization_op: LinearOperator
     """Linear operator :math:`B` applied to the current estimate in the regularization term."""
@@ -82,7 +82,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         regularization_data
             Regularization data, e.g. a reference image (:math:`x_0`).
         regularization_weight
-            Strength of the regularization (:math:`L`).
+            Strength of the regularization (:math:`l`).
         regularization_op
             Linear operator :math:`B` applied to the current estimate in the regularization term. If None, nothing is
             applied to the current estimate.
