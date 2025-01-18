@@ -37,7 +37,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
     """Regularization data (i.e. prior) :math:`x_0`."""
 
     regularization_weight: torch.Tensor
-    """Strength of the regularization :math:`\lambda`."""
+    r"""Strength of the regularization :math:`\lambda`."""
 
     regularization_op: LinearOperator
     """Linear operator :math:`B` applied to the current estimate in the regularization term."""
@@ -55,7 +55,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         regularization_weight: float | torch.Tensor,
         regularization_op: LinearOperator | None = None,
     ) -> None:
-        """Initialize RegularizedIterativeSENSEReconstruction.
+        r"""Initialize RegularizedIterativeSENSEReconstruction.
 
         For a unregularized version of the iterative SENSE algorithm the regularization_weight can be set to 0 or
         IterativeSENSEReconstruction algorithm can be used.
