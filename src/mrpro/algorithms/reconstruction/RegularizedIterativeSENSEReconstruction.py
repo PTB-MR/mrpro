@@ -26,8 +26,8 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
     by using a conjugate gradient algorithm to solve
     :math:`H x = b` with :math:`H = A^H W A + \lambda B^H B` and :math:`b = A^H W y + \lambda B^H x_0` where :math:`A`
     is the acquisition model (coil sensitivity maps, Fourier operator, k-space sampling), :math:`y` is the acquired
-    k-space data, :math:`W` describes the density compensation, :math:`\lambda` is the strength of the regularization and
-    :math:`x_0` is the regularization image (i.e. the prior). :math:`B` is a linear operator applied to :math:`x`.
+    k-space data, :math:`W` describes the density compensation, :math:`\lambda` is the strength of the regularization
+    and :math:`x_0` is the regularization image (i.e. the prior). :math:`B` is a linear operator applied to :math:`x`.
     """
 
     n_iterations: int
