@@ -82,7 +82,7 @@ class ConstraintsOp(EndomorphOperator):
     @staticmethod
     def softplus_inverse(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
         """Inverse of 'softplus_transformation."""
-        return beta * x + torch.log(-torch.expm1(-beta * x))
+        return x + torch.log(-torch.expm1(-beta * x)) / beta
 
     @endomorph
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
