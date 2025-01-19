@@ -183,13 +183,13 @@ m0, t1 = (p.detach().cpu() for p in result)
 # %%
 error = model(m0, t1)[0] - idata_multi_ti.data
 relative_absolute_error = error.abs().sum(dim=0) / (idata_multi_ti.data.abs().sum(dim=0) + 1e-9)
-fig, axes = plt.subplots(1, 3, figsize=(10, 2), squeeze=False)
 
 mask = torch.isnan(t1) | (m0 < 500)
 m0[mask] = 0
 t1[mask] = 0
 relative_absolute_error[mask] = 0
 
+fig, axes = plt.subplots(1, 3, figsize=(10, 2), squeeze=False)
 im = axes[0, 0].imshow(m0[0, 0])
 axes[0, 0].set_title('$M_0$')
 axes[0, 0].set_axis_off()
@@ -200,9 +200,11 @@ axes[0, 1].set_title('$T_1$')
 axes[0, 1].set_axis_off()
 fig.colorbar(im, ax=axes[0, 1], label='s')
 
-im = axes[0, 2].imshow(relative_absolute_error[0, 0], vmin=0, vmax=1.0)
+im = axes[0, 2].imshow(relative_absolute_error[0, 0], vmin=0, vmax=0.1)
 axes[0, 2].set_title('Relative error')
 axes[0, 2].set_axis_off()
 fig.colorbar(im, ax=axes[0, 2])
 
 plt.show()
+
+# %%
