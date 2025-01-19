@@ -27,7 +27,7 @@
 
 
 # %% [markdown]
-# # Using `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`
+# ## Using `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`
 # First, we demonstrate the use of `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`, before we
 # peek behind the scenes and implement the reconstruction manually.
 #
@@ -43,7 +43,7 @@
 
 
 # %% tags=["hide-cell"]
-# Download raw data from Zenodo
+# ### Download raw data from Zenodo
 import tempfile
 from pathlib import Path
 
@@ -72,7 +72,7 @@ direct_reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kda
 img_direct = direct_reconstruction(kdata)
 
 # %% [markdown]
-# ## Setting up the iterative SENSE reconstruction
+# ### Setting up the iterative SENSE reconstruction
 # Now let's use the `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` class to reconstruct the image
 # using the iterative SENSE algorithm.
 #
@@ -94,7 +94,7 @@ iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSER
     n_iterations=4,
 )
 # %% [markdown]
-# ## Run the reconstruction
+# ### Run the reconstruction
 # We now run the reconstruction using ``iterative_sense_reconstruction`` object. We just need to pass the k-space data
 # and obtain the reconstructed image as `~mrpro.data.IData` object.
 # %%
@@ -102,13 +102,13 @@ img = iterative_sense_reconstruction(kdata)
 
 # %% [markdown]
 # %% [markdown]
-# # Behind the scenes
+# ## Behind the scenes
 # We now peek behind the scenes to see how the iterative SENSE reconstruction is implemented. We perform all steps
 # `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` does when initialized with only an `~mrpro.data.KData`
 # object, i.e., we need to set up a Fourier operator, estimate coil sensitivity maps, and the density weighting.
 # without reusing any thing from `direct_reconstruction`.
 # %% [markdown]
-# ## Set up density compensation operator $W$
+# ### Set up density compensation operator $W$
 # We create a density compensation operator $W$ for weighting the loss. We use
 # Voronoi tessellation of the trajectory to calculate the `~mrpro.data.DcfData`.
 #
@@ -122,7 +122,7 @@ dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata.traj).as_operator()
 
 
 # %% [markdown]
-# ## Set up the acquisition model $A$
+# ### Set up the acquisition model $A$
 # We need `~mrpro.operators.FourierOp` and `~mrpro.operators.SensitivityOp` operators to set up the acquisition model
 # $A$. The Fourier operator is created from the trajectory and header information in `kdata`:
 # %%
@@ -146,21 +146,21 @@ csm_operator = csm_data.as_operator()
 acquisition_operator = fourier_operator @ csm_operator
 
 # %% [markdown]
-# ## Calculate the right-hand-side of the linear system
+# ### Calculate the right-hand-side of the linear system
 # Next, we need to calculate $b = A^H W y$.
 
 # %%
 (right_hand_side,) = (acquisition_operator.H @ dcf_operator)(kdata.data)
 
 # %% [markdown]
-# ## Set-up the linear self-adjoint operator $H$
+# ### Set-up the linear self-adjoint operator $H$
 # We setup $H = A^H W A$, using the ``dcf_operator`` and ``acquisition_operator``.
 
 # %%
 operator = acquisition_operator.H @ dcf_operator @ acquisition_operator
 
 # %% [markdown]
-# ## Run conjugate gradient
+# ### Run conjugate gradient
 # Finally, we solve the linear system $Hx = b$ using the conjugate gradient method.
 # Again, we use early stopping after 4 iterations. Instead, we could also use a tolerance
 # to stop the iterations when the residual is below a certain threshold.
@@ -171,7 +171,7 @@ img_manual = mrpro.algorithms.optimizers.cg(
 )
 
 # %% [markdown]
-# # Display the results
+# ## Display the results
 # We can now compare the results of the iterative SENSE reconstruction with the direct reconstruction.
 # Both versions, the one using the `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` class
 # and the manual implementation should result in identical images.
@@ -193,7 +193,6 @@ def show_images(*images: torch.Tensor, titles: list[str] | None = None) -> None:
 
 
 # %%
-# Display the reconstructed image
 show_images(
     img_direct.rss()[0, 0],
     img.rss()[0, 0],
@@ -207,8 +206,8 @@ show_images(
 # If the assert statement did not raise an exception, the results are equal.
 assert torch.allclose(img.data, img_manual)
 # %% [markdown]
-# ### Next steps
-# We can also reconstruct undeersampled data: You can replace the filename above to use a dataset with fewer spokes to
+# ## Next steps
+# We can also reconstruct undersampled data: You can replace the filename above to use a dataset with fewer spokes to
 # try it out.\
 # If you want to see how to include a regularization term in the optimization problem,
 # see the example in <project:iterative_sense_reconstruction_with_regularization.ipynb>.
