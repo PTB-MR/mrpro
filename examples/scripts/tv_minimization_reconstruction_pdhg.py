@@ -3,8 +3,7 @@
 
 # %% [markdown]
 # ### Image reconstruction
-# Here, we use the Primal Dual Hybrid Gradient (PDHG) algorithm to reconstruct an image from 2D radial k-space data
-# data.
+# Here, we use the Primal Dual Hybrid Gradient (PDHG) algorithm to reconstruct an image from 2D radial k-space data.
 #
 # Let $y$ denote the k-space data of the image $x_{\mathrm{true}}$ sampled with an acquisition model $A$
 # (Fourier transform, coil sensitivity maps, ...), i.e the forward problem is given as
@@ -115,8 +114,9 @@ sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruct
 )
 img_sense_24 = sense_reconstruction(kdata_24spokes)
 
+# %% [markdown]
 # ### Set up the operator $A$
-# Now, to set up the Problem, we need to define the acquisition operator $A$, consisting of a
+# Now, to set up the problem, we need to define the acquisition operator $A$, consisting of a
 # `~mrpro.operators.FourierOp` and a `~mrpro.operators.SensitivityOp`, which applies the coil sensitivity maps
 # (CSM) to the image. We reuse the CSMs estimated in the direct reconstruction.
 # %%
@@ -192,7 +192,7 @@ def callback(optimizer_status: PDHGStatus) -> None:
     callback=callback,
 )
 
-# %%
+# %% [markdown]
 # ### Compare the results
 # %% tags=["hide-cell"]
 import matplotlib.pyplot as plt
@@ -225,7 +225,7 @@ show_images(
 # Hurrah! We have successfully reconstructed an image from 24 spokes using TV-minimization.
 #
 # ### Next steps
-# Play around with the regularization weight and the number of iterations to see how they affect the final image.
+# In the above example we used quite a high regularization weight $\lambda$. Play around with the regularization weight and the number of iterations to see how they affect the final image.
 # You can also try to use the 96 spokes data to see how the reconstruction quality improves with more spokes.
 
 # %%
