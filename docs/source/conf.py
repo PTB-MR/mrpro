@@ -55,6 +55,7 @@ myst_enable_extensions = [
     "dollarmath",
 ]
 nb_execution_mode = "off"
+nb_merge_streams = True
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
