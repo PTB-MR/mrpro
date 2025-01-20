@@ -18,7 +18,7 @@
 #
 # The minimization of the functional $\mathcal{F}$ is a non-trivial task due to the presence of the operator
 # $\nabla$ in the non-differentiable $\ell_1$-norm. A suitable algorithm to solve the problem is the
-# PDHG-algorithm [Chambolle \& Pock, JMIV 2011](https://doi.org/10.1007%2Fs10851-010-0251-1).\
+# PDHG-algorithm [[Chambolle \& Pock, JMIV 2011](https://doi.org/10.1007%2Fs10851-010-0251-1)].\
 # PDHG is a method for solving problems of the form
 #
 # $ \min_x f(K(x)) + g(x)  \quad \quad \quad (2)$
