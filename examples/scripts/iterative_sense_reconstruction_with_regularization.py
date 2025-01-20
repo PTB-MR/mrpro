@@ -3,7 +3,7 @@
 # Here we use the `~mrpro.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction` class to reconstruct
 # undersampled images from 2D radial data.
 
-# %% tags=["hide-cell"]
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
 # Download raw data from Zenodo
 import tempfile
 from pathlib import Path
@@ -123,7 +123,7 @@ img_us_regularized_iterative_sense = regularized_iterative_sense_reconstruction(
 # Besides the fully sampled image, we display two undersampled images:
 # The first one is obtained by unregularized iterative SENSE, the second one using regularization.
 
-# %% tags=["hide-cell"]
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
 import matplotlib.pyplot as plt
 import torch
 

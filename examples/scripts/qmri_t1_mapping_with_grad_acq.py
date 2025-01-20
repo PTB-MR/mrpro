@@ -56,7 +56,7 @@
 # - Split the data into multiple dynamics and reconstruct these dynamic images
 # - Define a signal model and a loss function to obtain the $T_1$ maps
 #
-# %% tags=["hide-cell"]
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
 # Download raw data in ISMRMRD format from zenodo into a temporary directory
 import tempfile
 from pathlib import Path

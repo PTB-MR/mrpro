@@ -17,7 +17,7 @@
 # This can be done by passing a `~mrpro.data.traj_calculators.KTrajectoryIsmrmrd` object to
 # `~mrpro.data.KData.from_file` when loading creating the `~mrpro.data.KData`.
 
-# %% tags=["hide-cell"]
+# %% tags=["hide-cell"]  mystnb={"code_prompt_show": "Show download details"}
 # Download raw data from Zenodo
 import tempfile
 from pathlib import Path

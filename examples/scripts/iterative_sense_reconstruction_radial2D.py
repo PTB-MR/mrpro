@@ -39,7 +39,7 @@
 #
 # We use the 402 spokes dataset for the reconstruction.
 
-# %% tags=["hide-cell"]
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
 # ### Download raw data from Zenodo
 import tempfile
 from pathlib import Path
@@ -180,7 +180,7 @@ img_manual = mrpro.algorithms.optimizers.cg(
 # Both versions, the one using the `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` class
 # and the manual implementation should result in identical images.
 
-# %% tags=["hide-cell"]
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
 import matplotlib.pyplot as plt
 import torch
 

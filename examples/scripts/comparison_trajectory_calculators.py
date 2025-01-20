@@ -7,7 +7,7 @@
 # - calculating the trajectory from the pulseq sequence file using the PyPulseq trajectory calculator
 
 
-# %% tags=["hide-cell"]
+# %% tags=["hide-cell"]  mystnb={"code_prompt_show": "Show download details"}
 # Download raw data from Zenodo
 import tempfile
 from pathlib import Path
@@ -89,7 +89,7 @@ img_using_pulseq_traj = reconstruction(kdata)
 # %% [markdown]
 # ### Plot the different reconstructed images
 # All three images are reconstructed using the same raw data and should look almost identical.
-# %% tags=["hide-cell"]
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
 import matplotlib.pyplot as plt
 import torch
 

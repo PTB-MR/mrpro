@@ -40,7 +40,7 @@ idata_multi_ti = mrpro.data.IData.from_dicom_files(ti_dicom_files)
 if idata_multi_ti.header.ti is None:
     raise ValueError('Inversion times need to be defined in the DICOM files.')
 
-# %% tags=["hide-cell"]
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
 import matplotlib.pyplot as plt
 import torch
 
