@@ -64,7 +64,7 @@ repos:
           "colab": {"gpuType": "T4","provenance": []},
           "kernelspec": {"display_name": "Python 3 (ipykernel)","language": "python","name": "python3"}
         }'
-        --opt cell_metadata_filter=tags,mystnb,-all
+        --opt cell_metadata_filter=mystnb,tags,-all
        always_run: true
        pass_filenames: true
        files: ^examples/scripts/.*py
