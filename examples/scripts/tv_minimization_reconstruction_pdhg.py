@@ -118,21 +118,8 @@ acquisition_operator = fourier_operator @ csm_operator
 # %% [markdown]
 # ### Recast the problem to be able to apply PDHG
 # To apply the PDHG algorithm, we need to recast the problem into the form of (2). We need to identify
-# the functionals $f$ and $g$ and the operator $K$.
-# A possible identification would be the following
-#
-# $f(x) = \lambda \| x\|_1,$
-#
-# $g(x) = \frac{1}{2}\|Ax  - y\|_2^2,$
-#
-# $K(x) = \nabla x.$
-#
-# However, although $\mathrm{prox}_{\sigma f^\ast}$ has a simple form, calculations show that
-# to be able to compute $\mathrm{prox}_{\tau g}$, one would need to solve a linear system at each
-# iteration. Thus, we need to find a more efficient identification.
-#
-# Another way more efficient identification for which both $\mathrm{prox}_{\sigma f^{\ast}}$
-# and $\mathrm{prox}_{\tau g}$ are easy to compute is the following:
+# the functionals $f$ and $g$ and the operator $K$. We chose an identification for which both
+# $\mathrm{prox}_{\sigma f^{\ast}}$ and $\mathrm{prox}_{\tau g}$ are easy to compute:
 #
 # #### $f(z) = f(p,q) = f_1(p) + f_2(q) =  \frac{1}{2}\|p  - y\|_2^2 + \lambda \| q \|_1.$
 
@@ -156,7 +143,16 @@ K = mrpro.operators.LinearOperatorMatrix(((acquisition_operator,), (nabla,)))
 # implemented as `~mrpro.operators.functionals.ZeroFunctional`
 # %%
 g = mrpro.operators.functionals.ZeroFunctional()
-
+# %% [markdown]
+# ```{note}
+# An obvious identification would have been
+# - $f(x) = \lambda \| x\|_1,$
+# - $g(x) = \frac{1}{2}\|Ax  - y\|_2^2,$
+# - $K(x) = \nabla x.$
+# But to be able to compute $\mathrm{prox}_{\tau g}$, one would need to solve a linear system at each
+# iteration, making this identification impractical.
+# ```
+#
 # %% [markdown]
 # This identification allows us to compute the proximal operators of $f$ and $g$ easily.
 # ### Run PDHG for a certain number of iterations
