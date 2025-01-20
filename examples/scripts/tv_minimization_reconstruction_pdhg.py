@@ -11,22 +11,19 @@
 # $ y = Ax_{\mathrm{true}} + n, $
 #
 # where $n$ describes complex Gaussian noise. When using TV-minimization as regularization method, an approximation of
-# $x_{\mathrm{true}}$ is obtained by minimizing the following functional $\mathcal{F}$:
+# $x_{\mathrm{true}}$ is obtained by minimizing the following functional $\mathcal{F}$ where $\nabla$ is the
+# discretized gradient operator.
 #
 # $ \mathcal{F}(x) = \frac{1}{2}||Ax - y||_2^2 + \lambda \| \nabla x \|_1, \quad \quad \quad (1)$
 #
-# where $\nabla$ is the discretized gradient operator.
-#
 # The minimization of the functional $\mathcal{F}$ is a non-trivial task due to the presence of the operator
 # $\nabla$ in the non-differentiable $\ell_1$-norm. A suitable algorithm to solve the problem is the
-# PDHG-algorithm [Chambolle \& Pock, JMIV 2011](https://doi.org/10.1007%2Fs10851-010-0251-1).
-#
+# PDHG-algorithm [Chambolle \& Pock, JMIV 2011](https://doi.org/10.1007%2Fs10851-010-0251-1).\
 # PDHG is a method for solving problems of the form
 #
 # $ \min_x f(K(x)) + g(x)  \quad \quad \quad (2)$
 #
-# where $f$ and $g$ denote proper, convex, lower-semicontinous functionals and $K$ denotes a linear operator.
-#
+# where $f$ and $g$ denote proper, convex, lower-semicontinous functionals and $K$ denotes a linear operator.\
 # PDHG essentially consists of three steps, which read as
 #
 # $z_{k+1} = \mathrm{prox}_{\sigma f^{\ast}}(z_k + \sigma K \bar{x}_k)$
@@ -40,9 +37,8 @@
 # $L=\|K\|_2$ is the operator norm of the operator $K$.
 #
 # The first step is to recast problem (1) into the general form of (2) and then to apply the steps above
-# in an iterative fashion.
-#
-# In the following, we use (2) to reconstruct a 2D radial image using `~mrpro.algorithms.optimizers.pdgh`.
+# in an iterative fashion. In the following, we use this approach to reconstruct a 2D radial image using
+# `~mrpro.algorithms.optimizers.pdgh`.
 
 # %% [markdown]
 # ### Load data
@@ -54,7 +50,8 @@
 # - ``radial2D_402spokes_golden_angle_with_traj.h5``
 #
 # We will use the 402 spokes as a reference and try to reconstruct the image from the 24 spokes data.
-# %% tags=["hide-cell"]
+
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
 # Download raw data from Zenodo
 import tempfile
 from pathlib import Path
@@ -66,6 +63,7 @@ dataset = '14617082'
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
 zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
+
 # %%
 import mrpro
 
@@ -92,6 +90,7 @@ img_direct_24 = direct_reconstruction_24(kdata_24spokes)
 # %% [markdown]
 # We also run an iterative SENSE reconstruction (see <project:iterative_sense_reconstruction.ipynb>) with early stopping
 # of the 24 spokes data. we use it as a comparison and as an initial guess for the TV-minimization reconstruction.
+
 # %%
 sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
     kdata_24spokes,
@@ -106,6 +105,7 @@ img_sense_24 = sense_reconstruction(kdata_24spokes)
 # Now, to set up the problem, we need to define the acquisition operator $A$, consisting of a
 # `~mrpro.operators.FourierOp` and a `~mrpro.operators.SensitivityOp`, which applies the coil sensitivity maps
 # (CSM) to the image. We reuse the CSMs estimated in the direct reconstruction.
+
 # %%
 fourier_operator = mrpro.operators.FourierOp.from_kdata(kdata_24spokes)
 
@@ -128,19 +128,23 @@ regularization_lambda = 0.2
 f_1 = 0.5 * mrpro.operators.functionals.L2NormSquared(target=kdata_24spokes.data, divide_by_n=True)
 f_2 = regularization_lambda * mrpro.operators.functionals.L1NormViewAsReal(divide_by_n=True)
 f = mrpro.operators.ProximableFunctionalSeparableSum(f_1, f_2)
+
 # %% [markdown]
 # #### $K(x) = [A, \nabla]^T$
 #
 #   where $\nabla$ is the finite difference operator that computes the directional derivatives along the last two
 #   dimensions (y,x), implemented as `~mrpro.operators.FiniteDifferenceOp`, and
 #  `~mrpro.operators.LinearOperatorMatrix` can be used to stack the operators.
+
 # %%
 nabla = mrpro.operators.FiniteDifferenceOp(dim=(-2, -1), mode='forward')
 K = mrpro.operators.LinearOperatorMatrix(((acquisition_operator,), (nabla,)))
+
 # %% [markdown]
 # #### $g(x) = 0,$
 #
 # implemented as `~mrpro.operators.functionals.ZeroFunctional`
+
 # %%
 g = mrpro.operators.functionals.ZeroFunctional()
 # %% [markdown]
@@ -149,10 +153,11 @@ g = mrpro.operators.functionals.ZeroFunctional()
 # - $f(x) = \lambda \| x\|_1,$
 # - $g(x) = \frac{1}{2}\|Ax  - y\|_2^2,$
 # - $K(x) = \nabla x.$
+#
 # But to be able to compute $\mathrm{prox}_{\tau g}$, one would need to solve a linear system at each
 # iteration, making this identification impractical.
 # ```
-#
+
 # %% [markdown]
 # This identification allows us to compute the proximal operators of $f$ and $g$ easily.
 # ### Run PDHG for a certain number of iterations
@@ -163,7 +168,8 @@ g = mrpro.operators.functionals.ZeroFunctional()
 # about the progress. In the collapsed cell, we implement a simple callback function that print the status
 # message
 # ```
-# %% tags=["hide-cell"]
+
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show callback details"}
 # This is a "callback" function that will be called after each iteration of the PDHG algorithm.
 # We use it here to print progress information.
 
@@ -179,7 +185,6 @@ def callback(optimizer_status: PDHGStatus) -> None:
 
 
 # %%
-# %%
 (img_pdhg_24,) = mrpro.algorithms.optimizers.pdhg(
     f=f,
     g=g,
@@ -191,7 +196,9 @@ def callback(optimizer_status: PDHGStatus) -> None:
 
 # %% [markdown]
 # ### Compare the results
-# %% tags=["hide-cell"]
+# We now compare the results of the direct reconstruction, the iterative SENSE reconstruction, and the TV-minimization
+
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
 import matplotlib.pyplot as plt
 import torch
 
