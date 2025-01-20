@@ -4,14 +4,12 @@
 # 2D radial data.
 # A *direct* reconstruction uses the density compensated adjoint of the acquisition operator to obtain the images.
 
-
 # %% [markdown]
 # ## Using `~mrpro.algorithms.reconstruction.DirectReconstruction`
 # We use the `~mrpro.algorithms.reconstruction.DirectReconstruction` class to reconstruct images from 2D radial data.
 # `~mrpro.algorithms.reconstruction.DirectReconstruction` estimates sensitivity maps, density compensation factors, etc.
 # and performs an adjoint Fourier transform.
 # This the simplest reconstruction method in our high-level interface to the reconstruction pipeline.
-
 
 # %% [markdown]
 # ### Load the data
@@ -94,6 +92,7 @@ plt.show()
 # ### Calculate density compensation using the trajectory
 # We use a Voronoi tessellation of the trajectory to calculate the `~mrpro.data.DcfData` and obtain
 # a `~mrpro.operators.DensityCompensationOp` operator.
+
 # %%
 dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata.traj).as_operator()
 
@@ -122,6 +121,7 @@ csm_operator = mrpro.data.CsmData.from_idata_walsh(img_coilwise).as_operator()
 # Finally, the direct reconstruction is performed and an `~mrpro.data.IData` object with the reconstructed
 # image is returned. We update the ``adjoint_operator`` to also include the coil sensitivity maps, thus
 # performing the coil combination.
+
 # %%
 adjoint_operator = (fourier_operator @ csm_operator).H
 img_manual = mrpro.data.IData.from_tensor_and_kheader(*adjoint_operator(kdata.data), kdata.header)
@@ -138,27 +138,35 @@ fourier_operator = mrpro.operators.FourierOp(
 )
 # %% [markdown]
 # We can call one of the algorithms in `mrpro.algorithms.dcf` to calculate the density compensation factors.
+
 # %%
 kykx = torch.stack((kdata.traj.ky[0, 0], kdata.traj.kx[0, 0]))
 dcf_tensor = mrpro.algorithms.dcf.dcf_2d3d_voronoi(kykx)
+
 # %% [markdown]
 # We use these DCFs to weight the k-space data before performing the adjoint Fourier transform. We can also call
 # `~mrpro.operators.FourierOp.adjoint` on the Fourier operator instead of obtaining an adjoint operator.
+
 # %%
 (img_tensor_coilwise,) = fourier_operator.adjoint(dcf_tensor * kdata.data)
+
 # %% [markdown]
 # Next, we calculate the coil sensitivity maps by using one of the algorithms in `mrpro.algorithms.csm` and set
 # up a `~mrpro.operators.SensitivityOp` operator.
 csm_data = mrpro.algorithms.csm.walsh(img_tensor_coilwise[0], smoothing_width=5)
 csm_operator = mrpro.operators.SensitivityOp(csm_data)
+
 # %% [markdown]
 # Finally, we perform the coil combination of the coil-wise images and obtain final images.
+
 # %%
 (img_tensor_coilcombined,) = csm_operator.adjoint(img_tensor_coilwise)
 img_more_manual = mrpro.data.IData.from_tensor_and_kheader(img_tensor_coilcombined, kdata.header)
+
 # %% [markdown]
 # ### Check for equal results
 # The 3 versions result should in the same image data.
+
 # %%
 # If the assert statement did not raise an exception, the results are equal.
 assert torch.allclose(img.data, img_manual.data)

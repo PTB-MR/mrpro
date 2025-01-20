@@ -2,13 +2,13 @@
 # # Basics of MRpro and Cartesian Reconstructions
 # Here, we are going to have a look at a few basics of MRpro and reconstruct data acquired with a Cartesian sampling
 # pattern.
+
 # %% [markdown]
 # ## Overview
 # In this notebook, we are going to explore the `~mrpro.data.KData` object and the included header parameters.
 # We will then use a FFT-operator in order to reconstruct data acquired with a Cartesian sampling scheme.
 # We will also reconstruct data  acquired on a Cartesian grid but with partial echo and partial Fourier acceleration.
 # Finally, we will reconstruct a Cartesian scan with regular undersampling.
-
 
 # %% tags=["hide-cell"]
 # Get the raw data from zenodo
@@ -32,7 +32,6 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 # - ``cart_t1_msense_integrated.mrd`` is accelerated using regular undersampling and self-calibrated SENSE
 #
 # - ``cart_t1_partial_echo_partial_fourier.mrd`` is accelerated using partial echo and partial Fourier
-
 
 # %% [markdown]
 # ## Read in raw data and explore header
@@ -62,7 +61,6 @@ kdata = mrpro.data.KData.from_file(
 
 # %% tags=["show-output"]
 print(kdata)
-
 
 # %% [markdown]
 # We can also have a look at more specific header information like the 1H Lamor frequency
@@ -169,7 +167,6 @@ fft_op = mrpro.operators.FastFourierOp(
 # Combine data from different coils using root-sum-of-squares
 magnitude_pe_pf = img_pe_pf.abs().square().sum(dim=-4).sqrt().squeeze()
 
-
 # Plot both images
 show_images(magnitude_fully_sampled, magnitude_pe_pf, titles=['fully sampled', 'PF & PE'])
 # %% [markdown]
@@ -200,6 +197,7 @@ full_kz, full_ky, full_kx = kdata_pe_pf.traj.as_tensor()
 plt.plot(full_ky[0, 0].flatten(), full_kx[0, 0].flatten(), '+r')
 
 plt.show()
+
 # %% [markdown]
 # We see that for the fully sampled acquisition, the k-space is covered symmetrically from -256 to 255 along the
 # readout direction and from -128 to 127 along the phase encoding direction. For the acquisition with partial Fourier
@@ -257,7 +255,6 @@ show_images(magnitude_fully_sampled, magnitude_pe_pf, titles=['fully sampled', '
 # from different coils. In MRpro, you can do this by calculating coil sensitivity data and then creating a
 # `~mrpro.operators.SensitivityOp` to combine the data after image reconstruction.
 
-
 # %% [markdown]
 # ### Sensitivity Operator
 # We have different options for calculating coil sensitivity maps from the image data of the various coils.
@@ -277,7 +274,6 @@ csm_op = mrpro.operators.SensitivityOp(csm_data)
 (img_walsh_combined,) = csm_op.adjoint(*fourier_op.adjoint(kdata_pe_pf.data))
 magnitude_walsh_combined = img_walsh_combined.abs().squeeze()
 show_images(magnitude_pe_pf, magnitude_walsh_combined, titles=['RSS', 'Adaptive Combination'])
-
 
 # %% [markdown]
 # Tada! The "hole" is gone, and the image looks much better 🎉.
@@ -314,11 +310,9 @@ direct_recon_pe_pf = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_
 # Reconstruct image by calling the DirectReconstruction object
 idat_pe_pf = direct_recon_pe_pf(kdata_pe_pf)
 
-
 # %% [markdown]
 # This is much simpler — everything happens in the background, so we don't have to worry about it.
 # Let's finally try it on the undersampled dataset now.
-
 
 # %% [markdown]
 # ## Reconstruction of undersampled data
@@ -357,12 +351,16 @@ kdata_calib_lines = mrpro.data.KData.from_file(
 
 direct_recon_calib_lines = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_calib_lines)
 idat_calib_lines = direct_recon_calib_lines(kdata_calib_lines)
+
 # %% [markdown]
 # If we look at the reconstructed image, we see it is low resolution..
+
 # %%
 show_images(idat_calib_lines.rss().squeeze(), titles=['Calibration Image'])
+
 # %% [markdown]
 # ..but it is good enough to calculate coil sensitivity maps, which we can use when creating the reconstruction object:
+
 # %%
 # The coil sensitivity maps
 assert direct_recon_calib_lines.csm is not None
@@ -375,13 +373,13 @@ direct_recon_us_csm = mrpro.algorithms.reconstruction.DirectReconstruction(kdata
 idat_us_csm = direct_recon_us_csm(kdata_us)
 show_images(idat_us.rss().squeeze(), idat_us_csm.rss().squeeze(), titles=['Autocalibration', 'Calibration Lines'])
 
-
 # %% [markdown]
 # As expected, we still see undersampling artifacts in the image. In order to get rid of them,
 # we try can a more sophisticated reconstruction method, such as the *iterative SENSE algorithm*.
 # As you might have guessed, these are also included in MRpro:
 # Instead of the `~mrpro.algorithms.reconstruction.DirectReconstruction`,
 # we can use `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`:
+
 # %%
 sense_recon_us = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
     kdata_us,
@@ -390,6 +388,7 @@ sense_recon_us = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
 )
 idat_us_sense = sense_recon_us(kdata_us)
 show_images(idat_us_sense.rss().squeeze(), titles=['Iterative SENSE'])
+
 # %% [markdown]
 # This looks better! More information about the iterative SENSE reconstruction and its implementation in MRpro
 # can be found in the examples <project:iterative_sense_reconstruction_radial2D.ipynb> and

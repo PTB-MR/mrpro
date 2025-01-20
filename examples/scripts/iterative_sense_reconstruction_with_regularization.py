@@ -2,6 +2,7 @@
 # # Regularized Iterative SENSE Reconstruction of 2D golden angle radial data
 # Here we use the `~mrpro.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction` class to reconstruct
 # undersampled images from 2D radial data.
+
 # %% tags=["hide-cell"]
 # Download raw data from Zenodo
 import tempfile
@@ -14,6 +15,7 @@ dataset = '14617082'
 tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
 zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
+
 # %% [markdown]
 # ### Image reconstruction
 # We use the `~mrpro.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction` class to reconstruct images
@@ -52,7 +54,6 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 # only parts of it ($x$)). This of course is an unrealistic case but it will allow us to study the effect of the
 # regularization.
 
-
 # %% [markdown]
 # ### Reading of both fully sampled and undersampled data
 # We read the raw data and the trajectory from the ISMRMRD file.
@@ -72,6 +73,7 @@ kdata_undersampled = mrpro.data.KData.from_file(
     data_folder / 'radial2D_24spokes_golden_angle_with_traj.h5',
     mrpro.data.traj_calculators.KTrajectoryIsmrmrd(),
 )
+
 # %% [markdown]
 # ##### Image $x_{reg}$ from fully sampled data
 # We first reconstruct the fully sampled image to use it as a regularization image.
@@ -120,6 +122,7 @@ img_us_regularized_iterative_sense = regularized_iterative_sense_reconstruction(
 # ##### Display the results
 # Besides the fully sampled image, we display two undersampled images:
 # The first one is obtained by unregularized iterative SENSE, the second one using regularization.
+
 # %% tags=["hide-cell"]
 import matplotlib.pyplot as plt
 import torch
@@ -156,6 +159,7 @@ show_images(
 #
 # This is very similar to <project:iterative_sense_reconstruction_radial2D.ipynb> .
 # For more details, please refer to that notebook.
+
 # %%
 dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata_undersampled.traj).as_operator()
 fourier_operator = mrpro.operators.FourierOp.from_kdata(kdata_undersampled)
@@ -190,10 +194,12 @@ operator = (
 # We solve the linear system $Hx = b$ using the conjugate gradient method.
 # Here, we use early stopping after 8 iterations. Instead, we could also use a tolerance to stop the iterations when
 # the residual is small enough.
+
 # %%
 img_manual = mrpro.algorithms.optimizers.cg(
     operator, right_hand_side, initial_value=right_hand_side, max_iterations=8, tolerance=0.0
 )
+
 # %% [markdown]
 # #####  Display the reconstructed image
 # We can now compare our 'manual' reconstruction with the regularized iterative SENSE reconstruction
@@ -205,9 +211,11 @@ show_images(
     img_manual.abs()[0, 0, 0],
     titles=['RegularizedIterativeSense', 'Manual'],
 )
+
 # %% [markdown]
 # We can also check if the results are equal by comparing the actual image data.
 # If the assert statement does not raise an exception, the results are equal.
+
 # %%
 torch.testing.assert_close(img_us_regularized_iterative_sense.data, img_manual)
 

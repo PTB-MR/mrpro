@@ -34,7 +34,6 @@ zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 
 # %%
 # Read the raw data and the trajectory from ISMRMRD file
-
 kdata = mrpro.data.KData.from_file(
     data_folder / 'radial2D_402spokes_golden_angle_with_traj.h5',
     mrpro.data.traj_calculators.KTrajectoryIsmrmrd(),
@@ -123,5 +122,3 @@ show_images(
 # If a pulseq sequence file is available, the trajectory can be calculated using the PyPulseq trajectory calculator.
 # Otherwise, a trajectory calculator needs to be implemented for the specific trajectory used.
 # ```
-
-# %%

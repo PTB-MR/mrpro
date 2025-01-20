@@ -2,7 +2,6 @@
 # # Iterative SENSE Reconstruction of 2D golden angle radial data
 # Here we use an iterative reconstruction method reconstruct images from ISMRMRD 2D radial data.
 
-
 # %% [markdown]
 # We use the `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` class to reconstruct images by solving
 # the following reconstruction problem:
@@ -25,7 +24,6 @@
 #
 # which is a linear system $Hx = b$ that needs to be solved for $x$. This is done using the conjugate gradient method.
 
-
 # %% [markdown]
 # ## Using `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`
 # First, we demonstrate the use of `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction`, before we
@@ -40,7 +38,6 @@
 # - `radial2D_24spokes_golden_angle_with_traj.h5` with 24 spokes
 #
 # We use the 402 spokes dataset for the reconstruction.
-
 
 # %% tags=["hide-cell"]
 # ### Download raw data from Zenodo
@@ -86,6 +83,7 @@ img_direct = direct_reconstruction(kdata)
 # We can also provide `~mrpro.data.KData` and some information, such as the sensitivity maps.
 # In that case, the reconstruction will fill in the missing information based on the `~mrpro.data.KData` object.
 # ```
+
 # %%
 iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
     fourier_op=direct_reconstruction.fourier_op,
@@ -93,20 +91,22 @@ iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSER
     dcf=direct_reconstruction.dcf,
     n_iterations=4,
 )
+
 # %% [markdown]
 # ### Run the reconstruction
 # We now run the reconstruction using ``iterative_sense_reconstruction`` object. We just need to pass the k-space data
 # and obtain the reconstructed image as `~mrpro.data.IData` object.
 # %%
+
 img = iterative_sense_reconstruction(kdata)
 
-# %% [markdown]
 # %% [markdown]
 # ## Behind the scenes
 # We now peek behind the scenes to see how the iterative SENSE reconstruction is implemented. We perform all steps
 # `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` does when initialized with only an `~mrpro.data.KData`
 # object, i.e., we need to set up a Fourier operator, estimate coil sensitivity maps, and the density weighting.
 # without reusing any thing from `direct_reconstruction`.
+
 # %% [markdown]
 # ### Set up density compensation operator $W$
 # We create a density compensation operator $W$ for weighting the loss. We use
@@ -117,23 +117,26 @@ img = iterative_sense_reconstruction(kdata)
 # the benefits and drawbacks. Currently, the iterative SENSE reconstruction in mrpro uses a weighted loss.
 # This might chang in the future.
 # ```
+
 # %%
 dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata.traj).as_operator()
-
 
 # %% [markdown]
 # ### Set up the acquisition model $A$
 # We need `~mrpro.operators.FourierOp` and `~mrpro.operators.SensitivityOp` operators to set up the acquisition model
 # $A$. The Fourier operator is created from the trajectory and header information in `kdata`:
+
 # %%
 fourier_operator = mrpro.operators.FourierOp(
     traj=kdata.traj,
     recon_matrix=kdata.header.recon_matrix,
     encoding_matrix=kdata.header.encoding_matrix,
 )
+
 # %% [markdown]
 # To estimate the coil sensitivity maps, we first calculate the coil-wise images from the k-space data and then
 # estimate the coil sensitivity maps using the Walsh method:
+
 # %%
 img_coilwise = mrpro.data.IData.from_tensor_and_kheader(*fourier_operator.H(*dcf_operator(kdata.data)), kdata.header)
 csm_data = mrpro.data.CsmData.from_idata_walsh(img_coilwise)
@@ -142,6 +145,7 @@ csm_operator = csm_data.as_operator()
 # %% [markdown]
 # Now we can set up the acquisition operator $A$ by composing the Fourier operator and the coil sensitivity maps
 # operator using ``@``.
+
 # %%
 acquisition_operator = fourier_operator @ csm_operator
 
@@ -175,6 +179,7 @@ img_manual = mrpro.algorithms.optimizers.cg(
 # We can now compare the results of the iterative SENSE reconstruction with the direct reconstruction.
 # Both versions, the one using the `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` class
 # and the manual implementation should result in identical images.
+
 # %% tags=["hide-cell"]
 import matplotlib.pyplot as plt
 import torch
@@ -199,17 +204,18 @@ show_images(
     img_manual.abs()[0, 0, 0],
     titles=['Direct', 'Iterative SENSE', 'Manual Iterative SENSE'],
 )
+
 # %% [markdown]
 # ### Check for equal results
 #  Finally, we check if two images are really identical.
+
 # %%
 # If the assert statement did not raise an exception, the results are equal.
 assert torch.allclose(img.data, img_manual)
+
 # %% [markdown]
 # ## Next steps
 # We can also reconstruct undersampled data: You can replace the filename above to use a dataset with fewer spokes to
 # try it out.\
 # If you want to see how to include a regularization term in the optimization problem,
 # see the example in <project:iterative_sense_reconstruction_with_regularization.ipynb>.
-
-# %%

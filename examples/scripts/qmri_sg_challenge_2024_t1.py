@@ -79,6 +79,7 @@ model = mrpro.operators.MagnitudeOp() @ mrpro.operators.models.InversionRecovery
 # %% [markdown]
 # As a loss function for the optimizer, we calculate the mean-squared error between the image data $x$ and our signal
 # model $q$.
+
 # %%
 mse = mrpro.operators.functionals.MSE(idata_multi_ti.data.abs())
 
@@ -86,6 +87,7 @@ mse = mrpro.operators.functionals.MSE(idata_multi_ti.data.abs())
 # Now we can simply combine the two into a functional to solve
 #
 # $ \min_{M_0, T_1} || |q(M_0, T_1, TI)| - x||_2^2$
+
 # %%
 functional = mse @ model
 
@@ -127,13 +129,15 @@ idx_best_match = dot_product.abs().argmax(dim=0)
 t1_start = t1_dictionary[idx_best_match]
 
 # %% [markdown]
-# The maximum absolute value observed is a good approximation for m0
+# The maximum absolute value observed is a good approximation for $M_0$
+
 # %%
 m0_start = idata_multi_ti.data.abs().amax(dim=0)
 
 # %% [markdown]
 # #### Visualize the starting values
 # Let's have a look at the starting values for $M_0$ and $T_1$:
+
 # %%
 fig, axes = plt.subplots(1, 2, figsize=(6, 2), squeeze=False)
 
@@ -206,5 +210,3 @@ axes[0, 2].set_axis_off()
 fig.colorbar(im, ax=axes[0, 2])
 
 plt.show()
-
-# %%
