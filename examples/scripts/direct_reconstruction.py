@@ -131,6 +131,7 @@ img_manual = mrpro.data.IData.from_tensor_and_kheader(*adjoint_operator(kdata.da
 # There is also a even more manual way to perform the direct reconstruction. We can set up the Fourier operator by
 # passing the trajectory and matrix sizes.
 
+# %%
 fourier_operator = mrpro.operators.FourierOp(
     recon_matrix=kdata.header.recon_matrix,
     encoding_matrix=kdata.header.encoding_matrix,
@@ -153,6 +154,8 @@ dcf_tensor = mrpro.algorithms.dcf.dcf_2d3d_voronoi(kykx)
 # %% [markdown]
 # Next, we calculate the coil sensitivity maps by using one of the algorithms in `mrpro.algorithms.csm` and set
 # up a `~mrpro.operators.SensitivityOp` operator.
+
+# %%
 csm_data = mrpro.algorithms.csm.walsh(img_tensor_coilwise[0], smoothing_width=5)
 csm_operator = mrpro.operators.SensitivityOp(csm_data)
 
@@ -171,5 +174,3 @@ img_more_manual = mrpro.data.IData.from_tensor_and_kheader(img_tensor_coilcombin
 # If the assert statement did not raise an exception, the results are equal.
 torch.testing.assert_close(img.data, img_manual.data)
 torch.testing.assert_close(img.data, img_more_manual.data, atol=1e-4, rtol=1e-4)
-
-# %%

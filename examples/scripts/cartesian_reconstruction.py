@@ -10,7 +10,7 @@
 # We will also reconstruct data  acquired on a Cartesian grid but with partial echo and partial Fourier acceleration.
 # Finally, we will reconstruct a Cartesian scan with regular undersampling.
 
-# %% tags=["hide-cell"]
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
 # Get the raw data from zenodo
 import tempfile
 from pathlib import Path
@@ -120,7 +120,7 @@ print('Shape:', img.shape)
 # coils using root-sum-of-squares and then display the image. Note that we usually index from behind in MRpro
 # (i.e. -1 for the last, -4 for the fourth last (coil) dimension) to allow for more than one 'other' dimension.
 
-# %% tags=["hide-cell"]
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
 import matplotlib.pyplot as plt
 import torch
 
