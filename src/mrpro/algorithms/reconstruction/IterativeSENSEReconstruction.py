@@ -1,4 +1,4 @@
-"""Iterative SENSE Reconstruction by adjoint Fourier transform."""
+"""Iterative SENSE Reconstruction."""
 
 from __future__ import annotations
 
