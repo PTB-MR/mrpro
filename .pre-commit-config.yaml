@@ -64,6 +64,7 @@ repos:
           "colab": {"gpuType": "T4","provenance": []},
           "kernelspec": {"display_name": "Python 3 (ipykernel)","language": "python","name": "python3"}
         }'
+        --opt cell_metadata_filter=tags,mystnb,-all
        always_run: true
        pass_filenames: true
        files: ^examples/scripts/.*py
@@ -98,41 +99,3 @@ repos:
           - xsdata
           - "--index-url=https://download.pytorch.org/whl/cpu"
           - "--extra-index-url=https://pypi.python.org/simple"
-
-  - repo: https://github.com/kynan/nbstripout
-    rev: 0.8.0
-    hooks:
-    # cleans the .ipynbs (removes outputs, resets all cell-ids to 0..N, cleans steps)
-    # also clean any kernel information left after execution
-    - id: nbstripout
-      name: clean .ipynb output
-      args: [--extra-keys, "metadata.language_info"]
-      files: examples/notebooks
-
-  - repo: https://github.com/mwouts/jupytext
-    rev: v1.16.6
-    hooks:
-     - id: jupytext
-       name: convert .py to .ipynb
-       args:
-         - --update
-         - --pipe
-         - "python .precommit/add_notebook_preamble.py {}"
-         - --to
-         - "../notebooks//ipynb"
-         - --update-metadata
-         - '{"accelerator": "GPU","colab": {"gpuType": "T4","provenance": []},"kernelspec": {"display_name": "Python 3 (ipykernel)","language": "python","name": "python3"}}'
-         - --opt cell_metadata_filter=tags,mystnb,-all
-         - examples/scripts/*.py
-       always_run: true
-       pass_filenames: false
-
-ci:
-  autofix_commit_msg: |
-    [pre-commit] auto fixes from pre-commit hooks
-  autofix_prs: false
-  autoupdate_branch: ""
-  autoupdate_commit_msg: "[pre-commit] pre-commit autoupdate"
-  autoupdate_schedule: monthly
-  skip: [mypy]
-  submodules: false
