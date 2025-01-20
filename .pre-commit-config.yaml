@@ -32,6 +32,42 @@ repos:
         args: [--double-quotes, --fix]
         exclude: ^tests/
 
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.8.0
+    hooks:
+    # cleans the .ipynbs (removes outputs, resets all cell-ids to 0..N, cleans steps)
+    # also clean any kernel information left after execution
+    - id: nbstripout
+      name: clean .ipynb output
+      args: [--extra-keys, "metadata.language_info"]
+      files: examples/notebooks
+
+  - repo: local
+    hooks:
+     - id: jupytext
+       name: convert .py to .ipynb
+       language: python
+
+       additional_dependencies:
+        - jupytext
+       entry: >
+        jupytext
+        --update
+        --pipe
+        "python .precommit/add_notebook_preamble.py {}"
+        --to
+        "../notebooks//ipynb"
+        --update-metadata
+        '{
+          "accelerator": "GPU",
+          "colab": {"gpuType": "T4","provenance": []},
+          "kernelspec": {"display_name": "Python 3 (ipykernel)","language": "python","name": "python3"}
+        }'
+       always_run: true
+       pass_filenames: true
+       files: ^examples/scripts/.*py
+       types_or: [python]
+
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.14.1
     hooks:
