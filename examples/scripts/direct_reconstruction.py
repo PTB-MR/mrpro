@@ -169,5 +169,5 @@ img_more_manual = mrpro.data.IData.from_tensor_and_kheader(img_tensor_coilcombin
 
 # %%
 # If the assert statement did not raise an exception, the results are equal.
-assert torch.allclose(img.data, img_manual.data)
-assert torch.allclose(img.data, img_more_manual.data)
+assert torch.testing.assert_close(img.data, img_manual.data)
+assert torch.testing.assert_close(img.data, img_more_manual.data)
