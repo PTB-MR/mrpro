@@ -19,7 +19,7 @@
 #
 # The minimization of the functional $\mathcal{F}$ is a non-trivial task due to the presence of the operator
 # $\nabla$ in the non-differentiable $\ell_1$-norm. A suitable algorithm to solve the problem is the
-# PDHG-algorithm [Chambolle \& Pock, JMIV 2011].
+# PDHG-algorithm [Chambolle \& Pock, JMIV 2011](https://doi.org/10.1007%2Fs10851-010-0251-1).
 #
 # PDHG is a method for solving problems of the form
 #
@@ -42,20 +42,7 @@
 # The first step is to recast problem (1) into the general form of (2) and then to apply the steps above
 # in an iterative fashion.
 #
-# A possible and intuitive (but unfortunately not efficient) identification is the following
-#
-# $f(x) = \lambda \| x\|_1,$
-#
-# $g(x) = \frac{1}{2}\|Ax  - y\|_2^2,$
-#
-# $K(x) = \nabla x.$
-#
-# However, although $\mathrm{prox}_{\sigma f^\ast}$ has a simple form, calculations show that
-# to be able to compute $\mathrm{prox}_{\tau g}$, one would need to solve a linear system at each
-# iteration. We will therefore use a way more efficient identification.
-#
 # In the following, we use (2) to reconstruct a 2D radial image using `~mrpro.algorithms.optimizers.pdgh`.
-
 
 # %% [markdown]
 # ### Load data
@@ -130,11 +117,24 @@ acquisition_operator = fourier_operator @ csm_operator
 
 # %% [markdown]
 # ### Recast the problem to be able to apply PDHG
-# As mentioned trivial identification of the functionals $f$ and $g$ and the operator $K$ is not efficient.
+# To apply the PDHG algorithm, we need to recast the problem into the form of (2). We need to identify
+# the functionals $f$ and $g$ and the operator $K$.
+# A possible identification would be the following
+#
+# $f(x) = \lambda \| x\|_1,$
+#
+# $g(x) = \frac{1}{2}\|Ax  - y\|_2^2,$
+#
+# $K(x) = \nabla x.$
+#
+# However, although $\mathrm{prox}_{\sigma f^\ast}$ has a simple form, calculations show that
+# to be able to compute $\mathrm{prox}_{\tau g}$, one would need to solve a linear system at each
+# iteration. Thus, we need to find a more efficient identification.
+#
 # Another way more efficient identification for which both $\mathrm{prox}_{\sigma f^{\ast}}$
 # and $\mathrm{prox}_{\tau g}$ are easy to compute is the following:
 #
-# - $f(z) = f(p,q) = f_1(p) + f_2(q) =  \frac{1}{2}\|p  - y\|_2^2 + \lambda \| q \|_1.$
+# #### $f(z) = f(p,q) = f_1(p) + f_2(q) =  \frac{1}{2}\|p  - y\|_2^2 + \lambda \| q \|_1.$
 
 # %%
 regularization_lambda = 0.2
@@ -142,7 +142,7 @@ f_1 = 0.5 * mrpro.operators.functionals.L2NormSquared(target=kdata_24spokes.data
 f_2 = regularization_lambda * mrpro.operators.functionals.L1NormViewAsReal(divide_by_n=True)
 f = mrpro.operators.ProximableFunctionalSeparableSum(f_1, f_2)
 # %% [markdown]
-# - $K(x) = [A, \nabla]^T$
+# #### $K(x) = [A, \nabla]^T$
 #
 #   where $\nabla$ is the finite difference operator that computes the directional derivatives along the last two
 #   dimensions (y,x), implemented as `~mrpro.operators.FiniteDifferenceOp`, and
@@ -151,13 +151,14 @@ f = mrpro.operators.ProximableFunctionalSeparableSum(f_1, f_2)
 nabla = mrpro.operators.FiniteDifferenceOp(dim=(-2, -1), mode='forward')
 K = mrpro.operators.LinearOperatorMatrix(((acquisition_operator,), (nabla,)))
 # %% [markdown]
-# - $g(x) = 0,$
+# #### $g(x) = 0,$
 #
 # implemented as `~mrpro.operators.functionals.ZeroFunctional`
 # %%
 g = mrpro.operators.functionals.ZeroFunctional()
 
 # %% [markdown]
+# This identification allows us to compute the proximal operators of $f$ and $g$ easily.
 # ### Run PDHG for a certain number of iterations
 # Now we can run the PDHG algorithm to solve the minimization problem. We use
 # the iterative SENSE image as an initial value to speed up the convergence.
@@ -225,7 +226,5 @@ show_images(
 # Hurrah! We have successfully reconstructed an image from 24 spokes using TV-minimization.
 #
 # ### Next steps
-# In the above example we used quite a high regularization weight $\lambda$. Play around with the regularization weight and the number of iterations to see how they affect the final image.
+# Play around with the regularization weight and the number of iterations to see how they affect the final image.
 # You can also try to use the 96 spokes data to see how the reconstruction quality improves with more spokes.
-
-# %%
