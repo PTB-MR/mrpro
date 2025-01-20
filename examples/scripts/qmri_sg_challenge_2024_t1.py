@@ -215,17 +215,15 @@ plt.show()
 # ### Next steps
 #
 # The 2024 ISMRM QMRI Challenge also included the estimation of $T_2^*$ maps from multi-echo data. You can find the
-# the data here: https://zenodo.org/record/10868361. You can download it using the same method as above and then
-# unpacking the 'T2star.zip' file.
+# the data on zenodo in [record 10868361](https://zenodo.org/record/10868361) as ``T2star.zip``
+# You can download and unpack it using the same method as above.
 #
-# As a signal model $q$ you can use `~mrpro.operators.models.MonoExponentialDecay` describing the signal decay as
-#
-# $q(TE) = M_0 e^{-TE/T_2^*}$
-#
-# with the equilibrium magnetization $M_0$, the echo time $TE$, and $T_2^*$
-#
+# As a signal model $q$ you can use `~mrpro.operators.models.MonoExponentialDecay` describing the signal decay
+# as $q(TE) = M_0 e^{-TE/T_2^*}$ with the equilibrium magnetization $M_0$, the echo time $TE$, and $T_2^*$.\
 # Give it a try and see if you can obtain good $T_2^*$ maps!
 # ```{note}
 # The echo times $TE$ can be found in `IData.header.te`. A good starting value for $M_0$ is the signal at the shortest
 # echo time. A good starting value for $T_2^*$ is 20 ms.
 # ```
+
+# %%
