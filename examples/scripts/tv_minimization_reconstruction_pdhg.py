@@ -38,7 +38,7 @@
 #
 # The first step is to recast problem (1) into the general form of (2) and then to apply the steps above
 # in an iterative fashion. In the following, we use this approach to reconstruct a 2D radial image using
-# `~mrpro.algorithms.optimizers.pdgh`.
+# `~mrpro.algorithms.optimizers.pdhg`.
 
 # %% [markdown]
 # ### Load data
