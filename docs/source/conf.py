@@ -46,7 +46,6 @@ autosummary_generate = True
 autosummary_imported_members = False
 autosummary_ignore_module_all = False
 autodoc_member_order = 'groupwise'
-default_role = 'py:obj'
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 source_suffix = {'.rst': 'restructuredtext', '.txt': 'restructuredtext', '.md': 'markdown'}
@@ -56,7 +55,6 @@ myst_enable_extensions = [
     "dollarmath",
 ]
 nb_execution_mode = "off"
-nb_merge_streams = True
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
