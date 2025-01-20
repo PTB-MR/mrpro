@@ -82,6 +82,7 @@ nb_execution_mode = 'auto'
 nb_output_stderr = 'remove'
 nb_output_stdout = 'remove'
 nb_execution_timeout = 120
+nb_merge_streams=True
 html_favicon = '_static/favicon.svg'
 html_theme = 'sphinx_rtd_theme'
 html_title = name
@@ -280,13 +281,15 @@ def sync_notebooks(source_folder, dest_folder):
             dest_file = dest / src_file.name
             if not dest_file.exists() or src_file.stat().st_mtime > dest_file.stat().st_mtime:
                 shutil.copy2(src_file, dest_file)
-                print(f'Copied {src_file} to {dest_file}. Setting execution mode to "force".')
-                mode = 'force'
+                print(f'Copied {src_file} to {dest_file}. ', end='')
+                if os.environ.get('NORUN') == '1':
+                    print('NORUN: Skipping execution.')
+                    mode = 'off'
+                else:
+                    print('Setting execution mode to "force".')
+                    mode = 'force'
             else:
                 print(f'Existing {dest_file}. Skipping execution.')
-                mode = 'off'
-            if os.environ.get('NORUN') == '1':
-                print("NORUN: Skipping execution.")
                 mode = 'off'
             content = nbformat.read(dest_file, as_version=nbformat.NO_CONVERT)
             content.metadata['mystnb'] = {'execution_mode': mode}
