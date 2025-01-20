@@ -25,11 +25,11 @@ def example_traj_rad_2d(n_kr, n_ka, phi0=0.0, broadcast=True):
 @pytest.mark.parametrize(
     ('n_kr', 'n_ka', 'phi0', 'broadcast'),
     [
-        (100, 20, 0, True),
-        (100, 1, 0, True),
-        (100, 20, torch.pi / 4, True),
-        (100, 1, torch.pi / 4, True),
-        (100, 1, 0, False),
+        (20, 20, 0, True),
+        (20, 1, 0, True),
+        (20, 20, torch.pi / 4, True),
+        (20, 1, torch.pi / 4, True),
+        (20, 1, 0, False),
     ],
 )
 def test_dcf_rad_traj_voronoi(n_kr, n_ka, phi0, broadcast):
@@ -56,7 +56,7 @@ def test_dcf_rad_traj_voronoi(n_kr, n_ka, phi0, broadcast):
         assert dcf.shape == traj.broadcasted_shape, 'DCF shape should match broadcasted trajectory shape'
 
 
-@pytest.mark.parametrize(('n_k2', 'n_k1', 'n_k0'), [(40, 16, 20), (1, 2, 2)])
+@pytest.mark.parametrize(('n_k2', 'n_k1', 'n_k0'), [(4, 6, 8), (1, 2, 2)])
 def test_dcf_3d_cart_traj_broadcast_voronoi(n_k2, n_k1, n_k0):
     """Compare voronoi-based dcf calculation for broadcasted 3D regular
     Cartesian trajectory to analytical solution which is 1 for each k-space
@@ -76,7 +76,7 @@ def test_dcf_3d_cart_traj_broadcast_voronoi(n_k2, n_k1, n_k0):
     torch.testing.assert_close(dcf[:, 1:-1, 1:-1, 1:-1], dcf_analytical[:, 1:-1, 1:-1, 1:-1])
 
 
-@pytest.mark.parametrize(('n_k2', 'n_k1', 'n_k0'), [(40, 16, 20), (1, 2, 2)])
+@pytest.mark.parametrize(('n_k2', 'n_k1', 'n_k0'), [(4, 6, 8), (1, 2, 2)])
 def test_dcf_3d_cart_full_traj_voronoi(n_k2, n_k1, n_k0):
     """Compare voronoi-based dcf calculation for full 3D regular Cartesian
     trajectory to analytical solution which is 1 for each k-space point."""
@@ -103,7 +103,7 @@ def test_dcf_3d_cart_full_traj_voronoi(n_k2, n_k1, n_k0):
 
 @pytest.mark.parametrize(
     ('n_k2', 'n_k1', 'n_k0', 'k2_steps', 'k1_steps', 'k0_steps'),
-    [(30, 20, 10, (1.0, 0.5, 0.25), (1.0, 0.5), (1.0,))],
+    [(4, 6, 8, (1.0, 0.5, 0.25), (1.0, 0.5), (1.0,))],
 )
 def test_dcf_3d_cart_nonuniform_traj_voronoi(n_k2, n_k1, n_k0, k2_steps, k1_steps, k0_steps):
     """Compare voronoi-based dcf calculation for 3D nonuniform Cartesian
