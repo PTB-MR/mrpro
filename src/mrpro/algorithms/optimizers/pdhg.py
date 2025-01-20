@@ -53,7 +53,9 @@ def pdhg(
     r"""Primal-Dual Hybrid Gradient Algorithm (PDHG).
 
     Solves the minimization problem
+
         :math:`\min_x f(K x) + g(x)`
+
     with linear operator :math:`K` and proper, convex, lower-semicontinous functionals :math:`f` and :math:`g`.
 
     PDHG is a primal-dual algorithm that performs the following steps
@@ -68,15 +70,17 @@ def pdhg(
     convex conjugate of the functional :math:`f`. Thereby, :math:`\tau` and :math:`\sigma`
     are the primal and dual step sizes, respectively (see further below) and :math:`\theta\in [0,1]`.
 
-    The operator is supplied as a LinearOperator or as a :math:`m\times n` -matrix (tuple of tuples) of
-    linear operators, :math:`f` and :math:`g` are supplied as tuples of proximable functionals interpreted
-    as separable sums.
+    The operator can be supplied as a `~mrpro.operators.LinearOperator` or as a
+    :math:`m\times n` -`~mrpro.operators.LinearOperatorMatrix`, :math:`f` and :math:`g` can either be single functionals
+    or `~mrpro.operators.functionals.ProximableFunctionalSeparableSum` of m, or n, respectively, functionals.
 
     Thus, this implementation solves the problem
-            :math:`\min_{x=(x_1,\ldots,x_n)} \sum_{i=1}^m f_i\big( (Kx)_i\big) + \sum_{j=1}^n g_j(x_j)`.
+
+        :math:`\min_{x=(x_1,\ldots,x_n)} \sum_{i=1}^m f_i\big( (Kx)_i\big) + \sum_{j=1}^n g_j(x_j)`.
 
     If neither primal nor dual step size are supplied, they are both chosen as :math:`1/||K||_2`.
     If only one of them is supplied, the other is chosen such that
+
         :math:`\tau \sigma = 1/||K||_2`,
 
     where :math:`1/||K||_2` denotes the operator-norm of :math:`K`.
