@@ -1,4 +1,4 @@
-"""Smap utility function."""
+"""Serial mapping function."""
 
 from collections.abc import Callable, Sequence
 
@@ -13,13 +13,13 @@ def smap(
     """Apply a function to a tensor serially along multiple dimensions.
 
     The function is applied serially without a batch dimensions.
-    Compared to torch.vmap, it works with arbitrary functions, but is slower.
+    Compared to `torch.vmap`, it works with arbitrary functions, but is slower.
 
     Parameters
     ----------
     function
         Function to apply to the tensor.
-        Should handle len(fun_dims) dimensions and not change the number of dimensions.
+        Should handle ``len(fun_dims)`` dimensions and not change the number of dimensions.
     tensor
         Tensor to apply the function to.
     passed_dimensions
