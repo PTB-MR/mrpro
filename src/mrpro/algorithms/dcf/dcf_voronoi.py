@@ -18,10 +18,17 @@ def _volume(v: ArrayLike):
 def dcf_1d(traj: torch.Tensor) -> torch.Tensor:
     """Calculate sample density compensation function for 1D trajectory.
 
+    This function operators on a single `other` sample.
+    See also `~mrpro.data.DcfData` and `mrpro.utils.smap`
+
     Parameters
     ----------
     traj
         k-space positions, 1D tensor
+
+    Returns
+    -------
+        density compensation values
     """
     traj_sorted, inverse, counts = torch.unique(
         torch.round(traj, decimals=UNIQUE_ROUNDING_DECIMALS),
@@ -56,19 +63,25 @@ def dcf_1d(traj: torch.Tensor) -> torch.Tensor:
 
 
 def dcf_2d3d_voronoi(traj: torch.Tensor) -> torch.Tensor:
-    """Calculate sample density compensation function using voronoi method.
+    """Calculate sample density compensation function using Voronoi method.
 
-    Points at the edge of k-space are detected as outliers and assigned the
-    area of the 1% largest dcf values.
+    This function computes the DCF by determining the area around each point in k-space using the Voronoi tessellation.
+    Points at the edge of k-space are detected as outliers and are assigned the area of the 1% largest DCF values.
+
+    The Voronoi tessellation assigns each point in k-space a region based on the proximity to its nearest neighbors. The
+    DCF is then computed based on the inverse of the area of these regions.
+
+    This function operators on a single `other` sample.
+    See also `~mrpro.data.DcfData` and `mrpro.utils.smap`
 
     Parameters
     ----------
     traj
-        k-space positions (2 or 3, k2, k1, k0)
+        k-space positions `(2 or 3, k2, k1, k0)`
 
     Returns
     -------
-        density compensation values (1, k2, k1, k0)
+        density compensation values `(1, k2, k1, k0)`
     """
     # 2D and 3D trajectories supported
     dim = traj.shape[0]

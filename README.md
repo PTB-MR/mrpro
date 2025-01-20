@@ -22,7 +22,7 @@ MR image reconstruction and processing package specifically developed for PyTorc
 
 ## Awards
 
-- 2024 ISMRM QMRI Study Group Challenge, 2nd prize for Relaxometry (T2* and T1)
+- 2024 ISMRM QMRI Study Group Challenge, 2nd prize for Relaxometry ([T2*](https://github.com/PTB-MR/mrpro/blob/8d2133c4a7ce63ac490798c4eb5a70cc1c543646/examples/qmri_sg_challenge_2024_t2_star.ipynb) and [T1](https://github.com/PTB-MR/mrpro/blob/8d2133c4a7ce63ac490798c4eb5a70cc1c543646/examples/qmri_sg_challenge_2024_t1.ipynb))
 
 ## Main features
 
