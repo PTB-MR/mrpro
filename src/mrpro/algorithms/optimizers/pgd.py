@@ -112,9 +112,7 @@ def pgd(
     for iteration in range(max_iterations):
         while stepsize > 1e-30:
             gradient, f_y = grad_and_value_f(y)
-            x = g_sum.prox(
-                *[yi - stepsize * gi for yi, gi in zip(y, gradient, strict=True)], sigma=stepsize
-            )
+            x = g_sum.prox(*[yi - stepsize * gi for yi, gi in zip(y, gradient, strict=True)], sigma=stepsize)
 
             if not backtracking:
                 # no need to check stepsize, continue to next iteration
@@ -146,9 +144,10 @@ def pgd(
         t_old = t
 
         if callback is not None:
-            callback(PGDStatus(solution=x, 
-                               iteration_number=iteration, 
-                               stepsize=stepsize,
-                               objective=lambda *x: f(*x)[0] + g(*x)[0]))
+            callback(
+                PGDStatus(
+                    solution=x, iteration_number=iteration, stepsize=stepsize, objective=lambda *x: f(*x)[0] + g(*x)[0]
+                )
+            )
 
     return x
