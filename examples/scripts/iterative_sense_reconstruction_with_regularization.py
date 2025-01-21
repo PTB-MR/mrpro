@@ -1,5 +1,5 @@
 # %% [markdown]
-# # Regularized Iterative SENSE Reconstruction of 2D golden angle radial data
+# # Regularized iterative SENSE reconstruction of 2D golden angle radial data
 # Here we use the `~mrpro.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction` class to reconstruct
 # undersampled images from 2D radial data.
 

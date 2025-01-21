@@ -1,5 +1,5 @@
 # %% [markdown]
-# # Iterative SENSE Reconstruction of 2D golden angle radial data
+# # Iterative SENSE reconstruction of 2D golden angle radial data
 # Here we use an iterative reconstruction method reconstruct images from ISMRMRD 2D radial data.
 
 # %% [markdown]
@@ -33,9 +33,9 @@
 # We read the raw k-space data and the trajectory from the ISMRMRD file
 # (see <project:comparison_trajectory_calculators.ipynb> for more information on the trajectory calculation).
 # Our example data contains three datasets:
-# - `radial2D_402spokes_golden_angle_with_traj.h5` with 402 spokes
-# - `radial2D_96spokes_golden_angle_with_traj.h5` with 96 spokes
-# - `radial2D_24spokes_golden_angle_with_traj.h5` with 24 spokes
+# - ``radial2D_402spokes_golden_angle_with_traj.h5`` with 402 spokes
+# - ``radial2D_96spokes_golden_angle_with_traj.h5`` with 96 spokes
+# - ``radial2D_24spokes_golden_angle_with_traj.h5`` with 24 spokes
 #
 # We use the 402 spokes dataset for the reconstruction.
 
@@ -105,7 +105,7 @@ img = iterative_sense_reconstruction(kdata)
 # We now peek behind the scenes to see how the iterative SENSE reconstruction is implemented. We perform all steps
 # `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` does when initialized with only an `~mrpro.data.KData`
 # object, i.e., we need to set up a Fourier operator, estimate coil sensitivity maps, and the density weighting.
-# without reusing any thing from `direct_reconstruction`.
+# without reusing any thing from ``direct_reconstruction```.
 
 # %% [markdown]
 # ### Set up density compensation operator $W$
@@ -124,7 +124,7 @@ dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata.traj).as_operator()
 # %% [markdown]
 # ### Set up the acquisition model $A$
 # We need `~mrpro.operators.FourierOp` and `~mrpro.operators.SensitivityOp` operators to set up the acquisition model
-# $A$. The Fourier operator is created from the trajectory and header information in `kdata`:
+# $A$. The Fourier operator is created from the trajectory and header information in ``kdata``:
 
 # %%
 fourier_operator = mrpro.operators.FourierOp(

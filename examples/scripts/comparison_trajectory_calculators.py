@@ -1,5 +1,5 @@
 # %% [markdown]
-# # Different ways to obtain the Trajectory
+# # Different ways to obtain the trajectory
 # This example builds upon the <project:direct_reconstruction.ipynb> example and demonstrates three ways
 # to obtain the trajectory information required for image reconstruction:
 # - using the trajectory that is stored in the ISMRMRD file
