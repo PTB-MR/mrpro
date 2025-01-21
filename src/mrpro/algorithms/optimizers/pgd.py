@@ -15,8 +15,8 @@ from mrpro.operators.Operator import Operator
 class PGDStatus(OptimizerStatus):
     """Proximal Gradient Descent callback base class."""
 
-    stepsize: float
-    """Current stepsize of the algorithm."""
+    stepsize: float | torch.Tensor
+    objective: Callable[[*tuple[torch.Tensor, ...]], torch.Tensor]
 
 
 def pgd(
@@ -24,7 +24,6 @@ def pgd(
     g: ProximableFunctional | ProximableFunctionalSeparableSum,
     initial_value: torch.Tensor | tuple[torch.Tensor, ...],
     stepsize: float = 1.0,
-    reg_parameter: float = 0.01,
     max_iterations: int = 128,
     backtrack_factor: float = 1.0,
     callback: Callable[[PGDStatus], None] | None = None,
@@ -49,7 +48,8 @@ def pgd(
                 fft = FastFourierOp()
                 l2 = L2NormSquared(target=kspace_data)
                 f = l2 @ fft
-                g = L1Norm()
+                reg_parameter = 0.01
+                g = reg_parameter * L1Norm()
                 operator_norm = 1.
                 stepsize = 0.85 * 1 / operator_norm
                 initial_value = torch.ones(image_space_shape)
@@ -58,7 +58,6 @@ def pgd(
                     g=g,
                     initial_value=initial_value,
                     stepsize=stepsize,
-                    reg_parameter=0.01,
                     max_iterations=200,
                     backtrack_factor=1.0,
                 )
@@ -74,8 +73,6 @@ def pgd(
         initial value for the solution of the algorithm
     stepsize
         stepsize needed in the gradient step, constant if no backtracking is used, otherwise it is the initial stepsize
-    reg_parameter
-        regularization parameter that multiplies g
     max_iterations
         number of iterations
     backtrack_factor
@@ -116,7 +113,7 @@ def pgd(
         while stepsize > 1e-30:
             gradient, f_y = grad_and_value_f(y)
             x = g_sum.prox(
-                *[yi - stepsize * gi for yi, gi in zip(y, gradient, strict=True)], sigma=reg_parameter * stepsize
+                *[yi - stepsize * gi for yi, gi in zip(y, gradient, strict=True)], sigma=stepsize
             )
 
             if not backtracking:
@@ -149,6 +146,9 @@ def pgd(
         t_old = t
 
         if callback is not None:
-            callback(PGDStatus(solution=y, iteration_number=iteration, stepsize=stepsize))
+            callback(PGDStatus(solution=x, 
+                               iteration_number=iteration, 
+                               stepsize=stepsize,
+                               objective=lambda *x: f(*x)[0] + g(*x)[0]))
 
     return x
