@@ -29,8 +29,9 @@ def walsh(coil_images: torch.Tensor, smoothing_width: SpatialDimension[int] | in
        Normalize the resulting eigenvectors to produce the final CSMs.
 
     This function works on a single set of coil images. The input should be a tensor with dimensions
-    (coils, z, y, x). The output will have the same dimensions. Either apply this function individually to each set of
-    coil images, or see CsmData.from_idata_walsh which performs this operation on a whole dataset [WAL2000]_.
+    `(coils, z, y, x)`. The output will have the same dimensions. Either apply this function individually to each set of
+    coil images, or see `~mrpro.data.CsmData.from_idata_walsh` which performs this operation on a whole dataset
+    [WAL2000]_.
 
     This implementation is inspired by `ismrmrd-python-tools <https://github.com/ismrmrd/ismrmrd-python-tools>`_.
 

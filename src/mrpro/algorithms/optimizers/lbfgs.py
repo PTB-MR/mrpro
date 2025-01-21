@@ -28,7 +28,7 @@ def lbfgs(
     The Limited-memory Broyden-Fletcher-Goldfarb-Shanno (LBFGS) algorithm is a quasi-Newton optimization method
     that approximates the inverse Hessian matrix using a limited memory of past gradients and updates.
     It is well-suited for high-dimensional problems and leverages curvature information
-    for faster convergence compared to first-order methods such as `mrpro.algorithms.optimizers.adam`
+    for faster convergence compared to first-order methods such as `mrpro.algorithms.optimizers.adam`.
 
     The parameter update rule is:
 
@@ -82,14 +82,14 @@ def lbfgs(
     line_search_fn
         line search algorithm, either ``strong_wolfe`` or `None` (meaning constant step size)
     callback
-        function to be called after each iteration.
-        N.B. the callback is not called within the line search of LBFGS
+        Function to be called after each iteration.
+        N.B. the callback is not called within the line search of LBFGS.
         You can use the information from the `~mrpro.algorithms.optimizers.OptimizerStatus`
         to display a progress bar.
 
     Returns
     -------
-        list of optimized parameters
+        List of optimized parameters.
     """
     parameters = tuple(p.detach().clone().requires_grad_(True) for p in initial_parameters)
     optim = LBFGS(

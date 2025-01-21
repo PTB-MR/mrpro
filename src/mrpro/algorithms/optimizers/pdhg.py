@@ -72,7 +72,7 @@ def pdhg(
 
     The operator can be supplied as a `~mrpro.operators.LinearOperator` or as a
     :math:`m\times n` -`~mrpro.operators.LinearOperatorMatrix`, :math:`f` and :math:`g` can either be single functionals
-    or `~mrpro.operators.functionals.ProximableFunctionalSeparableSum` of m, or n, respectively, functionals.
+    or `~mrpro.operators.ProximableFunctionalSeparableSum` of m, or n, respectively, functionals.
 
     Thus, this implementation solves the problem
 
@@ -94,12 +94,12 @@ def pdhg(
     Parameters
     ----------
     f
-        functional `f` in the problem definition. If set to None, it is interpreted as the zero-functional.
+        Functional `f` in the problem definition. If set to None, it is interpreted as the zero-functional.
     g
-        functional `g` in the problem definition. If set to None, it is interpreted as the zero-functional.
+        Functional `g` in the problem definition. If set to None, it is interpreted as the zero-functional.
     operator
-        linear operator or matrix of linear operators;
-        if set to None, it is interpreted as the Identity-operator
+        Linear operator or matrix of linear operators;
+        if set to None, it is interpreted as the Identity-operator.
     initial_values
         initial guess of the solution
     max_iterations

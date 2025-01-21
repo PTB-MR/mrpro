@@ -14,10 +14,10 @@ def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float | torch.T
 
     Steps:
 
-    - Calculate noise correlation matrix :math:`N`
-    - Carry out Cholesky decomposition :math:`L L^H = N`
-    - Estimate noise decorrelation matrix :math:`D = L^{-1}`
-    - Apply :math:`D` to k-space data
+    - Calculate noise correlation matrix :math:`N`.
+    - Carry out Cholesky decomposition :math:`L L^H = N`.
+    - Estimate noise decorrelation matrix :math:`D = L^{-1}`.
+    - Apply :math:`D` to k-space data.
 
     More information can be found in [ISMa]_ [HAN2014]_ [ROE1990]_.
 
@@ -39,7 +39,7 @@ def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float | torch.T
 
     Returns
     -------
-        Prewhitened *copy* of k-space data
+        Prewhitened *copy* of k-space data.
 
     References
     ----------
