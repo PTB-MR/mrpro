@@ -83,7 +83,7 @@ class SliceProjectionOp(LinearOperator):
 
     The projection will be done by sparse matrix multiplication.
 
-    Rotation, shift, and profile can have (multiple) batch dimensions. These dimensions will
+    `slice_rotation`, `slice_shift`, and `slice_profile` can have (multiple) batch dimensions. These dimensions will
     be broadcasted to a common shape and added to the front of the volume.
     Different settings for different volume batches are NOT supported, consider creating multiple
     operators if required.
@@ -129,7 +129,8 @@ class SliceProjectionOp(LinearOperator):
             A function returning the relative intensity of the slice profile at a position x
             (relative to the nominal profile center). This can also be a nested Sequence or an
             numpy array of functions. See `mrpro.utils.slice_profiles` for examples.
-            If it is a single float, it will be interpreted as the FWHM of a rectangular profile.
+            If it is a single float, it will be interpreted as the full-width-at-half-maximum (FWHM) of a rectangular
+            profile.
         optimize_for
             Whether to optimize for forward or adjoint operation or both.
             Optimizing for both takes more memory but is faster for both operations.

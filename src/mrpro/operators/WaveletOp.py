@@ -57,14 +57,14 @@ class WaveletOp(LinearOperator):
         Parameters
         ----------
         domain_shape
-            Shape of domain where wavelets are calculated. If set to None the shape is taken from the input of the
+            Shape of domain where wavelets are calculated. If set to `None` the shape is taken from the input of the
             forward operator. The adjoint operator will raise an error.
         dim
             Dimensions (axes) where wavelets are calculated
         wavelet_name
             Name of wavelets
         level
-            Highest wavelet level. If set to None, the highest possible level is calculated based on the domain shape.
+            Highest wavelet level. If set to `None`, the highest possible level is calculated based on the domain shape.
 
         Raises
         ------
