@@ -8,13 +8,13 @@ from typing import Literal, TypeAlias
 import einops
 import numpy as np
 import torch
-from numpy._typing import _NestedSequence as NestedSequence
 from torch import Tensor
 
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
 from mrpro.utils.slice_profiles import SliceSmoothedRectangular
+from mrpro.utils.typing import NestedSequence
 
 
 class _MatrixMultiplicationCtx(torch.autograd.function.FunctionCtx):
@@ -77,13 +77,13 @@ class SliceProjectionOp(LinearOperator):
     """Slice Projection Operator.
 
     This operation samples from a 3D Volume a slice with a given rotation and shift
-    (relative to the center of the volume) according to the slice_profile.
+    (relative to the center of the volume) according to the `slice_profile`.
     It can, for example, be used to describe the slice selection of a 2D MRI sequence
     from the 3D Volume.
 
     The projection will be done by sparse matrix multiplication.
 
-    Rotation, shift, and profile can have (multiple) batch dimensions. These dimensions will
+    `slice_rotation`, `slice_shift`, and `slice_profile` can have (multiple) batch dimensions. These dimensions will
     be broadcasted to a common shape and added to the front of the volume.
     Different settings for different volume batches are NOT supported, consider creating multiple
     operators if required.
@@ -118,9 +118,9 @@ class SliceProjectionOp(LinearOperator):
         Parameters
         ----------
         input_shape
-            Shape of the 3D volume to sample from (z, y, x)
+            Shape of the 3D volume to sample from. `(z, y, x)`
         slice_rotation
-            Rotation that describes the orientation of the plane. If None,
+            Rotation that describes the orientation of the plane. If `None`,
             an identity rotation is used.
         slice_shift
             Offset of the plane in the volume perpendicular plane from the center of the volume.
@@ -128,8 +128,9 @@ class SliceProjectionOp(LinearOperator):
         slice_profile
             A function returning the relative intensity of the slice profile at a position x
             (relative to the nominal profile center). This can also be a nested Sequence or an
-            numpy array of functions.
-            If it is a single float, it will be interpreted as the FWHM of a rectangular profile.
+            numpy array of functions. See `mrpro.utils.slice_profiles` for examples.
+            If it is a single float, it will be interpreted as the full-width-at-half-maximum (FWHM) of a rectangular
+            profile.
         optimize_for
             Whether to optimize for forward or adjoint operation or both.
             Optimizing for both takes more memory but is faster for both operations.
@@ -214,12 +215,12 @@ class SliceProjectionOp(LinearOperator):
         Parameters
         ----------
         x
-            3D Volume with shape (..., z, y, x)
+            3D Volume with shape `(..., z, y, x)`
             with z, y, x matching the input_shape
 
         Returns
         -------
-        A 2D slice with shape (..., 1, max(z, y, x), (max(z, y, x)))
+        A 2D slice with shape `(..., 1, max(z, y, x), (max(z, y, x)))`
         """
         match (self.matrix, self.matrix_adjoint):
             # selection based on the optimize_for setting
@@ -246,13 +247,13 @@ class SliceProjectionOp(LinearOperator):
         Parameters
         ----------
         x
-            2D Slice with shape (..., 1, max(z, y, x), (max(z, y, x)))
-            with z, y, x matching the input_shape
+            2D Slice with shape `(..., 1, max(z, y, x), (max(z, y, x)))`
+            with `z, y, x` matching the input_shape
 
         Returns
         -------
-        A 3D Volume with shape (..., z, y, x)
-           with z, y, x matching the input_shape
+        A 3D Volume with shape `(..., z, y, x)`
+           with` z, y, x` matching the input_shape
         """
         match (self.matrix, self.matrix_adjoint):
             # selection based on the optimize_for setting
@@ -340,12 +341,12 @@ class SliceProjectionOp(LinearOperator):
             Rotation that describes the orientation of the plane
         offset: Tensor
             Shift of the plane from the center of the volume in the rotated coordinate system
-            in units of the 3D volume, order z, y, x
+            in units of the 3D volume, order `z, y, x`
         w: int
             Factor that determines the number of pixels that are considered in the projection along
             the slice profile direction.
         slice_function
-            Function that describes the slice profile.
+            Function that describes the slice profile. See `mrpro.utils.slice_profiles` for examples.
         rotation_center
             Center of rotation, if None the center of the volume is used,
             i.e. for 4 pixels 0 1 2 3 it is between 1 and 2

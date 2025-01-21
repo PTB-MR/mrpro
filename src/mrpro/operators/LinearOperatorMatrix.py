@@ -20,9 +20,9 @@ _IdxType = _SingleIdxType | tuple[_SingleIdxType, _SingleIdxType]
 
 
 class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torch.Tensor, ...]]):
-    r"""Matrix of Linear Operators.
+    r"""Matrix of linear operators.
 
-    A matrix of Linear Operators, where each element is a Linear Operator.
+    A matrix of linear operators, where each element is a `~mrpro.operators.LinearOperator`.
 
     This matrix can be applied to a sequence of tensors, where the number of tensors should match
     the number of columns of the matrix. The output will be a sequence of tensors, where the number
@@ -32,9 +32,9 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
     in the i-th row and j-th column and :math:`x[j]` is the j-th input tensor.
 
     The matrix can be indexed and sliced like a regular matrix to get submatrices.
-    If indexing returns a single element, it is returned as a Linear Operator.
+    If indexing returns a single element, it is returned as a `~mrpro.operators.LinearOperator`.
 
-    Basic arithmetic operations are supported with Linear Operators and Tensors.
+    Basic arithmetic operations are supported with `~mrpro.operators.LinearOperator` and Tensors.
 
     """
 
@@ -43,13 +43,13 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
     def __init__(self, operators: Sequence[Sequence[LinearOperator]]):
         """Initialize Linear Operator Matrix.
 
-        Create a matrix of LinearOperators from a sequence of rows, where each row is a sequence
-        of LinearOperators that represent the columns of the matrix.
+        Create a matrix of `~mrpro.operators.LinearOperator` from a sequence of rows, where each row is a sequence
+        of `~mrpro.operators.LinearOperator` that represent the columns of the matrix.
 
         Parameters
         ----------
         operators
-            A sequence of rows, which are sequences of Linear Operators.
+            A sequence of rows, which are sequences of `~mrpro.operators.LinearOperator`.
         """
         if not all(isinstance(op, LinearOperator) for row in operators for op in row):
             raise ValueError('All elements should be LinearOperators.')
@@ -94,7 +94,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
 
         Returns
         -------
-            Subset LinearOperatorMatrix or Linear Operator.
+            Subset `LinearOperatorMatrix` or `~mrpro.operators.LinearOperator`.
         """
         idxs: tuple[_SingleIdxType, _SingleIdxType] = idx if isinstance(idx, tuple) else (idx, slice(None))
         if len(idxs) > 2:
@@ -235,15 +235,15 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
 
     @classmethod
     def from_diagonal(cls, *operators: LinearOperator):
-        """Create a diagonal LinearOperatorMatrix.
+        """Create a diagonal `LinearOperatorMatrix`.
 
-        Create a square LinearOperatorMatrix with the given Linear Operators on the diagonal,
+        Construct a square `LinearOperatorMatrix` with the given linear operators on the diagonal,
         resulting in a block-diagonal linear operator.
 
         Parameters
         ----------
         operators
-            Sequence of Linear Operators to be placed on the diagonal.
+            Sequence of `~mrpro.operators.LinearOperator` to be placed on the diagonal.
         """
         operator_matrix: list[list[LinearOperator]] = [
             [op if i == j else ZeroOp(False) for j in range(len(operators))] for i, op in enumerate(operators)
