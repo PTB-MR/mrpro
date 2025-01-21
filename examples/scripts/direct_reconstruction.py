@@ -1,5 +1,5 @@
 # %% [markdown]
-# # Direct Reconstruction of 2D golden angle radial data
+# # Direct reconstruction of 2D golden angle radial data
 # Here we use the `~mrpro.algorithms.reconstruction.DirectReconstruction` class to perform a basic reconstruction of
 # 2D radial data.
 # A *direct* reconstruction uses the density compensated adjoint of the acquisition operator to obtain the images.

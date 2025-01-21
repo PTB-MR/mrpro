@@ -151,7 +151,7 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
 
             * If `dim=(-1)`, `batch1*batch2` matrices are considered, and for each a separate operator norm is computed.
 
-            * If `dim=(-1,-2)`, `batch1` matrices with `batch2` blocks are considered, and for each matrix a
+            * If `dim=(-2,-1)`, `batch1` matrices with `batch2` blocks are considered, and for each matrix a
               separate operator norm is computed.
 
             Thus, the choice of `dim` determines implicitly determines the domain of the operator.
@@ -160,17 +160,17 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         relative_tolerance
             absolute tolerance for the change of the operator-norm at each iteration;
             if set to zero, the maximal number of iterations is the only stopping criterion used to stop
-            the power iteration
+            the power iteration.
         absolute_tolerance
             absolute tolerance for the change of the operator-norm at each iteration;
             if set to zero, the maximal number of iterations is the only stopping criterion used to stop
-            the power iteration
+            the power iteration.
         callback
             user-provided function to be called at each iteration
 
         Returns
         -------
-            an estimaton of the operator norm. Shape corresponds to the shape of the input tensor `initial_value`
+            An estimaton of the operator norm. Shape corresponds to the shape of the input tensor `initial_value`
             with the dimensions specified in `dim` reduced to a single value.
             The pointwise multiplication of `initial_value` with the result of the operator norm will always
             be well-defined.

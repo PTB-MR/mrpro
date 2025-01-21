@@ -47,7 +47,7 @@ def adam(
 
     1. Initialize parameters and moment estimates (:math:`m_0`, :math:`v_0`).
     2. Compute the gradient of the objective function.
-    3. Compute biased corrected estimates of the moments :math:`\hat{m}_t` and :math:`\hat{v}_t`.
+    3. Compute bias-corrected estimates of the moments :math:`\hat{m}_t` and :math:`\hat{v}_t`.
     4. Update parameters using the adaptive step size.
 
     This function wraps PyTorch's :class:`torch.optim.Adam` and :class:`torch.optim.AdamW` implementations,
@@ -79,7 +79,7 @@ def adam(
     eps
         term added to the denominator to improve numerical stability
     weight_decay
-        weight decay (L2 penalty if `decoupled_weight_decay` is False)
+        weight decay (L2 penalty if `decoupled_weight_decay` is `False`)
     amsgrad
         whether to use the AMSGrad variant [REDDI2019]_
     decoupled_weight_decay

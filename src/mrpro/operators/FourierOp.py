@@ -27,7 +27,7 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
     It also includes padding/cropping to the reconstruction matrix size.
 
     The operator can directly be constructed from a `~mrpro.data.KData` object to match its
-    trajectory and header information, see `FourierOp.from_kdata`
+    trajectory and header information, see `FourierOp.from_kdata`.
 
     """
 
@@ -147,7 +147,7 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
         kdata
             k-space data
         recon_shape
-            dimension of the reconstructed image. Defaults to KData.header.recon_matrix
+            Dimension of the reconstructed image. Defaults to `KData.header.recon_matrix`.
         """
         return cls(
             recon_matrix=kdata.header.recon_matrix if recon_shape is None else recon_shape,

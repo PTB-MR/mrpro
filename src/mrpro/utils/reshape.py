@@ -11,7 +11,7 @@ def unsqueeze_right(x: torch.Tensor, n: int) -> torch.Tensor:
     """Unsqueeze multiple times in the rightmost dimension.
 
     Example:
-        tensor with shape `(1,2,3)` and `n=2` would result in tensor with shape `(1,2,3,1,1)`
+        Tensor with shape `(1,2,3)` and `n=2` would result in tensor with shape `(1,2,3,1,1)`.
 
     Parameters
     ----------
@@ -22,16 +22,16 @@ def unsqueeze_right(x: torch.Tensor, n: int) -> torch.Tensor:
 
     Returns
     -------
-    unsqueezed tensor (view)
+        unsqueezed tensor (view)
     """
     return x.reshape(*x.shape, *(n * (1,)))
 
 
 def unsqueeze_left(x: torch.Tensor, n: int) -> torch.Tensor:
-    """Unsqueze multiple times in the leftmost dimension.
+    """Unsqueeze multiple times in the leftmost dimension.
 
     Example:
-        tensor with shape `(1,2,3)` and `n=2` would result in tensor with shape `(1,1,1,2,3)`
+        Tensor with shape `(1,2,3)` and `n=2` would result in tensor with shape `(1,1,1,2,3)`.
 
 
     Parameters
@@ -43,7 +43,7 @@ def unsqueeze_left(x: torch.Tensor, n: int) -> torch.Tensor:
 
     Returns
     -------
-    unsqueezed tensor (view)
+        unsqueezed tensor (view)
     """
     return x.reshape(*(n * (1,)), *x.shape)
 
@@ -56,8 +56,7 @@ def broadcast_right(*x: torch.Tensor) -> tuple[torch.Tensor, ...]:
     Then, `torch.broadcast_tensors` is used.
 
     Example:
-        tensors with shapes `(1,2,3), (1,2), (2)`
-        results in tensors with shape `(2,2,3)`
+        Tensors with shapes `(1,2,3), (1,2), (2)` results in tensors with shape `(2,2,3)`.
 
     Parameters
     ----------
@@ -78,14 +77,14 @@ def reduce_view(x: torch.Tensor, dim: int | Sequence[int] | None = None) -> torc
 
     Reduce either all or specific dimensions to a singleton if it
     points to the same memory address.
-    This undoes `torch.expand`.
+    This undoes `torch.Tensor.expand`.
 
     Parameters
     ----------
     x
         input tensor
     dim
-        only reduce expanded dimensions in the specified dimensions.
+        Only reduce expanded dimensions in the specified dimensions.
         If `None`, reduce all expanded dimensions.
     """
     if dim is None:

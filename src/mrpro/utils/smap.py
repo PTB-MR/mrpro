@@ -12,7 +12,7 @@ def smap(
 ) -> torch.Tensor:
     """Apply a function to a tensor serially along multiple dimensions.
 
-    The function is applied serially without a batch dimensions.
+    The function is applied serially without batch dimensions.
     Compared to `torch.vmap`, it works with arbitrary functions, but is slower.
 
     Parameters

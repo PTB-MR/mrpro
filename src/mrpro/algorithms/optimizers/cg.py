@@ -60,11 +60,11 @@ def cg(
         is the only stopping criterion used to stop the cg.
         If the condition number of :math:`H` is large, a small residual may not imply a highly accurate solution.
     callback
-        function to be called at each iteration. This can be used to monitor the progress of the algorithm.
+        Function to be called at each iteration. This can be used to monitor the progress of the algorithm.
 
     Returns
     -------
-        an approximate solution of the linear system :math:`Hx=b`
+        An approximate solution of the linear system :math:`Hx=b`.
 
     References
     ----------

@@ -18,8 +18,8 @@ def _volume(v: ArrayLike):
 def dcf_1d(traj: torch.Tensor) -> torch.Tensor:
     """Calculate sample density compensation function for 1D trajectory.
 
-    This function operators on a single `other` sample.
-    See also `~mrpro.data.DcfData` and `mrpro.utils.smap`
+    This function operates on a single `other` sample.
+    See also `~mrpro.data.DcfData` and `~mrpro.utils.smap`.
 
     Parameters
     ----------
@@ -71,8 +71,8 @@ def dcf_2d3d_voronoi(traj: torch.Tensor) -> torch.Tensor:
     The Voronoi tessellation assigns each point in k-space a region based on the proximity to its nearest neighbors. The
     DCF is then computed based on the inverse of the area of these regions.
 
-    This function operators on a single `other` sample.
-    See also `~mrpro.data.DcfData` and `mrpro.utils.smap`
+    This function operates on a single `other` sample.
+    See also `~mrpro.data.DcfData` and `~mrpro.utils.smap`.
 
     Parameters
     ----------

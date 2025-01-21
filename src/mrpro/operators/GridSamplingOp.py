@@ -49,16 +49,16 @@ class AdjointGridSample(torch.autograd.Function):
         y
             tensor in the range of gridsample(x,grid). Should not include batch or channel dimension.
         grid
-            grid in the shape (*y.shape, 2/3)
+            grid in the shape `(*y.shape, 2/3)`
         xshape
-            shape of the domain of gridsample(x,grid), i.e. the shape of x
+            shape of the domain of gridsample(x,grid), i.e. the shape of `x`
         interpolation_mode
             the kind of interpolation used
         padding_mode
             how to pad the input
         align_corners
              if True, the corner pixels of the input and output tensors are aligned,
-             and thus preserving the values at those pixels
+             and thus preserve the values at those pixels
 
         """
         # grid_sampler_and_backward uses integer values instead of strings for the modes
@@ -191,10 +191,10 @@ class GridSamplingOp(LinearOperator):
         Parameters
         ----------
         grid
-            sampling grid. Shape \*batchdim, z,y,x,3 / \*batchdim, y,x,2.
-            Values should be in [-1, 1.]
+            sampling grid. Shape `\*batchdim, z,y,x,3 / \*batchdim, y,x,2`.
+            Values should be in ``[-1, 1.]``.
         input_shape
-            Used in the adjoint. The z,y,x shape of the domain of the operator.
+            Used in the adjoint. The z, y, x shape of the domain of the operator.
             If grid has 2 as the last dimension, only y and x will be used.
         interpolation_mode
             mode used for interpolation. bilinear is trilinear in 3D, bicubic is only supported in 2D.
@@ -202,7 +202,7 @@ class GridSamplingOp(LinearOperator):
             how the input of the forward is padded.
         align_corners
             if True, the corner pixels of the input and output tensors are aligned,
-            and thus preserving the values at those pixels
+            and thus preserve the values at those pixels
         """
         super().__init__()
 

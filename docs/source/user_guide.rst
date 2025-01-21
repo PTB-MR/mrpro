@@ -3,9 +3,8 @@ User Guide
 ==========
 
 MRpro is a MR image reconstruction and processing framework specifically developed to work well with pytorch.
-The data classes utilize `torch.Tensor` for storing data such as MR raw data or reconstructed image data,
-operators are implemented as `torch.nn.Module`
-Where possible batch parallelisation of pytorch is utilized to speed up image reconstruction.
+The data classes utilize `torch.Tensor` for storing data such as MR raw data or reconstructed image data.
+Operators are implemented as `torch.nn.Module` where possible batch parallelisation of pytorch is utilized to speed up image reconstruction.
 
 Installation
 ============
@@ -39,7 +38,7 @@ A basic pipeline would contain the following steps:
 
 The following provides some basic information about these steps.
 For more detailed information please have a look at the :doc:`examples`.
-You can easily launch notebooks via the |colab-badge| badge and give the notebooks a try -
+You can easily launch notebooks via the |colab-badge| badge and give the notebooks a try!
 
 Reading in raw data
 -------------------
@@ -54,7 +53,7 @@ for available trajectory calculators and :doc:`_notebooks/comparison_trajectory_
 .. note::
     In MRpro, we use the convention ``(z, y, x)`` for spatial dimensions and ``(k2, k1, k0)`` for k-space dimensions.
     Here, `k0` is the readout direction, `k1` and `k2` are phase encoding directions.
-    The full shape of a multi-slice 2D k-space data, for example, is ``(other, coil, 1, k1, k0)`` where `other` will be the different slices.
+    The full shape of a multi-slice 2D k-space data for example is ``(other, coil, 1, k1, k0)`` where `other` will be the different slices.
     In general, `other` can be any number of additional dimensions.
 
 .. note::

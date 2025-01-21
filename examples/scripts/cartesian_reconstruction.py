@@ -1,5 +1,5 @@
 # %% [markdown]
-# # Basics of MRpro and Cartesian Reconstructions
+# # Basics of MRpro and Cartesian reconstructions
 # Here, we are going to have a look at a few basics of MRpro and reconstruct data acquired with a Cartesian sampling
 # pattern.
 
@@ -295,7 +295,7 @@ show_images(magnitude_pe_pf, titles=['PF & PE'])
 # different operators and chain them together. Wouldn't it be nice if this could be done automatically?
 #
 # That is why we also included some top-level reconstruction algorithms in MRpro. For this whole steps from above,
-# we can simply use a `~mrpro.algorithnms.reconstruction.DirectReconstruction`.
+# we can simply use a `~mrpro.algorithms.reconstruction.DirectReconstruction`.
 # Reconstruction algorithms can be instantiated from only the information in the `~mrpro.data.KData` object.
 #
 # In contrast to operators, top-level reconstruction algorithms operate on the data objects of MRpro, i.e. the input is

@@ -17,9 +17,9 @@ class PCACompressionOp(LinearOperator):
     ) -> None:
         """Construct a PCA based compression operator.
 
-        The operator carries out an SVD followed by a threshold of the n_components largest values along the last
+        The operator carries out an SVD followed by a threshold of the `n_components` largest values along the last
         dimension of a data with shape `(*other, joint_dim, compression_dim)`.
-        A single SVD is carried out for everything along joint_dim. Other are batch dimensions.
+        A single SVD is carried out for everything along `joint_dim`. `other` are batch dimensions.
 
         Consider combining this operator with `~mrpro.operators.RearrangeOp` to make sure the data is
         in the correct shape before applying.
