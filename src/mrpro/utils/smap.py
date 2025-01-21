@@ -23,9 +23,9 @@ def smap(
     tensor
         Tensor to apply the function to.
     passed_dimensions
-        Dimensions NOT to be batched / dimensions that are passed to the function
-        tuple of dimension indices (negative indices are supported) or an integer
-        an integer n means the last n dimensions are passed to the function
+        Dimensions NOT to be batched / dimensions that are passed to the function.
+        Either a tuple of dimension indices (negative indices are supported) or an integer.
+        An integer ``n`` means the last ``n`` dimensions are passed to the function.
     """
     if isinstance(passed_dimensions, int):
         # use the last fun_dims dimensions for the function
