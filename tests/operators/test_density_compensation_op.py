@@ -4,8 +4,7 @@ import torch
 from mrpro.data import DcfData
 from mrpro.operators import DensityCompensationOp
 
-from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test
+from tests import RandomGenerator, dotproduct_adjointness_test
 
 
 def test_density_compensation_op_adjointness():

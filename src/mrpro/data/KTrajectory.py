@@ -1,6 +1,7 @@
 """KTrajectory dataclass."""
 
 from dataclasses import dataclass
+from typing import Literal
 
 import numpy as np
 import torch
@@ -8,6 +9,7 @@ from typing_extensions import Self
 
 from mrpro.data.enums import TrajType
 from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils import remove_repeat
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 
@@ -69,29 +71,52 @@ class KTrajectory(MoveDataMixin):
         cls,
         tensor: torch.Tensor,
         stack_dim: int = 0,
-        repeat_detection_tolerance: float | None = 1e-8,
+        axes_order: Literal['zxy', 'zyx', 'yxz', 'yzx', 'xyz', 'xzy'] = 'zyx',
+        repeat_detection_tolerance: float | None = 1e-6,
         grid_detection_tolerance: float = 1e-3,
+        scaling_matrix: SpatialDimension | None = None,
     ) -> Self:
         """Create a KTrajectory from a tensor representation of the trajectory.
 
-        Reduces repeated dimensions to singletons if repeat_detection_tolerance
-        is not set to None.
-
+        Reduces repeated dimensions to singletons if repeat_detection_tolerance is not set to None.
 
         Parameters
         ----------
         tensor
             The tensor representation of the trajectory.
-            This should be a 5-dim tensor, with (kz,ky,kx) stacked in this order along stack_dim
+            This should be a 5-dim tensor, with (kz, ky, kx) stacked in this order along `stack_dim`.
         stack_dim
-            The dimension in the tensor the directions have been stacked along.
+            The dimension in the tensor along which the directions are stacked.
+        axes_order
+            The order of the axes in the tensor. The MRpro convention is 'zyx'.
         repeat_detection_tolerance
-            detects if broadcasting can be used, i.e. if dimensions are repeated.
-            Set to None to disable.
+            Tolerance for detecting repeated dimensions (broadcasting).
+            If trajectory points differ by less than this value, they are considered identical.
+            Set to None to disable this feature.
         grid_detection_tolerance
-            tolerance to detect if trajectory points are on integer grid positions
+            Tolerance for detecting whether trajectory points align with integer grid positions.
+            This tolerance is applied after rescaling if `scaling_matrix` is provided.
+        scaling_matrix
+            If a scaling matrix is provided, the trajectory is rescaled to fit within
+            the dimensions of the matrix. If not provided, the trajectory remains unchanged.
+
         """
-        kz, ky, kx = torch.unbind(tensor, dim=stack_dim)
+        ks = tensor.unbind(dim=stack_dim)
+        kz, ky, kx = (ks[axes_order.index(axis)] for axis in 'zyx')
+
+        def rescale(k: torch.Tensor, size: float) -> torch.Tensor:
+            max_abs_range = 2 * k.abs().max()
+            if size < 2 or max_abs_range < 1e-6:
+                # a single encoding point should be at zero
+                # avoid division by zero
+                return torch.zeros_like(k)
+            return k * (size / max_abs_range)
+
+        if scaling_matrix is not None:
+            kz = rescale(kz, scaling_matrix.z)
+            ky = rescale(ky, scaling_matrix.y)
+            kx = rescale(kx, scaling_matrix.x)
+
         return cls(
             kz,
             ky,

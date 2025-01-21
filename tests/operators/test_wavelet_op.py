@@ -8,8 +8,7 @@ from ptwt.conv_transform import wavedec
 from ptwt.conv_transform_2 import wavedec2
 from ptwt.conv_transform_3 import wavedec3
 
-from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test, operator_isometry_test, operator_unitary_test
+from tests import RandomGenerator, dotproduct_adjointness_test, linear_operator_unitary_test, operator_isometry_test
 
 
 @pytest.mark.parametrize(
@@ -168,4 +167,4 @@ def test_wavelet_op_unitary(im_shape, domain_shape, dim, wavelet_name):
     random_generator = RandomGenerator(seed=0)
     img = random_generator.complex64_tensor(size=im_shape)
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name=wavelet_name)
-    operator_unitary_test(wavelet_op, img)
+    linear_operator_unitary_test(wavelet_op, img)

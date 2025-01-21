@@ -1,7 +1,8 @@
 """Helper/Utilities for test functions."""
 
 import torch
-from mrpro.operators import Operator
+from mrpro.operators import LinearOperator, Operator
+from typing_extensions import TypeVarTuple, Unpack
 
 
 def relative_image_difference(img1: torch.Tensor, img2: torch.Tensor) -> torch.Tensor:
@@ -26,9 +27,13 @@ def relative_image_difference(img1: torch.Tensor, img2: torch.Tensor) -> torch.T
 
 
 def dotproduct_adjointness_test(
-    operator: Operator, u: torch.Tensor, v: torch.Tensor, relative_tolerance: float = 1e-3, absolute_tolerance=1e-5
+    operator: LinearOperator,
+    u: torch.Tensor,
+    v: torch.Tensor,
+    relative_tolerance: float = 1e-3,
+    absolute_tolerance=1e-5,
 ):
-    """Test the adjointness of operator and operator.H.
+    """Test the adjointness of linear operator and operator.H.
 
     Test if
          <Operator(u),v> == <u, Operator^H(v)>
@@ -42,7 +47,7 @@ def dotproduct_adjointness_test(
     Parameters
     ----------
     operator
-        operator
+        linear operator
     u
         element of the domain of the operator
     v
@@ -74,9 +79,12 @@ def dotproduct_adjointness_test(
 
 
 def operator_isometry_test(
-    operator: Operator, u: torch.Tensor, relative_tolerance: float = 1e-3, absolute_tolerance=1e-5
+    operator: Operator[torch.Tensor, tuple[torch.Tensor]],
+    u: torch.Tensor,
+    relative_tolerance: float = 1e-3,
+    absolute_tolerance=1e-5,
 ):
-    """Test the isometry of an operator.
+    """Test the isometry of a operator.
 
     Test if
          ||Operator(u)|| == ||u||
@@ -103,10 +111,10 @@ def operator_isometry_test(
     )
 
 
-def operator_unitary_test(
-    operator: Operator, u: torch.Tensor, relative_tolerance: float = 1e-3, absolute_tolerance=1e-5
+def linear_operator_unitary_test(
+    operator: LinearOperator, u: torch.Tensor, relative_tolerance: float = 1e-3, absolute_tolerance=1e-5
 ):
-    """Test if an operator is unitary.
+    """Test if a linear operator is unitary.
 
     Test if
          Operator.adjoint(Operator(u)) == u
@@ -115,7 +123,7 @@ def operator_unitary_test(
     Parameters
     ----------
     operator
-        operator
+        linear operator
     u
         element of the domain of the operator
     relative_tolerance
@@ -129,3 +137,36 @@ def operator_unitary_test(
         if the adjointness property does not hold
     """
     torch.testing.assert_close(u, operator.adjoint(operator(u)[0])[0], rtol=relative_tolerance, atol=absolute_tolerance)
+
+
+Tin = TypeVarTuple('Tin')
+
+
+def autodiff_test(
+    operator: Operator[Unpack[Tin], tuple[torch.Tensor, ...]],
+    *u: Unpack[Tin],
+):
+    """Test if autodiff of an operator is working.
+    This test does not check that the gradient is correct but simply that it can be calculated using both torch.func.jvp
+    and torch.func.vjp.
+
+    Parameters
+    ----------
+    operator
+        operator
+    u
+        element(s) of the domain of the operator
+
+    Raises
+    ------
+    AssertionError
+        if autodiff fails
+    """
+    # Forward-mode autodiff using jvp
+    with torch.autograd.detect_anomaly():
+        v_range, _ = torch.func.jvp(operator.forward, u, u)
+
+    # Backward-mode autodiff using vjp
+    with torch.autograd.detect_anomaly():
+        (_, vjpfunc) = torch.func.vjp(operator.forward, *u)
+        vjpfunc(v_range)

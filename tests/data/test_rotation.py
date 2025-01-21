@@ -535,7 +535,7 @@ def _test_stats(error: torch.Tensor, mean_max: float, rms_max: float) -> None:
     assert torch.all(rms < rms_max)
 
 
-@pytest.mark.parametrize('seq_tuple', permutations('xyz'))
+@pytest.mark.parametrize('seq_tuple', permutations('xyz'), ids=str)
 @pytest.mark.parametrize('intrinsic', [False, True])
 def test_as_euler_asymmetric_axes(seq_tuple, intrinsic):
     rnd = RandomGenerator(0)
@@ -555,7 +555,7 @@ def test_as_euler_asymmetric_axes(seq_tuple, intrinsic):
     _test_stats(angles_quat - angles, 1e-15, 1e-14)
 
 
-@pytest.mark.parametrize('seq_tuple', permutations('xyz'))
+@pytest.mark.parametrize('seq_tuple', permutations('xyz'), ids=str)
 @pytest.mark.parametrize('intrinsic', [False, True])
 def test_as_euler_symmetric_axes(seq_tuple, intrinsic):
     rnd = RandomGenerator(0)
@@ -576,7 +576,7 @@ def test_as_euler_symmetric_axes(seq_tuple, intrinsic):
     _test_stats(angles_quat - angles, 1e-16, 1e-14)
 
 
-@pytest.mark.parametrize('seq_tuple', permutations('xyz'))
+@pytest.mark.parametrize('seq_tuple', permutations('xyz'), ids=str)
 @pytest.mark.parametrize('intrinsic', [False, True])
 def test_as_euler_degenerate_asymmetric_axes(seq_tuple, intrinsic):
     # Since we cannot check for angle equality, we check for rotation matrix
@@ -598,7 +598,7 @@ def test_as_euler_degenerate_asymmetric_axes(seq_tuple, intrinsic):
     torch.testing.assert_close(mat_expected, mat_estimated)
 
 
-@pytest.mark.parametrize('seq_tuple', permutations('xyz'))
+@pytest.mark.parametrize('seq_tuple', permutations('xyz'), ids=str)
 @pytest.mark.parametrize('intrinsic', [False, True])
 def test_as_euler_degenerate_symmetric_axes(seq_tuple, intrinsic):
     # Since we cannot check for angle equality, we check for rotation matrix

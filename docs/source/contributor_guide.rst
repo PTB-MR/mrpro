@@ -5,8 +5,6 @@ Contributor Guide
 Repo structure
 ==============
 This repository uses a *pyproject.toml* file to specify all the requirements.
-If you need a "normal" *requirements.txt* file, please have a look in *binder*. There you find a *requirements.txt*
-automatically created from *pyproject.toml* using GitHub actions.
 
 **.github/workflows**
     Definitions of GitHub action workflows to carry out formatting checks, run tests and automatically create this
@@ -18,12 +16,9 @@ automatically created from *pyproject.toml* using GitHub actions.
 **.docs**
     Files to create this documentation.
 
-**binder**
-    *environment.yml* to install MRpro when starting a binder session.
-
 **examples**
     Python scripts showcasing how MRpro can be used. Any data needed has to be available from
-    an online repository (e.g. zenodo) such that it can be automatically downloaded. The scripts 
+    an online repository (e.g. zenodo) such that it can be automatically downloaded. The scripts
     are automatically translated to jupyter notebooks using GitHub
     actions. Individual cells should be indicated with ``# %%``. For markdown cells use ``# %% [markdown]``.
     The translation from python script to jupyter notebook is done using
@@ -67,14 +62,14 @@ src/mrpro structure
 
 Linting
 =======
-We use Ruff for linting. If you are using VSCode, you can install an 
-`extension <https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff>`_, 
-which we have also added to the list of extensions that VSCode should recommend when you open the code. 
+We use Ruff for linting. If you are using VSCode, you can install an
+`extension <https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff>`_,
+which we have also added to the list of extensions that VSCode should recommend when you open the code.
 We also run `mypy <https://pypi.org/project/mypy/>`_ as a type checker.
 
-In CI, our linting is driven by `pre-commit <https://pre-commit.com/>`_. 
+In CI, our linting is driven by `pre-commit <https://pre-commit.com/>`_.
 If you install MRpro via ``pip install -e .[test]``, pre-commit will be installed in your python environment.
-You can either add pre-commit to your git pre-commit hooks, requiring it to pass before each commit (``pre-commit install``), 
+You can either add pre-commit to your git pre-commit hooks, requiring it to pass before each commit (``pre-commit install``),
 or run it manually using ``pre-commit run --all-files`` after making your changes, before requesting a PR review.
 
 Naming convention

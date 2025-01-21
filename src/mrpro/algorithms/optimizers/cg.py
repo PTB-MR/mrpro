@@ -82,7 +82,7 @@ def cg(
         return solution
 
     # dummy value. new value will be set in loop before first usage
-    residual_norm_squared_previous = None
+    residual_norm_squared_previous: torch.Tensor | None = None
 
     for iteration in range(max_iterations):
         # calculate the square norm of the residual
@@ -93,7 +93,7 @@ def cg(
         if tolerance != 0 and (residual_norm_squared < tolerance**2):
             return solution
 
-        if iteration > 0:
+        if residual_norm_squared_previous is not None:  # not first iteration
             beta = residual_norm_squared / residual_norm_squared_previous
             conjugate_vector = residual + beta * conjugate_vector
 

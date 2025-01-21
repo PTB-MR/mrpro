@@ -3,6 +3,7 @@
 import pytest
 import torch
 from mrpro.operators.models import InversionRecovery
+from tests import autodiff_test
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
 
 
@@ -39,3 +40,10 @@ def test_inversion_recovery_shape(parameter_shape, contrast_dim_shape, signal_sh
     m0, t1 = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=2)
     (signal,) = model_op(m0, t1)
     assert signal.shape == signal_shape
+
+
+def test_autodiff_inversion_recovery():
+    """Test autodiff works for inversion_recovery model."""
+    model = InversionRecovery(ti=10)
+    m0, t1 = create_parameter_tensor_tuples(parameter_shape=(2, 5, 10, 10, 10), number_of_tensors=2)
+    autodiff_test(model, m0, t1)

@@ -56,7 +56,7 @@ class DcfData(MoveDataMixin):
 
         if ks_needing_voronoi:
             # Handle full dimensions needing voronoi
-            dcfs.append(smap(dcf_2d3d_voronoi, torch.stack(list(ks_needing_voronoi), -4), 4))
+            dcfs.append(smap(dcf_2d3d_voronoi, torch.stack(torch.broadcast_tensors(*ks_needing_voronoi), -4), 4))
 
         if dcfs:
             # Multiply all dcfs together

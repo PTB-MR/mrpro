@@ -5,8 +5,7 @@ import torch
 from mrpro.operators import LinearOperator
 from torch.autograd.gradcheck import GradcheckError
 
-from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test
+from tests import RandomGenerator, dotproduct_adjointness_test
 
 
 class NonDifferentiableOperator(LinearOperator, adjoint_as_backward=False):

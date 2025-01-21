@@ -5,8 +5,7 @@ import torch
 from einops import repeat
 from mrpro.operators import FiniteDifferenceOp
 
-from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test
+from tests import RandomGenerator, dotproduct_adjointness_test
 
 
 @pytest.mark.parametrize('mode', ['central', 'forward', 'backward'])

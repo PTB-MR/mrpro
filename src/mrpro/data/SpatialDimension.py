@@ -18,6 +18,7 @@ from mrpro.data.MoveDataMixin import MoveDataMixin
 VectorTypes = torch.Tensor
 ScalarTypes = int | float
 T = TypeVar('T', torch.Tensor, int, float)
+
 # Covariant types, as SpatialDimension is a Container
 # and we want, for example, SpatialDimension[int] to also be a SpatialDimension[float]
 T_co = TypeVar('T_co', torch.Tensor, int, float, covariant=True)
@@ -108,6 +109,7 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
 
         return SpatialDimension(z, y, x)
 
+    # This function is mainly for type hinting and docstring
     def apply_(self, function: Callable[[T], T] | None = None, **_) -> Self:
         """Apply a function to each z, y, x (in-place).
 
@@ -117,6 +119,17 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
             function to apply
         """
         return super(SpatialDimension, self).apply_(function)
+
+    # This function is mainly for type hinting and docstring
+    def apply(self, function: Callable[[T], T] | None = None, **_) -> Self:
+        """Apply a function to each z, y, x (returning a new object).
+
+        Parameters
+        ----------
+        function
+            function to apply
+        """
+        return super(SpatialDimension, self).apply(function)
 
     @property
     def zyx(self) -> tuple[T_co, T_co, T_co]:
