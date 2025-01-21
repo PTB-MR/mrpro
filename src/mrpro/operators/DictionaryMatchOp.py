@@ -83,8 +83,7 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[*Tin]]):
         """
         if not self.x:
             raise KeyError('No keys in the dictionary. Please first add some x values using `append`.')
-
-        similar = einops.einsum(input_signal, self.y, 'm ..., m idx  -> idx ...')
-        idx = torch.argmax(torch.abs(similar), dim=0)
-        match = [x[idx] for x in self.x]
+        similarity = einops.einsum(input_signal, self.y.conj(), 'm ..., m idx  -> idx ...').abs()
+        idx = similarity.argmax(dim=0)
+        match = tuple(x[idx] for x in self.x)
         return match
