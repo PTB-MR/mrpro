@@ -10,6 +10,8 @@ from einops import repeat
 from mrpro.data import SpatialDimension
 from mrpro.phantoms import EllipsePhantom
 
+from tests import RandomGenerator
+
 ISMRMRD_TRAJECTORY_TYPE = (
     'cartesian',
     'epi',
@@ -57,8 +59,8 @@ class IsmrmrdRawTestData:
     def __init__(
         self,
         filename: str | Path,
-        matrix_size: int = 256,
-        n_coils: int = 8,
+        matrix_size: int = 64,
+        n_coils: int = 4,
         oversampling: int = 2,
         repetitions: int = 1,
         flag_invalid_reps: bool = False,
@@ -165,12 +167,12 @@ class IsmrmrdRawTestData:
 
         # Encoded and recon spaces
         encoding_fov = ismrmrd.xsd.fieldOfViewMm()
-        encoding_fov.x = self.oversampling * 256
-        encoding_fov.y = 256
+        encoding_fov.x = self.oversampling * matrix_size
+        encoding_fov.y = matrix_size
         encoding_fov.z = 5
         recon_fov = ismrmrd.xsd.fieldOfViewMm()
-        recon_fov.x = 256
-        recon_fov.y = 256
+        recon_fov.x = matrix_size
+        recon_fov.y = matrix_size
         recon_fov.z = 5
 
         encoding_matrix = ismrmrd.xsd.matrixSizeType()
@@ -347,7 +349,7 @@ class IsmrmrdRawTestData:
 
         # Different temporal orders of phase encoding points
         if sampling_order == 'random':
-            perm = torch.randperm(len(kpe))
+            perm = RandomGenerator(13).randperm(len(kpe))
             kpe = kpe[perm[: len(perm) // acceleration]]
         elif sampling_order == 'linear':
             kpe, _ = torch.sort(kpe)

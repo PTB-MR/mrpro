@@ -35,7 +35,7 @@ def zero_pad_or_crop(
     new_shape: Sequence[int] | torch.Size,
     dim: None | Sequence[int] = None,
 ) -> torch.Tensor:
-    """Change shape of data by cropping or zero-padding.
+    """Change shape of data by center cropping or symmetric zero-padding.
 
     Parameters
     ----------

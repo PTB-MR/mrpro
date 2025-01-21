@@ -1,4 +1,4 @@
-"""Iterative SENSE Reconstruction by adjoint Fourier transform."""
+"""Iterative SENSE Reconstruction."""
 
 from __future__ import annotations
 
@@ -7,9 +7,9 @@ from collections.abc import Callable
 from mrpro.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction import (
     RegularizedIterativeSENSEReconstruction,
 )
-from mrpro.data._kdata.KData import KData
 from mrpro.data.CsmData import CsmData
 from mrpro.data.DcfData import DcfData
+from mrpro.data.KData import KData
 from mrpro.data.KNoise import KNoise
 from mrpro.operators.LinearOperator import LinearOperator
 
