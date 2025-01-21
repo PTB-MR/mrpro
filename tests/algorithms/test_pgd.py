@@ -20,7 +20,7 @@ def test_pgd_convergence_fft_example() -> None:
 
     l2 = L2NormSquared(target=kspace, divide_by_n=True)
     f = l2 @ fft
-    g = L1Norm(divide_by_n=True)
+    g = 0.01 * L1Norm(divide_by_n=True)
 
     initial_value = torch.ones_like(image)
     pgd_solution = pgd(
@@ -28,7 +28,6 @@ def test_pgd_convergence_fft_example() -> None:
         g=g,
         initial_value=initial_value,
         stepsize=0.5,
-        reg_parameter=0.01,
         max_iterations=200,
         backtrack_factor=1.0,
     )
@@ -49,7 +48,7 @@ def test_pgd_convergence_backtracking_fft_example() -> None:
 
     l2 = L2NormSquared(target=kspace, divide_by_n=True)
     f = l2 @ fft
-    g = L1Norm(divide_by_n=True)
+    g = 0.01 * L1Norm(divide_by_n=True)
 
     initial_value = torch.ones_like(image)
     pgd_solution = pgd(
@@ -57,7 +56,6 @@ def test_pgd_convergence_backtracking_fft_example() -> None:
         g=g,
         initial_value=initial_value,
         stepsize=2.0,
-        reg_parameter=0.01,
         max_iterations=200,
         backtrack_factor=0.75,
     )
@@ -74,7 +72,7 @@ def test_pgd_convergence_backtracking_denoising_example() -> None:
     noisy_image = image + noise
 
     f = L2NormSquared(target=noisy_image, divide_by_n=True)
-    g = L1Norm(divide_by_n=True)
+    g = 0.01 * L1Norm(divide_by_n=True)
 
     initial_value = torch.ones_like(image)
     pgd_solution = pgd(
@@ -82,7 +80,6 @@ def test_pgd_convergence_backtracking_denoising_example() -> None:
         g=g,
         initial_value=initial_value,
         stepsize=2.0,
-        reg_parameter=0.01,
         max_iterations=200,
         backtrack_factor=0.75,
     )
@@ -101,7 +98,7 @@ def test_pgd_convergence_on_functionals_with_multiple_inputs() -> None:
     (kspace,) = fft(image)
 
     l2 = L2NormSquared(target=kspace, divide_by_n=True)
-    l1 = L1Norm(divide_by_n=True)
+    l1 = 0.01 * L1Norm(divide_by_n=True)
 
     # to check on multiple inputs, we will use the same input twice
     f = ProximableFunctionalSeparableSum(l2, l2) @ LinearOperatorMatrix.from_diagonal(fft, fft)
@@ -113,7 +110,6 @@ def test_pgd_convergence_on_functionals_with_multiple_inputs() -> None:
         g=g,
         initial_value=initial_value,
         stepsize=0.5,
-        reg_parameter=0.01,
         max_iterations=200,
         backtrack_factor=1.0,
     )
@@ -133,14 +129,13 @@ def test_pgd_convergence_singular_vs_multiple_inputs() -> None:
 
     # to check on multiple inputs, we will use the same input twice
     l2 = L2NormSquared(target=kspace, divide_by_n=True)
-    l1 = L1Norm(divide_by_n=True)
+    l1 = 0.01 * L1Norm(divide_by_n=True)
 
     pgd_solution_multiple = pgd(
         f=ProximableFunctionalSeparableSum(l2, l2) @ LinearOperatorMatrix.from_diagonal(fft, fft),
         g=ProximableFunctionalSeparableSum(l1, l1),
         initial_value=(torch.ones_like(image), torch.ones_like(image)),
         stepsize=0.5,
-        reg_parameter=0.01,
         max_iterations=200,
         backtrack_factor=1.0,
     )
@@ -150,7 +145,6 @@ def test_pgd_convergence_singular_vs_multiple_inputs() -> None:
         g=l1,
         initial_value=torch.ones_like(image),
         stepsize=0.5,
-        reg_parameter=0.01,
         max_iterations=200,
         backtrack_factor=1.0,
     )
