@@ -12,7 +12,7 @@ def smap(
 ) -> torch.Tensor:
     """Apply a function to a tensor serially along multiple dimensions.
 
-    The function is applied serially without a batch dimensions.
+    The function is applied serially without batch dimensions.
     Compared to `torch.vmap`, it works with arbitrary functions, but is slower.
 
     Parameters
@@ -24,8 +24,8 @@ def smap(
         Tensor to apply the function to.
     passed_dimensions
         Dimensions NOT to be batched / dimensions that are passed to the function
-        tuple of dimension indices (negative indices are supported) or an integer
-        an integer n means the last n dimensions are passed to the function
+        tuple of dimension indices (negative indices are supported) or
+        an integer ``n`` means the last ``n`` dimensions are passed to the function.
     """
     if isinstance(passed_dimensions, int):
         # use the last fun_dims dimensions for the function

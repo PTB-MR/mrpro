@@ -9,7 +9,7 @@ def remove_repeat(tensor: torch.Tensor, tol: float) -> torch.Tensor:
     Parameters
     ----------
     tensor:
-        input tensor. Must be real
+        Input tensor, must be real.
     tol:
         tolerance
     """
