@@ -19,7 +19,7 @@ class KTrajectoryRawShape(MoveDataMixin):
 
     Contains the k-space trajectory, i.e. a description of where data point was acquired in k-space,
     in the raw shape as it is read from the data file, before any reshaping or sorting by indices is applied.
-    The shape of each of `kx`, `ky`,` kz` is `((other*k2*k1), k0)`,
+    The shape of each of `kx`, `ky`, `kz` is `((other*k2*k1), k0)`,
     this means that e.g. slices, averages... have not yet been separated from the phase and slice encoding dimensions.
     """
 
