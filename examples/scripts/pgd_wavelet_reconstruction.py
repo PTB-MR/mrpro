@@ -1,35 +1,5 @@
 # %% [markdown]
 # # Proximal gradient descent (FISTA) reconstruction of 2D golden angle radial data
-
-# %% [markdown]
-# ##### Download and read-in the raw data
-
-# %%
-import tempfile
-
-import mrpro
-import requests
-
-# define zenodo URL of the example ismrmd data
-# choose number of spokes; either 24, 96402
-n_spokes = 24
-zenodo_url = 'https://zenodo.org/records/14617082/files/'
-fname = f'radial2D_{n_spokes}spokes_golden_angle_with_traj.h5'
-
-# Download the data from zenodo
-data_file = tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.h5')
-response = requests.get(zenodo_url + fname, timeout=30)
-data_file.write(response.content)
-data_file.flush()
-
-# Load in the data from the ISMRMRD file
-kdata = mrpro.data.KData.from_file(data_file.name, mrpro.data.traj_calculators.KTrajectoryIsmrmrd())
-kdata.header.recon_matrix.x = 256
-kdata.header.recon_matrix.y = 256
-
-
-# %% [markdown]
-# ### Image reconstruction
 # Here, we use a proximal gradient descent algorithm to reconstruct an image
 # from 2D radial k-space data with wavelet regularization.
 # In particular, we use the accelerated version known as FISTA (Fast Iterative Shrinkage-Thresholding Algorithm)
@@ -111,8 +81,41 @@ kdata.header.recon_matrix.y = 256
 # In the following, we load 2D radial MR data and set up problem (2) to use
 # FISTA to reconstruct the data.
 
+
+# ## Read-in the raw data
+# We read the raw k-space data and the trajectory from the ISMRMRD file
+# (see <project:comparison_trajectory_calculators.ipynb> for more information on the trajectory calculation).
+# Our example data contains three datasets:
+# - ``radial2D_402spokes_golden_angle_with_traj.h5`` with 402 spokes
+# - ``radial2D_96spokes_golden_angle_with_traj.h5`` with 96 spokes
+# - ``radial2D_24spokes_golden_angle_with_traj.h5`` with 24 spokes
+#
+# We use the 24 spokes dataset for the reconstruction.
+
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
+# ### Download raw data from Zenodo
+import tempfile
+from pathlib import Path
+
+import zenodo_get
+
+dataset = '14617082'
+
+tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
+data_folder = Path(tmp.name)
+zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
+
+# %%
+# Load in the data from the ISMRMRD file
+import mrpro
+
+trajectory_calculator = mrpro.data.traj_calculators.KTrajectoryIsmrmrd()
+kdata = mrpro.data.KData.from_file(data_folder / 'radial2D_24spokes_golden_angle_with_traj.h5', trajectory_calculator)
+
+
+
 # %% [markdown]
-# ### Set up the operator $A$
+# ## Set up the operator $A$
 # Estimate coil sensitivity maps and density compensation function. Also run a direct (adjoint)
 # reconstruction and iterative SENSE as methods of comparison.
 #
@@ -126,7 +129,7 @@ img_direct = direct_reconstruction(kdata)
 
 # run iterative SENSE to compare the solution
 iterative_sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
-    kdata,
+    fourier_op=direct_reconstruction.fourier_op
     n_iterations=8,
     csm=direct_reconstruction.csm,
     dcf=direct_reconstruction.dcf,
@@ -153,10 +156,6 @@ acquisition_operator = fourier_operator @ csm_operator @ wavelet_operator.H
 # and then run FISTA.
 
 # %%
-from mrpro.algorithms.optimizers import pgd
-from mrpro.algorithms.optimizers.pgd import PGDStatus
-from mrpro.operators.functionals import L1Norm, L2NormSquared
-
 # Regularization parameter for the $\ell_1$-norm
 regularization_parameter = 1e-6
 
@@ -200,20 +199,26 @@ def callback(optimizer_status: PGDStatus) -> None:
 (img_pgd,) = wavelet_operator.H(img_wave_pgd)
 
 
-# %%
-# ### Compare the results
-# Display the reconstructed images
+# %% [markdown]
+# #ä Result
+# We compare the result of the wavelet regularized reconstruction with the iterative SENSE and direct reconstruction
+# result.
+
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
 import matplotlib.pyplot as plt
+import torch
 
-fig, ax = plt.subplots(1, 3, figsize=(12, 4))
-clim = [0, 1e-3]
-ax[0].set_title('Adjoint (direct) Recon', fontsize=10)
-ax[0].imshow(img_direct.data.abs()[0, 0, 0, :, :], clim=clim)
-ax[1].set_title('Iterative SENSE', fontsize=10)
-ax[1].imshow(img_iterative_sense.data.abs()[0, 0, 0, :, :], clim=clim)
-ax[2].set_title('FISTA', fontsize=10)
-ax[2].imshow(img_pgd.abs()[0, 0, 0, :, :], clim=clim)
-plt.setp(ax, xticks=[], yticks=[])
 
-plt.show()
+def show_images(*images: torch.Tensor, titles: list[str] | None = None) -> None:
+    """Plot images."""
+    n_images = len(images)
+    _, axes = plt.subplots(1, n_images, squeeze=False, figsize=(n_images * 3, 3))
+    for i in range(n_images):
+        axes[0][i].imshow(images[i], cmap='gray')
+        axes[0][i].axis('off')
+        if titles:
+            axes[0][i].set_title(titles[i])
+    plt.show()
+
 # %%
+show_images(img_direct.rss[0,0], img_iterative_sense.rss()[0,0], img_pgd.abs()[0, 0],titles=["Direct Reconstruction", "Iterative SENSE", "Wavelet (PGD)"]
