@@ -12,17 +12,47 @@ Tin = TypeVarTuple('Tin')
 
 
 class DictionaryMatchOp(Operator[torch.Tensor, tuple[*Tin]]):
-    """Dictionary Matching Operator class."""
+    """Dictionary Matching Operator.
+
+    This operator can be used for dictionary matching, for example in
+    magnetic ressonance fingerprinting.
+
+    At inizilization, the signal model needs to be provided.
+    Afterwards `append` with different x values should be called.
+    This operator than calculates for each x value the y value as returned by the signal model.
+
+    To perform a match, use `__call__` and supply some y values. The operator will then perform
+    dot product matching and return the y values that match.
+    """
 
     def __init__(self, generating_function: Callable[[Unpack[Tin]], tuple[torch.Tensor,]]):
+        """Initialize DictionaryMatchOp.
+
+        Parameters
+        ----------
+        generating_function
+            signal model that takes n inputs and returns a signal y.
+        """
         super().__init__()
         self._f = generating_function
         self.x: list[torch.Tensor] = []
         self.y = torch.tensor([])
 
     def append(self, *x: Unpack[Tin]) -> Self:
+        """Append `x` values to the dictionary.
+
+        Parameters
+        ----------
+        x
+            points where the signal model will be evaluated. For signal models
+            with n inputs, n Tensors should be provided. Broadcasting is supported.
+
+        Returns
+        -------
+        Self
+
+        """
         (newy,) = self._f(*x)
-        newy = newy.to(dtype=torch.complex64)
         newy = newy / torch.linalg.norm(newy, dim=0, keepdim=True)
         newy = newy.flatten(start_dim=1)
         newx = [x.flatten() for x in torch.broadcast_tensors(*x)]
@@ -35,7 +65,26 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[*Tin]]):
         return
 
     def forward(self, input_signal: torch.Tensor) -> tuple[Unpack[Tin]]:
-        similar = einops.einsum(input_signal, self.y, 't ..., t idx  -> idx ...')
+        """Perform dot-product matching.
+
+        Given y values as input_signal, the tuple of x values in the dictionary
+        that result in a signal with the highest dot-product similiary will be returned
+
+        Parameters
+        ----------
+        input_signal
+            y values, shape `(m ...)` where `m` is the return dimension of the signal model,
+            for example time points.
+
+        Returns
+        -------
+        match
+            tuple of n tensors with shape (...)
+        """
+        if not self.x:
+            raise KeyError('No keys in the dictionary. Please first add some x values using `append`.')
+
+        similar = einops.einsum(input_signal, self.y, 'm ..., m idx  -> idx ...')
         idx = torch.argmax(torch.abs(similar), dim=0)
         match = [x[idx] for x in self.x]
         return match
