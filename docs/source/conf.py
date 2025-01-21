@@ -256,7 +256,7 @@ class CustomClassDocumenter(ClassDocumenter):
 
 
 def replace_patterns_in_markdown(app, docname, source):
-    """Replace patterns like `module.class` with {any}`module.class` in Markdown cells."""
+    """Replace patterns like `module.class` with {py:obj}`module.class` in Markdown cells."""
     if '_notebooks' not in docname:
         return
     notebook = nbformat.reads(source[0], as_version=4)
