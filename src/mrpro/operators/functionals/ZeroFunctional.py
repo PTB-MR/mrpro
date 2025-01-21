@@ -66,7 +66,7 @@ class ZeroFunctional(ElementaryProximableFunctional):
 
         The convex conjugate of the zero functional is the indicator function over :math:`C^N \setminus {0}`,
         which evaluates to infinity for all values of `x` except zero.
-        If sigma>0, the proximal operator of the scaled convex conjugate is constant zero, otherwise it is the identity.
+        If ``sigma > 0``, the proximal operator of the scaled convex conjugate is constant zero, otherwise it is the identity.
 
         Parameters
         ----------
