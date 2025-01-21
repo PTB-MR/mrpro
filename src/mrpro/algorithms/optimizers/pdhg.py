@@ -60,11 +60,11 @@ def pdhg(
 
     PDHG is a primal-dual algorithm that performs the following steps
 
-    :math:`z_{k+1} = \mathrm{prox}_{\sigma f^{\ast}}(z_k + \sigma K \bar{x}_k),`
+    .. math::
 
-    :math:`x_{k+1} = \mathrm{prox}_{\tau g}(x_k - \tau K^H z_{k+1}),`
-
-    :math:`\bar{x}_{k+1} = x_{k+1} + \theta(x_{k+1} - x_k),`
+        z_{k+1} = \mathrm{prox}_{\sigma f^{\ast}}(z_k + \sigma K \bar{x}_k),
+        x_{k+1} = \mathrm{prox}_{\tau g}(x_k - \tau K^H z_{k+1}),
+        \bar{x}_{k+1} = x_{k+1} + \theta(x_{k+1} - x_k),
 
     where :math:`\mathrm{prox}` denotes the proximal operator and :math:`f^{\ast}` is the
     convex conjugate of the functional :math:`f`. Thereby, :math:`\tau` and :math:`\sigma`
@@ -72,7 +72,7 @@ def pdhg(
 
     The operator can be supplied as a `~mrpro.operators.LinearOperator` or as a
     :math:`m\times n` -`~mrpro.operators.LinearOperatorMatrix`, :math:`f` and :math:`g` can either be single functionals
-    or `~mrpro.operators.functionals.ProximableFunctionalSeparableSum` of m, or n, respectively, functionals.
+    or `~mrpro.operators.ProximableFunctionalSeparableSum` of m, or n, respectively, functionals.
 
     Thus, this implementation solves the problem
 
@@ -94,30 +94,30 @@ def pdhg(
     Parameters
     ----------
     f
-        functional `f` in the problem definition. If set to None, it is interpreted as the zero-functional.
+        Functional `f` in the problem definition. If set to None, it is interpreted as the zero-functional.
     g
-        functional `g` in the problem definition. If set to None, it is interpreted as the zero-functional.
+        Functional `g` in the problem definition. If set to None, it is interpreted as the zero-functional.
     operator
-        linear operator or matrix of linear operators;
-        if set to None, it is interpreted as the Identity-operator
+        Linear operator or matrix of linear operators;
+        if set to `None`, it is interpreted as the Identity-operator.
     initial_values
-        initial guess of the solution
+        initial guess of the solution.
     max_iterations
-        maximum number of iterations
+        maximum number of iterations.
     tolerance
-        tolerance for relative change of the primal solution; if set to zero, max_iterations of pdhg are run
+        tolerance for relative change of the primal solution; if set to zero, `max_iterations` of pdhg are run.
     dual_stepsize
-        dual step size
+        dual step size.
     primal_stepsize
-        primal step size
+        primal step size.
     relaxation
-        relaxation parameter, 1.0 is no relaxation
+        relaxation parameter, ``1.0`` is no relaxation.
     initial_relaxed
-        relaxed primals, used for warm start
+        relaxed primals, used for warm start.
     initial_duals
-        dual variables, used for warm start
+        dual variables, used for warm start.
     callback
-        callback function called after each iteration
+        callback function called after each iteration.
     """
     if f is None and g is None:
         warnings.warn(

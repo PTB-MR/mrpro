@@ -14,20 +14,20 @@ class PCACompressionOp(LinearOperator):
         self,
         data: torch.Tensor,
         n_components: int,
-    ):
+    ) -> None:
         """Construct a PCA based compression operator.
 
-        The operator carries out an SVD followed by a threshold of the n_components largest values along the last
-        dimension of a data with shape (*other, joint_dim, compression_dim). A single SVD is carried out for everything
-        along joint_dim. Other are batch dimensions.
+        The operator carries out an SVD followed by a threshold of the `n_components` largest values along the last
+        dimension of a data with shape `(*other, joint_dim, compression_dim)`.
+        A single SVD is carried out for everything along `joint_dim`. `other` are batch dimensions.
 
-        Consider combining this operator with :class:`mrpro.operators.RearrangeOp` to make sure the data is
+        Consider combining this operator with `~mrpro.operators.RearrangeOp` to make sure the data is
         in the correct shape before applying.
 
         Parameters
         ----------
         data
-            Data of shape (*other, joint_dim, compression_dim) to be used to find the principal components.
+            Data of shape `(*other, joint_dim, compression_dim)` to be used to find the principal components.
         n_components
             Number of principal components to keep along the compression_dim.
         """
@@ -46,11 +46,11 @@ class PCACompressionOp(LinearOperator):
         Parameters
         ----------
         data
-            data to be compressed of shape (*other, joint_dim, compression_dim)
+            data to be compressed of shape `(*other, joint_dim, compression_dim)`
 
         Returns
         -------
-            compressed data of shape (*other, joint_dim, n_components)
+            compressed data of shape `(*other, joint_dim, n_components)`
         """
         try:
             result = (self._compression_matrix @ data.unsqueeze(-1)).squeeze(-1)
@@ -68,11 +68,11 @@ class PCACompressionOp(LinearOperator):
         Parameters
         ----------
         data
-            compressed data of shape (*other, joint_dim, n_components)
+            compressed data of shape `(*other, joint_dim, n_components)`
 
         Returns
         -------
-            expanded data of shape (*other, joint_dim, compression_dim)
+            expanded data of shape `(*other, joint_dim, compression_dim)`
         """
         try:
             result = (self._compression_matrix.mH @ data.unsqueeze(-1)).squeeze(-1)
