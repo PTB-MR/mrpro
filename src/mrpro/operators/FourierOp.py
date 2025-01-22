@@ -176,7 +176,7 @@ class FourierGramOp(LinearOperator):
     """Gram operator for the Fourier operator.
 
     Implements the adjoint of the forward operator of the Fourier operator, i.e. the gram operator
-    `F.H@F.
+    `F.H@F`.
 
     Uses a convolution, implemented as multiplication in Fourier space, to calculate the gram operator
     for the toeplitz NUFFT operator.

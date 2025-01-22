@@ -36,19 +36,19 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         direction
             direction along which non-uniform FFT is applied
         recon_matrix
-            Dimension of the reconstructed image. If this is SpatialDimension only values of directions will be used.
-            Otherwise, it should be a Sequence of the same length as direction.
+            Dimension of the reconstructed image. If this is `~mrpro.data.SpatialDimension` only values of directions
+            will be used. Otherwise, it should be a `Sequence` of the same length as direction.
         encoding_matrix
-            Dimension of the encoded k-space. If this is SpatialDimension only values of directions will be used.
-            Otherwise, it should be a Sequence of the same length as direction.
+            Dimension of the encoded k-space. If this is `~mrpro.data.SpatialDimension` only values of directions will
+            be used. Otherwise, it should be a `Sequence` of the same length as direction.
         traj
-            the k-space trajectories where the frequencies are sampled
+            The k-space trajectories where the frequencies are sampled.
         nufft_oversampling
-            oversampling used for interpolation in non-uniform FFTs
+            Oversampling used for interpolation in non-uniform FFTs.
         nufft_numpoints
-            number of neighbors for interpolation in non-uniform FFTs
+            Number of neighbors for interpolation in non-uniform FFTs.
         nufft_kbwidth
-            size of the Kaiser-Bessel kernel interpolation in non-uniform FFTs
+            Size of the Kaiser-Bessel kernel interpolation in non-uniform FFTs.
         """
         super().__init__()
 
@@ -178,7 +178,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
 
         Returns
         -------
-            ((sep dims along zyx), (permute for zyx), (sep dims along 210), (permute for 210))
+            `((sep dims along zyx), (permute for zyx), (sep dims along 210), (permute for 210))`
 
         """
         # We did most in _init_ and here we only have to check the other dimensions.
@@ -205,11 +205,11 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         Parameters
         ----------
         x
-            coil image data with shape: (... coils z y x)
+            coil image data with shape `(... coils z y x)`
 
         Returns
         -------
-            coil k-space data with shape: (... coils k2 k1 k0)
+            coil k-space data with shape `(... coils k2 k1 k0)`
         """
         if len(self._nufft_directions):
             # We rearrange x into (sep_dims, joint_dims, nufft_directions)
@@ -236,11 +236,11 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         Parameters
         ----------
         x
-            coil k-space data with shape: (... coils k2 k1 k0)
+            coil k-space data with shape `(... coils k2 k1 k0)`
 
         Returns
         -------
-            coil image data with shape: (... coils z y x)
+            coil image data with shape `(... coils z y x)`
         """
         if len(self._nufft_directions):
             # We rearrange x into (sep_dims, joint_dims, nufft_directions)
@@ -291,7 +291,8 @@ def gram_nufft_kernel(weight: torch.Tensor, trajectory: torch.Tensor, recon_shap
     Returns
     -------
     kernel
-        real valued convolution kernel for the NUFFT gram operator, already in Fourier space
+        Real valued convolution kernel for :class:`mrpro.operator.NonUniformFastFourierOpGramOp`, already in Fourier
+        space.
     """
     rank = trajectory.shape[-2]
     # Instead of doing one adjoint nufft with double the recon size in all dimensions,
@@ -328,16 +329,16 @@ def gram_nufft_kernel(weight: torch.Tensor, trajectory: torch.Tensor, recon_shap
 
 
 class NonUniformFastFourierOpGramOp(LinearOperator):
-    """Gram operator for the non-uniform Fast Fourier operator.
+    """Gram operator for py:class:`NonUniformFastFourierOp`.
 
     Implements the adjoint of the forward operator of the non-uniform Fast Fourier operator, i.e. the gram operator
-    `NUFFT.H@NUFFT.
+    `NUFFT.H@NUFFT`.
 
     Uses a convolution, implemented as multiplication in Fourier space, to calculate the gram operator
-    for the toeplitz NUFFT operator.
+    for the Toeplitz NUFFT operator.
 
     This should not be used directly, but rather through the `gram` method of a
-    :class:`mrpro.operator.NonUniformFastFourierOp` object.
+    py:class:`NonUniformFastFourierOp` object.
     """
 
     _kernel: torch.Tensor | None
@@ -348,7 +349,7 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
         Parameters
         ----------
         nufft_op
-            the non-uniform Fast Fourier operator to calculate the gram operator for
+            The py:class:`NonUniformFastFourierOp` to calculate the gram operator for.
 
         """
         super().__init__()
@@ -389,7 +390,7 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
         Parameters
         ----------
         x
-            input tensor, shape (..., coils, z, y, x)
+            input tensor, shape `(..., coils, z, y, x)`
         """
         if self.nufft_gram is not None:
             (x,) = self.nufft_gram(x)
@@ -402,7 +403,7 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
         Parameters
         ----------
         x
-            input tensor, shape (..., coils, k2, k1, k0)
+            input tensor, shape `(..., coils, k2, k1, k0)`
         """
         return self.forward(x)
 
