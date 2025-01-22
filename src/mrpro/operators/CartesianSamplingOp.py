@@ -33,7 +33,7 @@ class CartesianSamplingOp(LinearOperator):
         traj
             the k-space trajectory describing at which frequencies data is sampled.
             Its broadcasted shape will be used to determine the shape after sampling,
-            i.e., the operator's range
+            i.e., the operator's range.
         """
         super().__init__()
         # the shape of the k data,
@@ -112,7 +112,7 @@ class CartesianSamplingOp(LinearOperator):
 
         Returns
         -------
-            selected k-space data in acquired shape (as described by the trajectory)
+            Selected k-space data in acquired shape (as described by the trajectory).
         """
         if self._sorted_grid_shape != SpatialDimension(*x.shape[-3:]):
             raise ValueError('k-space data shape mismatch')
@@ -151,7 +151,7 @@ class CartesianSamplingOp(LinearOperator):
 
         Returns
         -------
-            k-space data sorted into encoding_space matrix
+            K-space data sorted into encoding_space matrix.
         """
         if self._trajectory_shape[-3:] != y.shape[-3:]:
             raise ValueError('k-space data shape mismatch')
@@ -219,13 +219,13 @@ class CartesianSamplingOp(LinearOperator):
 
         Returns
         -------
-            Gram operator for this Cartesian Sampling Operator
+            Gram operator for this Cartesian Sampling Operator.
         """
         return CartesianSamplingGramOp(self)
 
 
 class CartesianSamplingGramOp(LinearOperator):
-    """Gram operator for Cartesian Sampling Operator.
+    """Gram operator for the Cartesian Sampling Operator.
 
     The Gram operator is the composition CartesianSamplingOp.H @ CartesianSamplingOp.
     """

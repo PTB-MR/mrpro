@@ -44,7 +44,7 @@ class ElementaryFunctional(Functional):
     r"""Elementary functional base class.
 
     Here, an 'elementary' functional is a functional that can be written as
-    :math:`f(x) = \phi ( weight ( x - target))`, returning a real value.
+    :math:`f(x) = \phi ( \mathrm{weight} ( x - \mathrm{target}))`, returning a real value.
     It does not require another functional for initialization.
     """
 
@@ -76,7 +76,7 @@ class ElementaryFunctional(Functional):
             the tensor `weight ( x - target)`. If true, the functional is thus calculated as the mean,
             else the sum.
         keepdim
-            if true, the dimension(s) of the input indexed by dim are maintained and collapsed to singeltons,
+            if true, the dimension(s) of the input indexed by `dim` are maintained and collapsed to singeltons,
             else they are removed from the result.
 
         """
@@ -126,7 +126,7 @@ class ProximableFunctional(Functional, ABC):
     r"""ProximableFunctional Base Class.
 
     A proximable functional is a functional :math:`f(x)` that has a prox implementation,
-    i.e. a function that yields :math:`argmin_x \sigma f(x) + 1/2 ||x - y||^2`
+    i.e. a function that yields :math:`\mathrm{argmin}_x \sigma f(x) + 1/2 ||x - y||_2^2`
     and a prox_convex_conjugate, yielding the prox of the convex conjugate.
     """
 
@@ -134,7 +134,8 @@ class ProximableFunctional(Functional, ABC):
     def prox(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         r"""Apply proximal operator.
 
-        Yields :math:`prox_{\sigma f}(x) = argmin_{p} (\sigma f(p) + 1/2 \|x-p\|^{2}` given :math:`x` and :math:`\sigma`
+        Yields :math:`\mathrm{prox}_{\sigma f}(x) = \mathrm{argmin}_{p} (\sigma f(p) + 1/2 \|x-p\|_2^2` given :math:`x`
+        and :math:`\sigma`.
 
         Parameters
         ----------
@@ -151,7 +152,7 @@ class ProximableFunctional(Functional, ABC):
     def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         r"""Apply proximal operator of convex conjugate of functional.
 
-        Yields :math:`prox_{\sigma f^*}(x) = argmin_{p} (\sigma f^*(p) + 1/2 \|x-p\|^{2}`,
+        Yields :math:`\mathrm{prox}_{\sigma f^*}(x) = \mathrm{argmin}_{p} (\sigma f^*(p) + 1/2 \|x-p\|_2^2`,
         where :math:`f^*` denotes the convex conjugate of :math:`f`, given :math:`x` and :math:`\sigma`.
 
         Parameters
@@ -197,12 +198,12 @@ class ProximableFunctional(Functional, ABC):
 class ElementaryProximableFunctional(ElementaryFunctional, ProximableFunctional):
     r"""Elementary proximable functional base class.
 
-    Here, an *elementary* functional is a functional that can be written as
-    :math:`f(x) = \phi ( weight ( x - target))`, returning a real value.
+    Here, an 'elementary' functional is a functional that can be written as
+    :math:`f(x) = \phi ( \mathrm{weight} ( x - \mathrm{target}))`, returning a real value.
     It does not require another functional for initialization.
 
     A proximable functional is a functional :math:`f(x)` that has a prox implementation,
-    i.e. a function that yields :math:`argmin_x \sigma f(x) + 1/2 \|x - y\|^2`.
+    i.e. a function that yields :math:`\mathrm{argmin}_x \sigma f(x) + 1/2 \|x - y\|^2`.
     """
 
 

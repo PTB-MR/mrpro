@@ -8,8 +8,8 @@ import torch
 from torchkbnufft import KbNufft, KbNufftAdjoint
 from typing_extensions import Self
 
-from mrpro.data._kdata.KData import KData
 from mrpro.data.enums import TrajType
+from mrpro.data.KData import KData
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp
@@ -18,7 +18,18 @@ from mrpro.operators.LinearOperator import LinearOperator
 
 
 class FourierOp(LinearOperator, adjoint_as_backward=True):
-    """Fourier Operator class."""
+    """Fourier Operator class.
+
+    This is the recommended operator for all Fourier transformations.
+    It auto-detects if a non-uniform or regular fast Fourier transformation is required.
+    For Cartesian data on a regular grid, the data is sorted and a FFT is used.
+    For non-Cartesian data, a NUFFT with regridding is used.
+    It also includes padding/cropping to the reconstruction matrix size.
+
+    The operator can directly be constructed from a `~mrpro.data.KData` object to match its
+    trajectory and header information, see `FourierOp.from_kdata`.
+
+    """
 
     def __init__(
         self,
@@ -29,7 +40,7 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
         nufft_numpoints: int = 6,
         nufft_kbwidth: float = 2.34,
     ) -> None:
-        """Fourier Operator class.
+        """Initialize Fourier Operator.
 
         Parameters
         ----------
@@ -108,17 +119,17 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             # Broadcast shapes not always needed but also does not hurt
             omega = [k.expand(*np.broadcast_shapes(*[k.shape for k in omega])) for k in omega]
             self.register_buffer('_omega', torch.stack(omega, dim=-4))  # use the 'coil' dim for the direction
-
+            numpoints = [min(img_size, nufft_numpoints) for img_size in self._nufft_im_size]
             self._fwd_nufft_op: KbNufftAdjoint | None = KbNufft(
                 im_size=self._nufft_im_size,
                 grid_size=grid_size,
-                numpoints=nufft_numpoints,
+                numpoints=numpoints,
                 kbwidth=nufft_kbwidth,
             )
             self._adj_nufft_op: KbNufftAdjoint | None = KbNufftAdjoint(
                 im_size=self._nufft_im_size,
                 grid_size=grid_size,
-                numpoints=nufft_numpoints,
+                numpoints=numpoints,
                 kbwidth=nufft_kbwidth,
             )
         else:
@@ -136,7 +147,7 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
         kdata
             k-space data
         recon_shape
-            dimension of the reconstructed image. Defaults to KData.header.recon_matrix
+            Dimension of the reconstructed image. Defaults to `KData.header.recon_matrix`.
         """
         return cls(
             recon_matrix=kdata.header.recon_matrix if recon_shape is None else recon_shape,
@@ -150,11 +161,11 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
         Parameters
         ----------
         x
-            coil image data with shape: (... coils z y x)
+            coil image data with shape: `(... coils z y x)`
 
         Returns
         -------
-            coil k-space data with shape: (... coils k2 k1 k0)
+            coil k-space data with shape: `(... coils k2 k1 k0)`
         """
         if self._fwd_nufft_op is not None and self._omega is not None:
             # NUFFT Type 2
@@ -192,11 +203,11 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
         Parameters
         ----------
         x
-            coil k-space data with shape: (... coils k2 k1 k0)
+            coil k-space data with shape: `(... coils k2 k1 k0)`
 
         Returns
         -------
-            coil image data with shape: (... coils z y x)
+            coil image data with shape: `(... coils z y x)`
         """
         if self._fast_fourier_op is not None and self._cart_sampling_op is not None:
             # IFFT
@@ -307,7 +318,7 @@ class FourierGramOp(LinearOperator):
     the Cartesian FFT operator
 
     This Operator is only used internally and should not be used directly.
-    Instead, consider using the `gram` property of :class: `mrpro.operators.FourierOp`.
+    Instead, consider using the py:func:`~FourierOp.gram` property of py:class:`FourierOp`.
     """
 
     _kernel: torch.Tensor | None
@@ -361,7 +372,7 @@ class FourierGramOp(LinearOperator):
         Parameters
         ----------
         x
-            input tensor, shape (..., coils, z, y, x)
+            input tensor, shape: `(..., coils, z, y, x)`
         """
         if self.nufft_gram is not None:
             (x,) = self.nufft_gram(x)
@@ -376,7 +387,7 @@ class FourierGramOp(LinearOperator):
         Parameters
         ----------
         x
-            input tensor, shape (..., coils, k2, k1, k0)
+            input tensor, shape: `(..., coils, k2, k1, k0)`
         """
         return self.forward(x)
 

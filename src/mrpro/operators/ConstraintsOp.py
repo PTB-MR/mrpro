@@ -34,7 +34,7 @@ class ConstraintsOp(EndomorphOperator):
             the value is not constrained from above.
             If the bounds are set to (None, None) or (-inf, inf), the value is not constrained at all.
         beta_sigmoid
-            beta parameter for the sigmoid transformation (used an input has two bounds).
+            beta parameter for the sigmoid transformation (used if an input has two bounds).
             A higher value leads to a steeper sigmoid.
         beta_softplus
             parameter for the softplus transformation (used if an input is either bounded from below or above).
@@ -81,8 +81,8 @@ class ConstraintsOp(EndomorphOperator):
 
     @staticmethod
     def softplus_inverse(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
-        """Inverse of 'softplus_transformation."""
-        return beta * x + torch.log(-torch.expm1(-beta * x))
+        """Inverse of `softplus_transformation`."""
+        return x + torch.log(-torch.expm1(-beta * x)) / beta
 
     @endomorph
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:

@@ -415,7 +415,7 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
 
         Raises
         ------
-            ValueError if the shapes are not equal
+            `ValueError` if the shapes are not equal
         """
         if isinstance(self.x, ScalarTypes) and isinstance(self.y, ScalarTypes) and isinstance(self.z, ScalarTypes):
             return ()

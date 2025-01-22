@@ -14,76 +14,26 @@ defaults:
     shell: bash
 
 jobs:
-  convert_scripts:
-    name: Translate scripts to notebooks
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      contents: write
-    outputs:
-      commit_hash: ${{ steps.add-commit-push.outputs.commit_hash }}
-    container:
-      image: ghcr.io/ptb-mr/mrpro_py311:latest
-      options: --user runner
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.commit }}
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
-
-      - name: Install mrpro and dependencies
-        run: pip install --upgrade --upgrade-strategy "eager" .[notebook]
-
-      - name: Translate scripts to notebooks
-        run: |
-          scripts=$(ls ./examples/*.py)
-          for script in $scripts
-            do jupytext --set-kernel "python3" --update --output ${script//.py/.ipynb} $script
-          done
-
-      - name: Check if any notebooks have been changed
-        uses: tj-actions/verify-changed-files@v20
-        id: verify-changed-notebooks
-        with:
-          files: ./examples/*.ipynb
-
-      - name: Commit notebooks
-        if: steps.verify-changed-notebooks.outputs.files_changed == 'true'
-        uses: actions4git/add-commit-push@v1
-        with:
-          commit-message: Notebooks updated
-
-      - name: Get hash of last commit
-        id: add-commit-push
-        run: echo "commit_hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-
   get_notebooks:
     name: Get list of notebooks
-    needs: convert_scripts
     runs-on: ubuntu-latest
     steps:
       - name: Checkout mrpro repo
         uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.convert_scripts.outputs.commit_hash }}
 
       - id: set-matrix
         run: |
-          cd ./examples/
-          ls
-          echo "notebooks=$(ls *.ipynb | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+          echo "notebook_paths=$(find examples/notebooks -type f -name '*.ipynb' | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
       - name: Notebook overview
         run: |
-          echo "jupyter-notebooks: ${{ steps.set-matrix.outputs.notebooks }}"
+          echo "jupyter-notebooks: ${{ steps.set-matrix.outputs.notebook_paths }}"
     outputs:
-      notebooks: ${{ steps.set-matrix.outputs.notebooks }}
+      notebook_paths: ${{ steps.set-matrix.outputs.notebook_paths }}
 
   run_notebook:
     name: Run notebook
-    needs: [convert_scripts, get_notebooks]
+    needs: get_notebooks
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -94,33 +44,49 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        notebook: ${{ fromJson(needs.get_notebooks.outputs.notebooks) }}
+        notebook_path: ${{ fromJson(needs.get_notebooks.outputs.notebook_paths) }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.convert_scripts.outputs.commit_hash }}
 
       - name: Install mrpro and dependencies
         run: pip install --upgrade --upgrade-strategy "eager" .[notebook]
 
       - name: Notebook name
         run: |
-          echo "current jupyter-notebook: ${{ matrix.notebook }}"
+          echo "current jupyter-notebook: ${{ matrix.notebook_path }}"
+
+      - name: Add nb-myst download badge
+        run: |
+          notebook=${{ matrix.notebook_path }}
+          notebook_name=$(basename $notebook)
+          download_badge_md="[![Download notebook](https://img.shields.io/badge/Download-notebook-blue?logo=jupyter)](path:$notebook_name)"
+          python_command="import nbformat as nbf\n\
+          nb = nbf.read(open('$notebook'), as_version=4)\n\
+          # if the 1st cell is md and has colab text => add space after\n\
+          if nb['cells'][0]['cell_type'] == 'markdown' and 'colab' in nb['cells'][0]['source'].lower():\n\
+              nb['cells'][0]['source'] += ' '\n\
+          # if there is no md cell with colab => create empty md cell on top\n\
+          else:\n\
+              nb['cells'].insert(0, nbf.v4.new_markdown_cell())\n\
+          nb['cells'][0]['source'] += '$download_badge_md'\n\
+          nbf.write(nb, open('$notebook', 'w'))"
+
+          python -c "exec (\"$python_command\")"
 
       - name: Run notebook
         uses: fzimmermann89/run-notebook@v3
         env:
           RUNNER: ${{ toJson(runner) }}
         with:
-          notebook: ./examples/${{ matrix.notebook }}
+          notebook: ${{ matrix.notebook_path }}
 
       - name: Get artifact names
         id: artifact_names
         run: |
-          notebook=${{ matrix.notebook }}
-          echo "ARTIFACT_NAME=${notebook/.ipynb/}" >> $GITHUB_OUTPUT
-          echo "IPYNB_EXECUTED=${notebook}" >> $GITHUB_OUTPUT
+          notebook=${{ matrix.notebook_path }}
+          echo "ARTIFACT_NAME=$(basename ${notebook/.ipynb})" >> $GITHUB_OUTPUT
+          echo "IPYNB_EXECUTED=$(basename $notebook)" >> $GITHUB_OUTPUT
 
       - name: Upload notebook
         uses: actions/upload-artifact@v4
@@ -133,7 +99,7 @@ jobs:
 
   create_documentation:
     name: Build and deploy documentation
-    needs: [convert_scripts, run_notebook]
+    needs: run_notebook
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/ptb-mr/mrpro_py311:latest
@@ -144,8 +110,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.convert_scripts.outputs.commit_hash }}
 
       - name: Install mrpro and dependencies
         run: pip install --upgrade --upgrade-strategy "eager" .[docs]
@@ -155,6 +119,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: ./docs/source/_notebooks/
+          merge-multiple: true
 
       - name: Build docs
         run: |

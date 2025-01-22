@@ -6,19 +6,19 @@ import numpy as np
 import torch
 
 __all__ = [
-    'ms_to_s',
-    's_to_ms',
-    'mm_to_m',
-    'm_to_mm',
-    'deg_to_rad',
-    'rad_to_deg',
-    'lamor_frequency_to_magnetic_field',
-    'magnetic_field_to_lamor_frequency',
     'GYROMAGNETIC_RATIO_PROTON',
+    'deg_to_rad',
+    'lamor_frequency_to_magnetic_field',
+    'm_to_mm',
+    'magnetic_field_to_lamor_frequency',
+    'mm_to_m',
+    'ms_to_s',
+    'rad_to_deg',
+    's_to_ms',
 ]
 
 GYROMAGNETIC_RATIO_PROTON = 42.58 * 1e6
-r"""The gyromagnetic ratio :math:`\frac{\gamma}{2\pi}` of 1H in H20 in Hz/T"""
+r"""The gyromagnetic ratio :math:`\frac{\gamma}{2\pi}` of 1H in H2O in Hz/T."""
 
 # Conversion functions for units
 T = TypeVar('T', float, torch.Tensor)
@@ -70,7 +70,7 @@ def lamor_frequency_to_magnetic_field(lamor_frequency: T, gyromagnetic_ratio: fl
 
     Returns
     -------
-    Magnetic field strength [T]
+        Magnetic field strength [T]
     """
     return lamor_frequency / gyromagnetic_ratio
 
@@ -89,6 +89,6 @@ def magnetic_field_to_lamor_frequency(
 
     Returns
     -------
-    Lamor frequency [Hz]
+        Lamor frequency [Hz]
     """
     return magnetic_field_strength * gyromagnetic_ratio
