@@ -118,6 +118,7 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         function
             function to apply
         """
+        # This function is mainly used for type hinting
         return super(SpatialDimension, self).apply_(function)
 
     # This function is mainly for type hinting and docstring
