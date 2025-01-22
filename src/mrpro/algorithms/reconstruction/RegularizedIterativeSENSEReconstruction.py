@@ -1,4 +1,4 @@
-"""Regularized Iterative SENSE Reconstruction by adjoint Fourier transform."""
+"""Regularized Iterative SENSE Reconstruction."""
 
 from __future__ import annotations
 
@@ -22,12 +22,12 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
     r"""Regularized iterative SENSE reconstruction.
 
     This algorithm solves the problem :math:`min_x \frac{1}{2}||W^\frac{1}{2} (Ax - y)||_2^2 +
-    \frac{1}{2}L||Bx - x_0||_2^2`
+    \frac{1}{2}\lambda||Bx - x_0||_2^2`
     by using a conjugate gradient algorithm to solve
-    :math:`H x = b` with :math:`H = A^H W A + L B` and :math:`b = A^H W y + L x_0` where :math:`A`
+    :math:`H x = b` with :math:`H = A^H W A + \lambda B^H B` and :math:`b = A^H W y + \lambda B^H x_0` where :math:`A`
     is the acquisition model (coil sensitivity maps, Fourier operator, k-space sampling), :math:`y` is the acquired
-    k-space data, :math:`W` describes the density compensation, :math:`L` is the strength of the regularization and
-    :math:`x_0` is the regularization image (i.e. the prior). :math:`B` is a linear operator applied to :math:`x`.
+    k-space data, :math:`W` describes the density compensation, :math:`\lambda` is the strength of the regularization
+    and :math:`x_0` is the regularization image (i.e. the prior). :math:`B` is a linear operator applied to :math:`x`.
     """
 
     n_iterations: int
@@ -37,7 +37,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
     """Regularization data (i.e. prior) :math:`x_0`."""
 
     regularization_weight: torch.Tensor
-    """Strength of the regularization :math:`L`."""
+    r"""Strength of the regularization :math:`\lambda`."""
 
     regularization_op: LinearOperator
     """Linear operator :math:`B` applied to the current estimate in the regularization term."""
@@ -55,43 +55,44 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         regularization_weight: float | torch.Tensor,
         regularization_op: LinearOperator | None = None,
     ) -> None:
-        """Initialize RegularizedIterativeSENSEReconstruction.
+        r"""Initialize RegularizedIterativeSENSEReconstruction.
 
-        For a unregularized version of the iterative SENSE algorithm the regularization_weight can be set to 0 or
-        IterativeSENSEReconstruction algorithm can be used.
+        For a unregularized version of the iterative SENSE algorithm the regularization_weight can be set to ``0``
+        or `~mrpro.algorithms.reconstruction.IterativeSENSEReconstruction` algorithm can be used.
 
         Parameters
         ----------
         kdata
-            KData. If kdata is provided and fourier_op or dcf are None, then fourier_op and dcf are estimated based on
-            kdata. Otherwise fourier_op and dcf are used as provided.
+            If `kdata` is provided and `fourier_op` or `dcf` are `None`, then `fourier_op` and `dcf` are estimated
+            based on `kdata`. Otherwise `fourier_op` and `dcf` are used as provided.
         fourier_op
-            Instance of the FourierOperator used for reconstruction. If None, set up based on kdata.
+            Instance of the `~mrpro.operators.FourierOp` used for reconstruction.
+            If `None`, set up based on `kdata`.
         csm
-            Sensitivity maps for coil combination. If None, no coil combination is carried out, i.e. images for each
-            coil are returned. If a callable is provided, coil images are reconstructed using the adjoint of the
-            FourierOperator (including density compensation) and then sensitivity maps are calculated using the
-            callable. For this, kdata needs also to be provided. For examples have a look at the CsmData class
-            e.g. from_idata_walsh or from_idata_inati.
+            Sensitivity maps for coil combination. If `None`, no coil combination is carried out, i.e. images for each
+            coil are returned. If a `Callable` is provided, coil images are reconstructed using the adjoint of the
+            `~mrpro.operators.FourierOp` (including density compensation) and then sensitivity maps are calculated
+            using the `Callable`. For this, `kdata` needs also to be provided.
+            For examples have a look at the `mrpro.data.CsmData` class e.g. `~mrpro.data.CsmData.from_idata_walsh`
+            or `~mrpro.data.CsmData.from_idata_inati`.
         noise
-            KNoise used for prewhitening. If None, no prewhitening is performed
+            Noise used for prewhitening. If `None`, no prewhitening is performed
         dcf
-            K-space sampling density compensation. If None, set up based on kdata.
+            K-space sampling density compensation. If `None`, set up based on `kdata`.
         n_iterations
             Number of CG iterations
         regularization_data
             Regularization data, e.g. a reference image (:math:`x_0`).
         regularization_weight
-            Strength of the regularization (:math:`L`).
+            Strength of the regularization (:math:`\lambda`).
         regularization_op
             Linear operator :math:`B` applied to the current estimate in the regularization term. If None, nothing is
             applied to the current estimate.
 
-
         Raises
         ------
-        ValueError
-            If the kdata and fourier_op are None or if csm is a Callable but kdata is None.
+        `ValueError`
+            If the `kdata` and `fourier_op` are `None` or if `csm` is a `Callable` but `kdata` is None.
         """
         super().__init__(kdata, fourier_op, csm, noise, dcf)
         self.n_iterations = n_iterations
@@ -125,8 +126,8 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
 
         # Add regularization
         if not torch.all(self.regularization_weight == 0):
-            operator = operator + IdentityOp() @ (self.regularization_weight * self.regularization_op)
-            right_hand_side += self.regularization_weight * self.regularization_data
+            operator = operator + self.regularization_weight * self.regularization_op.H @ self.regularization_op
+            right_hand_side += self.regularization_weight * self.regularization_op.H(self.regularization_data)[0]
 
         img_tensor = cg(
             operator,
