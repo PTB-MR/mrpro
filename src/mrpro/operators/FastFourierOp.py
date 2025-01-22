@@ -149,3 +149,8 @@ class FastFourierOp(LinearOperator):
                 dim=self._dim,
             ),
         )
+
+    def __repr__(self):
+        """Representation method for FastFourierOperator."""
+        out = f'Dimension along which FFT is applied: {list(self._dim)!s}'
+        return out
