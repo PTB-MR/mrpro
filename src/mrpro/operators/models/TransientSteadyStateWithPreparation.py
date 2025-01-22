@@ -20,18 +20,18 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
     [Part A: 180° inversion pulse][Part B: spoiler gradient][Part C: Continuous data acquisition]
 
     - Part A: The 180° pulse leads to an inversion of the equilibrium magnetization (:math:`M_0`) to :math:`-M_0`.
-      This can be described by setting the scaling factor ``m0_scaling_preparation`` to -1.
+      This can be described by setting the scaling factor `m0_scaling_preparation` to `-1`.
 
     - Part B: Commonly after an inversion pulse a strong spoiler gradient is played out to compensate for non-perfect
       inversion. During this time the magnetization :math:`M_z(t)` follows the signal model:
-      :math:`M_z(t) = M_0 + (s * M_0 - M_0)e^{(-t / T1)}` where :math:`s` is ``m0_scaling_preparation``.
+      :math:`M_z(t) = M_0 + (s * M_0 - M_0)e^{(-t / T1)}` where :math:`s` is `m0_scaling_preparation`.
 
     - Part C: After the spoiler gradient the data acquisition starts and the magnetization :math:`M_z(t)` can be
-      described by the signal model: :math:`M_z(t) = M_0^* + (M_{init} - M_0^*)e^{(-t / T1^*)}` where the initial
-      magnetization is :math:`M_{init} = M_0 + (s*M_0 - M_0)e^{(-\Delta t / T1)}` where :math:`s` is
-      ``m0_scaling_preparation`` and :math:`\Delta t` is ``delay_after_preparation``. The effective longitudinal
-      relaxation time is :math:`T1^* = 1/(1/T1 - ln(cos(\alpha)/TR)`
-      where :math:`TR` is ``repetition_time`` and :math:`\alpha` is ``flip_angle``.
+      described by the signal model: :math:`M_z(t) = M_0^* + (M_{init} - M_0^*)e^{(-t / T1^*)}`
+      where the initial magnetization is :math:`M_{init} = M_0 + (s*M_0 - M_0)e^{(-\Delta t / T1)}`,
+      where :math:`s` is `m0_scaling_preparation` and :math:`\Delta t` is `delay_after_preparation`.
+      The effective longitudinal relaxation time is :math:`T1^* = 1/(1/T1 - ln(cos(\alpha)/TR)`
+      where :math:`TR` is `repetition_time` and :math:`\alpha` is `flip_angle`.
       The steady-state magnetization is :math:`M_0^* = M_0 T1^* / T1`.
 
     References
@@ -57,10 +57,10 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
         Parameters
         ----------
         sampling_time
-            Time points when model is evaluated. A sampling_time of 0 describes the first acquired data point after the
-            inversion pulse and spoiler gradients. To take the T1 relaxation during the delay between inversion pulse
-            and start of data acquisition into account, set the delay_after_preparation > 0.
-            with shape (time, ...)
+            Time points when model is evaluated. A `sampling_time` of 0 describes the first acquired data point
+            after the inversion pulse and spoiler gradients. To take the T1 relaxation during the delay between
+            inversion pulse and start of data acquisition into account, set the `delay_after_preparation` > 0.
+            with shape `(time, ...)`
         repetition_time
             repetition time
         m0_scaling_preparation
@@ -91,17 +91,17 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
         ----------
         m0
             equilibrium signal / proton density
-            with shape (... other, coils, z, y, x)
+            with shape `(*other, coils, z, y, x)`
         t1
             longitudinal relaxation time T1
-            with shape (... other, coils, z, y, x)
+            with shape `(*other, coils, z, y, x)`
         flip_angle
             flip angle of data acquisition in rad
-            with shape (... other, coils, z, y, x)
+            with shape `(*other, coils, z, y, x)`
 
         Returns
         -------
-            signal with shape (time ... other, coils, z, y, x)
+            signal with shape `(time, *other, coils, z, y, x)`
         """
         m0_ndim = m0.ndim
 
