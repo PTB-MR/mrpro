@@ -7,7 +7,11 @@ from mrpro.operators.LinearOperator import LinearOperator
 
 
 class SensitivityOp(LinearOperator):
-    """Sensitivity operator class."""
+    """Sensitivity operator class.
+
+    The forward operator expands an image to multiple coil images according to coil sensitivity maps,
+    the adjoint operator reduces the coil images to a single image.
+    """
 
     def __init__(self, csm: CsmData | torch.Tensor) -> None:
         """Initialize a Sensitivity Operator.
@@ -29,11 +33,11 @@ class SensitivityOp(LinearOperator):
         Parameters
         ----------
         img
-            image data tensor with dimensions (... other 1 z y x).
+            image data tensor with dimensions `(*other 1 z y x)`.
 
         Returns
         -------
-            image data tensor with dimensions (... other coils z y x).
+            image data tensor with dimensions `(*other coils z y x)`.
         """
         return (self.csm_tensor * img,)
 
@@ -43,10 +47,10 @@ class SensitivityOp(LinearOperator):
         Parameters
         ----------
         img
-            image data tensor with dimensions (... other coils z y x).
+            image data tensor with dimensions `(*other coils z y x)`.
 
         Returns
         -------
-            image data tensor with dimensions (... other 1 z y x).
+            image data tensor with dimensions `(*other 1 z y x)`.
         """
         return ((self.csm_tensor.conj() * img).sum(-4, keepdim=True),)

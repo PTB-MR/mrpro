@@ -14,10 +14,10 @@ def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float | torch.T
 
     Steps:
 
-    - Calculate noise correlation matrix N
-    - Carry out Cholesky decomposition L L^H = N
-    - Estimate noise decorrelation matrix D = inv(L)
-    - Apply D to k-space data
+    - Calculate noise correlation matrix :math:`N`.
+    - Carry out Cholesky decomposition :math:`L L^H = N`.
+    - Estimate noise decorrelation matrix :math:`D = L^{-1}`.
+    - Apply :math:`D` to k-space data.
 
     More information can be found in [ISMa]_ [HAN2014]_ [ROE1990]_.
 
@@ -35,11 +35,11 @@ def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float | torch.T
     scale_factor
         Square root is applied on the noise covariance matrix. Used to adjust for effective noise bandwidth
         and difference in sampling rate between noise calibration and actual measurement:
-        scale_factor = (T_acq_dwell/T_noise_dwell)*NoiseReceiverBandwidthRatio
+        ``scale_factor = (T_acq_dwell/T_noise_dwell)*NoiseReceiverBandwidthRatio``
 
     Returns
     -------
-        Prewhitened copy of k-space data
+        Prewhitened *copy* of k-space data.
 
     References
     ----------

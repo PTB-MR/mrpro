@@ -18,7 +18,7 @@ class KNoise(MoveDataMixin):
     """MR raw data / k-space data class for noise measurements."""
 
     data: torch.Tensor
-    """K-space data of noise measurements. Shape (...other coils k2 k1 k0)"""
+    """K-space data of noise measurements. Shape `(*other coils k2 k1 k0)`"""
 
     @classmethod
     def from_file(

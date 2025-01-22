@@ -28,7 +28,7 @@ class QData(Data):
         Parameters
         ----------
         data
-            quantitative image data tensor with dimensions (...other, coils, z, y, x)
+            quantitative image data tensor with dimensions `(*other, coils, z, y, x)`
         header
             MRpro header containing required meta data for the QHeader
         """

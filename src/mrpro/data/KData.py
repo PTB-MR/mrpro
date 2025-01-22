@@ -72,10 +72,10 @@ class KData(
     """Header information for k-space data"""
 
     data: torch.Tensor
-    """K-space data. Shape (... other coils k2 k1 k0)"""
+    """K-space data. Shape `(*other coils k2 k1 k0)`"""
 
     traj: KTrajectory
-    """K-space trajectory along kz, ky and kx. Shape (... other k2 k1 k0)"""
+    """K-space trajectory along kz, ky and kx. Shape `(*other k2 k1 k0)`"""
 
     @classmethod
     def from_file(
@@ -314,9 +314,9 @@ class KData(
 
         Raises
         ------
-        ValueError
+        `ValueError`
             If both batch_dims and joint_dims are defined.
-        Valuer Error
+        `ValuerError`
             If coil dimension is part of joint_dims or batch_dims.
 
         References
@@ -378,14 +378,16 @@ class KData(
     def rearrange_k2_k1_into_k1(self: Self) -> Self:
         """Rearrange kdata from (... k2 k1 ...) to (... 1 (k2 k1) ...).
 
+        Note: This function will be deprecated in the future.
+
         Parameters
         ----------
         kdata
-            K-space data (other coils k2 k1 k0)
+            K-space data `(other coils k2 k1 k0)`
 
         Returns
         -------
-            K-space data (other coils 1 (k2 k1) k0)
+            K-space data `(other  coils 1 (k2 k1) k0)`
         """
         # Rearrange data
         kdat = rearrange(self.data, '... coils k2 k1 k0->... coils 1 (k2 k1) k0')
@@ -404,7 +406,10 @@ class KData(
         return type(self)(kheader, kdat, type(self.traj).from_tensor(ktraj))
 
     def remove_readout_os(self: Self) -> Self:
-        """Remove any oversampling along the readout (k0) direction [GAD]_.
+        """Remove any oversampling along the readout direction.
+
+        Removes oversampling along the readout direction by cropping the data
+        to the size of the reconstruction matrix in image space [GAD]_.
 
         Returns a copy of the data.
 
@@ -419,7 +424,7 @@ class KData(
 
         Raises
         ------
-        ValueError
+        `ValueError`
             If the recon matrix along x is larger than the encoding matrix along x.
 
         References
@@ -472,10 +477,12 @@ class KData(
     ) -> Self:
         """Select a subset from the other dimension of KData.
 
+        Note: This function will be deprecated in the future.
+
         Parameters
         ----------
         kdata
-            K-space data (other coils k2 k1 k0)
+            K-space data `(other coils k2 k1 k0)`
         subset_idx
             Index which elements of the other subset to use, e.g. phase 0,1,2 and 5
         subset_label
@@ -483,11 +490,11 @@ class KData(
 
         Returns
         -------
-            K-space data (other_subset coils k2 k1 k0)
+            K-space data `(other_subset coils k2 k1 k0)`
 
         Raises
         ------
-        ValueError
+        `ValueError`
             If the subset indices are not available in the data
         """
         # Make a copy such that the original kdata.header remains the same
@@ -528,7 +535,7 @@ class KData(
         ----------
         split_idx
             2D index describing the k2 or k1 points in each block to be moved to the other dimension
-            (other_split, k1_per_split) or (other_split, k2_per_split)
+            `(other_split, k1_per_split)` or `(other_split, k2_per_split)`
         other_label
             Label of other dimension, e.g. repetition, phase
         split_dir
@@ -537,12 +544,12 @@ class KData(
         Returns
         -------
             K-space data with new shape
-            ((other other_split) coils k2 k1_per_split k0) or ((other other_split) coils k2_per_split k1 k0)
+            `((other other_split) coils k2 k1_per_split k0)` or `((other other_split) coils k2_per_split k1 k0)`
 
         Raises
         ------
-        ValueError
-            Already existing "other_label" can only be of length 1
+        `ValueError`
+            Already existing `other_label` can only be of length 1
         """
         # Number of other
         n_other = split_idx.shape[0]
@@ -644,17 +651,20 @@ class KData(
     ) -> Self:
         """Based on an index tensor, split the data in e.g. phases.
 
+        Note: This function will be deprecated in the future.
+
         Parameters
         ----------
         kdata
-            K-space data (other coils k2 k1 k0)
+            K-space data `(other coils k2 k1 k0)`
         split_idx
-            2D index describing the k2 points in each block to be moved to other dimension  (other_split, k2_per_split)
+            2D index describing the k2 points in each block to be moved to *other* dimension
+            `(other_split, k2_per_split)`
         other_label
-            Label of other dimension, e.g. repetition, phase
+            Label of *other* dimension, e.g. repetition, phase
 
         Returns
         -------
-            K-space data with new shape ((other other_split) coils k2_per_split k1 k0)
+            K-space data with new shape `((other other_split) coils k2_per_split k1 k0)`
         """
         return self._split_k2_or_k1_into_other(split_idx, other_label, split_dir='k2')
