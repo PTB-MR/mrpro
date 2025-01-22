@@ -122,7 +122,7 @@ class FastFourierOp(LinearOperator):
 
         Returns
         -------
-            FFT of x
+            FFT of `x`
         """
         y = torch.fft.fftshift(
             torch.fft.fftn(torch.fft.ifftshift(*self._pad_op(x), dim=self._dim), dim=self._dim, norm='ortho'),
@@ -140,7 +140,7 @@ class FastFourierOp(LinearOperator):
 
         Returns
         -------
-            IFFT of y
+            IFFT of `y`
         """
         # FFT
         return self._pad_op.adjoint(
