@@ -17,6 +17,10 @@ path_data = '/echo/kolbit01/data/GRPE_Charite/2024_12_09/'
 fname = path_data + 'meas_MID00058_FID17527_grpe_seq_sag_short.mrd'
 fname = path_data + 'meas_MID00060_FID17529_grpe_seq_sag_long.mrd'
 
+path_data = '/echo/kolbit01/data/GRPE_Charite/2025_01_14/'
+fname = path_data + 'meas_MID00277_FID22434_Test_long_libbalanceCheckOn_phantom.mrd'
+fname = path_data + 'meas_MID00274_FID22431_Test_short_libbalanceCheckOn_phantom.mrd'
+
 # ### Imports
 import matplotlib.pyplot as plt
 import torch
@@ -61,6 +65,9 @@ if not os.path.exists(fname.replace('.mrd', '_pf.mrd')):
         ismrmrd_header.encoding[0].encodingLimits.kspace_encoding_step_1.center=64
     else:
         raise NotImplementedError(f'{ismrmrd_header.encoding[0].encodedSpace.matrixSize.y} k1 points.')
+    
+    ismrmrd_header.encoding[0].encodedSpace.matrixSize.z = ismrmrd_header.encoding[0].encodedSpace.matrixSize.y
+    ismrmrd_header.encoding[0].reconSpace.matrixSize.z = ismrmrd_header.encoding[0].reconSpace.matrixSize.y
     
     # Create new file
     fname_out = fname.replace('.mrd', '_pf.mrd')
@@ -170,7 +177,8 @@ def tv_admm(img_initial, kdata, csm, dcf, reg_weight=0.2, data_weight=0.1, tv_it
 # %% Read data
 # We are going to reconstruct an image using all the acquired data.
 # Read the raw data, calculate the trajectory and dcf
-kdata = KData.from_file(fname.replace('.mrd', '_pf.mrd'), KTrajectoryRpe(angle=torch.pi * 0.618034, shift_between_rpe_lines=[0,]))
+# kdata = KData.from_file(fname.replace('.mrd', '_pf.mrd'), KTrajectoryRpe(angle=torch.pi * 0.618034, shift_between_rpe_lines=[0,]))
+kdata = KData.from_file(fname.replace('.mrd', '_pf.mrd'), KTrajectoryRpe(angle=torch.pi * 0.618034))
 
 # Display slices
 showz, showy, showx = [50, 96, 120] if kdata.header.recon_matrix.y == 192 else [50, 96, 28] 
@@ -196,9 +204,11 @@ if flag_plot:
 
 # %% Coil maps
 # Calculate coil maps
+tstart = time.time()
 avg_recon = DirectReconstruction(kdata, csm = None)
 avg_im = avg_recon(kdata)
 csm_maps = CsmData.from_idata_inati(avg_im, smoothing_width = 9)
+print(f'Csm {(time.time()-tstart)/60}min')
 
 if flag_plot:
     fig, ax = plt.subplots(5,1)
@@ -232,7 +242,7 @@ if flag_plot:
     img_save = np.concatenate(img_save)
     plt.figure()
     plt.imshow(img_save, cmap='grey', vmin=0, vmax=0.35)
-    plt.imsave(os.path.join(path_data,f'average.png'), img_save, dpi=300, cmap='grey', vmin=0, vmax=0.35)
+    plt.imsave(os.path.join(path_data, fname.replace('.mrd', '_average.png')), img_save, dpi=300, cmap='grey', vmin=0, vmax=0.35)
 
 
 # %% Respiratory self-navigator
@@ -256,7 +266,7 @@ nav_data = rearrange(nav_data, 'k1k2 coil k0 -> k1k2 (coil k0)')
 u, _, _ = torch.linalg.svd(nav_data - nav_data.mean(dim=0, keepdim=True))
 
 # Find SVD component that is closest to expected respitory frequency
-resp_freq_window_Hz = [0.2, 0.3]
+resp_freq_window_Hz = [0.2, 0.5]
 dt = torch.mean(torch.diff(nav_signal_time_in_s, dim=0))
 U_freq = torch.abs(torch.fft.fft(u, dim=0)) 
 
@@ -328,14 +338,14 @@ if flag_plot:
         img_save = np.concatenate(img_save)
         plt.figure()
         plt.imshow(img_save, cmap='grey', vmin=0, vmax=0.35)
-        plt.imsave(os.path.join(path_data,f'dynamic_{nnd}.png'), img_save, dpi=300, cmap='grey', vmin=0, vmax=0.35)
+        plt.imsave(os.path.join(path_data,fname.replace('.mrd', f'_dynamic_{nnd}.png')), img_save, dpi=300, cmap='grey', vmin=0, vmax=0.35)
   
 # %%
 from PIL import Image, GifImagePlugin, ImageEnhance
 GifImagePlugin.LOADING_STRATEGY = GifImagePlugin.LoadingStrategy.RGB_AFTER_DIFFERENT_PALETTE_ONLY
 img_pil = []
 for nnd in range(img_dynamic[0].shape[0]):
-    img_pil.append(ImageEnhance.Brightness(Image.open(os.path.join(path_data,f'dynamic_{nnd}.png')).convert('L')).enhance(1.5))
-img_pil[0].save(fp=os.path.join(path_data,f'dynamic.gif'), format='GIF', append_images=img_pil[1:], save_all=True, 
+    img_pil.append(ImageEnhance.Brightness(Image.open(os.path.join(path_data,fname.replace('.mrd', f'_dynamic_{nnd}.png'))).convert('L')).enhance(1.5))
+img_pil[0].save(fp=os.path.join(path_data,fname.replace('.mrd', '_dynamic.gif')), format='GIF', append_images=img_pil[1:], save_all=True, 
                 duration=200, loop=0, optimize=False, lossless=True)
 # %%
