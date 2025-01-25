@@ -22,12 +22,26 @@ description = "MR image reconstruction and processing package specifically devel
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
 dynamic = ["version"]
-keywords = ["MRI, reconstruction, processing, PyTorch"]
+keywords = [
+    "MRI",
+    "qMRI",
+    "medical imaging",
+    "physics-informed learning",
+    "model-based reconstruction",
+    "quantitative",
+    "signal models",
+    "machine learning",
+    "deep learning",
+    "reconstruction",
+    "processing",
+    "Pulseq",
+    "PyTorch",
+]
 authors = [
     { name = "MRpro Team", email = "info@emerpro.de" },
     { name = "Christoph Kolbitsch", email = "christoph.kolbitsch@ptb.de" },
     { name = "Patrick Schuenke", email = "patrick.schuenke@ptb.de" },
-    { name = "Felix Zimmermann", email = "felix.zimmermann89@ptb.de" },
+    { name = "Felix Zimmermann", email = "felix.zimmermann@ptb.de" },
     { name = "David Schote", email = "david.schote@ptb.de" },
     { name = "Sherine Brahma", email = "sherine.brahma@ptb.de" },
     { name = "Mara Guastini", email = "mara.guastini@ptb.de" },
@@ -66,12 +80,18 @@ test = [
     "pytest-cov",
     "pytest-xdist",
 ]
-docs = ["sphinx",
+docs = [
+    "sphinx",
     "sphinx_rtd_theme",
     "sphinx-pyproject",
     "myst-nb",
     "sphinx-mathjax-offline",
-    ]
+    "sphinx_github_style",
+    "sphinx-autodoc-typehints",
+    "sphinx-copybutton",
+    "sphinx-last-updated-by-git",
+
+]
 notebook = [
     "zenodo_get",
     "ipykernel",
@@ -79,6 +99,8 @@ notebook = [
     "jupytext",
     "matplotlib",
     "pip-tools",
+    "sigpy==0.1.26",
+
 ]
 
 [project.urls]
@@ -90,7 +112,7 @@ testpaths = ["tests"]
 filterwarnings = [
     "error",
     "ignore:'write_like_original':DeprecationWarning:pydicom:",
-    "ignore:Anomaly Detection has been enabled:UserWarning", #torch.autograd
+    "ignore:Anomaly Detection has been enabled:UserWarning",    #torch.autograd
 ]
 addopts = "-n auto"
 markers = ["cuda : Tests only to be run when cuda device is available"]
@@ -191,6 +213,7 @@ iy = "iy"
 daa = "daa"       # required for wavelet operator
 gaus = "gaus"     # required for wavelet operator
 arange = "arange" # torch.arange
+Ba = "Ba"
 
 [tool.typos.files]
 extend-exclude = [

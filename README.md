@@ -1,19 +1,28 @@
-# MRpro
+<h1 align="center">
 
-![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/source/_static/logo_white.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/source/_static/logo.svg">
+  <img src="docs/source/_static/logo.svg" alt="MRpro logo" width="50%">
+</picture>
+
+</h1><br>
+
+![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Coverage Bagde](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ckolbPTB/48e334a10caf60e6708d7c712e56d241/raw/coverage.json)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14509598.svg)](https://doi.org/10.5281/zenodo.14509598)
 
 MR image reconstruction and processing package specifically developed for PyTorch.
 
 - **Source code:** <https://github.com/PTB-MR/mrpro>
 - **Documentation:** <https://ptb-mr.github.io/mrpro/>
 - **Bug reports:** <https://github.com/PTB-MR/mrpro/issues>
-- **Try it out:** [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/PTB-MR/mrpro.git/main?labpath=examples)
+- **Try it out:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/PTB-MR/mrpro)
 
 ## Awards
 
-- 2024 ISMRM QMRI Study Group Challenge, 2nd prize for Relaxometry (T2* and T1)
+- 2024 ISMRM QMRI Study Group Challenge, 2nd prize for Relaxometry ([T2*](https://github.com/PTB-MR/mrpro/blob/8d2133c4a7ce63ac490798c4eb5a70cc1c543646/examples/qmri_sg_challenge_2024_t2_star.ipynb) and [T1](https://github.com/PTB-MR/mrpro/blob/8d2133c4a7ce63ac490798c4eb5a70cc1c543646/examples/qmri_sg_challenge_2024_t1.ipynb))
 
 ## Main features
 
@@ -84,5 +93,3 @@ We are looking forward to your contributions via Pull-Requests.
 4. Setup pre-commit hook: ``` pre-commit install ```
 
 Please look at our [contributor guide](https://ptb-mr.github.io/mrpro/contributor_guide.html) for more information on the repository structure, naming conventions, and other useful information.
-
-
