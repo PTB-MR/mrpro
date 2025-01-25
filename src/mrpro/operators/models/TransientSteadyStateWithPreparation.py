@@ -73,13 +73,13 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
         super().__init__()
         sampling_time = torch.as_tensor(sampling_time)
         self.sampling_time = torch.nn.Parameter(sampling_time, requires_grad=sampling_time.requires_grad)
-        repetition_time = torch.as_tensor(repetition_time)
+        repetition_time = torch.as_tensor(repetition_time, device=sampling_time.device)
         self.repetition_time = torch.nn.Parameter(repetition_time, requires_grad=repetition_time.requires_grad)
-        m0_scaling_preparation = torch.as_tensor(m0_scaling_preparation)
+        m0_scaling_preparation = torch.as_tensor(m0_scaling_preparation, device=sampling_time.device)
         self.m0_scaling_preparation = torch.nn.Parameter(
             m0_scaling_preparation, requires_grad=m0_scaling_preparation.requires_grad
         )
-        delay_after_preparation = torch.as_tensor(delay_after_preparation)
+        delay_after_preparation = torch.as_tensor(delay_after_preparation, device=sampling_time.device)
         self.delay_after_preparation = torch.nn.Parameter(
             delay_after_preparation, requires_grad=delay_after_preparation.requires_grad
         )
