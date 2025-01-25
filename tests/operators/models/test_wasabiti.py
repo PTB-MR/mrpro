@@ -109,4 +109,3 @@ def test_wasabiti_cuda():
     model.cpu()
     (signal,) = model(b0_shift, relative_b1, t1)
     assert signal.is_cpu
-
