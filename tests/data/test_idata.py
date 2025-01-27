@@ -15,22 +15,22 @@ def test_IData_from_dcm_file(dcm_2d):
     torch.testing.assert_close(img, dcm_2d.img_ref)
 
 
-def test_IData_from_dcm_folder(dcm_multi_echo_times):
+def test_IData_from_dcm_folder(dcm_2d_multi_echo_times):
     """IData from multiple dcm files in folder."""
-    idata = IData.from_dicom_folder(dcm_multi_echo_times[0].filename.parent)
+    idata = IData.from_dicom_folder(dcm_2d_multi_echo_times[0].filename.parent)
     # Verify correct echo times
-    original_echo_times = torch.as_tensor([ds.te for ds in dcm_multi_echo_times])
+    original_echo_times = torch.as_tensor([ds.te for ds in dcm_2d_multi_echo_times])
     assert idata.header.te is not None
     assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(idata.header.te)[0])
     # Verify all images were read in
     assert idata.data.shape[0] == original_echo_times.shape[0]
 
 
-def test_IData_from_dcm_folder_via_path(dcm_multi_echo_times):
+def test_IData_from_dcm_folder_via_path(dcm_2d_multi_echo_times):
     """IData from multiple dcm files in folder."""
-    idata = IData.from_dicom_files(Path(dcm_multi_echo_times[0].filename.parent).glob('*.dcm'))
+    idata = IData.from_dicom_files(Path(dcm_2d_multi_echo_times[0].filename.parent).glob('*.dcm'))
     # Verify correct echo times
-    original_echo_times = torch.as_tensor([ds.te for ds in dcm_multi_echo_times])
+    original_echo_times = torch.as_tensor([ds.te for ds in dcm_2d_multi_echo_times])
     assert idata.header.te is not None
     assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(idata.header.te)[0])
     # Verify all images were read in
@@ -49,15 +49,23 @@ def test_IData_from_empty_dcm_file_list():
         _ = IData.from_dicom_files([])
 
 
-def test_IData_from_dcm_files(dcm_multi_echo_times_multi_folders):
+def test_IData_from_dcm_files(dcm_2d_multi_echo_times_multi_folders):
     """IData from multiple dcm files in different folders."""
-    idata = IData.from_dicom_files([dcm_file.filename for dcm_file in dcm_multi_echo_times_multi_folders])
+    idata = IData.from_dicom_files([dcm_file.filename for dcm_file in dcm_2d_multi_echo_times_multi_folders])
     # Verify correct echo times
-    original_echo_times = torch.as_tensor([ds.te for ds in dcm_multi_echo_times_multi_folders])
+    original_echo_times = torch.as_tensor([ds.te for ds in dcm_2d_multi_echo_times_multi_folders])
     assert idata.header.te is not None
     assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(idata.header.te)[0])
     # Verify all images were read in
     assert idata.data.shape[0] == len(original_echo_times)
+
+
+def test_IData_from_3d(dcm_3d):
+    """IData from 3D dcm file."""
+    idata = IData.from_single_dicom(dcm_3d.filename)
+    # IData uses complex values but dicom only supports real values
+    img = torch.real(idata.data[0, 0, 0, ...])
+    torch.testing.assert_close(img, dcm_3d.img_ref)
 
 
 def test_IData_from_kheader_and_tensor(random_kheader, random_test_data):
