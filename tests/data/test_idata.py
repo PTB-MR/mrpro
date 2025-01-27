@@ -21,8 +21,7 @@ def test_IData_from_dcm_folder(dcm_multi_echo_times):
     # Verify correct echo times
     original_echo_times = torch.as_tensor([ds.te for ds in dcm_multi_echo_times])
     assert idata.header.te is not None
-    # dicom expects echo times in ms, mrpro in s
-    assert torch.allclose(torch.sort(original_echo_times)[0] / 1000, torch.sort(idata.header.te)[0])
+    assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(idata.header.te)[0])
     # Verify all images were read in
     assert idata.data.shape[0] == original_echo_times.shape[0]
 
@@ -33,8 +32,7 @@ def test_IData_from_dcm_folder_via_path(dcm_multi_echo_times):
     # Verify correct echo times
     original_echo_times = torch.as_tensor([ds.te for ds in dcm_multi_echo_times])
     assert idata.header.te is not None
-    # dicom expects echo times in ms, mrpro in s
-    assert torch.allclose(torch.sort(original_echo_times)[0] / 1000, torch.sort(idata.header.te)[0])
+    assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(idata.header.te)[0])
     # Verify all images were read in
     assert idata.data.shape[0] == len(original_echo_times)
 
@@ -57,8 +55,7 @@ def test_IData_from_dcm_files(dcm_multi_echo_times_multi_folders):
     # Verify correct echo times
     original_echo_times = torch.as_tensor([ds.te for ds in dcm_multi_echo_times_multi_folders])
     assert idata.header.te is not None
-    # dicom expects echo times in ms, mrpro in s
-    assert torch.allclose(torch.sort(original_echo_times)[0] / 1000, torch.sort(idata.header.te)[0])
+    assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(idata.header.te)[0])
     # Verify all images were read in
     assert idata.data.shape[0] == len(original_echo_times)
 

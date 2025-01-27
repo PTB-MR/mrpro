@@ -6,7 +6,7 @@ from ismrmrd import xsd
 
 from tests import RandomGenerator
 from tests.conftest import generate_random_data
-from tests.data import Dicom2DTestImage
+from tests.data import DicomTestImage
 
 
 @pytest.fixture(params=({'seed': 0},))
@@ -69,7 +69,7 @@ def random_test_data(request):
 def dcm_2d(ellipse_phantom, tmp_path_factory):
     """Single 2D dicom image."""
     dcm_filename = tmp_path_factory.mktemp('mrpro') / 'dicom_2d.dcm'
-    dcm_idata = Dicom2DTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom)
+    dcm_idata = DicomTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom)
     return dcm_idata
 
 
@@ -78,12 +78,12 @@ def dcm_multi_echo_times(request, ellipse_phantom, tmp_path_factory):
     """Multiple 2D dicom images with different echo times."""
     n_images = request.param['n_images']
     path = tmp_path_factory.mktemp('mrpro_multi_dcm')
-    te = 2.0
+    te = 0.02
     dcm_image_data = []
-    for _ in range(n_images):
-        dcm_filename = path / f'dicom_te_{int(te)}.dcm'
-        dcm_image_data.append(Dicom2DTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom, te=te))
-        te += 1.0
+    for idx in range(n_images):
+        dcm_filename = path / f'dicom_{idx}.dcm'
+        dcm_image_data.append(DicomTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom, te=te))
+        te += 0.01
     return dcm_image_data
 
 
@@ -91,11 +91,11 @@ def dcm_multi_echo_times(request, ellipse_phantom, tmp_path_factory):
 def dcm_multi_echo_times_multi_folders(request, ellipse_phantom, tmp_path_factory):
     """Multiple 2D dicom images with different echo times each saved in a different folder."""
     n_images = request.param['n_images']
-    te = 2.0
+    te = 0.02
     dcm_image_data = []
-    for _ in range(n_images):
-        path = tmp_path_factory.mktemp(f'mrpro_multi_dcm_te_{int(te)}')
+    for idx in range(n_images):
+        path = tmp_path_factory.mktemp(f'mrpro_multi_dcm_{idx}')
         dcm_filename = path / f'dicom_te_{int(te)}.dcm'
-        dcm_image_data.append(Dicom2DTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom, te=te))
-        te += 1.0
+        dcm_image_data.append(DicomTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom, te=te))
+        te += 0.01
     return dcm_image_data
