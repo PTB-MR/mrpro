@@ -7,6 +7,7 @@ from typing import Any
 import torch
 
 from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.operators.SignalModel import SignalModel
 
 
 @torch.jit.script
@@ -163,6 +164,12 @@ class Parameters(MoveDataMixin):
     relative_b1: torch.Tensor | None = None
 
     @property
+    def device(self) -> torch.device:
+        device = super().device
+        assert device is not None  # mypy
+        return device
+
+    @property
     def shape(self) -> torch.Size:
         shape = torch.broadcast_shapes(self.t1.shape, self.t2.shape, self.m0.shape)
         if self.relative_b1 is not None:
@@ -207,7 +214,7 @@ def initial_state(
     return torch.zeros(*shape, 3, n_sates, device=device, dtype=dtype)
 
 
-class EPGBlock(torch.nn.Module, TensorAttributeMixin):
+class EPGBlock(TensorAttributeMixin):
     """Base class for EPG blocks."""
 
     def __call__(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, Sequence[torch.Tensor]]:
@@ -216,6 +223,7 @@ class EPGBlock(torch.nn.Module, TensorAttributeMixin):
     def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, Sequence[torch.Tensor]]:
         raise NotImplementedError
 
+    @property
     def duration(self) -> torch.Tensor:
         """Duration of the block in s."""
         raise NotImplementedError
@@ -294,7 +302,7 @@ class T2PrepBlock(EPGBlock):
         state = rf(state, rf_matrix(torch.pi / 2, -torch.pi, parameters.relative_b1))
         # Spoiler
         state = gradient_dephasing(state)
-        return state
+        return state, []
 
     @property
     def duration(self) -> torch.Tensor:
@@ -316,8 +324,8 @@ class DelayBlock(EPGBlock):
         return self.delay_time
 
 
-class MRFSequence(torch.nn.ModuleList):
-    """Signal model for MRF based on EPG.
+class EPGSequence(torch.nn.ModuleList, EPGBlock):
+    """Sequene of EPG blocks.
 
     The sequence as multiple blocks, such as preparation pulses, acquisition blocks and delays.
 
@@ -356,19 +364,68 @@ class MRFSequence(torch.nn.ModuleList):
 
     """
 
-    def __init__(self, blocks: Sequence[EPGBlock], n_states: int = 20):
+    def __init__(self, blocks: Sequence[EPGBlock] = ()):
         torch.nn.ModuleList.__init__(self, blocks)
-        self.n_states = n_states
 
-    def forward(self, parameters: Parameters) -> torch.Tensor:
-        state = initial_state(
-            shape=parameters.shape,
-            n_sates=self.n_states,
-            device=parameters.device,
-            dtype=torch.promote_types(parameters.dtype, torch.complex64),
-        )
-        signals = []
+    def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
+        signals: list[torch.Tensor] = []
+        block: EPGBlock
         for block in self:
             state, signal = block(state, parameters)
             signals.extend(signal)
-        return torch.concatenate(signals, dim=0)
+        return state, signals
+
+    @property
+    def duration(self) -> torch.Tensor:
+        return sum(block.duration() for block in self)
+
+
+class EPGSignalModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor | None]):
+    """EPG signal model."""
+
+    def __init__(self, sequence: EPGSequence | Sequence[EPGBlock], n_states: int = 20):
+        self.n_states = n_states
+        if not isinstance(sequence, EPGSequence):
+            self.sequence = EPGSequence(sequence)
+        else:
+            self.sequence = sequence
+
+    def forward(
+        self, t1: torch.Tensor, t2: torch.Tensor, m0: torch.Tensor, relative_b1: torch.Tensor | None = None
+    ) -> tuple[torch.Tensor]:
+        parameters = Parameters(t1, t2, m0, relative_b1)
+        state = initial_state(parameters.shape, n_sates=self.n_states, device=parameters.device, dtype=parameters.dtype)
+        _, signals = self.sequence(state, parameters)
+        signal = torch.stack(list(signals), dim=0)
+        return (signal,)
+
+
+class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
+    """Cardiac MR Fingerprinting signal model."""
+
+    def __init__(self, acquisition_times: torch.Tensor, te: float) -> None:
+        sequence = EPGSequence()
+        max_flip_angles = [12.5, 18.75, 25.0, 25.0, 25.0, 12.5, 18.75, 25.0, 25.0, 25.0, 12.5, 18.75, 25.0, 25.0, 25.0]
+        for i in range(len(acquisition_times)):
+            block = EPGSequence()
+            match i % 5:
+                case 0:
+                    block.append(InversionBlock(0.020))
+                case 1:
+                    pass
+                case 2:
+                    block.append(T2PrepBlock(0.03))
+                case 3:
+                    block.append(T2PrepBlock(0.05))
+                case 4:
+                    block.append(T2PrepBlock(0.1))
+            flip_angles = torch.cat((torch.linspace(4, max_flip_angles[i], 16), torch.full((31,), max_flip_angles[i])))
+            block.append(FispBlock(flip_angles, 0.0, tr=0.01, te=te))
+            if i > 0:
+                delay = (acquisition_times[i] - acquisition_times[i - 1]) - block.duration
+                sequence.append(DelayBlock(delay))
+            sequence.append(block)
+        self.model = EPGSignalModel(sequence, n_states=20)
+
+    def forward(self, t1: torch.Tensor, t2: torch.Tensor, m0: torch.Tensor) -> tuple[torch.Tensor]:
+        return self.model(t1, t2, m0, None)
