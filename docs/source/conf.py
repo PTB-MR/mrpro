@@ -104,7 +104,7 @@ html_context = {
     'github_repo': 'mrpro',
     'github_version': 'main',
 }
-linkcode_blob = html_context['github_version']
+linkcode_blob = "head"
 linkcode_link_text = '[source]'
 default_role = 'py:obj'
 pygments_style = 'default'
