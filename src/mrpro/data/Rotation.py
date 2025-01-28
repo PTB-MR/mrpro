@@ -1060,7 +1060,7 @@ class Rotation(torch.nn.Module):
             shape `(3,)` or `(..., 3)`, depending on shape of inputs used to initialize object.
             The returned angles are in the range:
 
-            - First angle belongs to`` [-180, 180]`` degrees (both inclusive)
+            - First angle belongs to ``[-180, 180]`` degrees (both inclusive)
             - Third angle belongs to ``[-180, 180]`` degrees (both inclusive)
             - Second angle belongs to:
 
