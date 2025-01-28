@@ -20,6 +20,9 @@ jobs:
     steps:
       - name: Checkout mrpro repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # fetch history for github links
+          fetch-tags: true
 
       - id: set-matrix
         run: |
@@ -28,6 +31,7 @@ jobs:
       - name: Notebook overview
         run: |
           echo "jupyter-notebooks: ${{ steps.set-matrix.outputs.notebook_paths }}"
+
     outputs:
       notebook_paths: ${{ steps.set-matrix.outputs.notebook_paths }}
 
