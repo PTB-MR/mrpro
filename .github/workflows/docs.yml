@@ -20,9 +20,6 @@ jobs:
     steps:
       - name: Checkout mrpro repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # fetch history for github links
-          fetch-tags: true
 
       - id: set-matrix
         run: |
@@ -114,6 +111,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # fetch history for github links
+          fetch-tags: true
+
 
       - name: Install mrpro and dependencies
         run: pip install --upgrade --upgrade-strategy "eager" .[docs]
