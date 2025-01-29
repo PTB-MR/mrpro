@@ -2,6 +2,7 @@
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from multiprocessing.sharedctypes import Value
 from typing import Any
 
 import torch
@@ -677,7 +678,10 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
         super().__init__()
         sequence = EPGSequence()
         max_flip_angles = [12.5, 18.75, 25.0, 25.0, 25.0, 12.5, 18.75, 25.0, 25.0, 25.0, 12.5, 18.75, 25.0, 25.0, 25.0]
-        for i in range(len(acquisition_times)):
+        if acquisition_times.size(-1) != 705:
+            raise ValueError(f'Expected 705 acquisition times. Got {acquisition_times.size(-1)}')
+        block_time = acquisition_times[..., ::47]
+        for i in range(block_time.size(-1)):
             block = EPGSequence()
             match i % 5:
                 case 0:
@@ -693,7 +697,7 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             flip_angles = torch.cat((torch.linspace(4, max_flip_angles[i], 16), torch.full((31,), max_flip_angles[i])))
             block.append(FispBlock(flip_angles, 0.0, tr=0.01, te=te))
             if i > 0:
-                delay = (acquisition_times[i] - acquisition_times[i - 1]) - block.duration
+                delay = (block_time[..., i] - block_time[..., i - 1]) - block.duration
                 sequence.append(DelayBlock(delay))
             sequence.append(block)
         self.model = EPGSignalModel(sequence, n_states=20)

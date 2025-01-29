@@ -8,7 +8,7 @@ from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, crea
 
 def test_cmrf_model():
     """Test the CMRF model."""
-    acquisition_times = torch.linspace(0, 10, 15)
+    acquisition_times = torch.linspace(0, 10, 705)
     te = 0.05
     model = CardiacFingerprinting(acquisition_times=acquisition_times, te=te)
     t1, t2, m0 = create_parameter_tensor_tuples(number_of_tensors=3)
