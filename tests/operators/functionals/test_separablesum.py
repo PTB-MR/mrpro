@@ -10,7 +10,7 @@ class Dummy(ProximableFunctional):
 
     def __init__(self, prox_scale: float = 1.0):
         super().__init__()
-        self.dummy = torch.nn.Buffer(torch.tensor(1.0))
+        self.dummy = torch.tensor(1.0)
         self.prox_scale = prox_scale
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:

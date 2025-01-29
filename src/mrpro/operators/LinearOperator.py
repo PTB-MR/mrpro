@@ -222,16 +222,14 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     def __matmul__(self, other: LinearOperator) -> LinearOperator: ...
 
     @overload
-    def __matmul__(self, other: mrpro.operators.LinearOperatorMatrix) -> mrpro.operators.LinearOperatorMatrix: ...
-
-    @overload
     def __matmul__(
         self, other: Operator[Unpack[Tin2], tuple[torch.Tensor,]]
     ) -> Operator[Unpack[Tin2], tuple[torch.Tensor,]]: ...
 
     def __matmul__(
-        self, other: Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator
-    ) -> Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator | mrpro.operators.LinearOperatorMatrix:
+        self,
+        other: Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator,
+    ) -> Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator:
         """Operator composition.
 
         Returns ``lambda x: self(other(x))``
@@ -244,9 +242,6 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         elif isinstance(self, mrpro.operators.ZeroOp) or isinstance(other, mrpro.operators.ZeroOp):
             # zero operator composition with any operator is zero
             return mrpro.operators.ZeroOp()
-        elif isinstance(other, mrpro.operators.LinearOperatorMatrix):
-            operators = [[op @ self for op in row] for row in other._operators]
-            return mrpro.operators.LinearOperatorMatrix(operators)
         elif isinstance(other, LinearOperator):
             # LinearOperator@LinearOperator is linear
             return LinearOperatorComposition(self, other)
@@ -422,12 +417,7 @@ class LinearOperatorSum(LinearOperator):
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Operator addition."""
-
-        def _add(a: tuple[torch.Tensor], b: tuple[torch.Tensor]) -> tuple[torch.Tensor]:
-            return (a[0] + b[0],)
-
-        result = functools.reduce(_add, (op(x) for op in self._operators))
-        return result
+        return (functools.reduce(operator.add, (op(x)[0] for op in self._operators)),)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint of the operator addition."""
@@ -484,7 +474,7 @@ class LinearOperatorElementwiseProductLeft(LinearOperator):
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Linear operator elementwise left multiplication."""
-        return (self._operator(x * self._scalar),)
+        return self._operator(x * self._scalar)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint linear operator elementwise multiplication with a tensor/scalar."""

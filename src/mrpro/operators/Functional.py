@@ -81,10 +81,10 @@ class ElementaryFunctional(Functional):
 
         """
         super().__init__()
-        self.weight = torch.nn.Buffer(torch.as_tensor(weight))
+        self.weight = torch.as_tensor(weight)
         if target is None:
             target = torch.tensor(0, dtype=torch.float32)
-        self.target = torch.nn.Buffer(torch.as_tensor(target))
+        self.target = torch.as_tensor(target)
         if isinstance(dim, int):
             dim = (dim,)
         elif isinstance(dim, Sequence):
@@ -225,7 +225,7 @@ class ScaledFunctional(Functional):
         """
         super().__init__()
         self.functional = functional
-        self.scale = torch.nn.Buffer(torch.as_tensor(scale))
+        self.scale = torch.as_tensor(scale)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Forward method.
@@ -260,7 +260,7 @@ class ScaledProximableFunctional(ProximableFunctional):
         """
         super().__init__()
         self.functional = functional
-        self.scale = torch.nn.Buffer(torch.as_tensor(scale))
+        self.scale = torch.as_tensor(scale)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Forward method.

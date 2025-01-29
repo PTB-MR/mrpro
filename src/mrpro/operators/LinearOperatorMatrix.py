@@ -197,6 +197,11 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
             operators.append([cast(LinearOperator, o * op) for op in row])
         return self.__class__(operators)
 
+    def __rmatmul__(self, other: LinearOperator) -> Self:  # type: ignore[misc]
+        """Composition of operators."""
+        operators = [[op @ other for op in row] for row in self._operators]
+        return self.__class__(operators)
+
     def __matmul__(self, other: LinearOperator | Self) -> Self:  # type: ignore[override]
         """Composition of operators."""
         if isinstance(other, LinearOperator):
