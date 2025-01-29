@@ -38,7 +38,7 @@ class PCACompressionOp(LinearOperator):
         _, _, v = torch.svd(correlation)
         # add joint_dim along which the the compression is the same
         v = repeat(v, '... comp1 comp2 -> ... joint_dim comp1 comp2', joint_dim=1)
-        self.register_buffer('_compression_matrix', v[..., :n_components, :].clone())
+        self._compression_matrix = v[..., :n_components, :].clone()
 
     def forward(self, data: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the compression to the data.
