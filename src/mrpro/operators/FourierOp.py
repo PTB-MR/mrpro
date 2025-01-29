@@ -118,9 +118,8 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
 
             # Broadcast shapes not always needed but also does not hurt
             omega = [k.expand(*np.broadcast_shapes(*[k.shape for k in omega])) for k in omega]
-            self._omega: torch.Tensor | None = torch.nn.Buffer(
-                torch.stack(omega, dim=-4)
-            )  # use the 'coil' dim for the direction
+            self._omega: torch.Tensor | None = torch.stack(omega, dim=-4)
+            # use the 'coil' dim for the direction
             numpoints = [min(img_size, nufft_numpoints) for img_size in self._nufft_im_size]
             self._fwd_nufft_op: KbNufftAdjoint | None = KbNufft(
                 im_size=self._nufft_im_size,

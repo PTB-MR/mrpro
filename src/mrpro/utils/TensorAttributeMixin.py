@@ -20,11 +20,7 @@ class TensorAttributeMixin(torch.nn.Module):
         value
             attribute to set.
         """
-        if (
-            isinstance(value, torch.Tensor)
-            and not isinstance(value, torch.nn.Parameter | torch.nn.Buffer)
-            and not value.requires_grad
-        ):
+        if isinstance(value, torch.Tensor) and not isinstance(value, torch.nn.Parameter) and not value.requires_grad:
             self.register_buffer(name, value)
         else:
             super().__setattr__(name, value)
