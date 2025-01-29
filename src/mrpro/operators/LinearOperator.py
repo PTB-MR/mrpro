@@ -384,7 +384,7 @@ class LinearOperatorComposition(LinearOperator):
         self._operator2 = operator2
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Operator composition."""
+        """Linear operator composition."""
         return self._operator1(*self._operator2(x))
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
@@ -400,12 +400,12 @@ class LinearOperatorComposition(LinearOperator):
 
 
 class LinearOperatorSum(LinearOperator):
-    """Operator addition."""
+    """Linear operator addition."""
 
     _operators: list[LinearOperator]
 
     def __init__(self, operator1: LinearOperator, /, *other_operators: LinearOperator):
-        """Operator addition initialization."""
+        """Linear operator addition initialization."""
         super().__init__()
         ops: list[LinearOperator] = []
         for op in (operator1, *other_operators):
@@ -416,11 +416,11 @@ class LinearOperatorSum(LinearOperator):
         self._operators = cast(list[LinearOperator], torch.nn.ModuleList(ops))
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Operator addition."""
+        """Linear operator addition."""
         return (functools.reduce(operator.add, (op(x)[0] for op in self._operators)),)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Adjoint of the operator addition."""
+        """Adjoint of the linear operator addition."""
         # (A+B)^H = A^H + B^H
         return (functools.reduce(operator.add, (op.adjoint(x)[0] for op in self._operators)),)
 
@@ -438,7 +438,7 @@ class LinearOperatorElementwiseProductRight(LinearOperator):
         self._scalar = scalar
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Operator elementwise right multiplication."""
+        """Linear operator elementwise right multiplication."""
         (out,) = self._operator(x)
         return (out * self._scalar,)
 
