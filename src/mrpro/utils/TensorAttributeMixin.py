@@ -1,3 +1,5 @@
+"""Mixin for smarter tensor attributes."""
+
 from typing import Any
 
 import torch
