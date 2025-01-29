@@ -117,7 +117,7 @@ jobs:
 
 
       - name: Install mrpro and dependencies
-        run: pip install --upgrade --upgrade-strategy "eager" .[docs]
+        run: pip install --upgrade --upgrade-strategy "eager" -e .[docs]
 
       - name: Download executed notebook ipynb files
         id: download
