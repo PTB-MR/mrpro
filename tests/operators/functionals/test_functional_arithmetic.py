@@ -3,8 +3,7 @@ from typing import Literal, cast
 import pytest
 import torch
 from mrpro.operators import ElementaryFunctional, ElementaryProximableFunctional, ProximableFunctional
-from mrpro.operators.Functional import ScaledProximableFunctional
-from typing_extensions import assert_type
+from mrpro.operators.Functional import ScaledFunctional, ScaledProximableFunctional
 
 from tests import RandomGenerator
 from tests.operators.functionals.conftest import (
@@ -15,10 +14,10 @@ from tests.operators.functionals.conftest import (
 )
 
 
-@pytest.mark.parametrize('functional', PROXIMABLE_FUNCTIONALS)
+@pytest.mark.parametrize('functional', FUNCTIONALS)
 @pytest.mark.parametrize('scale_type', ['negative', 'positive', 'tensor', 'int'])
 def test_functional_scaling_forward(
-    functional: type[ElementaryProximableFunctional], scale_type: Literal['negative', 'positive', 'tensor', 'int']
+    functional: type[ElementaryFunctional], scale_type: Literal['negative', 'positive', 'tensor', 'int']
 ):
     """Test if forward method is scaled."""
     rng = RandomGenerator(1)
@@ -34,8 +33,7 @@ def test_functional_scaling_forward(
         case 'int':
             scale = 5
     scaled_f = scale * f
-    assert isinstance(scaled_f, ScaledProximableFunctional)
-    assert_type(scaled_f, ScaledProximableFunctional)
+    assert isinstance(scaled_f, ScaledFunctional | ScaledProximableFunctional)
     torch.testing.assert_close(scaled_f(x)[0], scale * f(x)[0])
 
 
