@@ -191,7 +191,7 @@ class GridSamplingOp(LinearOperator):
         Parameters
         ----------
         grid
-            sampling grid. Shape `\*batchdim, z,y,x,3 / \*batchdim, y,x,2`.
+            sampling grid. Shape `*batchdim, z,y,x,3` / `*batchdim, y,x,2`.
             Values should be in ``[-1, 1.]``.
         input_shape
             Used in the adjoint. The z, y, x shape of the domain of the operator.
@@ -230,7 +230,7 @@ class GridSamplingOp(LinearOperator):
 
         self.interpolation_mode = interpolation_mode
         self.padding_mode = padding_mode
-        self.register_buffer('grid', grid)
+        self.grid = grid
         self.input_shape = input_shape
         self.align_corners = align_corners
 
