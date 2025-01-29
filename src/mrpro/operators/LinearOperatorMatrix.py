@@ -200,7 +200,8 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
     def __matmul__(self, other: LinearOperator | Self) -> Self:  # type: ignore[override]
         """Composition of operators."""
         if isinstance(other, LinearOperator):
-            return self._binary_operation(other, '__matmul__')
+            operators = [[other @ op for op in row] for row in self._operators]
+            return self.__class__(operators)
         elif isinstance(other, LinearOperatorMatrix):
             if self.shape[1] != other.shape[0]:
                 raise ValueError('OperatorMatrix shapes do not match.')

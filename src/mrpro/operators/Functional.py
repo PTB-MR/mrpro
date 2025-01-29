@@ -81,10 +81,10 @@ class ElementaryFunctional(Functional):
 
         """
         super().__init__()
-        self.register_buffer('weight', torch.as_tensor(weight))
+        self.weight = torch.nn.Buffer(torch.as_tensor(weight))
         if target is None:
             target = torch.tensor(0, dtype=torch.float32)
-        self.register_buffer('target', torch.as_tensor(target))
+        self.target = torch.nn.Buffer(torch.as_tensor(target))
         if isinstance(dim, int):
             dim = (dim,)
         elif isinstance(dim, Sequence):
@@ -167,7 +167,7 @@ class ProximableFunctional(Functional, ABC):
             Proximal operator  of the convex conjugate applied to the input tensor
         """
         if not isinstance(sigma, torch.Tensor):
-            sigma = torch.as_tensor(1.0 * sigma, device=self.target.device)
+            sigma = torch.as_tensor(1.0 * sigma)
         self._throw_if_negative_or_complex(sigma)
         sigma[sigma < 1e-8] += 1e-6
         return (x - sigma * self.prox(x / sigma, 1 / sigma)[0],)
@@ -225,7 +225,7 @@ class ScaledFunctional(Functional):
         """
         super().__init__()
         self.functional = functional
-        self.register_buffer('scale', torch.as_tensor(scale))
+        self.scale = torch.nn.Buffer(torch.as_tensor(scale))
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Forward method.
@@ -242,8 +242,39 @@ class ScaledFunctional(Functional):
         return (self.scale * self.functional(x)[0],)
 
 
-class ScaledProximableFunctional(ScaledFunctional, ProximableFunctional):
+class ScaledProximableFunctional(ProximableFunctional):
     """Proximable Functional scaled by a scalar."""
+
+    def __init__(self, functional: ProximableFunctional, scale: torch.Tensor | float) -> None:
+        r"""Initialize a scaled proximable functional.
+
+        A scaled functional is a functional that is scaled by a scalar factor :math:`\alpha`,
+        i.e. :math:`f(x) = \alpha g(x)`.
+
+        Parameters
+        ----------
+        functional
+            proximable functional to be scaled
+        scale
+            scaling factor, must be real and positive
+        """
+        super().__init__()
+        self.functional = functional
+        self.scale = torch.nn.Buffer(torch.as_tensor(scale))
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Forward method.
+
+        Parameters
+        ----------
+        x
+            input tensor
+
+        Returns
+        -------
+            scaled output of the functional
+        """
+        return (self.scale * self.functional(x)[0],)
 
     def prox(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         """Proximal Mapping.

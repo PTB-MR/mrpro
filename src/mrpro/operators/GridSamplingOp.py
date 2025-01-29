@@ -230,7 +230,7 @@ class GridSamplingOp(LinearOperator):
 
         self.interpolation_mode = interpolation_mode
         self.padding_mode = padding_mode
-        self.register_buffer('grid', grid)
+        self.grid = torch.nn.Buffer(grid)
         self.input_shape = input_shape
         self.align_corners = align_corners
 

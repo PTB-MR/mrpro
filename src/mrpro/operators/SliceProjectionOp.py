@@ -194,14 +194,14 @@ class SliceProjectionOp(LinearOperator):
             # beta status in pytorch causes a warning to be printed
             warnings.filterwarnings('ignore', category=UserWarning, message='Sparse')
             if optimize_for == 'forward':
-                self.register_buffer('matrix', matrix.to_sparse_csr())
+                self.matrix = torch.nn.Buffer(matrix.to_sparse_csr())
                 self.matrix_adjoint = None
             elif optimize_for == 'adjoint':
-                self.register_buffer('matrix_adjoint', matrix.H.to_sparse_csr())
+                self.matrix_adjoint = torch.nn.Buffer(matrix.H.to_sparse_csr())
                 self.matrix = None
             elif optimize_for == 'both':
-                self.register_buffer('matrix_adjoint', matrix.H.to_sparse_csr())
-                self.register_buffer('matrix', matrix.to_sparse_csr())
+                self.matrix_adjoint = torch.nn.Buffer(matrix.H.to_sparse_csr())
+                self.matrix = torch.nn.Buffer(matrix.to_sparse_csr())
 
             else:
                 raise ValueError("optimize_for must be one of 'forward', 'adjoint', 'both'")

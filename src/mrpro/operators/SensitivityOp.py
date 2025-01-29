@@ -25,7 +25,7 @@ class SensitivityOp(LinearOperator):
         if isinstance(csm, CsmData):
             # only tensors can be used as buffers
             csm = csm.data
-        self.register_buffer('csm_tensor', csm)
+        self.csm_tensor = torch.nn.Buffer(csm)
 
     def forward(self, img: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the forward operator, thus expand the coils dimension.

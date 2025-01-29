@@ -39,6 +39,8 @@ class SliceProfileBase(abc.ABC, torch.nn.Module):
 class SliceGaussian(SliceProfileBase):
     """Gaussian slice profile."""
 
+    fwhm: torch.Tensor
+
     def __init__(self, fwhm: float | Tensor):
         """Initialize the Gaussian slice profile.
 
@@ -48,7 +50,7 @@ class SliceGaussian(SliceProfileBase):
             Full width at half maximum of the Gaussian
         """
         super().__init__()
-        self.register_buffer('fwhm', torch.as_tensor(fwhm))
+        self.fwhm = torch.nn.Buffer(torch.as_tensor(fwhm))
 
     def forward(self, x: Tensor) -> Tensor:
         """Evaluate the Gaussian slice profile at a position.
@@ -88,8 +90,8 @@ class SliceSmoothedRectangular(SliceProfileBase):
             Value of the profile / intensity at the given position
         """
         super().__init__()
-        self.register_buffer('fwhm_rect', torch.as_tensor(fwhm_rect))
-        self.register_buffer('fwhm_gauss', torch.as_tensor(fwhm_gauss))
+        self.fwhm_rect = torch.nn.Buffer(torch.as_tensor(fwhm_rect))
+        self.fwhm_gauss = torch.nn.Buffer(torch.as_tensor(fwhm_gauss))
 
     def forward(self, x: Tensor) -> Tensor:
         """Evaluate the Gaussian slice profile at a position.
