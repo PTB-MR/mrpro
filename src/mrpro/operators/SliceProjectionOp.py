@@ -172,8 +172,8 @@ class SliceProjectionOp(LinearOperator):
         rotation_quats = torch.broadcast_to(slice_rotation.as_quat(), (*batch_shapes, 4)).reshape(-1, 4)
         slice_rotation = Rotation(rotation_quats, normalize=False, copy=False)
         slice_shift_tensor = torch.broadcast_to(slice_shift_tensor, batch_shapes).flatten()
-        slice_profile_array = np.broadcast_to(slice_profile_array, batch_shapes).ravel()
         widths = np.broadcast_to(np.vectorize(_find_width)(slice_profile_array), batch_shapes).ravel()
+        slice_profile_array = np.broadcast_to(slice_profile_array, batch_shapes).ravel()
         matrices = [
             SliceProjectionOp.projection_matrix(
                 input_shape,

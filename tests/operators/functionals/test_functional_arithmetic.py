@@ -1,9 +1,10 @@
-from typing import Literal, assert_type, cast
+from typing import Literal, cast
 
 import pytest
 import torch
 from mrpro.operators import ElementaryFunctional, ElementaryProximableFunctional, ProximableFunctional
 from mrpro.operators.Functional import ScaledProximableFunctional
+from typing_extensions import assert_type
 
 from tests import RandomGenerator
 from tests.operators.functionals.conftest import (
