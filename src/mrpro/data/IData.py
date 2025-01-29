@@ -135,14 +135,12 @@ class IData(Data):
         # (0018|0023) is used to determine if the data is 3D.
         number_of_frames = [item.value for item in dataset_list[0].iterall() if item.tag == 0x00280008]
         mr_acquisition_type = [item.value for item in dataset_list[0].iterall() if item.tag == 0x00180023]
-        if (
-            len(number_of_frames) > 0
-            and float(number_of_frames[0]) > 1
-            and len(mr_acquisition_type) > 0
-            and mr_acquisition_type[0] == '3D'
-        ):
-            idata = repeat(idata, 'other z y x -> other coils z y x', coils=1)
-        else:
+        if len(number_of_frames) > 0 and float(number_of_frames[0]) > 1:  # multi-frame data
+            if len(mr_acquisition_type) > 0 and mr_acquisition_type[0] == '3D':  # multi-frame 3D data
+                idata = repeat(idata, 'other z y x -> other coils z y x', coils=1)
+            else:  # multi-frame 2D data
+                idata = repeat(idata, 'other frame y x -> other frame coils z y x', coils=1, z=1)
+        else:  # single-frame data
             idata = repeat(idata, 'other y x -> other coils z y x', coils=1, z=1)
 
         return cls(data=idata, header=header)
