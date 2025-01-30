@@ -1,8 +1,8 @@
 <h1 align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/source/_static/logo_white.svg">
-  <source media="(prefers-color-scheme: light)" srcset="docs/source/_static/logo.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/PTB-MR/mrpro/refs/heads/main/docs/source/_static/logo_white.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/PTB-MR/mrpro/refs/heads/main/docs/source/_static/logo.svg">
   <img src="docs/source/_static/logo.svg" alt="MRpro logo" width="50%">
 </picture>
 
