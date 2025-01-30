@@ -36,6 +36,11 @@ class DicomTestImage:
         time after R-peak
     phantom
         phantom with different ellipses
+    series_description
+        description of the DICOM series
+    series_instance_uid
+        UID identifying a series, i.e. a set of images which belong together (e.g. multiple slices).
+        If None, a new UID is generated.
     """
 
     def __init__(
@@ -48,6 +53,8 @@ class DicomTestImage:
         te: float = 0.037,
         time_after_rpeak: float = 0.333,
         phantom: EllipsePhantom | None = None,
+        series_description: str = 'dicom_test_images',
+        series_instance_uid: str | None = None,
     ):
         if not phantom:
             phantom = EllipsePhantom()
@@ -69,6 +76,8 @@ class DicomTestImage:
         self.te: float = te
         self.time_after_rpeak: float = time_after_rpeak
         self.phantom: EllipsePhantom = phantom
+        self.series_description = series_description
+        self.series_instance_uid = pydicom.uid.generate_uid() if series_instance_uid is None else series_instance_uid
 
         # Create image
         img_dimension = SpatialDimension(z=1, y=matrix_size_y, x=matrix_size_x)
@@ -94,7 +103,8 @@ class DicomTestImage:
         dataset.StudyDescription = 'MRpro'
         dataset.SeriesDate = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d')
         dataset.SeriesTime = datetime.datetime.now(datetime.timezone.utc).strftime('%H%M%S.%f')
-        dataset.SeriesDescription = 'dicom_test_images'
+        dataset.SeriesDescription = series_description
+        dataset.SeriesInstanceUID = self.series_instance_uid
 
         # When accessing the data using dataset.pixel_array pydicom will return an image with dimensions (rows columns).
         # According to the dicom standard rows corresponds to the vertical dimension (i.e. y) and columns corresponds

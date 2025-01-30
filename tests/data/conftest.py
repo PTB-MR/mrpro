@@ -81,10 +81,16 @@ def dcm_2d_multi_echo_times(request, ellipse_phantom, tmp_path_factory):
     path = tmp_path_factory.mktemp('mrpro_2d_multi_echo')
     te = 0.02
     dcm_image_data = []
+    series_instance_uid = None
     for idx in range(n_echoes):
         dcm_filename = path / f'dicom_{idx}.dcm'
-        dcm_image_data.append(DicomTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom, te=te))
+        dcm_image_data.append(
+            DicomTestImage(
+                filename=dcm_filename, phantom=ellipse_phantom.phantom, te=te, series_instance_uid=series_instance_uid
+            )
+        )
         te += 0.01
+        series_instance_uid = dcm_image_data[-1].series_instance_uid
     return dcm_image_data
 
 
@@ -134,13 +140,19 @@ def dcm_3d_multi_echo(request, ellipse_phantom, tmp_path_factory):
     te = 0.02
     path = tmp_path_factory.mktemp('mrpro_3d_multi_echo')
     dcm_image_data = []
+    series_instance_uid = None
     for idx in range(n_echoes):
         dcm_filename = path / f'dicom_{idx}.dcm'
         dcm_image_data.append(
             DicomTestImage(
-                filename=dcm_filename, phantom=ellipse_phantom.phantom, slice_offset=[-2.0, 0.0, 2.0, 4.0], te=te
+                filename=dcm_filename,
+                phantom=ellipse_phantom.phantom,
+                slice_offset=[-2.0, 0.0, 2.0, 4.0],
+                te=te,
+                series_instance_uid=series_instance_uid,
             )
         )
+        series_instance_uid = dcm_image_data[-1].series_instance_uid
         te += 0.01
     return dcm_image_data
 
@@ -155,6 +167,7 @@ def dcm_3d_multi_echo_multi_cardiac_phases(request, ellipse_phantom, tmp_path_fa
     dcm_image_data = []
     time_after_rpeak = 0.1
     idx = 0
+    series_instance_uid = None
     for _ in range(n_cardiac_phases):
         te = 0.02
         for _ in range(n_echoes):
@@ -166,8 +179,10 @@ def dcm_3d_multi_echo_multi_cardiac_phases(request, ellipse_phantom, tmp_path_fa
                     slice_offset=[-2.0, 0.0, 2.0, 4.0],
                     te=te,
                     time_after_rpeak=time_after_rpeak,
+                    series_instance_uid=series_instance_uid,
                 )
             )
+            series_instance_uid = dcm_image_data[-1].series_instance_uid
             te += 0.01
             idx += 1
         time_after_rpeak += 0.1
