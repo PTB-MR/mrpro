@@ -216,7 +216,7 @@ def ravel_multi_index(multi_index: Sequence[torch.Tensor], dims: Sequence[int]) 
     Returns
     -------
     index
-        A tensor of shape (n,) with the flattened indices.
+        flattened index
     """
     flat_index = multi_index[0]
     for idx, dim in zip(multi_index[1:], dims[1:], strict=True):
