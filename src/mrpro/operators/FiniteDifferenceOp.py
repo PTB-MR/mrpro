@@ -60,7 +60,7 @@ class FiniteDifferenceOp(LinearOperator):
         super().__init__()
         self.dim = dim
         self.pad_mode: Literal['constant', 'circular'] = 'constant' if pad_mode == 'zeros' else pad_mode
-        self.register_buffer('kernel', self.finite_difference_kernel(mode))
+        self.kernel = self.finite_difference_kernel(mode)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Forward of finite differences.
