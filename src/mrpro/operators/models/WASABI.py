@@ -5,6 +5,7 @@ from torch import nn
 
 from mrpro.operators.SignalModel import SignalModel
 from mrpro.utils import unsqueeze_right
+from mrpro.utils.unit_conversion import GYROMAGNETIC_RATIO_PROTON
 
 
 class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
@@ -15,7 +16,7 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         offsets: torch.Tensor,
         rf_duration: float | torch.Tensor = 0.005,
         b1_nominal: float | torch.Tensor = 3.70e-6,
-        gamma: float | torch.Tensor = 42.5764e6,
+        gamma: float | torch.Tensor = GYROMAGNETIC_RATIO_PROTON,
     ) -> None:
         """Initialize WASABI signal model for mapping of B0 and B1 [SCHU2016]_.
 
@@ -46,7 +47,7 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         self.offsets = nn.Parameter(offsets, requires_grad=offsets.requires_grad)
         self.rf_duration = nn.Parameter(rf_duration, requires_grad=rf_duration.requires_grad)
         self.b1_nominal = nn.Parameter(b1_nominal, requires_grad=b1_nominal.requires_grad)
-        self.gamma = nn.Parameter(gamma, requires_grad=gamma.requires_grad)
+        self.gamma = gamma
 
     def forward(
         self,
