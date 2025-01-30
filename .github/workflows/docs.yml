@@ -28,6 +28,7 @@ jobs:
       - name: Notebook overview
         run: |
           echo "jupyter-notebooks: ${{ steps.set-matrix.outputs.notebook_paths }}"
+
     outputs:
       notebook_paths: ${{ steps.set-matrix.outputs.notebook_paths }}
 
@@ -50,7 +51,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install mrpro and dependencies
-        run: pip install --upgrade --upgrade-strategy "eager" .[notebook]
+        run: pip install --upgrade --upgrade-strategy "eager" -e .[notebook]
 
       - name: Notebook name
         run: |
@@ -110,9 +111,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # fetch history for github links
+          fetch-tags: true
+
 
       - name: Install mrpro and dependencies
-        run: pip install --upgrade --upgrade-strategy "eager" .[docs]
+        run: pip install --upgrade --upgrade-strategy "eager" -e .[docs]
 
       - name: Download executed notebook ipynb files
         id: download
