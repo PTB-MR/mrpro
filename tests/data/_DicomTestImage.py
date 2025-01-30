@@ -1,4 +1,4 @@
-"""Create 2D dicom image datasets for testing."""
+"""Create dicom image datasets for testing."""
 
 import datetime
 from collections.abc import Sequence
@@ -15,33 +15,7 @@ from mrpro.utils.unit_conversion import s_to_ms
 
 
 class DicomTestImage:
-    """Dicom image for testing.
-
-    Parameters
-    ----------
-    filename
-        full path and filename
-    matrix_size_y
-        size of image matrix along y
-    matrix_size_x
-        size of image matrix along x
-    slice_orientation
-        Orientation of slice. If None assume transversal orientation.
-    slice_offset
-        Slice offset from isocentre along slice_orientation. The number of slices is determined by the length of this
-        parameter. If the length is greater than 1, the dicom will be saved as a 3D volume.
-    te
-        echo time
-    time_after_rpeak
-        time after R-peak
-    phantom
-        phantom with different ellipses
-    series_description
-        description of the DICOM series
-    series_instance_uid
-        UID identifying a series, i.e. a set of images which belong together (e.g. multiple slices).
-        If None, a new UID is generated.
-    """
+    """Dicom image for testing."""
 
     def __init__(
         self,
@@ -56,12 +30,40 @@ class DicomTestImage:
         series_description: str = 'dicom_test_images',
         series_instance_uid: str | None = None,
     ):
+        """Initialize DicomTestImage.
+
+        Parameters
+        ----------
+        filename
+            full path and filename
+        matrix_size_y
+            size of image matrix along y
+        matrix_size_x
+            size of image matrix along x
+        slice_orientation
+            Orientation of slice. If None assume transversal orientation.
+        slice_offset
+            Slice offset from isocentre along slice_orientation. The number of slices is determined by the length of
+            this parameter. If the length is greater than 1, the dicom will be saved as a 3D volume.
+        te
+            echo time
+        time_after_rpeak
+            time after R-peak
+        phantom
+            phantom with different ellipses
+        series_description
+            description of the DICOM series
+        series_instance_uid
+            UID identifying a series, i.e. a set of images which belong together (e.g. multiple slices).
+            If None, a new UID is generated.
+        """
+
         if not phantom:
             phantom = EllipsePhantom()
 
-        self.filename: str | Path = filename
-        self.matrix_size_y: int = matrix_size_y
-        self.matrix_size_x: int = matrix_size_x
+        self.filename = filename
+        self.matrix_size_y = matrix_size_y
+        self.matrix_size_x = matrix_size_x
         if slice_orientation is None:
             transversal_orientation: Sequence[SpatialDimension] = [
                 SpatialDimension(1, 0, 0),
@@ -72,10 +74,10 @@ class DicomTestImage:
         self.slice_orientation: Sequence[SpatialDimension] = (
             transversal_orientation if slice_orientation is None else slice_orientation.as_directions()
         )
-        self.slice_offset: torch.Tensor = torch.atleast_1d(torch.as_tensor(slice_offset))
-        self.te: float = te
-        self.time_after_rpeak: float = time_after_rpeak
-        self.phantom: EllipsePhantom = phantom
+        self.slice_offset = torch.atleast_1d(torch.as_tensor(slice_offset))
+        self.te = te
+        self.time_after_rpeak = time_after_rpeak
+        self.phantom = phantom
         self.series_description = series_description
         self.series_instance_uid = pydicom.uid.generate_uid() if series_instance_uid is None else series_instance_uid
 
@@ -121,7 +123,7 @@ class DicomTestImage:
         dataset.PhotometricInterpretation = 'MONOCHROME2'
         dataset.BitsStored = 16
 
-        nslices = len(self.slice_offset)
+        n_slices = len(self.slice_offset)
         readout_direction = np.asarray(self.slice_orientation[2].zyx[::-1])
         phase_direction = np.asarray(self.slice_orientation[1].zyx[::-1])
         slice_direction = np.asarray(self.slice_orientation[0].zyx[::-1])
@@ -135,9 +137,9 @@ class DicomTestImage:
             - phase_direction * inplane_resolution * dataset.Rows / 2
         )
 
-        if nslices > 1:
+        if n_slices > 1:
             dataset.MRAcquisitionType = '3D'
-            dataset.NumberOfFrames = nslices
+            dataset.NumberOfFrames = n_slices
             dataset.PerFrameFunctionalGroupsSequence = pydicom.Sequence()
 
             plane_position_sequence = pydicom.Sequence()
@@ -151,7 +153,7 @@ class DicomTestImage:
             mr_timing_parameters_sequence = pydicom.Sequence()
             mr_timing_parameters_sequence.append(pydicom.Dataset())
 
-            for slice_idx in range(nslices):
+            for slice_idx in range(n_slices):
                 dataset.PerFrameFunctionalGroupsSequence.append(pydicom.Dataset())
 
                 plane_position_sequence[0].ImagePositionPatient = (
@@ -192,8 +194,8 @@ class DicomTestImage:
             dataset.RepetitionTime = 25.2
 
         dataset.PixelData = (
-            repeat(self.img_ref, 'x y -> nslices x y', nslices=nslices).numpy().astype(np.uint16).tobytes()
+            repeat(self.img_ref, 'x y -> slices x y', slices=n_slices).numpy().astype(np.uint16).tobytes()
         )
 
         # Save
-        dataset.save_as(self.filename, write_like_original=False)
+        dataset.save_as(self.filename, enforce_file_format=True)

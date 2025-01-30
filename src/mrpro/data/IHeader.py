@@ -131,15 +131,17 @@ class IHeader(MoveDataMixin):
         ).apply_(mm_to_m)
 
         # Parameters which are optional
-        fa_deg = make_unique_tensor(get_items(dicom_datasets, 'FlipAngle'))
-        ti_ms = make_unique_tensor(get_items(dicom_datasets, 'InversionTime'))
-        tr_ms = make_unique_tensor(get_items(dicom_datasets, 'RepetitionTime'))
+        # For 3D datasets these parameters are the same for each 3D volume so we only keep one value per volume
+        n_volumes = number_of_frames[0] if datasets_are_3d else 1
+        fa_deg = make_unique_tensor(get_items(dicom_datasets, 'FlipAngle')[::n_volumes])
+        ti_ms = make_unique_tensor(get_items(dicom_datasets, 'InversionTime')[::n_volumes])
+        tr_ms = make_unique_tensor(get_items(dicom_datasets, 'RepetitionTime')[::n_volumes])
 
         # get echo time(s). Some scanners use 'EchoTime', some use 'EffectiveEchoTime'
         te_ms = get_items(dicom_datasets, 'EchoTime')
         if all(val is None for val in te_ms):  # check if all entries are None
             te_ms = get_items(dicom_datasets, 'EffectiveEchoTime')
-        te_ms = make_unique_tensor(te_ms)
+        te_ms = make_unique_tensor(te_ms[::n_volumes])
 
         # Get misc parameters
         misc = {}

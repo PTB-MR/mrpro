@@ -70,14 +70,13 @@ def random_test_data(request):
 def dcm_2d(ellipse_phantom, tmp_path_factory):
     """Single 2D dicom image."""
     dcm_filename = tmp_path_factory.mktemp('mrpro_2d') / 'dicom.dcm'
-    dcm_idata = DicomTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom)
-    return dcm_idata
+    return (DicomTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom),)
 
 
-@pytest.fixture(scope='session', params=({'n_echoes': 7},))
-def dcm_2d_multi_echo_times(request, ellipse_phantom, tmp_path_factory):
+@pytest.fixture(scope='session')
+def dcm_2d_multi_echo_times(ellipse_phantom, tmp_path_factory):
     """Multiple 2D dicom images with different echo times."""
-    n_echoes = request.param['n_echoes']
+    n_echoes = 7
     path = tmp_path_factory.mktemp('mrpro_2d_multi_echo')
     te = 0.02
     dcm_image_data = []
@@ -94,10 +93,10 @@ def dcm_2d_multi_echo_times(request, ellipse_phantom, tmp_path_factory):
     return dcm_image_data
 
 
-@pytest.fixture(scope='session', params=({'n_echoes': 7},))
-def dcm_2d_multi_echo_times_multi_folders(request, ellipse_phantom, tmp_path_factory):
+@pytest.fixture(scope='session')
+def dcm_2d_multi_echo_times_multi_folders(ellipse_phantom, tmp_path_factory):
     """Multiple 2D dicom images with different echo times each saved in a different folder."""
-    n_echoes = request.param['n_echoes']
+    n_echoes = 7
     te = 0.02
     dcm_image_data = []
     for idx in range(n_echoes):
@@ -130,13 +129,13 @@ def dcm_3d(ellipse_phantom, tmp_path_factory):
     """3D dicom image in a single dicom file."""
     path = tmp_path_factory.mktemp('mrpro_3d')
     dcm_filename = path / 'dicom.dcm'
-    return DicomTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom, slice_offset=[-2.0, 0.0, 2.0, 4.0])
+    return (DicomTestImage(filename=dcm_filename, phantom=ellipse_phantom.phantom, slice_offset=[-2.0, 0.0, 2.0, 4.0]),)
 
 
-@pytest.fixture(scope='session', params=({'n_echoes': 7},))
-def dcm_3d_multi_echo(request, ellipse_phantom, tmp_path_factory):
+@pytest.fixture(scope='session')
+def dcm_3d_multi_echo(ellipse_phantom, tmp_path_factory):
     """3D dicom images with different echo times, each in a single dicom file."""
-    n_echoes = request.param['n_echoes']
+    n_echoes = 7
     te = 0.02
     path = tmp_path_factory.mktemp('mrpro_3d_multi_echo')
     dcm_image_data = []
@@ -157,11 +156,11 @@ def dcm_3d_multi_echo(request, ellipse_phantom, tmp_path_factory):
     return dcm_image_data
 
 
-@pytest.fixture(scope='session', params=({'n_echoes': 7}, {'n_cardiac_phases': 3}))
-def dcm_3d_multi_echo_multi_cardiac_phases(request, ellipse_phantom, tmp_path_factory):
+@pytest.fixture(scope='session')
+def dcm_3d_multi_echo_multi_cardiac_phases(ellipse_phantom, tmp_path_factory):
     """3D dicom images with different echo times, each in a single dicom file."""
-    n_echoes = request.param['n_echoes']
-    n_cardiac_phases = request.param['n_cardiac_phases']
+    n_echoes = 7
+    n_cardiac_phases = 3
 
     path = tmp_path_factory.mktemp('mrpro_3d_multi_echo_multi_cardiac_phases')
     dcm_image_data = []
