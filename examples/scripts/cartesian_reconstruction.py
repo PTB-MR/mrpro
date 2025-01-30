@@ -315,7 +315,7 @@ idat_pe_pf = direct_recon_pe_pf(kdata_pe_pf)
 
 # %% [markdown]
 # ## Reconstruction of undersampled data
-# Let's finally try it on the undersampled dataset now.
+# Let's finally try it on the undersampled dataset.
 
 # %%
 kdata_us = mrpro.data.KData.from_file(
