@@ -1,27 +1,14 @@
 """Extended phase graph (EPG) signal models."""
 
+from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass
-from multiprocessing.sharedctypes import Value
-from typing import Any
 
 import torch
 
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.operators.SignalModel import SignalModel
-
-
-class TensorAttributeMixin(torch.nn.Module):
-    def __setattr__(self, name: str, value: Any):
-        if isinstance(value, torch.Tensor):
-            if value.is_leaf and value.requires_grad:
-                self.register_parameter(name, torch.nn.Parameter(value))
-            elif value.is_leaf:
-                self.register_buffer(name, value)
-            else:
-                super().__setattr__(name, value)
-        else:
-            super().__setattr__(name, value)
+from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
 
 
 @dataclass
@@ -93,27 +80,26 @@ def rf_matrix(
     sina = torch.sin(flip_angle)
     cosa2 = (cosa + 1) / 2
     sina2 = 1 - cosa2
-    ejp = torch.polar(torch.tensor(1.0), 1j * phase)
+    ejp = torch.polar(torch.tensor(1.0), phase)
     inv_ejp = 1 / ejp
-    new_shape = flip_angle.shape + (3, 3)
+    new_shape = flip_angle.shape + (3, 3)  # noqa: RUF005 # not supported in torchscript
 
     return torch.stack(
         [
-            cosa2 + 0j,
+            cosa2 + 0.0j,
             ejp**2 * sina2,
-            -1j * ejp * sina,
+            -1.0j * ejp * sina,
             inv_ejp**2 * sina2,
-            cosa2 + 0j,
-            1j * inv_ejp * sina,
-            -1j / 2.0 * inv_ejp * sina,
-            1j / 2.0 * ejp * sina,
-            cosa + 0j,
+            cosa2 + 0.0j,
+            1.0j * inv_ejp * sina,
+            -0.5j * inv_ejp * sina,
+            0.5j * ejp * sina,
+            cosa + 0.0j,
         ],
         -1,
     ).reshape(new_shape)
 
 
-@torch.jit.script
 def rf(state: torch.Tensor, matrix: torch.Tensor) -> torch.Tensor:
     """Propagate EPG states through an RF rotation.
 
@@ -230,13 +216,16 @@ def initial_state(
     return torch.zeros(*shape, 3, n_states, device=device, dtype=dtype)
 
 
-class EPGBlock(TensorAttributeMixin):
+class EPGBlock(TensorAttributeMixin, ABC):
     """Base class for EPG blocks."""
 
     def __call__(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, Sequence[torch.Tensor]]:
+        """Apply the block."""
         return super().__call__(state, parameters)
 
+    @abstractmethod
     def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, Sequence[torch.Tensor]]:
+        """Apply the block."""
         raise NotImplementedError
 
     @property
@@ -249,6 +238,15 @@ class RFBlock(EPGBlock):
     """RF pulse block."""
 
     def __init__(self, flip_angle: torch.Tensor | float, phase: torch.Tensor | float) -> None:
+        """Initialize RF block.
+
+        Parameters
+        ----------
+        flip_angle
+            flip angle [rad]
+        phase
+            initial rf phase
+        """
         super().__init__()
         self.flip_angle = torch.as_tensor(flip_angle)
         self.phase = torch.as_tensor(phase)
@@ -304,7 +302,7 @@ class AcquisitionBlock(EPGBlock):
 class GradientDephasingBlock(EPGBlock):
     """Gradient dephasing block."""
 
-    def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
+    def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:  # noqa: ARG002
         """Apply the gradient dephasing block to the EPG state.
 
         Parameters
@@ -427,7 +425,6 @@ class InversionBlock(EPGBlock):
         -------
             EPG configuration states after the block and an empty list
         """
-
         state = rf(state, rf_matrix(torch.tensor(torch.pi), torch.tensor(0.0), parameters.relative_b1))
         state = relax(state, relax_matrix(self.inversion_time, parameters.t1, parameters.t2))
         return state, []
@@ -454,7 +451,7 @@ class T2PrepBlock(EPGBlock):
         self.te = torch.as_tensor(te)
 
     def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
-        """Apply the T2 preperation block to the EPG state.
+        """Apply the T2 preparation block to the EPG state.
 
         Parameters
         ----------
@@ -489,6 +486,7 @@ class DelayBlock(EPGBlock):
 
     def __init__(self, delay_time: torch.Tensor | float) -> None:
         """Initialize the delay block.
+
         Parameters
         ----------
         delay_time
@@ -562,7 +560,14 @@ class EPGSequence(torch.nn.ModuleList, EPGBlock):
 
     """
 
-    def __init__(self, blocks: Sequence[EPGBlock] = ()):
+    def __init__(self, blocks: Sequence[EPGBlock] = ()) -> None:
+        """Initialize an EPG Sequence.
+
+        Parameters
+        ----------
+        blocks
+            blocks such as RF, delays, acquisitions etc.
+        """
         torch.nn.ModuleList.__init__(self, blocks)
 
     def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
@@ -603,7 +608,8 @@ class EPGSignalModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch
         sequence
             EPG sequence of blocks
         n_states
-            Number of EPG configuration states. This model uses a fixed number of states for performance reasons. Should be large enough to capture the signal dynamics.
+            Number of EPG configuration states. This model uses a fixed number of states for performance reasons.
+            Should be large enough to capture the signal dynamics.
             More states increase the accuracy of the simulation but also the computational cost.
         """
         super().__init__()
@@ -612,7 +618,7 @@ class EPGSignalModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch
             self.sequence = EPGSequence(sequence)
         else:
             self.sequence = sequence
-        self.sequence.compile()
+        # self.sequence.compile()
 
     def forward(
         self, t1: torch.Tensor, t2: torch.Tensor, m0: torch.Tensor, relative_b1: torch.Tensor | None = None
@@ -636,7 +642,7 @@ class EPGSignalModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch
         """
         parameters = Parameters(t1, t2, m0, relative_b1)
         state = initial_state(
-            parameters.shape, n_states=self.n_states, device=parameters.device, dtype=parameters.dtype
+            parameters.shape, n_states=self.n_states, device=parameters.device, dtype=parameters.dtype.to_complex()
         )
         _, signals = self.sequence(state, parameters)
         signal = torch.stack(list(signals), dim=0)
