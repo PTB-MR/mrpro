@@ -10,13 +10,14 @@ import torch
 from typing_extensions import TypeVar, TypeVarTuple, Unpack, overload
 
 import mrpro.operators
+from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
 
 Tin = TypeVarTuple('Tin')  # TODO: bind to torch.Tensors
 Tin2 = TypeVarTuple('Tin2')  # TODO: bind to torch.Tensors
 Tout = TypeVar('Tout', bound=tuple, covariant=True)  # TODO: bind to torch.Tensors
 
 
-class Operator(Generic[Unpack[Tin], Tout], ABC, torch.nn.Module):
+class Operator(Generic[Unpack[Tin], Tout], ABC, TensorAttributeMixin, torch.nn.Module):
     """The general Operator class.
 
     An operator is a function that maps one or more input tensors to one or more output tensors.

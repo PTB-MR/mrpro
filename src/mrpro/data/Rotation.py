@@ -45,7 +45,7 @@ from __future__ import annotations
 import math
 import re
 import warnings
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from typing import Literal, cast
 
 import numpy as np
@@ -378,7 +378,7 @@ def _axisangle_to_matrix(axis: torch.Tensor, angle: torch.Tensor) -> torch.Tenso
     return matrix
 
 
-class Rotation(torch.nn.Module):
+class Rotation(torch.nn.Module, Iterable['Rotation']):
     """A container for Rotations.
 
     A pytorch implementation of scipy.spatial.transform.Rotation.
@@ -1611,6 +1611,16 @@ class Rotation(torch.nn.Module):
         else:
             indexer_quat = (indexer, slice(None))
         return self.__class__(self._quaternions[indexer_quat], normalize=False, inversion=self._is_improper[indexer])
+
+    def __iter__(self) -> Iterator[Self]:
+        """Provide an explicit iterator."""
+        index = 0
+        while True:
+            try:
+                yield self[index]
+                index += 1
+            except IndexError:
+                break
 
     @property
     def quaternion_x(self) -> torch.Tensor:
