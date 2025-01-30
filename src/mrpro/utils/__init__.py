@@ -9,8 +9,9 @@ from mrpro.utils.remove_repeat import remove_repeat
 from mrpro.utils.zero_pad_or_crop import zero_pad_or_crop
 from mrpro.utils.split_idx import split_idx
 from mrpro.utils.reshape import broadcast_right, unsqueeze_left, unsqueeze_right, reduce_view, reshape_broadcasted
-
+from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
 __all__ = [
+    "TensorAttributeMixin",
     "broadcast_right",
     "fill_range_",
     "reduce_view",
