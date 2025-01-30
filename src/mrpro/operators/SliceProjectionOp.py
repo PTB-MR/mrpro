@@ -152,8 +152,8 @@ class SliceProjectionOp(LinearOperator):
             test_values = torch.arange(-max_shape, max_shape, max_shape)
             profile = slice_profile(test_values)
             cdf = torch.cumsum(profile, -1) / profile.sum()
-            left = test_values[np.argmax(cdf > 0.01)]
-            right = test_values[np.argmax(cdf > 0.99)]
+            left = test_values[(cdf > 0.01).int().argmax()]
+            right = test_values[(cdf > 0.99).int().argmax()]
             return int(max(left.abs().item(), right.abs().item())) + 1
 
         def _at_least_width_1(slice_profile: TensorFunction):

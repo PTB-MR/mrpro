@@ -59,7 +59,7 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
-    "numpy>=1.23, <2.0",
+    "numpy>=1.23, <3.0",
     "torch>=2.3",
     "ismrmrd>=1.14.1",
     "einops",
@@ -112,8 +112,11 @@ testpaths = ["tests"]
 filterwarnings = [
     "error",
     "ignore:'write_like_original':DeprecationWarning:pydicom:",
-    "ignore:Anomaly Detection has been enabled:UserWarning",    #torch.autograd
+    "ignore:Anomaly Detection has been enabled:UserWarning",                   # torch.autograd
     "ignore:allow_ops_in_compiled_graph failed to import torch:ImportWarning", # einops and dynamo<2.5
+    "ignore:__array__ implementation doesn't:DeprecationWarning",              # https://github.com/pytorch/pytorch/issues/136264
+    "ignore:__array_wrap__ must accept:DeprecationWarning",                    # https://github.com/pytorch/pytorch/issues/136264
+
 ]
 addopts = "-n auto"
 markers = ["cuda : Tests only to be run when cuda device is available"]
