@@ -15,8 +15,8 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         offsets: torch.Tensor,
         recovery_time: torch.Tensor,
         rf_duration: float | torch.Tensor = 0.005,
-        b1_nominal: float | torch.Tensor = 3.75,
-        gamma: float | torch.Tensor = 42.5764,
+        b1_nominal: float | torch.Tensor = 3.75e-6,
+        gamma: float | torch.Tensor = 42.5764e6,
     ) -> None:
         """Initialize WASABITI signal model for mapping of B0, B1 and T1 [SCH2023]_.
 
@@ -29,9 +29,9 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         rf_duration
             RF pulse duration [s]
         b1_nominal
-            nominal B1 amplitude [µT]
+            nominal B1 amplitude [T]
         gamma
-            gyromagnetic ratio [MHz/T]
+            gyromagnetic ratio [Hz/T]
 
         References
         ----------
@@ -81,13 +81,13 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         recovery_time = unsqueeze_right(self.recovery_time, delta_ndim)
 
         b1 = self.b1_nominal * relative_b1
-        delta_b0 = offsets - b0_shift
+        offsets_shifted = offsets - b0_shift
         mz_initial = 1.0 - torch.exp(-recovery_time / t1)
 
         signal = mz_initial * (
             1
             - 2
             * (torch.pi * b1 * self.gamma * self.rf_duration) ** 2
-            * torch.sinc(self.rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + delta_b0**2)) ** 2
+            * torch.sinc(self.rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + offsets_shifted**2)) ** 2
         )
         return (signal,)

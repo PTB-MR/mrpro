@@ -14,8 +14,8 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         self,
         offsets: torch.Tensor,
         rf_duration: float | torch.Tensor = 0.005,
-        b1_nominal: float | torch.Tensor = 3.70,
-        gamma: float | torch.Tensor = 42.5764,
+        b1_nominal: float | torch.Tensor = 3.70e-6,
+        gamma: float | torch.Tensor = 42.5764e6,
     ) -> None:
         """Initialize WASABI signal model for mapping of B0 and B1 [SCHU2016]_.
 
@@ -27,9 +27,9 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         rf_duration
             RF pulse duration [s]
         b1_nominal
-            nominal B1 amplitude [µT]
+            nominal B1 amplitude [T]
         gamma
-            gyromagnetic ratio [MHz/T]
+            gyromagnetic ratio [Hz/T]
 
         References
         ----------
@@ -77,13 +77,13 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
             signal with shape `(offsets, *other, coils, z, y, x)`
         """
         offsets = unsqueeze_right(self.offsets, b0_shift.ndim - (self.offsets.ndim - 1))  # -1 for offset
-        delta_b0 = offsets - b0_shift
+        offsets_shifted = offsets - b0_shift
         b1 = self.b1_nominal * relative_b1
 
         signal = (
             c
             - d
             * (torch.pi * b1 * self.gamma * self.rf_duration) ** 2
-            * torch.sinc(self.rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + delta_b0**2)) ** 2
+            * torch.sinc(self.rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + offsets_shifted**2)) ** 2
         )
         return (signal,)
