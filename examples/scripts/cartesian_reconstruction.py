@@ -312,10 +312,10 @@ idat_pe_pf = direct_recon_pe_pf(kdata_pe_pf)
 
 # %% [markdown]
 # This is much simpler — everything happens in the background, so we don't have to worry about it.
-# Let's finally try it on the undersampled dataset now.
 
 # %% [markdown]
 # ## Reconstruction of undersampled data
+# Let's finally try it on the undersampled dataset.
 
 # %%
 kdata_us = mrpro.data.KData.from_file(
@@ -328,8 +328,8 @@ idat_us = direct_recon_us(kdata_us)
 show_images(idat_pe_pf.rss().squeeze(), idat_us.rss().squeeze(), titles=['PE & PF', 'Undersampled'])
 
 # %% [markdown]
-
-# We used the same data for coil sensitivity calculation as for image reconstruction (*auto-calibration*)
+### Using Calibration Data
+# We used the same data for coil sensitivity calculation as for image reconstruction (*auto-calibration*).
 # Another approach is to acquire a few calibration lines in the center of k-space to create a low-resolution,
 # fully sampled image. In our example data from Siemens scanners, these lines are part of the dataset.
 # As they aren't meant to be used for image reconstruction, only for calibration, i.e., coil sensitivity calculation,
@@ -359,7 +359,7 @@ idat_calib_lines = direct_recon_calib_lines(kdata_calib_lines)
 show_images(idat_calib_lines.rss().squeeze(), titles=['Calibration Image'])
 
 # %% [markdown]
-# ..but it is good enough to calculate coil sensitivity maps, which we can use when creating the reconstruction object:
+# ..but it is good enough to calculate coil sensitivity maps:
 
 # %%
 # The coil sensitivity maps
@@ -368,7 +368,11 @@ show_images(
     *direct_recon_calib_lines.csm.data[0].abs().squeeze(),
     titles=[f'|CSM {i}|' for i in range(direct_recon_calib_lines.csm.data.size(-4))],
 )
-# reusing the CSMs
+# %% [markdown]
+# ### Reconstruction
+# We can now use these CSMs in a new `~mrpro.algorithms.reconstruction.DirectReconstruction`:
+
+# %%
 direct_recon_us_csm = mrpro.algorithms.reconstruction.DirectReconstruction(kdata_us, csm=direct_recon_calib_lines.csm)
 idat_us_csm = direct_recon_us_csm(kdata_us)
 show_images(idat_us.rss().squeeze(), idat_us_csm.rss().squeeze(), titles=['Autocalibration', 'Calibration Lines'])
