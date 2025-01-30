@@ -89,7 +89,7 @@ img_direct_24 = direct_reconstruction_24(kdata_24spokes)
 
 # %% [markdown]
 # We also run an iterative SENSE reconstruction (see <project:iterative_sense_reconstruction_radial2D.ipynb>) with early
-# stopping of the 24 spokes data. we use it as a comparison and as an initial guess for the TV-minimization
+# stopping of the 24 spokes data. We use it as a comparison and as an initial guess for the TV-minimization
 # reconstruction.
 
 # %%
