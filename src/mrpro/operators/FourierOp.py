@@ -108,6 +108,7 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
         else:
             self._non_uniform_fast_fourier_op = None
 
+
     @classmethod
     def from_kdata(cls, kdata: KData, recon_shape: SpatialDimension[int] | None = None) -> Self:
         """Create an instance of FourierOp from kdata with default settings.
