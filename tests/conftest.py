@@ -81,7 +81,7 @@ def random_acquisition(request):
     trajectory = generate_random_trajectory(generator, (n_samples, 2))
     header = generate_random_acquisition_properties(generator)
     header['flags'] &= ~AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value
-    return ismrmrd.Acquisition.from_array(kdata, trajectory, **header)
+    return ismrmrd.Acquisition.from_array(kdata.numpy(), trajectory.numpy(), **header)
 
 
 @pytest.fixture(params=({'seed': 1, 'n_coils': 32, 'n_samples': 256},))
@@ -96,7 +96,7 @@ def random_noise_acquisition(request):
     trajectory = generate_random_trajectory(generator, (n_samples, 2))
     header = generate_random_acquisition_properties(generator)
     header['flags'] |= AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value
-    return ismrmrd.Acquisition.from_array(kdata, trajectory, **header)
+    return ismrmrd.Acquisition.from_array(kdata.numpy(), trajectory.numpy(), **header)
 
 
 @pytest.fixture(params=({'seed': 0},))

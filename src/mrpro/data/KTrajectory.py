@@ -185,8 +185,8 @@ class KTrajectory(MoveDataMixin):
 
         # kz should only have flags that are enabled in all columns
         # k2 only flags enabled in all rows, etc
-        type_zyx = [TrajType(i.item()) for i in np.bitwise_and.reduce(traj_type_matrix, axis=1)]
-        type_210 = [TrajType(i.item()) for i in np.bitwise_and.reduce(traj_type_matrix, axis=0)]
+        type_zyx = [TrajType(int(i)) for i in np.bitwise_and.reduce(traj_type_matrix.numpy(), axis=1)]
+        type_210 = [TrajType(int(i)) for i in np.bitwise_and.reduce(traj_type_matrix.numpy(), axis=0)]
 
         # make mypy recognize return  will always have len=3
         return (type_zyx[0], type_zyx[1], type_zyx[2]), (type_210[0], type_210[1], type_210[2])

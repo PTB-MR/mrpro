@@ -200,3 +200,25 @@ def reshape_broadcasted(tensor: torch.Tensor, *shape: int) -> torch.Tensor:
         # finally, we can expand the broadcasted dimensions to the requested shape
         semicontiguous = semicontiguous.expand(tensor.shape)
         return semicontiguous.view(shape)
+
+
+def ravel_multi_index(multi_index: Sequence[torch.Tensor], dims: Sequence[int]) -> torch.Tensor:
+    """
+    Convert a multi-dimensional index into a flat index.
+
+    Parameters
+    ----------
+    multi_index
+        Sequence of integer index tensors.
+    dims
+        The shape of the tensor being indexed.
+
+    Returns
+    -------
+    index
+        A tensor of shape (n,) with the flattened indices.
+    """
+    flat_index = multi_index[0]
+    for idx, dim in zip(multi_index[1:], dims[1:], strict=True):
+        flat_index = flat_index * dim + idx
+    return flat_index

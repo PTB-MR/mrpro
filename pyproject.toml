@@ -114,9 +114,6 @@ filterwarnings = [
     "ignore:'write_like_original':DeprecationWarning:pydicom:",
     "ignore:Anomaly Detection has been enabled:UserWarning",                   # torch.autograd
     "ignore:allow_ops_in_compiled_graph failed to import torch:ImportWarning", # einops and dynamo<2.5
-    "ignore:__array__ implementation doesn't:DeprecationWarning",              # https://github.com/pytorch/pytorch/issues/136264
-    "ignore:__array_wrap__ must accept:DeprecationWarning",                    # https://github.com/pytorch/pytorch/issues/136264
-
 ]
 addopts = "-n auto"
 markers = ["cuda : Tests only to be run when cuda device is available"]
