@@ -74,10 +74,10 @@ jobs:
         run: pip install pytest-github-actions-annotate-failures
 
       - name: Run PyTest and Generate Coverage Report
-        # with the "set -o pipefail" the "pytest" exit code won't be suppressed by "tee" command
+        # shell bash sets the -o pipefail
         run: |
-          (set -o pipefail && pytest -n 4 -m "not cuda" --junitxml=pytest.xml \
-          --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt)
+          pytest -n 4 -m "not cuda" --junitxml=pytest.xml \
+          --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
         shell: bash
 
       - name: Upload PyTest Coverage Report
