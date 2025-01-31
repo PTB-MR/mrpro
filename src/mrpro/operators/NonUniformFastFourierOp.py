@@ -32,8 +32,8 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
 
         ```{note}
         Consider using `~mrpro.operators.FourierOp` instead of this operator. It automatically detects if a non-uniform
-        or regular fast Fourier transformation is required and can also be constructed automatically from a `mrpro.data.KData`
-        object.
+        or regular fast Fourier transformation is required and can also be constructed automatically from
+        a `mrpro.data.KData` object.
         ````
 
         ```{note}
