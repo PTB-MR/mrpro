@@ -171,18 +171,14 @@ jobs:
       - name: Dump documentation info
         if: always()
         run: |
-          echo "artifact-url=${{ steps.upload_docs.outputs.artifact-url }}" > docs_metadata
-          echo "pr-number=${{ github.event.pull_request.number }}" >> docs_metadata
-          echo "event-number=${{ github.event.number }}" >> docs_metadata
-          echo "event-name=${{ github.event_name }}" >> docs_metadata
-          echo "ref=${{ github.ref }}" >> docs_metadata
+          echo "${{ steps.upload_docs.outputs.artifact-url }}" > artifact_url
 
       - name: Upload docs-metadata artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: docs-metadata
-          path: docs_metadata
+          name: artifact_url
+          path: artifact_url
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

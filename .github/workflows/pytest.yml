@@ -80,20 +80,12 @@ jobs:
           --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt)
         shell: bash
 
-      - name: Dump PR number, event name and ref to pytest_data file
-        if: always()
-        run: |
-          echo "pr-number=${{ github.event.number }}" > pytest_metadata
-          echo "event-name=${{ github.event_name }}" >> pytest_metadata
-          echo "ref=${{ github.ref }}" >> pytest_metadata
-
       - name: Upload PyTest Coverage Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pytest-report-${{ matrix.imagename }}
           path: |
-            pytest_metadata
             pytest-coverage.txt
             pytest.xml
 

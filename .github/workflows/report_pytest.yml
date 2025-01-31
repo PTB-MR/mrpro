@@ -13,8 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       actions: read
-      issues: write
-      contents: write
       pull-requests: write
     steps:
       # use the results of python 3.12, consider this as target platform
@@ -25,18 +23,11 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      # pytest_metadata is set in pytest.yml as A=value\nB=value\n...
-      - name: Set vars from pytest_metadata
-        run: |
-          while IFS= read -r line; do
-            echo "$line" >> $GITHUB_ENV
-          done < pytest_metadata
-
       - name: Post PyTest Coverage Comment
         id: coverage_comment
         uses: MishaKav/pytest-coverage-comment@v1.1.53
         with:
-          issue-number: ${{ env.pr-number }}
+          issue-number: ${{ github.event.workflow_run.event.pull_request.number }}
           pytest-coverage-path: pytest-coverage.txt
           junitxml-path: pytest.xml
 
@@ -46,7 +37,7 @@ jobs:
         if: steps.coverage_comment.outputs.coverageHtml == ''
         uses: edumserrano/find-create-or-update-comment@v3
         with:
-          issue-number: ${{ env.pr-number }}
+          issue-number: ${{ github.event.workflow_run.event.pull_request.number }}
           # see https://github.com/MishaKav/pytest-coverage-comment/blob/81882822c5b22af01f91bd3eacb1cefb6ad73dc2/src/index.js#L97
           # for the generation of the unique id for comment
           # in this particular case, there is no additional watermarkUniqueId
@@ -61,7 +52,7 @@ jobs:
 
       - name: Create Coverage Badge on Main Branch Push
         uses: schneegans/dynamic-badges-action@v1.7.0
-        if: ${{ env.event_name == 'push' }} && ${{ env.ref }} == 'refs/heads/main'
+        if: ${{ github.event.workflow_run.event.event_name == 'push'  && github.event.workflow_run.event.ref == 'refs/heads/main' }}
         with:
           auth: ${{ secrets.GIST_SECRET }}
           gistID: 48e334a10caf60e6708d7c712e56d241
