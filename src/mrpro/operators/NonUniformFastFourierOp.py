@@ -5,7 +5,6 @@ from dataclasses import astuple
 from itertools import product
 from typing import Literal
 
-import numpy as np
 import torch
 from torchkbnufft import KbNufft, KbNufftAdjoint
 from typing_extensions import Self
@@ -59,112 +58,111 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         if len(direction) != len(set(self._nufft_directions)):
             raise ValueError(f'Directions must be unique. Normalized directions are {self._nufft_directions}')
 
-        if len(self._nufft_directions):
-            nufft_traj = [
-                ks
-                for ks, i in zip((traj.kz, traj.ky, traj.kx), (-3, -2, -1), strict=True)
-                if i in self._nufft_directions
-            ]
+        if not self._nufft_directions:
+            return
+        nufft_traj = [
+            ks for ks, i in zip((traj.kz, traj.ky, traj.kx), (-3, -2, -1), strict=True) if i in self._nufft_directions
+        ]
 
-            # Find out along which dimensions (k0, k1 or k2) nufft needs to be applied, i.e. where it is not singleton
-            self._nufft_dims = []
-            for dim in (-3, -2, -1):
-                for ks in nufft_traj:
-                    if ks.shape[dim] > 1:
-                        self._nufft_dims.append(dim)
-                        break  # one case where nufft is needed is enough for each dimension
+        # Find out along which dimensions (k0, k1 or k2) nufft needs to be applied, i.e. where it is not singleton
+        self._nufft_dims = []
+        for dim in (-3, -2, -1):
+            for ks in nufft_traj:
+                if ks.shape[dim] > 1:
+                    self._nufft_dims.append(dim)
+                    break  # one case where nufft is needed is enough for each dimension
 
-            # For e.g. single shot acquisitions the number of dimensions do not necessarily match the number of
-            # directions. This leads to a mismatch between reconstructed and expected dimensions. To avoid this we try
-            # to find the most logical solution, i.e. add another singleton direction
-            if len(self._nufft_directions) > len(self._nufft_dims):
-                for dim in (-1, -2, -3):
-                    if dim not in self._nufft_dims and all(ks.shape[dim] == 1 for ks in (traj.kz, traj.ky, traj.kx)):
-                        self._nufft_dims.append(dim)
-                    if len(self._nufft_directions) == len(self._nufft_dims):
-                        break
-                self._nufft_dims.sort()
+        # For e.g. single shot acquisitions the number of dimensions do not necessarily match the number of
+        # directions. This leads to a mismatch between reconstructed and expected dimensions. To avoid this we try
+        # to find the most logical solution, i.e. add another singleton direction
+        if len(self._nufft_directions) > len(self._nufft_dims):
+            for dim in (-1, -2, -3):
+                if dim not in self._nufft_dims and all(ks.shape[dim] == 1 for ks in (traj.kz, traj.ky, traj.kx)):
+                    self._nufft_dims.append(dim)
+                if len(self._nufft_directions) == len(self._nufft_dims):
+                    break
+            self._nufft_dims.sort()
 
-            if len(self._nufft_directions) != len(self._nufft_dims):
-                raise ValueError(
-                    f'Mismatch between number of nufft directions {self._nufft_directions} and dims {self._nufft_dims}'
-                )
-
-            if isinstance(recon_matrix, SpatialDimension):
-                im_size: Sequence[int] = [int(astuple(recon_matrix)[d]) for d in self._nufft_directions]
-            else:
-                if (n_recon_matrix := len(recon_matrix)) != (n_nufft_dir := len(self._nufft_directions)):
-                    raise ValueError(f'recon_matrix should have {n_nufft_dir} entries but has {n_recon_matrix}')
-                im_size = recon_matrix
-
-            if isinstance(encoding_matrix, SpatialDimension):
-                k_size: Sequence[int] = [int(astuple(encoding_matrix)[d]) for d in self._nufft_directions]
-            else:
-                if (n_enc_matrix := len(encoding_matrix)) != (n_nufft_dir := len(self._nufft_directions)):
-                    raise ValueError(f'encoding_matrix should have {n_nufft_dir} entries but has {n_enc_matrix}')
-                k_size = encoding_matrix
-
-            grid_size = [int(size * nufft_oversampling) for size in im_size]
-            omega_list = [
-                k * 2 * torch.pi / ks
-                for k, ks in zip(
-                    nufft_traj,
-                    k_size,
-                    strict=True,
-                )
-            ]
-
-            # Broadcast shapes not always needed but also does not hurt
-            omega_list = [k.expand(*np.broadcast_shapes(*[k.shape for k in omega_list])) for k in omega_list]
-            omega = torch.stack(omega_list, dim=-4)  # use the 'coil' dim for the direction
-            self._traj_broadcast_shape = omega.shape
-
-            keep_dims_210 = [-4, *self._nufft_dims]  # -4 is always coil
-            permute_210 = [i for i in range(-omega.ndim, 0) if i not in keep_dims_210] + keep_dims_210
-            # omega should be (sep_dims, 1, 2 or 3, nufft_dimensions)
-            omega = omega.permute(*permute_210)
-            omega = omega.flatten(end_dim=-len(keep_dims_210) - 1).flatten(start_dim=-len(keep_dims_210) + 1)
-
-            # non-Cartesian -> Cartesian
-            numpoints = [min(size, nufft_numpoints) for size in im_size]
-            adj_nufft_op = KbNufftAdjoint(
-                im_size=im_size,
-                grid_size=grid_size,
-                numpoints=numpoints,
-                kbwidth=nufft_kbwidth,
+        if len(self._nufft_directions) != len(self._nufft_dims):
+            raise ValueError(
+                f'Mismatch between number of nufft directions {self._nufft_directions} and dims {self._nufft_dims}'
             )
-            self._nufft_type1 = lambda x: adj_nufft_op(x, omega, norm='ortho')
 
-            # Cartesian -> non-Cartesian
-            nufft_op = KbNufft(
-                im_size=im_size,
-                grid_size=grid_size,
-                numpoints=numpoints,
-                kbwidth=nufft_kbwidth,
+        if isinstance(recon_matrix, SpatialDimension):
+            im_size: Sequence[int] = [int(astuple(recon_matrix)[d]) for d in self._nufft_directions]
+        else:
+            if (n_recon_matrix := len(recon_matrix)) != (n_nufft_dir := len(self._nufft_directions)):
+                raise ValueError(f'recon_matrix should have {n_nufft_dir} entries but has {n_recon_matrix}')
+            im_size = recon_matrix
+
+        if isinstance(encoding_matrix, SpatialDimension):
+            k_size: Sequence[int] = [int(astuple(encoding_matrix)[d]) for d in self._nufft_directions]
+        else:
+            if (n_enc_matrix := len(encoding_matrix)) != (n_nufft_dir := len(self._nufft_directions)):
+                raise ValueError(f'encoding_matrix should have {n_nufft_dir} entries but has {n_enc_matrix}')
+            k_size = encoding_matrix
+
+        grid_size = [int(size * nufft_oversampling) for size in im_size]
+        omega_list = [
+            k * 2 * torch.pi / ks
+            for k, ks in zip(
+                nufft_traj,
+                k_size,
+                strict=True,
             )
-            self._nufft_type2 = lambda x: nufft_op(x, omega, norm='ortho')
+        ]
 
-            # we want to rearrange everything into (sep_dims)(joint_dims)(nufft_dims) where sep_dims are dimension
-            # where the traj changes, joint_dims are dimensions where the traj does not change and nufft_dims are the
-            # dimensions along which the nufft is applied. We have to do this for the (z-y-x) and (k2-k1-k0) space
-            # separately. If we know two of the three dimensions we can infer the rest. We cannot do the other
-            # dimensions here because they might be different between data and trajectory.
-            self._joint_dims_210 = [
-                d for d in [-3, -2, -1] if d not in self._nufft_dims and self._traj_broadcast_shape[d] == 1
-            ]
-            self._joint_dims_210.append(-4)  # -4 is always coil and always a joint dimension
+        # Broadcast shapes not always needed but also does not hurt
+        omega_list = [k.expand(*torch.broadcast_shapes(*[k.shape for k in omega_list])) for k in omega_list]
+        omega = torch.stack(omega_list, dim=-4)  # use the 'coil' dim for the direction
+        self._traj_broadcast_shape = omega.shape
 
-            traj_shape = torch.as_tensor([k.shape[-3:] for k in (traj.kz, traj.ky, traj.kx)])
-            self._joint_dims_zyx = []
-            for dzyx in [-3, -2, -1]:
-                if dzyx not in self._nufft_directions:
-                    dim210_non_singleton = [d210 for d210 in [-3, -2, -1] if traj_shape[dzyx, d210] > 1]
-                    if all(all(traj_shape[self._nufft_directions, d] == 1) for d in dim210_non_singleton):
-                        self._joint_dims_zyx.append(dzyx)
-            self._joint_dims_zyx.append(-4)  # -4 is always coil and always a joint dimension
+        keep_dims_210 = [-4, *self._nufft_dims]  # -4 is always coil
+        permute_210 = [i for i in range(-omega.ndim, 0) if i not in keep_dims_210] + keep_dims_210
+        # omega should be (sep_dims, 1, 2 or 3, nufft_dimensions)
+        omega = omega.permute(*permute_210)
+        omega = omega.flatten(end_dim=-len(keep_dims_210) - 1).flatten(start_dim=-len(keep_dims_210) + 1)
 
-            self._im_size = im_size
-            self.register_buffer('_omega', omega)
+        # non-Cartesian -> Cartesian
+        numpoints = [min(size, nufft_numpoints) for size in im_size]
+        adj_nufft_op = KbNufftAdjoint(
+            im_size=im_size,
+            grid_size=grid_size,
+            numpoints=numpoints,
+            kbwidth=nufft_kbwidth,
+        )
+        self._nufft_type1 = lambda x: adj_nufft_op(x, omega, norm='ortho')
+
+        # Cartesian -> non-Cartesian
+        nufft_op = KbNufft(
+            im_size=im_size,
+            grid_size=grid_size,
+            numpoints=numpoints,
+            kbwidth=nufft_kbwidth,
+        )
+        self._nufft_type2 = lambda x: nufft_op(x, omega, norm='ortho')
+
+        # we want to rearrange everything into (sep_dims)(joint_dims)(nufft_dims) where sep_dims are dimension
+        # where the traj changes, joint_dims are dimensions where the traj does not change and nufft_dims are the
+        # dimensions along which the nufft is applied. We have to do this for the (z-y-x) and (k2-k1-k0) space
+        # separately. If we know two of the three dimensions we can infer the rest. We cannot do the other
+        # dimensions here because they might be different between data and trajectory.
+        self._joint_dims_210 = [
+            d for d in [-3, -2, -1] if d not in self._nufft_dims and self._traj_broadcast_shape[d] == 1
+        ]
+        self._joint_dims_210.append(-4)  # -4 is always coil and always a joint dimension
+
+        traj_shape = torch.as_tensor([k.shape[-3:] for k in (traj.kz, traj.ky, traj.kx)])
+        self._joint_dims_zyx = []
+        for dzyx in [-3, -2, -1]:
+            if dzyx not in self._nufft_directions:
+                dim210_non_singleton = [d210 for d210 in [-3, -2, -1] if traj_shape[dzyx, d210] > 1]
+                if all(all(traj_shape[self._nufft_directions, d] == 1) for d in dim210_non_singleton):
+                    self._joint_dims_zyx.append(dzyx)
+        self._joint_dims_zyx.append(-4)  # -4 is always coil and always a joint dimension
+
+        self._im_size = im_size
+        self._omega = omega
 
     def _separate_joint_dimensions(
         self, data_ndim: int
@@ -178,7 +176,10 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
 
         Returns
         -------
-            `((sep dims along zyx), (permute for zyx), (sep dims along 210), (permute for 210))`
+            separate dimensions along zyx,
+            permutation rule for zyx,
+            separate dimensions along 210,
+            permutation rule for 210.
 
         """
         # We did most in _init_ and here we only have to check the other dimensions.
@@ -214,7 +215,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         if len(self._nufft_directions):
             # We rearrange x into (sep_dims, joint_dims, nufft_directions)
             sep_dims_zyx, permute_zyx, _, permute_210 = self._separate_joint_dimensions(x.ndim)
-            unpermute_210 = np.argsort(permute_210)
+            unpermute_210 = torch.tensor(permute_210).argsort().tolist()
 
             x = x.permute(*permute_zyx)
             unflatten_shape = x.shape[: -len(self._nufft_directions)]
@@ -245,7 +246,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         if len(self._nufft_directions):
             # We rearrange x into (sep_dims, joint_dims, nufft_directions)
             _, permute_zyx, sep_dims_210, permute_210 = self._separate_joint_dimensions(x.ndim)
-            unpermute_zyx = np.argsort(permute_zyx)
+            unpermute_zyx = torch.tensor(permute_zyx).argsort().tolist()
 
             x = x.permute(*permute_210)
             unflatten_other_shape = x.shape[: -len(self._nufft_dims) - 1]  # -1 for coil
@@ -353,36 +354,38 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
 
         """
         super().__init__()
-        if nufft_op._nufft_dims:
-            weight = torch.ones(
-                [*nufft_op._traj_broadcast_shape[:-4], 1, *nufft_op._traj_broadcast_shape[-3:]],
-                dtype=nufft_op._omega.dtype,
-            ).to(nufft_op._omega)
+        self.nufft_gram: None | LinearOperator = None
 
-            # We rearrange weight into (sep_dims, joint_dims, nufft_dims)
-            _, permute_zyx, sep_dims_210, permute_210 = nufft_op._separate_joint_dimensions(weight.ndim)
-            unpermute_zyx = np.argsort(permute_zyx)
+        if not nufft_op._nufft_dims:
+            return
 
-            weight = weight.permute(*permute_210)
-            unflatten_other_shape = weight.shape[: -len(nufft_op._nufft_dims) - 1]  # -1 for coil
-            # combine sep_dims
-            weight = weight.flatten(end_dim=len(sep_dims_210) - 1) if len(sep_dims_210) else weight[None, :]
-            # combine joint_dims and nufft_dims
-            weight = weight.flatten(start_dim=1, end_dim=-len(nufft_op._nufft_dims) - 1).flatten(start_dim=2)
+        weight = torch.ones(
+            [*nufft_op._traj_broadcast_shape[:-4], 1, *nufft_op._traj_broadcast_shape[-3:]],
+            dtype=nufft_op._omega.dtype,
+        ).to(nufft_op._omega)
 
-            kernel = gram_nufft_kernel(weight + 0j, nufft_op._omega, nufft_op._im_size)
+        # We rearrange weight into (sep_dims, joint_dims, nufft_dims)
+        _, permute_zyx, sep_dims_210, permute_210 = nufft_op._separate_joint_dimensions(weight.ndim)
+        unpermute_zyx = torch.tensor(permute_zyx).argsort().tolist()
 
-            kernel = kernel.reshape(*unflatten_other_shape, -1, *kernel.shape[-len(nufft_op._nufft_directions) :])
-            kernel = kernel.permute(*unpermute_zyx)
+        weight = weight.permute(*permute_210)
+        unflatten_other_shape = weight.shape[: -len(nufft_op._nufft_dims) - 1]  # -1 for coil
+        # combine sep_dims
+        weight = weight.flatten(end_dim=len(sep_dims_210) - 1) if len(sep_dims_210) else weight[None, :]
+        # combine joint_dims and nufft_dims
+        weight = weight.flatten(start_dim=1, end_dim=-len(nufft_op._nufft_dims) - 1).flatten(start_dim=2)
 
-            fft = FastFourierOp(
-                dim=nufft_op._nufft_directions,
-                encoding_matrix=[2 * s for s in nufft_op._im_size],
-                recon_matrix=nufft_op._im_size,
-            )
-            self.nufft_gram: None | LinearOperator = fft.H * kernel @ fft
-        else:
-            self.nufft_gram = None
+        kernel = gram_nufft_kernel(weight + 0j, nufft_op._omega, nufft_op._im_size)
+
+        kernel = kernel.reshape(*unflatten_other_shape, -1, *kernel.shape[-len(nufft_op._nufft_directions) :])
+        kernel = kernel.permute(*unpermute_zyx)
+
+        fft = FastFourierOp(
+            dim=nufft_op._nufft_directions,
+            encoding_matrix=[2 * s for s in nufft_op._im_size],
+            recon_matrix=nufft_op._im_size,
+        )
+        self.nufft_gram = fft.H * kernel @ fft
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the operator to the input tensor.
