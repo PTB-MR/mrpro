@@ -30,6 +30,17 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
     ) -> None:
         """Initialize Non-Uniform Fast Fourier Operator.
 
+        ```{note}
+        Consider using `~mrpro.operators.FourierOp` instead of this operator. It automatically detects if a non-uniform
+        or regular fast Fourier transformation is required and can also be constructed automatically from a `mrpro.data.KData`
+        object.
+        ````
+
+        ```{note}
+        The NUFFT is scaled such that it matches 'orthonormal' FFT scaling for cartesian trajectories.
+        This from other packages, which apply scaling based on the size of the oversampled grid.
+        ````
+
         Parameters
         ----------
         direction
@@ -123,24 +134,27 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         omega = omega.permute(*permute_210)
         omega = omega.flatten(end_dim=-len(keep_dims_210) - 1).flatten(start_dim=-len(keep_dims_210) + 1)
 
-        # non-Cartesian -> Cartesian
         numpoints = [min(size, nufft_numpoints) for size in im_size]
+        # scaling independent of nufft oversampling, matches FFT scaling for cartesian trajectories
+        self.scale = torch.tensor(k_size).prod().sqrt().reciprocal()
+
+        # non-Cartesian -> Cartesian (Type 1, adjoint)
         adj_nufft_op = KbNufftAdjoint(
             im_size=im_size,
             grid_size=grid_size,
             numpoints=numpoints,
             kbwidth=nufft_kbwidth,
         )
-        self._nufft_type1 = lambda x: adj_nufft_op(x, omega, norm='ortho')
+        self._nufft_type1 = lambda x: adj_nufft_op(x, omega, norm=None) * self.scale
 
-        # Cartesian -> non-Cartesian
+        # Cartesian -> non-Cartesian (Type 2, forward)
         nufft_op = KbNufft(
             im_size=im_size,
             grid_size=grid_size,
             numpoints=numpoints,
             kbwidth=nufft_kbwidth,
         )
-        self._nufft_type2 = lambda x: nufft_op(x, omega, norm='ortho')
+        self._nufft_type2 = lambda x: nufft_op(x, omega, norm=None) * self.scale
 
         # we want to rearrange everything into (sep_dims)(joint_dims)(nufft_dims) where sep_dims are dimension
         # where the traj changes, joint_dims are dimensions where the traj does not change and nufft_dims are the
@@ -324,7 +338,6 @@ def gram_nufft_kernel(weight: torch.Tensor, trajectory: torch.Tensor, recon_shap
 
     kernel = symmetrize(kernel, rank)
     kernel = torch.fft.hfftn(kernel, dim=list(range(-rank, 0)), norm='backward')
-    kernel /= kernel.shape[-rank:].numel()
     kernel = torch.fft.fftshift(kernel, dim=list(range(-rank, 0)))
     return kernel
 
@@ -361,7 +374,6 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
 
         weight = torch.ones(
             [*nufft_op._traj_broadcast_shape[:-4], 1, *nufft_op._traj_broadcast_shape[-3:]],
-            dtype=nufft_op._omega.dtype,
         ).to(nufft_op._omega)
 
         # We rearrange weight into (sep_dims, joint_dims, nufft_dims)
@@ -376,9 +388,9 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
         weight = weight.flatten(start_dim=1, end_dim=-len(nufft_op._nufft_dims) - 1).flatten(start_dim=2)
 
         kernel = gram_nufft_kernel(weight + 0j, nufft_op._omega, nufft_op._im_size)
-
         kernel = kernel.reshape(*unflatten_other_shape, -1, *kernel.shape[-len(nufft_op._nufft_directions) :])
         kernel = kernel.permute(*unpermute_zyx)
+        kernel = kernel * (nufft_op.scale) ** 2
 
         fft = FastFourierOp(
             dim=nufft_op._nufft_directions,

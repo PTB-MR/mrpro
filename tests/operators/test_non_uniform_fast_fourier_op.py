@@ -5,7 +5,7 @@ import torch
 from mrpro.data import KData, KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
-from mrpro.operators import NonUniformFastFourierOp
+from mrpro.operators import FastFourierOp, NonUniformFastFourierOp
 
 from tests import RandomGenerator
 from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
@@ -81,21 +81,34 @@ def test_non_uniform_fast_fourier_op_gram(
 
 
 def test_non_uniform_fast_fourier_op_equal_to_fft(ismrmrd_cart_high_res):
-    """Eval result of non-uniform Fast Fourier transform for Cartesian data."""
+    """Compare nufft result to fft result for Cartesian data."""
     kdata = KData.from_file(ismrmrd_cart_high_res.filename, KTrajectoryIsmrmrd())
-
-    # recon_matrix and encoding_matrix have to be identical to avoid image scaling
-    # oversampling > 1 leads to a scaling of the image, the object of the images are far away from the edge so there
-    # are no aliasing artifacts even for oversampling = 1
     nufft_op = NonUniformFastFourierOp(
         direction=(-2, -1),
-        recon_matrix=[kdata.header.encoding_matrix.y, kdata.header.encoding_matrix.x],
+        recon_matrix=[kdata.header.recon_matrix.y, kdata.header.recon_matrix.x],
         encoding_matrix=[kdata.header.encoding_matrix.y, kdata.header.encoding_matrix.x],
         traj=kdata.traj,
-        nufft_oversampling=1.0,
+    )
+    (nufft_img,) = nufft_op.adjoint(kdata.data)
+    fft_op = FastFourierOp(
+        dim=(-2, -1),
+        recon_matrix=[kdata.header.recon_matrix.y, kdata.header.recon_matrix.x],
+        encoding_matrix=[kdata.header.encoding_matrix.y, kdata.header.encoding_matrix.x],
+    )
+    (fft_img,) = fft_op.adjoint(kdata.data)
+    torch.testing.assert_close(nufft_img, fft_img, rtol=1e-3, atol=1e-3)
+
+
+def test_non_uniform_fast_fourier_cartesian_result(ismrmrd_cart_high_res):
+    """Eval result of non-uniform Fast Fourier transform for Cartesian data."""
+    kdata = KData.from_file(ismrmrd_cart_high_res.filename, KTrajectoryIsmrmrd())
+    nufft_op = NonUniformFastFourierOp(
+        direction=(-2, -1),
+        recon_matrix=[kdata.header.recon_matrix.y, kdata.header.recon_matrix.x],
+        encoding_matrix=[kdata.header.encoding_matrix.y, kdata.header.encoding_matrix.x],
+        traj=kdata.traj,
     )
     (reconstructed_img,) = nufft_op.adjoint(kdata.data)
-
     # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
     # differences along the edges of the elliptic objects.

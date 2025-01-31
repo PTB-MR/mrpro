@@ -1,8 +1,11 @@
 """Tests for Fourier operator."""
 
+from typing import cast
+
 import pytest
 import torch
 from mrpro.data import KData, KTrajectory, SpatialDimension
+from mrpro.data.enums import TrajType
 from mrpro.data.traj_calculators import KTrajectoryCartesian
 from mrpro.operators import FourierOp
 
@@ -18,6 +21,18 @@ def create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
     # create random trajectories
     trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
     return img, trajectory
+
+
+class NufftTrajektory(KTrajectory):
+    """Always returns non-grid trajectory type."""
+
+    def _traj_types(
+        self,
+        tolerance: float,
+    ) -> tuple[tuple[TrajType, TrajType, TrajType], tuple[TrajType, TrajType, TrajType]]:
+        true_types = super()._traj_types(tolerance)
+        modified = tuple(tuple(t & (~TrajType.ONGRID) for t in ts) for ts in true_types)
+        return cast(tuple[tuple[TrajType, TrajType, TrajType], tuple[TrajType, TrajType, TrajType]], modified)
 
 
 @COMMON_MR_TRAJECTORIES
@@ -86,7 +101,7 @@ def test_fourier_op_cartesian_sorting(ismrmrd_cart):
 @pytest.mark.parametrize(
     ('im_shape', 'k_shape', 'nkx', 'nky', 'nkz', 'type_kx', 'type_ky', 'type_kz'),  # parameter names
     [
-        (  # 3d single shot stack of spiral but cartesian FFT dimenion in ky and k2
+        (  # 3d single shot stack of spiral but cartesian FFT dimension in ky and k2
             (1, 2, 96, 4, 128),  # im_shape
             (1, 2, 4, 1, 192),  # k_shape
             (1, 1, 1, 192),  # nkx
@@ -124,3 +139,90 @@ def test_fourier_op_not_supported_traj(im_shape, k_shape, nkx, nky, nkz, type_kx
     )
     with pytest.raises(NotImplementedError, match='Cartesian FFT dims need to be aligned'):
         FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
+
+
+@COMMON_MR_TRAJECTORIES
+def test_fourier_op_fft_nufft_forward(
+    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
+):
+    """Test Nufft vs FFT for Fourier operator."""
+    if not any(t == 'uniform' for t in [type_kx, type_ky, type_kz]):
+        return  # only test for uniform trajectories
+
+    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+
+    recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
+    encoding_matrix = SpatialDimension(
+        int(trajectory.kz.max() - trajectory.kz.min() + 1),
+        int(trajectory.ky.max() - trajectory.ky.min() + 1),
+        int(trajectory.kx.max() - trajectory.kx.min() + 1),
+    )
+    fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
+
+    nufft_fourier_op = FourierOp(
+        recon_matrix=recon_matrix,
+        encoding_matrix=encoding_matrix,
+        traj=NufftTrajektory(trajectory.kz, trajectory.ky, trajectory.kx),
+        nufft_oversampling=8.0,
+    )
+
+    (result_normal,) = fourier_op(img)
+    (result_nufft,) = nufft_fourier_op(img)
+    torch.testing.assert_close(result_normal, result_nufft, atol=3e-4, rtol=5e-3)
+
+
+@COMMON_MR_TRAJECTORIES
+def test_fourier_op_fft_nufft_adjoint(
+    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
+):
+    """Test AdjointNufft vs IFFT for Fourier operator."""
+    if not any(t == 'uniform' for t in [type_kx, type_ky, type_kz]):
+        return  # only test for uniform trajectories
+    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
+    encoding_matrix = SpatialDimension(
+        int(trajectory.kz.max() - trajectory.kz.min() + 1),
+        int(trajectory.ky.max() - trajectory.ky.min() + 1),
+        int(trajectory.kx.max() - trajectory.kx.min() + 1),
+    )
+    fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
+
+    nufft_fourier_op = FourierOp(
+        recon_matrix=recon_matrix,
+        encoding_matrix=encoding_matrix,
+        traj=NufftTrajektory(trajectory.kz, trajectory.ky, trajectory.kx),
+        nufft_oversampling=8.0,
+    )
+
+    (k,) = fourier_op(img)
+    (result_normal,) = fourier_op.H(k)
+    (result_nufft,) = nufft_fourier_op.H(k)
+    torch.testing.assert_close(result_normal, result_nufft, atol=3e-4, rtol=5e-3)
+
+
+@COMMON_MR_TRAJECTORIES
+def test_fourier_op_fft_nufft_gram(
+    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
+):
+    """Test Nufft gram vs FFt gram for Fourier operator."""
+    if not any(t == 'uniform' for t in [type_kx, type_ky, type_kz]):
+        return  # only test for uniform trajectories
+    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
+    encoding_matrix = SpatialDimension(
+        int(trajectory.kz.max() - trajectory.kz.min() + 1),
+        int(trajectory.ky.max() - trajectory.ky.min() + 1),
+        int(trajectory.kx.max() - trajectory.kx.min() + 1),
+    )
+    fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
+
+    nufft_fourier_op = FourierOp(
+        recon_matrix=recon_matrix,
+        encoding_matrix=encoding_matrix,
+        traj=NufftTrajektory(trajectory.kz, trajectory.ky, trajectory.kx),
+        nufft_oversampling=8.0,
+    )
+
+    (result_normal,) = fourier_op.gram(img)
+    (result_nufft,) = nufft_fourier_op.gram(img)
+    torch.testing.assert_close(result_normal, result_nufft, atol=3e-4, rtol=5e-3)
