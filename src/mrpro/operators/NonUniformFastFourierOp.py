@@ -292,7 +292,7 @@ def gram_nufft_kernel(weight: torch.Tensor, trajectory: torch.Tensor, recon_shap
     Returns
     -------
     kernel
-        Real valued convolution kernel for :class:`mrpro.operator.NonUniformFastFourierOpGramOp`, already in Fourier
+        Real valued convolution kernel for `~mrpro.operator.NonUniformFastFourierOpGramOp`, already in Fourier
         space.
     """
     rank = trajectory.shape[-2]
@@ -330,7 +330,7 @@ def gram_nufft_kernel(weight: torch.Tensor, trajectory: torch.Tensor, recon_shap
 
 
 class NonUniformFastFourierOpGramOp(LinearOperator):
-    """Gram operator for py:class:`NonUniformFastFourierOp`.
+    """Gram operator for `NonUniformFastFourierOp`.
 
     Implements the adjoint of the forward operator of the non-uniform Fast Fourier operator, i.e. the gram operator
     `NUFFT.H@NUFFT`.
@@ -338,8 +338,8 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
     Uses a convolution, implemented as multiplication in Fourier space, to calculate the gram operator
     for the Toeplitz NUFFT operator.
 
-    This should not be used directly, but rather through the `gram` method of a
-    py:class:`NonUniformFastFourierOp` object.
+    This should not be used directly, but rather through the `~NonUniformFastFourierOp.gram` method of a
+    `NonUniformFastFourierOp` object.
     """
 
     _kernel: torch.Tensor | None
