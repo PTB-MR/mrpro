@@ -181,16 +181,16 @@ def test_KData_calibration_lines(ismrmrd_cart_with_calibration_lines):
     assert kdata.data.shape[-2] == ismrmrd_cart_with_calibration_lines.n_separate_calibration_lines
 
 
-def test_KData_kspace(ismrmrd_cart):
+def test_KData_kspace(ismrmrd_cart_high_res):
     """Read in data and verify k-space by comparing reconstructed image."""
-    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kdata = KData.from_file(ismrmrd_cart_high_res.filename, DummyTrajectory())
     ff_op = FastFourierOp(dim=(-1, -2))
     (reconstructed_img,) = ff_op.adjoint(kdata.data)
 
     # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
     # differences along the edges of the elliptic objects.
-    assert relative_image_difference(reconstructed_img[0, 0, 0, ...], ismrmrd_cart.img_ref) <= 0.05
+    assert relative_image_difference(reconstructed_img[0, 0, 0, ...], ismrmrd_cart_high_res.img_ref) <= 0.05
 
 
 @pytest.mark.parametrize(('field', 'value'), [('lamor_frequency_proton', 42.88 * 1e6), ('tr', torch.tensor([24.3]))])
@@ -423,8 +423,8 @@ def test_KData_split_k2_into_other(consistently_shaped_kdata, monkeypatch, n_oth
     ('subset_label', 'subset_idx'),
     [
         ('repetition', torch.tensor([1], dtype=torch.int32)),
-        ('average', torch.tensor([3, 4, 5], dtype=torch.int32)),
-        ('phase', torch.tensor([2, 2, 8], dtype=torch.int32)),
+        ('average', torch.tensor([1, 2, 3], dtype=torch.int32)),
+        ('phase', torch.tensor([2, 2, 3], dtype=torch.int32)),
     ],
 )
 def test_KData_select_other_subset(consistently_shaped_kdata, monkeypatch, subset_label, subset_idx):
@@ -520,9 +520,9 @@ def test_modify_acq_info(random_kheader_shape):
     assert kheader.acq_info.position.z.shape == (n_other, n_k2, n_k1, 1)
 
 
-def test_KData_compress_coils(ismrmrd_cart):
+def test_KData_compress_coils(ismrmrd_cart_high_res):
     """Test coil combination does not alter image content (much)."""
-    kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
+    kdata = KData.from_file(ismrmrd_cart_high_res.filename, DummyTrajectory())
     kdata = kdata.compress_coils(n_compressed_coils=4)
     ff_op = FastFourierOp(dim=(-1, -2))
     (reconstructed_img,) = ff_op.adjoint(kdata.data)
@@ -530,7 +530,7 @@ def test_KData_compress_coils(ismrmrd_cart):
     # Image content of each coil is the same. Therefore we only compare one coil image but we need to normalize.
     reconstructed_img = reconstructed_img[0, 0, 0, ...].abs()
     reconstructed_img /= reconstructed_img.max()
-    ref_img = ismrmrd_cart.img_ref[0, 0, 0, ...].abs()
+    ref_img = ismrmrd_cart_high_res.img_ref[0, 0, 0, ...].abs()
     ref_img /= ref_img.max()
 
     assert relative_image_difference(reconstructed_img, ref_img) <= 0.1
@@ -574,3 +574,10 @@ def test_KData_compress_coils_error_coil_dim(consistently_shaped_kdata):
 
     with pytest.raises(ValueError, match='Coil dimension must not'):
         consistently_shaped_kdata.compress_coils(n_compressed_coils=3, joint_dims=(-4,))
+
+
+def test_KData_compress_coils_error_n_coils(consistently_shaped_kdata):
+    """Test if error is raised if new coils would be larger than existing coils"""
+    existing_coils = consistently_shaped_kdata.data.shape[-4]
+    with pytest.raises(ValueError, match='greater'):
+        consistently_shaped_kdata.compress_coils(existing_coils + 1)

@@ -3,7 +3,6 @@
 from collections.abc import Sequence
 from typing import Literal
 
-import numpy as np
 import torch
 from ptwt.conv_transform import wavedec, waverec
 from ptwt.conv_transform_2 import wavedec2, waverec2
@@ -58,22 +57,22 @@ class WaveletOp(LinearOperator):
         Parameters
         ----------
         domain_shape
-            Shape of domain where wavelets are calculated. If set to None the shape is taken from the input of the
+            Shape of domain where wavelets are calculated. If set to `None` the shape is taken from the input of the
             forward operator. The adjoint operator will raise an error.
         dim
             Dimensions (axes) where wavelets are calculated
         wavelet_name
             Name of wavelets
         level
-            Highest wavelet level. If set to None, the highest possible level is calculated based on the domain shape.
+            Highest wavelet level. If set to `None`, the highest possible level is calculated based on the domain shape.
 
         Raises
         ------
-        ValueError
+        `ValueError`
             If wavelets are calculated for more than three dimensions.
-        ValueError
+        `ValueError`
             If wavelet dimensions and domain shape do not match.
-        NotImplementedError
+        `NotImplementedError`
             If any dimension of the domain shape is odd. Adjoint will lead to the wrong domain shape.
         """
         super().__init__()
@@ -116,14 +115,14 @@ class WaveletOp(LinearOperator):
             verified_level = _check_level(domain_shape, wavelet_length, level)
 
             if verified_level == 0:  # only a/aa/aaa component possible
-                self.coefficients_shape = [domain_shape]
+                self.coefficients_shape:list[torch.Size] = [torch.Size(domain_shape)]
             else:
                 self.coefficients_shape = []
                 for _ in range(verified_level):
                     # Add padding
                     current_shape = (current_shape / 2).ceil() + wavelet_length // 2 - 1
                     self.coefficients_shape.extend(
-                        [tuple(current_shape.to(dtype=torch.int64))] * self.n_wavelet_directions
+                        [torch.Size(current_shape.to(dtype=torch.int64))] * self.n_wavelet_directions
                     )
 
                 self.coefficients_shape = self.coefficients_shape[::-1]
@@ -152,7 +151,7 @@ class WaveletOp(LinearOperator):
             raise ValueError(f'Axis must be unique. Normalized axis are {dim}')
 
         # move axes where wavelets are calculated to the end
-        x = torch.moveaxis(x, dim, list(range(-len(self._dim), 0)))
+        x = x.moveaxis(dim, list(range(-len(self._dim), 0)))
 
         # the ptwt functions work only for real data, thus we handle complex inputs as an additional channel
         x_real = torch.view_as_real(x).moveaxis(-1, 0) if x.is_complex() else x
@@ -365,10 +364,10 @@ class WaveletOp(LinearOperator):
             2D: [aa, ad_n, da_n, dd_n, ..., ad_1, da_1, dd_1]
             3D: [aaa, aad_n, ada_n, add_n, ..., ..., aad_1, ada_1, add_1, ...]
         """
-        coefficients = torch.split(
-            coefficients_stack, [int(np.prod(shape)) for shape in self.coefficients_shape], dim=-1
+        coefficients = coefficients_stack.split(
+            [shape.numel() for shape in self.coefficients_shape], dim=-1
         )
         return [
-            torch.reshape(coeff, (*coeff.shape[:-1], *shape))
+            coeff.reshape((*coeff.shape[:-1], *shape))
             for coeff, shape in zip(coefficients, self.coefficients_shape, strict=True)
         ]

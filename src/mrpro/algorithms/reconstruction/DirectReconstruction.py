@@ -3,10 +3,10 @@
 from collections.abc import Callable
 
 from mrpro.algorithms.reconstruction.Reconstruction import Reconstruction
-from mrpro.data._kdata.KData import KData
 from mrpro.data.CsmData import CsmData
 from mrpro.data.DcfData import DcfData
 from mrpro.data.IData import IData
+from mrpro.data.KData import KData
 from mrpro.data.KNoise import KNoise
 from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.LinearOperator import LinearOperator
@@ -25,28 +25,36 @@ class DirectReconstruction(Reconstruction):
     ):
         """Initialize DirectReconstruction.
 
+        A direct reconstruction uses the adjoint of the acquisition operator and a
+        density compensation to obtain the complex valued images from k-space data.
+
+        If csm is not set to `None`, a single coil combined image will reconstructed.
+        The method for estimating sensitivity maps can be adjusted using the `csm` argument.
+
         Parameters
         ----------
         kdata
-            KData. If kdata is provided and fourier_op or dcf are None, then fourier_op and dcf are estimated based on
-            kdata. Otherwise fourier_op and dcf are used as provided.
+            If `kdata` is provided and `fourier_op` or `dcf` are `None`, then `fourier_op` and `dcf` are estimated
+            based on `kdata`. Otherwise `fourier_op` and `dcf` are used as provided.
         fourier_op
-            Instance of the FourierOperator used for reconstruction. If None, set up based on kdata.
+            Instance of the `~mrpro.operators.FourierOp` used for reconstruction.
+            If `None`, set up based on `kdata`.
         csm
-            Sensitivity maps for coil combination. If None, no coil combination is carried out, i.e. images for each
-            coil are returned. If a callable is provided, coil images are reconstructed using the adjoint of the
-            FourierOperator (including density compensation) and then sensitivity maps are calculated using the
-            callable. For this, kdata needs also to be provided. For examples have a look at the CsmData class
-            e.g. from_idata_walsh or from_idata_inati.
+            Sensitivity maps for coil combination. If `None`, no coil combination is carried out, i.e. images for each
+            coil are returned. If a `Callable` is provided, coil images are reconstructed using the adjoint of the
+            `~mrpro.operators.FourierOp` (including density compensation) and then sensitivity maps are calculated
+            using the callable. For this, `kdata` needs also to be provided.
+            For examples have a look at the `~mrpro.data.CsmData` class e.g. `~mrpro.data.CsmData.from_idata_walsh`
+            or `~mrpro.data.CsmData.from_idata_inati`.
         noise
-            KNoise used for prewhitening. If None, no prewhitening is performed
+            Noise used for prewhitening. If `None`, no prewhitening is performed
         dcf
-            K-space sampling density compensation. If None, set up based on kdata.
+            K-space sampling density compensation. If `None`, set up based on `kdata`.
 
         Raises
         ------
-        ValueError
-            If the kdata and fourier_op are None or if csm is a Callable but kdata is None.
+        `ValueError`
+            If the `kdata` and `fourier_op` are `None` or if `csm` is a `Callable` but `kdata` is None.
         """
         super().__init__()
         if fourier_op is None:
