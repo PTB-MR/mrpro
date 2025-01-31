@@ -86,7 +86,7 @@ def test_fourier_op_cartesian_sorting(ismrmrd_cart):
 @pytest.mark.parametrize(
     ('im_shape', 'k_shape', 'nkx', 'nky', 'nkz', 'type_kx', 'type_ky', 'type_kz'),  # parameter names
     [
-        (  # 3d single shot stack of spiral
+        (  # 3d single shot stack of spiral but cartesian FFT dimenion in ky and k2
             (1, 2, 96, 4, 128),  # im_shape
             (1, 2, 4, 1, 192),  # k_shape
             (1, 1, 1, 192),  # nkx
@@ -107,7 +107,7 @@ def test_fourier_op_cartesian_sorting(ismrmrd_cart):
             'non-uniform',  # type_kz
         ),
     ],
-    ids=['3d_single_shot_stack_of_spirals', 'cartesian_fft_dims_not_aligned_with_k2_k1_k0_dims'],
+    ids=['3d_single_shot_stack_of_spirals_ky_in_k2', 'cartesian_fft_dims_not_aligned_with_k2_k1_k0_dims'],
 )
 def test_fourier_op_not_supported_traj(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
     """Test trajectory not supported by Fourier operator."""
