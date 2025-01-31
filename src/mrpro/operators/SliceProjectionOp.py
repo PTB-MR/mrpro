@@ -13,6 +13,7 @@ from torch import Tensor
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
+from mrpro.utils import ravel_multi_index
 from mrpro.utils.slice_profiles import SliceSmoothedRectangular
 from mrpro.utils.typing import NestedSequence
 
@@ -152,8 +153,8 @@ class SliceProjectionOp(LinearOperator):
             test_values = torch.arange(-max_shape, max_shape, max_shape)
             profile = slice_profile(test_values)
             cdf = torch.cumsum(profile, -1) / profile.sum()
-            left = test_values[np.argmax(cdf > 0.01)]
-            right = test_values[np.argmax(cdf > 0.99)]
+            left = test_values[(cdf > 0.01).int().argmax()]
+            right = test_values[(cdf > 0.99).int().argmax()]
             return int(max(left.abs().item(), right.abs().item())) + 1
 
         def _at_least_width_1(slice_profile: TensorFunction):
@@ -430,9 +431,8 @@ class SliceProjectionOp(LinearOperator):
         # We need this at the edge of the volume to approximate zero padding
         fraction_in_view = (mask * (weight > 0)).sum(-1) / (weight > 0).sum(-1)
 
-        source_index = torch.tensor(
-            np.ravel_multi_index(source[mask].unbind(-1), (input_shape.z, input_shape.y, input_shape.x))
-        )
+        source_index = ravel_multi_index(source[mask].unbind(-1), (input_shape.z, input_shape.y, input_shape.x))
+
         target_index = torch.repeat_interleave(torch.arange(y * x), mask.sum(-1))
 
         with warnings.catch_warnings():

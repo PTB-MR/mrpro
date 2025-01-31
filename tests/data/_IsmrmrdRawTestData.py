@@ -89,6 +89,8 @@ class IsmrmrdRawTestData:
         self.img_ref: torch.Tensor
         self.n_separate_calibration_lines: int = n_separate_calibration_lines
 
+        rng = RandomGenerator(0)
+
         # The number of points in image space (x,y) and kspace (fe,pe)
         n_x = self.matrix_size
         n_y = self.matrix_size
@@ -229,7 +231,7 @@ class IsmrmrdRawTestData:
 
         # Write out a few noise scans
         for _ in range(32):
-            noise = self.noise_level * torch.randn(self.n_coils, n_freq_encoding, dtype=torch.complex64)
+            noise = self.noise_level * rng.randn_tensor((self.n_coils, n_freq_encoding), dtype=torch.complex64)
             # here's where we would make the noise correlated
             acq.scan_counter = scan_counter
             acq.clearAllFlags()
@@ -242,9 +244,10 @@ class IsmrmrdRawTestData:
         if add_bodycoil_acquisitions:
             acq.resize(n_freq_encoding, 2, trajectory_dimensions=2)
             for _ in range(8):
+                data = rng.randn_tensor((2, n_freq_encoding), dtype=torch.complex64)
                 acq.scan_counter = scan_counter
                 acq.clearAllFlags()
-                acq.data[:] = torch.randn(2, n_freq_encoding, dtype=torch.complex64)
+                acq.data[:] = data.numpy()
                 dataset.append_acquisition(acq)
                 scan_counter += 1
             acq.resize(n_freq_encoding, self.n_coils, trajectory_dimensions=2)
@@ -259,8 +262,8 @@ class IsmrmrdRawTestData:
             )
             kspace_calibration = self.phantom.kspace(traj_ky_calibration, traj_kx_calibration)
             kspace_calibration = repeat(kspace_calibration, '... -> coils ... ', coils=self.n_coils)
-            kspace_calibration = kspace_calibration + self.noise_level * torch.randn(
-                self.n_coils, n_freq_encoding, len(kpe_calibration), dtype=torch.complex64
+            kspace_calibration = kspace_calibration + self.noise_level * rng.randn_tensor(
+                (self.n_coils, n_freq_encoding, len(kpe_calibration)), dtype=torch.complex64
             )
 
             for pe_idx, pe_pos in enumerate(kpe_calibration):
@@ -280,7 +283,9 @@ class IsmrmrdRawTestData:
 
         # Loop over the repetitions, add noise and write to disk
         for rep in range(self.repetitions):
-            noise = self.noise_level * torch.randn(self.n_coils, n_freq_encoding, len(kpe[rep]), dtype=torch.complex64)
+            noise = self.noise_level * rng.randn_tensor(
+                (self.n_coils, n_freq_encoding, len(kpe[rep])), dtype=torch.complex64
+            )
             # Here's where we would make the noise correlated
             kspace_with_noise = true_kspace[rep] + noise
             acq.idx.repetition = rep
