@@ -101,10 +101,10 @@ class IData(Data):
         DICOM images can be saved as single-frame or multi-frame images [DCMMF]_.
 
         If the DICOM files are single-frame, we treat each file separately and stack them along the `other` dimension.
-        If the DICOM files are multi-frame and the MRAcquisitionType is '3D' we treat the frame dimension as the `z`
+        If the DICOM files are multi-frame and the MRAcquisitionType is ``3D`` we treat the frame dimension as the `z`
         dimension. Otherwise, we move the frame dimension to the `other` dimension. Multiple multi-frame DICOM
         images are stacked along an additional `other` dimension before the frame dimension.
-        Providing the list of files sortey by filename usually leads to a reasonable sorting of the data.
+        Providing the list of files sorted by filename usually leads to a reasonable sorting of the data.
 
         Parameters
         ----------
