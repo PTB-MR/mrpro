@@ -187,6 +187,7 @@ ignore = [
     "N999",   #  invalid module name
     "COM812", #  missing-trailing-comma (conflict with formatter)
     "SIM108", #  if-else-block-instead-of-if-exp
+    "A005"    #  stdlib-module-shadowing
 ]
 
 [tool.ruff.lint.isort]
