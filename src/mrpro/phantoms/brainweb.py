@@ -1,3 +1,5 @@
+"""Brainweb Phantom."""
+
 import concurrent.futures
 import gzip
 import hashlib
@@ -36,7 +38,7 @@ HASHES = {
 }
 URL = 'http://brainweb.bic.mni.mcgill.ca/brainweb/anatomic_normal_20.html'
 
-CLASSES = ['gry', 'wht', 'csf', 'mrw', 'dura', 'fat', 'fat2', 'mus', 'm-s', 'ves', 'bck', 'skl']
+CLASSES = ['gry', 'what', 'csf', 'mrw', 'dura', 'fat', 'fat2', 'mus', 'm-s', 'ves', 'back', 'skl']
 
 
 def load_url(url: str, timeout: float = 60) -> bytes:
@@ -64,7 +66,7 @@ def norm_(values: list[np.ndarray]) -> np.ndarray:
     return np.stack(values, -1)
 
 
-def download_subject(subject: str, outfilename: Path, workers: int, progress: tqdm) -> None:
+def download_subject(subject: str, outfilename: Path, workers: int, progressbar: tqdm) -> None:
     """Download and process all class files for a single subject asynchronously."""
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
@@ -79,7 +81,7 @@ def download_subject(subject: str, outfilename: Path, workers: int, progress: tq
         for future in concurrent.futures.as_completed(futures):
             c = futures[future]
             downloaded_data[c] = future.result()
-            progress.update(1)
+            progressbar.update(1)
 
     values = norm_([unpack(downloaded_data[c], shape=(362, 434, 362), dtype=np.uint16) for c in CLASSES])
 
@@ -97,15 +99,15 @@ def download(output_directory: str | PathLike, workers: int = 4, progress: bool 
     output_directory.mkdir(parents=True, exist_ok=True)
 
     total_steps = len(subjects) * len(CLASSES)
-    with tqdm(total=total_steps, desc='Downloading brainweb data', disable=not progress) as progress:
+    with tqdm(total=total_steps, desc='Downloading brainweb data', disable=not progress) as progressbar:
         for subject in subjects:
             outfilename = output_directory / f's{subject}.h5'
             if outfilename.exists():
-                md5 = hashlib.file_digest(open(outfilename, 'rb'), 'md5').hexdigest()
+                md5 = hashlib.file_digest(outfilename.open('rb'), 'md5').hexdigest()
                 if md5 == HASHES[subject]:
-                    progress.update(len(CLASSES))
+                    progressbar.update(len(CLASSES))
                     continue
-            download_subject(subject, outfilename, workers, progress)
+            download_subject(subject, outfilename, workers, progressbar)
 
 
 if __name__ == '__main__':
@@ -116,5 +118,3 @@ if __name__ == '__main__':
     with tempfile.TemporaryDirectory() as tmpdirname:
         cache = platformdirs.user_cache_dir('mrpro')
         download(cache, workers=2)
-        print('done')
-        print(HASHES)
