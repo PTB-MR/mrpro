@@ -207,12 +207,13 @@ skip-magic-trailing-comma = false
 [tool.typos.default]
 locale = "en-us"
 check-filename = false
-extend-ignore-re = ["(?Rm)^.*(#|//)\\s*noqa:\\s*typos"]
+extend-ignore-re = [
+    "(?Rm)^.*(#|//)\\s*noqa:\\s*typos", # "# noqa: typos" to ignore typos
+]
+
 [tool.typos.default.extend-words]
 Reson = "Reson"   # required for Proc. Intl. Soc. Mag. Reson. Med.
 iy = "iy"
-daa = "daa"       # required for wavelet operator
-gaus = "gaus"     # required for wavelet operator
 arange = "arange" # torch.arange
 Ba = "Ba"
 
