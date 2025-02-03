@@ -38,7 +38,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
 
         ```{note}
         The NUFFT is scaled such that it matches 'orthonormal' FFT scaling for cartesian trajectories.
-        This from other packages, which apply scaling based on the size of the oversampled grid.
+        This is different from other packages, which apply scaling based on the size of the oversampled grid.
         ````
 
         Parameters
