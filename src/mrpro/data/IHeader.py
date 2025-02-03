@@ -162,5 +162,5 @@ class IHeader(MoveDataMixin):
         te = summarize_tensorvalues(self.te)
         ti = summarize_tensorvalues(self.ti)
         fa = summarize_tensorvalues(self.fa)
-        out = f'FOV [m]: {self.fov!s}\n' f'TE [s]: {te}\nTI [s]: {ti}\nFlip angle [rad]: {fa}.'
+        out = f'FOV [m]: {self.fov!s}\nTE [s]: {te}\nTI [s]: {ti}\nFlip angle [rad]: {fa}.'
         return out
