@@ -52,7 +52,7 @@ URL_TEMPLATE = (
 )
 
 
-CLASSES = ['skl', 'gry', 'what', 'csf', 'mrw', 'dura', 'fat', 'fat2', 'mus', 'm-s', 'ves']  # noqa: typos
+CLASSES = ['skl', 'gry', 'wht', 'csf', 'mrw', 'dura', 'fat', 'fat2', 'mus', 'm-s', 'ves']  # noqa: typos
 
 CACHE_DIR = platformdirs.user_cache_dir('mrpro')
 K = TypeVar('K')
@@ -110,28 +110,24 @@ def download_subject(subject: str, outfilename: Path, workers: int, progressbar:
 
 
 def download(output_directory: str | PathLike, workers: int = 4, progress: bool = False) -> None:
-    """Download brainweb data with subjects in series and class files in parallel."""
+    """Download Brainweb data with subjects in series and class files in parallel."""
     page = requests.get(OVERVIEW_URL, timeout=5)
     subjects = re.findall(r'option value=(\d*)>', page.text)
     output_directory = Path(output_directory)
     output_directory.mkdir(parents=True, exist_ok=True)
 
     totalsteps = len(subjects) * len(CLASSES)
-    with tqdm(total=totalsteps, desc='Downloading brainweb data', disable=not progress) as progressbar:
+    with tqdm(total=totalsteps, desc='Downloading Brainweb data', disable=not progress) as progressbar:
         for subject in subjects:
             outfilename = output_directory / f's{subject}.h5'
             if outfilename.exists():
                 md5 = hashlib.file_digest(outfilename.open('rb'), 'md5').hexdigest()
-                if md5 == HASHES[subject]:
-                    progressbar.update(len(CLASSES))
-                    continue
+                # if md5 == HASHES[subject]:
+                #     progressbar.update(len(CLASSES))
+                #     continue
             download_subject(subject, outfilename, workers, progressbar)
-
-
-if __name__ == '__main__':
-    import platformdirs
-
-    download(CACHE_DIR, workers=4, progress=True)
+            md5 = hashlib.file_digest(outfilename.open('rb'), 'md5').hexdigest()
+            HASHES[subject] = md5
 
 
 @dataclass
@@ -168,7 +164,7 @@ class T1T2PD:
 
 VALUES_3T = {
     'gry': T1T2PD(1.200, 2.000, 0.080, 0.120, 0.7, 1.0),
-    'wht': T1T2PD(0.800, 1.500, 0.060, 0.100, 0.50, 0.9),
+    'wht': T1T2PD(0.800, 1.500, 0.060, 0.100, 0.50, 0.9),  # noqa:typos
     'csf': T1T2PD(2.000, 4.000, 1.300, 2.000, 0.9, 1.0),
     'mrw': T1T2PD(0.400, 0.600, 0.060, 0.100, 0.7, 1.0),
     'dura': T1T2PD(2.000, 2.800, 0.200, 0.500, 0.9, 1.0),
@@ -211,7 +207,7 @@ DEFAULT_TRANSFORMS_256 = (
         translate=(0.05, 0.05),
         scale=(0.7, 0.8),
         fill=0.0,
-        shear=((0, 5), (0, 5)),
+        shear=(0, 5, 0, 5),
         interpolation=torchvision.transforms.InterpolationMode.BILINEAR,
     ),
     torchvision.transforms.CenterCrop((256, 256)),
@@ -221,6 +217,8 @@ DEFAULT_TRANSFORMS_256 = (
 
 
 class BrainwebSlices(torch.utils.data.Dataset):
+    """Dataset of 2D qMRI parameter slices based on Brainweb dataset."""
+
     def __init__(
         self,
         folder: str | Path,
@@ -231,7 +229,8 @@ class BrainwebSlices(torch.utils.data.Dataset):
         transforms: Sequence[Callable[[torch.Tensor], torch.Tensor]] = DEFAULT_TRANSFORMS_256,
         what: Sequence[Literal['r1', 'r2', 'pd', 't1', 't2', 'mask', 'classes']] = ('pd', 'r1', 'r2'),
         mask_values: Mapping[str, float | None] = DEFAULT_VALUES,
-    ):
+    ) -> None:
+        """Initialize Brainweb qMRI slice phantom."""
         self.parameters = parameters
         self._cuts = cuts
         self._axis = axis
@@ -315,3 +314,10 @@ class BrainwebSlices(torch.utils.data.Dataset):
                 torch.nn.functional.conv2d(~mask[None, None].float(), torch.ones(1, 1, 3, 3), padding=1)[0, 0] < 1
             )
         return result
+
+
+if __name__ == '__main__':
+    import platformdirs
+
+    download(CACHE_DIR, workers=4, progress=True)
+    print(HASHES)
