@@ -21,10 +21,10 @@ def test_QData_from_iheader_and_tensor(random_kheader, random_test_data):
 
 def test_QData_from_dcm_file(dcm_2d):
     """QData from single dicom file."""
-    qdata = QData.from_single_dicom(dcm_2d.filename)
+    qdata = QData.from_single_dicom(dcm_2d[0].filename)
     # QData uses complex values but dicom only supports real values
     img = torch.real(qdata.data[0, 0, 0, ...])
-    torch.testing.assert_close(img, dcm_2d.img_ref)
+    torch.testing.assert_close(img, dcm_2d[0].img_ref)
 
 
 def test_QData_to_complex128(random_kheader, random_test_data):

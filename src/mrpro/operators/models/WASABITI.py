@@ -5,6 +5,7 @@ from torch import nn
 
 from mrpro.operators.SignalModel import SignalModel
 from mrpro.utils import unsqueeze_right
+from mrpro.utils.unit_conversion import GYROMAGNETIC_RATIO_PROTON
 
 
 class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
@@ -15,9 +16,8 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         offsets: torch.Tensor,
         recovery_time: torch.Tensor,
         rf_duration: float | torch.Tensor = 0.005,
-        b1_nominal: float | torch.Tensor = 3.75,
-        gamma: float | torch.Tensor = 42.5764,
-        larmor_frequency: float | torch.Tensor = 127.7292,
+        b1_nominal: float | torch.Tensor = 3.75e-6,
+        gamma: float | torch.Tensor = GYROMAGNETIC_RATIO_PROTON,
     ) -> None:
         """Initialize WASABITI signal model for mapping of B0, B1 and T1 [SCH2023]_.
 
@@ -30,11 +30,9 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         rf_duration
             RF pulse duration [s]
         b1_nominal
-            nominal B1 amplitude [µT]
+            nominal B1 amplitude [T]
         gamma
-            gyromagnetic ratio [MHz/T]
-        larmor_frequency
-            larmor frequency [MHz]
+            gyromagnetic ratio [Hz/T]
 
         References
         ----------
@@ -47,7 +45,6 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         rf_duration = torch.as_tensor(rf_duration)
         b1_nominal = torch.as_tensor(b1_nominal)
         gamma = torch.as_tensor(gamma)
-        larmor_frequency = torch.as_tensor(larmor_frequency)
 
         if recovery_time.shape != offsets.shape:
             raise ValueError(
@@ -59,8 +56,7 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         self.recovery_time = nn.Parameter(recovery_time, requires_grad=recovery_time.requires_grad)
         self.rf_duration = nn.Parameter(rf_duration, requires_grad=rf_duration.requires_grad)
         self.b1_nominal = nn.Parameter(b1_nominal, requires_grad=b1_nominal.requires_grad)
-        self.gamma = nn.Parameter(gamma, requires_grad=gamma.requires_grad)
-        self.larmor_frequency = nn.Parameter(larmor_frequency, requires_grad=larmor_frequency.requires_grad)
+        self.gamma = gamma
 
     def forward(self, b0_shift: torch.Tensor, relative_b1: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply WASABITI signal model.
@@ -86,13 +82,13 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         recovery_time = unsqueeze_right(self.recovery_time, delta_ndim)
 
         b1 = self.b1_nominal * relative_b1
-        delta_b0 = offsets - b0_shift
+        offsets_shifted = offsets - b0_shift
         mz_initial = 1.0 - torch.exp(-recovery_time / t1)
 
         signal = mz_initial * (
             1
             - 2
             * (torch.pi * b1 * self.gamma * self.rf_duration) ** 2
-            * torch.sinc(self.rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + delta_b0**2)) ** 2
+            * torch.sinc(self.rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + offsets_shifted**2)) ** 2
         )
         return (signal,)

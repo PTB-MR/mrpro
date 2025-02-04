@@ -56,7 +56,7 @@ class ConstraintsOp(EndomorphOperator):
         for lb, ub in bounds:
             if lb is not None and ub is not None:
                 if torch.isnan(torch.tensor(lb)) or torch.isnan(torch.tensor(ub)):
-                    raise ValueError(' "nan" is not a valid lower or upper bound;' f'\nbound tuple {lb, ub} is invalid')
+                    raise ValueError(f' "nan" is not a valid lower or upper bound;\nbound tuple {lb, ub} is invalid')
 
                 if lb >= ub:
                     raise ValueError(

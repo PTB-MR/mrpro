@@ -75,8 +75,7 @@ def cg(
     """
     if initial_value is not None and (initial_value.shape != right_hand_side.shape):
         raise ValueError(
-            'Shapes of starting_value and right_hand_side must match,'
-            f'got {initial_value.shape, right_hand_side.shape}'
+            f'Shapes of starting_value and right_hand_side must match,got {initial_value.shape, right_hand_side.shape}'
         )
 
     # initial residual
