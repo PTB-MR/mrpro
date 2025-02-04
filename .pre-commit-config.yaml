@@ -15,7 +15,7 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.6
+    rev: v0.9.4
     hooks:
       - id: ruff # linter
         args: [--fix]
@@ -34,7 +34,7 @@ repos:
         exclude: ^tests/
 
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.8.0
+    rev: 0.8.1
     hooks:
     # cleans the .ipynbs (removes outputs, resets all cell-ids to 0..N, cleans steps)
     # also clean any kernel information left after execution
@@ -71,7 +71,7 @@ repos:
        types_or: [python]
 
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.8.0
+    rev: 0.8.1
     hooks:
     # cleans the .ipynbs (removes outputs, resets all cell-ids to 0..N, cleans steps)
     # also clean any kernel information left after execution
