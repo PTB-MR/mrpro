@@ -7,6 +7,7 @@ repos:
     hooks:
       - id: check-added-large-files
       - id: check-merge-conflict
+        exclude_types: [rst]
       - id: check-yaml
       - id: check-toml
       - id: check-json
@@ -14,14 +15,14 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.1
+    rev: v0.9.4
     hooks:
       - id: ruff # linter
         args: [--fix]
       - id: ruff-format # formatter
 
   - repo: https://github.com/crate-ci/typos
-    rev: typos-dict-v0.11.37
+    rev: v1.29.4
     hooks:
       - id: typos
 
@@ -32,8 +33,55 @@ repos:
         args: [--double-quotes, --fix]
         exclude: ^tests/
 
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.8.1
+    hooks:
+    # cleans the .ipynbs (removes outputs, resets all cell-ids to 0..N, cleans steps)
+    # also clean any kernel information left after execution
+    - id: nbstripout
+      name: clean .ipynb output
+      args: [--extra-keys, "metadata.language_info"]
+      files: examples/notebooks
+
+  - repo: local
+    hooks:
+     - id: jupytext
+       name: convert .py to .ipynb
+       language: python
+
+       additional_dependencies:
+        - jupytext
+       entry: >
+        jupytext
+        --update
+        --pipe
+        "python .precommit/add_notebook_preamble.py {}"
+        --to
+        "../notebooks//ipynb"
+        --update-metadata
+        '{
+          "accelerator": "GPU",
+          "colab": {"gpuType": "T4","provenance": []},
+          "kernelspec": {"display_name": "Python 3 (ipykernel)","language": "python","name": "python3"}
+        }'
+        --opt cell_metadata_filter=mystnb,tags,-all
+       always_run: true
+       pass_filenames: true
+       files: ^examples/scripts/.*py
+       types_or: [python]
+
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.8.1
+    hooks:
+    # cleans the .ipynbs (removes outputs, resets all cell-ids to 0..N, cleans steps)
+    # also clean any kernel information left after execution
+    - id: nbstripout
+      name: clean .ipynb output
+      args: [--extra-keys, "metadata.language_info"]
+      files: examples/notebooks
+
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.13.0
+    rev: v1.14.1
     hooks:
       - id: mypy
         pass_filenames: false
@@ -41,7 +89,7 @@ repos:
         args: [src, tests, examples]
         additional_dependencies:
           - numpy
-          - torch>=2.4.0
+          - torch>=2.6.0
           - types-requests
           - typing-extensions
           - einops

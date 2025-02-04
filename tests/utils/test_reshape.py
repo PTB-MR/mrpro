@@ -1,8 +1,16 @@
 """Tests for reshaping utilities."""
 
+import numpy as np
 import pytest
 import torch
-from mrpro.utils import broadcast_right, reduce_view, reshape_broadcasted, unsqueeze_left, unsqueeze_right
+from mrpro.utils import (
+    broadcast_right,
+    ravel_multi_index,
+    reduce_view,
+    reshape_broadcasted,
+    unsqueeze_left,
+    unsqueeze_right,
+)
 
 from tests import RandomGenerator
 
@@ -83,3 +91,17 @@ def test_reshape_broadcasted_fail():
         reshape_broadcasted(a, -1, -3)
     with pytest.raises(RuntimeError, match='only one dimension'):
         reshape_broadcasted(a, -1, -1)
+
+
+def test_ravel_multidex() -> None:
+    """Test ravel_multiindex"""
+    rng = RandomGenerator(1)
+    dims = [5, 1, 6]
+    indices = [
+        rng.int64_tensor((2, 3), low=0, high=dims[0]),
+        rng.int64_tensor((1, 1), low=0, high=dims[1]),
+        rng.int64_tensor((2, 1), low=0, high=dims[2]),
+    ]
+    expected = torch.as_tensor(np.ravel_multi_index([idx.numpy() for idx in indices], dims))
+    actual = ravel_multi_index(indices, dims)
+    assert torch.equal(expected, actual)

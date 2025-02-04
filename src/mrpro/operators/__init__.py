@@ -1,3 +1,5 @@
+"""Linear operators (such as FourierOp), functionals/loss functions, and qMRI signal models."""
+
 from mrpro.operators.Operator import Operator
 from mrpro.operators.LinearOperator import LinearOperator
 from mrpro.operators.Functional import Functional, ProximableFunctional, ElementaryFunctional, ElementaryProximableFunctional, ScaledFunctional, ScaledProximableFunctional
@@ -14,9 +16,11 @@ from mrpro.operators.IdentityOp import IdentityOp
 from mrpro.operators.LinearOperatorMatrix import LinearOperatorMatrix
 from mrpro.operators.MagnitudeOp import MagnitudeOp
 from mrpro.operators.MultiIdentityOp import MultiIdentityOp
+from mrpro.operators.NonUniformFastFourierOp import NonUniformFastFourierOp
 from mrpro.operators.PCACompressionOp import PCACompressionOp
 from mrpro.operators.PhaseOp import PhaseOp
 from mrpro.operators.ProximableFunctionalSeparableSum import ProximableFunctionalSeparableSum
+from mrpro.operators.RearrangeOp import RearrangeOp
 from mrpro.operators.SensitivityOp import SensitivityOp
 from mrpro.operators.SignalModel import SignalModel
 from mrpro.operators.SliceProjectionOp import SliceProjectionOp
@@ -41,11 +45,13 @@ __all__ = [
     "LinearOperatorMatrix",
     "MagnitudeOp",
     "MultiIdentityOp",
+    "NonUniformFastFourierOp",
     "Operator",
     "PCACompressionOp",
     "PhaseOp",
     "ProximableFunctional",
     "ProximableFunctionalSeparableSum",
+    "RearrangeOp",
     "ScaledFunctional",
     "ScaledProximableFunctional",
     "SensitivityOp",
