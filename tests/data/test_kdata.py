@@ -184,7 +184,11 @@ def test_KData_calibration_lines(ismrmrd_cart_with_calibration_lines):
 def test_KData_kspace(ismrmrd_cart_high_res):
     """Read in data and verify k-space by comparing reconstructed image."""
     kdata = KData.from_file(ismrmrd_cart_high_res.filename, DummyTrajectory())
-    ff_op = FastFourierOp(dim=(-1, -2))
+    ff_op = FastFourierOp(
+        dim=(-1, -2),
+        recon_matrix=[kdata.header.recon_matrix.x, kdata.header.recon_matrix.y],
+        encoding_matrix=[kdata.header.encoding_matrix.x, kdata.header.encoding_matrix.y],
+    )
     (reconstructed_img,) = ff_op.adjoint(kdata.data)
 
     # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
@@ -524,7 +528,11 @@ def test_KData_compress_coils(ismrmrd_cart_high_res):
     """Test coil combination does not alter image content (much)."""
     kdata = KData.from_file(ismrmrd_cart_high_res.filename, DummyTrajectory())
     kdata = kdata.compress_coils(n_compressed_coils=4)
-    ff_op = FastFourierOp(dim=(-1, -2))
+    ff_op = FastFourierOp(
+        dim=(-1, -2),
+        recon_matrix=[kdata.header.recon_matrix.x, kdata.header.recon_matrix.y],
+        encoding_matrix=[kdata.header.encoding_matrix.x, kdata.header.encoding_matrix.y],
+    )
     (reconstructed_img,) = ff_op.adjoint(kdata.data)
 
     # Image content of each coil is the same. Therefore we only compare one coil image but we need to normalize.
@@ -574,3 +582,10 @@ def test_KData_compress_coils_error_coil_dim(consistently_shaped_kdata):
 
     with pytest.raises(ValueError, match='Coil dimension must not'):
         consistently_shaped_kdata.compress_coils(n_compressed_coils=3, joint_dims=(-4,))
+
+
+def test_KData_compress_coils_error_n_coils(consistently_shaped_kdata):
+    """Test if error is raised if new coils would be larger than existing coils"""
+    existing_coils = consistently_shaped_kdata.data.shape[-4]
+    with pytest.raises(ValueError, match='greater'):
+        consistently_shaped_kdata.compress_coils(existing_coils + 1)

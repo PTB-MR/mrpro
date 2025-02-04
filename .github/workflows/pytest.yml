@@ -74,42 +74,20 @@ jobs:
         run: pip install pytest-github-actions-annotate-failures
 
       - name: Run PyTest and Generate Coverage Report
+        # shell bash sets the -o pipefail
         run: |
           pytest -n 4 -m "not cuda" --junitxml=pytest.xml \
           --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
+        shell: bash
 
-      - name: Verify PyTest XML Output
-        run: |
-          if [ ! -f pytest.xml ]; then
-            echo "PyTest XML report not found. Please check the previous 'Run PyTest' step for errors."
-            exit 1
-          fi
-
-      - name: Post PyTest Coverage Comment
-        id: coverageComment
-        uses: MishaKav/pytest-coverage-comment@v1.1.53
+      - name: Upload PyTest Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          pytest-coverage-path: ./pytest-coverage.txt
-          junitxml-path: ./pytest.xml
-
-      - name: Create Coverage Badge on Main Branch Push
-        uses: schneegans/dynamic-badges-action@v1.7.0
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        with:
-          auth: ${{ secrets.GIST_SECRET }}
-          gistID: 48e334a10caf60e6708d7c712e56d241
-          filename: coverage.json
-          label: Coverage Report
-          message: ${{ steps.coverageComment.outputs.coverage }}
-          color: ${{ steps.coverageComment.outputs.color }}
-          namedLogo: python
-
-      - name: Set Pipeline Status Based on Test Results
-        if: steps.coverageComment.outputs.errors != 0 || steps.coverageComment.outputs.failures != 0
-        uses: actions/github-script@v7
-        with:
-          script: |
-            core.setFailed("PyTest workflow failed with ${{ steps.coverageComment.outputs.errors }} errors and ${{ steps.coverageComment.outputs.failures }} failures.")
+          name: pytest-report-${{ matrix.imagename }}
+          path: |
+            pytest-coverage.txt
+            pytest.xml
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
