@@ -207,7 +207,7 @@ skip-magic-trailing-comma = false
 [tool.typos.default]
 locale = "en-us"
 check-filename = false
-extend-ignore-re = ["(?Rm)^.*(#|//)\\s*noqa:\\s*typos"]
+
 [tool.typos.default.extend-words]
 Reson = "Reson"   # required for Proc. Intl. Soc. Mag. Reson. Med.
 iy = "iy"
