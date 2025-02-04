@@ -81,7 +81,7 @@ def random_acquisition(request):
     trajectory = generate_random_trajectory(generator, (n_samples, 2))
     header = generate_random_acquisition_properties(generator)
     header['flags'] &= ~AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value
-    return ismrmrd.Acquisition.from_array(kdata, trajectory, **header)
+    return ismrmrd.Acquisition.from_array(kdata.numpy(), trajectory.numpy(), **header)
 
 
 @pytest.fixture(params=({'seed': 1, 'n_coils': 32, 'n_samples': 256},))
@@ -96,7 +96,7 @@ def random_noise_acquisition(request):
     trajectory = generate_random_trajectory(generator, (n_samples, 2))
     header = generate_random_acquisition_properties(generator)
     header['flags'] |= AcqFlags.ACQ_IS_NOISE_MEASUREMENT.value
-    return ismrmrd.Acquisition.from_array(kdata, trajectory, **header)
+    return ismrmrd.Acquisition.from_array(kdata.numpy(), trajectory.numpy(), **header)
 
 
 @pytest.fixture(params=({'seed': 0},))
@@ -192,7 +192,7 @@ def random_acq_info(random_acquisition):
     return acq_info
 
 
-@pytest.fixture(params=({'seed': 0, 'n_other': 10, 'n_k2': 40, 'n_k1': 20},))
+@pytest.fixture(params=({'seed': 0, 'n_other': 4, 'n_k2': 12, 'n_k1': 14},))
 def random_kheader_shape(request, random_acquisition, random_full_ismrmrd_header):
     """Random (not necessarily valid) KHeader with defined shape."""
     # Get dimensions
@@ -217,7 +217,7 @@ def random_kheader_shape(request, random_acquisition, random_full_ismrmrd_header
     return kheader, n_other, n_coils, n_k2, n_k1, n_k0
 
 
-def create_uniform_traj(nk, k_shape):
+def create_uniform_traj(nk):
     """Create a tensor of uniform points with predefined shape nk."""
     kidx = torch.where(torch.tensor(nk[1:]) > 1)[0]
     if len(kidx) > 1:
@@ -225,8 +225,7 @@ def create_uniform_traj(nk, k_shape):
     if len(kidx) >= 1:
         # kidx+1 because we searched in nk[1:]
         n_kpoints = nk[kidx + 1]
-        # kidx+2 because k_shape also includes coils dimensions
-        k = torch.linspace(-k_shape[kidx + 2] // 2, k_shape[kidx + 2] // 2 - 1, n_kpoints, dtype=torch.float32)
+        k = torch.linspace(-n_kpoints // 2, n_kpoints // 2 - 1, n_kpoints, dtype=torch.float32)
         views = [1 if i != n_kpoints else -1 for i in nk]
         k = k.view(*views).expand(list(nk))
     else:
@@ -242,7 +241,7 @@ def create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
         if spacing == 'non-uniform':
             k = random_generator.float32_tensor(size=nk, low=-1, high=1) * max(nk)
         elif spacing == 'uniform':
-            k = create_uniform_traj(nk, k_shape=k_shape)
+            k = create_uniform_traj(nk)
         elif spacing == 'zero':
             k = torch.zeros(nk)
         k_list.append(k)
@@ -256,6 +255,20 @@ def ismrmrd_cart(ellipse_phantom, tmp_path_factory):
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
     ismrmrd_kdata = IsmrmrdRawTestData(
         filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        phantom=ellipse_phantom.phantom,
+    )
+    return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_high_res(ellipse_phantom, tmp_path_factory):
+    """Fully sampled cartesian data set."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart_high_res.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        matrix_size=256,
         noise_level=0.0,
         repetitions=3,
         phantom=ellipse_phantom.phantom,
@@ -320,7 +333,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
         ),
         (  # (4) 2d single shot spiral
             (1, 2, 1, 96, 128),  # im_shape
-            (1, 1, 1, 1, 192),  # k_shape
+            (1, 2, 1, 1, 192),  # k_shape
             (1, 1, 1, 192),  # nkx
             (1, 1, 1, 192),  # nky
             (1, 1, 1, 1),  # nkz
@@ -331,12 +344,25 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'zero',  # type_k1
             'zero',  # type_k2
         ),
-        (  # (5) 3d non-uniform, 4 coils, 2 other
+        (  # (5) 3d single shot spiral, 4 coils, 2 other
             (2, 4, 16, 32, 64),  # im_shape
-            (2, 4, 16, 32, 64),  # k_shape
-            (2, 16, 32, 64),  # nkx
-            (2, 16, 32, 64),  # nky
-            (2, 16, 32, 64),  # nkz
+            (2, 4, 1, 64, 1),  # k_shape
+            (2, 1, 64, 1),  # nkx
+            (2, 1, 64, 1),  # nky
+            (2, 1, 64, 1),  # nkz
+            'non-uniform',  # type_kx
+            'non-uniform',  # type_ky
+            'non-uniform',  # type_kz
+            'zero',  # type_k0
+            'non-uniform',  # type_k1
+            'zero',  # type_k2
+        ),
+        (  # (6) 3d non-uniform, 3 coils, 2 other
+            (2, 3, 10, 12, 14),  # im_shape
+            (2, 3, 6, 8, 10),  # k_shape
+            (2, 6, 8, 10),  # nkx
+            (2, 6, 8, 10),  # nky
+            (2, 6, 8, 10),  # nkz
             'non-uniform',  # type_kx
             'non-uniform',  # type_ky
             'non-uniform',  # type_kz
@@ -344,12 +370,12 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'non-uniform',  # type_k2
         ),
-        (  # (6) 2d non-uniform cine with 8 cardiac phases, 5 coils
-            (8, 5, 1, 64, 64),  # im_shape
-            (8, 5, 1, 18, 128),  # k_shape
-            (8, 1, 18, 128),  # nkx
-            (8, 1, 18, 128),  # nky
-            (8, 1, 1, 1),  # nkz
+        (  # (7) 2d non-uniform cine with 2 cardiac phases, 3 coils, same traj for each phase
+            (2, 3, 1, 64, 64),  # im_shape
+            (2, 3, 1, 18, 128),  # k_shape
+            (1, 1, 18, 128),  # nkx
+            (1, 1, 18, 128),  # nky
+            (1, 1, 1, 1),  # nkz
             'non-uniform',  # type_kx
             'non-uniform',  # type_ky
             'zero',  # type_kz
@@ -357,12 +383,25 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'zero',  # type_k2
         ),
-        (  # (7) 2d cartesian cine with 9 cardiac phases, 6 coils
-            (9, 6, 1, 96, 128),  # im_shape
-            (9, 6, 1, 128, 192),  # k_shape
-            (9, 1, 1, 192),  # nkx
-            (9, 1, 128, 1),  # nky
-            (9, 1, 1, 1),  # nkz
+        (  # (8) 2d non-uniform cine with 2 cardiac phases, 3 coils
+            (2, 3, 1, 64, 64),  # im_shape
+            (2, 3, 1, 18, 128),  # k_shape
+            (2, 1, 18, 128),  # nkx
+            (2, 1, 18, 128),  # nky
+            (2, 1, 1, 1),  # nkz
+            'non-uniform',  # type_kx
+            'non-uniform',  # type_ky
+            'zero',  # type_kz
+            'non-uniform',  # type_k0
+            'non-uniform',  # type_k1
+            'zero',  # type_k2
+        ),
+        (  # (9) 2d cartesian cine with 2 cardiac phases, 3 coils
+            (2, 3, 1, 96, 128),  # im_shape
+            (2, 3, 1, 128, 192),  # k_shape
+            (2, 1, 1, 192),  # nkx
+            (2, 1, 128, 1),  # nky
+            (2, 1, 1, 1),  # nkz
             'uniform',  # type_kx
             'uniform',  # type_ky
             'zero',  # type_kz
@@ -370,12 +409,12 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'uniform',  # type_k1
             'zero',  # type_k2
         ),
-        (  # (8) radial phase encoding (RPE), 8 coils, with oversampling in both FFT and non-uniform directions
-            (2, 8, 64, 32, 48),  # im_shape
-            (2, 8, 8, 64, 96),  # k_shape
-            (2, 1, 1, 96),  # nkx
-            (2, 8, 64, 1),  # nky
-            (2, 8, 64, 1),  # nkz
+        (  # (10) radial phase encoding (RPE), 3 coils, with oversampling in both FFT and non-uniform directions
+            (2, 3, 6, 8, 10),  # im_shape
+            (2, 3, 8, 10, 12),  # k_shape
+            (2, 1, 1, 12),  # nkx
+            (2, 8, 10, 1),  # nky
+            (2, 8, 10, 1),  # nkz
             'uniform',  # type_kx
             'non-uniform',  # type_ky
             'non-uniform',  # type_kz
@@ -383,12 +422,12 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'non-uniform',  # type_k2
         ),
-        (  # (9) radial phase encoding (RPE), 8 coils with non-Cartesian sampling along readout
-            (2, 8, 64, 32, 48),  # im_shape
-            (2, 8, 8, 64, 96),  # k_shape
-            (2, 1, 1, 96),  # nkx
-            (2, 8, 64, 1),  # nky
-            (2, 8, 64, 1),  # nkz
+        (  # (11) radial phase encoding (RPE), 2 coils with non-Cartesian sampling along readout
+            (2, 2, 6, 8, 10),  # im_shape
+            (2, 2, 8, 10, 12),  # k_shape
+            (2, 1, 1, 12),  # nkx
+            (2, 8, 10, 1),  # nky
+            (2, 8, 10, 1),  # nkz
             'non-uniform',  # type_kx
             'non-uniform',  # type_ky
             'non-uniform',  # type_kz
@@ -396,18 +435,44 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k1
             'non-uniform',  # type_k2
         ),
-        (  # (10) stack of stars, 5 other, 3 coil, oversampling in both FFT and non-uniform directions
-            (5, 3, 48, 16, 32),  # im_shape
-            (5, 3, 96, 18, 64),  # k_shape
-            (5, 1, 18, 64),  # nkx
-            (5, 1, 18, 64),  # nky
-            (5, 96, 1, 1),  # nkz
+        (  # (12) stack of stars, 3 other, 2 coil, oversampling in both FFT and non-uniform directions
+            (3, 2, 10, 8, 8),  # im_shape
+            (3, 2, 12, 8, 10),  # k_shape
+            (3, 1, 8, 10),  # nkx
+            (3, 1, 8, 10),  # nky
+            (3, 12, 1, 1),  # nkz
             'non-uniform',  # type_kx
             'non-uniform',  # type_ky
             'uniform',  # type_kz
             'non-uniform',  # type_k0
             'non-uniform',  # type_k1
             'uniform',  # type_k2
+        ),
+        (  # (13) stack of stars, (2,2,4) other, 3 coil, trajectory is different along second other dimension
+            (2, 2, 4, 3, 8, 6, 6),  # im_shape
+            (2, 2, 4, 3, 12, 6, 10),  # k_shape
+            (2, 1, 1, 6, 10),  # nkx
+            (2, 1, 1, 6, 10),  # nky
+            (2, 1, 12, 1, 1),  # nkz
+            'non-uniform',  # type_kx
+            'non-uniform',  # type_ky
+            'uniform',  # type_kz
+            'non-uniform',  # type_k0
+            'non-uniform',  # type_k1
+            'uniform',  # type_k2
+        ),
+        (  # (14) 2d non-uniform not aligned in kzyx and k210, similar to 3d single shot spiral but with singleton dim
+            (8, 5, 64, 1, 64),  # im_shape
+            (8, 5, 1, 18, 128),  # k_shape
+            (8, 1, 18, 128),  # nkx
+            (8, 1, 1, 1),  # nky
+            (8, 1, 18, 128),  # nkz
+            'non-uniform',  # type_kx
+            'zero',  # type_ky
+            'non-uniform',  # type_kz
+            'non-uniform',  # type_k0
+            'non-uniform',  # type_k1
+            'zero',  # type_k2
         ),
     ],
     ids=[
@@ -416,11 +481,15 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
         '2d_non_cartesian_mri_2_coils',
         '2d_cartesian_irregular_sampling',
         '2d_single_shot_spiral',
+        '3d_single_shot_spiral',
         '3d_nonuniform_4_coils_2_other',
-        '2d_nnonuniform_cine_mri_8_cardiac_phases_5_coils',
-        '2d_cartesian_cine_9_cardiac_phases_6_coils',
-        'radial_phase_encoding_8_coils_with_oversampling',
-        'radial_phase_encoding_8_coils_non_cartesian_sampling',
-        'stack_of_stars_5_other_3_coil_with_oversampling',
+        '2d_nonuniform_cine_mri_3_cardiac_phases_2_coils_same_traj',
+        '2d_nonuniform_cine_mri_3_cardiac_phases_2_coils',
+        '2d_cartesian_cine_2_cardiac_phases_3_coils',
+        'radial_phase_encoding_3_coils_with_oversampling',
+        'radial_phase_encoding_2_coils_non_cartesian_sampling',
+        'stack_of_stars_3_other_4_coil_with_oversampling',
+        'stack_of_stars_2_2_4_other',
+        '2d_nonuniform_kzyx_k210_not_aligned',
     ],
 )
