@@ -108,7 +108,10 @@ def dcf_2d3d_voronoi(traj: torch.Tensor) -> torch.Tensor:
 
     if dim == 2:
         # Shoelace equation for 2d
-        dcf = np.array([np.abs(np.cross(v[:-1], v[1:]).sum(0) + np.cross(v[-1], v[0])) / 2 for v in vertices])
+        def cross2d(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+            return x[..., 0] * y[..., 1] - x[..., 1] * y[..., 0]
+
+        dcf = np.array([np.abs(cross2d(v[:-1], v[1:]).sum(0) + cross2d(v[-1], v[0])) / 2 for v in vertices])
 
     else:
         # Calculate volume/area of voronoi cells using processes, as this is a very time-consuming operation

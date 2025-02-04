@@ -435,7 +435,7 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
             # integer or boolean dtypes
             quaternions_ = quaternions_.float()
         if quaternions_.shape[-1] != 4:
-            raise ValueError('Expected `quaternions` to have shape (..., 4), ' f'got {quaternions_.shape}.')
+            raise ValueError(f'Expected `quaternions` to have shape (..., 4), got {quaternions_.shape}.')
 
         reflection_ = torch.as_tensor(reflection)
         inversion_ = torch.as_tensor(inversion)
@@ -766,15 +766,15 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         """
         n_axes = len(seq)
         if n_axes < 1 or n_axes > 3:
-            raise ValueError('Expected axis specification to be a non-empty ' f'string of upto 3 characters, got {seq}')
+            raise ValueError(f'Expected axis specification to be a non-empty string of upto 3 characters, got {seq}')
 
         intrinsic = re.match(r'^[XYZ]{1,3}$', seq) is not None
         extrinsic = re.match(r'^[xyz]{1,3}$', seq) is not None
         if not (intrinsic or extrinsic):
-            raise ValueError("Expected axes from `seq` to be from ['x', 'y', " f"'z'] or ['X', 'Y', 'Z'], got {seq}")
+            raise ValueError(f"Expected axes from `seq` to be from ['x', 'y', 'z'] or ['X', 'Y', 'Z'], got {seq}")
 
         if any(seq[i] == seq[i + 1] for i in range(n_axes - 1)):
-            raise ValueError('Expected consecutive axes to be different, ' f'got {seq}')
+            raise ValueError(f'Expected consecutive axes to be different, got {seq}')
         seq = seq.lower()
 
         angles = torch.as_tensor(angles)
@@ -789,7 +789,7 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         else:
             is_single = False
         if angles.ndim < 2 or angles.shape[-1] != n_axes:
-            raise ValueError('Expected angles to have shape (..., ' f'n_axes), got {angles.shape}.')
+            raise ValueError(f'Expected angles to have shape (..., n_axes), got {angles.shape}.')
 
         quaternions = _make_elementary_quat(seq[0], angles[..., 0])
         for axis, angle in zip(seq[1:], angles[..., 1:].unbind(-1), strict=False):
@@ -1080,10 +1080,10 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         intrinsic = re.match(r'^[XYZ]{1,3}$', seq) is not None
         extrinsic = re.match(r'^[xyz]{1,3}$', seq) is not None
         if not (intrinsic or extrinsic):
-            raise ValueError('Expected axes from `seq` to be from ' "['x', 'y', 'z'] or ['X', 'Y', 'Z'], " f'got {seq}')
+            raise ValueError(f"Expected axes from `seq` to be from ['x', 'y', 'z'] or ['X', 'Y', 'Z'], got {seq}")
 
         if any(seq[i] == seq[i + 1] for i in range(2)):
-            raise ValueError('Expected consecutive axes to be different, ' f'got {seq}')
+            raise ValueError(f'Expected consecutive axes to be different, got {seq}')
 
         seq = seq.lower()
         if improper == 'reflection' or improper == 'inversion':
