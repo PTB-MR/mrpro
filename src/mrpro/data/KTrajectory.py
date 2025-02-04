@@ -18,14 +18,6 @@ from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 class KTrajectory(MoveDataMixin):
     """K-space trajectory.
 
-    <<<<<<< HEAD
-    Order of directions is always kz, ky, kx
-    Shape of each of kx,ky,kz is (...other,k2,k1,k0)
-    =======
-    Contains the trajectory in k-space along the three dimensions `kz`, `ky`, `kx`,
-    i.e. describes where in k-space each data point was acquired.
-    >>>>>>> main
-
     The shape of each of `kx`, `ky`, `kz` is `(*other, k2, k1, k0)`,
     where `other` can span multiple dimensions.
 
