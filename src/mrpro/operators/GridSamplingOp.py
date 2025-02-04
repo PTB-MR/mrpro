@@ -242,8 +242,8 @@ class GridSamplingOp(LinearOperator):
         dim = self.grid.shape[-1]
         if x.ndim < dim + 2:
             raise ValueError(
-                f'For a {dim}D sampling operation, x should have at least have {dim+2} dimensions:'
-                f' batch channel {"z y x" if dim==3 else "y x"}.'
+                f'For a {dim}D sampling operation, x should have at least have {dim + 2} dimensions:'
+                f' batch channel {"z y x" if dim == 3 else "y x"}.'
             )
 
         #   The gridsample operator only works for real data, thus we handle complex inputs as an additional channel

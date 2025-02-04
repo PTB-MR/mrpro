@@ -182,7 +182,7 @@ def callback(optimizer_status: PDHGStatus) -> None:
     iteration = optimizer_status['iteration_number']
     solution = optimizer_status['solution']
     if iteration % 16 == 0:
-        print(f"Iteration {iteration: >3}: Objective = {optimizer_status['objective'](*solution).item():.3e}")
+        print(f'Iteration {iteration: >3}: Objective = {optimizer_status["objective"](*solution).item():.3e}')
 
 
 # %%
