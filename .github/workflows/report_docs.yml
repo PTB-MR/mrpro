@@ -1,0 +1,93 @@
+name: Report Docs
+
+on:
+  workflow_run:
+    workflows:
+      - Sphinx Docs
+    types:
+      - completed
+
+jobs:
+  docs_report:
+    name: Docs report
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pull-requests: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: artifact_url
+
+      # actually, artifact name and run-id do define the artifact url
+      # since the artifact can be downloaded, with only run-id and name
+      # however, it looks more clear to propagate the docs artifact URL via another artifact
+      - name: Set docs artifact URL to env
+        run: |
+          echo "artifact-url=$(cat artifact_url)" >> $GITHUB_ENV
+
+      # if the build of docs was successful the "artifact-url" will be non-empty
+      - name: Update PR with link to summary
+        if: ${{ env.artifact-url != '' && github.event.workflow_run.event.event_name == 'pull_request' }}
+        uses: edumserrano/find-create-or-update-comment@v3
+        with:
+          issue-number: ${{ github.event.workflow_run.event.pull_request.number }}
+          body-includes: '<!-- documentation build ${{ github.event.workflow_run.event.pull_request.number }} -->'
+          comment-author: 'github-actions[bot]'
+          body: |
+            <!-- documentation build ${{ github.event.workflow_run.event.number }} -->
+            ### :books: Documentation
+            :file_folder: [Download as zip](${{ env.artifact-url }})
+            :mag: [View online](https://zimf.de/zipserve/${{ env.artifact-url }}/)
+          edit-mode: replace
+
+      # if the build of docs failed the "artifact-url" will be an empty string
+      - name: Report failure of docs build
+        if: ${{ env.artifact-url == '' && github.event.workflow_run.event.event_name == 'pull_request' }}
+        uses: edumserrano/find-create-or-update-comment@v3
+        with:
+          issue-number: ${{ github.event.workflow_run.event.pull_request.number }}
+          body-includes: '<!-- documentation build ${{ github.event.workflow_run.event.pull_request.number }} -->'
+          comment-author: 'github-actions[bot]'
+          body: |
+            <!-- documentation build ${{ github.event.workflow_run.event.number }} -->
+            ### :books: Documentation
+            :x: Documentation build failed
+
+            Check the Sphinx Docs Workflow
+          edit-mode: replace
+
+  deploy:
+    name: Deploy docs
+    runs-on: ubuntu-latest
+    needs: docs_report
+    if: ${{ github.event.workflow_run.event.event_name == 'push' && github.event.workflow_run.event.ref == 'refs/heads/main' }}
+    permissions:
+        actions: read
+        pages: write
+        id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download docs artifact
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: Documentation
+          path: html_build
+
+      - name: Upload pages
+        id: upload_pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: html_build
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+

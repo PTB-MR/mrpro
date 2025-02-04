@@ -1,0 +1,63 @@
+name: Report PyTest
+
+on:
+  workflow_run:
+    workflows:
+      - PyTest
+    types:
+      - completed
+
+jobs:
+  coverage_report:
+    name: Coverage report
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pull-requests: write
+    steps:
+      # use the results of python 3.12, consider this as target platform
+      - name: Download PyTest report artifact for mrpro_py312
+        uses: actions/download-artifact@v4
+        with:
+          name: pytest-report-mrpro_py312
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Post PyTest Coverage Comment
+        id: coverage_comment
+        uses: MishaKav/pytest-coverage-comment@v1.1.53
+        with:
+          issue-number: ${{ github.event.workflow_run.event.pull_request.number }}
+          pytest-coverage-path: pytest-coverage.txt
+          junitxml-path: pytest.xml
+
+      - name: Post Failure Comment if Coverage Comment failed
+        # if there is no data the comment action does not fail
+        # but has an empty output
+        if: steps.coverage_comment.outputs.coverageHtml == ''
+        uses: edumserrano/find-create-or-update-comment@v3
+        with:
+          issue-number: ${{ github.event.workflow_run.event.pull_request.number }}
+          # see https://github.com/MishaKav/pytest-coverage-comment/blob/81882822c5b22af01f91bd3eacb1cefb6ad73dc2/src/index.js#L97
+          # for the generation of the unique id for comment
+          # in this particular case, there is no additional watermarkUniqueId
+          body-includes: '<!-- Pytest Coverage Comment: ${{ github.job }} -->'
+          comment-author: 'github-actions[bot]'
+          body: |
+            <!-- Pytest Coverage Comment: ${{ github.job }} -->
+            ### :x: PyTest Coverage Report was not found
+
+            Check the PyTest Workflow
+          edit-mode: replace
+
+      - name: Create Coverage Badge on Main Branch Push
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        if: ${{ github.event.workflow_run.event.event_name == 'push'  && github.event.workflow_run.event.ref == 'refs/heads/main' }}
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: 48e334a10caf60e6708d7c712e56d241
+          filename: coverage.json
+          label: Coverage Report
+          message: ${{ steps.coverage_comment.outputs.coverage }}
+          color: ${{ steps.coverage_comment.outputs.color }}
+          namedLogo: python
