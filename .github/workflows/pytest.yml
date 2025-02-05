@@ -65,7 +65,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install MRpro and Dependencies
-        run: pip install --upgrade --upgrade-strategy eager .[test]
+        # use cpu version of torch
+        run: pip install pip install  --index-url=https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple/ --upgrade --upgrade-strategy eager .[test]
 
       - name: Install PyTest GitHub Annotation Plugin
         run: pip install pytest-github-actions-annotate-failures
