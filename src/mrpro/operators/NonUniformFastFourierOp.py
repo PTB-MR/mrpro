@@ -6,7 +6,8 @@ from itertools import product
 from typing import Literal
 
 import torch
-from torchkbnufft import KbNufft, KbNufftAdjoint
+from pytorch_finufft.functional import finufft_type1, finufft_type2
+from torchkbnufft import KbNufftAdjoint
 from typing_extensions import Self
 
 from mrpro.data.KTrajectory import KTrajectory
@@ -25,8 +26,6 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         encoding_matrix: SpatialDimension[int] | Sequence[int],
         traj: KTrajectory,
         nufft_oversampling: float = 2.0,
-        nufft_numpoints: int = 6,
-        nufft_kbwidth: float = 2.34,
     ) -> None:
         """Initialize Non-Uniform Fast Fourier Operator.
 
@@ -55,10 +54,6 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             The k-space trajectories where the frequencies are sampled.
         nufft_oversampling
             Oversampling used for interpolation in non-uniform FFTs.
-        nufft_numpoints
-            Number of neighbors for interpolation in non-uniform FFTs.
-        nufft_kbwidth
-            Size of the Kaiser-Bessel kernel interpolation in non-uniform FFTs.
         """
         super().__init__()
 
@@ -113,7 +108,6 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
                 raise ValueError(f'encoding_matrix should have {n_nufft_dir} entries but has {n_enc_matrix}')
             k_size = encoding_matrix
 
-        grid_size = [int(size * nufft_oversampling) for size in im_size]
         omega_list = [
             k * 2 * torch.pi / ks
             for k, ks in zip(
@@ -134,27 +128,46 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         omega = omega.permute(*permute_210)
         omega = omega.flatten(end_dim=-len(keep_dims_210) - 1).flatten(start_dim=-len(keep_dims_210) + 1)
 
-        numpoints = [min(size, nufft_numpoints) for size in im_size]
         # scaling independent of nufft oversampling, matches FFT scaling for cartesian trajectories
         self.scale = torch.tensor(k_size).prod().sqrt().reciprocal()
 
         # non-Cartesian -> Cartesian (Type 1, adjoint)
-        adj_nufft_op = KbNufftAdjoint(
-            im_size=im_size,
-            grid_size=grid_size,
-            numpoints=numpoints,
-            kbwidth=nufft_kbwidth,
+        output_shape = (im_size[0], im_size[1]) if len(im_size) == 2 else (im_size[0], im_size[1], im_size[2])  # mypy
+        self._nufft_type1 = (
+            lambda x: torch.stack(
+                [
+                    finufft_type1(
+                        points=omega[i, ...],
+                        values=x[i, ...],
+                        output_shape=output_shape,
+                        upsampfac=nufft_oversampling,
+                        modeord=0,
+                        isign=1,
+                    )
+                    for i in range(omega.shape[0])
+                ],
+                dim=0,
+            )
+            * self.scale
         )
-        self._nufft_type1 = lambda x: adj_nufft_op(x, omega, norm=None) * self.scale
 
         # Cartesian -> non-Cartesian (Type 2, forward)
-        nufft_op = KbNufft(
-            im_size=im_size,
-            grid_size=grid_size,
-            numpoints=numpoints,
-            kbwidth=nufft_kbwidth,
+        self._nufft_type2 = (
+            lambda x: torch.stack(
+                [
+                    finufft_type2(
+                        points=omega[i, ...],
+                        targets=x[i, ...],
+                        upsampfac=nufft_oversampling,
+                        modeord=0,
+                        isign=-1,
+                    )
+                    for i in range(omega.shape[0])
+                ],
+                dim=0,
+            )
+            * self.scale
         )
-        self._nufft_type2 = lambda x: nufft_op(x, omega, norm=None) * self.scale
 
         # we want to rearrange everything into (sep_dims)(joint_dims)(nufft_dims) where sep_dims are dimension
         # where the traj changes, joint_dims are dimensions where the traj does not change and nufft_dims are the
