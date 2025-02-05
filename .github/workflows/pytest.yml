@@ -53,9 +53,6 @@ jobs:
     name: Run Tests and Coverage Report
     needs: get_dockerfiles
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      contents: write
     strategy:
       fail-fast: false
       matrix:
