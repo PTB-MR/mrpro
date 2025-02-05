@@ -51,7 +51,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install mrpro and dependencies
-        run: pip install --upgrade --upgrade-strategy "eager" -e .[notebook]
+        run: pip install --index-url=https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple/ --upgrade --upgrade-strategy "eager" -e .[notebook]
 
       - name: Notebook name
         run: |
