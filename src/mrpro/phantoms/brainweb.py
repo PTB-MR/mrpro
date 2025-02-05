@@ -134,7 +134,7 @@ def resize(data: torch.Tensor, size: int = 256) -> torch.Tensor:
     resized data
     """
     scale = size / max(data.shape[1:])
-    data = torchvision.transforms.functional.resize(data, [scale * data.shape[1], scale * data.shape[2]])
+    data = torchvision.transforms.functional.resize(data, [int(scale * data.shape[1]), int(scale * data.shape[2])])
     data = torchvision.transforms.functional.center_crop(data, [size, size])
     return data
 
@@ -362,7 +362,7 @@ class BrainwebVolumes(torch.utils.data.Dataset):
             elif el == 'tissueclass':
                 result[el] = data.argmax(-1)
             elif el in classnames:
-                result[el] = data[classnames.index(el)] / 255
+                result[el] = data[..., classnames.index(el)] / 255
             elif el == 'mask':
                 mask = data.sum(-1) < 150
                 mask = (
@@ -534,7 +534,7 @@ class BrainwebSlices(torch.utils.data.Dataset):
             elif el == 'tissueclass':
                 result[el] = data.argmax(-1)
             elif el in classnames:
-                result[el] = data[classnames.index(el)]
+                result[el] = data[..., classnames.index(el)]
             else:
                 raise NotImplementedError(f'what=({el},) is not implemented.')
 
