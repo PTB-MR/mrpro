@@ -401,7 +401,7 @@ class BrainwebSlices(torch.utils.data.Dataset):
     def __init__(
         self,
         folder: str | Path = CACHE_DIR,
-        what: Sequence[Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass']] = ('m0', 'r1', 'r2'),
+        what: Sequence[Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass'] | TClassNames] = ('m0', 'r1', 'r2'),
         parameters: Mapping[TClassNames, T1T2M0] = VALUES_3T,
         orientation: Literal['axial', 'coronal', 'sagittal'] = 'axial',
         skip_slices: tuple[tuple[int, int], tuple[int, int], tuple[int, int]] = ((80, 80), (100, 100), (100, 100)),

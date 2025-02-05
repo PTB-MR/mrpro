@@ -92,24 +92,28 @@ def test_brainwebvolumes_init(brainweb_test_data):
 
 def test_brainweb_getitem(brainweb_test_data):
     """Test dataset __getitem__ method."""
-    what = ('m0', 'r1', 't2', 'mask', 'tissueclass', 'dura')
-    dataset = BrainwebVolumes(folder=brainweb_test_data, what=what)
+    dataset = BrainwebVolumes(folder=brainweb_test_data, what=('m0', 'r1', 't2', 'mask', 'tissueclass', 'dura'))
     sample = dataset[0]
 
     assert isinstance(sample, dict)
 
-    for w in what:
-        assert w in sample
-        assert sample[w].shape == (362, 434, 362), w
+    assert sample['m0'].shape == (362, 434, 362)
+    assert sample['r1'].shape == (362, 434, 362)
+    assert sample['t2'].shape == (362, 434, 362)
+    assert sample['mask'] == (362, 434, 362)
+    assert sample['tissueclass'] == (362, 434, 362)
+    assert sample['dura'].shape == (362, 434, 362)
 
-    assert sample['mask'].dtype == torch.bool
-    assert sample['tissueclass'].dtype == torch.long
+    assert sample['m0'].dtype == torch.complex64
     assert sample['r1'].dtype == torch.float
     assert sample['t2'].dtype == torch.float
-    assert sample['m0'].dtype == torch.complex64
+    assert sample['mask'].dtype == torch.bool
+    assert sample['tissueclass'].dtype == torch.long
 
-    for w in ('m0', 'r1', 't2', 'dura'):
-        assert not torch.isnan(sample[w]).any(), w
+    assert not torch.isnan(sample['m0']).any()
+    assert not torch.isnan(sample['r1']).any()
+    assert not torch.isnan(sample['t2']).any()
+    assert not torch.isnan(sample['dura']).any()
 
 
 def test_brainweb_no_files(tmp_path):
@@ -167,23 +171,29 @@ def test_brainwebslices_init(brainweb_test_data):
 
 def test_brainwebslices_getitem(brainweb_test_data):
     """Test dataset __getitem__ method."""
-    what = ('m0', 'r1', 't2', 'mask', 'tissueclass')
-    dataset = BrainwebSlices(folder=brainweb_test_data, what=what, orientation='coronal')
+    dataset = BrainwebSlices(
+        folder=brainweb_test_data, what=('m0', 'r1', 't2', 'mask', 'tissueclass', 'dura'), orientation='coronal'
+    )
     sample = dataset[0]
 
     assert isinstance(sample, dict)
-    for w in what:
-        assert w in sample
-        assert sample[w].shape[-2:] == (256, 256), f'Unexpected shape for {w}'
 
-    assert sample['mask'].dtype == torch.bool
-    assert sample['tissueclass'].dtype == torch.long
+    assert sample['m0'].shape[-2:] == (256, 256)
+    assert sample['r1'].shape[-2:] == (256, 256)
+    assert sample['t2'].shape[-2:] == (256, 256)
+    assert sample['mask'].shape[-2:] == (256, 256)
+    assert sample['tissueclass'].shape[-2:] == (256, 256)
+    assert sample['dura'].shape[-2:] == (256, 256)
+
+    assert sample['m0'].dtype == torch.complex64
     assert sample['r1'].dtype == torch.float
     assert sample['t2'].dtype == torch.float
-    assert sample['m0'].dtype == torch.complex64
+    assert sample['mask'].dtype == torch.bool
+    assert sample['tissueclass'].dtype == torch.long
 
-    for w in ('m0', 'r1', 't2'):
-        assert not torch.isnan(sample[w]).any(), f'NaN values in {w}'
+    assert not torch.isnan(sample['m0']).any()
+    assert not torch.isnan(sample['t1']).any()
+    assert not torch.isnan(sample['t2']).any()
 
 
 @pytest.mark.parametrize('orientation', ['axial', 'coronal', 'sagittal'])
