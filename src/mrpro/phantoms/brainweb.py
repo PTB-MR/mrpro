@@ -2,7 +2,6 @@
 
 import concurrent.futures
 import gzip
-import hashlib
 import io
 import re
 from collections.abc import Mapping, Sequence
@@ -22,30 +21,6 @@ import torchvision.transforms.functional
 from tqdm import tqdm
 from typing_extensions import TypeVar
 
-HASHES = MappingProxyType(
-    {
-        '04': '84408e7f1f283722de0555cdb8dc014b',
-        '05': 'ea316cef36e4575a0410f033c9dae532',
-        '06': 'ad695379f4d0a8209483959c6d143538',
-        '18': 'fe847558357f8164800c652a146a1c77',
-        '20': '467d52fdf4d7b6668fc61ecb329e9b8b',
-        '38': '2a3dcce823e8e8ae60805d24a96f73c8',
-        '41': 'f8c57277328e7c8ec0fd047b78922b71',
-        '42': '944c128c019a4b5610030cd846a0f25a',
-        '43': 'a9910dea3d9db6afaaeaae47bbe15c22',
-        '44': 'd380d9700c84f48462c820c8f7f2be4a',
-        '45': '4d82f7cf02f47bccc9b39e00b3874042',
-        '46': '8df1985c9c613f5799065f648768c8df',
-        '47': '8c5ac60ce5ae496917f9fe6fdbf4df49',
-        '48': '590a3dac01de32f6f17c40a542402e43',
-        '49': '985ab9752355de81a16ae08cfedbafaf',
-        '50': 'ce7205b609f265729693b5f4d6983ee8',
-        '51': 'be78055171f5c19a999655ba2abaab30',
-        '52': 'e017d263c2fe62ad441f072bc8ee2d85',
-        '53': '0d65a61628bb0fba84816a054d13cbf4',
-        '54': 'abd56a191d00fab9fec1d7849705303e',
-    }
-)
 OVERVIEW_URL = 'http://brainweb.bic.mni.mcgill.ca/brainweb/anatomic_normal_20.html'
 URL_TEMPLATE = (
     'http://brainweb.bic.mni.mcgill.ca/cgi/brainweb1?'
@@ -57,10 +32,10 @@ URL_TEMPLATE = (
 
 
 CLASSES = ('bck', 'skl', 'gry', 'wht', 'csf', 'mrw', 'dura', 'fat', 'fat2', 'mus', 'm-s', 'ves')  # noqa: typos
-
+VERSION = 1
 CACHE_DIR = platformdirs.user_cache_dir('mrpro')
 K = TypeVar('K')
-TClassNames = Literal['skl', 'gry', 'wht', 'csf', 'mrw', 'dura', 'fat', 'fat2', 'mus', 'm-s', 'ves']  # noqa:typos
+TClassNames = Literal['skl', 'gry', 'wht', 'csf', 'mrw', 'dura', 'fat', 'fat2', 'mus', 'm-s', 'ves']  # noqa: typos
 
 
 @dataclass
@@ -77,15 +52,33 @@ class T1T2M0:
     phase_max: float = 0.01
 
     def random_r1(self, rng: None | torch.Generator = None) -> torch.Tensor:
-        """Get randomized r1 value."""
+        """Get randomized r1 value.
+
+        Parameters
+        ----------
+        rng
+            Random number generator. `None` uses the default generator.
+        """
         return 1 / torch.empty(1).uniform_(self.t1_min, self.t1_max, generator=rng)
 
     def random_r2(self, rng: None | torch.Generator = None) -> torch.Tensor:
-        """Get randomized r2 value."""
+        """Get randomized r2 value.
+
+        Parameters
+        ----------
+        rng
+            Random number generator. `None` uses the default generator.
+        """
         return 1 / torch.empty(1).uniform_(self.t2_min, self.t2_max, generator=rng)
 
     def random_m0(self, rng: None | torch.Generator = None) -> torch.Tensor:
-        """Get renadomized complex m0 value."""
+        """Get renadomized complex m0 value.
+
+        Parameters
+        ----------
+        rng
+            Random number generator. `None` uses the default generator.
+        """
         return torch.polar(
             torch.empty(1).uniform_(self.m0_min, self.m0_max, generator=rng),
             torch.empty(1).uniform_(self.phase_min, self.phase_max, generator=rng),
@@ -93,7 +86,17 @@ class T1T2M0:
 
 
 def affine_augment(data: torch.Tensor, size: int = 256, rng: torch.Generator | None = None) -> torch.Tensor:
-    """Apply random affine augmentation."""
+    """Apply random affine augmentation.
+
+    Parameters
+    ----------
+    data
+        2D data to augment.
+    size
+        resulting image will be size x size pixels.
+    rng
+        Random number generator. `None` uses the default generator.
+    """
     rand = torch.empty(6).uniform_(-1, 1, generator=rng).tolist()
 
     shear_x = rand[0] * 5
@@ -117,7 +120,19 @@ def affine_augment(data: torch.Tensor, size: int = 256, rng: torch.Generator | N
 
 
 def resize(data: torch.Tensor, size: int = 256) -> torch.Tensor:
-    """Resize and crop tensor."""
+    """Resize and crop tensor.
+
+    Parameters
+    ----------
+    data
+        2D input tensor.
+    size
+        Size of the output tensor.
+
+    Returns
+    -------
+    resized data
+    """
     scale = size / max(data.shape[1:])
     data = torchvision.transforms.functional.resize(data, [scale * data.shape[1], scale * data.shape[2]])
     data = torchvision.transforms.functional.center_crop(data, [size, size])
@@ -125,7 +140,17 @@ def resize(data: torch.Tensor, size: int = 256) -> torch.Tensor:
 
 
 def trim_indices(mask: torch.Tensor) -> tuple[slice, slice]:
-    """Get slices that remove outer masked out values."""
+    """Get slices that remove outer masked out values.
+
+    Parameters
+    ----------
+    mask
+        Mask indicating valid data.
+
+    Returns
+    -------
+        slices to index data
+    """
     mask = mask.any(dim=tuple(range(mask.ndim - 2)))
     row_mask, col_mask = mask.any(1).short(), mask.any(0).short()
     row_min = int(torch.argmax(row_mask))
@@ -152,12 +177,13 @@ VALUES_3T: Mapping[TClassNames, T1T2M0] = MappingProxyType(
 )
 """Tissue values at 3T."""
 
-DEFAULT_VALUES = {'r1': 0.0, 'm0': 0.0, 'r2': 0.0, 'mask': 0, 'classes': -1}
+DEFAULT_VALUES = {'r1': 0.0, 'm0': 0.0, 'r2': 0.0, 'mask': 0, 'tissueclass': -1}
 """Default values for masked out regions."""
-# Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass'] | TClassNames
 
 
-def download(output_directory: str | PathLike = CACHE_DIR, workers: int = 4, progress: bool = False) -> None:
+def download_brainweb(
+    output_directory: str | PathLike = CACHE_DIR, workers: int = 4, progress: bool = False, compress: bool = False
+) -> None:
     """Download Brainweb data with subjects in series and class files in parallel."""
 
     def load_file(url: str, timeout: float = 60) -> bytes:
@@ -175,7 +201,7 @@ def download(output_directory: str | PathLike = CACHE_DIR, workers: int = 4, pro
         for i, x in enumerate(values):
             values[i] = np.clip(x - np.min(x[50], (0, 1)), 0, 4096)
         sum_values = sum(values)
-        values.pop(CLASSES.index('back'))
+        values.pop(CLASSES.index('bck'))  # noqa: typos
         for i, x in enumerate(values):
             x = np.divide(x, sum_values, where=sum_values != 0)
             x[sum_values == 0] = 0
@@ -202,11 +228,12 @@ def download(output_directory: str | PathLike = CACHE_DIR, workers: int = 4, pro
                 values.shape,
                 dtype=values.dtype,
                 data=values,
-                chunks=(4, 4, 4, values.shape[-1]),
-                compression='lzf',
+                chunks=(4, 4, 4, values.shape[-1]) if compress else None,
+                compression='lzf' if compress else None,
             )
-            f.attrs['classnames'] = [c for c in CLASSES if c != 'back']
+            f.attrs['classnames'] = [c for c in CLASSES if c != 'bck']  # noqa: typos
             f.attrs['subject'] = int(subject)
+            f.attrs['version'] = VERSION
 
     page = requests.get(OVERVIEW_URL, timeout=5)
     subjects = re.findall(r'option value=(\d*)>', page.text)
@@ -217,15 +244,19 @@ def download(output_directory: str | PathLike = CACHE_DIR, workers: int = 4, pro
     with tqdm(total=totalsteps, desc='Downloading Brainweb data', disable=not progress) as progressbar:
         for subject in subjects:
             outfilename = output_directory / f's{subject}.h5'
-            if (
-                outfilename.exists()
-                and hashlib.file_digest(outfilename.open('rb'), 'md5').hexdigest() == HASHES[subject]
-            ):
-                progressbar.update(len(CLASSES))
-                continue
+            if outfilename.exists():
+                with h5py.File(outfilename, 'r') as f:
+                    if (
+                        f.attrs.get('version', 0) == VERSION
+                        and f.attrs.get('subject', 0) == int(subject)
+                        and f['classes'].compression == 'lzf'
+                        if compress
+                        else None
+                    ):
+                        # file is already downloaded and up to date
+                        progressbar.update(len(CLASSES))
+                        continue
             download_subject(subject, outfilename, workers, progressbar)
-            if not hashlib.file_digest(outfilename.open('rb'), 'md5').hexdigest() == HASHES[subject]:
-                raise RuntimeError(f'Hash mismatch for subject {subject}')
 
 
 class BrainwebVolumes(torch.utils.data.Dataset):
@@ -233,6 +264,27 @@ class BrainwebVolumes(torch.utils.data.Dataset):
 
     This dataset provides 1mm isotropic 3D brain data of various quantitative MRI (qMRI) parameters.
     """
+
+    @staticmethod
+    def download(
+        output_directory: str | PathLike = CACHE_DIR, workers: int = 4, progress: bool = False, compress: bool = False
+    ) -> None:
+        """Download Brainweb data.
+
+        Parameters
+        ----------
+        output_directory
+            Directory to save the data.
+        workers
+            Number of parallel downloads.
+        progress
+            Show progress bar.
+        compress
+            Use compression for HDF5 files. Saves disk space but might slow down or speed up access,
+            depending on the file system and access pattern.
+
+        """
+        download_brainweb(output_directory, workers, progress, compress)
 
     def __init__(
         self,
@@ -249,21 +301,21 @@ class BrainwebVolumes(torch.utils.data.Dataset):
             The directory containing Brainweb HDF5 files
         what
             What to return for each subject:
-                - 'r1': R1 relaxation rate.
-                - 'r2': R2 relaxation rate.
-                - 'm0': M0 magnetization.
-                - 't1': T1 relaxation time.
-                - 't2': T2 relaxation time.
-                - 'mask': Mask indicating valid data.
-                - 'tissueclass': (Mayority) Class index.
-                -  Brainweb class name: raw percentage for a specific tissue class.
+                - r1: R1 relaxation rate.
+                - r2: R2 relaxation rate.
+                - m0: M0 magnetization.
+                - t1: T1 relaxation time.
+                - t2: T2 relaxation time.
+                - mask: Mask indicating valid data.
+                - tissueclass: (Majority) Class index.
+                - Brainweb class name: raw percentage for a specific tissue class.
         parameters
             Parameters for each tissue class.
         seed
             Determines how the random number generator is initialized:
-            - If 'random', uses torch.default_generator.
+            - If ``random``, uses torch.default_generator.
             - If an integer, creates a new torch.Generator seeded with the provided value.
-            - If 'index', no random generator is initialized (e.g., for deterministic behavior based on file indexing).
+            - If ``index``, uses the index of the subject as seed.
         """
         self.files = list(Path(folder).glob('s??.h5'))
 
@@ -311,6 +363,12 @@ class BrainwebVolumes(torch.utils.data.Dataset):
                 result[el] = data.argmax(-1)
             elif el in classnames:
                 result[el] = data[classnames.index(el)] / 255
+            elif el == 'mask':
+                mask = data.sum(-1) < 150
+                mask = (
+                    torch.nn.functional.conv3d(mask[None, None].float(), torch.ones(1, 1, 3, 3, 3), padding=1)[0, 0] < 1
+                )
+                result[el] = ~mask
             else:
                 raise NotImplementedError(f'what=({el},) is not implemented.')
         return result
@@ -318,6 +376,27 @@ class BrainwebVolumes(torch.utils.data.Dataset):
 
 class BrainwebSlices(torch.utils.data.Dataset):
     """Dataset of 2D qMRI parameter slices based on Brainweb dataset."""
+
+    @staticmethod
+    def download(
+        output_directory: str | PathLike = CACHE_DIR, workers: int = 4, progress: bool = False, compress: bool = False
+    ) -> None:
+        """Download Brainweb data.
+
+        Parameters
+        ----------
+        output_directory
+            Directory to save the data.
+        workers
+            Number of parallel downloads.
+        progress
+            Show progress bar.
+        compress
+            Use compression for HDF5 files. Saves disk space but might slow down or speed up access,
+            depending on the file system and access pattern.
+
+        """
+        download_brainweb(output_directory, workers, progress, compress)
 
     def __init__(
         self,
@@ -469,94 +548,3 @@ class BrainwebSlices(torch.utils.data.Dataset):
                 torch.nn.functional.conv2d(~mask[None, None].float(), torch.ones(1, 1, 3, 3), padding=1)[0, 0] < 1
             )
         return result
-
-
-def visualize_dataset(dataset) -> None:
-    """
-    Visualize elements from a PyTorch dataset using a slider and radio buttons.
-
-    The dataset is expected to return a dict of 2D tensors on each access.
-    The function displays an image corresponding to a selected key (via radio buttons)
-    and dataset element index (via a slider).
-
-    Parameters
-    ----------
-    dataset : Dataset
-        A PyTorch dataset with __getitem__ and __len__ implemented. Each item should be a dict
-        mapping string keys to 2D tensors.
-    """
-    import matplotlib.pyplot as plt
-    import numpy as np
-    import torch
-    from matplotlib.widgets import RadioButtons, Slider
-
-    # Retrieve the keys from the first element and the total number of items.
-    first_item = dataset[0]
-    keys = list(first_item.keys())
-    dataset_length = len(dataset)
-
-    # Initial display settings.
-    initial_index = 0
-    initial_key = keys[0]
-
-    # Create a figure and an axis for the image display.
-    fig, ax = plt.subplots()
-    plt.subplots_adjust(left=0.25, bottom=0.25)
-
-    # Get the initial image data.
-    image_data = dataset[initial_index][initial_key]
-    if isinstance(image_data, torch.Tensor):
-        image_data = image_data.numpy()
-    if np.iscomplexobj(image_data):
-        image_data = np.abs(image_data)
-    # Display the image; assuming a grayscale image.
-    img = ax.imshow(image_data, cmap='gray')
-    ax.set_title(f'Index: {initial_index}, Key: {initial_key}')
-
-    # Create a slider axis for selecting the dataset index.
-    ax_index = plt.axes((0.25, 0.1, 0.65, 0.03))
-    slider_index = Slider(
-        ax=ax_index, label='Index', valmin=0, valmax=dataset_length - 1, valinit=initial_index, valstep=1
-    )
-
-    # Create a radio button axis for selecting the key.
-    ax_radio = plt.axes((0.05, 0.4, 0.15, 0.15))
-    radio = RadioButtons(ax_radio, keys, active=0)
-
-    def update(_: float) -> None:
-        """Update the displayed image based on the current slider and radio button values."""
-        idx = int(slider_index.val)
-        selected_key = radio.value_selected
-        # Get the new image data from the dataset.
-        data = dataset[idx][selected_key]
-        if isinstance(data, torch.Tensor):
-            data = data.numpy()
-        if np.iscomplexobj(data):
-            data = np.abs(data)
-        # Update the image display and title.
-        img.set_data(data)
-        ax.set_title(f'Index: {idx}, Key: {selected_key}')
-        fig.canvas.draw_idle()
-
-    # Connect the slider and radio button events to the update function.
-    slider_index.on_changed(update)
-    radio.on_clicked(lambda _: update(0))
-
-    plt.show()
-
-
-if __name__ == '__main__':
-    # import platformdirs
-
-    # download(CACHE_DIR, workers=4, progress=True)
-    # print(HASHES)
-    # print(HASHES)
-
-    b = BrainwebSlices(CACHE_DIR)
-    # import matplotlib.pyplot as plt
-
-    # plt.imshow(b[20]['pd'].abs())
-    # plt.show()
-    # print()
-    visualize_dataset(b)
-    print(1)
