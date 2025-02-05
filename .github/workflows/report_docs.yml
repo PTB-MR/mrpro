@@ -58,7 +58,7 @@ jobs:
         uses: edumserrano/find-create-or-update-comment@v3
         with:
           issue-number: ${{ steps.pr-context.outputs.number }}
-          body-includes: '<!-- documentation build ${{ gsteps.pr-context.outputs.number }} -->'
+          body-includes: '<!-- documentation build ${{ steps.pr-context.outputs.number }} -->'
           comment-author: 'github-actions[bot]'
           body: |
             <!-- documentation build ${{ steps.pr-context.outputs.number }} -->
