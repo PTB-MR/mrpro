@@ -22,6 +22,7 @@ jobs:
         with:
           name: pytest-report-mrpro_py312
           run-id: ${{ github.event.workflow_run.id }}
+          # needs to be explicitly set
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get PR number

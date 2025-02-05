@@ -20,6 +20,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           run-id: ${{ github.event.workflow_run.id }}
+          # needs to be explicitly set
           github-token: ${{ secrets.GITHUB_TOKEN }}
           name: artifact_url
 
