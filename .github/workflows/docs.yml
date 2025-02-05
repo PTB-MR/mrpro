@@ -105,16 +105,12 @@ jobs:
     container:
       image: ghcr.io/ptb-mr/mrpro_py311:latest
       options: --user runner
-    permissions:
-      pull-requests: write
-      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # fetch history for github links
           fetch-tags: true
-
 
       - name: Install mrpro and dependencies
         run: pip install --upgrade --upgrade-strategy "eager" -e .[docs]
