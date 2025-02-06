@@ -1,5 +1,6 @@
 import gzip
 import re
+from typing import Literal
 
 import h5py
 import numpy as np
@@ -45,7 +46,7 @@ def mock_requests(monkeypatch) -> None:
     monkeypatch.setattr(requests, 'get', mock_get)
 
 
-def test_download_brainweb(tmp_path, mock_requests):
+def test_download_brainweb(tmp_path, mock_requests) -> None:
     """Test download_brainweb using mock data."""
 
     download_brainweb(output_directory=tmp_path, workers=1, progress=False, compress=False)
@@ -84,13 +85,13 @@ def brainweb_test_data(tmp_path_factory):
     return test_dir
 
 
-def test_brainwebvolumes_init(brainweb_test_data):
+def test_brainwebvolumes_init(brainweb_test_data) -> None:
     """Test BrainwebVolumes dataset initialization."""
     dataset = BrainwebVolumes(folder=brainweb_test_data, what=('m0', 'r1'))
     assert len(dataset) == 2  # Two subjects
 
 
-def test_brainweb_getitem(brainweb_test_data):
+def test_brainweb_getitem(brainweb_test_data) -> None:
     """Test dataset __getitem__ method."""
     dataset = BrainwebVolumes(folder=brainweb_test_data, what=('m0', 'r1', 't2', 'mask', 'tissueclass', 'dura'))
     sample = dataset[0]
@@ -115,7 +116,7 @@ def test_brainweb_getitem(brainweb_test_data):
     assert not torch.isnan(sample['dura']).any()
 
 
-def test_brainweb_no_files(tmp_path):
+def test_brainweb_no_files(tmp_path) -> None:
     """Ensure error is raised if no files are found."""
     with pytest.raises(FileNotFoundError):
         BrainwebVolumes(folder=tmp_path)
@@ -124,19 +125,49 @@ def test_brainweb_no_files(tmp_path):
 @pytest.mark.parametrize(
     'param',
     [
-        BrainwebTissue(0.5, 1.5, 0.02, 0.1, 0.7, 1.0),
+        BrainwebTissue((0.5, 1.5), (0.02, 0.1), (0.7, 1.2), (-0.1, 0.1)),
+        BrainwebTissue(1.0, 0.05, 0.9, 0.05),
     ],
 )
-def test_t1t2m0_random_values(param):
+def test_brainwebtissue_random_values_tuple() -> None:
+    """Test BrainwebTissue when initialized with tuple parameters."""
     rng = torch.Generator().manual_seed(42)
-    assert param.t1_min <= 1 / param.random_r1(rng) <= param.t1_max
-    assert param.t2_min <= 1 / param.random_r2(rng) <= param.t2_max
-    m0 = param.random_m0(rng)
-    assert param.m0_min <= torch.abs(m0) <= param.m0_max
+    param = BrainwebTissue((0.5, 1.5), (0.02, 0.1), (0.7, 1.2), (-0.1, 0.1))
+
+    assert isinstance(param.t1, tuple)
+    assert isinstance(param.t2, tuple)
+    assert isinstance(param.m0_abs, tuple)
+    assert isinstance(param.m0_phase, tuple)
+
+    assert param.t1[0] <= 1 / param.sample_r1(rng) <= param.t1[1]
+    assert param.t2[0] <= 1 / param.sample_r2(rng) <= param.t2[1]
+
+    m0 = param.sample_m0(rng)
+    assert param.m0_abs[0] <= m0.abs() <= param.m0_abs[1]
+    assert param.m0_phase[0] <= m0.angle() <= param.m0_phase[1]
+
+
+def test_brainwebtissue_random_values_float() -> None:
+    """Test BrainwebTissue when initialized with float parameters."""
+    rng = torch.Generator().manual_seed(42)
+    param = BrainwebTissue(1.0, 0.05, 0.9, 0.05)
+
+    assert isinstance(param.t1, float)
+    assert isinstance(param.t2, float)
+    assert isinstance(param.m0_abs, float)
+    assert isinstance(param.m0_phase, float)
+
+    assert torch.tensor(param.t1).isclose(1 / param.sample_r1(rng))
+    assert torch.tensor(param.t2).isclose(1 / param.sample_r2(rng))
+
+    m0 = param.sample_m0(rng)
+    assert torch.tensor(param.m0_abs).isclose(m0.abs())
+    assert torch.tensor(param.m0_phase).isclose(m0.angle())
 
 
 @pytest.mark.parametrize('size', [128, 256])
-def test_affine_augment(size):
+def test_affine_augment(size) -> None:
+    """Test affine_augment function."""
     data = RandomGenerator(1).float32_tensor((1, 150, 100))
     aug_data = affine_augment(data, size)
     assert aug_data.shape == (1, size, size)
@@ -144,7 +175,8 @@ def test_affine_augment(size):
 
 
 @pytest.mark.parametrize('size', [128, 256])
-def test_resize(size):
+def test_resize(size: int) -> None:
+    """Text resize function."""
     data = RandomGenerator(2).float32_tensor((1, 150, 100))
     resized = resize(data, size)
     assert resized.shape == (1, size, size)
@@ -158,17 +190,18 @@ def test_resize(size):
         (torch.tensor([[0, 0, 0], [0, 1, 0], [0, 0, 0]]), (slice(1, 2), slice(1, 2))),
     ],
 )
-def test_trim_indices(mask, expected):
+def test_trim_indices(mask: torch.Tensor, expected: tuple[slice, slice]) -> None:
+    """Test trim_indices function."""
     assert trim_indices(mask) == expected
 
 
-def test_brainwebslices_init(brainweb_test_data):
+def test_brainwebslices_init(brainweb_test_data) -> None:
     """Test BrainwebSlices dataset initialization."""
     dataset = BrainwebSlices(folder=brainweb_test_data, what=('m0', 'r1'), orientation='axial')
     assert len(dataset) > 0
 
 
-def test_brainwebslices_getitem(brainweb_test_data):
+def test_brainwebslices_getitem(brainweb_test_data) -> None:
     """Test dataset __getitem__ method."""
     dataset = BrainwebSlices(
         folder=brainweb_test_data, what=('m0', 'r1', 't2', 'mask', 'tissueclass', 'dura'), orientation='coronal'
@@ -195,7 +228,7 @@ def test_brainwebslices_getitem(brainweb_test_data):
 
 
 @pytest.mark.parametrize('orientation', ['axial', 'coronal', 'sagittal'])
-def test_brainwebslices_orientations(brainweb_test_data, orientation):
+def test_brainwebslices_orientations(brainweb_test_data, orientation: Literal['axial', 'coronal', 'sagittal']) -> None:
     """Test different slice orientations."""
     dataset = BrainwebSlices(folder=brainweb_test_data, orientation=orientation)
     assert len(dataset) > 0
@@ -203,7 +236,7 @@ def test_brainwebslices_orientations(brainweb_test_data, orientation):
     assert isinstance(sample, dict)
 
 
-def test_brainwebslices_no_files(tmp_path):
+def test_brainwebslices_no_files(tmp_path) -> None:
     """Ensure error is raised if no files are found."""
     with pytest.raises(FileNotFoundError):
         BrainwebSlices(folder=tmp_path)
