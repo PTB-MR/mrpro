@@ -46,7 +46,7 @@ def mock_requests(monkeypatch) -> None:
 
 
 def test_download_brainweb(tmp_path, mock_requests):
-    """Test download_brainweb"""
+    """Test download_brainweb using mock data."""
 
     download_brainweb(output_directory=tmp_path, workers=1, progress=False, compress=False)
 
