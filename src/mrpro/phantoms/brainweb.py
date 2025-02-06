@@ -184,7 +184,20 @@ DEFAULT_VALUES = {'r1': 0.0, 'm0': 0.0, 'r2': 0.0, 'mask': 0, 'tissueclass': -1}
 def download_brainweb(
     output_directory: str | PathLike = CACHE_DIR, workers: int = 4, progress: bool = False, compress: bool = False
 ) -> None:
-    """Download Brainweb data with subjects in series and class files in parallel."""
+    """Download Brainweb data.
+
+    Parameters
+    ----------
+    output_directory
+        Directory to save the data.
+    workers
+        Number of parallel downloads.
+    progress
+        Show progress bar.
+    compress
+        Use compression for HDF5 files. Saves disk space but might slow down (or speed up) access,
+        depending on the system and access pattern.
+    """
 
     def load_file(url: str, timeout: float = 60) -> bytes:
         """Load url content."""
@@ -291,6 +304,7 @@ class BrainwebVolumes(torch.utils.data.Dataset):
         folder: str | Path = CACHE_DIR,
         what: Sequence[Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass'] | TClassNames] = ('m0', 'r1', 'r2'),
         parameters: Mapping[TClassNames, T1T2M0] = VALUES_3T,
+        mask_values: Mapping[str, float | None] = DEFAULT_VALUES,
         seed: int | Literal['index', 'random'] = 'random',
     ) -> None:
         """Initialize Dataset.
@@ -311,6 +325,8 @@ class BrainwebVolumes(torch.utils.data.Dataset):
                 - Brainweb class name: raw percentage for a specific tissue class.
         parameters
             Parameters for each tissue class.
+        mask_values
+            Values to use for masked out regions.
         seed
             Determines how the random number generator is initialized:
             - If ``random``, uses torch.default_generator.
@@ -330,6 +346,8 @@ class BrainwebVolumes(torch.utils.data.Dataset):
             self._rng = torch.Generator().manual_seed(seed)
         elif seed == 'index':
             self._rng = None
+
+        self.mask_values = mask_values
 
     def __len__(self) -> int:
         """Get number of subjects."""
@@ -371,6 +389,15 @@ class BrainwebVolumes(torch.utils.data.Dataset):
                 result[el] = ~mask
             else:
                 raise NotImplementedError(f'what=({el},) is not implemented.')
+
+        for key, value in result.items():
+            if key == 'mask':
+                continue
+            if (mask_value := self.mask_values.get(key, None)) is not None:
+                value[~mask] = mask_value
+            elif key not in classnames:
+                value[~mask] = torch.nan
+
         return result
 
 
@@ -449,19 +476,17 @@ class BrainwebSlices(torch.utils.data.Dataset):
         self.what = what
         self.mask_values = mask_values
 
-        self._skip_slices = skip_slices
-
         try:
             self._axis = {'axial': 0, 'coronal': 1, 'sagittal': 2}[orientation]
         except KeyError:
             raise ValueError(f'Invalid axis: {orientation}.') from None
+        self._skip_slices = skip_slices[self._axis]
 
         files = []
         ns_slices = [0]
         for fn in Path(folder).glob('s??.h5'):
             with h5py.File(fn) as f:
-                n_slices = f['classes'].shape[self._axis]
-                n_slices -= self._skip_slices[self._axis * 2] + self._skip_slices[self._axis * 2 + 1]
+                n_slices = f['classes'].shape[self._axis] - self._skip_slices[0] - self._skip_slices[1]
                 ns_slices.append(n_slices)
                 files.append(fn)
         if not files:
@@ -497,15 +522,14 @@ class BrainwebSlices(torch.utils.data.Dataset):
             index = index * self.step
 
         file_id = np.searchsorted(self._ns_slices, index, 'right') - 1
-        slice_id = index - self._ns_slices[file_id] + self._skip_slices[self._axis * 2]
+        slice_id = index - self._ns_slices[file_id] + self._skip_slices[0]
 
         with h5py.File(
             self._files[file_id],
         ) as file:
-            where = [
-                slice(self._skip_slices[2 * i], file['classes'].shape[i] - self._skip_slices[2 * i + 1])
-                for i in range(3)
-            ] + [slice(None)]
+            where = [slice(self._skip_slices[0], file['classes'].shape[i] - self._skip_slices[1]) for i in range(3)] + [
+                slice(None)
+            ]
             where[self._axis] = slice_id
             data = torch.as_tensor(np.array(file['classes'][tuple(where)], dtype=np.uint8))
             classnames = tuple(file.attrs['classnames'])
@@ -535,16 +559,19 @@ class BrainwebSlices(torch.utils.data.Dataset):
                 result[el] = data.argmax(-1)
             elif el in classnames:
                 result[el] = data[..., classnames.index(el)]
+            elif el == 'mask':
+                result[el] = ~(
+                    torch.nn.functional.conv2d((~mask)[None, None].float(), torch.ones(1, 1, 3, 3), padding=1)[0, 0] < 1
+                )
             else:
                 raise NotImplementedError(f'what=({el},) is not implemented.')
 
         for key, value in result.items():
+            if key == 'mask':
+                continue
             if (mask_value := self.mask_values.get(key, None)) is not None:
                 value[~mask] = mask_value
             elif key not in classnames:
                 value[~mask] = torch.nan
-        if 'mask' in self.what:
-            result['mask'] = ~(
-                torch.nn.functional.conv2d(~mask[None, None].float(), torch.ones(1, 1, 3, 3), padding=1)[0, 0] < 1
-            )
+
         return result

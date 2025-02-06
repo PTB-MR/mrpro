@@ -112,7 +112,6 @@ def test_brainweb_getitem(brainweb_test_data):
 
     assert not torch.isnan(sample['m0']).any()
     assert not torch.isnan(sample['r1']).any()
-    assert not torch.isnan(sample['t2']).any()
     assert not torch.isnan(sample['dura']).any()
 
 
@@ -155,7 +154,7 @@ def test_resize(size):
 @pytest.mark.parametrize(
     ('mask', 'expected'),
     [
-        (torch.tensor([[0, 0, 1], [0, 1, 1], [1, 1, 1]]), (slice(0, 3), slice(2, 3))),
+        (torch.tensor([[0, 0, 1], [0, 1, 1], [1, 1, 1]]), (slice(0, 3), slice(0, 3))),
         (torch.tensor([[0, 0, 0], [0, 1, 0], [0, 0, 0]]), (slice(1, 2), slice(1, 2))),
     ],
 )
@@ -192,8 +191,7 @@ def test_brainwebslices_getitem(brainweb_test_data):
     assert sample['tissueclass'].dtype == torch.long
 
     assert not torch.isnan(sample['m0']).any()
-    assert not torch.isnan(sample['t1']).any()
-    assert not torch.isnan(sample['t2']).any()
+    assert not torch.isnan(sample['r1']).any()
 
 
 @pytest.mark.parametrize('orientation', ['axial', 'coronal', 'sagittal'])
