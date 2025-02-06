@@ -33,25 +33,21 @@ URL_TEMPLATE = (
 
 CLASSES = ('bck', 'skl', 'gry', 'wht', 'csf', 'mrw', 'dura', 'fat', 'fat2', 'mus', 'm-s', 'ves')  # noqa: typos
 VERSION = 1
-CACHE_DIR = platformdirs.user_cache_dir('mrpro')
+CACHE_DIR = platformdirs.user_cache_dir('mrpro')  # ~/.cache/mrpro on Linux, %AppData%\Local\mrpro on Windows
 K = TypeVar('K')
 TClassNames = Literal['skl', 'gry', 'wht', 'csf', 'mrw', 'dura', 'fat', 'fat2', 'mus', 'm-s', 'ves']  # noqa: typos
 
 
 @dataclass
-class T1T2M0:
+class BrainwebTissue:
     """Container for Parameters of a single tissue."""
 
-    t1_min: float
-    t1_max: float
-    t2_min: float
-    t2_max: float
-    m0_min: float
-    m0_max: float
-    phase_min: float = -0.01
-    phase_max: float = 0.01
+    t1: float | tuple[float, float]
+    t2: float | tuple[float, float]
+    m0_abs: float | tuple[float, float]
+    m0_phase: float | tuple[float, float] = 0.0
 
-    def random_r1(self, rng: None | torch.Generator = None) -> torch.Tensor:
+    def sample_r1(self, rng: None | torch.Generator = None) -> torch.Tensor:
         """Get randomized r1 value.
 
         Parameters
@@ -59,9 +55,11 @@ class T1T2M0:
         rng
             Random number generator. `None` uses the default generator.
         """
-        return 1 / torch.empty(1).uniform_(self.t1_min, self.t1_max, generator=rng)
+        if isinstance(self.t1, tuple):
+            return 1 / torch.empty(1).uniform_(*self.t1, generator=rng)
+        return 1 / torch.tensor(self.t1)
 
-    def random_r2(self, rng: None | torch.Generator = None) -> torch.Tensor:
+    def sample_r2(self, rng: None | torch.Generator = None) -> torch.Tensor:
         """Get randomized r2 value.
 
         Parameters
@@ -69,9 +67,11 @@ class T1T2M0:
         rng
             Random number generator. `None` uses the default generator.
         """
-        return 1 / torch.empty(1).uniform_(self.t2_min, self.t2_max, generator=rng)
+        if isinstance(self.t2, tuple):
+            return 1 / torch.empty(1).uniform_(*self.t2, generator=rng)
+        return 1 / torch.tensor(self.t2)
 
-    def random_m0(self, rng: None | torch.Generator = None) -> torch.Tensor:
+    def sample_m0(self, rng: None | torch.Generator = None) -> torch.Tensor:
         """Get renadomized complex m0 value.
 
         Parameters
@@ -79,10 +79,15 @@ class T1T2M0:
         rng
             Random number generator. `None` uses the default generator.
         """
-        return torch.polar(
-            torch.empty(1).uniform_(self.m0_min, self.m0_max, generator=rng),
-            torch.empty(1).uniform_(self.phase_min, self.phase_max, generator=rng),
-        )
+        if isinstance(self.m0_abs, tuple):
+            magnitude = torch.empty(1).uniform_(*self.m0_abs, generator=rng)
+        else:
+            magnitude = torch.tensor(self.m0_abs)
+        if isinstance(self.m0_phase, tuple):
+            phase = torch.empty(1).uniform_(*self.m0_phase, generator=rng)
+        else:
+            phase = torch.tensor(self.m0_phase)
+        return torch.polar(magnitude, phase)
 
 
 def affine_augment(data: torch.Tensor, size: int = 256, rng: torch.Generator | None = None) -> torch.Tensor:
@@ -160,19 +165,19 @@ def trim_indices(mask: torch.Tensor) -> tuple[slice, slice]:
     return slice(row_min, row_max), slice(col_min, col_max)
 
 
-VALUES_3T: Mapping[TClassNames, T1T2M0] = MappingProxyType(
+VALUES_3T: Mapping[TClassNames, BrainwebTissue] = MappingProxyType(
     {
-        'skl': T1T2M0(0.000, 2.000, 0.000, 0.010, 0.0, 0.05),
-        'gry': T1T2M0(1.200, 2.000, 0.080, 0.120, 0.7, 1.0),
-        'wht': T1T2M0(0.800, 1.500, 0.060, 0.100, 0.50, 0.9),  # noqa:typos
-        'csf': T1T2M0(2.000, 4.000, 1.300, 2.000, 0.9, 1.0),
-        'mrw': T1T2M0(0.400, 0.600, 0.060, 0.100, 0.7, 1.0),
-        'dura': T1T2M0(2.000, 2.800, 0.200, 0.500, 0.9, 1.0),
-        'fat': T1T2M0(0.300, 0.500, 0.060, 0.100, 0.9, 1.0),
-        'fat2': T1T2M0(0.400, 0.600, 0.060, 0.100, 0.6, 0.9),
-        'mus': T1T2M0(1.200, 1.500, 0.040, 0.060, 0.9, 1.0),
-        'm-s': T1T2M0(0.500, 0.900, 0.300, 0.500, 0.9, 1),
-        'ves': T1T2M0(1.700, 2.100, 0.200, 0.400, 0.8, 1),
+        'skl': BrainwebTissue((0.000, 2.000), (0.000, 0.010), (0.00, 0.05), (-0.2, 0.2)),
+        'gry': BrainwebTissue((1.200, 2.000), (0.080, 0.120), (0.70, 1.00), (-0.2, 0.2)),
+        'wht': BrainwebTissue((0.800, 1.500), (0.060, 0.100), (0.50, 0.90), (-0.2, 0.2)),  # noqa:typos
+        'csf': BrainwebTissue((2.000, 4.000), (1.300, 2.000), (0.90, 1.00), (-0.2, 0.2)),
+        'mrw': BrainwebTissue((0.400, 0.600), (0.060, 0.100), (0.70, 1.00), (-0.2, 0.2)),
+        'dura': BrainwebTissue((2.000, 2.800), (0.200, 0.500), (0.90, 1.00), (-0.2, 0.2)),
+        'fat': BrainwebTissue((0.300, 0.500), (0.060, 0.100), (0.90, 1.00), (-0.2, 0.2)),
+        'fat2': BrainwebTissue((0.400, 0.600), (0.060, 0.100), (0.60, 0.90), (-0.2, 0.2)),
+        'mus': BrainwebTissue((1.200, 1.500), (0.040, 0.060), (0.90, 1.00), (-0.2, 0.2)),
+        'm-s': BrainwebTissue((0.500, 0.900), (0.300, 0.500), (0.90, 1.00), (-0.2, 0.2)),
+        'ves': BrainwebTissue((1.700, 2.100), (0.200, 0.400), (0.80, 1.00), (-0.2, 0.2)),
     }
 )
 """Tissue values at 3T."""
@@ -303,7 +308,7 @@ class BrainwebVolumes(torch.utils.data.Dataset):
         self,
         folder: str | Path = CACHE_DIR,
         what: Sequence[Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass'] | TClassNames] = ('m0', 'r1', 'r2'),
-        parameters: Mapping[TClassNames, T1T2M0] = VALUES_3T,
+        parameters: Mapping[TClassNames, BrainwebTissue] = VALUES_3T,
         mask_values: Mapping[str, float | None] = DEFAULT_VALUES,
         seed: int | Literal['index', 'random'] = 'random',
     ) -> None:
@@ -363,19 +368,19 @@ class BrainwebVolumes(torch.utils.data.Dataset):
         result: dict[Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass'] | TClassNames, torch.Tensor] = {}
         for el in self.what:
             if el == 'r1':
-                values = torch.stack([self.parameters[k].random_r1() for k in classnames]) / 255
+                values = torch.stack([self.parameters[k].sample_r1() for k in classnames]) / 255
                 result[el] = (data.to(values) @ values)[..., 0]
             elif el == 'r2':
-                values = torch.stack([self.parameters[k].random_r2() for k in classnames]) / 255
+                values = torch.stack([self.parameters[k].sample_r2() for k in classnames]) / 255
                 result[el] = (data.to(values) @ values)[..., 0]
             elif el == 'm0':
-                values = torch.stack([self.parameters[k].random_m0() for k in classnames]) / 255
+                values = torch.stack([self.parameters[k].sample_m0() for k in classnames]) / 255
                 result[el] = (data.to(values) @ values)[..., 0]
             elif el == 't1':
-                values = torch.stack([self.parameters[k].random_r1() for k in classnames]) / 255
+                values = torch.stack([self.parameters[k].sample_r1() for k in classnames]) / 255
                 result[el] = (data.to(values) @ values)[..., 0].reciprocal()
             elif el == 't2':
-                values = torch.stack([self.parameters[k].random_r2() for k in classnames]) / 255
+                values = torch.stack([self.parameters[k].sample_r2() for k in classnames]) / 255
                 result[el] = (data.to(values) @ values)[..., 0].reciprocal()
             elif el == 'tissueclass':
                 result[el] = data.argmax(-1)
@@ -429,7 +434,7 @@ class BrainwebSlices(torch.utils.data.Dataset):
         self,
         folder: str | Path = CACHE_DIR,
         what: Sequence[Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass'] | TClassNames] = ('m0', 'r1', 'r2'),
-        parameters: Mapping[TClassNames, T1T2M0] = VALUES_3T,
+        parameters: Mapping[TClassNames, BrainwebTissue] = VALUES_3T,
         orientation: Literal['axial', 'coronal', 'sagittal'] = 'axial',
         skip_slices: tuple[tuple[int, int], tuple[int, int], tuple[int, int]] = ((80, 80), (100, 100), (100, 100)),
         step: int = 1,
@@ -541,19 +546,19 @@ class BrainwebSlices(torch.utils.data.Dataset):
 
         for el in self.what:
             if el == 'r1':
-                values = torch.stack([self.parameters[k].random_r1(rng) for k in classnames])
+                values = torch.stack([self.parameters[k].sample_r1(rng) for k in classnames])
                 result[el] = (data.to(values) @ values)[..., 0]
             elif el == 'r2':
-                values = torch.stack([self.parameters[k].random_r2(rng) for k in classnames])
+                values = torch.stack([self.parameters[k].sample_r2(rng) for k in classnames])
                 result[el] = (data.to(values) @ values)[..., 0]
             elif el == 'm0':
-                values = torch.stack([self.parameters[k].random_m0(rng) for k in classnames])
+                values = torch.stack([self.parameters[k].sample_m0(rng) for k in classnames])
                 result[el] = (data.to(values) @ values)[..., 0]
             elif el == 't1':
-                values = torch.stack([self.parameters[k].random_r1(rng) for k in classnames])
+                values = torch.stack([self.parameters[k].sample_r1(rng) for k in classnames])
                 result[el] = (data.to(values) @ values)[..., 0].reciprocal()
             elif el == 't2':
-                values = torch.stack([self.parameters[k].random_r2(rng) for k in classnames])
+                values = torch.stack([self.parameters[k].sample_r2(rng) for k in classnames])
                 result[el] = (data.to(values) @ values)[..., 0].reciprocal()
             elif el == 'tissueclass':
                 result[el] = data.argmax(-1)

@@ -9,9 +9,9 @@ import torch
 from mrpro.phantoms.brainweb import (
     CLASSES,
     OVERVIEW_URL,
-    T1T2M0,
     VERSION,
     BrainwebSlices,
+    BrainwebTissue,
     BrainwebVolumes,
     affine_augment,
     download_brainweb,
@@ -124,7 +124,7 @@ def test_brainweb_no_files(tmp_path):
 @pytest.mark.parametrize(
     'param',
     [
-        T1T2M0(0.5, 1.5, 0.02, 0.1, 0.7, 1.0),
+        BrainwebTissue(0.5, 1.5, 0.02, 0.1, 0.7, 1.0),
     ],
 )
 def test_t1t2m0_random_values(param):
