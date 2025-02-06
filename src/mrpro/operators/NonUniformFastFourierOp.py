@@ -2,6 +2,7 @@
 
 from collections.abc import Sequence
 from dataclasses import astuple
+from enum import Enum
 from itertools import product
 from typing import Literal
 
@@ -16,6 +17,14 @@ from mrpro.operators.FastFourierOp import FastFourierOp
 from mrpro.operators.LinearOperator import LinearOperator
 
 
+class FinufftOversamplingFactors(Enum):
+    """Oversampling factors supported by finufft."""
+
+    TWO = 2.0
+    ONEPOINTTWOFIVE = 1.25
+    AUTO = 0.0
+
+
 class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
     """Non-Uniform Fast Fourier Operator class."""
 
@@ -25,7 +34,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         recon_matrix: SpatialDimension[int] | Sequence[int],
         encoding_matrix: SpatialDimension[int] | Sequence[int],
         traj: KTrajectory,
-        nufft_oversampling: float = 2.0,
+        nufft_oversampling: FinufftOversamplingFactors = FinufftOversamplingFactors.AUTO,
     ) -> None:
         """Initialize Non-Uniform Fast Fourier Operator.
 
@@ -53,7 +62,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         traj
             The k-space trajectories where the frequencies are sampled.
         nufft_oversampling
-            Oversampling used for interpolation in non-uniform FFTs.
+            Oversampling used for interpolation in non-uniform FFTs. If set to None the best value is chosen by finufft.
         """
         super().__init__()
 
@@ -140,7 +149,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
                         points=omega[i, ...],
                         values=x[i, ...],
                         output_shape=output_shape,
-                        upsampfac=nufft_oversampling,
+                        upsampfac=nufft_oversampling.value,
                         modeord=0,
                         isign=1,
                     )
@@ -158,7 +167,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
                     finufft_type2(
                         points=omega[i, ...],
                         targets=x[i, ...],
-                        upsampfac=nufft_oversampling,
+                        upsampfac=nufft_oversampling.value,
                         modeord=0,
                         isign=-1,
                     )
