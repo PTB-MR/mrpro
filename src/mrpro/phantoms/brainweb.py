@@ -93,7 +93,7 @@ def affine_augment(data: torch.Tensor, size: int = 256, rng: torch.Generator | N
     data
         2D data to augment.
     size
-        resulting image will be size x size pixels.
+        resulting image will be (size x size) pixels.
     rng
         Random number generator. `None` uses the default generator.
     """
