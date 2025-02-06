@@ -140,6 +140,8 @@ module = [
     "zenodo_get",
     "ptwt.*",
     "pywt.*",
+    "torchvision.*",
+    "platformdirs",
 ]
 ignore_missing_imports = true
 
