@@ -122,13 +122,6 @@ def test_brainweb_no_files(tmp_path) -> None:
         BrainwebVolumes(folder=tmp_path)
 
 
-@pytest.mark.parametrize(
-    'param',
-    [
-        BrainwebTissue((0.5, 1.5), (0.02, 0.1), (0.7, 1.2), (-0.1, 0.1)),
-        BrainwebTissue(1.0, 0.05, 0.9, 0.05),
-    ],
-)
 def test_brainwebtissue_random_values_tuple() -> None:
     """Test BrainwebTissue when initialized with tuple parameters."""
     rng = torch.Generator().manual_seed(42)
