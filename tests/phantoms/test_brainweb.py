@@ -100,8 +100,8 @@ def test_brainweb_getitem(brainweb_test_data):
     assert sample['m0'].shape == (362, 434, 362)
     assert sample['r1'].shape == (362, 434, 362)
     assert sample['t2'].shape == (362, 434, 362)
-    assert sample['mask'] == (362, 434, 362)
-    assert sample['tissueclass'] == (362, 434, 362)
+    assert sample['mask'].shape == (362, 434, 362)
+    assert sample['tissueclass'].shape == (362, 434, 362)
     assert sample['dura'].shape == (362, 434, 362)
 
     assert sample['m0'].dtype == torch.complex64
