@@ -6,6 +6,8 @@ from math import prod
 
 import torch
 
+from mrpro.utils.typing import endomorph
+
 
 def unsqueeze_right(x: torch.Tensor, n: int) -> torch.Tensor:
     """Unsqueeze multiple times in the rightmost dimension.
@@ -48,12 +50,31 @@ def unsqueeze_left(x: torch.Tensor, n: int) -> torch.Tensor:
     return x.reshape(*(n * (1,)), *x.shape)
 
 
+@endomorph
+def unsqueeze_tensors_left(*x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+    """Unsqueeze tensors on the left to the same number of dimensions."""
+    max_dim = max(el.ndim for el in x)
+    return tuple(unsqueeze_left(el, max_dim - el.ndim) for el in x)
+
+
+@endomorph
+def unsqueeze_tensors_right(*x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+    """Unsqueeze tensors on the right to the same number of dimensions."""
+    max_dim = max(el.ndim for el in x)
+    return tuple(unsqueeze_right(el, max_dim - el.ndim) for el in x)
+
+
+@endomorph
 def broadcast_right(*x: torch.Tensor) -> tuple[torch.Tensor, ...]:
     """Broadcasting on the right.
 
     Given multiple tensors, apply broadcasting with unsqueezed on the right.
     First, tensors are unsqueezed on the right to the same number of dimensions.
     Then, `torch.broadcast_tensors` is used.
+
+    ```{note}
+    `broadcast_left` is regular `torch.broadcast_tensors`
+    ```
 
     Example:
         Tensors with shapes `(1,2,3), (1,2), (2)` results in tensors with shape `(2,2,3)`.
