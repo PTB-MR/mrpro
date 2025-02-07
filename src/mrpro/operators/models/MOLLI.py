@@ -3,7 +3,7 @@
 import torch
 
 from mrpro.operators.SignalModel import SignalModel
-from mrpro.utils import unsqueeze_right
+from mrpro.utils import unsqueeze_right, unsqueeze_tensors_right
 
 
 class MOLLI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
@@ -52,6 +52,7 @@ class MOLLI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         -------
             signal with shape `(time, *other, coils, z, y, x)`
         """
-        ti = unsqueeze_right(self.ti, a.ndim - (self.ti.ndim - 1))  # -1 for time
+        a, c, t1 = unsqueeze_tensors_right(a, c, t1)
+        ti = unsqueeze_right(self.ti, a.ndim - self.ti.ndim + 1)  # leftmost is time
         signal = a * (1 - c * torch.exp(ti / t1 * (1 - c)))
         return (signal,)

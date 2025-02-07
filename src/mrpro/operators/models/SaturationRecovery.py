@@ -3,7 +3,7 @@
 import torch
 
 from mrpro.operators.SignalModel import SignalModel
-from mrpro.utils import unsqueeze_right
+from mrpro.utils import unsqueeze_right, unsqueeze_tensors_right
 
 
 class SaturationRecovery(SignalModel[torch.Tensor, torch.Tensor]):
@@ -38,6 +38,7 @@ class SaturationRecovery(SignalModel[torch.Tensor, torch.Tensor]):
         -------
             signal with shape `(time, *other, coils, z, y, x)`
         """
-        ti = unsqueeze_right(self.ti, m0.ndim - (self.ti.ndim - 1))  # -1 for time
+        m0, t1 = unsqueeze_tensors_right(m0, t1)
+        ti = unsqueeze_right(self.ti, m0.ndim - self.ti.ndim + 1)  # leftmost is time
         signal = m0 * (1 - torch.exp(-(ti / t1)))
         return (signal,)

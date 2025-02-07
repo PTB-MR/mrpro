@@ -224,7 +224,7 @@ else:
 
     def endomorph(f: F) -> F:
         """Decorate a function to make it an endomorph callable."""
-        return F
+        return f
 
 
-__all__ = (['NestedSequence', 'NumpyIndexerType', 'TorchIndexerType', 'endomorph'],)
+__all__ = ['NestedSequence', 'NumpyIndexerType', 'TorchIndexerType', 'endomorph']

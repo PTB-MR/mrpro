@@ -4,7 +4,7 @@ import torch
 from torch import nn
 
 from mrpro.operators.SignalModel import SignalModel
-from mrpro.utils import unsqueeze_right
+from mrpro.utils import unsqueeze_right, unsqueeze_tensors_right
 from mrpro.utils.unit_conversion import GYROMAGNETIC_RATIO_PROTON
 
 
@@ -77,7 +77,8 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         -------
             signal with shape `(offsets, *other, coils, z, y, x)`
         """
-        delta_ndim = b0_shift.ndim - (self.offsets.ndim - 1)  # -1 for offset
+        b0_shift, relative_b1, t1 = unsqueeze_tensors_right(b0_shift, relative_b1, t1)
+        delta_ndim = b0_shift.ndim - self.offsets.ndim + 1  # leftmost is offset
         offsets = unsqueeze_right(self.offsets, delta_ndim)
         recovery_time = unsqueeze_right(self.recovery_time, delta_ndim)
 
