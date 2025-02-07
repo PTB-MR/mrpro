@@ -44,22 +44,22 @@ def test_unsqueeze_tensors_left() -> None:
     """Test unsqueeze_tensors_left"""
     tensor1 = torch.ones(1, 2, 3)
     tensor2 = torch.ones(1, 2)
-    tensor3 = torch.ones(2)
+    tensor3 = torch.ones(3)
     unsqueezed = unsqueeze_tensors_left(tensor1, tensor2, tensor3)
     assert unsqueezed[0].shape == (1, 2, 3)
-    assert unsqueezed[1].shape == (1, 2, 1)
-    assert unsqueezed[2].shape == (2, 1, 1)
+    assert unsqueezed[1].shape == (1, 1, 2)
+    assert unsqueezed[2].shape == (1, 1, 3)
 
 
 def test_unsqueeze_tensors_right() -> None:
     """Test unsqueeze_tensors_right"""
     tensor1 = torch.ones(1, 2, 3)
     tensor2 = torch.ones(1, 2)
-    tensor3 = torch.ones(2)
+    tensor3 = torch.ones(3)
     unsqueezed = unsqueeze_tensors_right(tensor1, tensor2, tensor3)
     assert unsqueezed[0].shape == (1, 2, 3)
     assert unsqueezed[1].shape == (1, 2, 1)
-    assert unsqueezed[2].shape == (2, 1, 1)
+    assert unsqueezed[2].shape == (3, 1, 1)
 
 
 def test_reduce_view():
