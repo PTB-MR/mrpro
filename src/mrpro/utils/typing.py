@@ -222,7 +222,7 @@ else:
     NumpyIndexerType: TypeAlias = Any
     """Numpy indexer type."""
 
-    def endomorph(f: F) -> F:
+    def endomorph(f: Callable) -> Callable:
         """Decorate a function to make it an endomorph callable."""
         return f
 
