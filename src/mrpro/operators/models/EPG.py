@@ -52,7 +52,7 @@ class Parameters(MoveDataMixin):
         return dtype
 
 
-@torch.jit.script
+# @torch.jit.script
 def rf_matrix(
     flip_angle: torch.Tensor,
     phase: torch.Tensor,
@@ -118,7 +118,7 @@ def rf(state: torch.Tensor, matrix: torch.Tensor) -> torch.Tensor:
     return matrix @ state
 
 
-@torch.jit.script
+# @torch.jit.script
 def gradient_dephasing(state: torch.Tensor) -> torch.Tensor:
     """Propagate EPG states through a "unit" gradient.
 
@@ -139,7 +139,7 @@ def gradient_dephasing(state: torch.Tensor) -> torch.Tensor:
     return torch.stack((f_plus, f_minus, z), -2)
 
 
-@torch.jit.script
+# @torch.jit.script
 def relax_matrix(relaxation_time: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor) -> torch.Tensor:
     """Calculate relaxation vector.
 
@@ -161,7 +161,7 @@ def relax_matrix(relaxation_time: torch.Tensor, t1: torch.Tensor, t2: torch.Tens
     return torch.stack([e2, e2, e1], dim=-1)
 
 
-@torch.jit.script
+# @torch.jit.script
 def relax(state: torch.Tensor, relaxation_matrix: torch.Tensor, t1_recovery: bool = True) -> torch.Tensor:
     """Propagate EPG states through a period of relaxation and recovery.
 
@@ -185,7 +185,7 @@ def relax(state: torch.Tensor, relaxation_matrix: torch.Tensor, t1_recovery: boo
     return state
 
 
-@torch.jit.script
+# @torch.jit.script
 def acquisition(state: torch.Tensor, m0: torch.Tensor) -> torch.Tensor:
     """Calculate the signal from the EPG state."""
     return m0 * state[..., 0, 0]
@@ -466,11 +466,11 @@ class T2PrepBlock(EPGBlock):
         """
         # 90° pulse -> relaxation during TE/2 -> 180° pulse -> relaxation during TE/2 -> -90° pulse
         te2_relax = relax_matrix(self.te / 2, parameters.t1, parameters.t2)
-        state = rf(state, rf_matrix(torch.pi / 2, 0, parameters.relative_b1))
+        state = rf(state, rf_matrix(torch.tensor(torch.pi / 2), torch.tensor(0.0), parameters.relative_b1))
         state = relax(state, te2_relax)
-        state = rf(state, rf_matrix(torch.pi, torch.pi / 2, parameters.relative_b1))
+        state = rf(state, rf_matrix(torch.tensor(torch.pi), torch.tensor(torch.pi / 2), parameters.relative_b1))
         state = relax(state, te2_relax)
-        state = rf(state, rf_matrix(torch.pi / 2, -torch.pi, parameters.relative_b1))
+        state = rf(state, rf_matrix(torch.tensor(torch.pi / 2), -torch.tensor(torch.pi), parameters.relative_b1))
         # Spoiler
         state = gradient_dephasing(state)
         return state, []
@@ -683,7 +683,23 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
         """
         super().__init__()
         sequence = EPGSequence()
-        max_flip_angles = [12.5, 18.75, 25.0, 25.0, 25.0, 12.5, 18.75, 25.0, 25.0, 25.0, 12.5, 18.75, 25.0, 25.0, 25.0]
+        max_flip_angles_deg = [
+            12.5,
+            18.75,
+            25.0,
+            25.0,
+            25.0,
+            12.5,
+            18.75,
+            25.0,
+            25.0,
+            25.0,
+            12.5,
+            18.75,
+            25.0,
+            25.0,
+            25.0,
+        ]
         if acquisition_times.size(-1) != 705:
             raise ValueError(f'Expected 705 acquisition times. Got {acquisition_times.size(-1)}')
         block_time = acquisition_times[..., ::47]
@@ -700,7 +716,9 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
                     block.append(T2PrepBlock(0.05))
                 case 4:
                     block.append(T2PrepBlock(0.1))
-            flip_angles = torch.cat((torch.linspace(4, max_flip_angles[i], 16), torch.full((31,), max_flip_angles[i])))
+            flip_angles = torch.deg2rad(
+                torch.cat((torch.linspace(4, max_flip_angles_deg[i], 16), torch.full((31,), max_flip_angles_deg[i])))
+            )
             block.append(FispBlock(flip_angles, 0.0, tr=0.01, te=te))
             if i > 0:
                 delay = (block_time[..., i] - block_time[..., i - 1]) - block.duration
