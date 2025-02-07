@@ -3,7 +3,7 @@
 import torch
 
 from mrpro.operators.SignalModel import SignalModel
-from mrpro.utils import unsqueeze_right, unsqueeze_tensors_right
+from mrpro.utils import unsqueeze_right
 
 
 class MonoExponentialDecay(SignalModel[torch.Tensor, torch.Tensor]):
@@ -38,7 +38,7 @@ class MonoExponentialDecay(SignalModel[torch.Tensor, torch.Tensor]):
         -------
             signal with shape `(time, *other, coils, z, y, x)`
         """
-        m0, decay_constant = unsqueeze_tensors_right(m0, decay_constant)
-        decay_time = unsqueeze_right(self.decay_time, m0.ndim - self.decay_time.ndim + 1)  # leftmost is time
+        ndim = max(m0.ndim, decay_constant.ndim)
+        decay_time = unsqueeze_right(self.decay_time, ndim - self.decay_time.ndim + 1)  # leftmost is time
         signal = m0 * torch.exp(-(decay_time / decay_constant))
         return (signal,)

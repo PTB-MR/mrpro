@@ -5,8 +5,6 @@ import torch
 from mrpro.operators.SignalModel import SignalModel
 from mrpro.utils import unsqueeze_right
 
-from ...utils.reshape import unsqueeze_tensors_right
-
 
 class InversionRecovery(SignalModel[torch.Tensor, torch.Tensor]):
     """Inversion recovery signal model."""
@@ -40,7 +38,7 @@ class InversionRecovery(SignalModel[torch.Tensor, torch.Tensor]):
         -------
             signal with shape `(time, *other, coils, z, y, x)`
         """
-        m0, t1 = unsqueeze_tensors_right(m0, t1)
-        ti = unsqueeze_right(self.ti, m0.ndim - self.ti.ndim + 1)  # leftmost is time
+        ndim = max(m0.ndim, t1.ndim)
+        ti = unsqueeze_right(self.ti, ndim - self.ti.ndim + 1)  # leftmost is time
         signal = m0 * (1 - 2 * torch.exp(-(ti / t1)))
         return (signal,)
