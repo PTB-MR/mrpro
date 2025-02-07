@@ -43,7 +43,6 @@ def test_molli_shape(parameter_shape, contrast_dim_shape, signal_shape):
     (ti,) = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=1)
     model_op = MOLLI(ti)
     a, c, t1 = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=3)
-    a = a[0]
     (signal,) = model_op(a, c, t1)
     assert signal.shape == signal_shape
 
