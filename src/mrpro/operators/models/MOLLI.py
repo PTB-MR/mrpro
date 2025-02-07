@@ -7,7 +7,7 @@ from mrpro.utils import unsqueeze_right
 
 
 class MOLLI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
-    """Signal model for Modified Look-Locker inversion recovery (MOLLI).
+    r"""Signal model for Modified Look-Locker inversion recovery (MOLLI).
 
     This model describes
     :math:`M_z(t) = a(1 - (1 + c) e^{-t / T_1^*})` with :math:`T_1^* = T_1 / c`.
@@ -55,5 +55,5 @@ class MOLLI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
             signal with shape `(time, *other, coils, z, y, x)`
         """
         ti = unsqueeze_right(self.ti, a.ndim - (self.ti.ndim - 1))  # -1 for time
-        signal = a * (1 - (1+ c) * torch.exp(ti / t1 * c))
+        signal = a * (1 - (1 + c) * torch.exp(-ti / t1 * c))
         return (signal,)
