@@ -9,7 +9,8 @@ import torch
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.operators.SignalModel import SignalModel
 from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
-from ...utils.reshape import unsqueeze_right
+
+from ...utils.reshape import unsqueeze_tensors_right
 
 
 @dataclass
@@ -385,7 +386,7 @@ class FispBlock(EPGBlock):
     @property
     def duration(self) -> torch.Tensor:
         """Duration of the block in s."""
-        return self.flip_angles.shape[-1] * self.tr
+        return self.tr.sum(0)
 
     def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
         """Apply the FISP block to the EPG state.
@@ -402,8 +403,8 @@ class FispBlock(EPGBlock):
             EPG configuration states after the block and the acquired signals
         """
         signal = []
-        unsqueeze_right(x, x.ndim-parameter.ndim)for x in self.flip_angles, self.rf_phases, self.te, self.tr
-        for flip_angle, rf_phase, te, tr in zip(self.flip_angles, self.rf_phases, self.te, self.tr, strict=True):
+        unsqueezed = unsqueeze_tensors_right(self.flip_angles, self.rf_phases, self.te, self.tr, ndim=parameters.ndim)
+        for flip_angle, rf_phase, te, tr in zip(*unsqueezed, strict=True):
             state = rf(state, rf_matrix(flip_angle, rf_phase, parameters.relative_b1))
             state = relax(state, relax_matrix(te, parameters.t1, parameters.t2))
             signal.append(acquisition(state, parameters.m0))
@@ -519,7 +520,8 @@ class DelayBlock(EPGBlock):
         -------
             EPG configuration states after the block and an empty list
         """
-        state = relax(state, relax_matrix(self.delay_time, parameters.t1, parameters.t2))
+        (delay_time,) = unsqueeze_tensors_right(self.delay_time, ndim=parameters.ndim)
+        state = relax(state, relax_matrix(delay_time, parameters.t1, parameters.t2))
         return state, []
 
     @property
