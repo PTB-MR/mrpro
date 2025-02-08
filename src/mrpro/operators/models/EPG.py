@@ -9,6 +9,7 @@ import torch
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.operators.SignalModel import SignalModel
 from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
+from ...utils.reshape import unsqueeze_right
 
 
 @dataclass
@@ -50,6 +51,14 @@ class Parameters(MoveDataMixin):
         if self.relative_b1 is not None:
             dtype = torch.promote_types(dtype, self.relative_b1.dtype)
         return dtype
+
+    @property
+    def ndim(self) -> int:
+        """Number of dimensions of the parameters."""
+        ndim = max(self.t1.ndim, self.t2.ndim, self.m0.ndim)
+        if self.relative_b1 is not None:
+            ndim = max(ndim, self.relative_b1.ndim)
+        return ndim
 
 
 # @torch.jit.script
@@ -393,6 +402,7 @@ class FispBlock(EPGBlock):
             EPG configuration states after the block and the acquired signals
         """
         signal = []
+        unsqueeze_right(x, x.ndim-parameter.ndim)for x in self.flip_angles, self.rf_phases, self.te, self.tr
         for flip_angle, rf_phase, te, tr in zip(self.flip_angles, self.rf_phases, self.te, self.tr, strict=True):
             state = rf(state, rf_matrix(flip_angle, rf_phase, parameters.relative_b1))
             state = relax(state, relax_matrix(te, parameters.t1, parameters.t2))
@@ -700,9 +710,9 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             25.0,
             25.0,
         ]
-        if acquisition_times.size(-1) != 705:
+        if len(acquisition_times) != 705:
             raise ValueError(f'Expected 705 acquisition times. Got {acquisition_times.size(-1)}')
-        block_time = acquisition_times[..., ::47]
+        block_time = acquisition_times[::47]
         for i in range(block_time.size(-1)):
             block = EPGSequence()
             match i % 5:
@@ -721,7 +731,7 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             )
             block.append(FispBlock(flip_angles, 0.0, tr=0.01, te=te))
             if i > 0:
-                delay = (block_time[..., i] - block_time[..., i - 1]) - block.duration
+                delay = (block_time[i] - block_time[i - 1]) - block.duration
                 sequence.append(DelayBlock(delay))
             sequence.append(block)
         self.model = EPGSignalModel(sequence, n_states=20)
