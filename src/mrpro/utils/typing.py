@@ -43,26 +43,26 @@ if TYPE_CHECKING:
         """
 
         @overload
-        def __call__(self, /) -> tuple[()]: ...
+        def __call__(self, /, **kwargs) -> tuple[()]: ...
         @overload
-        def __call__(self, x1: torch.Tensor, /) -> tuple[torch.Tensor]: ...
+        def __call__(self, x1: torch.Tensor, /, **kwargs) -> tuple[torch.Tensor]: ...
 
         @overload
-        def __call__(self, x1: torch.Tensor, x2: torch.Tensor, /) -> tuple[torch.Tensor, torch.Tensor]: ...
+        def __call__(self, x1: torch.Tensor, x2: torch.Tensor, /, **kwargs) -> tuple[torch.Tensor, torch.Tensor]: ...
 
         @overload
         def __call__(
-            self, x1: torch.Tensor, x2: torch.Tensor, x3: torch.Tensor, /
+            self, x1: torch.Tensor, x2: torch.Tensor, x3: torch.Tensor, /, **kwargs
         ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]: ...
 
         @overload
         def __call__(
-            self, x1: torch.Tensor, x2: torch.Tensor, x3: torch.Tensor, x4: torch.Tensor, /
+            self, x1: torch.Tensor, x2: torch.Tensor, x3: torch.Tensor, x4: torch.Tensor, /, **kwargs
         ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: ...
 
         @overload
         def __call__(
-            self, x1: torch.Tensor, x2: torch.Tensor, x3: torch.Tensor, x4: torch.Tensor, x5: torch.Tensor, /
+            self, x1: torch.Tensor, x2: torch.Tensor, x3: torch.Tensor, x4: torch.Tensor, x5: torch.Tensor, /, **kwargs
         ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: ...
 
         @overload
@@ -75,6 +75,7 @@ if TYPE_CHECKING:
             x5: torch.Tensor,
             x6: torch.Tensor,
             /,
+            **kwargs,
         ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]: ...
 
         @overload
@@ -88,6 +89,7 @@ if TYPE_CHECKING:
             x6: torch.Tensor,
             x7: torch.Tensor,
             /,
+            **kwargs,
         ) -> tuple[
             torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor
         ]: ...
@@ -104,6 +106,7 @@ if TYPE_CHECKING:
             x7: torch.Tensor,
             x8: torch.Tensor,
             /,
+            **kwargs,
         ) -> tuple[
             torch.Tensor,
             torch.Tensor,
@@ -128,6 +131,7 @@ if TYPE_CHECKING:
             x8: torch.Tensor,
             x9: torch.Tensor,
             /,
+            **kwargs,
         ) -> tuple[
             torch.Tensor,
             torch.Tensor,
@@ -154,6 +158,7 @@ if TYPE_CHECKING:
             x9: torch.Tensor,
             x10: torch.Tensor,
             /,
+            **kwargs,
         ) -> tuple[
             torch.Tensor,
             torch.Tensor,
@@ -182,6 +187,7 @@ if TYPE_CHECKING:
             x10: torch.Tensor,
             /,
             *args: torch.Tensor,
+            **kwargs,
         ) -> tuple[
             torch.Tensor,
             torch.Tensor,
@@ -197,9 +203,9 @@ if TYPE_CHECKING:
         ]: ...
 
         @overload
-        def __call__(self, /, *args: torch.Tensor) -> tuple[torch.Tensor, ...]: ...
+        def __call__(self, /, *args: torch.Tensor, **kwargs) -> tuple[torch.Tensor, ...]: ...
 
-        def __call__(self, /, *args: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        def __call__(self, /, *args: torch.Tensor, **kwargs) -> tuple[torch.Tensor, ...]:
             """Apply the Operator."""
 
     def endomorph(f: F, /) -> _EndomorphCallable:
