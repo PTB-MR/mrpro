@@ -8,7 +8,7 @@ import pytest
 import requests
 import torch
 from mrpro.phantoms.brainweb import (
-    CLASSES,
+    ALL_CLASSES,
     OVERVIEW_URL,
     VERSION,
     BrainwebSlices,
@@ -36,7 +36,7 @@ def mock_requests(monkeypatch) -> None:
         if match := re.search(r'do_download_alias=subject(\d+)_([^&]*)', url):
             # Fake data
             subject, class_name = match.groups()
-            rng = RandomGenerator(int(subject) * 100 + CLASSES.index(class_name))
+            rng = RandomGenerator(int(subject) * 100 + ALL_CLASSES.index(class_name))
             fake_data = rng.int16_tensor((362, 434, 362), low=0, high=4096)
             compressed_data = gzip.compress(fake_data.numpy().astype(np.uint16).tobytes(), compresslevel=0)
             return type('MockResponse', (), {'content': compressed_data, 'raise_for_status': lambda _: None})()
@@ -62,7 +62,7 @@ def test_download_brainweb(tmp_path, mock_requests) -> None:
             assert 'subject' in f.attrs
             assert 'version' in f.attrs
             assert f.attrs['version'] == VERSION
-            assert f['classes'].shape == (362, 434, 362, len(CLASSES) - 1)
+            assert f['classes'].shape == (362, 434, 362, len(ALL_CLASSES) - 1)
 
 
 @pytest.fixture(scope='session')
@@ -74,12 +74,12 @@ def brainweb_test_data(tmp_path_factory):
         file_path = test_dir / f's{subject:02d}.h5'
         with h5py.File(file_path, 'w') as f:
             rng = RandomGenerator(int(subject))
-            fake_data = rng.float32_tensor((362, 434, 362, len(CLASSES) - 1))
+            fake_data = rng.float32_tensor((362, 434, 362, len(ALL_CLASSES) - 1))
             fake_data *= 255 / fake_data.sum(-1, keepdim=True)
             f.create_dataset('classes', data=fake_data.to(torch.uint8))
 
             # Store metadata
-            f.attrs['classnames'] = [c for c in CLASSES if c != 'bck']  # noqa: typos
+            f.attrs['classnames'] = [c for c in ALL_CLASSES if c != 'bck']  # noqa: typos
             f.attrs['subject'] = subject
             f.attrs['version'] = 1
     return test_dir
