@@ -4,9 +4,8 @@ import concurrent.futures
 import gzip
 import io
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from functools import partial
 from os import PathLike
 from pathlib import Path
 from types import MappingProxyType
@@ -100,18 +99,18 @@ class BrainwebTissue:
 
 
 def augment(
-    data: torch.Tensor,
     size: int = 256,
-    rng: torch.Generator | None = None,
+    trim: bool = True,
     max_random_shear: float = 5,
     max_random_rotation: float = 10,
     max_random_scaling_factor: float = 0.1,
     p_horizontal_flip: float = 0.5,
     p_vertical_flip: float = 0.5,
-) -> torch.Tensor:
-    """Apply randomized affine augmentation and random flipping.
+) -> Callable[[torch.Tensor, torch.Generator | None], torch.Tensor]:
+    """Get an augmentation function.
 
-    Applies a random rotation and shear to the input image.
+    Creates a function that applies augmentation to the input tensor, that is
+    a random rotation and shear to the input image.
     The image is scaled such that the largest dimension is in
     [size * (1 - max_random_scaling), size * (1 + max_random_scaling)], then padded/cropped to size `size x size`.
     In scaling, the aspect ratio is preserved.
@@ -119,12 +118,10 @@ def augment(
 
     Parameters
     ----------
-    data
-        2D data to augment, shape `(..., height, width)`.
     size
         resulting image will be (size x size) pixels.
-    rng
-        Random number generator. `None` uses the default generator.
+    trim
+        If True, remove fully zero outer rows and columns before scaling
     max_random_shear
         Maximum random shear in degrees, shear is in [-max_shear, max_shear] in x and y direction.
     max_random_rotation
@@ -135,51 +132,70 @@ def augment(
         Probability of horizontal flip.
     p_vertical_flip
         Probability of vertical flip.
+
+    Returns
+    -------
+    Callable that applies augmentation to the input tensor
     """
-    rand = torch.empty(6).uniform_(-1, 1, generator=rng).tolist()
 
-    shear_x = rand[0] * max_random_shear
-    shear_y = rand[1] * max_random_shear
-    angle = rand[2] * max_random_rotation
-    scale = size / max(data.shape[-2:])
-    scale *= 1 + max_random_scaling_factor * rand[3]
-    translate = rand[4:6]  # single pixel translations
-    data = torchvision.transforms.functional.affine(
-        data,
-        angle=angle,
-        scale=scale,
-        shear=[shear_x, shear_y],
-        translate=translate,
-        interpolation=torchvision.transforms.InterpolationMode.BILINEAR,
-        fill=0.0,
-    )
-    rand = torch.empty(2).uniform_(0, 1, generator=rng).tolist()
-    data = torchvision.transforms.functional.hflip(data) if rand[0] < p_horizontal_flip else data
-    data = torchvision.transforms.functional.vflip(data) if rand[0] < p_vertical_flip else data
+    def augment_fn(data: torch.Tensor, rng: torch.Generator | None) -> torch.Tensor:
+        """Apply augmentation to the input tensor."""
+        rand = torch.empty(6).uniform_(-1, 1, generator=rng).tolist()
 
-    data = torchvision.transforms.functional.center_crop(data, [size, size])
+        shear_x = rand[0] * max_random_shear
+        shear_y = rand[1] * max_random_shear
+        angle = rand[2] * max_random_rotation
+        scale = size / max(data.shape[-2:])
+        scale *= 1 + max_random_scaling_factor * rand[3]
+        translate = rand[4:6]  # single pixel translations
+        if trim:
+            data = data[trim_indices(data.sum(-1) > 0.1 * data.amax())]
 
-    return data
+        data = torchvision.transforms.functional.affine(
+            data,
+            angle=angle,
+            scale=scale,
+            shear=[shear_x, shear_y],
+            translate=translate,
+            interpolation=torchvision.transforms.InterpolationMode.BILINEAR,
+            fill=0.0,
+        )
+        rand = torch.empty(2).uniform_(0, 1, generator=rng).tolist()
+        data = torchvision.transforms.functional.hflip(data) if rand[0] < p_horizontal_flip else data
+        data = torchvision.transforms.functional.vflip(data) if rand[0] < p_vertical_flip else data
+
+        data = torchvision.transforms.functional.center_crop(data, [size, size])
+
+        return data
+
+    return augment_fn
 
 
-def resize(data: torch.Tensor, size: int = 256) -> torch.Tensor:
-    """Resize and crop tensor.
+def resize(size: int = 256) -> Callable[[torch.Tensor, torch.Generator | None], torch.Tensor]:
+    """Get a resizing and cropping function.
 
     Parameters
     ----------
-    data
-        2D input tensor.
     size
         Size of the output tensor.
 
     Returns
     -------
-    resized data
+    Callable that resizes and crops the input tensor.
     """
-    scale = size / max(data.shape[-2:])
-    data = torchvision.transforms.functional.resize(data, [int(scale * data.shape[1]), int(scale * data.shape[2])])
-    data = torchvision.transforms.functional.center_crop(data, [size, size])
-    return data
+
+    def resize_fn(data: torch.Tensor, _: torch.Generator | None) -> torch.Tensor:
+        """Apply resizing and cropping to the input tensor."""
+        scale = size / max(data.shape[-2:])
+        data = torchvision.transforms.functional.resize(data, [int(scale * data.shape[1]), int(scale * data.shape[2])])
+        data = torchvision.transforms.functional.center_crop(data, [size, size])
+        return data
+
+    return resize_fn
+
+
+DEFAULT_AUGMENT_256 = augment(256)
+"""Default random augmentation for 256x256 images."""
 
 
 def trim_indices(mask: torch.Tensor) -> tuple[slice, slice]:
@@ -504,8 +520,7 @@ class BrainwebSlices(torch.utils.data.Dataset):
         orientation: Literal['axial', 'coronal', 'sagittal'] = 'axial',
         skip_slices: tuple[tuple[int, int], tuple[int, int], tuple[int, int]] = ((80, 80), (100, 100), (100, 100)),
         step: int = 1,
-        matrix_size: int = 256,
-        augmentations: bool = True,
+        slice_preparation: Callable[[torch.Tensor, torch.Generator | None], torch.Tensor] = DEFAULT_AUGMENT_256,
         mask_values: Mapping[str, float | None] = DEFAULT_VALUES,
         seed: int | Literal['index', 'random'] = 'random',
     ) -> None:
@@ -545,10 +560,9 @@ class BrainwebSlices(torch.utils.data.Dataset):
             or sagittal orientation.
         step
             Step size between slices, in voxel units (1mm).
-        matrix_size
-            Size of output slice (pixels).
-        augmentations
-            Whether to apply random augmentations to slices.
+        slice_preparation
+            Callable that performs slice augmentation and resizing, see `resize` or `augment` for examples.
+            The default applies slight random rotation, shear, scaling, and flips, and scales to 256x256 images.
         mask_values
             Values to use for masked out regions.
         seed
@@ -577,10 +591,7 @@ class BrainwebSlices(torch.utils.data.Dataset):
         self._files = tuple(files)
         self._ns_slices = np.cumsum(ns_slices)
 
-        if augmentations:
-            self.transforms = partial(augment, size=matrix_size)
-        else:
-            self.transforms = partial(resize, size=matrix_size)
+        self.slice_preparation = slice_preparation
 
         if seed == 'random':
             self._rng: torch.Generator | None = torch.default_generator
@@ -617,7 +628,6 @@ class BrainwebSlices(torch.utils.data.Dataset):
             data = torch.as_tensor(np.array(file['classes'][tuple(where)], dtype=np.uint8))
             classnames = tuple(file.attrs['classnames'])
         rng = torch.Generator().manual_seed(index) if self._rng is None else self._rng
-        data = data[trim_indices(data.sum(-1) > 0.5)]
         data = self.transforms(data.moveaxis(-1, 0) / 255, rng=rng).moveaxis(0, -1)
         mask = data.sum(-1) > 0.5
         result: dict[Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass'] | TClassNames, torch.Tensor] = {}

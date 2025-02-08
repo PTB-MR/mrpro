@@ -159,18 +159,18 @@ def test_brainwebtissue_random_values_float() -> None:
 
 
 @pytest.mark.parametrize('size', [128, 256])
-def test_affine_augment(size) -> None:
+def test_augment(size) -> None:
     """Test augment function."""
     data = RandomGenerator(1).float32_tensor((1, 150, 100))
 
-    aug_data = augment(data, size, rng=torch.Generator().manual_seed(42))
+    aug_data = augment(size)(data, rng=torch.Generator().manual_seed(42))
     assert aug_data.shape == (1, size, size)
     assert aug_data.dtype == data.dtype
 
-    aug_data_same = augment(data, size, rng=torch.Generator().manual_seed(42))
+    aug_data_same = augment(size)(data, rng=torch.Generator().manual_seed(42))
     torch.testing.assert_close(aug_data, aug_data_same)
 
-    aug_data_different = augment(data, size, rng=torch.Generator().manual_seed(43))
+    aug_data_different = augment(size)(data, rng=torch.Generator().manual_seed(43))
     assert not torch.isclose(aug_data, aug_data_different).all()
 
 
@@ -178,7 +178,7 @@ def test_affine_augment(size) -> None:
 def test_resize(size: int) -> None:
     """Text resize function."""
     data = RandomGenerator(2).float32_tensor((1, 150, 100))
-    resized = resize(data, size)
+    resized = resize(size)(data)
     assert resized.shape == (1, size, size)
     assert resized.dtype == data.dtype
 
