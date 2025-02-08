@@ -51,37 +51,44 @@ def unsqueeze_left(x: torch.Tensor, n: int) -> torch.Tensor:
 
 
 @endomorph
-def unsqueeze_tensors_left(*x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+def unsqueeze_tensors_left(*x: torch.Tensor, ndim: int | None = None) -> tuple[torch.Tensor, ...]:
     """Unsqueeze tensors on the left to the same number of dimensions.
 
     Parameters
     ----------
     x
         tensors to unsqueeze
+    ndim
+        number of dimensions to unsqueeze to. If `None`, unsqueeze to the maximum number of dimensions
+        of the input tensors.
+
 
     Returns
     -------
         unsqueezed tensors (views)
     """
-    max_dim = max(el.ndim for el in x)
-    return tuple(unsqueeze_left(el, max_dim - el.ndim) for el in x)
+    ndim_ = max(el.ndim for el in x) if ndim is None else ndim
+    return tuple(unsqueeze_left(el, ndim_ - el.ndim) for el in x)
 
 
 @endomorph
-def unsqueeze_tensors_right(*x: torch.Tensor) -> tuple[torch.Tensor, ...]:
+def unsqueeze_tensors_right(*x: torch.Tensor, ndim: int | None = None) -> tuple[torch.Tensor, ...]:
     """Unsqueeze tensors on the right to the same number of dimensions.
 
     Parameters
     ----------
     x
         tensors to unsqueeze
+    ndim
+        number of dimensions to unsqueeze to. If `None`, unsqueeze to the maximum number of dimensions
+        of the input tensors.
 
     Returns
     -------
         unsqueezed tensors (views)
     """
-    max_dim = max(el.ndim for el in x)
-    return tuple(unsqueeze_right(el, max_dim - el.ndim) for el in x)
+    ndim_ = max(el.ndim for el in x) if ndim is None else ndim
+    return tuple(unsqueeze_right(el, ndim_ - el.ndim) for el in x)
 
 
 @endomorph
