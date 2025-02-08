@@ -14,7 +14,7 @@ from mrpro.phantoms.brainweb import (
     BrainwebSlices,
     BrainwebTissue,
     BrainwebVolumes,
-    affine_augment,
+    augment,
     download_brainweb,
     resize,
     trim_indices,
@@ -87,8 +87,8 @@ def brainweb_test_data(tmp_path_factory):
 
 def test_brainwebvolumes_init(brainweb_test_data) -> None:
     """Test BrainwebVolumes dataset initialization."""
-    dataset = BrainwebVolumes(folder=brainweb_test_data, what=('m0', 'r1'))
-    assert len(dataset) == 2  # Two subjects
+    dataset = BrainwebVolumes(folder=brainweb_test_data)
+    assert len(dataset) == 2  # Two subjects in test data
 
 
 def test_brainweb_getitem(brainweb_test_data) -> None:
@@ -160,11 +160,18 @@ def test_brainwebtissue_random_values_float() -> None:
 
 @pytest.mark.parametrize('size', [128, 256])
 def test_affine_augment(size) -> None:
-    """Test affine_augment function."""
+    """Test augment function."""
     data = RandomGenerator(1).float32_tensor((1, 150, 100))
-    aug_data = affine_augment(data, size)
+
+    aug_data = augment(data, size, rng=torch.Generator().manual_seed(42))
     assert aug_data.shape == (1, size, size)
     assert aug_data.dtype == data.dtype
+
+    aug_data_same = augment(data, size, rng=torch.Generator().manual_seed(42))
+    torch.testing.assert_close(aug_data, aug_data_same)
+
+    aug_data_different = augment(data, size, rng=torch.Generator().manual_seed(43))
+    assert not torch.isclose(aug_data, aug_data_different).all()
 
 
 @pytest.mark.parametrize('size', [128, 256])

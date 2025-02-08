@@ -30,25 +30,34 @@ URL_TEMPLATE = (
     '&download_for_real=%5BStart+download%21%5D'
 )
 
-
-CLASSES = ('bck', 'skl', 'gry', 'wht', 'csf', 'mrw', 'dura', 'fat', 'fat2', 'mus', 'm-s', 'ves')  # noqa: typos
+# includes background
+ALL_CLASSES = ('bck', 'skl', 'gry', 'wht', 'csf', 'mrw', 'dura', 'fat', 'fat2', 'mus', 'm-s', 'ves')  # noqa: typos
 VERSION = 1
-CACHE_DIR = platformdirs.user_cache_dir('mrpro')  # ~/.cache/mrpro on Linux, %AppData%\Local\mrpro on Windows
+CACHE_DIR = platformdirs.user_cache_dir('mrpro')  #  ~/.cache/mrpro on Linux, %AppData%\Local\mrpro on Windows
 K = TypeVar('K')
 TClassNames = Literal['skl', 'gry', 'wht', 'csf', 'mrw', 'dura', 'fat', 'fat2', 'mus', 'm-s', 'ves']  # noqa: typos
 
 
 @dataclass
 class BrainwebTissue:
-    """Container for Parameters of a single tissue."""
+    """Container for Parameters of a single tissue.
+
+    Attributes are either single values or ranges.
+    If ranges, the values are sampled uniformly from within this range by the `sample_r1`, `sample_r2`, and `sample_m0`
+    methods. If a single value is given, this value is returned by the respective method.
+    """
 
     t1: float | tuple[float, float]
+    """T1 value or range (T1_min, T1_max) in seconds."""
     t2: float | tuple[float, float]
+    """T2 value or range (T2_min, T2_max) in seconds."""
     m0_abs: float | tuple[float, float]
+    """Absolute value or range (M0_min, M0_max) of the complex M0."""
     m0_phase: float | tuple[float, float] = 0.0
+    """Phase value or range (Phase_min, Phase_max) of the complex M0 in radians."""
 
     def sample_r1(self, rng: None | torch.Generator = None) -> torch.Tensor:
-        """Get randomized r1 value.
+        """Get (possibly randomized) r1=1/t1 value.
 
         Parameters
         ----------
@@ -60,7 +69,7 @@ class BrainwebTissue:
         return 1 / torch.tensor(self.t1)
 
     def sample_r2(self, rng: None | torch.Generator = None) -> torch.Tensor:
-        """Get randomized r2 value.
+        """Get (possibly randomized) r2=1/t2 value.
 
         Parameters
         ----------
@@ -72,7 +81,7 @@ class BrainwebTissue:
         return 1 / torch.tensor(self.t2)
 
     def sample_m0(self, rng: None | torch.Generator = None) -> torch.Tensor:
-        """Get renadomized complex m0 value.
+        """Get (possibly randomized) complex m0 value.
 
         Parameters
         ----------
@@ -90,27 +99,51 @@ class BrainwebTissue:
         return torch.polar(magnitude, phase)
 
 
-def affine_augment(data: torch.Tensor, size: int = 256, rng: torch.Generator | None = None) -> torch.Tensor:
-    """Apply random affine augmentation.
+def augment(
+    data: torch.Tensor,
+    size: int = 256,
+    rng: torch.Generator | None = None,
+    max_random_shear: float = 5,
+    max_random_rotation: float = 10,
+    max_random_scaling_factor: float = 0.1,
+    p_horizontal_flip: float = 0.5,
+    p_vertical_flip: float = 0.5,
+) -> torch.Tensor:
+    """Apply randomized affine augmentation and random flipping.
+
+    Applies a random rotation and shear to the input image.
+    The image is scaled such that the largest dimension is in
+    [size * (1 - max_random_scaling), size * (1 + max_random_scaling)], then padded/cropped to size `size x size`.
+    In scaling, the aspect ratio is preserved.
+    Random horizontal and vertical flips are applied with probability `p_horizontal_flip` and `p_vertical_flip`.
 
     Parameters
     ----------
     data
-        2D data to augment.
+        2D data to augment, shape `(..., height, width)`.
     size
         resulting image will be (size x size) pixels.
     rng
         Random number generator. `None` uses the default generator.
+    max_random_shear
+        Maximum random shear in degrees, shear is in [-max_shear, max_shear] in x and y direction.
+    max_random_rotation
+        Maximum random rotation in degrees, rotation is in [-max_rotation, max_rotation].
+    max_random_scaling_factor
+        Strength of the scaling randomization (see above).
+    p_horizontal_flip
+        Probability of horizontal flip.
+    p_vertical_flip
+        Probability of vertical flip.
     """
     rand = torch.empty(6).uniform_(-1, 1, generator=rng).tolist()
 
-    shear_x = rand[0] * 5
-    shear_y = rand[1] * 5
-    angle = rand[2] * 10
-    scale = size / max(data.shape[1:])
-    scale *= 1 + 0.1 * rand[3]
-    translate = rand[4:6]
-
+    shear_x = rand[0] * max_random_shear
+    shear_y = rand[1] * max_random_shear
+    angle = rand[2] * max_random_rotation
+    scale = size / max(data.shape[-2:])
+    scale *= 1 + max_random_scaling_factor * rand[3]
+    translate = rand[4:6]  # single pixel translations
     data = torchvision.transforms.functional.affine(
         data,
         angle=angle,
@@ -120,7 +153,12 @@ def affine_augment(data: torch.Tensor, size: int = 256, rng: torch.Generator | N
         interpolation=torchvision.transforms.InterpolationMode.BILINEAR,
         fill=0.0,
     )
+    rand = torch.empty(2).uniform_(0, 1, generator=rng).tolist()
+    data = torchvision.transforms.functional.hflip(data) if rand[0] < p_horizontal_flip else data
+    data = torchvision.transforms.functional.vflip(data) if rand[0] < p_vertical_flip else data
+
     data = torchvision.transforms.functional.center_crop(data, [size, size])
+
     return data
 
 
@@ -138,14 +176,14 @@ def resize(data: torch.Tensor, size: int = 256) -> torch.Tensor:
     -------
     resized data
     """
-    scale = size / max(data.shape[1:])
+    scale = size / max(data.shape[-2:])
     data = torchvision.transforms.functional.resize(data, [int(scale * data.shape[1]), int(scale * data.shape[2])])
     data = torchvision.transforms.functional.center_crop(data, [size, size])
     return data
 
 
 def trim_indices(mask: torch.Tensor) -> tuple[slice, slice]:
-    """Get slices that remove outer masked out values.
+    """Get slices that remove fully masked out outer rows and columns.
 
     Parameters
     ----------
@@ -154,7 +192,8 @@ def trim_indices(mask: torch.Tensor) -> tuple[slice, slice]:
 
     Returns
     -------
-        slices to index data
+    Two `slice` ohjects, that can be used to index the data
+    to remove fully masked out outer rows and columns.
     """
     mask = mask.any(dim=tuple(range(mask.ndim - 2)))
     row_mask, col_mask = mask.any(1).short(), mask.any(0).short()
@@ -219,7 +258,7 @@ def download_brainweb(
         for i, x in enumerate(values):
             values[i] = np.clip(x - np.min(x[50], (0, 1)), 0, 4096)
         sum_values = sum(values)
-        values.pop(CLASSES.index('bck'))  # noqa: typos
+        values.pop(ALL_CLASSES.index('bck'))  # noqa: typos
         for i, x in enumerate(values):
             x = np.divide(x, sum_values, where=sum_values != 0)
             x[sum_values == 0] = 0
@@ -230,7 +269,7 @@ def download_brainweb(
     def download_subject(subject: str, outfilename: Path, workers: int, progressbar: tqdm) -> None:
         """Download and process all class files for a single subject asynchronously."""
         with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
-            futures = {executor.submit(load_file, URL_TEMPLATE.format(subject=subject, c=c)): c for c in CLASSES}
+            futures = {executor.submit(load_file, URL_TEMPLATE.format(subject=subject, c=c)): c for c in ALL_CLASSES}
 
             downloaded_data = {}
             for future in concurrent.futures.as_completed(futures):
@@ -238,7 +277,7 @@ def download_brainweb(
                 downloaded_data[c] = future.result()
                 progressbar.update(1)
 
-        values = norm_([unpack(downloaded_data.pop(c), shape=(362, 434, 362), dtype=np.uint16) for c in CLASSES])
+        values = norm_([unpack(downloaded_data.pop(c), shape=(362, 434, 362), dtype=np.uint16) for c in ALL_CLASSES])
 
         with h5py.File(outfilename, 'w') as f:
             f.create_dataset(
@@ -249,7 +288,7 @@ def download_brainweb(
                 chunks=(4, 4, 4, values.shape[-1]) if compress else None,
                 compression='lzf' if compress else None,
             )
-            f.attrs['classnames'] = [c for c in CLASSES if c != 'bck']  # noqa: typos
+            f.attrs['classnames'] = [c for c in ALL_CLASSES if c != 'bck']  # noqa: typos
             f.attrs['subject'] = int(subject)
             f.attrs['version'] = VERSION
 
@@ -258,7 +297,7 @@ def download_brainweb(
     output_directory = Path(output_directory)
     output_directory.mkdir(parents=True, exist_ok=True)
 
-    totalsteps = len(subjects) * len(CLASSES)
+    totalsteps = len(subjects) * len(ALL_CLASSES)
     with tqdm(total=totalsteps, desc='Downloading Brainweb data', disable=not progress) as progressbar:
         for subject in subjects:
             outfilename = output_directory / f's{subject}.h5'
@@ -272,7 +311,7 @@ def download_brainweb(
                         else None
                     ):
                         # file is already downloaded and up to date
-                        progressbar.update(len(CLASSES))
+                        progressbar.update(len(ALL_CLASSES))
                         continue
             download_subject(subject, outfilename, workers, progressbar)
 
@@ -281,6 +320,13 @@ class BrainwebVolumes(torch.utils.data.Dataset):
     """3D Brainweb Dataset.
 
     This dataset provides 1mm isotropic 3D brain data of various quantitative MRI (qMRI) parameters.
+
+    References
+    ----------
+    .. [AubertBroche2006] Aubert-Broche, B., Griffin, M., Pike, G.B., Evans, A.C., & Collins, D.L. (2006).
+       Twenty New Digital Brain Phantoms for Creation of Validation Image Data Bases.
+       *IEEE Transactions on Medical Imaging, 25*(11), 1410-1416.
+       https://doi.org/10.1109/TMI.2006.883453
     """
 
     @staticmethod
@@ -330,6 +376,18 @@ class BrainwebVolumes(torch.utils.data.Dataset):
                 - Brainweb class name: raw percentage for a specific tissue class.
         parameters
             Parameters for each tissue class.
+            The tissue classes are:
+                - 'skl': Skull
+                - 'gry': Gray matter
+                - 'what': White matter
+                - 'csf': Cerebrospinal fluid
+                - 'mrw': Bone marrow
+                - 'dura': Dura
+                - 'fat': Fat
+                - 'fat2': Fat and Tissue
+                - 'mus': Muscle
+                - 'm-s': Skin
+                - 'ves': Vessels
         mask_values
             Values to use for masked out regions.
         seed
@@ -407,7 +465,15 @@ class BrainwebVolumes(torch.utils.data.Dataset):
 
 
 class BrainwebSlices(torch.utils.data.Dataset):
-    """Dataset of 2D qMRI parameter slices based on Brainweb dataset."""
+    """Dataset of 2D qMRI parameter slices based on Brainweb dataset.
+
+    References
+    ----------
+    .. [AubertBroche2006] Aubert-Broche, B., Griffin, M., Pike, G.B., Evans, A.C., & Collins, D.L. (2006).
+       Twenty New Digital Brain Phantoms for Creation of Validation Image Data Bases.
+       *IEEE Transactions on Medical Imaging, 25*(11), 1410-1416.
+       https://doi.org/10.1109/TMI.2006.883453
+    """
 
     @staticmethod
     def download(
@@ -460,6 +526,18 @@ class BrainwebSlices(torch.utils.data.Dataset):
                 - tissueclass: Class index.
         parameters
             Parameters for each tissue class.
+            The tissue classes are:
+                - 'skl': Skull
+                - 'gry': Gray matter
+                - 'what': White matter
+                - 'csf': Cerebrospinal fluid
+                - 'mrw': Bone marrow
+                - 'dura': Dura
+                - 'fat': Fat
+                - 'fat2': Fat and Tissue
+                - 'mus': Muscle
+                - 'm-s': Skin
+                - 'ves': Vessels
         orientation
             Orientation of slices (axial, coronal, or sagittal).
         skip_slices
@@ -500,7 +578,7 @@ class BrainwebSlices(torch.utils.data.Dataset):
         self._ns_slices = np.cumsum(ns_slices)
 
         if augmentations:
-            self.transforms = partial(affine_augment, size=matrix_size)
+            self.transforms = partial(augment, size=matrix_size)
         else:
             self.transforms = partial(resize, size=matrix_size)
 
