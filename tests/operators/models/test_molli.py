@@ -10,7 +10,7 @@ from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, crea
 @pytest.mark.parametrize(
     ('ti', 'result'),
     [
-        (0, 'ac'),  # short ti
+        (0, '-ac'),  # short ti
         (1e8, 'a'),  # long ti
     ],
 )
