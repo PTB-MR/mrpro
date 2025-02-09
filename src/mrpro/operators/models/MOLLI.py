@@ -52,6 +52,7 @@ class MOLLI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         -------
             signal with shape `(time, *other, coils, z, y, x)`
         """
-        ti = unsqueeze_right(self.ti, a.ndim - (self.ti.ndim - 1))  # -1 for time
+        ndim = max(a.ndim, c.ndim, t1.ndim)
+        ti = unsqueeze_right(self.ti, ndim - self.ti.ndim + 1)  # leftmost is time
         signal = a * (1 - c * torch.exp(ti / t1 * (1 - c)))
         return (signal,)
