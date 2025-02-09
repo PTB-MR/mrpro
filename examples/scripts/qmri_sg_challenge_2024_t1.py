@@ -1,6 +1,25 @@
 # %% [markdown]
 # # QMRI Challenge ISMRM 2024 - $T_1$ mapping
-# In the 2024 ISMRM QMRI Challenge, the goal is to estimate $T_1$ maps from a set of inversion recovery images.
+
+# %%
+# Imports
+import shutil
+import tempfile
+import zipfile
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import torch
+import zenodo_get
+from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore [import-untyped]
+from mrpro.algorithms.optimizers import adam
+from mrpro.data import IData
+from mrpro.operators import MagnitudeOp, DictionaryMatchOp
+from mrpro.operators.functionals import MSE
+from mrpro.operators.models import InversionRecovery
+
+# %% [markdown]
+# ### Overview
 # The dataset consists of images obtained at 10 different inversion times using a turbo spin echo sequence. Each
 # inversion time is saved in a separate DICOM file. In order to obtain a $T_1$ map, we are going to:
 # - download the data from Zenodo
@@ -109,28 +128,12 @@ functional = mse @ model
 
 # %%
 # Define 100 T1 values between 0.1 and 3.0 s
-t1_dictionary = torch.linspace(0.1, 3.0, 100)
-
-# Calculate the signal corresponding to each of these T1 values. We set M0 to 1, but this is arbitrary because M0 is
-# just a scaling factor and we are going to normalize the signal curves.
-(signal_dictionary,) = model(torch.ones(1), t1_dictionary)
-signal_dictionary = signal_dictionary.to(dtype=torch.complex64)
-signal_dictionary /= torch.linalg.vector_norm(signal_dictionary, dim=0)
-
-# Calculate the dot-product and select for each voxel the T1 values that correspond to the maximum of the dot-product
-import einops
-
-dot_product = einops.einsum(
-    idata_multi_ti.data,
-    signal_dictionary,
-    'ti ..., ti t1 -> t1 ...',
-)
-idx_best_match = dot_product.abs().argmax(dim=0)
-t1_start = t1_dictionary[idx_best_match]
-
-# %% [markdown]
-# The maximum absolute value observed is a good approximation for $M_0$
-
+t1_dictionary = torch.linspace(0.1, 3, 100)
+# Dictionary Matching
+dict_match_op = DictionaryMatchOp(model)
+dictionary = dict_match_op.append(torch.ones(1), t1_dictionary)
+t1_start = dict_match_op.forward(idata_multi_ti.data)[1]
+t1_start = t1_start.reshape(idata_multi_ti.data.shape[1:])
 # %%
 m0_start = idata_multi_ti.data.abs().amax(dim=0)
 
