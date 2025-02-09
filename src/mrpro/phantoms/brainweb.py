@@ -335,7 +335,7 @@ def download_brainweb(
 class BrainwebVolumes(torch.utils.data.Dataset):
     """3D Brainweb Dataset.
 
-    This dataset provides 1mm isotropic 3D brain data of various quantitative MRI (qMRI) parameters.
+    This dataset provides 1 mm isotropic 3D brain data of various quantitative MRI (qMRI) parameters.
 
     References
     ----------
@@ -381,36 +381,34 @@ class BrainwebVolumes(torch.utils.data.Dataset):
         folder:
             The directory containing Brainweb HDF5 files
         what
-            What to return for each subject:
+            What to return for each subject.
+            Psossible values are:
                 - r1: R1 relaxation rate.
                 - r2: R2 relaxation rate.
                 - m0: M0 magnetization.
                 - t1: T1 relaxation time.
                 - t2: T2 relaxation time.
-                - mask: Mask indicating valid data.
-                - tissueclass: (Majority) Class index.
+                - mask: mask indicating valid data.
+                - tissueclass: (majority) Class index.
                 - Brainweb class name: raw percentage for a specific tissue class.
         parameters
             Parameters for each tissue class.
-            The tissue classes are:
-                - 'skl': Skull
-                - 'gry': Gray matter
-                - 'what': White matter
-                - 'csf': Cerebrospinal fluid
-                - 'mrw': Bone marrow
-                - 'dura': Dura
-                - 'fat': Fat
-                - 'fat2': Fat and Tissue
-                - 'mus': Muscle
-                - 'm-s': Skin
-                - 'ves': Vessels
+            The Brainweb tissue classes are:
+                - skl: skull
+                - gry: gray matter
+                - wht: white matter
+                - csf: cerebrospinal fluid
+                - mrw: bone marrow
+                - dura: dura
+                - fat: fat
+                - fat2: fat and Tissue
+                - mus: muscle
+                - m-s: skin
+                - ves: vessels
         mask_values
-            Values to use for masked out regions.
+            Default values to use for masked out regions.
         seed
-            Determines how the random number generator is initialized:
-            - If ``random``, uses torch.default_generator.
-            - If an integer, creates a new torch.Generator seeded with the provided value.
-            - If ``index``, uses the index of the subject as seed.
+            Random seed. Can be an int, the strings ``index`` to use slice index as seed, or ``random`` for random seed.
         """
         self.files = list(Path(folder).glob('s??.h5'))
 
@@ -442,6 +440,7 @@ class BrainwebVolumes(torch.utils.data.Dataset):
         result: dict[Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass'] | TClassNames, torch.Tensor] = {}
         for el in self.what:
             if el == 'r1':
+                # / 255 to convert from uint8 to 0...1
                 values = torch.stack([self.parameters[k].sample_r1() for k in classnames]) / 255
                 result[el] = (data.to(values) @ values)[..., 0]
             elif el == 'r2':
@@ -531,42 +530,43 @@ class BrainwebSlices(torch.utils.data.Dataset):
         folder
             Folder with Brainweb data as HDF5 files.
         what
-            What to return for each slice:
+            What to return for each slice.
+            Possible values are:
                 - r1: R1 relaxation rate.
                 - r2: R2 relaxation rate.
                 - m0: M0 magnetization.
                 - t1: T1 relaxation time.
                 - t2: T2 relaxation time.
-                - mask: Mask indicating valid data.
-                - tissueclass: Class index.
+                - mask: mask indicating valid data.
+                - tissueclass: class index.
         parameters
             Parameters for each tissue class.
-            The tissue classes are:
-                - 'skl': Skull
-                - 'gry': Gray matter
-                - 'what': White matter
-                - 'csf': Cerebrospinal fluid
-                - 'mrw': Bone marrow
-                - 'dura': Dura
-                - 'fat': Fat
-                - 'fat2': Fat and Tissue
-                - 'mus': Muscle
-                - 'm-s': Skin
-                - 'ves': Vessels
+            The Brainweb tissue classes are:
+                - skl: skull
+                - gry: gray matter
+                - wht: white matter
+                - csf: cerebrospinal fluid
+                - mrw: bone marrow
+                - dura: dura
+                - fat: fat
+                - fat2: fat and Tissue
+                - mus: muscle
+                - m-s: skin
+                - ves: vessels
         orientation
             Orientation of slices (axial, coronal, or sagittal).
         skip_slices
-            specifies how much many slices to skip from the beginning and end for each of axial, coronal,
+            Specifies how much many slices to skip from the beginning and end for each of axial, coronal,
             or sagittal orientation.
         step
-            Step size between slices, in voxel units (1mm).
+            Step size between slices, in voxel units (1 mm).
         slice_preparation
             Callable that performs slice augmentation and resizing, see `resize` or `augment` for examples.
             The default applies slight random rotation, shear, scaling, and flips, and scales to 256x256 images.
         mask_values
-            Values to use for masked out regions.
+            Defult values to use for masked out regions.
         seed
-            Random seed - can be an int, ``index`` to use slice index as seed, or ``random`` for random seed.
+            Random seed. Can be an int, the strings ``index`` to use slice index as seed, or ``random`` for random seed.
         """
         self.parameters = parameters
         self.step = step
@@ -627,8 +627,11 @@ class BrainwebSlices(torch.utils.data.Dataset):
             where[self._axis] = slice_id
             data = torch.as_tensor(np.array(file['classes'][tuple(where)], dtype=np.uint8))
             classnames = tuple(file.attrs['classnames'])
+
         rng = torch.Generator().manual_seed(index) if self._rng is None else self._rng
-        data = self.slice_preparation(data.moveaxis(-1, 0) / 255, rng).moveaxis(0, -1)
+        data = self.slice_preparation(data.moveaxis(-1, 0) / 255, rng).moveaxis(
+            0, -1
+        )  # / 255 to convert from uint8 to 0...1
         mask = data.sum(-1) > 0.5
         result: dict[Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass'] | TClassNames, torch.Tensor] = {}
 

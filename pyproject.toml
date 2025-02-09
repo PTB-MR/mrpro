@@ -220,6 +220,7 @@ Reson = "Reson"   # required for Proc. Intl. Soc. Mag. Reson. Med.
 iy = "iy"
 arange = "arange" # torch.arange
 Ba = "Ba"
+wht = "wht"       # Brainweb tissue class
 
 [tool.typos.files]
 extend-exclude = [
