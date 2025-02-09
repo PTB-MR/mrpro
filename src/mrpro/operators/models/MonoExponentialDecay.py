@@ -38,6 +38,7 @@ class MonoExponentialDecay(SignalModel[torch.Tensor, torch.Tensor]):
         -------
             signal with shape `(time, *other, coils, z, y, x)`
         """
-        decay_time = unsqueeze_right(self.decay_time, m0.ndim - (self.decay_time.ndim - 1))  # -1 for time
+        ndim = max(m0.ndim, decay_constant.ndim)
+        decay_time = unsqueeze_right(self.decay_time, ndim - self.decay_time.ndim + 1)  # leftmost is time
         signal = m0 * torch.exp(-(decay_time / decay_constant))
         return (signal,)
