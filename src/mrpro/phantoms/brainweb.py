@@ -138,7 +138,7 @@ def augment(
     Callable that applies augmentation to the input tensor
     """
 
-    def augment_fn(data: torch.Tensor, rng: torch.Generator | None) -> torch.Tensor:
+    def augment_fn(data: torch.Tensor, rng: torch.Generator | None = None) -> torch.Tensor:
         """Apply augmentation to the input tensor."""
         rand = torch.empty(6).uniform_(-1, 1, generator=rng).tolist()
 
@@ -184,7 +184,7 @@ def resize(size: int = 256) -> Callable[[torch.Tensor, torch.Generator | None], 
     Callable that resizes and crops the input tensor.
     """
 
-    def resize_fn(data: torch.Tensor, _: torch.Generator | None) -> torch.Tensor:
+    def resize_fn(data: torch.Tensor, _: torch.Generator | None = None) -> torch.Tensor:
         """Apply resizing and cropping to the input tensor."""
         scale = size / max(data.shape[-2:])
         data = torchvision.transforms.functional.resize(data, [int(scale * data.shape[1]), int(scale * data.shape[2])])
