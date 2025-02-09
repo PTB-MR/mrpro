@@ -178,7 +178,7 @@ def test_augment(size) -> None:
 def test_resize(size: int) -> None:
     """Text resize function."""
     data = RandomGenerator(2).float32_tensor((1, 150, 100))
-    resized = resize(size)(data)
+    resized = resize(size)(data, None)
     assert resized.shape == (1, size, size)
     assert resized.dtype == data.dtype
 
