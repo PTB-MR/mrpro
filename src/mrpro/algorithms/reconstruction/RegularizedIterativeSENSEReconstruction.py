@@ -21,7 +21,7 @@ from mrpro.operators.LinearOperator import LinearOperator
 class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
     r"""Regularized iterative SENSE reconstruction.
 
-    This algorithm solves the problem :math:`min_x \frac{1}{2}||W^\frac{1}{2} (Ax - y)||_2^2 +
+    This algorithm solves the problem :math:`\min_{x} \frac{1}{2}||W^\frac{1}{2} (Ax - y)||_2^2 +
     \frac{1}{2}\lambda||Bx - x_0||_2^2`
     by using a conjugate gradient algorithm to solve
     :math:`H x = b` with :math:`H = A^H W A + \lambda B^H B` and :math:`b = A^H W y + \lambda B^H x_0` where :math:`A`

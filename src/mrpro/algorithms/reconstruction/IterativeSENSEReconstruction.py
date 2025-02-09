@@ -17,7 +17,7 @@ from mrpro.operators.LinearOperator import LinearOperator
 class IterativeSENSEReconstruction(RegularizedIterativeSENSEReconstruction):
     r"""Iterative SENSE reconstruction.
 
-    This algorithm solves the problem :math:`min_x \frac{1}{2}||W^\frac{1}{2} (Ax - y)||_2^2`
+    This algorithm solves the problem :math:`\min_{x} \frac{1}{2}||W^\frac{1}{2} (Ax - y)||_2^2`
     by using a conjugate gradient algorithm to solve
     :math:`H x = b` with :math:`H = A^H W A` and :math:`b = A^H W y` where :math:`A` is the acquisition model
     (coil sensitivity maps, Fourier operator, k-space sampling), :math:`y` is the acquired k-space data and :math:`W`
