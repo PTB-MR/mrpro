@@ -184,7 +184,7 @@ def resize(size: int = 256) -> Callable[[torch.Tensor, torch.Generator | None], 
     Callable that resizes and crops the input tensor.
     """
 
-    def resize_fn(data: torch.Tensor, _: torch.Generator | None = None) -> torch.Tensor:
+    def resize_fn(data: torch.Tensor, rng: torch.Generator | None = None) -> torch.Tensor:  # noqa: ARG001
         """Apply resizing and cropping to the input tensor."""
         scale = size / max(data.shape[-2:])
         data = torchvision.transforms.functional.resize(data, [int(scale * data.shape[1]), int(scale * data.shape[2])])
@@ -628,7 +628,7 @@ class BrainwebSlices(torch.utils.data.Dataset):
             data = torch.as_tensor(np.array(file['classes'][tuple(where)], dtype=np.uint8))
             classnames = tuple(file.attrs['classnames'])
         rng = torch.Generator().manual_seed(index) if self._rng is None else self._rng
-        data = self.transforms(data.moveaxis(-1, 0) / 255, rng=rng).moveaxis(0, -1)
+        data = self.slice_preparation(data.moveaxis(-1, 0) / 255, rng=rng).moveaxis(0, -1)
         mask = data.sum(-1) > 0.5
         result: dict[Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass'] | TClassNames, torch.Tensor] = {}
 
