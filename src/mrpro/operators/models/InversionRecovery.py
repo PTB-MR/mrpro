@@ -38,6 +38,7 @@ class InversionRecovery(SignalModel[torch.Tensor, torch.Tensor]):
         -------
             signal with shape `(time, *other, coils, z, y, x)`
         """
-        ti = unsqueeze_right(self.ti, m0.ndim - (self.ti.ndim - 1))  # -1 for time
+        ndim = max(m0.ndim, t1.ndim)
+        ti = unsqueeze_right(self.ti, ndim - self.ti.ndim + 1)  # leftmost is time
         signal = m0 * (1 - 2 * torch.exp(-(ti / t1)))
         return (signal,)

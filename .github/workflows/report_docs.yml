@@ -11,7 +11,10 @@ jobs:
   docs_report:
     name: Docs report
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.event == 'pull_request' }}
+    if: >-
+      ${{ github.event.workflow_run.event == 'pull_request' &&
+          github.event.workflow_run.conclusion != 'cancelled' &&
+          github.event.workflow_run.conclusion != 'skipped' }}
     permissions:
       actions: read
       pull-requests: write
@@ -50,7 +53,7 @@ jobs:
           gh pr view --repo "${PR_TARGET_REPO}" "${PR_BRANCH}" \
               --json 'number' --jq '"number=\(.number)"' \
               >> "${GITHUB_OUTPUT}"
-  
+
 
       # if the build of docs was successful the "artifact-url" will be non-empty
       - name: Update PR with link to summary
@@ -86,7 +89,11 @@ jobs:
   deploy:
     name: Deploy docs
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' }}
+    if: >-
+      ${{ github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.head_branch == 'main' &&
+          github.event.workflow_run.conclusion != 'cancelled' &&
+          github.event.workflow_run.conclusion != 'skipped' }}
     permissions:
         actions: read
         pages: write
