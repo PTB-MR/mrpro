@@ -56,8 +56,7 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[*Tin]]):
         newy = newy.to(dtype=torch.complex64)
         newy = newy / torch.linalg.norm(newy, dim=0, keepdim=True)
 
-        if newy.ndimension() == 1:
-            newy = newy.unsqueeze(0)  # Adding a new dimension to make it 2D
+
         newy = newy.flatten(start_dim=1)
         newx = [x.flatten() for x in torch.broadcast_tensors(*x)]
         if not self.x:
