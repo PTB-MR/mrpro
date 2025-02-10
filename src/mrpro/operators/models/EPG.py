@@ -8,9 +8,8 @@ import torch
 
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.operators.SignalModel import SignalModel
+from mrpro.utils.reshape import unsqueeze_tensors_right
 from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
-
-from ...utils.reshape import unsqueeze_tensors_right
 
 
 @dataclass
@@ -195,7 +194,6 @@ def relax(state: torch.Tensor, relaxation_matrix: torch.Tensor, t1_recovery: boo
     return state
 
 
-@torch.jit.script
 def acquisition(state: torch.Tensor, m0: torch.Tensor) -> torch.Tensor:
     """Calculate the signal from the EPG state."""
     return m0 * state[..., 0, 0]
@@ -334,6 +332,28 @@ class GradientDephasingBlock(EPGBlock):
         return torch.tensor(0.0)
 
 
+@torch.jit.script
+def fisp_block(
+    flip_angles: torch.Tensor,
+    rf_phases: torch.Tensor,
+    tes: torch.Tensor,
+    trs: torch.Tensor,
+    state: torch.Tensor,
+    m0: torch.Tensor,
+    t1: torch.Tensor,
+    t2: torch.Tensor,
+    relative_b1: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, list[torch.Tensor]]:
+    signal = []
+    for flip_angle, rf_phase, te, tr in zip(flip_angles, rf_phases, tes, trs, strict=False):
+        state = rf(state, rf_matrix(flip_angle, rf_phase, relative_b1))
+        state = relax(state, relax_matrix(te, t1, t2))
+        signal.append(acquisition(state, m0))
+        state = gradient_dephasing(state)
+        state = relax(state, relax_matrix((tr - te), t1, t2))
+    return state, signal
+
+
 class FispBlock(EPGBlock):
     """FISP data acquisition block.
 
@@ -402,15 +422,17 @@ class FispBlock(EPGBlock):
         -------
             EPG configuration states after the block and the acquired signals
         """
-        signal = []
-        unsqueezed = unsqueeze_tensors_right(self.flip_angles, self.rf_phases, self.te, self.tr, ndim=parameters.ndim)
-        for flip_angle, rf_phase, te, tr in zip(*unsqueezed, strict=True):
-            state = rf(state, rf_matrix(flip_angle, rf_phase, parameters.relative_b1))
-            state = relax(state, relax_matrix(te, parameters.t1, parameters.t2))
-            signal.append(acquisition(state, parameters.m0))
-            state = gradient_dephasing(state)
-            state = relax(state, relax_matrix((tr - te), parameters.t1, parameters.t2))
-        return state, signal
+        # signal = []
+        # unsqueezed = unsqueeze_tensors_right(self.flip_angles, self.rf_phases, self.te, self.tr, ndim=parameters.ndim)
+        # for flip_angle, rf_phase, te, tr in zip(*unsqueezed, strict=True):
+        #     state = rf(state, rf_matrix(flip_angle, rf_phase, parameters.relative_b1))
+        #     state = relax(state, relax_matrix(te, parameters.t1, parameters.t2))
+        #     signal.append(acquisition(state, parameters.m0))
+        #     state = gradient_dephasing(state)
+        #     state = relax(state, relax_matrix((tr - te), parameters.t1, parameters.t2))
+        # return state, signal
+        attributes = unsqueeze_tensors_right(self.flip_angles, self.rf_phases, self.te, self.tr, ndim=parameters.ndim)
+        return fisp_block(*attributes, state, parameters.m0, parameters.t1, parameters.t2, parameters.relative_b1)
 
 
 class InversionBlock(EPGBlock):
@@ -630,7 +652,8 @@ class EPGSignalModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch
             self.sequence = EPGSequence(sequence)
         else:
             self.sequence = sequence
-        self.sequence.compile()
+        # self.sequence = torch.jit.script(self.sequence)
+        # self.sequence.compile()
 
     def forward(
         self, t1: torch.Tensor, t2: torch.Tensor, m0: torch.Tensor, relative_b1: torch.Tensor | None = None
