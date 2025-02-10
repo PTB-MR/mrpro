@@ -159,7 +159,7 @@ class CartesianSamplingOp(LinearOperator):
         if not self._needs_indexing:
             return (y,)
 
-        y_kflat = rearrange(y, '... coil k2 k1 k0 -> ... coil (k2 k1 k0)')
+        y_kflat = rearrange(y, '... k2 k1 k0 -> ... (k2 k1 k0)')
 
         if self._inside_encoding_matrix_idx is not None:
             idx = unsqueeze_left(self._inside_encoding_matrix_idx, y_kflat.ndim - self._inside_encoding_matrix_idx.ndim)
@@ -169,7 +169,7 @@ class CartesianSamplingOp(LinearOperator):
             y_kflat, self._sorted_grid_shape.z * self._sorted_grid_shape.y * self._sorted_grid_shape.x, self._fft_idx
         )
 
-        # reshape to  ..., other, coil, k2_enc, k1_enc, k0_enc
+        # reshape to  ..., other, coils, k2_enc, k1_enc, k0_enc
         y_reshaped = y_scattered.reshape(
             *y.shape[:-3],
             self._sorted_grid_shape.z,

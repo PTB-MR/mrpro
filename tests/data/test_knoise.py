@@ -5,6 +5,18 @@ import torch
 from mrpro.data import KNoise
 
 
+def test_knoise_from_tensor(random_test_data):
+    """Create KNoise from tensor."""
+    noise = KNoise(data=random_test_data)
+    assert noise.data.shape == random_test_data.shape
+
+
+def test_knoise_from_file(ismrmrd_cart):
+    """Create KNoise from file."""
+    knoise = KNoise.from_file(ismrmrd_cart.filename)
+    assert knoise is not None
+
+
 def test_knoise_to_complex128(random_test_data):
     """Change dtype to complex128."""
     noise = KNoise(data=random_test_data).to(dtype=torch.complex128)
@@ -13,7 +25,7 @@ def test_knoise_to_complex128(random_test_data):
 
 @pytest.mark.cuda
 def test_knoise_cuda(random_test_data):
-    """Move KNois object to CUDA memory."""
+    """Move KNoise object to CUDA memory."""
     noise = KNoise(data=random_test_data).cuda()
     assert noise.data.is_cuda
 

@@ -102,6 +102,7 @@ def test_wavelet_op_complex_real_shape():
         ((6, 10, 20, 30), (20, 30, 6), (-2, -1, -4)),
         ((6, 10, 20, 30), (20, 30, 6), (2, 3, 0)),
         ((5, 10, 20, 30), None, (-3, -2, -1)),
+        ((2, 3, 10, 20, 30), (10, 20, 30), (-3, -2, -1)),
     ],
 )
 def test_wavelet_op_isometry(im_shape, domain_shape, dim, wavelet_name):
@@ -125,6 +126,7 @@ def test_wavelet_op_isometry(im_shape, domain_shape, dim, wavelet_name):
         ((6, 10, 20, 30), (6, 20, 30), (-4, -2, -1)),
         ((6, 10, 20, 30), (20, 30, 6), (-2, -1, -4)),
         ((6, 10, 20, 30), (20, 30, 6), (2, 3, 0)),
+        ((2, 3, 10, 20, 30), (10, 20, 30), (-3, -2, -1)),
     ],
 )
 def test_wavelet_op_adjointness(im_shape, domain_shape, dim, wavelet_name):
@@ -160,6 +162,7 @@ def test_wavelet_op_adjointness(im_shape, domain_shape, dim, wavelet_name):
         ((6, 10, 20, 30), (6, 20, 30), (-4, -2, -1)),
         ((6, 10, 20, 30), (20, 30, 6), (-2, -1, -4)),
         ((6, 10, 20, 30), (20, 30, 6), (2, 3, 0)),
+        ((2, 3, 10, 20, 30), (10, 20, 30), (-3, -2, -1)),
     ],
 )
 def test_wavelet_op_unitary(im_shape, domain_shape, dim, wavelet_name):
