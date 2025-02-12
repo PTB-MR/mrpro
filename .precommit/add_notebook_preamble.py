@@ -16,8 +16,9 @@ import_python = """# %% tags=["remove-cell"]
 import importlib
 
 if not importlib.util.find_spec('mrpro'):
-    %pip install mrpro[notebook]
+    %pip install mrpro[notebook] 'torchkbnufft==1.4.0'
 """
+
 
 # the temp files of jupytext have the header which looks like:
 # ---
