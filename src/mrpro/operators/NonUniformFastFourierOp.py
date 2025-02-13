@@ -1,7 +1,6 @@
 """Non-Uniform Fast Fourier Operator."""
 
 from collections.abc import Sequence
-from enum import Enum
 from functools import partial
 from itertools import product
 from typing import Literal
@@ -14,14 +13,6 @@ from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.FastFourierOp import FastFourierOp
 from mrpro.operators.LinearOperator import LinearOperator
-
-
-class FinufftOversamplingFactors(Enum):
-    """Oversampling factors supported by finufft."""
-
-    TWO = 2.0
-    ONEPOINTTWOFIVE = 1.25
-    AUTO = 0.0
 
 
 class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
