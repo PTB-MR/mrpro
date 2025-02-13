@@ -66,7 +66,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         if not self._direction_zyx:
             return
         if len(self._direction_zyx) != 1 and len(self._direction_zyx) != 2 and len(self._direction_zyx) != 3:
-            raise ValueError('Only 0D, 1D, 2Dn or 3D NUFFT is supported')
+            raise ValueError('Only 0D, 1D, 2D or 3D NUFFT is supported')
 
         trajectory = [
             ks for ks, i in zip((traj.kz, traj.ky, traj.kx), (-3, -2, -1), strict=True) if i in self._direction_zyx
