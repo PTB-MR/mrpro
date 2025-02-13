@@ -69,16 +69,17 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
 
         # Convert to negative indexing
         direction_dict = {'z': -3, 'y': -2, 'x': -1, -3: -3, -2: -2, -1: -1}
-        direction_zyx = tuple(direction_dict[d] for d in direction)
-        if len(direction) != len(set(direction_zyx)):
-            raise ValueError(f'Directions must be unique. Normalized directions are {direction_zyx}')
-        if not direction_zyx:
+        self._direction_zyx = tuple(direction_dict[d] for d in direction)
+        if len(direction) != len(set(self._direction_zyx)):
+            raise ValueError(f'Directions must be unique. Normalized directions are {self._direction_zyx}')
+        if not self._direction_zyx:
             return
-        if len(direction_zyx) != 1 and len(direction_zyx) != 2 and len(direction_zyx) != 3:
-            raise ValueError('Only 1D, 2D or 3D NUFFT is supported')
-        self._direction_zyx = direction_zyx
+        if len(self._direction_zyx) != 1 and len(self._direction_zyx) != 2 and len(self._direction_zyx) != 3:
+            raise ValueError('Only 0D, 1D, 2Dn or 3D NUFFT is supported')
 
-        trajectory = [ks for ks, i in zip((traj.kz, traj.ky, traj.kx), (-3, -2, -1), strict=True) if i in direction_zyx]
+        trajectory = [
+            ks for ks, i in zip((traj.kz, traj.ky, traj.kx), (-3, -2, -1), strict=True) if i in self._direction_zyx
+        ]
 
         # Find out along which dimensions (k0, k1 or k2) nufft needs to be applied, i.e. where it is not singleton
         dimension_210: list[int] = []
@@ -91,17 +92,19 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         # For e.g. single shot acquisitions the number of dimensions do not necessarily match the number of
         # directions. This leads to a mismatch between reconstructed and expected dimensions. To avoid this we try
         # to find the most logical solution, i.e. add another singleton direction
-        if len(direction_zyx) > len(dimension_210):
+        if len(self._direction_zyx) > len(dimension_210):
             for dim in (-1, -2, -3):
                 if dim not in dimension_210 and all(ks.shape[dim] == 1 for ks in (traj.kz, traj.ky, traj.kx)):
                     dimension_210.append(dim)
-                if len(direction_zyx) == len(dimension_210):
+                if len(self._direction_zyx) == len(dimension_210):
                     break
             dimension_210.sort()
         self._dimension_210 = tuple(dimension_210)
 
         if len(self._direction_zyx) != len(self._dimension_210):
-            raise ValueError(f'Mismatch between number of nufft directions {direction_zyx} and dims {dimension_210}')
+            raise ValueError(
+                f'Mismatch between number of nufft directions {self._direction_zyx} and dims {dimension_210}'
+            )
 
         if isinstance(recon_matrix, SpatialDimension):
             im_size = tuple([recon_matrix.zyx[d] for d in self._direction_zyx])
@@ -109,7 +112,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             if (n_recon_matrix := len(recon_matrix)) != (n_nufft_dir := len(self._direction_zyx)):
                 raise ValueError(f'recon_matrix should have {n_nufft_dir} entries but has {n_recon_matrix}')
             im_size = tuple(recon_matrix)
-        assert len(im_size) == len(self._direction_zyx)  # mypy  # noqa: S101
+        assert len(im_size) == 1 or len(im_size) == 2 or len(im_size) == 3  # mypy  # noqa: S101
 
         if isinstance(encoding_matrix, SpatialDimension):
             k_size = tuple([int(encoding_matrix.zyx[d]) for d in self._direction_zyx])
@@ -117,7 +120,6 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             if (n_enc_matrix := len(encoding_matrix)) != (n_nufft_dir := len(self._direction_zyx)):
                 raise ValueError(f'encoding_matrix should have {n_nufft_dir} entries but has {n_enc_matrix}')
             k_size = tuple(encoding_matrix)
-        assert len(k_size) == len(self._direction_zyx)  # mypy  # noqa: S101
 
         omega_list = [
             k * 2 * torch.pi / ks
@@ -153,9 +155,9 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         traj_shape = torch.as_tensor([k.shape[-3:] for k in (traj.kz, traj.ky, traj.kx)])
         self._joint_dims_zyx = []
         for dzyx in [-3, -2, -1]:
-            if dzyx not in direction_zyx:
+            if dzyx not in self._direction_zyx:
                 dim210_non_singleton = [d210 for d210 in [-3, -2, -1] if traj_shape[dzyx, d210] > 1]
-                if all(all(traj_shape[direction_zyx, d] == 1) for d in dim210_non_singleton):
+                if all(all(traj_shape[self._direction_zyx, d] == 1) for d in dim210_non_singleton):
                     self._joint_dims_zyx.append(dzyx)
         self._joint_dims_zyx.append(-4)  # -4 is always coil and always a joint dimension
 
@@ -277,7 +279,9 @@ def symmetrize(kernel: torch.Tensor, rank: int) -> torch.Tensor:
     return kernel[..., : last_len // 2 + 1]
 
 
-def gram_nufft_kernel(weight: torch.Tensor, trajectory: torch.Tensor, recon_shape: Sequence[int]) -> torch.Tensor:
+def gram_nufft_kernel(
+    weight: torch.Tensor, trajectory: torch.Tensor, recon_shape: tuple[int] | tuple[int, int] | tuple[int, int, int]
+) -> torch.Tensor:
     """Calculate the convolution kernel for the NUFFT gram operator.
 
     Parameters
