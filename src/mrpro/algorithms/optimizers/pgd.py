@@ -2,6 +2,7 @@
 
 import math
 from collections.abc import Callable
+from dataclasses import dataclass
 
 import torch
 from typing_extensions import Unpack
@@ -12,6 +13,7 @@ from mrpro.operators.Functional import ProximableFunctional
 from mrpro.operators.Operator import Operator
 
 
+@dataclass
 class PGDStatus(OptimizerStatus):
     """Proximal Gradient Descent callback base class."""
 
