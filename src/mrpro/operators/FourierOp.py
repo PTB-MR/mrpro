@@ -34,7 +34,6 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
         recon_matrix: SpatialDimension[int],
         encoding_matrix: SpatialDimension[int],
         traj: KTrajectory,
-        nufft_oversampling: float = 2.0,
     ) -> None:
         """Initialize Fourier Operator.
 
@@ -46,11 +45,6 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
             dimension of the encoded k-space
         traj
             the k-space trajectories where the frequencies are sampled
-        nufft_oversampling
-            oversampling used for interpolation in non-uniform FFTs. The oversampling of the interpolation grid, which
-            is needed during the non-uniform FFT, ensures that there is no foldover due to the finite gridding kernel.
-            It can be reduced (e.g. to 1.25) to speed up the non-uniform FFT but this might lead to poorer image
-            quality.
         """
         super().__init__()
 
@@ -103,7 +97,6 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
                 recon_matrix=get_spatial_dims(recon_matrix, self._nufft_dims),
                 encoding_matrix=get_spatial_dims(encoding_matrix, self._nufft_dims),
                 traj=traj,
-                nufft_oversampling=nufft_oversampling,
             )
         else:
             self._non_uniform_fast_fourier_op = None
