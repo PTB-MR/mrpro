@@ -16,7 +16,7 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         offsets: torch.Tensor,
         rf_duration: float | torch.Tensor = 0.005,
         b1_nominal: float | torch.Tensor = 3.70e-6,
-        gamma: float | torch.Tensor = GYROMAGNETIC_RATIO_PROTON,
+        gamma: float = GYROMAGNETIC_RATIO_PROTON,
     ) -> None:
         """Initialize WASABI signal model for mapping of B0 and B1 [SCHU2016]_.
 
@@ -41,7 +41,6 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
 
         rf_duration = torch.as_tensor(rf_duration)
         b1_nominal = torch.as_tensor(b1_nominal)
-        gamma = torch.as_tensor(gamma)
 
         # nn.Parameters allow for grad calculation
         self.offsets = nn.Parameter(offsets, requires_grad=offsets.requires_grad)
@@ -77,14 +76,18 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
         -------
             signal with shape `(offsets, *other, coils, z, y, x)`
         """
-        offsets = unsqueeze_right(self.offsets, b0_shift.ndim - (self.offsets.ndim - 1))  # -1 for offset
+        ndim = max(b0_shift.ndim, relative_b1.ndim, c.ndim, d.ndim)
+        offsets = unsqueeze_right(self.offsets, ndim - self.offsets.ndim + 1)  # leftmost is offsets
+        rf_duration = unsqueeze_right(self.rf_duration, ndim - self.rf_duration.ndim)
+        b1_nominal = unsqueeze_right(self.b1_nominal, ndim - self.b1_nominal.ndim)
+
         offsets_shifted = offsets - b0_shift
-        b1 = self.b1_nominal * relative_b1
+        b1 = b1_nominal * relative_b1
 
         signal = (
             c
             - d
-            * (torch.pi * b1 * self.gamma * self.rf_duration) ** 2
-            * torch.sinc(self.rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + offsets_shifted**2)) ** 2
+            * (torch.pi * b1 * self.gamma * rf_duration) ** 2
+            * torch.sinc(rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + offsets_shifted**2)) ** 2
         )
         return (signal,)
