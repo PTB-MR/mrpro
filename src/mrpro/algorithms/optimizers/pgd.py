@@ -18,7 +18,7 @@ class PGDStatus(OptimizerStatus):
     """Proximal Gradient Descent callback base class."""
 
     stepsize: float | torch.Tensor
-    objective: Callable[[*tuple[torch.Tensor, ...]], torch.Tensor]
+    objective: Callable[..., torch.Tensor]
 
 
 def pgd(
