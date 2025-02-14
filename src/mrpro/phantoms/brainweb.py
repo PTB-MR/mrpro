@@ -564,7 +564,7 @@ class BrainwebSlices(torch.utils.data.Dataset):
             Callable that performs slice augmentation and resizing, see `resize` or `augment` for examples.
             The default applies slight random rotation, shear, scaling, and flips, and scales to 256x256 images.
         mask_values
-            Defult values to use for masked out regions.
+            Default values to use for masked out regions.
         seed
             Random seed. Can be an int, the strings ``index`` to use slice index as seed, or ``random`` for random seed.
         """
