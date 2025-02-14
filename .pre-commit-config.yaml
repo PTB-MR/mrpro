@@ -97,6 +97,7 @@ repos:
           - matplotlib
           - pytest
           - xsdata
+          - types-tqdm
           - "--index-url=https://download.pytorch.org/whl/cpu"
           - "--extra-index-url=https://pypi.python.org/simple"
 
