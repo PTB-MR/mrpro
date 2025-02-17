@@ -91,6 +91,7 @@ repos:
         additional_dependencies:
           - numpy
           - torch>=2.6.0
+          - pytorch-finufft
           - types-requests
           - typing-extensions
           - einops
