@@ -53,9 +53,7 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[*Tin]]):
 
         """
         (newy,) = self._f(*x)
-        newy = newy.to(dtype=torch.complex64)
         newy = newy / torch.linalg.norm(newy, dim=0, keepdim=True)
-
 
         newy = newy.flatten(start_dim=1)
         newx = [x.flatten() for x in torch.broadcast_tensors(*x)]
@@ -86,7 +84,13 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[*Tin]]):
         """
         if not self.x:
             raise KeyError('No keys in the dictionary. Please first add some x values using `append`.')
-        similarity = einops.einsum(input_signal, self.y, 'm ..., m idx  -> idx ...').abs()
+        similarity = einops.einsum(input_signal.real, self.y.real, 'm ..., m idx  -> idx ...').square()
+        if self.y.is_complex():
+            similarity += einops.einsum(input_signal.real, self.y.imag, 'm ..., m idx  -> idx ...').square()
+        if input_signal.is_complex():
+            similarity += einops.einsum(input_signal.imag, self.y.real, 'm ..., m idx  -> idx ...').square()
+        if self.y.is_complex() and input_signal.is_complex():
+            similarity += einops.einsum(input_signal.imag, self.y.imag, 'm ..., m idx  -> idx ...').square()
         idx = similarity.argmax(dim=0)
         match = tuple(x[idx] for x in self.x)
         return match
