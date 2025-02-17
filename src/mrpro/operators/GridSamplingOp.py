@@ -191,7 +191,7 @@ class GridSamplingOp(LinearOperator):
         Parameters
         ----------
         grid
-            sampling grid. Shape `\*batchdim, z,y,x,3 / \*batchdim, y,x,2`.
+            sampling grid. Shape `*batchdim, z,y,x,3` / `*batchdim, y,x,2`.
             Values should be in ``[-1, 1.]``.
         input_shape
             Used in the adjoint. The z, y, x shape of the domain of the operator.
@@ -230,7 +230,7 @@ class GridSamplingOp(LinearOperator):
 
         self.interpolation_mode = interpolation_mode
         self.padding_mode = padding_mode
-        self.register_buffer('grid', grid)
+        self.grid = grid
         self.input_shape = input_shape
         self.align_corners = align_corners
 
@@ -242,8 +242,8 @@ class GridSamplingOp(LinearOperator):
         dim = self.grid.shape[-1]
         if x.ndim < dim + 2:
             raise ValueError(
-                f'For a {dim}D sampling operation, x should have at least have {dim+2} dimensions:'
-                f' batch channel {"z y x" if dim==3 else "y x"}.'
+                f'For a {dim}D sampling operation, x should have at least have {dim + 2} dimensions:'
+                f' batch channel {"z y x" if dim == 3 else "y x"}.'
             )
 
         #   The gridsample operator only works for real data, thus we handle complex inputs as an additional channel

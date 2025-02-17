@@ -84,12 +84,12 @@ class CartesianSamplingOp(LinearOperator):
             inside_encoding_matrix = rearrange(inside_encoding_matrix, '... kz ky kx -> ... 1 (kz ky kx)')
             inside_encoding_matrix_idx = inside_encoding_matrix.nonzero(as_tuple=True)[-1]
             inside_encoding_matrix_idx = torch.reshape(inside_encoding_matrix_idx, (*kidx.shape[:-1], -1))
-            self.register_buffer('_inside_encoding_matrix_idx', inside_encoding_matrix_idx)
+            self._inside_encoding_matrix_idx: torch.Tensor | None = inside_encoding_matrix_idx
             kidx = torch.take_along_dim(kidx, inside_encoding_matrix_idx, dim=-1)
         else:
-            self._inside_encoding_matrix_idx: torch.Tensor | None = None
+            self._inside_encoding_matrix_idx = None
 
-        self.register_buffer('_fft_idx', kidx)
+        self._fft_idx = kidx
 
         # we can skip the indexing if the data is already sorted
         self._needs_indexing = (
@@ -245,9 +245,9 @@ class CartesianSamplingGramOp(LinearOperator):
         if sampling_op._needs_indexing:
             ones = torch.ones(*sampling_op._trajectory_shape[:-3], 1, *sampling_op._sorted_grid_shape.zyx)
             (mask,) = sampling_op.adjoint(*sampling_op.forward(ones))
-            self.register_buffer('_mask', mask)
+            self._mask: torch.Tensor | None = mask
         else:
-            self._mask: torch.Tensor | None = None
+            self._mask = None
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the Gram operator.
