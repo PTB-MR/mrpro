@@ -91,7 +91,7 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         reversed_readout_mask: torch.Tensor | None = None,
         **_,
     ) -> KTrajectory:
-        """Calculate radial phase encoding trajectory for given KHeader.
+        """Calculate radial phase encoding trajectory for given header information.
 
         Parameters
         ----------
@@ -110,7 +110,7 @@ class KTrajectoryRpe(KTrajectoryCalculator):
 
         Returns
         -------
-            radial phase encoding trajectory for given KHeader
+            radial phase encoding trajectory for given header information
         """
         angles = repeat(k2_idx * self.angle, '... k2 k1 -> ... k2 k1 k0', k0=1)
 
