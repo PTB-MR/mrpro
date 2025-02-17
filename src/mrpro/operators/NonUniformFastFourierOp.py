@@ -24,7 +24,7 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         recon_matrix: SpatialDimension[int] | Sequence[int],
         encoding_matrix: SpatialDimension[int] | Sequence[int],
         traj: KTrajectory,
-        oversampling: float = 2.0,  # FinufftOversamplingFactors.AUTO,
+        oversampling: float = 2.0,
     ) -> None:
         """Initialize Non-Uniform Fast Fourier Operator.
 
@@ -202,6 +202,10 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             coil k-space data with shape `(... coils k2 k1 k0)`
         """
         if len(self._direction_zyx):
+            if x.device.type == 'cpu' and self.oversampling not in (0.0, 1.25, 2.0):
+                raise ValueError('Only oversampling 1.25 and 2.0 are supported on CPU')
+            elif x.device.type not in ('cuda', 'cpu'):
+                raise ValueError('Only CPU and CUDA are supported')
             # We rearrange x into (sep_dims, joint_dims, nufft_directions)
             sep_dims_zyx, permute_zyx, _, permute_210 = self._separate_joint_dimensions(x.ndim)
             unpermute_210 = torch.tensor(permute_210).argsort().tolist()
@@ -215,7 +219,6 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
 
             x = torch.vmap(partial(finufft_type2, upsampfac=self.oversampling, modeord=0, isign=-1))(self._omega, x)
             x = x * self.scale
-
             shape_210 = [self._traj_broadcast_shape[i] for i in self._dimension_210]
             x = x.reshape(*unflatten_shape, *shape_210)
             x = x.permute(*unpermute_210)
@@ -234,6 +237,10 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             coil image data with shape `(... coils z y x)`
         """
         if len(self._direction_zyx):
+            if x.device.type == 'cpu' and self.oversampling not in (0.0, 1.25, 2.0):
+                raise ValueError('Only oversampling 1.25 and 2.0 are supported on CPU')
+            elif x.device.type not in ('cuda', 'cpu'):
+                raise ValueError('Only CPU and CUDA are supported')
             # We rearrange x into (sep_dims, joint_dims, nufft_directions)
             _, permute_zyx, sep_dims_210, permute_210 = self._separate_joint_dimensions(x.ndim)
             unpermute_zyx = torch.tensor(permute_zyx).argsort().tolist()
