@@ -1,25 +1,6 @@
 # %% [markdown]
 # # QMRI Challenge ISMRM 2024 - $T_1$ mapping
-
-# %%
-# Imports
-import shutil
-import tempfile
-import zipfile
-from pathlib import Path
-
-import matplotlib.pyplot as plt
-import torch
-import zenodo_get
-from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore [import-untyped]
-from mrpro.algorithms.optimizers import adam
-from mrpro.data import IData
-from mrpro.operators import MagnitudeOp, DictionaryMatchOp
-from mrpro.operators.functionals import MSE
-from mrpro.operators.models import InversionRecovery
-
-# %% [markdown]
-# ### Overview
+# In the 2024 ISMRM QMRI Challenge, the goal is to estimate $T_1$ maps from a set of inversion recovery images.
 # The dataset consists of images obtained at 10 different inversion times using a turbo spin echo sequence. Each
 # inversion time is saved in a separate DICOM file. In order to obtain a $T_1$ map, we are going to:
 # - download the data from Zenodo
@@ -125,17 +106,20 @@ functional = mse @ model
 # - calculate the signal curves corresponding to each of these $T_1$ values
 # - compare the signal curves to the signals of each voxel (we use the maximum of the dot-product as a metric of how
 # well the signals fit to each other)
+# - use the $T_1$ value with the best fit as a starting value for the fit. Use the scaling factor of the best fit for
+# the $M_0$ value.
+#
+# This is implemented in the `~mrpro.operators.DictionaryMatchOp` operator.
+
+# %%
 
 # %%
 # Define 100 T1 values between 0.1 and 3.0 s
-t1_dictionary = torch.linspace(0.1, 3, 100)
-# Dictionary Matching
-dict_match_op = DictionaryMatchOp(model)
-dictionary = dict_match_op.append(torch.ones(1), t1_dictionary)
-t1_start = dict_match_op.forward(idata_multi_ti.data)[1]
-t1_start = t1_start.reshape(idata_multi_ti.data.shape[1:])
-# %%
-m0_start = idata_multi_ti.data.abs().amax(dim=0)
+t1_values = torch.linspace(0.1, 3.0, 100)
+# Create the dictionary. We set M0 to constant 1, as the scaling is handled by the dictionary matching operator.
+dictionary = mrpro.operators.DictionaryMatchOp(model, 0).append(torch.ones(1), t1_values)
+# Select the closest values in the dictionary for each voxel based on cosine similarity
+m0_start, t1_start = dictionary(idata_multi_ti.data.real)
 
 # %% [markdown]
 # #### Visualize the starting values
@@ -176,7 +160,7 @@ lr = 1e-1
 # Run optimization
 result = mrpro.algorithms.optimizers.adam(functional, [m0_start, t1_start], max_iter=max_iter, lr=lr)
 m0, t1 = (p.detach().cpu() for p in result)
-
+model.cpu()
 # %% [markdown]
 # ### Visualize the final results
 #
@@ -225,8 +209,9 @@ plt.show()
 # as $q(TE) = M_0 e^{-TE/T_2^*}$ with the equilibrium magnetization $M_0$, the echo time $TE$, and $T_2^*$.\
 # Give it a try and see if you can obtain good $T_2^*$ maps!
 # ```{note}
-# The echo times $TE$ can be found in `IData.header.te`. A good starting value for $M_0$ is the signal at the shortest
-# echo time. A good starting value for $T_2^*$ is 20 ms.
+# The echo times $TE$ can be found in `IData.header.te`. Instead of using dictionary matching for starting values,
+# a good starting value for $M_0$ is the signal at the shortest echo time
+# and a good starting value for $T_2^*$ is 20 ms.
 # ```
 
 # %%
