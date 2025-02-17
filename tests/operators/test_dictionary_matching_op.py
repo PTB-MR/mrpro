@@ -20,11 +20,17 @@ def test_dictionaryop_matching(shape: tuple[int], dtype: torch.dtype, scaling_ar
     (y,) = model(m0, t1)
 
     operator = DictionaryMatchOp(model, scaling_argument=scaling_argument)
-    operator.append(m0[:1], t1[:1])
-    operator.append(m0[1:], t1[1:])
+    operator.append(m0, t1)
 
     m0_matched, t1_matched = operator(y)
 
     if scaling_argument is not None:
         torch.testing.assert_close(m0_matched, m0, atol=1e-3, rtol=0.0)
     torch.testing.assert_close(t1_matched, t1, atol=1e-4, rtol=0.0)
+
+
+# TODO:
+# doing two appends should result in the same .y and .x as doing one append with the concatenated inputs
+# empty dictionary should print error message (google: with pytest.raises(KeyError)
+# Add Error message if the scaling arguments is out of range
+# spell and grammar check
