@@ -30,7 +30,7 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         reversed_readout_mask: torch.Tensor | None = None,
         **_,
     ) -> KTrajectory:
-        """Calculate radial 2D trajectory for given KHeader.
+        """Calculate radial 2D trajectory for given header information.
 
         Parameters
         ----------

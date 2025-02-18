@@ -61,7 +61,7 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryCalculator):
         reversed_readout_mask: torch.Tensor | None = None,
         **_,
     ) -> KTrajectory:
-        """Calculate radial phase encoding trajectory for given KHeader.
+        """Calculate radial phase encoding trajectory for given header information.
 
         Parameters
         ----------

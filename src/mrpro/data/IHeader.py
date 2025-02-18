@@ -4,12 +4,15 @@ import dataclasses
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
+import numpy as np
 import torch
 from einops import repeat
+from pydicom import multival, valuerep
 from pydicom.dataset import Dataset
 from pydicom.tag import Tag, TagType
 from typing_extensions import Self
 
+from mrpro.data.AcqInfo import PhysiologyTimestamps
 from mrpro.data.KHeader import KHeader
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.Rotation import Rotation
@@ -17,8 +20,6 @@ from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.remove_repeat import remove_repeat
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 from mrpro.utils.unit_conversion import deg_to_rad, mm_to_m, ms_to_s
-
-from .AcqInfo import PhysiologyTimestamps
 
 MISC_TAGS = {'TimeAfterStart': 0x00191016}
 
@@ -78,8 +79,8 @@ class ImageIdx(MoveDataMixin):
 class IHeader(MoveDataMixin):
     """MR image data header."""
 
-    fov: SpatialDimension[float]
-    """Field of view [m]."""
+    resolution: SpatialDimension[float]
+    """Pixel spacing [m/px]."""
 
     te: torch.Tensor | None = None
     """Echo time [s]."""
@@ -121,21 +122,23 @@ class IHeader(MoveDataMixin):
 
     physiology_time_stamps: PhysiologyTimestamps = field(default_factory=PhysiologyTimestamps)
 
-    ImageIdx: ImageIdx = field(default_factory=ImageIdx)
+    idx: ImageIdx = field(default_factory=ImageIdx)
 
     @classmethod
-    def from_kheader(cls, kheader: KHeader) -> Self:
+    def from_kheader(cls, kheader: KHeader, resolution: SpatialDimension) -> Self:
         """Create IHeader object from KHeader object.
 
         Parameters
         ----------
         kheader
             MR raw data header (KHeader) containing required meta data.
+        resolution
+            Pixel Spacing
         """
-        return cls(fov=kheader.recon_fov, te=kheader.te, ti=kheader.ti, fa=kheader.fa, tr=kheader.tr)
+        return cls(resolution=resolution, te=kheader.te, ti=kheader.ti, fa=kheader.fa, tr=kheader.tr)
 
     @classmethod
-    def from_dicom_list(cls, dicom_datasets: Sequence[Dataset]) -> Self:
+    def from_dicoms(cls, dicom_datasets: Sequence[Dataset]) -> Self:
         """Read DICOM files and return IHeader object.
 
         Parameters
@@ -144,32 +147,33 @@ class IHeader(MoveDataMixin):
             list of dataset objects containing the DICOM file.
         """
 
-        def get_item(dataset: Dataset, name: TagType):
-            """Get item with a given name or Tag from a pydicom dataset."""
-            # iterall is recursive, so it will find all items with the given name
-            found_item = [item.value for item in dataset.iterall() if item.tag == Tag(name)]
-
-            if len(found_item) == 0:
-                return None
-            elif len(found_item) == 1:
-                return found_item[0]
+        def convert_pydicom_type(item) -> float | int | list[float | int | list | None] | None:  # noqa: ANN001
+            """Convert item to type given by pydicom."""
+            if isinstance(item, valuerep.DSfloat | valuerep.DSdecimal | valuerep.ISfloat):
+                return float(item)
+            elif isinstance(item, valuerep.IS):
+                return int(item)
+            elif isinstance(item, multival.MultiValue):
+                return [convert_pydicom_type(it) for it in item]
             else:
-                raise ValueError(f'Item {name} found {len(found_item)} times.')
+                return None
 
-        def get_items_from_dicom_datasets(name: TagType) -> list:
-            """Get list of items for all datasets in dicom_datasets."""
-            return [get_item(ds, name) for ds in dicom_datasets]
+        def get_items(name: TagType) -> list:
+            """Get a flattened list of converted items from each dataset for a given name or Tag."""
+            return [
+                item
+                for ds in dicom_datasets
+                for item in ([convert_pydicom_type(it.value) for it in ds.iterall() if it.tag == Tag(name)] or [None])
+            ]
 
-        def get_float_items_from_dicom_datasets(name: TagType) -> list[float]:
-            """Get float items from all dataset in dicom_datasets."""
-            items = []
-            for item in get_items_from_dicom_datasets(name):
-                try:
-                    items.append(float(item))
-                except (TypeError, ValueError):
-                    # None or invalid value
-                    items.append(float('nan'))
-            return items
+        def make_unique_tensor(values: Sequence[float]) -> torch.Tensor | None:
+            """If all the values are the same only return one."""
+            if any(val is None for val in values):
+                return None
+            elif len(np.unique(values)) == 1:
+                return torch.as_tensor([values[0]])
+            else:
+                return torch.as_tensor(values)
 
         def as_5d_tensor(values: Sequence[float]) -> torch.Tensor:
             """Convert a list of values to a 5d tensor."""
@@ -178,53 +182,57 @@ class IHeader(MoveDataMixin):
             tensor = remove_repeat(tensor, 1e-12)
             return tensor
 
-        def all_nan_to_none(tensor: torch.Tensor) -> torch.Tensor | None:
-            """If all values are nan, return None."""
-            if torch.isnan(tensor).all():
-                return None
-            return tensor
+        # Ensure datasets are consistently single-frame or multi-frame 2D/3D
+        number_of_frames = get_items('NumberOfFrames')
+        if len(set(number_of_frames)) > 1:
+            raise ValueError('Only DICOM files with the same number of frames can be stacked.')
 
-        fa = all_nan_to_none(deg_to_rad(as_5d_tensor(get_float_items_from_dicom_datasets('FlipAngle'))))
-        ti = all_nan_to_none(ms_to_s(as_5d_tensor(get_float_items_from_dicom_datasets('InversionTime'))))
-        tr = all_nan_to_none(ms_to_s(as_5d_tensor(get_float_items_from_dicom_datasets('RepetitionTime'))))
+        mr_acquisition_type = get_items('MRAcquisitionType')
+        if len(set(mr_acquisition_type)) > 1:
+            raise ValueError('Only DICOM files with the same MRAcquisitionType can be stacked.')
 
-        te_list = get_float_items_from_dicom_datasets('EchoTime')
-        if all(val is None for val in te_list):
-            # if all 'EchoTime' entries are None, try 'EffectiveEchoTime',
-            # which is used by some scanners
-            te_list = get_float_items_from_dicom_datasets('EffectiveEchoTime')
-        te = all_nan_to_none(ms_to_s(as_5d_tensor(te_list)))
+        datasets_are_3d = number_of_frames[0] is not None and number_of_frames[0] > 1 and mr_acquisition_type[0] == '3D'
+        n_volumes = number_of_frames[0] if datasets_are_3d else 1
 
-        try:
-            fov_x = mm_to_m(
-                get_float_items_from_dicom_datasets('Rows')[0]
-                * float(get_items_from_dicom_datasets('PixelSpacing')[0][0])
-            )
-        except (TypeError, ValueError):
-            fov_x = float('nan')
-        try:
-            fov_y = mm_to_m(
-                get_float_items_from_dicom_datasets('Columns')[0]
-                * float(get_items_from_dicom_datasets('PixelSpacing')[0][1])
-            )
-        except (TypeError, ValueError):
-            fov_y = float('nan')
-        try:
-            fov_z = mm_to_m(get_float_items_from_dicom_datasets('SliceThickness')[0])
-        except (TypeError, ValueError):
-            fov_z = float('nan')
-        fov = SpatialDimension(fov_z, fov_y, fov_x)
+        pixel_spacing = get_items('PixelSpacing')
+        if pixel_spacing[0] is None or len(np.unique(torch.tensor(pixel_spacing), axis=0)) > 1:
+            raise ValueError('Pixel spacing needs to be defined and the same for all.')
 
-        # Get misc parameters
-        misc = {}
-        for name in MISC_TAGS:
-            misc[name] = as_5d_tensor(get_float_items_from_dicom_datasets(MISC_TAGS[name]))
-        return cls(fov=fov, te=te, ti=ti, fa=fa, tr=tr, _misc=misc)
+        slice_thickness = get_items('SliceThickness')
+        if len(set(slice_thickness)) > 1 or slice_thickness[0] is None:
+            raise ValueError('Slice thickness needs to be defined and the same for all.')
+
+        resolution = SpatialDimension(
+            z=slice_thickness[0],
+            y=pixel_spacing[0][1],
+            x=pixel_spacing[0][0],
+        ).apply_(mm_to_m)
+
+        fa_deg = get_items('FlipAngle')[::n_volumes]
+        ti_ms = get_items('InversionTime')[::n_volumes]
+        tr_ms = get_items('RepetitionTime')[::n_volumes]
+
+        # get echo time(s). Some scanners use 'EchoTime', some use 'EffectiveEchoTime'
+        te_ms = get_items('EchoTime')
+        if all(val is None for val in te_ms):
+            te_ms = get_items('EffectiveEchoTime')
+        te_ms = te_ms[::n_volumes]
+
+        misc = {name: make_unique_tensor(get_items(tag)) for name, tag in MISC_TAGS.items()}
+
+        return cls(
+            resolution=resolution,
+            fa=None if fa_deg is None else deg_to_rad(fa_deg),
+            ti=None if ti_ms is None else ms_to_s(ti_ms),
+            tr=None if tr_ms is None else ms_to_s(tr_ms),
+            te=None if te_ms is None else ms_to_s(te_ms),
+            _misc=misc,
+        )
 
     def __repr__(self):
         """Representation method for IHeader class."""
         te = summarize_tensorvalues(self.te)
         ti = summarize_tensorvalues(self.ti)
         fa = summarize_tensorvalues(self.fa)
-        out = f'FOV [m]: {self.fov!s}\n' f'TE [s]: {te}\nTI [s]: {ti}\nFlip angle [rad]: {fa}.'
+        out = f'Resolution [m/pixel]: {self.resolution!s}\nTE [s]: {te}\nTI [s]: {ti}\nFlip angle [rad]: {fa}.'
         return out
