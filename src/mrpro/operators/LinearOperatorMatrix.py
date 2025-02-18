@@ -345,8 +345,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
         if isinstance(other, LinearOperator):
             if cols := self.shape[1] > 1:
                 raise ValueError(
-                    'Shape mismatch in horizontal stacking:'
-                    f'cannot stack LinearOperator and matrix with {cols} columns.'
+                    f'Shape mismatch in horizontal stacking:cannot stack LinearOperator and matrix with {cols} columns.'
                 )
             operators = [*self._operators, [other]]
             return self.__class__(operators)
