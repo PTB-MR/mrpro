@@ -15,7 +15,7 @@ class MOLLI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
     This is a small modification from the original MOLLI signal model [MESS2004]_:
     :math:`M_z(t) = a - be^{(-t / T_1^*)}` with :math:`T_1^* = T1 / (b/a - 1)`.
 
-    For a meaningful result, :math:`c \in R_{>0}`, :math:`t \in R_{>0}`, and :math:`T_1 \in R_{>0}`
+    For a meaningful result chose :math:`c \in R_{>0}`, :math:`t \in R_{>0}`, and :math:`T_1 \in R_{>0}`
 
     .. [MESS2004] Messroghli DR, Radjenovic A, Kozerke S, Higgins DM, Sivananthan MU, Ridgway JP (2004) Modified
       look-locker inversion recovery (MOLLI) for high-resolution T 1 mapping of the heart. MRM, 52(1).
