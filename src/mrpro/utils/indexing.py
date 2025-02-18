@@ -221,7 +221,7 @@ class Indexer:
                 if (idx >= shape[shape_position]).any() or (idx < -shape[shape_position]).any():
                     raise IndexError(
                         'Index out of bounds. '
-                        f'Got values in the inerval [{idx.min()}, {idx.max()+1}) for axis {shape_position} '
+                        f'Got values in the inerval [{idx.min()}, {idx.max() + 1}) for axis {shape_position} '
                         f'with shape {shape[shape_position]}'
                     )
                 if vectorized_shape is not None and vectorized_shape != idx.shape:
@@ -240,7 +240,7 @@ class Indexer:
                 if any(el >= shape[shape_position] or el < -shape[shape_position] for el in idx):
                     raise IndexError(
                         'Index out of bounds. '
-                        f'Got values in the interval [{min(idx)}, {max(idx)+1}) for axis {shape_position} '
+                        f'Got values in the interval [{min(idx)}, {max(idx) + 1}) for axis {shape_position} '
                         f'with shape {shape[shape_position]}'
                     )
                 if vectorized_shape is not None and vectorized_shape != (len(idx),):
