@@ -113,7 +113,7 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[*Tin]]):
         if not self.x:
             raise KeyError('No keys in the dictionary. Please first add some x values using `append`.')
 
-        # This avoids unnessary copies mixed domain cases
+        # This avoids unnecessary copies mixed domain cases
         similarity = einops.einsum(input_signal.real, self.y.real, 'm ..., m idx  -> idx ...').square()
         if self.y.is_complex():
             similarity += einops.einsum(input_signal.real, self.y.imag, 'm ..., m idx  -> idx ...').square()
