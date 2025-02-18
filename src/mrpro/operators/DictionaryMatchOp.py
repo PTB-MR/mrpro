@@ -12,7 +12,7 @@ from mrpro.operators.Operator import Operator
 Tin = TypeVarTuple('Tin')
 
 
-class DictionaryMatchOp(Operator[torch.Tensor, tuple[*Tin]]):
+class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
     r"""Dictionary Matching Operator.
 
     This operator can be used for dictionary matching, for example in
