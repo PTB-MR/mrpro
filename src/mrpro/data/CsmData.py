@@ -25,6 +25,8 @@ class CsmData(QData):
     ) -> Self:
         """Create csm object from image data using iterative Walsh method.
 
+        See also `~mrpro.algorithms.csm.walsh`.
+
         Parameters
         ----------
         idata
@@ -33,7 +35,7 @@ class CsmData(QData):
             width of smoothing filter.
         chunk_size_otherdim:
             How many elements of the other dimensions should be processed at once.
-            Default is None, which means that all elements are processed at once.
+            Default is `None`, which means that all elements are processed at once.
         """
         from mrpro.algorithms.csm.walsh import walsh
 

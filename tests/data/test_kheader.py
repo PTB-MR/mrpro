@@ -22,7 +22,7 @@ def test_kheader_set_missing_defaults(random_mandatory_ismrmrd_header, random_ac
 
 
 def test_kheader_verify_None(random_mandatory_ismrmrd_header, random_acq_info):
-    """Correct handling of None and missing values in KHeader creation."""
+    """Correct handling of `None` and missing values in `KHeader` creation."""
     tr_default = None
     fa_default = torch.as_tensor([0.1])
     defaults = {'trajectory': DummyTrajectory(), 'tr': tr_default, 'fa': fa_default}

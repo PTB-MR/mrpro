@@ -14,9 +14,9 @@ from mrpro.data.CheckDataMixin import (
     SuspendDataChecks,
     _FixedDim,
     _NamedDim,
+    shape_specification_to_string,
     string_to_shape_specification,
     string_to_size,
-    shape_specification_to_string,
 )
 
 

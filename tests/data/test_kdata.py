@@ -184,7 +184,11 @@ def test_KData_calibration_lines(ismrmrd_cart_with_calibration_lines):
 def test_KData_kspace(ismrmrd_cart_high_res):
     """Read in data and verify k-space by comparing reconstructed image."""
     kdata = KData.from_file(ismrmrd_cart_high_res.filename, DummyTrajectory())
-    ff_op = FastFourierOp(dim=(-1, -2))
+    ff_op = FastFourierOp(
+        dim=(-1, -2),
+        recon_matrix=[kdata.header.recon_matrix.x, kdata.header.recon_matrix.y],
+        encoding_matrix=[kdata.header.encoding_matrix.x, kdata.header.encoding_matrix.y],
+    )
     (reconstructed_img,) = ff_op.adjoint(kdata.data)
 
     # Due to discretisation artifacts the reconstructed image will be different to the reference image. Using standard
@@ -409,8 +413,8 @@ def test_KData_split_k2_into_other(consistently_shaped_kdata, monkeypatch, n_oth
     ('subset_label', 'subset_idx'),
     [
         ('repetition', torch.tensor([1], dtype=torch.int32)),
-        ('average', torch.tensor([1, 2, 3], dtype=torch.int32)),
-        ('phase', torch.tensor([2, 2, 3], dtype=torch.int32)),
+        ('average', torch.tensor([0, 1], dtype=torch.int32)),
+        ('phase', torch.tensor([1, 0, 0], dtype=torch.int32)),
     ],
 )
 def test_KData_select_other_subset(consistently_shaped_kdata, monkeypatch, subset_label, subset_idx):
@@ -501,7 +505,11 @@ def test_KData_compress_coils(ismrmrd_cart_high_res):
     """Test coil combination does not alter image content (much)."""
     kdata = KData.from_file(ismrmrd_cart_high_res.filename, DummyTrajectory())
     kdata = kdata.compress_coils(n_compressed_coils=4)
-    ff_op = FastFourierOp(dim=(-1, -2))
+    ff_op = FastFourierOp(
+        dim=(-1, -2),
+        recon_matrix=[kdata.header.recon_matrix.x, kdata.header.recon_matrix.y],
+        encoding_matrix=[kdata.header.encoding_matrix.x, kdata.header.encoding_matrix.y],
+    )
     (reconstructed_img,) = ff_op.adjoint(kdata.data)
 
     # Image content of each coil is the same. Therefore we only compare one coil image but we need to normalize.

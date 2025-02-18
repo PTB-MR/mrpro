@@ -97,7 +97,7 @@ def string_to_shape_specification(dim_str: str) -> tuple[tuple[_DimType, ...], i
     for index, elem in enumerate(dim_str.split()):
         if '...' in elem:
             if elem != '...':
-                raise SpecificationError("Anonymous multiple axes '...' must be used on its own; " f'got {elem}')
+                raise SpecificationError(f"Anonymous multiple axes '...' must be used on its own; got {elem}")
             if index_variadic is not None:
                 raise SpecificationError('Cannot use variadic specifiers (`*name` or `...`) more than once.')
             index_variadic = index
@@ -152,11 +152,11 @@ def shape_specification_to_string(dims: tuple[_DimType, ...]) -> str:
     for dim in dims:
         match dim:
             case _FixedDim(name, broadcastable):
-                string += f"{'#' if broadcastable else ''}{name} "
+                string += f'{"#" if broadcastable else ""}{name} '
             case _NamedDim(name, broadcastable):
-                string += f"{'#' if broadcastable else ''}{name} "
+                string += f'{"#" if broadcastable else ""}{name} '
             case _NamedVariadicDim(name, broadcastable):
-                string += f"*{name}{'#' if broadcastable else ''} "
+                string += f'*{name}{"#" if broadcastable else ""} '
             case _ if dim == _anonymous_dim:
                 string += '_ '
             case _ if dim == _anonymous_variadic_dim:
@@ -452,10 +452,10 @@ class Annotation:
         """Get a string representation of the annotation."""
         arguments = []
         if self.shape is not None:
-            arguments.append(f"shape='{shape_specification_to_string(self.shape) }'")
+            arguments.append(f"shape='{shape_specification_to_string(self.shape)}'")
         if self.dtype is not None:
             arguments.append(f'dtype={self.dtype}')
-        representation = f"Annotation({', '.join(arguments)})"
+        representation = f'Annotation({", ".join(arguments)})'
         return representation
 
     def assert_shape(self, obj: HasShape, memo: ShapeMemo | None = None) -> None | ShapeMemo:

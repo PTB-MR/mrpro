@@ -3,6 +3,6 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 try:
-    __version__ = version('package-name')
+    __version__ = version('mrpro')
 except PackageNotFoundError:
     __version__ = Path(__file__).parent.joinpath('VERSION').read_text().strip()
