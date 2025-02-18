@@ -21,7 +21,7 @@ class DcfData(MoveDataMixin):
     """Density compensation data (DcfData) class."""
 
     data: torch.Tensor
-    """Density compensation values. Shape (... other, k2, k1, k0)"""
+    """Density compensation values. Shape `(... other, k2, k1, k0)`"""
 
     @classmethod
     def from_traj_voronoi(cls, traj: KTrajectory) -> Self:

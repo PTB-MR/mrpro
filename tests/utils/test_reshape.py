@@ -1,8 +1,18 @@
 """Tests for reshaping utilities."""
 
+import numpy as np
 import pytest
 import torch
-from mrpro.utils import broadcast_right, reduce_view, reshape_broadcasted, unsqueeze_left, unsqueeze_right
+from mrpro.utils import (
+    broadcast_right,
+    ravel_multi_index,
+    reduce_view,
+    reshape_broadcasted,
+    unsqueeze_left,
+    unsqueeze_right,
+    unsqueeze_tensors_left,
+    unsqueeze_tensors_right,
+)
 
 from tests import RandomGenerator
 
@@ -28,6 +38,50 @@ def test_unsqueeze_right():
     unsqueezed = unsqueeze_right(tensor, 2)
     assert unsqueezed.shape == (1, 2, 3, 1, 1)
     assert torch.equal(tensor.ravel(), unsqueezed.ravel())
+
+
+def test_unsqueeze_tensors_left() -> None:
+    """Test unsqueeze_tensors_left"""
+    tensor1 = torch.ones(1, 2, 3)
+    tensor2 = torch.ones(1, 2)
+    tensor3 = torch.ones(3)
+    unsqueezed = unsqueeze_tensors_left(tensor1, tensor2, tensor3)
+    assert unsqueezed[0].shape == (1, 2, 3)
+    assert unsqueezed[1].shape == (1, 1, 2)
+    assert unsqueezed[2].shape == (1, 1, 3)
+
+
+def test_unsqueeze_tensors_right() -> None:
+    """Test unsqueeze_tensors_right"""
+    tensor1 = torch.ones(1, 2, 3)
+    tensor2 = torch.ones(1, 2)
+    tensor3 = torch.ones(3)
+    unsqueezed = unsqueeze_tensors_right(tensor1, tensor2, tensor3)
+    assert unsqueezed[0].shape == (1, 2, 3)
+    assert unsqueezed[1].shape == (1, 2, 1)
+    assert unsqueezed[2].shape == (3, 1, 1)
+
+
+def test_unsqueeze_tensors_left_ndim() -> None:
+    """Test unsqueeze_tensors_left with ndim set"""
+    tensor1 = torch.ones(1, 2, 3)
+    tensor2 = torch.ones(1, 2)
+    tensor3 = torch.ones(3)
+    unsqueezed = unsqueeze_tensors_left(tensor1, tensor2, tensor3, ndim=4)
+    assert unsqueezed[0].shape == (1, 1, 2, 3)
+    assert unsqueezed[1].shape == (1, 1, 1, 2)
+    assert unsqueezed[2].shape == (1, 1, 1, 3)
+
+
+def test_unsqueeze_tensors_right_ndim() -> None:
+    """Test unsqueeze_tensors_right with ndim set"""
+    tensor1 = torch.ones(1, 2, 3)
+    tensor2 = torch.ones(1, 2)
+    tensor3 = torch.ones(3)
+    unsqueezed = unsqueeze_tensors_right(tensor1, tensor2, tensor3, ndim=4)
+    assert unsqueezed[0].shape == (1, 2, 3, 1)
+    assert unsqueezed[1].shape == (1, 2, 1, 1)
+    assert unsqueezed[2].shape == (3, 1, 1, 1)
 
 
 def test_reduce_view():
@@ -83,3 +137,17 @@ def test_reshape_broadcasted_fail():
         reshape_broadcasted(a, -1, -3)
     with pytest.raises(RuntimeError, match='only one dimension'):
         reshape_broadcasted(a, -1, -1)
+
+
+def test_ravel_multidex() -> None:
+    """Test ravel_multiindex"""
+    rng = RandomGenerator(1)
+    dims = [5, 1, 6]
+    indices = [
+        rng.int64_tensor((2, 3), low=0, high=dims[0]),
+        rng.int64_tensor((1, 1), low=0, high=dims[1]),
+        rng.int64_tensor((2, 1), low=0, high=dims[2]),
+    ]
+    expected = torch.as_tensor(np.ravel_multi_index([idx.numpy() for idx in indices], dims))
+    actual = ravel_multi_index(indices, dims)
+    assert torch.equal(expected, actual)

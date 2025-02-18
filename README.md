@@ -1,5 +1,11 @@
 <h1 align="center">
-<img src="docs/source/_static/logo.svg" alt="MRpro logo" width="50%">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/PTB-MR/mrpro/refs/heads/main/docs/source/_static/logo_white.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/PTB-MR/mrpro/refs/heads/main/docs/source/_static/logo.svg">
+  <img src="https://raw.githubusercontent.com/PTB-MR/mrpro/refs/heads/main/docs/source/_static/logo.svg" alt="MRpro logo" width="50%">
+</picture>
+
 </h1><br>
 
 ![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)
@@ -16,7 +22,7 @@ MR image reconstruction and processing package specifically developed for PyTorc
 
 ## Awards
 
-- 2024 ISMRM QMRI Study Group Challenge, 2nd prize for Relaxometry (T2* and T1)
+- 2024 ISMRM QMRI Study Group Challenge, 2nd prize for Relaxometry ([T2*](https://github.com/PTB-MR/mrpro/blob/8d2133c4a7ce63ac490798c4eb5a70cc1c543646/examples/qmri_sg_challenge_2024_t2_star.ipynb) and [T1](https://github.com/PTB-MR/mrpro/blob/8d2133c4a7ce63ac490798c4eb5a70cc1c543646/examples/qmri_sg_challenge_2024_t1.ipynb))
 
 ## Main features
 

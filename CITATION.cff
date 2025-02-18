@@ -47,8 +47,7 @@ authors:
 cff-version: 1.2.0
 date-released: "2024-12-17"
 doi: 10.5281/zenodo.14509598
-license:
-    - apache-2.0
+license: Apache-2.0
 repository-code: https://github.com/PTB-MR/mrpro/
 title: MRpro - PyTorch-based MR image reconstruction and processing package
 type: software

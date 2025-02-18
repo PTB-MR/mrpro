@@ -10,8 +10,21 @@ import torch
 from typing_extensions import Any, Protocol, Self, TypeVar, overload, runtime_checkable
 
 
-class InconsistentDeviceError(ValueError):  # noqa: D101
-    def __init__(self, *devices):  # noqa: D107
+class InconsistentDeviceError(ValueError):
+    """Raised if the devices of different fields differ.
+
+    There is no single device that all fields are on, thus
+    the overall device of the object cannot be determined.
+    """
+
+    def __init__(self, *devices):
+        """Initialize.
+
+        Parameters
+        ----------
+        devices
+            The devices of the fields that differ.
+        """
         super().__init__(f'Inconsistent devices found, found at least {", ".join(str(d) for d in devices)}')
 
 
@@ -62,35 +75,35 @@ class MoveDataMixin:
     def to(self, *args, **kwargs) -> Self:
         """Perform dtype and/or device conversion of data.
 
-        A torch.dtype and torch.device are inferred from the arguments
+        A `torch.dtype` and `torch.device` are inferred from the arguments
         args and kwargs. Please have a look at the
-        documentation of torch.Tensor.to() for more details.
+        documentation of `torch.Tensor.to` for more details.
 
         A new instance of the dataclass will be returned.
 
         The conversion will be applied to all Tensor- or Module
         fields of the dataclass, and to all fields that implement
-        the MoveDataMixin.
+        the `MoveDataMixin`.
 
         The dtype-type, i.e. float or complex will always be preserved,
         but the precision of floating point dtypes might be changed.
 
         Example:
-        If called with dtype=torch.float32 OR dtype=torch.complex64:
+        If called with ``dtype=torch.float32`` OR ``dtype=torch.complex64``:
 
-        - A complex128 tensor will be converted to complex64
-        - A float64 tensor will be converted to float32
-        - A bool tensor will remain bool
-        - An int64 tensor will remain int64
+        - A ``complex128`` tensor will be converted to ``complex64``
+        - A ``float64`` tensor will be converted to ``float32``
+        - A ``bool`` tensor will remain ``bool``
+        - An ``int64`` tensor will remain ``int64``
 
-        If other conversions are desired, please use the torch.Tensor.to() method of
+        If other conversions are desired, please use the `~torch.Tensor.to` method of
         the fields directly.
 
-        If the copy argument is set to True (default), a deep copy will be returned
+        If the copy argument is set to `True` (default), a deep copy will be returned
         even if no conversion is necessary.
         If two fields are views of the same data before, in the result they will be independent
-        copies if copy is set to True or a conversion is necessary.
-        If set to False, some Tensors might be shared between the original and the new object.
+        copies if copy is set to `True` or a conversion is necessary.
+        If set to `False`, some Tensors might be shared between the original and the new object.
         """
         # Parse the arguments of the three overloads and call _to with the parsed arguments
         parsedType: TypeAlias = tuple[
@@ -156,10 +169,10 @@ class MoveDataMixin:
     ) -> Self:
         """Move data to device and convert dtype if necessary.
 
-        This method is called by .to(),  .cuda(),  .cpu(), .double(), and so on.
-        It should not be called directly.
+        This method is called by `.to()`, `.cuda()`, `.cpu()`,
+        `.double()`, and so on. It should not be called directly.
 
-        See .to() for more details.
+        See `MoveDataMixin.to()` for more details.
 
         Parameters
         ----------
@@ -168,16 +181,16 @@ class MoveDataMixin:
         dtype
             The destination dtype.
         non_blocking
-            If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
+            If `True` and the source is in pinned memory, the copy will be asynchronous with respect to the host.
             Otherwise, the argument has no effect.
         memory_format
             The desired memory format of returned tensor.
         shared_memory
-            If True and the target device is CPU, the tensors will reside in shared memory.
+            If `True` and the target device is CPU, the tensors will reside in shared memory.
             Otherwise, the argument has no effect.
         copy
-            If True, the returned tensor will always be a copy, even if the input was already on the correct device.
-            This will also create new tensors for views
+            If `True`, the returned tensor will always be a copy, even if the input was already on the correct device.
+            This will also create new tensors for views.
         memo
             A dictionary to keep track of already converted objects to avoid multiple conversions.
         """
@@ -250,9 +263,9 @@ class MoveDataMixin:
         Parameters
         ----------
         function
-            The function to apply to all fields. None is interpreted as a no-op.
+            The function to apply to all fields. `None` is interpreted as a no-op.
         recurse
-            If True, the function will be applied to all children that are MoveDataMixin instances.
+            If `True`, the function will be applied to all children that are `MoveDataMixin` instances.
         """
         new = self.clone().apply_(function, recurse=recurse)
         return new
@@ -269,12 +282,12 @@ class MoveDataMixin:
         Parameters
         ----------
         function
-            The function to apply to all fields. None is interpreted as a no-op.
+            The function to apply to all fields. `None` is interpreted as a no-op.
         memo
             A dictionary to keep track of objects that the function has already been applied to,
             to avoid multiple applications. This is useful if the object has a circular reference.
         recurse
-            If True, the function will be applied to all children that are MoveDataMixin instances.
+            If `True`, the function will be applied to all children that are `MoveDataMixin` instances.
         """
         applied: Any
 
@@ -312,13 +325,13 @@ class MoveDataMixin:
         device
             The destination GPU device. Defaults to the current CUDA device.
         non_blocking
-            If True and the source is in pinned memory, the copy will be asynchronous with respect to the host.
+            If `True` and the source is in pinned memory, the copy will be asynchronous with respect to the host.
             Otherwise, the argument has no effect.
         memory_format
             The desired memory format of returned tensor.
         copy:
-            If True, the returned tensor will always be a copy, even if the input was already on the correct device.
-            This will also create new tensors for views
+            If `True`, the returned tensor will always be a copy, even if the input was already on the correct device.
+            This will also create new tensors for views.
         """
         if device is None:
             device = torch.device(torch.cuda.current_device())
@@ -332,15 +345,15 @@ class MoveDataMixin:
         memory_format
             The desired memory format of returned tensor.
         copy
-            If True, the returned tensor will always be a copy, even if the input was already on the correct device.
-            This will also create new tensors for views
+            If `True`, the returned tensor will always be a copy, even if the input was already on the correct device.
+            This will also create new tensors for views.
         """
         return self._to(device='cpu', dtype=None, non_blocking=True, memory_format=memory_format, copy=copy)
 
     def double(self, *, memory_format: torch.memory_format = torch.preserve_format, copy: bool = False) -> Self:
         """Convert all float tensors to double precision.
 
-        converts float to float64 and complex to complex128
+        converts ``float`` to ``float64`` and ``complex`` to ``complex128``
 
 
         Parameters
@@ -348,15 +361,15 @@ class MoveDataMixin:
         memory_format
             The desired memory format of returned tensor.
         copy
-            If True, the returned tensor will always be a copy, even if the input was already on the correct device.
-            This will also create new tensors for views
+            If `True`, the returned tensor will always be a copy, even if the input was already on the correct device.
+            This will also create new tensors for views.
         """
         return self._to(dtype=torch.float64, memory_format=memory_format, copy=copy)
 
     def half(self, *, memory_format: torch.memory_format = torch.preserve_format, copy: bool = False) -> Self:
         """Convert all float tensors to half precision.
 
-        converts float to float16 and complex to complex32
+        converts ``float`` to ``float16`` and ``complex`` to ``complex32``
 
 
         Parameters
@@ -364,15 +377,15 @@ class MoveDataMixin:
         memory_format
             The desired memory format of returned tensor.
         copy
-            If True, the returned tensor will always be a copy, even if the input was already on the correct device.
-            This will also create new tensors for views
+            If `True`, the returned tensor will always be a copy, even if the input was already on the correct device.
+            This will also create new tensors for views.
         """
         return self._to(dtype=torch.float16, memory_format=memory_format, copy=copy)
 
     def single(self, *, memory_format: torch.memory_format = torch.preserve_format, copy: bool = False) -> Self:
         """Convert all float tensors to single precision.
 
-        converts float to float32 and complex to complex64
+        converts ``float`` to ``float32`` and ``complex`` to ``complex64``
 
 
         Parameters
@@ -380,8 +393,8 @@ class MoveDataMixin:
         memory_format
             The desired memory format of returned tensor.
         copy
-            If True, the returned tensor will always be a copy, even if the input was already on the correct device.
-            This will also create new tensors for views
+            If `True`, the returned tensor will always be a copy, even if the input was already on the correct device.
+            This will also create new tensors for views.
         """
         return self._to(dtype=torch.float32, memory_format=memory_format, copy=copy)
 
@@ -390,19 +403,19 @@ class MoveDataMixin:
         """Return the device of the tensors.
 
         Looks at each field of a dataclass implementing a device attribute,
-        such as torch.Tensors or MoveDataMixin instances. If the devices
-        of the fields iffer, an InconsistentDeviceError is raised, otherwise
+        such as `torch.Tensor` or `MoveDataMixin` instances. If the devices
+        of the fields differ, an :py:exc:`~mrpro.data.InconsistentDeviceError` is raised, otherwise
         the device is returned. If no field implements a device attribute,
         None is returned.
 
         Raises
         ------
-        InconsistentDeviceError:
+        :py:exc:`InconsistentDeviceError`
             If the devices of different fields differ.
 
         Returns
         -------
-            The device of the fields or None if no field implements a device attribute.
+            The device of the fields or `None` if no field implements a `device` attribute.
         """
         device: None | torch.device = None
         for _, data in self._items():
@@ -423,14 +436,14 @@ class MoveDataMixin:
 
     @property
     def is_cuda(self) -> bool:
-        """Return True if all tensors are on a single CUDA device.
+        """Return `True` if all tensors are on a single CUDA device.
 
         Checks all tensor attributes of the dataclass for their device,
-        (recursively if an attribute is a MoveDataMixin)
+        (recursively if an attribute is a `MoveDataMixin`)
 
 
-        Returns False if not all tensors are on the same CUDA devices, or if the device is inconsistent,
-        returns True if the data class has no tensors as attributes.
+        Returns `False` if not all tensors are on the same CUDA devices, or if the device is inconsistent,
+        returns `True` if the data class has no tensors as attributes.
         """
         try:
             device = self.device
@@ -445,10 +458,10 @@ class MoveDataMixin:
         """Return True if all tensors are on the CPU.
 
         Checks all tensor attributes of the dataclass for their device,
-        (recursively if an attribute is a MoveDataMixin)
+        (recursively if an attribute is a `MoveDataMixin`)
 
-        Returns False if not all tensors are on cpu or if the device is inconsistent,
-        returns True if the data class has no tensors as attributes.
+        Returns `False` if not all tensors are on cpu or if the device is inconsistent,
+        returns `True` if the data class has no tensors as attributes.
         """
         try:
             device = self.device

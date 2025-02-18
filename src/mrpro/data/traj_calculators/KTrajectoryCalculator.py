@@ -52,8 +52,6 @@ class KTrajectoryCalculator(ABC):
         encoding_matrix
             encoding matrix
 
-
-
         Returns
         -------
             Trajectory
