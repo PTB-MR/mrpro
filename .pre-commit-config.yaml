@@ -25,6 +25,7 @@ repos:
     rev: v1.29.4
     hooks:
       - id: typos
+        args: [] # empty, to remove write-changes from the default arguments.
 
   - repo: https://github.com/fzimmermann89/check_all
     rev: v1.1
@@ -90,6 +91,7 @@ repos:
         additional_dependencies:
           - numpy
           - torch>=2.6.0
+          - pytorch-finufft
           - types-requests
           - typing-extensions
           - einops
