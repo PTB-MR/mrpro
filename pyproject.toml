@@ -82,7 +82,7 @@ test = [
     "pytest-xdist",
 ]
 docs = [
-    "sphinx",
+    "sphinx>8, <8.2",
     "sphinx_rtd_theme",
     "sphinx-pyproject",
     "myst-nb",
