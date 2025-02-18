@@ -3,15 +3,15 @@
 import pytest
 import torch
 from mrpro.operators.models import MOLLI
-from tests import RandomGenerator, autodiff_test
+from tests import autodiff_test
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
 
 
 @pytest.mark.parametrize(
     ('ti', 'result'),
     [
-        (0, 'a(1-c)'),  # short ti
-        (20, 'a'),  # long ti
+        (0, '-ac'),  # short ti
+        (1e8, 'a'),  # long ti
     ],
 )
 def test_molli(ti, result):
@@ -20,18 +20,15 @@ def test_molli(ti, result):
     Checking that idata output tensor at ti=0 is close to a. Checking
     that idata output tensor at large ti is close to a(1-c).
     """
-    a, t1 = create_parameter_tensor_tuples()
-    # c>2 is necessary for t1_star to be >= 0 and to ensure t1_star < t1
-    random_generator = RandomGenerator(seed=0)
-    c = random_generator.float32_tensor(size=a.shape, low=2.0, high=4.0)
+    a, t1, c = create_parameter_tensor_tuples(number_of_tensors=3)
 
     # Generate signal model and torch tensor for comparison
     model = MOLLI(ti)
     (image,) = model(a, c, t1)
 
     # Assert closeness to a(1-c) for large ti
-    if result == 'a(1-c)':
-        torch.testing.assert_close(image[0, ...], a * (1 - c))
+    if result == '-ac':
+        torch.testing.assert_close(image[0, ...], -a * c)
     # Assert closeness to a for ti=0
     elif result == 'a':
         torch.testing.assert_close(image[0, ...], a)

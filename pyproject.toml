@@ -65,7 +65,8 @@ dependencies = [
     "einops",
     "pydicom>=2.3",
     "pypulseq>=1.4.2",
-    "torchkbnufft>=1.4.0",
+    "pytorch-finufft>=0.1.0",
+    "cufinufft>=2.3.1; platform_system=='Linux'",
     "scipy>=1.12",
     "ptwt>=0.1.8",
     "typing-extensions>=4.12",
@@ -187,7 +188,7 @@ ignore = [
     "N999",   #  invalid module name
     "COM812", #  missing-trailing-comma (conflict with formatter)
     "SIM108", #  if-else-block-instead-of-if-exp
-    "A005"    #  stdlib-module-shadowing
+    "A005",   #  stdlib-module-shadowing
 ]
 
 [tool.ruff.lint.isort]

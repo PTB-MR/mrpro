@@ -163,7 +163,6 @@ def test_fourier_op_fft_nufft_forward(
         recon_matrix=recon_matrix,
         encoding_matrix=encoding_matrix,
         traj=NufftTrajektory(trajectory.kz, trajectory.ky, trajectory.kx),
-        nufft_oversampling=8.0,
     )
 
     (result_normal,) = fourier_op(img)
@@ -191,7 +190,6 @@ def test_fourier_op_fft_nufft_adjoint(
         recon_matrix=recon_matrix,
         encoding_matrix=encoding_matrix,
         traj=NufftTrajektory(trajectory.kz, trajectory.ky, trajectory.kx),
-        nufft_oversampling=8.0,
     )
 
     (k,) = fourier_op(img)
@@ -220,7 +218,6 @@ def test_fourier_op_fft_nufft_gram(
         recon_matrix=recon_matrix,
         encoding_matrix=encoding_matrix,
         traj=NufftTrajektory(trajectory.kz, trajectory.ky, trajectory.kx),
-        nufft_oversampling=8.0,
     )
 
     (result_normal,) = fourier_op.gram(img)
