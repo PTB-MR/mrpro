@@ -149,10 +149,12 @@ class KData(
             or ismrmrd_header.acquisitionSystemInformation.systemVendor is None
         ):
             warnings.warn('No vendor information found. Assuming Siemens time stamp format.', stacklevel=1)
+            convert_time_stamp = convert_time_stamp_siemens
+
         else:
             warnings.warn(
                 f'Unknown vendor {ismrmrd_header.acquisitionSystemInformation.systemVendor}. '
-                'Assuming Siemens time stamp format. If this is wrong, consider opening an Issue',
+                'Assuming Siemens time stamp format. If this is wrong, consider opening an Issue.',
                 stacklevel=1,
             )
             convert_time_stamp = convert_time_stamp_siemens
@@ -181,17 +183,13 @@ class KData(
 
         shapes = (torch.as_tensor([acq.data.shape[-1] for acq in acquisitions]) - discard_pre - discard_post).unique()
         if len(shapes) > 1:
-            if discard_pre.any() or discard_post.any():
-                note = 'discard_pre and post were applied.'
-            else:
-                note = 'discard_pre and discard_post were empty.'
-                warnings.warn(
-                    f'Acquisitions have different shape. Got {list(shapes)}. '
-                    f'Keeping only acquisistions with {shapes[-1]} data samples. '
-                    f'Note: {note} '
-                    'Please open an issue of you need to handle this kind of data.',
-                    stacklevel=1,
-                )
+            warnings.warn(
+                f'Acquisitions have different shape. Got {list(shapes)}. '
+                f'Keeping only acquisistions with {shapes[-1]} data samples. Note: discard_pre and discard_post '
+                f'{"have been applied. " if discard_pre.any() or discard_post.any() else "were empty. "}'
+                'Please open an issue of you need to handle this kind of data.',
+                stacklevel=1,
+            )
         kdata = torch.stack(
             [
                 torch.as_tensor(acq.data[..., pre : acq.data.shape[-1] - post], dtype=torch.complex64)
