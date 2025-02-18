@@ -382,7 +382,7 @@ class BrainwebVolumes(torch.utils.data.Dataset):
             The directory containing Brainweb HDF5 files
         what
             What to return for each subject.
-            Psossible values are:
+            Possible values are:
                 - r1: R1 relaxation rate.
                 - r2: R2 relaxation rate.
                 - m0: M0 magnetization.
