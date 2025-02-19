@@ -298,7 +298,7 @@ def sync_notebooks(source_folder, dest_folder):
 
 object_description_original = sphinx.util.inspect.object_description
 def object_description_function_repr_overwrite(obj, *, _seen: frozenset[int] = frozenset()) -> str:
-    """Overwrite sphinx default function representation to use functioname instead of <functioname>.
+    """Overwrite sphinx default function representation to use functionname instead of <functionname>.
 
     <> would break interspinx and formatting of the function name."""
     if callable(obj):
