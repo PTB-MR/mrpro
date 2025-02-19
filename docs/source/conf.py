@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import get_overloads
 
 import nbformat
+import sphinx.util.inspect
 from sphinx.ext.autodoc import AttributeDocumenter, ClassDocumenter, MethodDocumenter, PropertyDocumenter
 from sphinx.util.inspect import isclassmethod, isstaticmethod, signature, stringify_signature
 from sphinx_pyproject import SphinxConfig
@@ -295,6 +296,14 @@ def sync_notebooks(source_folder, dest_folder):
             content.metadata['mystnb'] = {'execution_mode': mode}
             nbformat.write(content, dest_file)
 
+object_description_original = sphinx.util.inspect.object_description
+def object_description_function_repr_overwrite(obj, *, _seen: frozenset[int] = frozenset()) -> str:
+    """Overwrite sphinx default function representation to use functioname instad of <functioname>.
+
+    <> would break interspinx and formatting of the function name."""
+    if callable(obj):
+        return obj.__name__ + '()'
+    return object_description_original(obj, _seen=_seen)
 
 def setup(app):
     app.set_html_assets_policy('always')  # forces mathjax on all pages
@@ -302,4 +311,6 @@ def setup(app):
     app.connect('autodoc-process-signature', autodoc_inherit_overload, 0)
     app.connect('source-read', replace_patterns_in_markdown)
     app.add_autodocumenter(CustomClassDocumenter, True)
+    sphinx.util.inspect.object_description = object_description_function_repr_overwrite
+
     sync_notebooks(app.srcdir.parent.parent / 'examples' / 'notebooks', app.srcdir / '_notebooks')
