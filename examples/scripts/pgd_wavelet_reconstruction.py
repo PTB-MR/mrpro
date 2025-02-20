@@ -132,26 +132,27 @@ img_sense_24 = sense_reconstruction(kdata_24spokes)
 
 
 # %% [markdown]
-# ### Set up the operator $A$
+# ### Set up the operator $\tilde{A}$
 # Define the wavelet operator $W$ and set $\tilde{A} = A W^H = F C W^H $, where $F$ is the Fourier
-# operator, $C$ the coil sensitivity maps and $W^H$ the adjoint wavelet operator.
+# operator, $C$ denotes the coil sensitivity maps and $W^H$ represents the adjoint wavelet operator.
 
 # %%
 fourier_operator = direct_reconstruction_24.fourier_op
+
 assert direct_reconstruction_24.csm is not None
 csm_operator = direct_reconstruction_24.csm.as_operator()
 
 # Define the wavelet operator
 wavelet_operator = mrpro.operators.WaveletOp(
-    domain_shape=img_direct_24.data.shape[-2:], dim=(-2, -1), wavelet_name='sym8', level=3
+    domain_shape=img_direct_24.data.shape[-2:], dim=(-2, -1), wavelet_name='db4', level=None
 )
 
-# Create the full acquisition operator A with wavelet operator
+# Create the full acquisition operator $\tilde{A}$ including the adjoint of the wavelet operator
 acquisition_operator = fourier_operator @ csm_operator @ wavelet_operator.H
 
 # %% [markdown]
 # ### Set up the problem
-# In order to apply FISTA to solve $(2)$, we identify $f$ ang $g$ from $(3)$ as
+# In order to apply FISTA to solve $(2)$, we identify $f$ and $g$ from $(3)$ as
 #
 # $f(\tilde{x}) = \frac{1}{2}\|\tilde{A}\tilde{x}  - y\|_2^2,$
 #
@@ -160,70 +161,81 @@ acquisition_operator = fourier_operator @ csm_operator @ wavelet_operator.H
 # From this, we see that FISTA is a good choice to solve $(2)$,
 # as $\mathrm{prox}_g$ is given by simple soft-thresholding.
 #
-# After having run the algorithm for $N$ iterations, the obtained solution $\tilde{x}_{N}$
+# After having run the algorithm for $T$ iterations, the obtained solution $\tilde{x}_{T}$
 # is in the wavelet domain and needs to be mapped back to image domain.
 # Thus we apply the adjoint of the wavelet transform and obtain solution $x_{\text{opt}}$ as
 #
-# $x_{\text{opt}} := W^H x_{N}$.
+# $x_{\text{opt}} := W^H x_{T}$.
 
 
 # %%
 # Regularization parameter for the $\ell_1$-norm
-regularization_parameter = 3e-2
+regularization_parameter = 5e-5
 
 # Set up the problem by using the previously described identification
-l2 = 0.5 * mrpro.operators.functionals.L2NormSquared(target=kdata_24spokes.data, divide_by_n=True)
-l1 = mrpro.operators.functionals.L1NormViewAsReal(divide_by_n=True)
+l2 = 0.5 * mrpro.operators.functionals.L2NormSquared(target=kdata_24spokes.data, divide_by_n=False)
+l1 = mrpro.operators.functionals.L1NormViewAsReal(divide_by_n=False)
 
 f = l2 @ acquisition_operator
 g = regularization_parameter * l1
 
-# initialize FISTA with adjoint solution
-initial_values = wavelet_operator(img_direct_24.data)
-
-# %% [markdown]
-# ### Run FISTA for a certain number of iterations
-# %%
-max_iterations = 128
-
-# callback function to track the value of the objective functional f(x) + g(x)
+# %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show callback details"}
+# This is a "callback" function to track the value of the objective functional f(x) + g(x)
 # and stepsize update
 from mrpro.algorithms.optimizers.pgd import PGDStatus
 
 
 def callback(optimizer_status: PGDStatus) -> None:
-    """Print the value of the objective functional every 10th iteration."""
+    """Print the value of the objective functional every 8th iteration."""
     iteration = optimizer_status['iteration_number']
     solution = optimizer_status['solution']
-    if iteration % 10 == 0:
+    if iteration % 8 == 0:
         print(
             f'{iteration}: {optimizer_status["objective"](*solution).item()}, stepsize: {optimizer_status["stepsize"]}'
         )
 
 
-# compute the stepsize based on the operator norm of the acquisition operator
+# %% [markdown]
+# ### Run FISTA for a certain number of iterations
+# Now we can run the FISTA algorithm to solve the minimization problem. As an initial guess,
+# we use the wavelet-coefficients of the # iterative SENSE image to speed up the convergence.
+
+# compute the stepsize based on the operator norm of the acquisition operator and run FISTA
 import torch
+
+# initialize FISTA with adjoint solution
+initial_values = wavelet_operator(img_direct_24.data)
 
 op_norm = acquisition_operator.operator_norm(
     initial_value=torch.randn_like(initial_values[0]), dim=(-2, -1), max_iterations=36
 ).item()
 
 # define step size with a security factor to ensure to
-# have stepsize \in (0, 1/||acquisition_operator||_2)
-stepsize = 0.98 * (1 / op_norm)
+# have stepsize $t \in (0, L(f)), where L(f)=1/\|\tilde{A}\|_2^2)$ is
+# the Lipschitz constant of the functional $f$
+stepsize = 0.9 * (1 / op_norm**2)
 
 (img_wave_pgd_24,) = mrpro.algorithms.optimizers.pgd(
     f=f,
     g=g,
     initial_value=initial_values,
     stepsize=stepsize,
-    max_iterations=max_iterations,
+    max_iterations=48,
     backtrack_factor=1.0,
     callback=callback,
 )
 
 # map the solution back to image domain
 (img_pgd_24,) = wavelet_operator.H(img_wave_pgd_24)
+
+# ```{note}
+# When defining the functional $f$ with the argument `divide_b_n=True`, one needs to be careful when setting
+# the stepsize to be used in FISTA. The reason is that the Lipschitz-constant of the functional
+# $f_N(\tilde{x}) = 1/N\,\|\tilde{A}\\tilde{x} - y\|_2^2, where $y\in\mathbb{C}^N$, is no longer given
+# by the squared operator norm of $\tilde{A}$, but rather by the squared operator norm of the scaled
+# operator $1/N \tilde{A}$. # Thus, the Lipschitz constant $L(f_N)) must be appropriately scaled,
+# i.e.\ $L(f_N) = N \cdot L(f)$.
+# ```
 
 
 # %% [markdown]
@@ -240,7 +252,7 @@ def show_images(*images: torch.Tensor, titles: list[str] | None = None) -> None:
     n_images = len(images)
     _, axes = plt.subplots(1, n_images, squeeze=False, figsize=(n_images * 3, 3))
     for i in range(n_images):
-        axes[0][i].imshow(images[i], cmap='gray')
+        axes[0][i].imshow(images[i], cmap='gray', clim=[0, 3e-4])
         axes[0][i].axis('off')
         if titles:
             axes[0][i].set_title(titles[i])
@@ -262,8 +274,8 @@ show_images(
 # Congratulations! We have successfully reconstructed an image from 24 spokes using wavelets.
 #
 # ### Next steps
-# Not happy with the results? Play around with the regularization weight, the number of iterations, and the
-# number of levels in the wavelet decomposition to see how they affect the final image.
+# Not happy with the results? Play around with the regularization weight, the number of iterations, the
+# number of levels in the wavelet decomposition or the backtracing factor to see how they affect the final image.
 # Still not happy? Maybe worth giving a try to total variation (TV)-minimization as an alternative
 # regularization method (see <project:tv_minimization_reconstruction_pdhg.ipynb>).
 # You can also try to use the 96 spokes data to see how the reconstruction quality improves with more spokes.
