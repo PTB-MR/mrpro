@@ -98,3 +98,6 @@ We are looking forward to your contributions via "fork and pull requests". If yo
 You can find more information on "fork and pull requests" on the [GitHub documentation](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project)
 
 Please also look at our [contributor guide](https://ptb-mr.github.io/mrpro/contributor_guide.html) for more information on the repository structure, naming conventions, and other useful information.
+
+> [!NOTE]  
+> There are a few things which cannot be modified as "fork and pull requests" such as modifications of the docker images. If you think something needs to be changed there, please open up an issue first. 
