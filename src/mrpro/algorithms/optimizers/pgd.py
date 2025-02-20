@@ -37,15 +37,15 @@ def pgd(
 
     For fixed stepsize t, pgd converges globally when :math:`t \in (0, 1/L)`,
     where L is the Lipschitz constant of the gradient of f.
-    In applications, f is usually of the form :math:`f(x) = 1/2 ||Ax - target||^2`,
+    In applications, f is often of the form :math:`f(x) = 1/2 \|Ax - y\|^2`,
     where :math:`A` is a linear operator.
-    In this case, :math:`t \in (0, 1/||A^T A||)` for convergence.
+    In this case, :math:`t \in (0, 1/\|A\|_2^2)` for convergence.
     If no backtracking is used, the fixed stepsize should be given accordingly to the convergence condition.
 
     Example:
-        L1 regularized image reconstruction. Problem formulation: :math:`min_x 1/2 ||Fx - target||^2 + ||x||_1`,
-        with :math:`F` being the Fourier Transform, target the acquired data \in k-space and x \in image space,
-        :math:`f(x) = 1/2 ||Fx - target||^2, g(x) = ||x||_1`.
+        L1 regularized image reconstruction. Problem formulation: :math:`min_x 1/2 ||Fx - y||^2 + \lambda ||x||_1`,
+        with :math:`F` being the Fourier Transform, target denoting the acquired data \in k-space and x \in image space,
+        :math:`f(x) = 1/2 \|Fx - y\|^2, g(x) = \lambda \|x\|_1`.
         In this case, :math:`||F^T F|| = 1`. ::
                 fft = FastFourierOp()
                 l2 = L2NormSquared(target=kspace_data)
@@ -53,7 +53,7 @@ def pgd(
                 reg_parameter = 0.01
                 g = reg_parameter * L1Norm()
                 operator_norm = 1.
-                stepsize = 0.85 * 1 / operator_norm
+                stepsize = 0.85 * 1 / operator_norm**2
                 initial_value = torch.ones(image_space_shape)
                 pgd_image_solution = pgd(
                     f=f,
@@ -127,6 +127,7 @@ def pgd(
             )
 
             (f_x,) = f(*x)
+
             if f_x <= quadratic_approx:
                 # stepsize is ok, continue to next iteration
                 break
