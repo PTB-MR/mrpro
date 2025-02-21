@@ -163,14 +163,15 @@ acquisition_operator = fourier_operator @ csm_operator @ wavelet_operator.H
 #
 # After having run the algorithm for $T$ iterations, the obtained solution $\tilde{x}_{T}$
 # is in the wavelet domain and needs to be mapped back to image domain.
-# Thus we apply the adjoint of the wavelet transform and obtain solution $x_{\text{opt}}$ as
+# Thus, we apply the adjoint of the wavelet transform and obtain the solution $x_{\text{opt}}$
+# in image domain as
 #
 # $x_{\text{opt}} := W^H x_{T}$.
 
 
 # %%
 # Regularization parameter for the $\ell_1$-norm
-regularization_parameter = 5e-5
+regularization_parameter = 1e-5
 
 # Set up the problem by using the previously described identification
 l2 = 0.5 * mrpro.operators.functionals.L2NormSquared(target=kdata_24spokes.data, divide_by_n=False)
@@ -200,6 +201,7 @@ def callback(optimizer_status: PGDStatus) -> None:
 # Now we can run the FISTA algorithm to solve the minimization problem. As an initial guess,
 # we use the wavelet-coefficients of the # iterative SENSE image to speed up the convergence.
 
+# %%
 # compute the stepsize based on the operator norm of the acquisition operator and run FISTA
 import torch
 
@@ -211,7 +213,7 @@ op_norm = acquisition_operator.operator_norm(
 ).item()
 
 # define step size with a security factor to ensure to
-# have stepsize $t \in (0, L(f)), where L(f)=1/\|\tilde{A}\|_2^2)$ is
+# have stepsize $t \in (0, L(f))$, where $L(f)=1/\|\tilde{A}\|_2^2)$ is
 # the Lipschitz constant of the functional $f$
 stepsize = 0.9 * (1 / op_norm**2)
 
@@ -230,11 +232,11 @@ stepsize = 0.9 * (1 / op_norm**2)
 
 # ```{note}
 # When defining the functional $f$ with the argument `divide_b_n=True`, one needs to be careful when setting
-# the stepsize to be used in FISTA. The reason is that the Lipschitz-constant of the functional
+# the stepsize to be used in FISTA. The reason is that the Lipschitz-constant of the gradient of the functional
 # $f_N(\tilde{x}) = 1/N\,\|\tilde{A}\\tilde{x} - y\|_2^2, where $y\in\mathbb{C}^N$, is no longer given
 # by the squared operator norm of $\tilde{A}$, but rather by the squared operator norm of the scaled
-# operator $1/N \tilde{A}$. # Thus, the Lipschitz constant $L(f_N)) must be appropriately scaled,
-# i.e.\ $L(f_N) = N \cdot L(f)$.
+# operator $1/N \tilde{A}$. # Thus, the Lipschitz constant $L(\nabla f_N)) must be appropriately scaled,
+# i.e.\ $L(\nabla f_N) = N \cdot L( \nabla f)$.
 # ```
 
 
