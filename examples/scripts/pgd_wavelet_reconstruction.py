@@ -1,5 +1,6 @@
 # %% [markdown]
-# # Proximal gradient descent (FISTA) reconstruction of 2D golden angle radial data
+# # Accelerated Proximal gradient descent (FISTA) reconstruction of 2D golden angle radial data
+# using wavelets +$\ell_1$-norm minimization
 
 # %% [markdown]
 # ### Image reconstruction
@@ -234,9 +235,9 @@ stepsize = 0.9 * (1 / op_norm**2)
 # ```{note}
 # When defining the functional $f$ with the argument `divide_b_n=True`, one needs to be careful when setting
 # the stepsize to be used in FISTA. The reason is that the Lipschitz-constant of the gradient of the functional
-# $f_N(\tilde{x}) = 1/N\,\|\tilde{A}\\tilde{x} - y\|_2^2, where $y\in\mathbb{C}^N$, is no longer given
+# $f_N(\tilde{x}) = 1/N\,\|\tilde{A}\\tilde{x} - y\|_2^2$, where $y\in\mathbb{C}^N$, is no longer given
 # by the squared operator norm of $\tilde{A}$, but rather by the squared operator norm of the scaled
-# operator $1/N \tilde{A}$. # Thus, the Lipschitz constant $L(\nabla f_N)) must be appropriately scaled,
+# operator $1/N \tilde{A}$. Thus, the Lipschitz constant $L(\nabla f_N)) must be appropriately scaled,
 # i.e.\ $L(\nabla f_N) = N \cdot L( \nabla f)$.
 # ```
 
