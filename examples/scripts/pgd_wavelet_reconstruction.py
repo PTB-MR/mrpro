@@ -230,6 +230,7 @@ stepsize = 0.9 * (1 / op_norm**2)
 # map the solution back to image domain
 (img_pgd_24,) = wavelet_operator.H(img_wave_pgd_24)
 
+# %% [markdown]
 # ```{note}
 # When defining the functional $f$ with the argument `divide_b_n=True`, one needs to be careful when setting
 # the stepsize to be used in FISTA. The reason is that the Lipschitz-constant of the gradient of the functional
