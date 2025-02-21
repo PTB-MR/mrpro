@@ -13,9 +13,8 @@ class KTrajectoryIsmrmrd:
 
     The trajectory in the ISMRMRD raw data file is read out [TRA]_.
 
-    The value range of the trajectory in the ISMRMRD file is not well defined. Here we simple normalize everything
-    based on the highest value and ensure it is within [-pi, pi]. The trajectory is in the shape of the unsorted
-    raw data.
+    The value range of the trajectory in the ISMRMRD file is not well defined, thus we normalize
+    based on the highest value and ensure it is within [-pi, pi].
 
     References
     ----------
@@ -47,6 +46,10 @@ class KTrajectoryIsmrmrd:
                 kx=ktraj_mrd[..., 0],
             )
         else:
-            ktraj = KTrajectoryRawShape(kz=ktraj_mrd[..., 2], ky=ktraj_mrd[..., 1], kx=ktraj_mrd[..., 0])
+            ktraj = KTrajectoryRawShape(
+                kz=ktraj_mrd[..., 2],
+                ky=ktraj_mrd[..., 1],
+                kx=ktraj_mrd[..., 0],
+            )
 
         return ktraj

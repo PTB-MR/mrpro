@@ -17,8 +17,9 @@ from einops import rearrange, repeat
 from typing_extensions import Self, TypeVar
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
-from mrpro.data.AcqInfo import AcqInfo, rearrange_acq_info_fields
-from mrpro.data.EncodingLimits import Limits
+from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_siemens, rearrange_acq_info_fields
+from mrpro.data.EncodingLimits import EncodingLimits
+from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
@@ -136,11 +137,35 @@ class KData(
         if not acquisitions:
             raise ValueError('No acquisitions meeting the given filter criteria were found.')
 
-        kdata = torch.stack([torch.as_tensor(acq.data, dtype=torch.complex64) for acq in acquisitions])
+        if (
+            ismrmrd_header.acquisitionSystemInformation is not None
+            and isinstance(ismrmrd_header.acquisitionSystemInformation.systemVendor, str)
+            and ismrmrd_header.acquisitionSystemInformation.systemVendor.lower() == 'siemens'
+        ):
+            convert_time_stamp = convert_time_stamp_siemens  # 2.5ms time steps
+        # Here we could include more vendors
+        elif (
+            ismrmrd_header.acquisitionSystemInformation is None
+            or ismrmrd_header.acquisitionSystemInformation.systemVendor is None
+        ):
+            warnings.warn('No vendor information found. Assuming Siemens time stamp format.', stacklevel=1)
+            convert_time_stamp = convert_time_stamp_siemens
 
-        acqinfo = AcqInfo.from_ismrmrd_acquisitions(acquisitions)
+        else:
+            warnings.warn(
+                f'Unknown vendor {ismrmrd_header.acquisitionSystemInformation.systemVendor}. '
+                'Assuming Siemens time stamp format. If this is wrong, consider opening an Issue.',
+                stacklevel=1,
+            )
+            convert_time_stamp = convert_time_stamp_siemens
 
-        if len(torch.unique(acqinfo.idx.user5)) > 1:
+        acq_info, (k0_center, n_k0_tensor, discard_pre, discard_post) = AcqInfo.from_ismrmrd_acquisitions(
+            acquisitions,
+            additional_fields=('center_sample', 'number_of_samples', 'discard_pre', 'discard_post'),
+            convert_time_stamp=convert_time_stamp,
+        )
+
+        if len(torch.unique(acq_info.idx.user5)) > 1:
             warnings.warn(
                 'The Siemens to ismrmrd converter currently (ab)uses '
                 'the user 5 indices for storing the kspace center line number.\n'
@@ -148,7 +173,7 @@ class KData(
                 stacklevel=1,
             )
 
-        if len(torch.unique(acqinfo.idx.user6)) > 1:
+        if len(torch.unique(acq_info.idx.user6)) > 1:
             warnings.warn(
                 'The Siemens to ismrmrd converter currently (ab)uses '
                 'the user 6 indices for storing the kspace center partition number.\n'
@@ -156,26 +181,33 @@ class KData(
                 stacklevel=1,
             )
 
+        shapes = (torch.as_tensor([acq.data.shape[-1] for acq in acquisitions]) - discard_pre - discard_post).unique()
+        if len(shapes) > 1:
+            warnings.warn(
+                f'Acquisitions have different shape. Got {list(shapes)}. '
+                f'Keeping only acquisistions with {shapes[-1]} data samples. Note: discard_pre and discard_post '
+                f'{"have been applied. " if discard_pre.any() or discard_post.any() else "were empty. "}'
+                'Please open an issue of you need to handle this kind of data.',
+                stacklevel=1,
+            )
+        kdata = torch.stack(
+            [
+                torch.as_tensor(acq.data[..., pre : acq.data.shape[-1] - post], dtype=torch.complex64)
+                for acq, pre, post in zip(acquisitions, discard_pre, discard_post, strict=True)
+                if acq.data.shape[-1] - pre - post == shapes[-1]
+            ]
+        )
+
         # Raises ValueError if required fields are missing in the header
         kheader = KHeader.from_ismrmrd(
             ismrmrd_header,
-            acqinfo,
+            acq_info,
             defaults={
                 'datetime': modification_time,  # use the modification time of the dataset as fallback
                 'trajectory': ktrajectory,
             },
             overwrite=header_overwrites,
         )
-
-        # Fill k0 limits if they were set to zero / not set in the header
-        if kheader.encoding_limits.k0.length == 1:
-            # The encodig limits should describe the encoded space of all readout lines. If we have two readouts with
-            # (number_of_samples, center_sample) of (100, 20) (e.g. partial Fourier in the negative k0 direction) and
-            # (100, 80) (e.g. partial Fourier in the positive k0 direction) then this should lead to encoding limits of
-            # [min=0, max=159, center=80]
-            max_center_sample = int(torch.max(kheader.acq_info.center_sample))
-            max_pos_k0_extend = int(torch.max(kheader.acq_info.number_of_samples - kheader.acq_info.center_sample))
-            kheader.encoding_limits.k0 = Limits(0, max_center_sample + max_pos_k0_extend - 1, max_center_sample)
 
         # Sort and reshape the kdata and the acquisistion info according to the indices.
         # within "other", the aquisistions are sorted in the order determined by KDIM_SORT_LABELS.
@@ -234,13 +266,32 @@ class KData(
             else field
         )
         kdata = rearrange(kdata[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=n_k1, k2=n_k2)
+        k0_center = rearrange(k0_center[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=n_k1, k2=n_k2)
 
         # Calculate trajectory and check if it matches the kdata shape
         match ktrajectory:
             case KTrajectoryIsmrmrd():
                 ktrajectory_final = ktrajectory(acquisitions).sort_and_reshape(sort_idx, n_k2, n_k1)
             case KTrajectoryCalculator():
-                ktrajectory_or_rawshape = ktrajectory(kheader)
+                reversed_readout_mask = (kheader.acq_info.flags[..., 0] & AcqFlags.ACQ_IS_REVERSE.value).bool()
+                n_k0_unique = torch.unique(n_k0_tensor)
+                if len(n_k0_unique) > 1:
+                    raise ValueError(
+                        'Trajectory can only be calculated for constant number of readout samples.\n'
+                        f'Got unique values {list(n_k0_unique)}'
+                    )
+                encoding_limits = EncodingLimits.from_ismrmrd_header(ismrmrd_header)
+                ktrajectory_or_rawshape = ktrajectory(
+                    n_k0=int(n_k0_unique[0]),
+                    k0_center=k0_center,
+                    k1_idx=kheader.acq_info.idx.k1,
+                    k1_center=encoding_limits.k1.center,
+                    k2_idx=kheader.acq_info.idx.k2,
+                    k2_center=encoding_limits.k2.center,
+                    reversed_readout_mask=reversed_readout_mask,
+                    encoding_matrix=kheader.encoding_matrix,
+                )
+
                 if isinstance(ktrajectory_or_rawshape, KTrajectoryRawShape):
                     ktrajectory_final = ktrajectory_or_rawshape.sort_and_reshape(sort_idx, n_k2, n_k1)
                 else:
@@ -461,12 +512,7 @@ class KData(
 
         # Adapt header parameters
         header = copy.deepcopy(self.header)
-        header.acq_info.center_sample -= start_cropped_readout
-        header.acq_info.number_of_samples[:] = cropped_data.shape[-1]
         header.encoding_matrix.x = cropped_data.shape[-1]
-
-        header.acq_info.discard_post = (header.acq_info.discard_post * x_ratio).to(torch.int32)
-        header.acq_info.discard_pre = (header.acq_info.discard_pre * x_ratio).to(torch.int32)
 
         return type(self)(header, cropped_data, cropped_traj)
 
@@ -554,10 +600,6 @@ class KData(
         # Number of other
         n_other = split_idx.shape[0]
 
-        # Verify that the specified label of the other dimension is unused
-        if getattr(self.header.encoding_limits, other_label).length > 1:
-            raise ValueError(f'{other_label} is already used to encode different parts of the scan.')
-
         # Set-up splitting
         if split_dir == 'k1':
             # Split along k1 dimensions
@@ -610,9 +652,6 @@ class KData(
             if isinstance(field, Rotation | torch.Tensor)
             else field
         )
-
-        # Update other label limits and acquisition info
-        setattr(kheader.encoding_limits, other_label, Limits(min=0, max=n_other - 1, center=0))
 
         # acq_info for new other dimensions
         acq_info_other_split = repeat(
