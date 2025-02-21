@@ -39,19 +39,22 @@ TClassNames = Literal['skl', 'gry', 'wht', 'csf', 'mrw', 'dura', 'fat', 'fat2', 
 
 @dataclass
 class BrainwebTissue:
-    """Container for Parameters of a single tissue.
+    """Container for parameters of a single tissue.
 
     Attributes are either single values or ranges.
-    If ranges, the values are sampled uniformly from within this range by the `sample_r1`, `sample_r2`, and `sample_m0`
+    If ranges, values are sampled uniformly from within this range by the `sample_r1`, `sample_r2`, and `sample_m0`
     methods. If a single value is given, this value is returned by the respective method.
     """
 
     t1: float | tuple[float, float]
     """T1 value or range (T1_min, T1_max) in seconds."""
+
     t2: float | tuple[float, float]
     """T2 value or range (T2_min, T2_max) in seconds."""
+
     m0_abs: float | tuple[float, float]
     """Absolute value or range (M0_min, M0_max) of the complex M0."""
+
     m0_phase: float | tuple[float, float] = 0.0
     """Phase value or range (Phase_min, Phase_max) of the complex M0 in radians."""
 
@@ -109,8 +112,9 @@ def augment(
 ) -> Callable[[torch.Tensor, torch.Generator | None], torch.Tensor]:
     """Get an augmentation function.
 
-    Creates a function that applies augmentation to the input tensor, that is
-    a random rotation and shear to the input image.
+    Creates a function that applies augmentation to the input tensor consisting of
+    rotation, shearing, scaling and horizontal/vertical flipping.
+
     The image is scaled such that the largest dimension is in
     [size * (1 - max_random_scaling), size * (1 + max_random_scaling)], then padded/cropped to size `size x size`.
     In scaling, the aspect ratio is preserved.
@@ -135,7 +139,7 @@ def augment(
 
     Returns
     -------
-    Callable that applies augmentation to the input tensor
+        Callable that applies augmentation to the input tensor
     """
 
     def augment_fn(data: torch.Tensor, rng: torch.Generator | None = None) -> torch.Tensor:
@@ -147,7 +151,7 @@ def augment(
         angle = rand[2] * max_random_rotation
         scale = size / max(data.shape[-2:])
         scale *= 1 + max_random_scaling_factor * rand[3]
-        translate = rand[4:6]  # single pixel translations
+        translate = rand[4:6]  # subpixel translation for edge aliasing
         if trim:
             data = data[trim_indices(data.sum(-1) > 0.1 * data.amax())]
 
@@ -162,7 +166,7 @@ def augment(
         )
         rand = torch.empty(2).uniform_(0, 1, generator=rng).tolist()
         data = torchvision.transforms.functional.hflip(data) if rand[0] < p_horizontal_flip else data
-        data = torchvision.transforms.functional.vflip(data) if rand[0] < p_vertical_flip else data
+        data = torchvision.transforms.functional.vflip(data) if rand[1] < p_vertical_flip else data
 
         data = torchvision.transforms.functional.center_crop(data, [size, size])
 
@@ -181,7 +185,7 @@ def resize(size: int = 256) -> Callable[[torch.Tensor, torch.Generator | None], 
 
     Returns
     -------
-    Callable that resizes and crops the input tensor.
+        Callable that resizes and crops the input tensor.
     """
 
     def resize_fn(data: torch.Tensor, rng: torch.Generator | None = None) -> torch.Tensor:  # noqa: ARG001
@@ -208,8 +212,8 @@ def trim_indices(mask: torch.Tensor) -> tuple[slice, slice]:
 
     Returns
     -------
-    Two `slice` ohjects, that can be used to index the data
-    to remove fully masked out outer rows and columns.
+        Two `slice` objects, that can be used to index the data
+        to remove fully masked out outer rows and columns.
     """
     mask = mask.any(dim=tuple(range(mask.ndim - 2)))
     row_mask, col_mask = mask.any(1).short(), mask.any(0).short()
@@ -220,7 +224,7 @@ def trim_indices(mask: torch.Tensor) -> tuple[slice, slice]:
     return slice(row_min, row_max), slice(col_min, col_max)
 
 
-VALUES_3T: Mapping[TClassNames, BrainwebTissue] = MappingProxyType(
+VALUES_3T_RANDOMIZED: Mapping[TClassNames, BrainwebTissue] = MappingProxyType(
     {
         'skl': BrainwebTissue((0.000, 2.000), (0.000, 0.010), (0.00, 0.05), (-0.2, 0.2)),
         'gry': BrainwebTissue((1.200, 2.000), (0.080, 0.120), (0.70, 1.00), (-0.2, 0.2)),
@@ -235,7 +239,7 @@ VALUES_3T: Mapping[TClassNames, BrainwebTissue] = MappingProxyType(
         'ves': BrainwebTissue((1.700, 2.100), (0.200, 0.400), (0.80, 1.00), (-0.2, 0.2)),
     }
 )
-"""Tissue values at 3T."""
+"""Tissue values for 3T with wide randomization ranges."""
 
 DEFAULT_VALUES = {'r1': 0.0, 'm0': 0.0, 'r2': 0.0, 'mask': 0, 'tissueclass': -1}
 """Default values for masked out regions."""
@@ -333,16 +337,16 @@ def download_brainweb(
 
 
 class BrainwebVolumes(torch.utils.data.Dataset):
-    """3D Brainweb Dataset.
+    """Dataset of 3D qMRI parameters based on Brainweb dataset.
 
-    This dataset provides 1 mm isotropic 3D brain data of various quantitative MRI (qMRI) parameters.
+    This dataset provides 1 mm isotropic 3D brain data of various quantitative MRI (qMRI)
+    parameters based on the segmentations provided by the Brainweb [AubertBroche2006]_ dataset.
 
     References
     ----------
     .. [AubertBroche2006] Aubert-Broche, B., Griffin, M., Pike, G.B., Evans, A.C., & Collins, D.L. (2006).
        Twenty New Digital Brain Phantoms for Creation of Validation Image Data Bases.
-       *IEEE Transactions on Medical Imaging, 25*(11), 1410-1416.
-       https://doi.org/10.1109/TMI.2006.883453
+       IEEE Transactions on Medical Imaging, 25 (11), 1410-1416. https://doi.org/10.1109/TMI.2006.883453
     """
 
     @staticmethod
@@ -370,7 +374,7 @@ class BrainwebVolumes(torch.utils.data.Dataset):
         self,
         folder: str | Path = CACHE_DIR,
         what: Sequence[Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass'] | TClassNames] = ('m0', 'r1', 'r2'),
-        parameters: Mapping[TClassNames, BrainwebTissue] = VALUES_3T,
+        parameters: Mapping[TClassNames, BrainwebTissue] = VALUES_3T_RANDOMIZED,
         mask_values: Mapping[str, float | None] = DEFAULT_VALUES,
         seed: int | Literal['index', 'random'] = 'random',
     ) -> None:
@@ -389,8 +393,8 @@ class BrainwebVolumes(torch.utils.data.Dataset):
                 - t1: T1 relaxation time.
                 - t2: T2 relaxation time.
                 - mask: mask indicating valid data.
-                - tissueclass: (majority) Class index.
-                - Brainweb class name: raw percentage for a specific tissue class.
+                - tissueclass: (majority) class index.
+                - Brainweb class name: raw percentage of the specific tissue class (see below for possible values).
         parameters
             Parameters for each tissue class.
             The Brainweb tissue classes are:
@@ -401,14 +405,15 @@ class BrainwebVolumes(torch.utils.data.Dataset):
                 - mrw: bone marrow
                 - dura: dura
                 - fat: fat
-                - fat2: fat and Tissue
+                - fat2: fat and tissue
                 - mus: muscle
                 - m-s: skin
                 - ves: vessels
         mask_values
             Default values to use for masked out regions.
         seed
-            Random seed. Can be an int, the strings ``index`` to use slice index as seed, or ``random`` for random seed.
+            Random seed. Can be an int, the strings ``index`` to use subject index as seed,
+            or ``random`` for random seed.
         """
         self.files = list(Path(folder).glob('s??.h5'))
 
@@ -433,7 +438,7 @@ class BrainwebVolumes(torch.utils.data.Dataset):
     def __getitem__(
         self, index: int
     ) -> dict[Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass'] | TClassNames, torch.Tensor]:
-        """Get data from one subject."""
+        """Get 3D data from one subject."""
         with h5py.File(self.files[index]) as file:
             data = torch.as_tensor(np.array(file['classes'], dtype=np.uint8))
             classnames = tuple(file.attrs['classnames'])
@@ -482,12 +487,15 @@ class BrainwebVolumes(torch.utils.data.Dataset):
 class BrainwebSlices(torch.utils.data.Dataset):
     """Dataset of 2D qMRI parameter slices based on Brainweb dataset.
 
+    Dataset of agmented 2D qMRI parameter slices based on the segmentations of
+    the Brainweb dataset [AubertBroche2006]_.
+
+
     References
     ----------
     .. [AubertBroche2006] Aubert-Broche, B., Griffin, M., Pike, G.B., Evans, A.C., & Collins, D.L. (2006).
        Twenty New Digital Brain Phantoms for Creation of Validation Image Data Bases.
-       *IEEE Transactions on Medical Imaging, 25*(11), 1410-1416.
-       https://doi.org/10.1109/TMI.2006.883453
+       IEEE Transactions on Medical Imaging, 25 (11), 1410-1416. https://doi.org/10.1109/TMI.2006.883453
     """
 
     @staticmethod
@@ -515,7 +523,7 @@ class BrainwebSlices(torch.utils.data.Dataset):
         self,
         folder: str | Path = CACHE_DIR,
         what: Sequence[Literal['r1', 'r2', 'm0', 't1', 't2', 'mask', 'tissueclass'] | TClassNames] = ('m0', 'r1', 'r2'),
-        parameters: Mapping[TClassNames, BrainwebTissue] = VALUES_3T,
+        parameters: Mapping[TClassNames, BrainwebTissue] = VALUES_3T_RANDOMIZED,
         orientation: Literal['axial', 'coronal', 'sagittal'] = 'axial',
         skip_slices: tuple[tuple[int, int], tuple[int, int], tuple[int, int]] = ((80, 80), (100, 100), (100, 100)),
         step: int = 1,
