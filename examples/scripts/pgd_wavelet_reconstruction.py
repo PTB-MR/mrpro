@@ -245,6 +245,7 @@ stepsize = 0.9 * (1 / op_norm**2)
 
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show plotting details"}
 import matplotlib.pyplot as plt
+import torch
 
 
 def show_images(*images: torch.Tensor, titles: list[str] | None = None) -> None:
