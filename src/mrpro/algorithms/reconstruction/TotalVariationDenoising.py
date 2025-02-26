@@ -74,7 +74,7 @@ class TotalVariationDenoising(torch.nn.Module):
             the denoised image.
         """
         # L2-norm for the data consistency term
-        l2 = 0.5 * L2NormSquared(target=idata.data, divide_by_n=True)
+        l2 = 0.5 * L2NormSquared(target=idata.data, divide_by_n=False)
 
         # Finite difference operator and corresponding L1-norm
         nabla_operator = [
@@ -82,11 +82,7 @@ class TotalVariationDenoising(torch.nn.Module):
             for dim, weight in enumerate(self.regularization_weight)
             if weight != 0
         ]
-        l1 = [
-            weight / len(nabla_operator) * L1NormViewAsReal(divide_by_n=True)
-            for weight in self.regularization_weight
-            if weight != 0
-        ]
+        l1 = [weight * L1NormViewAsReal(divide_by_n=False) for weight in self.regularization_weight if weight != 0]
 
         f = ProximableFunctionalSeparableSum(l2, *l1)
         g = ZeroFunctional()

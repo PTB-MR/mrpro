@@ -101,7 +101,7 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         acquisition_operator = self.fourier_op @ self.csm.as_operator() if self.csm is not None else self.fourier_op
 
         # L2-norm for the data consistency term
-        l2 = 0.5 * L2NormSquared(target=kdata.data, divide_by_n=True)
+        l2 = 0.5 * L2NormSquared(target=kdata.data, divide_by_n=False)
 
         # Finite difference operator and corresponding L1-norm
         nabla_operator = [
@@ -109,7 +109,7 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
             for dim, weight in enumerate(self.regularization_weight)
             if weight != 0
         ]
-        l1 = [weight * L1NormViewAsReal(divide_by_n=True) for weight in self.regularization_weight if weight != 0]
+        l1 = [weight * L1NormViewAsReal(divide_by_n=False) for weight in self.regularization_weight if weight != 0]
 
         f = ProximableFunctionalSeparableSum(l2, *l1)
         g = ZeroFunctional()
