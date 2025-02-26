@@ -33,7 +33,7 @@ class CartesianSamplingOp(LinearOperator):
         traj
             the k-space trajectory describing at which frequencies data is sampled.
             Its broadcasted shape will be used to determine the shape after sampling,
-            i.e., the operator's range
+            i.e., the operator's range.
         """
         super().__init__()
         # the shape of the k data,
@@ -84,10 +84,12 @@ class CartesianSamplingOp(LinearOperator):
             inside_encoding_matrix = rearrange(inside_encoding_matrix, '... kz ky kx -> ... 1 (kz ky kx)')
             inside_encoding_matrix_idx = inside_encoding_matrix.nonzero(as_tuple=True)[-1]
             inside_encoding_matrix_idx = torch.reshape(inside_encoding_matrix_idx, (*kidx.shape[:-1], -1))
-            self.register_buffer('_inside_encoding_matrix_idx', inside_encoding_matrix_idx)
+            self._inside_encoding_matrix_idx: torch.Tensor | None = inside_encoding_matrix_idx
             kidx = torch.take_along_dim(kidx, inside_encoding_matrix_idx, dim=-1)
         else:
-            self._inside_encoding_matrix_idx: torch.Tensor | None = None
+            self._inside_encoding_matrix_idx = None
+
+        self._fft_idx = kidx
 
         # we can skip the indexing if the data is already sorted
         self._needs_indexing = (
@@ -115,7 +117,7 @@ class CartesianSamplingOp(LinearOperator):
 
         Returns
         -------
-            selected k-space data in acquired shape (as described by the trajectory)
+            Selected k-space data in acquired shape (as described by the trajectory).
         """
         if self._sorted_grid_shape != SpatialDimension(*x.shape[-3:]):
             raise ValueError('k-space data shape mismatch')
@@ -154,7 +156,7 @@ class CartesianSamplingOp(LinearOperator):
 
         Returns
         -------
-            k-space data sorted into encoding_space matrix
+            K-space data sorted into encoding_space matrix.
         """
         if self._trajectory_shape[-3:] != y.shape[-3:]:
             raise ValueError('k-space data shape mismatch')
@@ -222,7 +224,7 @@ class CartesianSamplingOp(LinearOperator):
 
         Returns
         -------
-            Gram operator for this Cartesian Sampling Operator
+            Gram operator for this Cartesian Sampling Operator.
         """
         return CartesianSamplingGramOp(self)
 
@@ -239,7 +241,7 @@ class CartesianSamplingOp(LinearOperator):
 
 
 class CartesianSamplingGramOp(LinearOperator):
-    """Gram operator for Cartesian Sampling Operator.
+    """Gram operator for the Cartesian Sampling Operator.
 
     The Gram operator is the composition CartesianSamplingOp.H @ CartesianSamplingOp.
     """
@@ -259,9 +261,9 @@ class CartesianSamplingGramOp(LinearOperator):
         if sampling_op._needs_indexing:
             ones = torch.ones(*sampling_op._trajectory_shape[:-3], 1, *sampling_op._sorted_grid_shape.zyx)
             (mask,) = sampling_op.adjoint(*sampling_op.forward(ones))
-            self.register_buffer('_mask', mask)
+            self._mask: torch.Tensor | None = mask
         else:
-            self._mask: torch.Tensor | None = None
+            self._mask = None
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the Gram operator.

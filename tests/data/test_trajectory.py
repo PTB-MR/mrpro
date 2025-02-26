@@ -154,9 +154,16 @@ def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, ty
     trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # Find out the type of the kz, ky and kz dimensions
-    single_value_dims = [d for d, s in zip((-3, -2, -1), (type_kz, type_ky, type_kx), strict=True) if s == 'z']
-    on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_kz, type_ky, type_kx), strict=True) if s == 'uf']
-    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_kz, type_ky, type_kx), strict=True) if s == 'nuf']
+    single_value_dims = [d for d, s in zip((-3, -2, -1), (type_kz, type_ky, type_kx), strict=True) if s == 'zero']
+    on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_kz, type_ky, type_kx), strict=True) if s == 'uniform']
+    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_kz, type_ky, type_kx), strict=True) if s == 'non-uniform']
+
+    # Make sure all dimensions are covered
+    if len(single_value_dims) + len(on_grid_dims) + len(not_on_grid_dims) != 3:
+        raise ValueError(
+            f'{single_value_dims=}, {on_grid_dims=} and {not_on_grid_dims=} do not cover all dimensions. ',
+            'There must be an error in the test itself.',
+        )
 
     # check dimensions which are of shape 1 and do not need any transform
     assert all(trajectory.type_along_kzyx[dim] & TrajType.SINGLEVALUE for dim in single_value_dims)
@@ -178,9 +185,16 @@ def test_ktype_along_k210(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, ty
     trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # Find out the type of the k2, k1 and k0 dimensions
-    single_value_dims = [d for d, s in zip((-3, -2, -1), (type_k2, type_k1, type_k0), strict=True) if s == 'z']
-    on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_k2, type_k1, type_k0), strict=True) if s == 'uf']
-    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_k2, type_k1, type_k0), strict=True) if s == 'nuf']
+    single_value_dims = [d for d, s in zip((-3, -2, -1), (type_k2, type_k1, type_k0), strict=True) if s == 'zero']
+    on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_k2, type_k1, type_k0), strict=True) if s == 'uniform']
+    not_on_grid_dims = [d for d, s in zip((-3, -2, -1), (type_k2, type_k1, type_k0), strict=True) if s == 'non-uniform']
+
+    # Make sure all dimensions are covered
+    if len(single_value_dims) + len(on_grid_dims) + len(not_on_grid_dims) != 3:
+        raise ValueError(
+            f'{single_value_dims=}, {on_grid_dims=} and {not_on_grid_dims=} do not cover all dimensions. ',
+            'There must be an error in the test itself.',
+        )
 
     # check dimensions which are of shape 1 and do not need any transform
     assert all(trajectory.type_along_k210[dim] & TrajType.SINGLEVALUE for dim in single_value_dims)
