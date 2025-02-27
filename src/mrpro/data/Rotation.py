@@ -52,6 +52,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F  # noqa: N812
 from einops import rearrange
+from einops._backends import AbstractBackend
 from scipy._lib._util import check_random_state
 from typing_extensions import Self, Unpack, overload
 
@@ -2005,3 +2006,84 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         return self.__class__(
             self._quaternions.reshape(*newshape, 4), inversion=self._is_improper.reshape(newshape), copy=True
         )
+
+    def permute(self, dims: Sequence[int]) -> Self:
+        """Permute the batch dimensions of the Rotation object.
+
+        Parameters
+        ----------
+        dims
+            The new order of the dimensions.
+
+        Returns
+        -------
+        permuted
+            The permuted Rotation object.
+        """
+        inversion = self._is_improper.permute(*dims)
+        # negative dimensions should ignore the internal dimension
+        quaternions = self._quaternions.permute(*[d - 1 if d < 0 else d for d in dims], -1)
+        return self.__class__(quaternions, inversion=inversion, copy=True)
+
+    def expand(self, *shape: int | Sequence[int]) -> Self:
+        """Expand the Rotation object in the batch dimensions.
+
+        Parameters
+        ----------
+        shape
+            The new shape of the Rotation object.
+
+        Returns
+        -------
+        expanded
+            The expanded Rotation object.
+        """
+        newshape = []
+        for s in shape:
+            if isinstance(s, int):
+                newshape.append(s)
+            else:
+                newshape.extend(s)
+        return self.__class__(
+            self._quaternions.expand(*newshape, 4), inversion=self._is_improper.expand(newshape), copy=True
+        )
+
+
+class RotationBackend(AbstractBackend):
+    """Einops backend for Rotations."""
+
+    framework_name = 'mrpro'
+
+    def is_appropriate_type(self, x) -> bool:  # noqa: ANN001
+        """Check if the object is a Rotation."""
+        return isinstance(x, Rotation)
+
+    def is_float_type(self, _: Rotation) -> bool:
+        """Return True as Rotations are always float."""
+        return True
+
+    def reduce(self, x: Rotation, operation: str, reduced_axes: int) -> Rotation:
+        """Perform reduction operation on the Rotation."""
+        if operation == 'mean':
+            return x.mean(dim=reduced_axes)
+        raise NotImplementedError(f'Unknown reduction {operation} for Rotations')
+
+    def transpose(self, x: Rotation, axes: Sequence[int]) -> Rotation:
+        """Permute the axes of the Rotation."""
+        return x.permute(axes)
+
+    def stack_on_zeroth_dimension(self, x: Sequence[Rotation]) -> Rotation:
+        """Stack the Rotations on the zeroth dimension."""
+        return Rotation.concatenate([r.reshape(1, *r.shape) for r in x])
+
+    def add_axis(self, x: Rotation, axis_position: int) -> Rotation:
+        """Add a new axis to the Rotation."""
+        return x.reshape(x.shape[:axis_position] + (1,) + x.shape[axis_position:])
+
+    def add_axes(self, x: Rotation, n_axes: int, pos2len: dict[int, int]) -> Rotation:
+        """Add multiple expanded axes to the Rotation."""
+        repeats = [-1] * n_axes
+        for axis_position, axis_length in pos2len.items():
+            x = self.add_axis(x, axis_position)
+            repeats[axis_position] = axis_length
+        return x.expand(repeats)

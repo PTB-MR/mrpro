@@ -17,7 +17,7 @@ from mrpro.data.AcqInfo import AcqInfo
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
-from mrpro.utils.unit_conversion import mm_to_m, ms_to_s
+from mrpro.utils.unit_conversion import deg_to_rad, mm_to_m, ms_to_s
 
 if TYPE_CHECKING:
     # avoid circular imports by importing only when type checking
@@ -60,19 +60,19 @@ class KHeader(MoveDataMixin):
     datetime: datetime.datetime | None = None
     """Date and time of acquisition."""
 
-    te: torch.Tensor | None = None
+    te: list[float] | torch.Tensor = field(default_factory=list)
     """Echo time [s]."""
 
-    ti: torch.Tensor | None = None
+    ti: list[float] | torch.Tensor = field(default_factory=list)
     """Inversion time [s]."""
 
-    fa: torch.Tensor | None = None
+    fa: list[float] | torch.Tensor = field(default_factory=list)
     """Flip angle [rad]."""
 
-    tr: torch.Tensor | None = None
+    tr: list[float] | torch.Tensor = field(default_factory=list)
     """Repetition time [s]."""
 
-    echo_spacing: torch.Tensor | None = None
+    echo_spacing: list[float] | torch.Tensor = field(default_factory=list)
     """Echo spacing [s]."""
 
     echo_train_length: int = 1
@@ -104,13 +104,15 @@ class KHeader(MoveDataMixin):
     algorithms should not rely on them."""
 
     @property
-    def fa_degree(self) -> torch.Tensor | None:
+    def fa_degree(self) -> torch.Tensor | list[float]:
         """Flip angle in degree."""
-        if self.fa is None:
-            warnings.warn('Flip angle is not defined.', stacklevel=1)
-            return None
-        else:
+        if isinstance(self.fa, torch.Tensor):
             return torch.rad2deg(self.fa)
+        elif not len(self.fa):
+            warnings.warn('Flip angle is not defined.', stacklevel=1)
+            return []
+        else:
+            return torch.rad2deg(torch.as_tensor(self.fa)).tolist()
 
     @classmethod
     def from_ismrmrd(
@@ -152,15 +154,15 @@ class KHeader(MoveDataMixin):
 
         if header.sequenceParameters is not None:
             if header.sequenceParameters.TR:
-                parameters['tr'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TR))
+                parameters['tr'] = ms_to_s(header.sequenceParameters.TR)
             if header.sequenceParameters.TE:
-                parameters['te'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TE))
+                parameters['te'] = ms_to_s(header.sequenceParameters.TE)
             if header.sequenceParameters.TI:
-                parameters['ti'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TI))
+                parameters['ti'] = ms_to_s(header.sequenceParameters.TI)
             if header.sequenceParameters.flipAngle_deg:
-                parameters['fa'] = torch.deg2rad(torch.as_tensor(header.sequenceParameters.flipAngle_deg))
+                parameters['fa'] = deg_to_rad(header.sequenceParameters.flipAngle_deg)
             if header.sequenceParameters.echo_spacing:
-                parameters['echo_spacing'] = ms_to_s(torch.as_tensor(header.sequenceParameters.echo_spacing))
+                parameters['echo_spacing'] = ms_to_s(header.sequenceParameters.echo_spacing)
 
             if header.sequenceParameters.sequence_type is not None:
                 parameters['sequence_type'] = header.sequenceParameters.sequence_type
