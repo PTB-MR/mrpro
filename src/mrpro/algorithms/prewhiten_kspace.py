@@ -61,7 +61,7 @@ def prewhiten_kspace(kdata: KData, knoise: KNoise, scale_factor: float | torch.T
 
     # solve_triangular is numerically more stable than inverting the matrix
     # but requires a single batch dimension
-    kdata_flat = rearrange(kdata.data, '... coil k2 k1 k0 -> (... k2 k1 k0) coil 1')
+    kdata_flat = rearrange(kdata.data, '... coils k2 k1 k0 -> (... k2 k1 k0) coils 1')
     whitened_flat = torch.linalg.solve_triangular(cholsky, kdata_flat, upper=False)
     whitened_flatother = rearrange(
         whitened_flat, '(other k2 k1 k0) coil 1-> other coil k2 k1 k0', **parse_shape(kdata.data, '... k2 k1 k0')
