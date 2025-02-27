@@ -1,3 +1,5 @@
+"""Cardiac MR Fingerprinting signal model (EPG)."""
+
 import torch
 
 from mrpro.operators.models.EPG import DelayBlock, EPGSequence, EPGSignalModel, FispBlock, InversionBlock, T2PrepBlock
@@ -7,9 +9,9 @@ from mrpro.operators.SignalModel import SignalModel
 class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
     """Cardiac MR Fingerprinting signal model.
 
-    This model simulates a cardiac MR fingerprinting sequence as described in Hamilton, J. I. et al. MR fingerprinting
-    for rapid quantification of myocardial T1 , T2 , and proton spin density. Magn. Reson. Med. 77, 1446-1458 (2017)
-    [http://doi.wiley.com/10.1002/mrm.26668].
+    This model simulates a cardiac MR fingerprinting sequence as described in Hamilton  et al. 'MR fingerprinting
+    for rapid quantification of myocardial T1, T2, and proton spin density'. Magn. Reson. Med. 77, 1446-1458 (2017)
+    [http://doi.wiley.com/10.1002/mrm.26668] using the extended phase graph (`~mrpro.operators.models.EPG`) formalism.
 
     It is a four-fold repetition of
 
