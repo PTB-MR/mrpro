@@ -93,8 +93,12 @@ def test_IData_from_dcm_files(dcm_2d_multi_echo_times_multi_folders):
 
 def test_IData_from_kheader_and_tensor(random_kheader, random_test_data):
     """IData from KHeader and data tensor."""
+    random_kheader.ti = []
     idata = IData.from_tensor_and_kheader(data=random_test_data, header=random_kheader)
     assert idata.header.te == random_kheader.te
+    assert idata.header.ti == random_kheader.ti
+    assert idata.header.te is not random_kheader.te
+    torch.testing.assert_close(idata.data, random_test_data)
 
 
 def test_IData_to_complex128(random_kheader, random_test_data):

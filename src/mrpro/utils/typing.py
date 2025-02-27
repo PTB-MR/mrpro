@@ -251,5 +251,8 @@ else:
 
     FileOrPath: TypeAlias = Any
 
+    class DataclassInstance(Protocol):
+        """An instance of a dataclass."""
+
 
 __all__ = ['DataclassInstance', 'FileOrPath', 'NestedSequence', 'NumpyIndexerType', 'TorchIndexerType', 'endomorph']
