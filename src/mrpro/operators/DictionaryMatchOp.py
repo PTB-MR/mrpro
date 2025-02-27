@@ -31,7 +31,9 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
     """
 
     def __init__(
-        self, generating_function: Callable[[Unpack[Tin]], tuple[torch.Tensor,]], index_of_scaling_parameter: int | None = None
+        self,
+        generating_function: Callable[[Unpack[Tin]], tuple[torch.Tensor,]],
+        index_of_scaling_parameter: int | None = None,
     ):
         """Initialize DictionaryMatchOp.
 
@@ -40,13 +42,15 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
         generating_function
             signal model that takes n inputs and returns a signal y.
         index_of_scaling_parameter
-           Normalized dot product matching is insensitive to overall signal scaling as all the signal curves are normalized. 
-           A scaling factor (e.g. the equilibrium magnetisation `m0` in `~mrpro.operators.models.InversionRecovery`) 
-           is calculated after the dictionary matching if `index_of_scaling_parameter` is not `None`. 
-           `index_of_scaling_parameter` should set to the index of the scaling parameter in the signal model. 
-           Example: 
-                For ~mrpro.operators.models.InversionRecovery the parameters are ``[m0, t1]`` and therefore `index_of_scaling_parameter` should be set to 0. 
-                The operator will then return `t1` estimated via dictionary matching and `m0` via a post-processing step. 
+            Normalized dot product matching is insensitive to overall signal scaling.
+            A scaling factor (e.g. the equilibrium magnetization `m0` in `~mrpro.operators.models.InversionRecovery`)
+            is calculated after the dictionary matching if `index_of_scaling_parameter` is not `None`.
+            `index_of_scaling_parameter` should set to the index of the scaling parameter in the signal model.
+
+            Example:
+                For ~mrpro.operators.models.InversionRecovery the parameters are ``[m0, t1]`` and therefore
+                `index_of_scaling_parameter` should be set to 0. The operator will then return `t1` estimated
+                via dictionary matching and `m0` via a post-processing step.
                 If `index_of_scaling_parameter` is None, the value returned for `m0` will be meaningless.
         """
         super().__init__()
