@@ -17,7 +17,7 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         recovery_time: torch.Tensor,
         rf_duration: float | torch.Tensor = 0.005,
         b1_nominal: float | torch.Tensor = 3.75e-6,
-        gamma: float | torch.Tensor = GYROMAGNETIC_RATIO_PROTON,
+        gamma: float = GYROMAGNETIC_RATIO_PROTON,
     ) -> None:
         """Initialize WASABITI signal model for mapping of B0, B1 and T1 [SCH2023]_.
 
@@ -44,7 +44,6 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         # convert all parameters to tensors
         rf_duration = torch.as_tensor(rf_duration)
         b1_nominal = torch.as_tensor(b1_nominal)
-        gamma = torch.as_tensor(gamma)
 
         if recovery_time.shape != offsets.shape:
             raise ValueError(
@@ -53,7 +52,9 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
 
         # nn.Parameters allow for grad calculation
         self.offsets = nn.Parameter(offsets, requires_grad=offsets.requires_grad)
-        self.recovery_time = nn.Parameter(recovery_time, requires_grad=recovery_time.requires_grad)
+        self.recovery_time = nn.Parameter(
+            recovery_time.to(device=offsets.device), requires_grad=recovery_time.requires_grad
+        )
         self.rf_duration = nn.Parameter(rf_duration, requires_grad=rf_duration.requires_grad)
         self.b1_nominal = nn.Parameter(b1_nominal, requires_grad=b1_nominal.requires_grad)
         self.gamma = gamma
@@ -77,18 +78,20 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         -------
             signal with shape `(offsets, *other, coils, z, y, x)`
         """
-        delta_ndim = b0_shift.ndim - (self.offsets.ndim - 1)  # -1 for offset
-        offsets = unsqueeze_right(self.offsets, delta_ndim)
-        recovery_time = unsqueeze_right(self.recovery_time, delta_ndim)
+        ndim = max(b0_shift.ndim, relative_b1.ndim, t1.ndim)
+        offsets = unsqueeze_right(self.offsets, ndim - self.offsets.ndim + 1)  # leftmost is offset
+        recovery_time = unsqueeze_right(self.recovery_time, ndim - self.recovery_time.ndim + 1)  # leftmost is offset
+        b1_nominal = unsqueeze_right(self.b1_nominal, ndim - self.b1_nominal.ndim)
+        rf_duration = unsqueeze_right(self.rf_duration, ndim - self.rf_duration.ndim)
 
-        b1 = self.b1_nominal * relative_b1
+        b1 = b1_nominal * relative_b1
         offsets_shifted = offsets - b0_shift
         mz_initial = 1.0 - torch.exp(-recovery_time / t1)
 
         signal = mz_initial * (
             1
             - 2
-            * (torch.pi * b1 * self.gamma * self.rf_duration) ** 2
-            * torch.sinc(self.rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + offsets_shifted**2)) ** 2
+            * (torch.pi * b1 * self.gamma * rf_duration) ** 2
+            * torch.sinc(rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + offsets_shifted**2)) ** 2
         )
         return (signal,)
