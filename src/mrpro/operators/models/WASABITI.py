@@ -52,7 +52,9 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
 
         # nn.Parameters allow for grad calculation
         self.offsets = nn.Parameter(offsets, requires_grad=offsets.requires_grad)
-        self.recovery_time = nn.Parameter(recovery_time, requires_grad=recovery_time.requires_grad)
+        self.recovery_time = nn.Parameter(
+            recovery_time.to(device=offsets.device), requires_grad=recovery_time.requires_grad
+        )
         self.rf_duration = nn.Parameter(rf_duration, requires_grad=rf_duration.requires_grad)
         self.b1_nominal = nn.Parameter(b1_nominal, requires_grad=b1_nominal.requires_grad)
         self.gamma = gamma
