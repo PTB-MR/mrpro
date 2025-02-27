@@ -29,8 +29,8 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
     :math:`\nabla` is the finite difference operator applied to :math:`x`.
     """
 
-    n_iterations: int
-    """Number of PDHG iterations."""
+    max_iterations: int
+    """Maximum number of PDHG iterations."""
 
     regularization_weight: torch.Tensor
     """Strength of the regularization :math:`L`."""
@@ -43,7 +43,7 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         noise: KNoise | None = None,
         dcf: DcfData | None = None,
         *,
-        n_iterations: int = 20,
+        max_iterations: int = 32,
         regularization_weight: Sequence[float] | Sequence[torch.Tensor],
     ) -> None:
         """Initialize TotalVariationRegularizedReconstruction.
@@ -66,8 +66,8 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         dcf
             K-space sampling density compensation. If None, set up based on kdata. The dcf is only used to calculate a
             starting estimate for PDHG.
-        n_iterations
-            Number of PDHG iterations
+        max_iterations
+            Maximum number of PDHG iterations
         regularization_weight
             Strength of the regularization (:math:`L`). Each entry is the regularization weight along a dimension of
             the reconstructed image starting at the back. E.g. (1,) will apply TV with L=1 along dimension (-1,).
@@ -79,7 +79,7 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
             If the kdata and fourier_op are None or if csm is a Callable but kdata is None.
         """
         super().__init__(kdata, fourier_op, csm, noise, dcf)
-        self.n_iterations = n_iterations
+        self.max_iterations = max_iterations
         self.regularization_weight = torch.as_tensor(regularization_weight)
 
     def forward(self, kdata: KData) -> IData:
@@ -121,7 +121,7 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         )[0]
 
         (img_tensor,) = pdhg(
-            f=f, g=g, operator=operator, initial_values=(initial_value,), max_iterations=self.n_iterations
+            f=f, g=g, operator=operator, initial_values=(initial_value,), max_iterations=self.max_iterations
         )
         img = IData.from_tensor_and_kheader(img_tensor, kdata.header)
         return img

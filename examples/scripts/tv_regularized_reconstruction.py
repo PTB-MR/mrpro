@@ -93,11 +93,11 @@ show_dynamic_images(img_direct.rss())
 # #### TV-regularized reconstruction using PDHG
 # Reconstruct images by solving
 #
-# $ \mathcal{F}(x) = \frac{1}{2}||Ax - y||_2^2 + \lambda \| \nabla x \|_1 $
+# $ \mathcal{F}(x) = \frac{1}{2}||Ex - y||_2^2 + \lambda \| \nabla x \|_1 $
 #
 # using PDHG.
 #
-# Because we have 2D dynamic images we can apply the TV-regularization along x,y and time.
+# Because we have 2D dynamic images, we can apply the TV-regularization along x,y and time.
 # For this we set the regularization weight along dimensions -1 (x), -2 (y) and -5 (time).
 #
 # For this data we chose the regularization along space and time as 5e-6.
@@ -110,7 +110,7 @@ regularization_weight_time = 5e-6
 tv_reconstruction = TotalVariationRegularizedReconstruction(
     kdata_dynamic,
     csm=csm,
-    n_iterations=100,
+    max_iterations=100,
     regularization_weight=(regularization_weight_time, 0, 0, regularization_weight_space, regularization_weight_space),
 )
 img_tv = tv_reconstruction(kdata_dynamic)
@@ -118,32 +118,32 @@ show_dynamic_images(img_tv.rss())
 
 # %% [markdown]
 # #### TV-regularized reconstruction using ADMM
-# In the above example we need to apply the acquisition operator during the PDHG iterations which is computationally
-# demanding and hence takes a long time. Another option is to use the Alternating Direction Method of Multipliers (ADMM)
-# which solves the general problem
+# In the above example, PDHG repeatedly applies the acquisition operator and its adjoint during the iterations, which
+# is computationally demanding and hence takes a long time. Another option is to use the Alternating Direction Method
+# of Multipliers (ADMM) [[S. Boyd et al, 2011](http://dx.doi.org/10.1561/2200000016)], which solves the general problem
 #
 # $ \min_x f(x) + g(z) \quad \text{subject to} \quad  Ax + Bz = c $
 #
-# If we use $f(x) = \lambda \| \nabla x \|_1$, $g(z)= \frac{1}{2}||Az - y||_2^2$, $A = I$, $B= -I$ and $c = 0$
+# If we use $f(x) = \lambda \| \nabla x \|_1$, $g(z)= \frac{1}{2}||Ez - y||_2^2$, $A = I$, $B= -I$ and $c = 0$
 #
 # then we can define a scaled form of the ADMM algorithm which solves
 #
-# $ \mathcal{F}(x) = \frac{1}{2}||Ax - y||_2^2 + \lambda \| \nabla x \|_1 $
+# $ \mathcal{F}(x) = \frac{1}{2}||Ex - y||_2^2 + \lambda \| \nabla x \|_1 $
 #
 # by doing
 #
-# $x_{k+1} = argmin_x \lambda \| \nabla x \|_1 + \frac{\rho}{2}||x - z_k + u_k||_2^2$
+# $x_{k+1} = \argmin_x \lambda \| \nabla x \|_1 + \frac{\rho}{2}||x - z_k + u_k||_2^2$
 #
-# $z_{k+1} = argmin_z \frac{1}{2}||Az - y||_2^2 + \frac{\rho}{2}||x_{k+1} - z + u_k||_2^2$
+# $z_{k+1} = \argmin_z \frac{1}{2}||Ez - y||_2^2 + \frac{\rho}{2}||x_{k+1} - z + u_k||_2^2$
 #
 # $u_{k+1} = u_k + x_{k+1} - z_{k+1}$
 #
 # The first step is TV-based denoising of $x$, the second step is a regularized iterative SENSE update of $z$ and the
-# final step updates the helper variable $u$.
+# final step updates the dual variable $u$.
 
 # %%
 data_weight = 0.5
-n_adam_iterations = 4
+n_admm_iterations = 4
 tv_denoising = TotalVariationDenoising(
     regularization_weight=(
         regularization_weight_time / data_weight,
@@ -152,7 +152,7 @@ tv_denoising = TotalVariationDenoising(
         regularization_weight_space / data_weight,
         regularization_weight_space / data_weight,
     ),
-    n_iterations=100,
+    max_iterations=100,
 )
 regularized_iterative_sense = RegularizedIterativeSENSEReconstruction(
     kdata_dynamic, csm=csm, n_iterations=20, regularization_weight=data_weight
@@ -162,7 +162,7 @@ regularized_iterative_sense.dcf = None
 img_z = img_direct.clone()
 img_x = img_direct.clone()
 img_u = torch.zeros_like(img_direct.data)
-for _ in range(n_adam_iterations):
+for _ in range(n_admm_iterations):
     # Denoising
     tv_denoising.initial_image = img_x.data
     img_x = tv_denoising(IData(img_z.data - img_u, img_direct.header))
@@ -185,22 +185,22 @@ img_tv_admm = img_z.rss()
 # #### TV-regularized reconstruction using ADMM
 # Another option which avoids pdhg altogether is to use
 #
-# $f(x) = \lambda \| x \|_1$, $g(z)= \frac{1}{2}||Az - y||_2^2$, $A = I$, $B= -\nabla$ and $c = 0$
+# $f(x) = \lambda \| x \|_1$, $g(z)= \frac{1}{2}||Ez - y||_2^2$, $A = I$, $B= -\nabla$ and $c = 0$
 #
 # then we can define a scaled form of the ADMM algorithm which solves
 #
-# $ \mathcal{F}(x) = \frac{1}{2}||Ax - y||_2^2 + \lambda \| \nabla x \|_1 $
+# $ \mathcal{F}(x) = \frac{1}{2}||Ex - y||_2^2 + \lambda \| \nabla x \|_1 $
 #
 # by doing
 #
-# $x_{k+1} = argmin_x \lambda \| x \|_1 + \frac{\rho}{2}||x - \nabla z_k + u_k||_2^2$
+# $x_{k+1} = \argmin_x \lambda \| x \|_1 + \frac{\rho}{2}||x - \nabla z_k + u_k||_2^2$
 #
-# $z_{k+1} = argmin_z \frac{1}{2}||Az - y||_2^2 + \frac{\rho}{2}||x_{k+1} - \nabla z + u_k||_2^2$
+# $z_{k+1} = \argmin_z \frac{1}{2}||Ez - y||_2^2 + \frac{\rho}{2}||x_{k+1} - \nabla z + u_k||_2^2$
 #
 # $u_{k+1} = u_k + x_{k+1} - \nabla z_{k+1}$
 #
 # The first step is soft-thresholding of $x$: $S_{\lambda/\rho}(\nabla z_k - u_k)$, the second step is a regularized
-# iterative SENSE update of $z$ and the final step updates the helper variable $u$.
+# iterative SENSE update of $z$ and the final step updates the dual variable $u$.
 
 # %%
 nabla_operator = FiniteDifferenceOp(dim=(0, -2, -1), mode='forward')
@@ -218,7 +218,7 @@ regularized_iterative_sense.dcf = None
 
 img_z = img_direct.clone()
 img_u = torch.zeros_like(img_direct.data)
-for _ in range(n_adam_iterations):
+for _ in range(n_admm_iterations):
     # Denoising by soft-thresholding
     img_x_nabla = torch.view_as_complex(
         torch.nn.functional.softshrink(torch.view_as_real(nabla_operator(img_z.data)[0] - img_u), regularization_weight)

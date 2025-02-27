@@ -18,7 +18,7 @@ class TotalVariationDenoising(torch.nn.Module):
     r"""TV denoising.
 
     This algorithm solves the problem :math:`min_x \frac{1}{2}||(x - y)||_2^2 + ||L\nabla x||_1`
-    by using the PDHG-algorithm. :math:`y` is the target image, :math:`L` is the strength of the regularization and
+    by using the PDHG-algorithm. :math:`y` is the given noisy image, :math:`L` is the strength of the regularization and
     :math:`\nabla` is the finite difference operator applied to :math:`x`.
     """
 
@@ -28,14 +28,14 @@ class TotalVariationDenoising(torch.nn.Module):
     initial_image: torch.Tensor | None
     """Initial image for PDHG-algorithm"""
 
-    n_iterations: int
-    """Number of PDHG iterations."""
+    max_iterations: int
+    """Maximum number of PDHG iterations."""
 
     def __init__(
         self,
         regularization_weight: Sequence[float] | Sequence[torch.Tensor],
         initial_image: torch.Tensor | None = None,
-        n_iterations: int = 20,
+        max_iterations: int = 32,
     ) -> None:
         """Initialize TotalVariationDenoising.
 
@@ -47,12 +47,12 @@ class TotalVariationDenoising(torch.nn.Module):
             (3,0,2) will apply TV with L=2 along dimension (-1) and TV with L=3 along (-3).
         initial_image
             Initial image. If None then the target image :math:`y` will be used.
-        n_iterations
-            Number of PDHG iterations
+        max_iterations
+            Maximum number of PDHG iterations
 
         """
         super().__init__()
-        self.n_iterations = n_iterations
+        self.max_iterations = max_iterations
         self.regularization_weight = torch.as_tensor(regularization_weight)
         self.initial_image = initial_image
 
@@ -91,6 +91,6 @@ class TotalVariationDenoising(torch.nn.Module):
         initial_image = self.initial_image if self.initial_image is not None else idata.data
 
         (img_tensor,) = pdhg(
-            f=f, g=g, operator=operator, initial_values=(initial_image,), max_iterations=self.n_iterations
+            f=f, g=g, operator=operator, initial_values=(initial_image,), max_iterations=self.max_iterations
         )
         return IData(img_tensor, idata.header)
