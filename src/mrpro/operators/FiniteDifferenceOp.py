@@ -13,7 +13,7 @@ class FiniteDifferenceOp(LinearOperator):
     """Finite Difference Operator."""
 
     @staticmethod
-    def finite_difference_kernel(mode: str) -> torch.Tensor:
+    def finite_difference_kernel(mode: Literal['central', 'forward', 'backward']) -> torch.Tensor:
         """Finite difference kernel.
 
         Parameters
@@ -27,7 +27,7 @@ class FiniteDifferenceOp(LinearOperator):
 
         Raises
         ------
-        ValueError
+        `ValueError`
             If mode is not central, forward, backward or doublecentral
         """
         if mode == 'central':
@@ -60,7 +60,7 @@ class FiniteDifferenceOp(LinearOperator):
         super().__init__()
         self.dim = dim
         self.pad_mode: Literal['constant', 'circular'] = 'constant' if pad_mode == 'zeros' else pad_mode
-        self.register_buffer('kernel', self.finite_difference_kernel(mode))
+        self.kernel = self.finite_difference_kernel(mode)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Forward of finite differences.
@@ -97,7 +97,7 @@ class FiniteDifferenceOp(LinearOperator):
 
         Raises
         ------
-        ValueError
+        `ValueError`
             If the first dimension of y is to the same as the number of dimensions along which the finite differences
             are calculated
         """

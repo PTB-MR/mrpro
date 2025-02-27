@@ -44,14 +44,14 @@ class ElementaryFunctional(Functional):
     r"""Elementary functional base class.
 
     Here, an 'elementary' functional is a functional that can be written as
-    :math:`f(x) = \phi ( weight ( x - target))`, returning a real value.
+    :math:`f(x) = \phi ( \mathrm{weight} ( x - \mathrm{target}))`, returning a real value.
     It does not require another functional for initialization.
     """
 
     def __init__(
         self,
-        weight: torch.Tensor | complex = 1.0,
         target: torch.Tensor | None | complex = None,
+        weight: torch.Tensor | complex = 1.0,
         dim: int | Sequence[int] | None = None,
         divide_by_n: bool = False,
         keepdim: bool = False,
@@ -64,10 +64,10 @@ class ElementaryFunctional(Functional):
 
         Parameters
         ----------
-        weight
-            weight parameter (see above)
         target
             target element - often data tensor (see above)
+        weight
+            weight parameter (see above)
         dim
             dimension(s) over which functional is reduced.
             All other dimensions of  `weight ( x - target)` will be treated as batch dimensions.
@@ -76,15 +76,15 @@ class ElementaryFunctional(Functional):
             the tensor `weight ( x - target)`. If true, the functional is thus calculated as the mean,
             else the sum.
         keepdim
-            if true, the dimension(s) of the input indexed by dim are maintained and collapsed to singeltons,
+            if true, the dimension(s) of the input indexed by `dim` are maintained and collapsed to singeltons,
             else they are removed from the result.
 
         """
         super().__init__()
-        self.register_buffer('weight', torch.as_tensor(weight))
+        self.weight = torch.as_tensor(weight)
         if target is None:
             target = torch.tensor(0, dtype=torch.float32)
-        self.register_buffer('target', torch.as_tensor(target))
+        self.target = torch.as_tensor(target)
         if isinstance(dim, int):
             dim = (dim,)
         elif isinstance(dim, Sequence):
@@ -126,7 +126,7 @@ class ProximableFunctional(Functional, ABC):
     r"""ProximableFunctional Base Class.
 
     A proximable functional is a functional :math:`f(x)` that has a prox implementation,
-    i.e. a function that yields :math:`argmin_x \sigma f(x) + 1/2 ||x - y||^2`
+    i.e. a function that yields :math:`\mathrm{argmin}_x \sigma f(x) + 1/2 ||x - y||_2^2`
     and a prox_convex_conjugate, yielding the prox of the convex conjugate.
     """
 
@@ -134,7 +134,8 @@ class ProximableFunctional(Functional, ABC):
     def prox(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         r"""Apply proximal operator.
 
-        Yields :math:`prox_{\sigma f}(x) = argmin_{p} (\sigma f(p) + 1/2 \|x-p\|^{2}` given :math:`x` and :math:`\sigma`
+        Yields :math:`\mathrm{prox}_{\sigma f}(x) = \mathrm{argmin}_{p} (\sigma f(p) + 1/2 \|x-p\|_2^2` given :math:`x`
+        and :math:`\sigma`.
 
         Parameters
         ----------
@@ -151,7 +152,7 @@ class ProximableFunctional(Functional, ABC):
     def prox_convex_conj(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         r"""Apply proximal operator of convex conjugate of functional.
 
-        Yields :math:`prox_{\sigma f^*}(x) = argmin_{p} (\sigma f^*(p) + 1/2 \|x-p\|^{2}`,
+        Yields :math:`\mathrm{prox}_{\sigma f^*}(x) = \mathrm{argmin}_{p} (\sigma f^*(p) + 1/2 \|x-p\|_2^2`,
         where :math:`f^*` denotes the convex conjugate of :math:`f`, given :math:`x` and :math:`\sigma`.
 
         Parameters
@@ -166,7 +167,7 @@ class ProximableFunctional(Functional, ABC):
             Proximal operator  of the convex conjugate applied to the input tensor
         """
         if not isinstance(sigma, torch.Tensor):
-            sigma = torch.as_tensor(1.0 * sigma, device=self.target.device)
+            sigma = torch.as_tensor(1.0 * sigma)
         self._throw_if_negative_or_complex(sigma)
         sigma[sigma < 1e-8] += 1e-6
         return (x - sigma * self.prox(x / sigma, 1 / sigma)[0],)
@@ -197,12 +198,12 @@ class ProximableFunctional(Functional, ABC):
 class ElementaryProximableFunctional(ElementaryFunctional, ProximableFunctional):
     r"""Elementary proximable functional base class.
 
-    Here, an *elementary* functional is a functional that can be written as
-    :math:`f(x) = \phi ( weight ( x - target))`, returning a real value.
+    Here, an 'elementary' functional is a functional that can be written as
+    :math:`f(x) = \phi ( \mathrm{weight} ( x - \mathrm{target}))`, returning a real value.
     It does not require another functional for initialization.
 
     A proximable functional is a functional :math:`f(x)` that has a prox implementation,
-    i.e. a function that yields :math:`argmin_x \sigma f(x) + 1/2 \|x - y\|^2`.
+    i.e. a function that yields :math:`\mathrm{argmin}_x \sigma f(x) + 1/2 \|x - y\|^2`.
     """
 
 
@@ -224,7 +225,7 @@ class ScaledFunctional(Functional):
         """
         super().__init__()
         self.functional = functional
-        self.register_buffer('scale', torch.as_tensor(scale))
+        self.scale = torch.as_tensor(scale)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         """Forward method.
@@ -241,8 +242,39 @@ class ScaledFunctional(Functional):
         return (self.scale * self.functional(x)[0],)
 
 
-class ScaledProximableFunctional(ScaledFunctional, ProximableFunctional):
+class ScaledProximableFunctional(ProximableFunctional):
     """Proximable Functional scaled by a scalar."""
+
+    def __init__(self, functional: ProximableFunctional, scale: torch.Tensor | float) -> None:
+        r"""Initialize a scaled proximable functional.
+
+        A scaled functional is a functional that is scaled by a scalar factor :math:`\alpha`,
+        i.e. :math:`f(x) = \alpha g(x)`.
+
+        Parameters
+        ----------
+        functional
+            proximable functional to be scaled
+        scale
+            scaling factor, must be real and positive
+        """
+        super().__init__()
+        self.functional = functional
+        self.scale = torch.as_tensor(scale)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Forward method.
+
+        Parameters
+        ----------
+        x
+            input tensor
+
+        Returns
+        -------
+            scaled output of the functional
+        """
+        return (self.scale * self.functional(x)[0],)
 
     def prox(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         """Proximal Mapping.

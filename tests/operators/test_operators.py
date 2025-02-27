@@ -1,13 +1,13 @@
 """Tests for the operators module."""
 
-from typing import Any, assert_type, cast
+from typing import cast
 
 import pytest
 import torch
 from mrpro.operators import LinearOperator, Operator
+from typing_extensions import Any, assert_type
 
-from tests import RandomGenerator
-from tests.helper import dotproduct_adjointness_test
+from tests import RandomGenerator, dotproduct_adjointness_test
 
 
 class DummyOperator(Operator[torch.Tensor, tuple[torch.Tensor,]]):
@@ -320,7 +320,7 @@ def test_adjoint_tensor_sum():
 def test_sum_operator_multiple():
     a = DummyOperator(torch.tensor(2.0))
     op_sum = a + (a + a) + (a + a) + a
-    assert len(op_sum._operators) == 6
+    assert len(op_sum._operators) == 6  # type: ignore[arg-type]
     x = RandomGenerator(0).complex64_tensor(10)
     (actual,) = op_sum(x)
     expected = 6 * a(x)[0]
@@ -331,10 +331,16 @@ def test_sum_operator_multiple_adjoint():
     rng = RandomGenerator(7)
     a = DummyLinearOperator(rng.complex64_tensor((3, 10)))
     linear_op_sum = a + (a + a) + (a + a) + a
-    assert len(linear_op_sum._operators) == 6
+    assert len(linear_op_sum._operators) == 6  # type: ignore[arg-type]
     u = rng.complex64_tensor(10)
     v = rng.complex64_tensor(3)
     dotproduct_adjointness_test(linear_op_sum, u, v)
+
+
+def test_adjoint_of_adjoint():
+    """Test that the adjoint of the adjoint is the original operator"""
+    a = DummyLinearOperator(RandomGenerator(7).complex64_tensor((3, 10)))
+    assert a.H.H is a
 
 
 def test_gram_shortcuts():
@@ -362,7 +368,7 @@ def test_gram_shortcuts():
     b = DummyLinearOperator(rng.complex64_tensor((10, 10)))
     a_gram_only = GramOnlyOperator(a)
     # ignore required due to https://github.com/pytorch/pytorch/issues/124015
-    op: LinearOperator = torch.tensor(1) * ((3 + 4j) * a_gram_only @ b) * (1 + 2j)  # type: ignore[assignment]
+    op: LinearOperator = torch.tensor(1) * ((3 + 4j) * a_gram_only @ b) * (1 + 2j)
     gram = op.gram
 
     u = rng.complex64_tensor(10)

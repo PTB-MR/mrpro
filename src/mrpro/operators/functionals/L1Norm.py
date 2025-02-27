@@ -13,6 +13,8 @@ class L1Norm(ElementaryProximableFunctional):
     where W is a either a scalar or tensor that corresponds to a (block-) diagonal operator
     that is applied to the input.
 
+    In most cases, consider setting `divide_by_n` to `true` to be independent of input size.
+
     The norm of the vector is computed along the dimensions given at initialization.
     """
 
@@ -22,7 +24,7 @@ class L1Norm(ElementaryProximableFunctional):
     ) -> tuple[torch.Tensor]:
         """Forward method.
 
-        Compute the l1-norm of the input.
+        Compute the L1 norm of the input.
 
         Parameters
         ----------
@@ -31,7 +33,7 @@ class L1Norm(ElementaryProximableFunctional):
 
         Returns
         -------
-            l1 norm of the input tensor
+            L1 norm of the input tensor
         """
         value = (self.weight * (x - self.target)).abs()
 
@@ -43,7 +45,7 @@ class L1Norm(ElementaryProximableFunctional):
     def prox(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         """Proximal Mapping of the L1 Norm.
 
-        Compute the proximal mapping of the L1-norm.
+        Compute the proximal mapping of the L1 norm.
 
         Parameters
         ----------
@@ -71,7 +73,7 @@ class L1Norm(ElementaryProximableFunctional):
     ) -> tuple[torch.Tensor]:
         """Convex conjugate of the L1 Norm.
 
-        Compute the proximal mapping of the convex conjugate of the L1-norm.
+        Compute the proximal mapping of the convex conjugate of the L1 norm.
 
         Parameters
         ----------

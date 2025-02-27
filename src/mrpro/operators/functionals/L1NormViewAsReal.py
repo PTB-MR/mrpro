@@ -1,4 +1,4 @@
-"""L1 Norm."""
+"""L1 Norm with :math:`C` as :math:`R^2`."""
 
 import torch
 
@@ -9,11 +9,13 @@ class L1NormViewAsReal(ElementaryProximableFunctional):
     r"""Functional class for the L1 Norm, where C is identified with R^2.
 
     This implements the functional given by
-    :math:`f: C^N -> [0, \infty), x ->  \|W_r * Re(x-b) )\|_1 + \|( W_i * Im(x-b) )\|_1`
+    :math:`f: C^N -> [0, \infty), x ->  \|W_r * Re(x-b) )\|_1 + \|( W_i * Im(x-b) )\|_1`,
     where :math:`W_r` and :math:`W_i` are a either scalars or tensors and `*` denotes element-wise multiplication.
 
     If the parameter `weight` is real-valued, :math:`W_r` and :math:`W_i` are both set to `weight`.
     If it is complex-valued, :math:`W_r` and :math:`W_I` are set to the real and imaginary part, respectively.
+
+    In most cases, consider setting `divide_by_n` to `true` to be independent of input size.
 
     The norm of the vector is computed along the dimensions set at initialization.
     """
@@ -24,7 +26,7 @@ class L1NormViewAsReal(ElementaryProximableFunctional):
     ) -> tuple[torch.Tensor]:
         """Forward method.
 
-        Compute the L1-norm of the input with C identified as R^2.
+        Compute the L1 norm of the input with :math:`C` identified as :math:`R^2`.
 
         Parameters
         ----------
@@ -33,7 +35,7 @@ class L1NormViewAsReal(ElementaryProximableFunctional):
 
         Returns
         -------
-            L1 norm of the input tensor, where C is identified as R^2
+            L1 norm of the input tensor, where :math:`C` is identified as :math:`R^2`.
         """
         dtype = torch.promote_types(self.target.dtype, x.dtype)
         x = x.to(dtype)
@@ -54,7 +56,7 @@ class L1NormViewAsReal(ElementaryProximableFunctional):
     def prox(self, x: torch.Tensor, sigma: torch.Tensor | float = 1.0) -> tuple[torch.Tensor]:
         """Proximal Mapping of the L1 Norm.
 
-        Apply the proximal mapping of the L1-norm with C identified as R^2.
+        Apply the proximal mapping of the L1 norm with :math:`C` identified as :math:`R^2`.
 
         Parameters
         ----------

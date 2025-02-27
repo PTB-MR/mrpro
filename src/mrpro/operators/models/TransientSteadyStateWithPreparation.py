@@ -3,6 +3,7 @@
 import torch
 
 from mrpro.operators.SignalModel import SignalModel
+from mrpro.utils import unsqueeze_right
 
 
 class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
@@ -19,18 +20,18 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
     [Part A: 180° inversion pulse][Part B: spoiler gradient][Part C: Continuous data acquisition]
 
     - Part A: The 180° pulse leads to an inversion of the equilibrium magnetization (:math:`M_0`) to :math:`-M_0`.
-      This can be described by setting the scaling factor ``m0_scaling_preparation`` to -1.
+      This can be described by setting the scaling factor `m0_scaling_preparation` to `-1`.
 
     - Part B: Commonly after an inversion pulse a strong spoiler gradient is played out to compensate for non-perfect
       inversion. During this time the magnetization :math:`M_z(t)` follows the signal model:
-      :math:`M_z(t) = M_0 + (s * M_0 - M_0)e^{(-t / T1)}` where :math:`s` is ``m0_scaling_preparation``.
+      :math:`M_z(t) = M_0 + (s * M_0 - M_0)e^{(-t / T1)}` where :math:`s` is `m0_scaling_preparation`.
 
     - Part C: After the spoiler gradient the data acquisition starts and the magnetization :math:`M_z(t)` can be
-      described by the signal model: :math:`M_z(t) = M_0^* + (M_{init} - M_0^*)e^{(-t / T1^*)}` where the initial
-      magnetization is :math:`M_{init} = M_0 + (s*M_0 - M_0)e^{(-\Delta t / T1)}` where :math:`s` is
-      ``m0_scaling_preparation`` and :math:`\Delta t` is ``delay_after_preparation``. The effective longitudinal
-      relaxation time is :math:`T1^* = 1/(1/T1 - ln(cos(\alpha)/TR)`
-      where :math:`TR` is ``repetition_time`` and :math:`\alpha` is ``flip_angle``.
+      described by the signal model: :math:`M_z(t) = M_0^* + (M_{init} - M_0^*)e^{(-t / T1^*)}`
+      where the initial magnetization is :math:`M_{init} = M_0 + (s*M_0 - M_0)e^{(-\Delta t / T1)}`,
+      where :math:`s` is `m0_scaling_preparation` and :math:`\Delta t` is `delay_after_preparation`.
+      The effective longitudinal relaxation time is :math:`T1^* = 1/(1/T1 - ln(cos(\alpha)/TR)`
+      where :math:`TR` is `repetition_time` and :math:`\alpha` is `flip_angle`.
       The steady-state magnetization is :math:`M_0^* = M_0 T1^* / T1`.
 
     References
@@ -56,10 +57,10 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
         Parameters
         ----------
         sampling_time
-            Time points when model is evaluated. A sampling_time of 0 describes the first acquired data point after the
-            inversion pulse and spoiler gradients. To take the T1 relaxation during the delay between inversion pulse
-            and start of data acquisition into account, set the delay_after_preparation > 0.
-            with shape (time, ...)
+            Time points when model is evaluated. A `sampling_time` of 0 describes the first acquired data point
+            after the inversion pulse and spoiler gradients. To take the T1 relaxation during the delay between
+            inversion pulse and start of data acquisition into account, set the `delay_after_preparation` > 0.
+            with shape `(time, ...)`
         repetition_time
             repetition time
         m0_scaling_preparation
@@ -72,13 +73,13 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
         super().__init__()
         sampling_time = torch.as_tensor(sampling_time)
         self.sampling_time = torch.nn.Parameter(sampling_time, requires_grad=sampling_time.requires_grad)
-        repetition_time = torch.as_tensor(repetition_time)
+        repetition_time = torch.as_tensor(repetition_time, device=sampling_time.device)
         self.repetition_time = torch.nn.Parameter(repetition_time, requires_grad=repetition_time.requires_grad)
-        m0_scaling_preparation = torch.as_tensor(m0_scaling_preparation)
+        m0_scaling_preparation = torch.as_tensor(m0_scaling_preparation, device=sampling_time.device)
         self.m0_scaling_preparation = torch.nn.Parameter(
             m0_scaling_preparation, requires_grad=m0_scaling_preparation.requires_grad
         )
-        delay_after_preparation = torch.as_tensor(delay_after_preparation)
+        delay_after_preparation = torch.as_tensor(delay_after_preparation, device=sampling_time.device)
         self.delay_after_preparation = torch.nn.Parameter(
             delay_after_preparation, requires_grad=delay_after_preparation.requires_grad
         )
@@ -90,30 +91,26 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
         ----------
         m0
             equilibrium signal / proton density
-            with shape (... other, coils, z, y, x)
+            with shape `(*other, coils, z, y, x)`
         t1
             longitudinal relaxation time T1
-            with shape (... other, coils, z, y, x)
+            with shape `(*other, coils, z, y, x)`
         flip_angle
             flip angle of data acquisition in rad
-            with shape (... other, coils, z, y, x)
+            with shape `(*other, coils, z, y, x)`
 
         Returns
         -------
-            signal with shape (time ... other, coils, z, y, x)
+            signal with shape `(time, *other, coils, z, y, x)`
         """
-        m0_ndim = m0.ndim
-
-        # -1 for time
-        sampling_time = self.expand_tensor_dim(self.sampling_time, m0_ndim - (self.sampling_time.ndim - 1))
-
-        repetition_time = self.expand_tensor_dim(self.repetition_time, m0_ndim - self.repetition_time.ndim)
-        m0_scaling_preparation = self.expand_tensor_dim(
-            self.m0_scaling_preparation, m0_ndim - self.m0_scaling_preparation.ndim
+        ndim = max(m0.ndim, t1.ndim, flip_angle.ndim)
+        repetition_time = unsqueeze_right(self.repetition_time, ndim - self.repetition_time.ndim)
+        m0_scaling_preparation = unsqueeze_right(self.m0_scaling_preparation, ndim - self.m0_scaling_preparation.ndim)
+        delay_after_preparation = unsqueeze_right(
+            self.delay_after_preparation, ndim - self.delay_after_preparation.ndim
         )
-        delay_after_preparation = self.expand_tensor_dim(
-            self.delay_after_preparation, m0_ndim - self.delay_after_preparation.ndim
-        )
+        # leftmost is time
+        sampling_time = unsqueeze_right(self.sampling_time, m0.ndim - self.sampling_time.ndim + 1)
 
         # effect of preparation pulse
         m_start = m0 * m0_scaling_preparation

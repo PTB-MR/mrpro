@@ -5,7 +5,7 @@ from typing import Literal
 
 import pytest
 import torch
-from mrpro.operators import ProximableFunctional, functionals
+from mrpro.operators import functionals
 from mrpro.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
 
 from tests import RandomGenerator
@@ -19,7 +19,7 @@ class FunctionalTestCase:
 
     """
 
-    functional: ProximableFunctional
+    functional: ElementaryProximableFunctional
     x_dtype: torch.dtype
     x_shape: torch.Size
     rng: RandomGenerator
@@ -47,12 +47,12 @@ PROXIMABLE_FUNCTIONALS: list[type[ElementaryProximableFunctional]] = [
 def functional_test_cases(func: Callable[[FunctionalTestCase], None]) -> Callable[..., None]:
     """Decorator combining multiple parameterizations for test cases for all proximable functionals."""
 
-    @pytest.mark.parametrize('shape', [[1, 2, 3]])
+    @pytest.mark.parametrize('shape', [[1, 2, 3]], ids=['shape=[1,2,3]'])
     @pytest.mark.parametrize('dtype_name', ['float32', 'complex64'])
     @pytest.mark.parametrize('weight', ['scalar_weight', 'tensor_weight', 'complex_weight'])
     @pytest.mark.parametrize('target', ['no_target', 'random_target'])
-    @pytest.mark.parametrize('dim', [None])
-    @pytest.mark.parametrize('divide_by_n', [True, False])
+    @pytest.mark.parametrize('dim', [None], ids=['dim=None'])
+    @pytest.mark.parametrize('divide_by_n', [True, False], ids=['mean', 'sum'])
     @pytest.mark.parametrize('functional', PROXIMABLE_FUNCTIONALS)
     def wrapper(
         functional: type[ElementaryProximableFunctional],

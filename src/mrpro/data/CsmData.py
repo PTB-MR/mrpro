@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING
 
 import torch
+from typing_extensions import Self
 
 from mrpro.data.IData import IData
 from mrpro.data.QData import QData
@@ -26,6 +27,8 @@ class CsmData(QData):
     ) -> Self:
         """Create csm object from image data using iterative Walsh method.
 
+        See also `~mrpro.algorithms.csm.walsh`.
+
         Parameters
         ----------
         idata
@@ -34,7 +37,7 @@ class CsmData(QData):
             width of smoothing filter.
         chunk_size_otherdim:
             How many elements of the other dimensions should be processed at once.
-            Default is None, which means that all elements are processed at once.
+            Default is `None`, which means that all elements are processed at once.
         """
         from mrpro.algorithms.csm.walsh import walsh
 

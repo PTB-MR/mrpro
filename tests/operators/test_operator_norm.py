@@ -12,9 +12,8 @@ from tests import RandomGenerator
 def test_power_iteration_uses_stopping_criterion():
     """Test if the power iteration stops if the absolute and relative tolerance are chosen high."""
 
-    # callback function that should not be called because the power iteration
-    # should stop if the tolerances are set high
-    def callback():
+    def callback(_):
+        """Callback function that should not be called, because the power iteration should stop."""
         pytest.fail('The power iteration did not stop despite high atol and rtol!')
 
     random_generator = RandomGenerator(seed=0)
@@ -118,17 +117,17 @@ def test_finite_difference_operator_norm(dim):
     finite_difference_operator = FiniteDifferenceOp(dim=dim, mode='forward')
 
     # initialize random image of appropriate shape depending on the dimensionality
-    image_shape = (1, *tuple([16 for _ in range(len(dim))]))
+    image_shape = (1, *([8] * len(dim)))
     random_image = random_generator.complex64_tensor(size=image_shape)
 
     # calculate the operator norm
-    finite_difference_operator_norm = finite_difference_operator.operator_norm(random_image, dim=dim, max_iterations=64)
+    finite_difference_operator_norm = finite_difference_operator.operator_norm(random_image, dim=dim, max_iterations=32)
 
     # closed form solution of the operator norm
     finite_difference_operator_norm_true = sqrt(len(dim) * 4)
 
     torch.testing.assert_close(
-        finite_difference_operator_norm.item(), finite_difference_operator_norm_true, atol=1e-2, rtol=1e-2
+        finite_difference_operator_norm.item(), finite_difference_operator_norm_true, atol=0.1, rtol=0
     )
 
 

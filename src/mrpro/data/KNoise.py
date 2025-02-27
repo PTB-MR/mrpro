@@ -3,11 +3,11 @@
 import dataclasses
 from collections.abc import Callable
 from pathlib import Path
-from typing import Self
 
 import ismrmrd
 import torch
 from einops import repeat
+from typing_extensions import Self
 
 from mrpro.data.acq_filters import is_noise_acquisition
 from mrpro.data.MoveDataMixin import MoveDataMixin
@@ -18,7 +18,7 @@ class KNoise(MoveDataMixin):
     """MR raw data / k-space data class for noise measurements."""
 
     data: torch.Tensor
-    """K-space data of noise measurements. Shape (...other coils k2 k1 k0)"""
+    """K-space data of noise measurements. Shape `(*other coils k2 k1 k0)`"""
 
     @classmethod
     def from_file(

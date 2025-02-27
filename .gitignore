@@ -91,6 +91,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/source/_notebooks/*
 
 # PyBuilder
 .pybuilder/
@@ -182,6 +183,7 @@ cython_debug/
 
 # Documentation
 **/_autosummary
+**/_notebooks
 
 # Ignore Conda environment directories:
 .conda
@@ -191,3 +193,4 @@ cython_debug/
 *~
 *.swp
 *.swo
+

@@ -3,17 +3,20 @@
 import dataclasses
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Self
+from itertools import chain
 
 import numpy as np
 import torch
+from pydicom import multival, valuerep
 from pydicom.dataset import Dataset
 from pydicom.tag import Tag, TagType
+from typing_extensions import Self
 
 from mrpro.data.KHeader import KHeader
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
+from mrpro.utils.unit_conversion import deg_to_rad, mm_to_m, ms_to_s
 
 MISC_TAGS = {'TimeAfterStart': 0x00191016}
 
@@ -62,26 +65,28 @@ class IHeader(MoveDataMixin):
             list of dataset objects containing the DICOM file.
         """
 
-        def get_item(dataset: Dataset, name: TagType):
-            """Get item with a given name or Tag from a pydicom dataset."""
-            # iterall is recursive, so it will find all items with the given name
-            found_item = [item.value for item in dataset.iterall() if item.tag == Tag(name)]
-
-            if len(found_item) == 0:
-                return None
-            elif len(found_item) == 1:
-                return found_item[0]
+        def convert_pydicom_type(item):  # noqa: ANN001
+            """Convert item to type given by pydicom."""
+            if isinstance(item, valuerep.DSfloat | valuerep.DSdecimal):
+                return float(item)
+            elif isinstance(item, valuerep.IS | valuerep.ISfloat):
+                return int(item)
+            elif isinstance(item, multival.MultiValue):
+                return [convert_pydicom_type(it) for it in item]
             else:
-                raise ValueError(f'Item {name} found {len(found_item)} times.')
+                return item
 
-        def get_items_from_all_dicoms(name: TagType):
+        def get_items_from_dataset(dataset: Dataset, name: TagType) -> Sequence:
+            """Get item with a given name or Tag from pydicom dataset."""
+            # iterall is recursive, so it will find all items with the given name
+            found_item = [convert_pydicom_type(item.value) for item in dataset.iterall() if item.tag == Tag(name)]
+            if len(found_item) == 0:
+                return (None,)
+            return found_item
+
+        def get_items(datasets: Sequence[Dataset], name: TagType):
             """Get list of items for all dataset objects in the list."""
-            return [get_item(ds, name) for ds in dicom_datasets]
-
-        def get_float_items_from_all_dicoms(name: TagType):
-            """Convert items to float."""
-            items = get_items_from_all_dicoms(name)
-            return [float(val) if val is not None else None for val in items]
+            return list(chain.from_iterable([get_items_from_dataset(ds, name) for ds in datasets]))
 
         def make_unique_tensor(values: Sequence[float]) -> torch.Tensor | None:
             """If all the values are the same only return one."""
@@ -92,40 +97,70 @@ class IHeader(MoveDataMixin):
             else:
                 return torch.as_tensor(values)
 
-        # Conversion functions for units
-        def ms_to_s(ms: torch.Tensor | None) -> torch.Tensor | None:
-            return None if ms is None else ms / 1000
+        # Ensure datasets are consistently single-frame or multi-frame 2D/3D
+        number_of_frames = get_items(dicom_datasets, 'NumberOfFrames')
+        if len(set(number_of_frames)) > 1:
+            raise ValueError('Only DICOM files with the same number of frames can be stacked.')
+        mr_acquisition_type = get_items(dicom_datasets, 'MRAcquisitionType')
+        if len(set(mr_acquisition_type)) > 1:
+            raise ValueError('Only DICOM files with the same MRAcquisitionType can be stacked.')
 
-        def deg_to_rad(deg: torch.Tensor | None) -> torch.Tensor | None:
-            return None if deg is None else torch.deg2rad(deg)
+        # Check if the data is multi-frame 3D
+        datasets_are_3d = False
+        if number_of_frames[0] is not None and number_of_frames[0] > 1 and mr_acquisition_type[0] == '3D':
+            datasets_are_3d = True
 
-        fa = deg_to_rad(make_unique_tensor(get_float_items_from_all_dicoms('FlipAngle')))
-        ti = ms_to_s(make_unique_tensor(get_float_items_from_all_dicoms('InversionTime')))
-        tr = ms_to_s(make_unique_tensor(get_float_items_from_all_dicoms('RepetitionTime')))
+        # Calculate FOV
+        image_rows = get_items(dicom_datasets, 'Rows')
+        if len(set(image_rows)) > 1 or image_rows[0] is None:
+            raise ValueError('Number of Rows needs to be defined and the same for all.')
+        image_columns = get_items(dicom_datasets, 'Columns')
+        if len(set(image_columns)) > 1 or image_columns[0] is None:
+            raise ValueError('Number of Columns needs to be defined and the same for all.')
+        pixel_spacing = get_items(dicom_datasets, 'PixelSpacing')
+        if pixel_spacing[0] is None or np.unique(np.asarray(pixel_spacing), axis=0).shape[0] > 1:
+            raise ValueError('Pixel spacing needs to be defined and the same for all.')
+        slice_thickness = get_items(dicom_datasets, 'SliceThickness')
+        if len(set(slice_thickness)) > 1 or slice_thickness[0] is None:
+            raise ValueError('Slice thickness needs to be defined and the same for all.')
+
+        fov = SpatialDimension(
+            z=slice_thickness[0] * number_of_frames[0] if datasets_are_3d else slice_thickness[0],
+            y=image_columns[0] * pixel_spacing[0][1],
+            x=image_rows[0] * pixel_spacing[0][0],
+        ).apply_(mm_to_m)
+
+        # Parameters which are optional
+        # For 3D datasets these parameters are the same for each 3D volume so we only keep one value per volume
+        n_volumes = number_of_frames[0] if datasets_are_3d else 1
+        fa_deg = make_unique_tensor(get_items(dicom_datasets, 'FlipAngle')[::n_volumes])
+        ti_ms = make_unique_tensor(get_items(dicom_datasets, 'InversionTime')[::n_volumes])
+        tr_ms = make_unique_tensor(get_items(dicom_datasets, 'RepetitionTime')[::n_volumes])
 
         # get echo time(s). Some scanners use 'EchoTime', some use 'EffectiveEchoTime'
-        te_list = get_float_items_from_all_dicoms('EchoTime')
-        if all(val is None for val in te_list):  # check if all entries are None
-            te_list = get_float_items_from_all_dicoms('EffectiveEchoTime')
-        te = ms_to_s(make_unique_tensor(te_list))
-
-        fov_x_mm = get_float_items_from_all_dicoms('Rows')[0] * float(get_items_from_all_dicoms('PixelSpacing')[0][0])
-        fov_y_mm = get_float_items_from_all_dicoms('Columns')[0] * float(
-            get_items_from_all_dicoms('PixelSpacing')[0][1],
-        )
-        fov_z_mm = get_float_items_from_all_dicoms('SliceThickness')[0]
-        fov = SpatialDimension(fov_x_mm / 1000.0, fov_y_mm / 1000.0, fov_z_mm / 1000.0)
+        te_ms = get_items(dicom_datasets, 'EchoTime')
+        if all(val is None for val in te_ms):  # check if all entries are None
+            te_ms = get_items(dicom_datasets, 'EffectiveEchoTime')
+        te_ms = make_unique_tensor(te_ms[::n_volumes])
 
         # Get misc parameters
         misc = {}
         for name in MISC_TAGS:
-            misc[name] = make_unique_tensor(get_float_items_from_all_dicoms(MISC_TAGS[name]))
-        return cls(fov=fov, te=te, ti=ti, fa=fa, tr=tr, misc=misc)
+            misc[name] = make_unique_tensor(get_items(dicom_datasets, MISC_TAGS[name]))
+
+        return cls(
+            fov=fov,
+            fa=None if fa_deg is None else deg_to_rad(fa_deg),
+            ti=None if ti_ms is None else ms_to_s(ti_ms),
+            tr=None if tr_ms is None else ms_to_s(tr_ms),
+            te=None if te_ms is None else ms_to_s(te_ms),
+            misc=misc,
+        )
 
     def __repr__(self):
         """Representation method for IHeader class."""
         te = summarize_tensorvalues(self.te)
         ti = summarize_tensorvalues(self.ti)
         fa = summarize_tensorvalues(self.fa)
-        out = f'FOV [m]: {self.fov!s}\n' f'TE [s]: {te}\nTI [s]: {ti}\nFlip angle [rad]: {fa}.'
+        out = f'FOV [m]: {self.fov!s}\nTE [s]: {te}\nTI [s]: {ti}\nFlip angle [rad]: {fa}.'
         return out

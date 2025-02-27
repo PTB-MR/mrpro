@@ -4,6 +4,8 @@ import torch
 from torch import nn
 
 from mrpro.operators.SignalModel import SignalModel
+from mrpro.utils import unsqueeze_right
+from mrpro.utils.unit_conversion import GYROMAGNETIC_RATIO_PROTON
 
 
 class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
@@ -12,28 +14,25 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
     def __init__(
         self,
         offsets: torch.Tensor,
-        trec: torch.Tensor,
-        tp: float | torch.Tensor = 0.005,
-        b1_nom: float | torch.Tensor = 3.75,
-        gamma: float | torch.Tensor = 42.5764,
-        freq: float | torch.Tensor = 127.7292,
+        recovery_time: torch.Tensor,
+        rf_duration: float | torch.Tensor = 0.005,
+        b1_nominal: float | torch.Tensor = 3.75e-6,
+        gamma: float = GYROMAGNETIC_RATIO_PROTON,
     ) -> None:
         """Initialize WASABITI signal model for mapping of B0, B1 and T1 [SCH2023]_.
 
         Parameters
         ----------
         offsets
-            frequency offsets [Hz] with shape (offsets, ...)
-        trec
-            recovery time between offsets [s] with shape (offsets, ...)
-        tp
+            frequency offsets [Hz] with shape `(offsets, ...)`
+        recovery_time
+            recovery time between offsets [s] with shape `(offsets, ...)`
+        rf_duration
             RF pulse duration [s]
-        b1_nom
-            nominal B1 amplitude [µT]
+        b1_nominal
+            nominal B1 amplitude [T]
         gamma
-            gyromagnetic ratio [MHz/T]
-        freq
-            larmor frequency [MHz]
+            gyromagnetic ratio [Hz/T]
 
         References
         ----------
@@ -43,53 +42,56 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         """
         super().__init__()
         # convert all parameters to tensors
-        tp = torch.as_tensor(tp)
-        b1_nom = torch.as_tensor(b1_nom)
-        gamma = torch.as_tensor(gamma)
-        freq = torch.as_tensor(freq)
+        rf_duration = torch.as_tensor(rf_duration)
+        b1_nominal = torch.as_tensor(b1_nominal)
 
-        if trec.shape != offsets.shape:
-            raise ValueError(f'Shape of trec ({trec.shape}) and offsets ({offsets.shape}) needs to be the same.')
+        if recovery_time.shape != offsets.shape:
+            raise ValueError(
+                f'Shape of recovery_time ({recovery_time.shape}) and offsets ({offsets.shape}) needs to be the same.'
+            )
 
         # nn.Parameters allow for grad calculation
         self.offsets = nn.Parameter(offsets, requires_grad=offsets.requires_grad)
-        self.trec = nn.Parameter(trec, requires_grad=trec.requires_grad)
-        self.tp = nn.Parameter(tp, requires_grad=tp.requires_grad)
-        self.b1_nom = nn.Parameter(b1_nom, requires_grad=b1_nom.requires_grad)
-        self.gamma = nn.Parameter(gamma, requires_grad=gamma.requires_grad)
-        self.freq = nn.Parameter(freq, requires_grad=freq.requires_grad)
+        self.recovery_time = nn.Parameter(
+            recovery_time.to(device=offsets.device), requires_grad=recovery_time.requires_grad
+        )
+        self.rf_duration = nn.Parameter(rf_duration, requires_grad=rf_duration.requires_grad)
+        self.b1_nominal = nn.Parameter(b1_nominal, requires_grad=b1_nominal.requires_grad)
+        self.gamma = gamma
 
-    def forward(self, b0_shift: torch.Tensor, rb1: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
+    def forward(self, b0_shift: torch.Tensor, relative_b1: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply WASABITI signal model.
 
         Parameters
         ----------
         b0_shift
             B0 shift [Hz]
-            with shape (... other, coils, z, y, x)
-        rb1
+            with shape `(*other, coils, z, y, x)`
+        relative_b1
             relative B1 amplitude
-            with shape (... other, coils, z, y, x)
+            with shape `(*other, coils, z, y, x)`
         t1
             longitudinal relaxation time T1 [s]
-            with shape (... other, coils, z, y, x)
+            with shape `(*other, coils, z, y, x)`
 
         Returns
         -------
-            signal with shape (offsets ... other, coils, z, y, x)
+            signal with shape `(offsets, *other, coils, z, y, x)`
         """
-        delta_ndim = b0_shift.ndim - (self.offsets.ndim - 1)  # -1 for offset
-        offsets = self.expand_tensor_dim(self.offsets, delta_ndim)
-        trec = self.expand_tensor_dim(self.trec, delta_ndim)
+        ndim = max(b0_shift.ndim, relative_b1.ndim, t1.ndim)
+        offsets = unsqueeze_right(self.offsets, ndim - self.offsets.ndim + 1)  # leftmost is offset
+        recovery_time = unsqueeze_right(self.recovery_time, ndim - self.recovery_time.ndim + 1)  # leftmost is offset
+        b1_nominal = unsqueeze_right(self.b1_nominal, ndim - self.b1_nominal.ndim)
+        rf_duration = unsqueeze_right(self.rf_duration, ndim - self.rf_duration.ndim)
 
-        b1 = self.b1_nom * rb1
-        da = offsets - b0_shift
-        mz_initial = 1.0 - torch.exp(-trec / t1)
+        b1 = b1_nominal * relative_b1
+        offsets_shifted = offsets - b0_shift
+        mz_initial = 1.0 - torch.exp(-recovery_time / t1)
 
         signal = mz_initial * (
             1
             - 2
-            * (torch.pi * b1 * self.gamma * self.tp) ** 2
-            * torch.sinc(self.tp * torch.sqrt((b1 * self.gamma) ** 2 + da**2)) ** 2
+            * (torch.pi * b1 * self.gamma * rf_duration) ** 2
+            * torch.sinc(rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + offsets_shifted**2)) ** 2
         )
         return (signal,)

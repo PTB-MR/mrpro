@@ -6,21 +6,22 @@ from math import log
 
 import numpy as np
 import torch
-from torch import Tensor
 
-__all__ = ['SliceProfileBase', 'SliceGaussian', 'SliceSmoothedRectangular', 'SliceInterpolate']
+from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
+
+__all__ = ['SliceGaussian', 'SliceInterpolate', 'SliceProfileBase', 'SliceSmoothedRectangular']
 
 
-class SliceProfileBase(abc.ABC, torch.nn.Module):
+class SliceProfileBase(abc.ABC, TensorAttributeMixin, torch.nn.Module):
     """Base class for slice profiles."""
 
     @abc.abstractmethod
-    def forward(self, x: Tensor) -> Tensor:
-        """Evaluate the slice profile at a position x."""
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Evaluate the slice profile at a position."""
         raise NotImplementedError
 
-    def random_sample(self, size: Sequence[int]) -> Tensor:
-        """Sample n random positions from the profile.
+    def random_sample(self, size: Sequence[int]) -> torch.Tensor:
+        """Sample `n` random positions from the profile.
 
         Use the profile as a probability density function to sample positions.
 
@@ -37,10 +38,12 @@ class SliceProfileBase(abc.ABC, torch.nn.Module):
 
 
 class SliceGaussian(SliceProfileBase):
-    """Gaussian Slice Profile."""
+    """Gaussian slice profile."""
 
-    def __init__(self, fwhm: float | Tensor):
-        """Initialize the Gaussian Slice Profile.
+    fwhm: torch.Tensor
+
+    def __init__(self, fwhm: float | torch.Tensor):
+        """Initialize the Gaussian slice profile.
 
         Parameters
         ----------
@@ -48,10 +51,10 @@ class SliceGaussian(SliceProfileBase):
             Full width at half maximum of the Gaussian
         """
         super().__init__()
-        self.register_buffer('fwhm', torch.as_tensor(fwhm))
+        self.fwhm = torch.as_tensor(fwhm)
 
-    def forward(self, x: Tensor) -> Tensor:
-        """Evaluate the Gaussian Slice Profile at a position.
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Evaluate the Gaussian slice profile at a position.
 
         Parameters
         ----------
@@ -66,14 +69,14 @@ class SliceGaussian(SliceProfileBase):
 
 
 class SliceSmoothedRectangular(SliceProfileBase):
-    """Rectangular Slice Profile with smoothed flanks.
+    """Rectangular slice profile with smoothed flanks.
 
     Implemented as a convolution of a rectangular profile
     with a Gaussian.
     """
 
-    def __init__(self, fwhm_rect: float | Tensor, fwhm_gauss: float | Tensor):
-        """Initialize the Rectangular Slice Profile.
+    def __init__(self, fwhm_rect: float | torch.Tensor, fwhm_gauss: float | torch.Tensor):
+        """Initialize the Rectangular slice profile.
 
         Parameters
         ----------
@@ -88,11 +91,11 @@ class SliceSmoothedRectangular(SliceProfileBase):
             Value of the profile / intensity at the given position
         """
         super().__init__()
-        self.register_buffer('fwhm_rect', torch.as_tensor(fwhm_rect))
-        self.register_buffer('fwhm_gauss', torch.as_tensor(fwhm_gauss))
+        self.fwhm_rect = torch.nn.Buffer(torch.as_tensor(fwhm_rect))
+        self.fwhm_gauss = torch.nn.Buffer(torch.as_tensor(fwhm_gauss))
 
-    def forward(self, x: Tensor) -> Tensor:
-        """Evaluate the Gaussian Slice Profile at a position.
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Evaluate the Gaussian slice profile at a position.
 
         Parameters
         ----------
@@ -117,33 +120,33 @@ class SliceSmoothedRectangular(SliceProfileBase):
 
 
 class SliceInterpolate(SliceProfileBase):
-    """Slice Profile based on Interpolation of Measured Profile."""
+    """slice profile based on interpolation of measured profile."""
 
-    def __init__(self, positions: Tensor, values: Tensor):
-        """Initialize the Interpolated Slice Profile.
+    def __init__(self, positions: torch.Tensor, values: torch.Tensor):
+        """Initialize the interpolated slice profile.
 
         Parameters
         ----------
         positions
-            Positions of the measured profile
+            Positions of the measured profile.
         values
-            Intensities of the measured profile
+            Intensities of the measured profile.
         """
         super().__init__()
         self._xs = positions.detach().cpu().float().numpy()
         self._weights = values.detach().cpu().float().numpy()
 
-    def forward(self, x: Tensor) -> Tensor:
-        """Evaluate the Interpolated Slice Profile at a position.
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Evaluate the interpolated slice profile at a position.
 
         Parameters
         ----------
         x
-            Position at which to evaluate the profile
+            Position at which to evaluate the profile.
 
         Returns
         -------
-            Value of the profile / intensity at the given position
+            Value of the profile / intensity at the given position.
         """
         if x.requires_grad:
             raise NotImplementedError('Interpolated profile does not support gradients.')
