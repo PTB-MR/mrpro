@@ -10,7 +10,7 @@ from typing_extensions import Self
 from mrpro.data.enums import TrajType
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.utils import remove_repeat
+from mrpro.utils import reduce_repeat
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 
 
@@ -54,7 +54,7 @@ class KTrajectory(MoveDataMixin):
 
         if self.repeat_detection_tolerance is not None:
             kz, ky, kx = (
-                as_any_float(remove_repeat(tensor, self.repeat_detection_tolerance))
+                as_any_float(reduce_repeat(tensor, self.repeat_detection_tolerance))
                 for tensor in (self.kz, self.ky, self.kx)
             )
             # use of setattr due to frozen dataclass
@@ -64,7 +64,7 @@ class KTrajectory(MoveDataMixin):
 
         try:
             shape = self.broadcasted_shape
-        except ValueError:
+        except RuntimeError:
             raise ValueError('The k-space trajectory dimensions must be broadcastable.') from None
 
         if len(shape) < 4:
@@ -130,15 +130,15 @@ class KTrajectory(MoveDataMixin):
         )
 
     @property
-    def broadcasted_shape(self) -> tuple[int, ...]:
+    def broadcasted_shape(self) -> torch.Size:
         """The broadcasted shape of the trajectory.
 
         Returns
         -------
             broadcasted shape of trajectory
         """
-        shape = np.broadcast_shapes(self.kx.shape, self.ky.shape, self.kz.shape)
-        return tuple(shape)
+        shape = torch.broadcast_shapes(self.kx.shape, self.ky.shape, self.kz.shape)
+        return shape
 
     @property
     def type_along_kzyx(self) -> tuple[TrajType, TrajType, TrajType]:

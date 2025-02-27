@@ -2,10 +2,9 @@
 
 import pytest
 import torch
-from einops import repeat
-from mrpro.data import KData, KTrajectory, SpatialDimension
+from einops import rearrange, repeat
+from mrpro.data import KData, KTrajectory, Rotation, SpatialDimension
 from mrpro.data.acq_filters import has_n_coils, is_coil_calibration_acquisition, is_image_acquisition
-from mrpro.data.AcqInfo import rearrange_acq_info_fields
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
 from mrpro.utils import split_idx
@@ -80,9 +79,9 @@ def consistently_shaped_kdata(request, random_kheader_shape):
     kheader, n_other, n_coils, n_k2, n_k1, n_k0 = random_kheader_shape
 
     kheader.acq_info.apply_(
-        lambda field: rearrange_acq_info_fields(
-            field, '(other k2 k1) ... -> other k2 k1 ...', other=n_other, k2=n_k2, k1=n_k1
-        )
+        lambda field: rearrange(field, '(other k2 k1) ... -> other k2 k1 ...', other=n_other, k2=n_k2, k1=n_k1)
+        if isinstance(field, torch.Tensor | Rotation)
+        else field
     )
 
     # Create kdata with consistent shape
@@ -121,7 +120,7 @@ def test_KData_random_cart_undersampling_shape(ismrmrd_cart_random_us):
 
 def test_KData_raise_wrong_trajectory_shape(ismrmrd_cart):
     """Wrong KTrajectory shape raises exception."""
-    kx = ky = kz = torch.zeros(1, 2, 3, 4)
+    kx = ky = kz = torch.zeros(5, 1, 2, 3, 4)
     trajectory = KTrajectory(kz, ky, kx, repeat_detection_tolerance=None)
     with pytest.raises(ValueError):
         _ = KData.from_file(ismrmrd_cart.filename, trajectory)
@@ -197,8 +196,8 @@ def test_KData_kspace(ismrmrd_cart_high_res):
     assert relative_image_difference(reconstructed_img[0, 0, 0, ...], ismrmrd_cart_high_res.img_ref) <= 0.05
 
 
-@pytest.mark.parametrize(('field', 'value'), [('lamor_frequency_proton', 42.88 * 1e6), ('tr', torch.tensor([24.3]))])
-def test_KData_modify_header(ismrmrd_cart, field, value):
+@pytest.mark.parametrize(('field', 'value'), [('lamor_frequency_proton', 42.88 * 1e6), ('tr', [24.3])])
+def test_KData_overwrite_header(ismrmrd_cart, field, value):
     """Overwrite some parameters in the header."""
     parameter_dict = {field: value}
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory(), header_overwrites=parameter_dict)
@@ -481,24 +480,6 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader):
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
     # differences along the edges of the elliptic objects.
     assert relative_image_difference(torch.abs(img_recon), img_tensor[:, 0, ...]) <= 0.05
-
-
-def test_modify_acq_info(random_kheader_shape):
-    """Test the modification of the acquisition info."""
-    # Create random header where AcqInfo fields are of shape [n_k1*n_k2] and reshape to [n_other, n_k2, n_k1]
-    kheader, n_other, _, n_k2, n_k1, _ = random_kheader_shape
-
-    kheader.acq_info.apply_(
-        lambda field: rearrange_acq_info_fields(
-            field, '(other k2 k1) ... -> other k2 k1 ...', other=n_other, k2=n_k2, k1=n_k1
-        )
-    )
-
-    # Verify shape
-    assert kheader.acq_info.acquisition_time_stamp.shape == (n_other, n_k2, n_k1, 1)
-    assert kheader.acq_info.idx.k1.shape == (n_other, n_k2, n_k1)
-    assert kheader.acq_info.orientation.shape == (n_other, n_k2, n_k1, 1)
-    assert kheader.acq_info.position.z.shape == (n_other, n_k2, n_k1, 1)
 
 
 def test_KData_compress_coils(ismrmrd_cart_high_res):

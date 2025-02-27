@@ -28,9 +28,9 @@ def test_kheader_verify_None(random_mandatory_ismrmrd_header, random_acq_info):
     defaults = {'trajectory': DummyTrajectory(), 'tr': tr_default, 'fa': fa_default}
     kheader = KHeader.from_ismrmrd(random_mandatory_ismrmrd_header, random_acq_info, defaults=defaults)
     # ti is not mandatory
-    assert kheader.ti is None
+    assert not kheader.ti
     # fa is not mandatory but overwriting with value
-    assert kheader.fa is not None
+    assert isinstance(kheader.fa, torch.Tensor)
     assert torch.allclose(kheader.fa, fa_default)
     # tr is not mandatory but overwritten with None
     assert kheader.tr is tr_default
