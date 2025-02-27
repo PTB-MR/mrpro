@@ -31,7 +31,7 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
     """
 
     def __init__(
-        self, generating_function: Callable[[Unpack[Tin]], tuple[torch.Tensor,]], scaling_argument: int | None = None
+        self, generating_function: Callable[[Unpack[Tin]], tuple[torch.Tensor,]], index_of_scaling_parameter: int | None = None
     ):
         """Initialize DictionaryMatchOp.
 
@@ -39,18 +39,22 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
         ----------
         generating_function
             signal model that takes n inputs and returns a signal y.
-        scaling_argument
-            If one of the inputs of the signal model is purely a scaling factor, the index of this input should
-            be set. This causes values provided for the scaling argument in the `append` method to be ignored
-            and when performing the match, the correct scaling factor will be calculated.
-            Otherwise, for pure scaling factors the values are meaningless due to the normalization.
+        index_of_scaling_parameter
+           Normalized dot product matching is insensitive to overall signal scaling as all the signal curves are normalized. 
+           A scaling factor (e.g. the equilibrium magnetisation `m0` in `~mrpro.operators.models.InversionRecovery`) 
+           is calculated after the dictionary matching if `index_of_scaling_parameter` is not `None`. 
+           `index_of_scaling_parameter` should set to the index of the scaling parameter in the signal model. 
+           Example: 
+                For ~mrpro.operators.models.InversionRecovery the parameters are ``[m0, t1]`` and therefore `index_of_scaling_parameter` should be set to 0. 
+                The operator will then return `t1` estimated via dictionary matching and `m0` via a post-processing step. 
+                If `index_of_scaling_parameter` is None, the value returned for `m0` will be meaningless.
         """
         super().__init__()
         self._f = generating_function
         self.x: list[torch.Tensor] = []
         self.y = torch.tensor([])
-        self._scaling_argument = scaling_argument
-        self.inverse_norm_y = None if scaling_argument is None else torch.tensor([])
+        self._index_of_scaling_parameter = index_of_scaling_parameter
+        self.inverse_norm_y = None if index_of_scaling_parameter is None else torch.tensor([])
 
     def append(self, *x: Unpack[Tin]) -> Self:
         """Append `x` values to the dictionary.
@@ -66,8 +70,8 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
         Self
 
         """
-        if self._scaling_argument is not None:
-            scaling_position = self._scaling_argument % len(x)
+        if self._index_of_scaling_parameter is not None:
+            scaling_position = self._index_of_scaling_parameter % len(x)
             # replace the scaling argument with 1 in call
             (y,) = self._f(*x[:scaling_position], torch.tensor(1), *x[scaling_position + 1 :])  # type: ignore[call-arg]
             # but drop it in the dictionary
@@ -125,9 +129,9 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
         idx = similarity.argmax(dim=0)
         match = [x[idx] for x in self.x]
 
-        if self._scaling_argument is not None and self.inverse_norm_y is not None:
+        if self._index_of_scaling_parameter is not None and self.inverse_norm_y is not None:
             # replace the scaling argument with the correct scaling factor
             scale = (self.y[:, idx].conj() * input_signal).sum(0) * self.inverse_norm_y[idx]
-            match.insert(self._scaling_argument, scale)
+            match.insert(self._index_of_scaling_parameter, scale)
 
         return cast(tuple[Unpack[Tin]], tuple(match))
