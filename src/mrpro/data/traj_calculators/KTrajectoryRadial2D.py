@@ -1,10 +1,10 @@
 """2D radial trajectory class."""
 
 import torch
-from einops import repeat
 
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
+from mrpro.utils.reshape import unsqueeze_tensors_left
 
 
 class KTrajectoryRadial2D(KTrajectoryCalculator):
@@ -48,8 +48,9 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
             radial 2D trajectory for given KHeader
         """
         radial = self._readout(n_k0=n_k0, k0_center=k0_center, reversed_readout_mask=reversed_readout_mask)
-        angle = repeat(k1_idx * self.angle, '... k2 k1 -> ... k2 k1 k0', k0=1)
+        angle = k1_idx * self.angle
         kx = radial * torch.cos(angle)
         ky = radial * torch.sin(angle)
-        kz = torch.zeros(1, 1, 1, 1)
+        kz = torch.zeros(1)
+        kz, ky, kx = unsqueeze_tensors_left(kz, ky, kx, ndim=4)
         return KTrajectory(kz, ky, kx)

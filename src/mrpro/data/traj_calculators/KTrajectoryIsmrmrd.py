@@ -1,11 +1,14 @@
 """Returns the trajectory saved in an ISMRMRD raw data file."""
 
+import warnings
 from collections.abc import Sequence
 
 import ismrmrd
 import torch
 
-from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
+from mrpro.data.KTrajectory import KTrajectory
+from mrpro.utils.reshape import unsqueeze_tensors_at
+from mrpro.utils.typing import FileOrPath
 
 
 class KTrajectoryIsmrmrd:
@@ -21,7 +24,18 @@ class KTrajectoryIsmrmrd:
     .. [TRA] ISMRMRD trajectory https://ismrmrd.readthedocs.io/en/latest/mrd_raw_data.html#k-space-trajectory
     """
 
-    def __call__(self, acquisitions: Sequence[ismrmrd.Acquisition]) -> KTrajectoryRawShape:
+    def __init__(self, filename: None | FileOrPath = None):
+        """Initialize KTrajectoryIsmrmrd.
+
+        Parameters
+        ----------
+        filename
+            Optional file to read the trajectory from. If set to None,
+            the trajectory saved inside the acquisitionons of the KData file will be used.
+        """
+        self.filename = filename
+
+    def __call__(self, acquisitions: Sequence[ismrmrd.Acquisition]) -> KTrajectory:
         """Read out the trajectory from the ISMRMRD data file.
 
         Parameters
@@ -34,22 +48,26 @@ class KTrajectoryIsmrmrd:
             trajectory in the shape of the original raw data.
         """
         # Read out the trajectory
-        ktraj_mrd = torch.stack([torch.as_tensor(acq.traj, dtype=torch.float32) for acq in acquisitions])
+
+        if self.filename is None:
+            ktraj_mrd = torch.stack([torch.as_tensor(acq.traj, dtype=torch.float32) for acq in acquisitions])
+        else:
+            with ismrmrd.File(self.filename, 'r') as file:
+                datasets = list(file.keys())
+                if len(datasets) == 0:
+                    raise ValueError('No datasets found in the ISMRMRD file.')
+                elif len(datasets) > 1:
+                    warnings.warn('More than one dataset found in the ISMRMRD file. Using the last one.', stacklevel=1)
+                ktraj_mrd = torch.stack(
+                    [torch.as_tensor(acq.traj, dtype=torch.float32) for acq in file[datasets[-1]].acquisitions]
+                )
 
         if ktraj_mrd.numel() == 0:
-            raise ValueError('No trajectory information available in the acquisitions.')
+            raise ValueError('No trajectory information available in the ISMRMD file.')
 
-        if ktraj_mrd.shape[2] == 2:
-            ktraj = KTrajectoryRawShape(
-                kz=torch.zeros_like(ktraj_mrd[..., 1]),
-                ky=ktraj_mrd[..., 1],
-                kx=ktraj_mrd[..., 0],
-            )
-        else:
-            ktraj = KTrajectoryRawShape(
-                kz=ktraj_mrd[..., 2],
-                ky=ktraj_mrd[..., 1],
-                kx=ktraj_mrd[..., 0],
-            )
+        kz = torch.zeros_like(ktraj_mrd[..., 1]) if ktraj_mrd.shape[-1] == 2 else ktraj_mrd[..., 2]
+        ky = ktraj_mrd[..., 1]
+        kx = ktraj_mrd[..., 0]
 
-        return ktraj
+        kz, ky, kx = unsqueeze_tensors_at(kz, ky, kx, dim=-2, ndim=4)
+        return KTrajectory(kz, ky, kx)
