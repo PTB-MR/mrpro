@@ -98,6 +98,11 @@ class CartesianSamplingOp(LinearOperator):
             or self._inside_encoding_matrix_idx is not None
         )
 
+        if self._needs_indexing:
+            self.register_buffer('_fft_idx', kidx)
+        else:
+            self._fft_idx: torch.Tensor
+
         self._trajectory_shape = traj.broadcasted_shape
         self._sorted_grid_shape = sorted_grid_shape
 
@@ -222,6 +227,17 @@ class CartesianSamplingOp(LinearOperator):
             Gram operator for this Cartesian Sampling Operator.
         """
         return CartesianSamplingGramOp(self)
+
+    def __repr__(self) -> str:
+        """Representation method for CartesianSamplingOperator."""
+        device = self._fft_idx.device if self._fft_idx is not None else 'none'
+        out = (
+            f'{type(self).__name__} on device: {device}\n'
+            f'Needs indexing: {self._needs_indexing}\n'
+            f'Sorted grid shape: {self._sorted_grid_shape}\n'
+            f'Inside encoding matrix index: {self._inside_encoding_matrix_idx}'
+        )
+        return out
 
 
 class CartesianSamplingGramOp(LinearOperator):
