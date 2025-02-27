@@ -222,7 +222,7 @@ functional = mse_loss @ magnitude_model_op @ constraints_op
 # %%
 m0_start = img_rss_dynamic[0]
 t1_start = torch.ones_like(m0_start)
-flip_angle_start = torch.ones_like(m0_start) * kdata_dynamic.header.fa
+flip_angle_start = torch.ones_like(m0_start) * torch.as_tensor(kdata_dynamic.header.fa)
 # %% [markdown]
 # If we use a `~mrpro.operators.ConstraintsOp`, the start values must be transformed to the
 # unconstrained space before the optimization and back to the original space after the optimization.

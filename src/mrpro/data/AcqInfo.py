@@ -7,25 +7,13 @@ from typing import Literal, TypeAlias, overload
 import ismrmrd
 import numpy as np
 import torch
-from einops import rearrange
 from typing_extensions import Self
 
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
+from mrpro.utils.reshape import unsqueeze_at, unsqueeze_right
 from mrpro.utils.unit_conversion import mm_to_m
-
-
-def rearrange_acq_info_fields(field: object, pattern: str, **axes_lengths: dict[str, int]) -> object:
-    """Change the shape of the fields in AcqInfo."""
-    if isinstance(field, Rotation):
-        return Rotation.from_matrix(rearrange(field.as_matrix(), pattern, **axes_lengths))
-
-    if isinstance(field, torch.Tensor):
-        return rearrange(field, pattern, **axes_lengths)
-
-    return field
-
 
 _convert_time_stamp_type: TypeAlias = Callable[
     [
@@ -251,80 +239,73 @@ class AcqInfo(MoveDataMixin):
             # Remove any unnecessary dimensions
             return torch.tensor(np.squeeze(data))
 
-        def tensor_2d(data: np.ndarray) -> torch.Tensor:
-            # Convert tensor to torch dtypes and ensure it is atleast 2D
+        def tensor_4d(data: np.ndarray) -> torch.Tensor:
+            # Convert tensor to torch dtypes and ensure it is 5D
             data_tensor = tensor(data)
-            # Ensure that data is (k1*k2*other, >=1)
-            if data_tensor.ndim == 1:
-                data_tensor = data_tensor[:, None]
-            elif data_tensor.ndim == 0:
-                data_tensor = data_tensor[None, None]
-            return data_tensor
+            return unsqueeze_right(data_tensor, 4 - data_tensor.ndim)
 
-        def spatialdimension_2d(data: np.ndarray) -> SpatialDimension[torch.Tensor]:
-            # Ensure spatial dimension is (k1*k2*other, 1, 3)
-            if data.ndim != 2:
-                raise ValueError('Spatial dimension is expected to be of shape (N,3)')
-            data = data[:, None, :]
+        def spatialdimension_4d(data: np.ndarray) -> SpatialDimension[torch.Tensor]:
+            data_tensor = torch.tensor(data, dtype=torch.float32)
+            data_tensor = unsqueeze_at(data_tensor, -2, 4 - data_tensor.ndim + 1)
             # all spatial dimensions are float32
-            return SpatialDimension[torch.Tensor].from_array_xyz(torch.tensor(data.astype(np.float32)))
+            return SpatialDimension.from_array_xyz(data_tensor)
 
         acq_idx = AcqIdx(
-            k1=tensor(idx['kspace_encode_step_1']),
-            k2=tensor(idx['kspace_encode_step_2']),
-            average=tensor(idx['average']),
-            slice=tensor(idx['slice']),
-            contrast=tensor(idx['contrast']),
-            phase=tensor(idx['phase']),
-            repetition=tensor(idx['repetition']),
-            set=tensor(idx['set']),
-            segment=tensor(idx['segment']),
-            user0=tensor(idx['user'][:, 0]),
-            user1=tensor(idx['user'][:, 1]),
-            user2=tensor(idx['user'][:, 2]),
-            user3=tensor(idx['user'][:, 3]),
-            user4=tensor(idx['user'][:, 4]),
-            user5=tensor(idx['user'][:, 5]),
-            user6=tensor(idx['user'][:, 6]),
-            user7=tensor(idx['user'][:, 7]),
+            k1=tensor_4d(idx['kspace_encode_step_1']),
+            k2=tensor_4d(idx['kspace_encode_step_2']),
+            average=tensor_4d(idx['average']),
+            slice=tensor_4d(idx['slice']),
+            contrast=tensor_4d(idx['contrast']),
+            phase=tensor_4d(idx['phase']),
+            repetition=tensor_4d(idx['repetition']),
+            set=tensor_4d(idx['set']),
+            segment=tensor_4d(idx['segment']),
+            user0=tensor_4d(idx['user'][:, 0]),
+            user1=tensor_4d(idx['user'][:, 1]),
+            user2=tensor_4d(idx['user'][:, 2]),
+            user3=tensor_4d(idx['user'][:, 3]),
+            user4=tensor_4d(idx['user'][:, 4]),
+            user5=tensor_4d(idx['user'][:, 5]),
+            user6=tensor_4d(idx['user'][:, 6]),
+            user7=tensor_4d(idx['user'][:, 7]),
         )
         user = UserValues(
-            tensor_2d(headers['user_float'][:, 0]),
-            tensor_2d(headers['user_float'][:, 1]),
-            tensor_2d(headers['user_float'][:, 2]),
-            tensor_2d(headers['user_float'][:, 3]),
-            tensor_2d(headers['user_float'][:, 4]),
-            tensor_2d(headers['user_float'][:, 5]),
-            tensor_2d(headers['user_float'][:, 6]),
-            tensor_2d(headers['user_float'][:, 7]),
-            tensor_2d(headers['user_int'][:, 0]),
-            tensor_2d(headers['user_int'][:, 1]),
-            tensor_2d(headers['user_int'][:, 2]),
-            tensor_2d(headers['user_int'][:, 3]),
-            tensor_2d(headers['user_int'][:, 4]),
-            tensor_2d(headers['user_int'][:, 5]),
-            tensor_2d(headers['user_int'][:, 6]),
-            tensor_2d(headers['user_int'][:, 7]),
+            tensor_4d(headers['user_float'][:, 0]),
+            tensor_4d(headers['user_float'][:, 1]),
+            tensor_4d(headers['user_float'][:, 2]),
+            tensor_4d(headers['user_float'][:, 3]),
+            tensor_4d(headers['user_float'][:, 4]),
+            tensor_4d(headers['user_float'][:, 5]),
+            tensor_4d(headers['user_float'][:, 6]),
+            tensor_4d(headers['user_float'][:, 7]),
+            tensor_4d(headers['user_int'][:, 0]),
+            tensor_4d(headers['user_int'][:, 1]),
+            tensor_4d(headers['user_int'][:, 2]),
+            tensor_4d(headers['user_int'][:, 3]),
+            tensor_4d(headers['user_int'][:, 4]),
+            tensor_4d(headers['user_int'][:, 5]),
+            tensor_4d(headers['user_int'][:, 6]),
+            tensor_4d(headers['user_int'][:, 7]),
         )
         physiology_time_stamps = PhysiologyTimestamps(
-            convert_time_stamp(tensor_2d(headers['physiology_time_stamp'][:, 0]), 'physiology_time_stamp_1'),
-            convert_time_stamp(tensor_2d(headers['physiology_time_stamp'][:, 1]), 'physiology_time_stamp_2'),
-            convert_time_stamp(tensor_2d(headers['physiology_time_stamp'][:, 2]), 'physiology_time_stamp_3'),
+            convert_time_stamp(tensor_4d(headers['physiology_time_stamp'][:, 0]), 'physiology_time_stamp_1'),
+            convert_time_stamp(tensor_4d(headers['physiology_time_stamp'][:, 1]), 'physiology_time_stamp_2'),
+            convert_time_stamp(tensor_4d(headers['physiology_time_stamp'][:, 2]), 'physiology_time_stamp_3'),
         )
         acq_info = cls(
             idx=acq_idx,
             acquisition_time_stamp=convert_time_stamp(
-                tensor_2d(headers['acquisition_time_stamp']), 'acquisition_time_stamp'
+                tensor_4d(headers['acquisition_time_stamp']), 'acquisition_time_stamp'
             ),
-            flags=tensor_2d(headers['flags']),
+            flags=tensor_4d(headers['flags']),
             orientation=Rotation.from_directions(
-                spatialdimension_2d(headers['slice_dir']),
-                spatialdimension_2d(headers['phase_dir']),
-                spatialdimension_2d(headers['read_dir']),
+                spatialdimension_4d(headers['slice_dir']),
+                spatialdimension_4d(headers['phase_dir']),
+                spatialdimension_4d(headers['read_dir']),
             ),
-            patient_table_position=spatialdimension_2d(headers['patient_table_position']).apply_(mm_to_m),
-            position=spatialdimension_2d(headers['position']).apply_(mm_to_m),
-            sample_time_us=tensor_2d(headers['sample_time_us']),
+            patient_table_position=spatialdimension_4d(headers['patient_table_position']).apply_(mm_to_m),
+            position=spatialdimension_4d(headers['position']).apply_(mm_to_m),
+            sample_time_us=tensor_4d(headers['sample_time_us']),
             user=user,
             physiology_time_stamps=physiology_time_stamps,
         )
@@ -332,5 +313,5 @@ class AcqInfo(MoveDataMixin):
         if additional_fields is None:
             return acq_info
         else:
-            additional_values = tuple(tensor_2d(headers[field]) for field in additional_fields)
+            additional_values = tuple(tensor_4d(headers[field]) for field in additional_fields)
             return acq_info, additional_values

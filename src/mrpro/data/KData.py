@@ -5,7 +5,6 @@ import dataclasses
 import datetime
 import warnings
 from collections.abc import Callable, Sequence
-from pathlib import Path
 from types import EllipsisType
 from typing import Literal, cast
 
@@ -17,16 +16,16 @@ from einops import rearrange, repeat
 from typing_extensions import Self, TypeVar
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
-from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_siemens, rearrange_acq_info_fields
+from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_siemens
 from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
-from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.Rotation import Rotation
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
+from mrpro.utils.typing import FileOrPath
 
 RotationOrTensor = TypeVar('RotationOrTensor', bound=torch.Tensor | Rotation)
 
@@ -81,8 +80,8 @@ class KData(
     @classmethod
     def from_file(
         cls,
-        filename: str | Path,
-        ktrajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
+        filename: FileOrPath,
+        trajectory: KTrajectoryCalculator | KTrajectory | KTrajectoryIsmrmrd,
         header_overwrites: dict[str, object] | None = None,
         dataset_idx: int = -1,
         acquisition_filter_criterion: Callable = is_image_acquisition,
@@ -92,9 +91,11 @@ class KData(
         Parameters
         ----------
         filename
-            path to the ISMRMRD file
-        ktrajectory
+            path to the ISMRMRD file or file-like object
+        trajectory
             KTrajectoryCalculator to calculate the k-space trajectory or an already calculated KTrajectory
+            If a KTrajectory is given, the shape should be `(acquisisions 1 1 k0)` in the same order as the acquisitions
+            in the ISMRMRD file.
         header_overwrites
             dictionary of key-value pairs to overwrite the header
         dataset_idx
@@ -190,37 +191,79 @@ class KData(
                 'Please open an issue of you need to handle this kind of data.',
                 stacklevel=1,
             )
-        kdata = torch.stack(
+        data = torch.stack(
             [
                 torch.as_tensor(acq.data[..., pre : acq.data.shape[-1] - post], dtype=torch.complex64)
                 for acq, pre, post in zip(acquisitions, discard_pre, discard_post, strict=True)
                 if acq.data.shape[-1] - pre - post == shapes[-1]
             ]
         )
+        data = rearrange(data, 'acquisitions coils k0 -> acquisitions coils 1 1 k0')
 
         # Raises ValueError if required fields are missing in the header
-        kheader = KHeader.from_ismrmrd(
+        header = KHeader.from_ismrmrd(
             ismrmrd_header,
             acq_info,
             defaults={
                 'datetime': modification_time,  # use the modification time of the dataset as fallback
-                'trajectory': ktrajectory,
+                'trajectory': trajectory,
             },
             overwrite=header_overwrites,
         )
+        # Calculate trajectory and check if it matches the kdata shape
+        match trajectory:
+            case KTrajectoryIsmrmrd():
+                trajectory_ = trajectory(acquisitions)
+            case KTrajectoryCalculator():
+                reversed_readout_mask = (header.acq_info.flags[..., 0] & AcqFlags.ACQ_IS_REVERSE.value).bool()
+                n_k0_unique = torch.unique(n_k0_tensor)
+                if len(n_k0_unique) > 1:
+                    raise ValueError(
+                        'Trajectory can only be calculated for constant number of readout samples.\n'
+                        f'Got unique values {list(n_k0_unique)}'
+                    )
+                encoding_limits = EncodingLimits.from_ismrmrd_header(ismrmrd_header)
+                trajectory_ = trajectory(
+                    n_k0=int(n_k0_unique[0]),
+                    k0_center=k0_center,
+                    k1_idx=header.acq_info.idx.k1,
+                    k1_center=encoding_limits.k1.center,
+                    k2_idx=header.acq_info.idx.k2,
+                    k2_center=encoding_limits.k2.center,
+                    reversed_readout_mask=reversed_readout_mask,
+                    encoding_matrix=header.encoding_matrix,
+                )
+            case KTrajectory():
+                try:
+                    torch.broadcast_shapes(trajectory.broadcasted_shape, (data.shape[0], *data.shape[-3:]))
+                except RuntimeError:
+                    raise ValueError(
+                        f'Trajectory shape {trajectory.broadcasted_shape} does not match data shape {data.shape}.'
+                    ) from None
+                trajectory_ = trajectory
+            case _:
+                raise TypeError(
+                    'ktrajectory must be KTrajectoryIsmrmrd, KTrajectory or KTrajectoryCalculator'
+                    f'not {type(trajectory)}',
+                )
 
-        # Sort and reshape the kdata and the acquisistion info according to the indices.
-        # within "other", the aquisistions are sorted in the order determined by KDIM_SORT_LABELS.
-        # The final shape will be ("all other labels", k2, k1, k0) for kdata
-        # and ("all other labels", k2, k1, length of the aqusitions info field) for aquisistion info.
+        kdata = cls(header, data, trajectory_)
+        kdata = kdata.reshape_by_idx()
+        return kdata
 
+    def reshape_by_idx(self) -> Self:
+        """Sort and reshape according to the acquisistion indices.
+
+        Reshapes the data to ("all other labels", coils, k2, k1, k0).
+        Within "all other labels", the order is determined by `KDIM_SORT_LABELS`.
+        """
         # First, determine if we can split into k2 and k1 and how large these should be
-        acq_indices_other = torch.stack([getattr(kheader.acq_info.idx, label) for label in OTHER_LABELS], dim=0)
+        acq_indices_other = torch.stack([getattr(self.header.acq_info.idx, label) for label in OTHER_LABELS], dim=0)
         _, n_acqs_per_other = torch.unique(acq_indices_other, dim=1, return_counts=True)
         # unique counts of acquisitions for each combination of the label values in "other"
         n_acqs_per_other = torch.unique(n_acqs_per_other)
 
-        acq_indices_other_k2 = torch.cat((acq_indices_other, kheader.acq_info.idx.k2.unsqueeze(0)), dim=0)
+        acq_indices_other_k2 = torch.cat((acq_indices_other, self.header.acq_info.idx.k2.unsqueeze(0)), dim=0)
         _, n_acqs_per_other_and_k2 = torch.unique(acq_indices_other_k2, dim=1, return_counts=True)
         # unique counts of acquisitions for each combination of other **and k2**
         n_acqs_per_other_and_k2 = torch.unique(n_acqs_per_other_and_k2)
@@ -245,76 +288,49 @@ class KData(
                 f'There are different numbers of acquisistions in'
                 'different combinations of labels {"/".join(OTHER_LABELS)}: \n'
                 f'Found {n_acqs_per_other.tolist()}. \n'
-                'The data will be reshaped to (acquisitions, 1, 1, k0). \n'
+                'The data will be reshaped to (acquisitions, coils, 1, 1, k0). \n'
                 'This needs to be adjusted be reshaping for a successful reconstruction. \n'
-                'If unintenional, this might be caused by wrong labels in the ismrmrd file or a wrong flag filter.',
+                'If unintenional, this might be caused by wrong labels in the ismrmrd file or a wrong flag filter. \n'
+                'To fix, it might be necessary to subset the data such that it can be reshaped to '
+                '(other, coils, k2, k1, k0), or indexes needs to be fixed. \n'
+                'After fixing the issue, call reshape_by_idx and consider recalculating the trajectory.',
                 stacklevel=1,
             )
             n_k1 = 1
             n_k2 = 1
 
         # Second, determine the sorting order
-        acq_indices = np.stack([getattr(kheader.acq_info.idx, label) for label in KDIM_SORT_LABELS], axis=0)
-        sort_idx = np.lexsort(acq_indices)  # torch does not have lexsort as of pytorch 2.2 (March 2024)
+        acq_indices = np.stack([getattr(self.header.acq_info.idx, label).ravel() for label in KDIM_SORT_LABELS], axis=0)
+        sort_idx = np.lexsort(acq_indices)  # torch does not have lexsort as of pytorch 2.6 (March 2025)
 
         # Finally, reshape and sort the tensors in acqinfo and acqinfo.idx, and kdata.
-        kheader.acq_info.apply_(
-            lambda field: rearrange_acq_info_fields(
-                field[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=n_k1, k2=n_k2
+        header = self.header.apply(
+            lambda field: rearrange(
+                cast(Rotation | torch.Tensor, rearrange(field, '... k2 k1 k0 -> (... k2 k1) k0'))[sort_idx],
+                '(other k2 k1) k0 -> other k2 k1 k0',
+                k1=n_k1,
+                k2=n_k2,
+                k0=1,
             )
             if isinstance(field, torch.Tensor | Rotation)
             else field
         )
-        kdata = rearrange(kdata[sort_idx], '(other k2 k1) coils k0 -> other coils k2 k1 k0', k1=n_k1, k2=n_k2)
-        k0_center = rearrange(k0_center[sort_idx], '(other k2 k1) ... -> other k2 k1 ...', k1=n_k1, k2=n_k2)
 
-        # Calculate trajectory and check if it matches the kdata shape
-        match ktrajectory:
-            case KTrajectoryIsmrmrd():
-                ktrajectory_final = ktrajectory(acquisitions).sort_and_reshape(sort_idx, n_k2, n_k1)
-            case KTrajectoryCalculator():
-                reversed_readout_mask = (kheader.acq_info.flags[..., 0] & AcqFlags.ACQ_IS_REVERSE.value).bool()
-                n_k0_unique = torch.unique(n_k0_tensor)
-                if len(n_k0_unique) > 1:
-                    raise ValueError(
-                        'Trajectory can only be calculated for constant number of readout samples.\n'
-                        f'Got unique values {list(n_k0_unique)}'
-                    )
-                encoding_limits = EncodingLimits.from_ismrmrd_header(ismrmrd_header)
-                ktrajectory_or_rawshape = ktrajectory(
-                    n_k0=int(n_k0_unique[0]),
-                    k0_center=k0_center,
-                    k1_idx=kheader.acq_info.idx.k1,
-                    k1_center=encoding_limits.k1.center,
-                    k2_idx=kheader.acq_info.idx.k2,
-                    k2_center=encoding_limits.k2.center,
-                    reversed_readout_mask=reversed_readout_mask,
-                    encoding_matrix=kheader.encoding_matrix,
-                )
+        data = rearrange(
+            rearrange(self.data, '... coils k2 k1 k0-> (... k2 k1) coils k0 ')[sort_idx],
+            '(other k2 k1) coils k0 -> other coils k2 k1 k0',
+            k1=n_k1,
+            k2=n_k2,
+        )
 
-                if isinstance(ktrajectory_or_rawshape, KTrajectoryRawShape):
-                    ktrajectory_final = ktrajectory_or_rawshape.sort_and_reshape(sort_idx, n_k2, n_k1)
-                else:
-                    ktrajectory_final = ktrajectory_or_rawshape
-            case KTrajectory():
-                ktrajectory_final = ktrajectory
-            case _:
-                raise TypeError(
-                    'ktrajectory must be KTrajectoryIsmrmrd, KTrajectory or KTrajectoryCalculator'
-                    f'not {type(ktrajectory)}',
-                )
-
-        try:
-            shape = ktrajectory_final.broadcasted_shape
-            torch.broadcast_shapes(kdata[..., 0, :, :, :].shape, shape)
-        except RuntimeError:
-            # Not broadcastable
-            raise ValueError(
-                f'Broadcasted shape trajectory do not match kdata: {shape} vs. {kdata.shape}. '
-                'Please check the trajectory.',
-            ) from None
-
-        return cls(kheader, kdata, ktrajectory_final)
+        kz, ky, kx = rearrange(
+            self.traj.as_tensor(-1).flatten(end_dim=-3)[sort_idx],
+            '(other k2 k1) k0 zyx -> zyx other k2 k1 k0 ',
+            k1=n_k1,
+            k2=n_k2,
+        )
+        traj = KTrajectory(kz, ky, kx, self.traj.grid_detection_tolerance, self.traj.repeat_detection_tolerance)
+        return self.__class__(header=header, data=data, traj=traj)
 
     def __repr__(self):
         """Representation method for KData class."""
@@ -451,7 +467,9 @@ class KData(
 
         # Update shape of acquisition info index
         kheader.acq_info.apply_(
-            lambda field: rearrange_acq_info_fields(field, 'other k2 k1 ... -> other 1 (k2 k1) ...')
+            lambda field: rearrange(field, 'other k2 k1 ... -> other 1 (k2 k1) ...')
+            if isinstance(field, torch.Tensor | Rotation)
+            else field
         )
 
         return type(self)(kheader, kdat, type(self.traj).from_tensor(ktraj))
@@ -648,7 +666,7 @@ class KData(
 
         # Update shape of acquisition info index
         kheader.acq_info.apply_(
-            lambda field: rearrange_acq_info_fields(split_acq_info(field), rearrange_pattern_acq_info)
+            lambda field: rearrange(split_acq_info(field), rearrange_pattern_acq_info)
             if isinstance(field, Rotation | torch.Tensor)
             else field
         )

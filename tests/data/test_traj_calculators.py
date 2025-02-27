@@ -2,6 +2,7 @@
 
 import pytest
 import torch
+from einops import rearrange
 from mrpro.data import KData
 from mrpro.data.traj_calculators import (
     KTrajectoryCartesian,
@@ -19,7 +20,7 @@ def test_KTrajectoryRadial2D():
     """Test shapes returned by KTrajectoryRadial2D."""
     n_k0 = 256
     n_k1 = 10
-    k1_idx = torch.arange(n_k1)[None, None, :]
+    k1_idx = torch.arange(n_k1)[:, None]
 
     trajectory_calculator = KTrajectoryRadial2D()
     trajectory = trajectory_calculator(
@@ -38,8 +39,8 @@ def test_KTrajectoryRpe():
     n_k0 = 100
     n_k1 = 20
     n_k2 = 10
-    k2_idx = torch.arange(n_k2)[None, :, None]
-    k1_idx = torch.arange(n_k1)[None, None, :]
+    k2_idx = torch.arange(n_k2)[:, None, None]
+    k1_idx = torch.arange(n_k1)[:, None]
 
     trajectory_calculator = KTrajectoryRpe(angle=torch.pi * 0.618034)
     trajectory = trajectory_calculator(
@@ -60,8 +61,8 @@ def test_KTrajectoryRpe_angle():
     n_k0 = 100
     n_k1 = 20
     n_k2 = 10
-    k1_idx = torch.arange(n_k1)[None, None, :]
-    k2_idx = torch.arange(n_k2)[None, :, None]
+    k2_idx = torch.arange(n_k2)[:, None, None]
+    k1_idx = torch.arange(n_k1)[:, None]
     angle = torch.pi / n_k2
 
     trajectory1_calculator = KTrajectoryRpe(angle=angle, shift_between_rpe_lines=(0,))
@@ -96,8 +97,8 @@ def test_KTrajectorySunflowerGoldenRpe():
     n_k0 = 100
     n_k1 = 20
     n_k2 = 10
-    k1_idx = torch.arange(n_k1)[None, None, :]
-    k2_idx = torch.arange(n_k2)[None, :, None]
+    k2_idx = torch.arange(n_k2)[:, None]
+    k1_idx = torch.arange(n_k1)
 
     trajectory_calculator = KTrajectorySunflowerGoldenRpe()
     trajectory = trajectory_calculator(
@@ -116,8 +117,8 @@ def test_KTrajectoryCartesian():
     n_k0 = 30
     n_k1 = 20
     n_k2 = 10
-    k1_idx = torch.arange(n_k1)[None, None, :]
-    k2_idx = torch.arange(n_k2)[None, :, None]
+    k2_idx = torch.arange(n_k2)[:, None, None]
+    k1_idx = torch.arange(n_k1)[:, None]
 
     trajectory_calculator = KTrajectoryCartesian()
     trajectory = trajectory_calculator(
@@ -138,8 +139,8 @@ def test_KTrajectoryCartesian_bipolar():
     n_k0 = 30
     n_k1 = 20
     n_k2 = 10
-    k1_idx = torch.arange(n_k1)[None, None, :]
-    k2_idx = torch.arange(n_k2)[None, :, None]
+    k2_idx = torch.arange(n_k2)[:, None, None]
+    k1_idx = torch.arange(n_k1)[:, None]
 
     reversed_readout_mask = torch.zeros(n_k1, dtype=torch.bool)
     reversed_readout_mask[1] = True
@@ -202,10 +203,9 @@ def test_KTrajectoryPulseq(pulseq_example_rad_seq):
         n_k0=pulseq_example_rad_seq.n_k0, encoding_matrix=pulseq_example_rad_seq.encoding_matrix
     )
 
-    kx_test = pulseq_example_rad_seq.traj_analytical.kx.squeeze()
+    kx_test = rearrange(pulseq_example_rad_seq.traj_analytical.kx, 'other k2 k1 k0 -> (other k2 k1) 1 1 k0')
     kx_test = kx_test * pulseq_example_rad_seq.encoding_matrix.x / (2 * kx_test.abs().max())
-
-    ky_test = pulseq_example_rad_seq.traj_analytical.ky.squeeze()
+    ky_test = rearrange(pulseq_example_rad_seq.traj_analytical.ky, 'other k2 k1 k0 -> (other k2 k1) 1 1 k0')
     ky_test = ky_test * pulseq_example_rad_seq.encoding_matrix.y / (2 * ky_test.abs().max())
 
     torch.testing.assert_close(trajectory.kx.to(torch.float32), kx_test.to(torch.float32), atol=1e-2, rtol=1e-3)

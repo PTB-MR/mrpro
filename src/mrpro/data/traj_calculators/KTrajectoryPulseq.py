@@ -3,9 +3,9 @@
 from pathlib import Path
 
 import torch
-from einops import rearrange
+from einops import repeat
 
-from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
+from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 
@@ -33,7 +33,7 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         n_k0: int,
         encoding_matrix: SpatialDimension,
         **_,
-    ) -> KTrajectoryRawShape:
+    ) -> KTrajectory:
         """Calculate trajectory from given .seq file and header information.
 
         Parameters
@@ -45,7 +45,7 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
 
         Returns
         -------
-            trajectory of type KTrajectoryRawShape
+            trajectory of type KTrajectory
         """
         from pypulseq import Sequence
 
@@ -54,9 +54,9 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         seq.read(file_path=str(self.seq_path))
         k_traj_adc_numpy = seq.calculate_kspace()[0]
         k_traj_adc = torch.tensor(k_traj_adc_numpy, dtype=torch.float32)
-        k_traj_reshaped = rearrange(k_traj_adc, 'xyz (other k0) -> xyz other k0', k0=n_k0)
+        k_traj_reshaped = repeat(k_traj_adc, 'xyz (other k0) -> xyz other k2 k1 k0', k2=1, k1=1, k0=n_k0)
 
-        return KTrajectoryRawShape.from_tensor(
+        return KTrajectory.from_tensor(
             k_traj_reshaped,
             axes_order='xyz',
             scaling_matrix=encoding_matrix,

@@ -38,6 +38,7 @@ import pickle
 from itertools import permutations
 from math import sqrt
 
+import einops
 import numpy as np
 import pytest
 import torch
@@ -52,28 +53,28 @@ def _norm(x):
     return torch.linalg.norm(x.float(), dim=-1, keepdim=True)
 
 
-def test_from_quats():
+def test_from_quats() -> None:
     x = torch.tensor([[3, 4, 0, 0], [5, 12, 0, 0]])
     r = Rotation.from_quat(x)
     expected_quat = x / _norm(x)
     torch.testing.assert_close(r.as_quat(), expected_quat)
 
 
-def test_from_single_1d_quaternion():
+def test_from_single_1d_quaternion() -> None:
     x = torch.tensor([3, 4, 0, 0])
     r = Rotation.from_quat(x)
     expected_quat = x / _norm(x)
     torch.testing.assert_close(r.as_quat(), expected_quat)
 
 
-def test_from_single_2d_quaternion():
+def test_from_single_2d_quaternion() -> None:
     x = torch.tensor([[3, 4, 0, 0]])
     r = Rotation.from_quat(x)
     expected_quat = x / _norm(x)
     torch.testing.assert_close(r.as_quat(), expected_quat)
 
 
-def test_from_square_quat_matrix():
+def test_from_square_quat_matrix() -> None:
     # Ensure proper norm array broadcasting
     x = torch.tensor(
         [
@@ -90,7 +91,7 @@ def test_from_square_quat_matrix():
     torch.testing.assert_close(r.as_quat(), expected_quat)
 
 
-def test_quat_double_to_canonical_single_cover():
+def test_quat_double_to_canonical_single_cover() -> None:
     x = torch.tensor([[-1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, -1], [-1, -1, -1, -1]])
     r = Rotation.from_quat(x)
     expected_quat = torch.abs(x) / _norm(x)
@@ -98,7 +99,7 @@ def test_quat_double_to_canonical_single_cover():
 
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-def test_quat_double_cover():
+def test_quat_double_cover() -> None:
     # See the scipy Rotation.from_quat() docstring for scope of the quaternion
     # double cover property.
     # Check from_quat and as_quat(canonical=False)
@@ -129,30 +130,30 @@ def test_quat_double_cover():
     )
 
 
-def test_malformed_1d_from_quat():
+def test_malformed_1d_from_quat() -> None:
     with pytest.raises(ValueError):
         Rotation.from_quat(torch.tensor([1, 2, 3]))
 
 
-def test_malformed_2d_from_quat():
+def test_malformed_2d_from_quat() -> None:
     with pytest.raises(ValueError):
         Rotation.from_quat(torch.tensor([[1, 2, 3, 4, 5], [4, 5, 6, 7, 8]]))
 
 
-def test_zero_norms_from_quat():
+def test_zero_norms_from_quat() -> None:
     x = torch.tensor([[3, 4, 0, 0], [0, 0, 0, 0], [5, 0, 12, 0]])
     with pytest.raises(ValueError):
         Rotation.from_quat(x)
 
 
-def test_as_matrix_single_1d_quaternion():
+def test_as_matrix_single_1d_quaternion() -> None:
     quat = torch.tensor([0, 0, 0, 1])
     mat = Rotation.from_quat(quat).as_matrix()
     # mat.shape == (3,3) due to 1d input
     torch.testing.assert_close(mat, torch.eye(3))
 
 
-def test_as_matrix_single_2d_quaternion():
+def test_as_matrix_single_2d_quaternion() -> None:
     quat = torch.tensor([[0, 0, 1, 1]])
     mat = Rotation.from_quat(quat).as_matrix()
     assert mat.shape == (1, 3, 3)
@@ -160,7 +161,7 @@ def test_as_matrix_single_2d_quaternion():
     torch.testing.assert_close(mat[0], expected_mat)
 
 
-def test_as_matrix_from_square_input():
+def test_as_matrix_from_square_input() -> None:
     quats = torch.tensor([[0.0, 0.0, 1.0, 1.0], [0.0, 1.0, 0.0, 1.0], [0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, -1.0]])
     mat = Rotation.from_quat(quats).as_matrix()
     assert mat.shape == (4, 3, 3)
@@ -175,7 +176,7 @@ def test_as_matrix_from_square_input():
     torch.testing.assert_close(mat[3], torch.eye(3))
 
 
-def test_as_matrix_from_generic_input():
+def test_as_matrix_from_generic_input() -> None:
     quats = torch.tensor([[0, 0, 1, 1], [0, 1, 0, 1], [1, 2, 3, 4]]).float()
     mat = Rotation.from_quat(quats).as_matrix()
     assert mat.shape == (3, 3, 3)
@@ -190,19 +191,19 @@ def test_as_matrix_from_generic_input():
     torch.testing.assert_close(mat[2], expected2)
 
 
-def test_from_single_2d_matrix():
+def test_from_single_2d_matrix() -> None:
     mat = torch.tensor([[0, 0, 1], [1, 0, 0], [0, 1, 0]]).float()
     expected_quat = torch.tensor([0.5, 0.5, 0.5, 0.5])
     torch.testing.assert_close(Rotation.from_matrix(mat).as_quat(), expected_quat)
 
 
-def test_from_single_3d_matrix():
+def test_from_single_3d_matrix() -> None:
     mat = torch.tensor([[0, 0, 1], [1, 0, 0], [0, 1, 0]]).reshape((1, 3, 3))
     expected_quat = torch.tensor([0.5, 0.5, 0.5, 0.5]).reshape((1, 4))
     torch.testing.assert_close(Rotation.from_matrix(mat).as_quat(), expected_quat)
 
 
-def test_from_matrix_calculation():
+def test_from_matrix_calculation() -> None:
     expected_quat = torch.tensor([1, 1, 6, 1]) / sqrt(39)
     mat = torch.tensor(
         [[-0.8974359, -0.2564103, 0.3589744], [0.3589744, -0.8974359, 0.2564103], [0.2564103, 0.3589744, 0.8974359]]
@@ -220,12 +221,12 @@ def test_from_matrix_calculation():
     )
 
 
-def test_matrix_calculation_pipeline():
+def test_matrix_calculation_pipeline() -> None:
     mat = torch.as_tensor(special_ortho_group.rvs(3, size=10, random_state=0))
     torch.testing.assert_close(Rotation.from_matrix(mat).as_matrix(), mat)
 
 
-def test_from_matrix_ortho_output():
+def test_from_matrix_ortho_output() -> None:
     rnd = RandomGenerator(0)
     mat = rnd.float32_tensor((100, 3, 3))
     ortho_mat = Rotation.from_matrix(mat).as_matrix()
@@ -237,21 +238,21 @@ def test_from_matrix_ortho_output():
     torch.testing.assert_close(mult_result, eye)
 
 
-def test_from_1d_single_rotvec():
+def test_from_1d_single_rotvec() -> None:
     rotvec = torch.tensor([1, 0, 0])
     expected_quat = torch.tensor([0.4794255, 0, 0, 0.8775826])
     result = Rotation.from_rotvec(rotvec)
     torch.testing.assert_close(result.as_quat(), expected_quat)
 
 
-def test_from_2d_single_rotvec():
+def test_from_2d_single_rotvec() -> None:
     rotvec = torch.tensor([[1, 0, 0]])
     expected_quat = torch.tensor([[0.4794255, 0, 0, 0.8775826]])
     result = Rotation.from_rotvec(rotvec)
     torch.testing.assert_close(result.as_quat(), expected_quat)
 
 
-def test_from_generic_rotvec():
+def test_from_generic_rotvec() -> None:
     rotvec = [[1.0, 2.0, 2.0], [1.0, -1.0, 0.5], [0.0, 0.0, 0.0]]
     expected_quat = torch.tensor(
         [[0.3324983, 0.6649967, 0.6649967, 0.0707372], [0.4544258, -0.4544258, 0.2272129, 0.7316889], [0, 0, 0, 1]]
@@ -259,7 +260,7 @@ def test_from_generic_rotvec():
     torch.testing.assert_close(Rotation.from_rotvec(rotvec).as_quat(), expected_quat)
 
 
-def test_from_rotvec_small_angle():
+def test_from_rotvec_small_angle() -> None:
     rotvec = torch.tensor([[5e-4 / sqrt(3), -5e-4 / sqrt(3), 5e-4 / sqrt(3)], [0.2, 0.3, 0.4], [0, 0, 0]])
 
     quat = Rotation.from_rotvec(rotvec).as_quat()
@@ -276,7 +277,7 @@ def test_from_rotvec_small_angle():
     assert (quat[2] == torch.tensor([0, 0, 0, 1])).all()
 
 
-def test_degrees_from_rotvec():
+def test_degrees_from_rotvec() -> None:
     rotvec1 = torch.tensor([1.0, 1.0, 1.0]) / 3 ** (1 / 3)
     rot1 = Rotation.from_rotvec(rotvec1, degrees=True)
     quat1 = rot1.as_quat()
@@ -288,17 +289,17 @@ def test_degrees_from_rotvec():
     torch.testing.assert_close(quat1, quat2)
 
 
-def test_malformed_1d_from_rotvec():
+def test_malformed_1d_from_rotvec() -> None:
     with pytest.raises(ValueError, match='Expected `rot_vec` to have shape'):
         Rotation.from_rotvec([1, 2])
 
 
-def test_malformed_2d_from_rotvec():
+def test_malformed_2d_from_rotvec() -> None:
     with pytest.raises(ValueError, match='Expected `rot_vec` to have shape'):
         Rotation.from_rotvec([[1, 2, 3, 4], [5, 6, 7, 8]])
 
 
-def test_as_generic_rotvec():
+def test_as_generic_rotvec() -> None:
     quat = torch.tensor([[1, 2, -1, 0.5], [1, -1, 1, 0.0003], [0, 0, 0, 1]])
     quat /= torch.linalg.vector_norm(quat, keepdim=True, dim=-1)
 
@@ -309,7 +310,7 @@ def test_as_generic_rotvec():
     torch.testing.assert_close(torch.linalg.cross(rotvec, quat[:, :3]), torch.zeros((3, 3)))
 
 
-def test_as_rotvec_single_1d_input():
+def test_as_rotvec_single_1d_input() -> None:
     quat = torch.tensor([1, 2, -3, 2])
     expected_rotvec = torch.tensor([0.5772381, 1.1544763, -1.7317144])
 
@@ -319,7 +320,7 @@ def test_as_rotvec_single_1d_input():
     torch.testing.assert_close(actual_rotvec, expected_rotvec)
 
 
-def test_as_rotvec_single_2d_input():
+def test_as_rotvec_single_2d_input() -> None:
     quat = torch.tensor([[1, 2, -3, 2]])
     expected_rotvec = torch.tensor([[0.5772381, 1.1544763, -1.7317144]])
 
@@ -329,7 +330,7 @@ def test_as_rotvec_single_2d_input():
     torch.testing.assert_close(actual_rotvec, expected_rotvec)
 
 
-def test_as_rotvec_degrees():
+def test_as_rotvec_degrees() -> None:
     # x->y, y->z, z->x
     mat = [[0, 0, 1], [1, 0, 0], [0, 1, 0]]
     rot = Rotation.from_matrix(mat)
@@ -340,7 +341,7 @@ def test_as_rotvec_degrees():
     torch.testing.assert_close(rotvec[1], rotvec[2])
 
 
-def test_rotvec_calc_pipeline():
+def test_rotvec_calc_pipeline() -> None:
     # Include small angles
     rotvec = torch.tensor([[0, 0, 0], [1, -1, 2], [-3e-4, 3.5e-4, 7.5e-5]])
     torch.testing.assert_close(Rotation.from_rotvec(rotvec).as_rotvec(), rotvec)
@@ -354,21 +355,21 @@ def test_rotvec_calc_pipeline():
 # as we haven't implemented as_davenport nor from_davenport.
 
 
-def test_from_euler_single_rotation():
+def test_from_euler_single_rotation() -> None:
     lastaxis = AXIS_ORDER[-1]
     quat = Rotation.from_euler(lastaxis.lower(), 90, degrees=True).as_quat()
     expected_quat = torch.tensor([0, 0, 1, 1]) / sqrt(2)
     torch.testing.assert_close(quat, expected_quat)
 
 
-def test_single_intrinsic_extrinsic_rotation():
+def test_single_intrinsic_extrinsic_rotation() -> None:
     lastaxis = AXIS_ORDER[-1]
     extrinsic = Rotation.from_euler(lastaxis.lower(), 90, degrees=True).as_matrix()
     intrinsic = Rotation.from_euler(lastaxis.upper(), 90, degrees=True).as_matrix()
     torch.testing.assert_close(extrinsic, intrinsic)
 
 
-def test_from_euler_rotation_order():
+def test_from_euler_rotation_order() -> None:
     # Intrinsic rotation is same as extrinsic with order reversed
     rnd = RandomGenerator(0)
     axes = AXIS_ORDER
@@ -379,7 +380,7 @@ def test_from_euler_rotation_order():
     torch.testing.assert_close(x, y)
 
 
-def test_from_euler_elementary_extrinsic_rotation():
+def test_from_euler_elementary_extrinsic_rotation() -> None:
     # Simple test to check if extrinsic rotations are implemented correctly
     axes = AXIS_ORDER[2] + AXIS_ORDER[0]
     mat = Rotation.from_euler(axes, [90, 90], degrees=True).as_matrix()
@@ -387,7 +388,7 @@ def test_from_euler_elementary_extrinsic_rotation():
     torch.testing.assert_close(mat, expected_mat)
 
 
-def test_from_euler_intrinsic_rotation_201():
+def test_from_euler_intrinsic_rotation_201() -> None:
     angles = [[30, 60, 45], [30, 60, 30], [45, 30, 60]]
     axes = (AXIS_ORDER[2] + AXIS_ORDER[0] + AXIS_ORDER[1]).upper()
     mat = Rotation.from_euler(axes, angles, degrees=True).as_matrix()
@@ -414,7 +415,7 @@ def test_from_euler_intrinsic_rotation_201():
     )
 
 
-def test_from_euler_intrinsic_rotation_202():
+def test_from_euler_intrinsic_rotation_202() -> None:
     angles = [[30, 60, 45], [30, 60, 30], [45, 30, 60]]
     axes = (AXIS_ORDER[2] + AXIS_ORDER[0] + AXIS_ORDER[2]).upper()
     mat = Rotation.from_euler(axes, angles, degrees=True).as_matrix()
@@ -447,7 +448,7 @@ def test_from_euler_intrinsic_rotation_202():
     torch.testing.assert_close(mat[2], expect2)
 
 
-def test_from_euler_extrinsic_rotation_201():
+def test_from_euler_extrinsic_rotation_201() -> None:
     angles = [[30, 60, 45], [30, 60, 30], [45, 30, 60]]
     axes = (AXIS_ORDER[2] + AXIS_ORDER[0] + AXIS_ORDER[1]).lower()
     mat = Rotation.from_euler(axes, angles, degrees=True).as_matrix()
@@ -486,7 +487,7 @@ def test_from_euler_extrinsic_rotation_201():
     )
 
 
-def test_from_euler_extrinsic_rotation_202():
+def test_from_euler_extrinsic_rotation_202() -> None:
     angles = [[30, 60, 45], [30, 60, 30], [45, 30, 60]]
     axes = (AXIS_ORDER[2] + AXIS_ORDER[0] + AXIS_ORDER[2]).lower()
 
@@ -621,7 +622,7 @@ def test_as_euler_degenerate_symmetric_axes(seq_tuple, intrinsic):
     torch.testing.assert_close(mat_expected, mat_estimated)
 
 
-def test_inv():
+def test_inv() -> None:
     rnd = np.random.RandomState(0)
     n = 10
     p = Rotation.random(num=n, random_state=rnd)
@@ -639,7 +640,7 @@ def test_inv():
     torch.testing.assert_close(result2, eye3d)
 
 
-def test_inv_single_rotation():
+def test_inv_single_rotation() -> None:
     rnd = np.random.RandomState(0)
     p = Rotation.random(random_state=rnd)
     q = p.inv()
@@ -675,13 +676,13 @@ def test_identity_magnitude(n):
     torch.testing.assert_close(Rotation.identity(n).inv().magnitude(), torch.zeros(n))
 
 
-def test_single_identity_magnitude():
+def test_single_identity_magnitude() -> None:
     assert Rotation.identity().magnitude() == 0
     assert Rotation.identity().inv().magnitude() == 0
 
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-def test_identity_invariance():
+def test_identity_invariance() -> None:
     n = 10
     p = Rotation.random(n, random_state=0)
 
@@ -693,7 +694,7 @@ def test_identity_invariance():
 
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-def test_single_identity_invariance():
+def test_single_identity_invariance() -> None:
     n = 10
     p = Rotation.random(n, random_state=0)
 
@@ -704,7 +705,7 @@ def test_single_identity_invariance():
     torch.testing.assert_close(result.magnitude(), torch.zeros(n))
 
 
-def test_magnitude():
+def test_magnitude() -> None:
     r = Rotation.from_quat(torch.eye(4))
     result = r.magnitude()
     torch.testing.assert_close(result, torch.tensor([torch.pi, torch.pi, torch.pi, 0]))
@@ -714,7 +715,7 @@ def test_magnitude():
     torch.testing.assert_close(result, torch.tensor([torch.pi, torch.pi, torch.pi, 0]))
 
 
-def test_magnitude_single_rotation():
+def test_magnitude_single_rotation() -> None:
     r = Rotation.from_quat(torch.eye(4))
     result1 = r[0].magnitude()
     torch.testing.assert_close(result1, torch.tensor(torch.pi))
@@ -723,7 +724,7 @@ def test_magnitude_single_rotation():
     torch.testing.assert_close(result2, torch.tensor(0.0))
 
 
-def test_approx_equal():
+def test_approx_equal() -> None:
     rng = np.random.RandomState(0)
     p = Rotation.random(10, random_state=rng)
     q = Rotation.random(10, random_state=rng)
@@ -733,7 +734,7 @@ def test_approx_equal():
     assert (p.approx_equal(q, atol) == (r_mag < atol)).all()
 
 
-def test_approx_equal_single_rotation():
+def test_approx_equal_single_rotation() -> None:
     # also tests passing single argument to approx_equal
     p = Rotation.from_rotvec([0, 0, 1e-9])  # less than atol of 1e-8
     q = Rotation.from_quat(torch.eye(4))
@@ -745,7 +746,7 @@ def test_approx_equal_single_rotation():
     assert not p.approx_equal(q[3], atol=1e-8, degrees=True)
 
 
-def test_apply_single_spatialdim():
+def test_apply_single_spatialdim() -> None:
     vec = SpatialDimension(1.0, 2.0, 3.0)
     mat = torch.tensor([[0, -1, 0], [1, 0, 0], [0, 0, 1]]).float()
     r_1d = Rotation.from_matrix(mat)
@@ -764,7 +765,7 @@ def test_apply_single_spatialdim():
     torch.testing.assert_close(getattr(v_2d, AXIS_ORDER[2]), torch.tensor([3.0]))
 
 
-def test_apply_single_rotation_single_point():
+def test_apply_single_rotation_single_point() -> None:
     mat = torch.tensor([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
     r_1d = Rotation.from_matrix(mat)
     r_2d = Rotation.from_matrix(mat.unsqueeze(0))
@@ -788,7 +789,7 @@ def test_apply_single_rotation_single_point():
     torch.testing.assert_close(r_2d(v_2d, inverse=True), v2d_inverse)
 
 
-def test_apply_single_rotation_multiple_points():
+def test_apply_single_rotation_multiple_points() -> None:
     mat = torch.tensor([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
     r1 = Rotation.from_matrix(mat)
     r2 = Rotation.from_matrix(mat.unsqueeze(0))
@@ -805,7 +806,7 @@ def test_apply_single_rotation_multiple_points():
     torch.testing.assert_close(r2(v, inverse=True), v_inverse)
 
 
-def test_apply_multiple_rotations_single_point():
+def test_apply_multiple_rotations_single_point() -> None:
     mat = torch.empty((2, 3, 3))
     mat[0] = torch.tensor([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
     mat[1] = torch.tensor([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
@@ -825,7 +826,7 @@ def test_apply_multiple_rotations_single_point():
     torch.testing.assert_close(r(v2, inverse=True), v_inverse)
 
 
-def test_apply_multiple_rotations_multiple_points():
+def test_apply_multiple_rotations_multiple_points() -> None:
     mat = torch.empty((2, 3, 3))
     mat[0] = torch.tensor([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
     mat[1] = torch.tensor([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
@@ -839,7 +840,7 @@ def test_apply_multiple_rotations_multiple_points():
     torch.testing.assert_close(r(v, inverse=True), v_inverse)
 
 
-def test_getitem():
+def test_getitem() -> None:
     mat = torch.empty((2, 3, 3))
     mat[0] = torch.tensor([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
     mat[1] = torch.tensor([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
@@ -850,18 +851,18 @@ def test_getitem():
     torch.testing.assert_close(r[:-1].as_matrix(), mat[0].unsqueeze(0))
 
 
-def test_getitem_single():
+def test_getitem_single() -> None:
     with pytest.raises(TypeError, match='not subscriptable'):
         Rotation.identity()[0]
 
 
-def test_setitem_single():
+def test_setitem_single() -> None:
     r = Rotation.identity()
     with pytest.raises(TypeError, match='not subscriptable'):
         r[0] = Rotation.identity()
 
 
-def test_setitem_slice():
+def test_setitem_slice() -> None:
     rng = np.random.RandomState(seed=0)
     r1 = Rotation.random(10, random_state=rng)
     r2 = Rotation.random(5, random_state=rng)
@@ -869,7 +870,7 @@ def test_setitem_slice():
     assert (r1[1:6].as_quat() == r2.as_quat()).all()
 
 
-def test_setitem_integer():
+def test_setitem_integer() -> None:
     rng = np.random.RandomState(seed=0)
     r1 = Rotation.random(10, random_state=rng)
     r2 = Rotation.random(random_state=rng)
@@ -877,13 +878,13 @@ def test_setitem_integer():
     assert (r1[1].as_quat() == r2.as_quat()).all()
 
 
-def test_setitem_wrong_type():
+def test_setitem_wrong_type() -> None:
     r = Rotation.random(10, random_state=0)
     with pytest.raises(TypeError, match='Rotation object'):
         r[0] = 1
 
 
-def test_n_rotations():
+def test_n_rotations() -> None:
     mat = torch.empty((2, 3, 3))
     mat[0] = torch.tensor([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
     mat[1] = torch.tensor([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
@@ -893,7 +894,7 @@ def test_n_rotations():
     assert len(r[:-1]) == 1
 
 
-def test_random_rotation_shape():
+def test_random_rotation_shape() -> None:
     rnd = np.random.RandomState(0)
     assert Rotation.random(random_state=rnd).as_quat().shape == (4,)
     assert Rotation.random(None, random_state=rnd).as_quat().shape == (4,)
@@ -902,7 +903,7 @@ def test_random_rotation_shape():
     assert Rotation.random((2, 3), random_state=rnd).as_quat().shape == (2, 3, 4)
 
 
-def test_align_vectors_no_rotation():
+def test_align_vectors_no_rotation() -> None:
     x = torch.tensor([[1, 2, 3], [4, 5, 6]]).float()
     y = x.clone()
 
@@ -911,7 +912,7 @@ def test_align_vectors_no_rotation():
     assert math.isclose(rssd, 0.0, abs_tol=1e-6, rel_tol=1e-4)
 
 
-def test_align_vectors_no_noise():
+def test_align_vectors_no_noise() -> None:
     rnd = np.random.RandomState(0)
     c = Rotation.random(random_state=rnd)
     b = torch.tensor(rnd.normal(size=(5, 3)))
@@ -922,7 +923,7 @@ def test_align_vectors_no_noise():
     assert math.isclose(rssd, 0.0, abs_tol=1e-6, rel_tol=1e-4)
 
 
-def test_align_vectors_improper_rotation():
+def test_align_vectors_improper_rotation() -> None:
     """Test for scipy issue #10444"""
     x = torch.tensor([[0.89299824, -0.44372674, 0.0752378], [0.60221789, -0.47564102, -0.6411702]]).double()
     y = torch.tensor([[0.02386536, -0.82176463, 0.5693271], [-0.27654929, -0.95191427, -0.1318321]]).double()
@@ -932,7 +933,7 @@ def test_align_vectors_improper_rotation():
     torch.testing.assert_close(rssd, torch.tensor(0.0, dtype=torch.float64), atol=1e-7, rtol=0)
 
 
-def test_align_vectors_rssd_sensitivity():
+def test_align_vectors_rssd_sensitivity() -> None:
     rssd_expected = 0.141421356237308
     sens_expected = torch.tensor([[0.2, 0.0, 0.0], [0.0, 1.5, 1.0], [0.0, 1.0, 1.0]])
     a = [[0, 1, 0], [0, 1, 1], [0, 1, 1]]
@@ -942,7 +943,7 @@ def test_align_vectors_rssd_sensitivity():
     assert torch.allclose(sens, sens_expected, atol=1e-6, rtol=1e-4)
 
 
-def test_align_vectors_scaled_weights():
+def test_align_vectors_scaled_weights() -> None:
     n = 10
     a = Rotation.random(n, random_state=0)([1, 0, 0])
     b = Rotation.random(n, random_state=1)([1, 0, 0])
@@ -956,7 +957,7 @@ def test_align_vectors_scaled_weights():
     torch.testing.assert_close(cov1, cov2)
 
 
-def test_align_vectors_noise():
+def test_align_vectors_noise() -> None:
     rnd = np.random.RandomState(0)
     n_vectors = 100
     rot = Rotation.random(random_state=rnd)
@@ -984,7 +985,7 @@ def test_align_vectors_noise():
     torch.testing.assert_close(torch.sum((noisy_result - est(vectors)) ** 2) ** 0.5, rssd)
 
 
-def test_align_vectors_invalid_input():
+def test_align_vectors_invalid_input() -> None:
     with pytest.raises(ValueError, match='Expected inputs to have same shapes'):
         Rotation.align_vectors([1, 2, 3, 4], [1, 2, 3])
 
@@ -1015,7 +1016,7 @@ def test_align_vectors_invalid_input():
         Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], return_sensitivity=True)
 
 
-def test_align_vectors_align_constrain():
+def test_align_vectors_align_constrain() -> None:
     """Align the primary +X B axis with the primary +Y A axis, and rotate about
     it such that the +Y B axis (residual of the [1, 1, 0] secondary b vector)
     is aligned with the +Z A axis (residual of the [0, 1, 1] secondary a
@@ -1049,7 +1050,7 @@ def test_align_vectors_align_constrain():
     assert math.isclose(rssd, rssd_expected, abs_tol=atol)
 
 
-def test_align_vectors_near_inf():
+def test_align_vectors_near_inf() -> None:
     """align_vectors should return near the same result for high weights as for
     infinite weights. rssd will be different with floating point error on the
     exactly aligned vector being multiplied by a large non-infinite weight
@@ -1078,7 +1079,7 @@ def test_align_vectors_near_inf():
         torch.testing.assert_close(r.as_matrix(), r2.as_matrix(), atol=1e-4, rtol=0.0)
 
 
-def test_align_vectors_parallel():
+def test_align_vectors_parallel() -> None:
     atol = 1e-6
 
     a = [[1, 0, 0], [0, 1, 0]]
@@ -1115,7 +1116,7 @@ def test_align_vectors_parallel():
         assert math.isclose(rssd, 0, abs_tol=atol)
 
 
-def test_multiplication_stability():
+def test_multiplication_stability() -> None:
     qs = Rotation.random(50, random_state=0)
     rs = Rotation.random(1000, random_state=1)
     for q in qs:
@@ -1156,7 +1157,7 @@ def test_pow_fraction(n):
     torch.testing.assert_close(q.as_quat(), r.as_quat(), atol=atol, rtol=0)
 
 
-def pow_small_angle():
+def pow_small_angle() -> None:
     """Small angle test case for pow"""
     atol = 1e-7
     p = Rotation.from_rotvec([1e-6, 0, 0])
@@ -1166,14 +1167,14 @@ def pow_small_angle():
     torch.testing.assert_close(q.as_quat(), r.as_quat(), atol=atol, rtol=0)
 
 
-def test_pow_modulus():
+def test_pow_modulus() -> None:
     """Modulus is not implemented"""
     p = Rotation.random(random_state=0)
     with pytest.raises(NotImplementedError, match='modulus not supported'):
         pow(p, 1, 1)
 
 
-def test_rotation_within_numpy_object_array():
+def test_rotation_within_numpy_object_array() -> None:
     """Rotation objects can be saved as objects in an numpy array"""
 
     single = Rotation.random(random_state=0)
@@ -1207,7 +1208,7 @@ def test_rotation_within_numpy_object_array():
 
 # Needed because of bug in torch 2.4.0. Should be fixed with 2.4.1
 @pytest.mark.filterwarnings('ignore::FutureWarning')
-def test_pickling():
+def test_pickling() -> None:
     """Test pickling a Rotation"""
     r = Rotation.from_quat([0, 0, np.sin(torch.pi / 4), np.cos(torch.pi / 4)])
     pkl = pickle.dumps(r)
@@ -1215,14 +1216,14 @@ def test_pickling():
     torch.testing.assert_close(r.as_matrix(), unpickled.as_matrix())
 
 
-def test_deepcopy():
+def test_deepcopy() -> None:
     """Test copying a rotation"""
     r = Rotation.from_quat([0, 0, np.sin(torch.pi / 4), np.cos(torch.pi / 4)])
     r1 = copy.deepcopy(r)
     torch.testing.assert_close(r.as_matrix(), r1.as_matrix())
 
 
-def test_as_euler_contiguous():
+def test_as_euler_contiguous() -> None:
     """Test if euler angles return contiguous tensor"""
     r = Rotation.from_quat([0, 0, 0, 1])
     e1 = r.as_euler('xyz')  # extrinsic euler rotation
@@ -1231,7 +1232,7 @@ def test_as_euler_contiguous():
     assert e2.is_contiguous()
 
 
-def test_concatenate():
+def test_concatenate() -> None:
     """Test Rotation"""
     rotation = Rotation.random(10, random_state=0)
     sizes = [1, 2, 3, 1, 3]
@@ -1241,13 +1242,13 @@ def test_concatenate():
     assert (rotation.as_quat() == result.as_quat()).all()
 
 
-def test_concatenate_wrong_type():
+def test_concatenate_wrong_type() -> None:
     """Test concatenation with non-Rotation objects"""
     with pytest.raises(TypeError, match='Rotation objects only'):
         Rotation.concatenate([Rotation.identity(), 1, None])  # type: ignore[list-item]
 
 
-def test_len_and_bool():
+def test_len_and_bool() -> None:
     """Test __len__ and __bool__"""
     # Regression test for scipy gh-16663
     rotation_multi_empty = Rotation(torch.empty((0, 4)))
@@ -1324,21 +1325,21 @@ def test_weighted_mean_dims(shape, keepdim, dim, expected_shape):
     assert mean1.approx_equal(mean2).all(), 'Weighting a Rotation 2x is not the same as including it twice'
 
 
-def test_mean_invalid_weights():
+def test_mean_invalid_weights() -> None:
     """Test mean with invalid weights"""
     r = Rotation.from_quat(torch.eye(4))
     with pytest.raises(ValueError, match='non-negative'):
         r.mean(weights=-torch.ones(4))
 
 
-def test_repr():
+def test_repr() -> None:
     """Test string representation"""
     assert repr(Rotation.identity(None)) == 'Rotation([[0.0, 0.0, 0.0, 1.0]])'
     assert repr(Rotation.identity(1)) == '(1,)-batched Rotation()'
     assert repr(Rotation.identity(1).reflect()) == '(1,)-batched improper Rotation()'
 
 
-def test_quaternion_properties_single():
+def test_quaternion_properties_single() -> None:
     """Test quaternion_x, quaternion_y, quaternion_z, quaternion_w"""
     quat = torch.tensor([1.0, 2.0, 3.0, 4.0])
     quat /= quat.norm()
@@ -1357,7 +1358,7 @@ def test_quaternion_properties_single():
     torch.testing.assert_close(r.quaternion_w, torch.tensor(4.0))
 
 
-def test_quaternion_properties_batch():
+def test_quaternion_properties_batch() -> None:
     """Test quaternion_x, quaternion_y, quaternion_z, quaternion_w"""
     quat = torch.arange(10 * 2 * 4).reshape(10, 2, 4).float()
     quat /= quat.norm(dim=-1, keepdim=True)
@@ -1376,12 +1377,12 @@ def test_quaternion_properties_batch():
     torch.testing.assert_close(r.quaternion_w, 4 * torch.ones(10, 2))
 
 
-def test_axis_order_zyx():
+def test_axis_order_zyx() -> None:
     """Check that the axis order is set to zyx"""
     assert AXIS_ORDER == 'zyx'
 
 
-def test_from_to_directions():
+def test_from_to_directions() -> None:
     """Test that from_directions and as_directions are inverse operations"""
     one = torch.ones(1, 2, 3, 4)
 
@@ -1396,7 +1397,7 @@ def test_from_to_directions():
     torch.testing.assert_close(b3.zyx, r.as_directions()[2].zyx, atol=1e-4, rtol=0)
 
 
-def test_as_directions():
+def test_as_directions() -> None:
     """Test conversion to basis vectors"""
     r = Rotation.random(10, random_state=0)
     matrix = r.as_matrix()
@@ -1408,7 +1409,7 @@ def test_as_directions():
             torch.testing.assert_close(actual, expected, atol=1e-4, rtol=0)
 
 
-def test_random_improper():
+def test_random_improper() -> None:
     """Test improper rotations"""
     r = Rotation.random(10, random_state=0, improper=True)
     matrix = r.as_matrix()
@@ -1416,7 +1417,7 @@ def test_random_improper():
     torch.testing.assert_close(det, -torch.ones(10))
 
 
-def test_reflect():
+def test_reflect() -> None:
     """Test improper rotations"""
     r = Rotation.random(None, random_state=0)
     r2 = r.reflect()
@@ -1426,7 +1427,7 @@ def test_reflect():
     torch.testing.assert_close(r.as_matrix(), r3.as_matrix())
 
 
-def test_invert_axes():
+def test_invert_axes() -> None:
     """Test inversion of axes"""
     r = Rotation.random(None, random_state=0)
     r2 = r.invert_axes()
@@ -1437,7 +1438,7 @@ def test_invert_axes():
     torch.testing.assert_close(r.as_matrix(), -r2.as_matrix())
 
 
-def test_improper_quat_inversion():
+def test_improper_quat_inversion() -> None:
     """Test improper quaternions with inversion"""
     r = Rotation.random(10, random_state=0, improper='random')
     q, inv = r.as_quat(improper='inversion')
@@ -1446,7 +1447,7 @@ def test_improper_quat_inversion():
     assert r2.approx_equal(r).all()
 
 
-def test_improper_quat_reflection():
+def test_improper_quat_reflection() -> None:
     """Test improper quaternions with reflection"""
     r = Rotation.random(10, random_state=0, improper='random')
     q, ref = r.as_quat(improper='reflection')
@@ -1455,14 +1456,14 @@ def test_improper_quat_reflection():
     assert r2.approx_equal(r).all()
 
 
-def test_improper_quat_warn():
+def test_improper_quat_warn() -> None:
     """Test improper quaternions with warning"""
     r = Rotation.random(10, random_state=0, improper=True)
     with pytest.warns(UserWarning, match='Rotation contains improper'):
         _ = r.as_quat(improper='warn')
 
 
-def test_improper_euler_reflection():
+def test_improper_euler_reflection() -> None:
     """Test improper euler angles with reflection"""
     r = Rotation.random(10, random_state=0, improper=True)
     angle, ref = r.as_euler('xyz', improper='reflection')
@@ -1470,7 +1471,7 @@ def test_improper_euler_reflection():
     assert r2.approx_equal(r, atol=1e-5).all()  # loss of precision in reflection conversion
 
 
-def test_improper_euler_inversion():
+def test_improper_euler_inversion() -> None:
     """Test improper euler angles with inversion"""
     r = Rotation.random(10, random_state=0, improper=True)
     angle, inv = r.as_euler('xyz', improper='inversion')
@@ -1478,14 +1479,14 @@ def test_improper_euler_inversion():
     assert r2.approx_equal(r).all()
 
 
-def test_improper_euler_warn():
+def test_improper_euler_warn() -> None:
     """Test improper euler angles with warning"""
     r = Rotation.random(10, random_state=0, improper=True)
     with pytest.warns(UserWarning, match='Rotation contains improper'):
         _ = r.as_euler('xyz', improper='warn')
 
 
-def test_improper_as_rotvec_reflection():
+def test_improper_as_rotvec_reflection() -> None:
     """Test improper as_rotvec with reflection"""
     r = Rotation.random(10, random_state=0, improper=True)
     expected = r.reflect().as_rotvec()
@@ -1494,7 +1495,7 @@ def test_improper_as_rotvec_reflection():
     torch.testing.assert_close(actual, expected, atol=1e-5, rtol=0)
 
 
-def test_improper_from_rotvec_reflection():
+def test_improper_from_rotvec_reflection() -> None:
     """Test improper from_rotvec with reflection"""
     # Test the shortcut in from_rotvec
     r = Rotation.random(10, random_state=0, improper=False)
@@ -1504,7 +1505,7 @@ def test_improper_from_rotvec_reflection():
     assert actual.approx_equal(expected).all()
 
 
-def test_improper_rotvec_inversion():
+def test_improper_rotvec_inversion() -> None:
     """Test improper rotvec with inversion"""
     r = Rotation.random(10, random_state=0, improper=True)
     rotvec, inv = r.as_rotvec(improper='inversion')
@@ -1512,7 +1513,7 @@ def test_improper_rotvec_inversion():
     assert r2.approx_equal(r).all()
 
 
-def test_improper_rotvec_reflection():
+def test_improper_rotvec_reflection() -> None:
     """Test improper rotvec with inversion"""
     r = Rotation.random(1, random_state=0, improper=False)
     rotvec = r.as_rotvec()
@@ -1521,14 +1522,14 @@ def test_improper_rotvec_reflection():
     assert r2.approx_equal(r3).all()
 
 
-def test_improper_rotvec_warn():
+def test_improper_rotvec_warn() -> None:
     """Test improper rotvec with warning"""
     r = Rotation.random(10, random_state=0, improper=True)
     with pytest.warns(UserWarning, match='Rotation contains improper'):
         _ = r.as_rotvec(improper='warn')
 
 
-def test_apply_scipy():
+def test_apply_scipy() -> None:
     """Test apply to vector (scipy style apply)"""
     r = Rotation.random(10, random_state=0)
     v = RandomGenerator(0).float32_tensor(size=(10, 3))
@@ -1538,14 +1539,14 @@ def test_apply_scipy():
     torch.testing.assert_close(expected, actual)
 
 
-def test_apply_torch():
+def test_apply_torch() -> None:
     """Test apply with callable (torch style apply)"""
     r = Rotation.random(10, random_state=0)
     r.apply(lambda x: x.double())
     assert r._quaternions.dtype == torch.float64
 
 
-def test_random_vmf_uniform():
+def test_random_vmf_uniform() -> None:
     """Test random rotations with a uniform distribution"""
     mean = torch.tensor([0, 0, 1.0])
     # vmf does not support a seed, as torch.distribution do not support it
@@ -1557,7 +1558,7 @@ def test_random_vmf_uniform():
     assert r.mean().magnitude() < 0.1
 
 
-def test_random_vmf_peaked():
+def test_random_vmf_peaked() -> None:
     """Test random rotations with a peaked distribution"""
     mean = torch.tensor([0.0, 1.0, 0.0])
     # vmf does not support a seed, as torch.distribution do not support it
@@ -1569,7 +1570,7 @@ def test_random_vmf_peaked():
     torch.testing.assert_close(torch.linalg.cross(r.mean().as_rotvec(), mean), torch.zeros(3), atol=3e-3, rtol=0)
 
 
-def test_apply_improper():
+def test_apply_improper() -> None:
     """Test apply with improper rotations"""
     r = Rotation.random(10, random_state=0, improper=False)
     v = RandomGenerator(0).float32_tensor(size=(10, 3))
@@ -1578,10 +1579,53 @@ def test_apply_improper():
     torch.testing.assert_close(expected, actual)
 
 
-def test_reshape():
+def test_reshape() -> None:
+    """Test reshape"""
     r = Rotation.random((1, 2, 3), random_state=0, improper=False)
     reshaped = r.reshape(3, 2, 1, 1)
     assert reshaped.shape == (3, 2, 1, 1)
     assert r.shape == (1, 2, 3)
     rereshaped = reshaped.reshape(1, 2, 3)
     torch.testing.assert_close(r._quaternions, rereshaped._quaternions)
+
+
+def test_permute() -> None:
+    """Test permute"""
+    r = Rotation.random((1, 2, 3), random_state=0, improper=True)
+    permuted = r.permute((2, 0, 1))
+    assert permuted.shape == (3, 1, 2)
+    assert r.shape == (1, 2, 3)
+    torch.testing.assert_close(permuted.as_matrix(), r.as_matrix().permute(2, 0, 1, 3, 4))
+    reverted = permuted.permute((1, 2, 0))
+    torch.testing.assert_close(r.as_matrix(), reverted.as_matrix())
+
+
+def test_expand() -> None:
+    """Test expand"""
+    r = Rotation.random((1, 1, 2), random_state=0, improper=True)
+    expanded = r.expand(10, 1, 2)
+    assert expanded.shape == (10, 1, 2)
+    assert r.shape == (1, 1, 2)
+    assert expanded[:1, :1, :].approx_equal(r).all()
+
+
+def test_einops_rearrange() -> None:
+    """Test rearrange"""
+
+    r = Rotation.random((1, 2, 3, 4), random_state=0, improper=True)
+    rearranged = einops.rearrange(r, 'a b c d -> b (c d) a')
+    assert rearranged.shape == (2, 3 * 4, 1)
+    assert rearranged._quaternions.shape == (2, 3 * 4, 1, 4)
+    assert rearranged._is_improper.shape == (2, 3 * 4, 1)
+    assert r.shape == (1, 2, 3, 4)
+    expected_matrix = einops.rearrange(r.as_matrix(), 'a b c d ... ->  b (c d) a ...')
+    torch.testing.assert_close(expected_matrix, rearranged.as_matrix())
+
+
+def test_einops_reduce() -> None:
+    """Test einops.reduce"""
+
+    r = Rotation.random((1, 2, 3, 4), random_state=0, improper=False)
+    # Only mean is implemented
+    mean = einops.reduce(r, 'a b c d -> a c d', 'mean')
+    assert r.mean(dim=1).approx_equal(mean, atol=1e-4).all()

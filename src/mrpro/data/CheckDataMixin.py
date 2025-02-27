@@ -2,19 +2,15 @@
 
 import weakref
 from collections.abc import Iterator, Mapping, Sequence
-from dataclasses import Field, dataclass, fields
+from dataclasses import dataclass, fields
 from functools import lru_cache, reduce
 from types import TracebackType, UnionType
-from typing import Annotated, Any, ClassVar, Literal, TypeAlias, Union, get_args, get_origin
+from typing import Annotated, ClassVar, Literal, TypeAlias, Union, get_args, get_origin
 
 import torch
 from typing_extensions import Protocol, Self, runtime_checkable
 
-
-class DataclassInstance(Protocol):
-    """An instance of a dataclass."""
-
-    __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
+from mrpro.utils.typing import DataclassInstance
 
 
 @dataclass(frozen=True, eq=True)
