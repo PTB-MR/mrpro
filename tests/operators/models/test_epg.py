@@ -1,7 +1,7 @@
 """Tests for EPG signal models."""
 
 import torch
-from mrpro.operators.models.EPG import CardiacFingerprinting
+from mrpro.operators.models import CardiacFingerprinting
 from tests.operators.models.conftest import create_parameter_tensor_tuples
 
 

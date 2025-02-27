@@ -6,10 +6,13 @@ from mrpro.operators.models.MOLLI import MOLLI
 from mrpro.operators.models.WASABI import WASABI
 from mrpro.operators.models.WASABITI import WASABITI
 from mrpro.operators.models.MonoExponentialDecay import MonoExponentialDecay
-from mrpro.operators.models.EPG import CardiacFingerprinting
+from mrpro.operators.models.cMRF import CardiacFingerprinting
 from mrpro.operators.models.TransientSteadyStateWithPreparation import TransientSteadyStateWithPreparation
+from mrpro.operators.models import EPG
+
 __all__ = [
     "CardiacFingerprinting",
+    "EPG",
     "InversionRecovery",
     "MOLLI",
     "MonoExponentialDecay",
