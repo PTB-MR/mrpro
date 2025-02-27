@@ -185,7 +185,7 @@ def test_checked_dataclass_fixed_fail() -> None:
     n_k0 = 4
     n_other = (1, 2, 3)
     not_one = 17
-    with pytest.raises(ShapeError, match=f' the dimension size {not_one} does not equal 1'):
+    with pytest.raises(ShapeError, match=f'the dimension size {not_one} does not equal 1'):
         CheckedDataClass(
             float_tensor=torch.ones(*n_other, n_coil, n_k2, n_k1, n_k0),
             int_tensor=torch.zeros(*n_other, 1, n_k2, 1, not_one, dtype=torch.int),
