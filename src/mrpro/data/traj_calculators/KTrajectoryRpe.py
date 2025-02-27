@@ -1,10 +1,10 @@
 """Radial phase encoding (RPE) trajectory class."""
 
 import torch
-from einops import repeat
 
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
+from mrpro.utils.reshape import unsqueeze_tensors_left
 
 
 class KTrajectoryRpe(KTrajectoryCalculator):
@@ -112,14 +112,13 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         -------
             radial phase encoding trajectory for given header information
         """
-        angles = repeat(k2_idx * self.angle, '... k2 k1 -> ... k2 k1 k0', k0=1)
+        angles = k2_idx * self.angle
 
         radial = (k1_idx - k1_center).to(torch.float32)
         radial = self._apply_shifts_between_rpe_lines(radial, k2_idx)
-        radial = repeat(radial, '... k2 k1 -> ... k2 k1 k0', k0=1)
 
         kz = radial * torch.sin(angles)
         ky = radial * torch.cos(angles)
         kx = self._readout(n_k0, k0_center, reversed_readout_mask=reversed_readout_mask)
-
+        kz, ky, kx = unsqueeze_tensors_left(kz, ky, kx, ndim=4)
         return KTrajectory(kz, ky, kx)

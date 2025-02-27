@@ -1,31 +1,74 @@
 """MR image data header (IHeader) dataclass."""
 
 import dataclasses
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
+from typing import cast
 
 import numpy as np
 import torch
-from einops import repeat
-from pydicom import multival, valuerep
 from pydicom.dataset import Dataset
 from pydicom.tag import Tag, TagType
-from typing_extensions import Self
+from typing_extensions import Self, TypeVar
 
-from mrpro.data.AcqInfo import PhysiologyTimestamps
+from mrpro.data.AcqInfo import AcqIdx, PhysiologyTimestamps
 from mrpro.data.KHeader import KHeader
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.utils.remove_repeat import remove_repeat
+from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 from mrpro.utils.unit_conversion import deg_to_rad, mm_to_m, ms_to_s
 
-MISC_TAGS = {'TimeAfterStart': 0x00191016}
-
 
 def _int_factory() -> torch.Tensor:
-    return torch.zeros(1, 1, dtype=torch.int64)
+    return torch.zeros(1, 1, 1, 1, 1, dtype=torch.int64)
+
+
+T = TypeVar('T')
+
+
+def get_items(datasets: Sequence[Dataset], name: TagType, target_type: Callable[..., T]) -> list[T]:
+    """Get a flattened list of converted items from each dataset for a given name or Tag.
+
+    Parameters
+    ----------
+    name
+        The name or tag to filter items.
+    datasets
+        The datasets to extract the items from.
+    target_type
+        The target type to convert the items into.
+
+    Returns
+    -------
+        A list of converted items.
+    """
+    return [target_type(item.value) for ds in datasets for item in ds.iterall() if item.tag == Tag(name)]
+
+
+def try_reduce_repeat(value: T) -> T:
+    """Replace dimensions by singleton if possible, raise exception if spatial or coil dimension remains."""
+    # TODO: Should be replaced by the CheckDataMixin and ReduceRepeatMixin
+    match value:
+        case torch.Tensor():
+            tensor = reduce_repeat(value, 1e-6)
+            if tensor.shape[-4:].numel() == 1:
+                return cast(T, tensor)
+        case Rotation():
+            tensor = value.as_matrix()
+            tensor = reduce_repeat(tensor, 1e-4, range(tensor.ndim - 1))
+            if tensor.shape[-5:-2].numel() == 1:
+                return cast(T, Rotation.from_matrix(tensor))
+        case SpatialDimension():
+            spatialdimension = value.apply(lambda x: reduce_repeat(x, 1e-6))
+            if spatialdimension.shape[-4:].numel() == 1:
+                return cast(T, spatialdimension)
+        case list():
+            return cast(T, list(value))
+        case _:
+            raise NotImplementedError('Unsupported Type')
+    raise ValueError('Spatial or coil dimension remains')
 
 
 @dataclass(slots=True)
@@ -74,6 +117,34 @@ class ImageIdx(MoveDataMixin):
     user7: torch.Tensor = field(default_factory=_int_factory)
     """User index 7."""
 
+    @classmethod
+    def from_acqidx(cls, idx: AcqIdx) -> Self:
+        """Create ImageIdx object from AcqIdx object.
+
+        This copies the indices except k1 and k2, which are not used in the image header.
+
+        Parameters
+        ----------
+        idx
+            Acquisition indices.
+        """
+        return cls(
+            average=try_reduce_repeat(idx.average),
+            slice=try_reduce_repeat(idx.slice),
+            contrast=try_reduce_repeat(idx.contrast),
+            phase=try_reduce_repeat(idx.phase),
+            repetition=try_reduce_repeat(idx.repetition),
+            set=try_reduce_repeat(idx.set),
+            user0=try_reduce_repeat(idx.user0),
+            user1=try_reduce_repeat(idx.user1),
+            user2=try_reduce_repeat(idx.user2),
+            user3=try_reduce_repeat(idx.user3),
+            user4=try_reduce_repeat(idx.user4),
+            user5=try_reduce_repeat(idx.user5),
+            user6=try_reduce_repeat(idx.user6),
+            user7=try_reduce_repeat(idx.user7),
+        )
+
 
 @dataclass(slots=True)
 class IHeader(MoveDataMixin):
@@ -82,16 +153,16 @@ class IHeader(MoveDataMixin):
     resolution: SpatialDimension[float]
     """Pixel spacing [m/px]."""
 
-    te: torch.Tensor | None = None
+    te: list[float] | torch.Tensor = field(default_factory=list)
     """Echo time [s]."""
 
-    ti: torch.Tensor | None = None
+    ti: list[float] | torch.Tensor = field(default_factory=list)
     """Inversion time [s]."""
 
-    fa: torch.Tensor | None = None
+    fa: list[float] | torch.Tensor = field(default_factory=list)
     """Flip angle [rad]."""
 
-    tr: torch.Tensor | None = None
+    tr: list[float] | torch.Tensor = field(default_factory=list)
     """Repetition time [s]."""
 
     _misc: dict = dataclasses.field(default_factory=dict)
@@ -125,81 +196,59 @@ class IHeader(MoveDataMixin):
     idx: ImageIdx = field(default_factory=ImageIdx)
 
     @classmethod
-    def from_kheader(cls, kheader: KHeader, resolution: SpatialDimension) -> Self:
+    def from_kheader(cls, header: KHeader) -> Self:
         """Create IHeader object from KHeader object.
 
         Parameters
         ----------
-        kheader
+        header
             MR raw data header (KHeader) containing required meta data.
         resolution
             Pixel Spacing
         """
-        return cls(resolution=resolution, te=kheader.te, ti=kheader.ti, fa=kheader.fa, tr=kheader.tr)
+        resolution = header.encoding_fov / header.encoding_matrix
+        return cls(
+            resolution=resolution,
+            te=try_reduce_repeat(header.te),
+            ti=try_reduce_repeat(header.ti),
+            fa=try_reduce_repeat(header.fa),
+            tr=try_reduce_repeat(header.tr),
+            orientation=try_reduce_repeat(header.acq_info.orientation),
+            position=try_reduce_repeat(header.acq_info.position),
+            patient_table_position=try_reduce_repeat(header.acq_info.patient_table_position),
+            acquisition_time_stamp=try_reduce_repeat(header.acq_info.acquisition_time_stamp),
+            physiology_time_stamps=PhysiologyTimestamps(
+                try_reduce_repeat(header.acq_info.physiology_time_stamps.timestamp1),
+                try_reduce_repeat(header.acq_info.physiology_time_stamps.timestamp2),
+                try_reduce_repeat(header.acq_info.physiology_time_stamps.timestamp3),
+            ),
+            idx=ImageIdx.from_acqidx(header.acq_info.idx),
+        )
 
     @classmethod
-    def from_dicoms(cls, dicom_datasets: Sequence[Dataset]) -> Self:
+    def from_dicom(cls, *dataset: Dataset) -> Self:
         """Read DICOM files and return IHeader object.
 
         Parameters
         ----------
-        dicom_datasets
-            list of dataset objects containing the DICOM file.
+        dataset
+            one or multiple dataset objects containing the DICOM data.
         """
-
-        def convert_pydicom_type(item) -> float | int | list[float | int | list | None] | None:  # noqa: ANN001
-            """Convert item to type given by pydicom."""
-            if isinstance(item, valuerep.DSfloat | valuerep.DSdecimal | valuerep.ISfloat):
-                return float(item)
-            elif isinstance(item, valuerep.IS):
-                return int(item)
-            elif isinstance(item, multival.MultiValue):
-                return [convert_pydicom_type(it) for it in item]
-            else:
-                return None
-
-        def get_items(name: TagType) -> list:
-            """Get a flattened list of converted items from each dataset for a given name or Tag."""
-            return [
-                item
-                for ds in dicom_datasets
-                for item in ([convert_pydicom_type(it.value) for it in ds.iterall() if it.tag == Tag(name)] or [None])
-            ]
-
-        def make_unique_tensor(values: Sequence[float]) -> torch.Tensor | None:
-            """If all the values are the same only return one."""
-            if any(val is None for val in values):
-                return None
-            elif len(np.unique(values)) == 1:
-                return torch.as_tensor([values[0]])
-            else:
-                return torch.as_tensor(values)
-
-        def as_5d_tensor(values: Sequence[float]) -> torch.Tensor:
-            """Convert a list of values to a 5d tensor."""
-            tensor = torch.as_tensor(values)
-            tensor = repeat(tensor, 'values-> values 1 1 1 1')
-            tensor = remove_repeat(tensor, 1e-12)
-            return tensor
-
         # Ensure datasets are consistently single-frame or multi-frame 2D/3D
-        number_of_frames = get_items('NumberOfFrames')
+        number_of_frames = get_items(dataset, 'NumberOfFrames', int)
         if len(set(number_of_frames)) > 1:
             raise ValueError('Only DICOM files with the same number of frames can be stacked.')
 
-        mr_acquisition_type = get_items('MRAcquisitionType')
+        mr_acquisition_type = get_items(dataset, 'MRAcquisitionType', str)
         if len(set(mr_acquisition_type)) > 1:
             raise ValueError('Only DICOM files with the same MRAcquisitionType can be stacked.')
 
-        datasets_are_3d = number_of_frames[0] is not None and number_of_frames[0] > 1 and mr_acquisition_type[0] == '3D'
-        n_volumes = number_of_frames[0] if datasets_are_3d else 1
-
-        pixel_spacing = get_items('PixelSpacing')
-        if pixel_spacing[0] is None or len(np.unique(torch.tensor(pixel_spacing), axis=0)) > 1:
+        pixel_spacing = get_items(dataset, 'PixelSpacing', lambda x: [float(val) for val in x])
+        if not pixel_spacing or len(np.unique(torch.tensor(pixel_spacing), axis=0)) > 1:
             raise ValueError('Pixel spacing needs to be defined and the same for all.')
 
-        slice_thickness = get_items('SliceThickness')
-        if len(set(slice_thickness)) > 1 or slice_thickness[0] is None:
+        slice_thickness = get_items(dataset, 'SliceThickness', float)
+        if len(set(slice_thickness)) != 1:
             raise ValueError('Slice thickness needs to be defined and the same for all.')
 
         resolution = SpatialDimension(
@@ -208,25 +257,26 @@ class IHeader(MoveDataMixin):
             x=pixel_spacing[0][0],
         ).apply_(mm_to_m)
 
-        fa_deg = get_items('FlipAngle')[::n_volumes]
-        ti_ms = get_items('InversionTime')[::n_volumes]
-        tr_ms = get_items('RepetitionTime')[::n_volumes]
+        datasets_are_3d = number_of_frames[0] is not None and number_of_frames[0] > 1 and mr_acquisition_type[0] == '3D'
+        n_volumes = number_of_frames[0] if datasets_are_3d else 1
 
-        # get echo time(s). Some scanners use 'EchoTime', some use 'EffectiveEchoTime'
-        te_ms = get_items('EchoTime')
-        if all(val is None for val in te_ms):
-            te_ms = get_items('EffectiveEchoTime')
-        te_ms = te_ms[::n_volumes]
+        # For 3D datasets we currently want to save only one value per volume of fa, ti, tr, and te
+        fa = deg_to_rad(get_items(dataset, 'FlipAngle', float)[::n_volumes])
+        ti = ms_to_s(get_items(dataset, 'InversionTime', float)[::n_volumes])
+        tr = ms_to_s(get_items(dataset, 'RepetitionTime', float)[::n_volumes])
 
-        misc = {name: make_unique_tensor(get_items(tag)) for name, tag in MISC_TAGS.items()}
+        te_ms = get_items(dataset, 'EchoTime', float)
+        if not te_ms:  # Some scanners use 'EchoTime', some use 'EffectiveEchoTime'
+            te_ms = get_items(dataset, 'EffectiveEchoTime', float)
+        te = ms_to_s(te_ms[::n_volumes])
 
+        # TODO: Orientation, Position, AcquisitionTime, PhysiologyTimeStamps, ImageIdx
         return cls(
             resolution=resolution,
-            fa=None if fa_deg is None else deg_to_rad(fa_deg),
-            ti=None if ti_ms is None else ms_to_s(ti_ms),
-            tr=None if tr_ms is None else ms_to_s(tr_ms),
-            te=None if te_ms is None else ms_to_s(te_ms),
-            _misc=misc,
+            fa=fa,
+            ti=ti,
+            tr=tr,
+            te=te,
         )
 
     def __repr__(self):

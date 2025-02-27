@@ -6,7 +6,6 @@ import torch
 from einops import repeat
 
 from mrpro.data.KTrajectory import KTrajectory
-from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
 from mrpro.data.SpatialDimension import SpatialDimension
 
 
@@ -25,7 +24,7 @@ class KTrajectoryCalculator(ABC):
         k2_center: int | torch.Tensor,
         encoding_matrix: SpatialDimension,
         reversed_readout_mask: torch.Tensor | None = None,
-    ) -> KTrajectory | KTrajectoryRawShape:
+    ) -> KTrajectory:
         """Calculate the trajectory for given KHeader.
 
         The shapes of kz, ky and kx of the calculated trajectory must be
@@ -97,9 +96,10 @@ class DummyTrajectory(KTrajectoryCalculator):
     Shape will fit to all data. Only used as dummy for testing.
     """
 
-    def __call__(self, **_) -> KTrajectory:
+    def __call__(self, n_k0: int, k1_idx: torch.Tensor, k2_idx: torch.Tensor, **_) -> KTrajectory:
         """Calculate dummy trajectory."""
-        kx = torch.zeros(1, 1, 1, 1)
-        ky = torch.zeros(1, 1, 1, 1)
-        kz = torch.zeros(1, 1, 1, 1)
+        shape = torch.broadcast_shapes(k1_idx.shape, k2_idx.shape)
+        kx = torch.arange(shape.numel()).reshape(shape)
+        ky = torch.zeros(*shape)
+        kz = torch.arange(n_k0).reshape(1, 1, 1, n_k0)
         return KTrajectory(kz, ky, kx)

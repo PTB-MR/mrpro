@@ -1,10 +1,10 @@
 """Cartesian trajectory class."""
 
 import torch
-from einops import repeat
 
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
+from mrpro.utils.reshape import unsqueeze_tensors_left
 
 
 class KTrajectoryCartesian(KTrajectoryCalculator):
@@ -52,7 +52,6 @@ class KTrajectoryCartesian(KTrajectoryCalculator):
         ky = (k1_idx - k1_center).to(torch.float32)
         kz = (k2_idx - k2_center).to(torch.float32)
 
-        # Bring to correct dimensions
-        ky = repeat(ky, '... k2 k1-> ... k2 k1 k0', k0=1)
-        kz = repeat(kz, '... k2 k1-> ... k2 k1 k0', k0=1)
+        kz, ky, kx = unsqueeze_tensors_left(kz, ky, kx, ndim=4)
+
         return KTrajectory(kz, ky, kx)
