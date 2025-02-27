@@ -332,28 +332,6 @@ class GradientDephasingBlock(EPGBlock):
         return torch.tensor(0.0)
 
 
-@torch.jit.script
-def fisp_block(
-    flip_angles: torch.Tensor,
-    rf_phases: torch.Tensor,
-    tes: torch.Tensor,
-    trs: torch.Tensor,
-    state: torch.Tensor,
-    m0: torch.Tensor,
-    t1: torch.Tensor,
-    t2: torch.Tensor,
-    relative_b1: torch.Tensor | None = None,
-) -> tuple[torch.Tensor, list[torch.Tensor]]:
-    signal = []
-    for flip_angle, rf_phase, te, tr in zip(flip_angles, rf_phases, tes, trs, strict=False):
-        state = rf(state, rf_matrix(flip_angle, rf_phase, relative_b1))
-        state = relax(state, relax_matrix(te, t1, t2))
-        signal.append(acquisition(state, m0))
-        state = gradient_dephasing(state)
-        state = relax(state, relax_matrix((tr - te), t1, t2))
-    return state, signal
-
-
 class FispBlock(EPGBlock):
     """FISP data acquisition block.
 
@@ -422,24 +400,31 @@ class FispBlock(EPGBlock):
         -------
             EPG configuration states after the block and the acquired signals
         """
-        # signal = []
-        # unsqueezed = unsqueeze_tensors_right(self.flip_angles, self.rf_phases, self.te, self.tr, ndim=parameters.ndim)
-        # for flip_angle, rf_phase, te, tr in zip(*unsqueezed, strict=True):
-        #     state = rf(state, rf_matrix(flip_angle, rf_phase, parameters.relative_b1))
-        #     state = relax(state, relax_matrix(te, parameters.t1, parameters.t2))
-        #     signal.append(acquisition(state, parameters.m0))
-        #     state = gradient_dephasing(state)
-        #     state = relax(state, relax_matrix((tr - te), parameters.t1, parameters.t2))
-        # return state, signal
-        attributes = unsqueeze_tensors_right(self.flip_angles, self.rf_phases, self.te, self.tr, ndim=parameters.ndim)
-        return fisp_block(*attributes, state, parameters.m0, parameters.t1, parameters.t2, parameters.relative_b1)
+        signal = []
+        unsqueezed = unsqueeze_tensors_right(self.flip_angles, self.rf_phases, self.te, self.tr, ndim=parameters.ndim)
+        for flip_angle, rf_phase, te, tr in zip(*unsqueezed, strict=True):
+            state = rf(state, rf_matrix(flip_angle, rf_phase, parameters.relative_b1))
+            state = relax(state, relax_matrix(te, parameters.t1, parameters.t2))
+            signal.append(acquisition(state, parameters.m0))
+            state = gradient_dephasing(state)
+            state = relax(state, relax_matrix((tr - te), parameters.t1, parameters.t2))
+        return state, signal
 
 
 class InversionBlock(EPGBlock):
-    """T1 Inversion Preparation Block."""
+    """T1 Inversion Preparation Block.
+
+    The inversion pulse is assumed to be B1 insensitive.
+    """
 
     def __init__(self, inversion_time: torch.Tensor | float) -> None:
-        """Initialize the inversion block."""
+        """Initialize the inversion block.
+
+        Parameters
+        ----------
+        inversion_time
+            Inversion time in s
+        """
         super().__init__()
 
         self.inversion_time = torch.as_tensor(inversion_time)
@@ -458,7 +443,7 @@ class InversionBlock(EPGBlock):
         -------
             EPG configuration states after the block and an empty list
         """
-        state = rf(state, rf_matrix(torch.tensor(torch.pi), torch.tensor(0.0), parameters.relative_b1))
+        state = rf(state, rf_matrix(torch.tensor(torch.pi), torch.tensor(0.0)))
         state = relax(state, relax_matrix(self.inversion_time, parameters.t1, parameters.t2))
         return state, []
 
@@ -469,7 +454,12 @@ class InversionBlock(EPGBlock):
 
 
 class T2PrepBlock(EPGBlock):
-    """T2 Preparation Block."""
+    """T2 Preparation Block.
+
+    Consists of a 90° pulse, relaxation during TE/2, 180° pulse, relaxation during TE/2 and a -90° pulse.
+
+    The pulses are assumed to be B1 insensitive.
+    """
 
     def __init__(self, te: torch.Tensor | float) -> None:
         """Initialize the T2 preparation block.
@@ -499,11 +489,11 @@ class T2PrepBlock(EPGBlock):
         """
         # 90° pulse -> relaxation during TE/2 -> 180° pulse -> relaxation during TE/2 -> -90° pulse
         te2_relax = relax_matrix(self.te / 2, parameters.t1, parameters.t2)
-        state = rf(state, rf_matrix(torch.tensor(torch.pi / 2), torch.tensor(0.0), parameters.relative_b1))
+        state = rf(state, rf_matrix(torch.tensor(torch.pi / 2), torch.tensor(0.0)))
         state = relax(state, te2_relax)
-        state = rf(state, rf_matrix(torch.tensor(torch.pi), torch.tensor(torch.pi / 2), parameters.relative_b1))
+        state = rf(state, rf_matrix(torch.tensor(torch.pi), torch.tensor(torch.pi / 2)))
         state = relax(state, te2_relax)
-        state = rf(state, rf_matrix(torch.tensor(torch.pi / 2), -torch.tensor(torch.pi), parameters.relative_b1))
+        state = rf(state, rf_matrix(torch.tensor(torch.pi / 2), -torch.tensor(torch.pi)))
         # Spoiler
         state = gradient_dephasing(state)
         return state, []
@@ -652,8 +642,6 @@ class EPGSignalModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch
             self.sequence = EPGSequence(sequence)
         else:
             self.sequence = sequence
-        # self.sequence = torch.jit.script(self.sequence)
-        # self.sequence.compile()
 
     def forward(
         self, t1: torch.Tensor, t2: torch.Tensor, m0: torch.Tensor, relative_b1: torch.Tensor | None = None
@@ -700,17 +688,23 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             [INV TI=20ms][ACQ]                     [ACQ]     [T2-prep TE=40ms][ACQ]    [T2-prep TE=80ms][ACQ]
 
 
+    ```{note}
+    This model is on purpose not flexible in all design choices. Instead, consider writing a custom
+    `~mrpro.operators.SignalModel` based on this implementation if you need to simulate a different sequence.
+    ```
     """
 
-    def __init__(self, acquisition_times: torch.Tensor, te: float) -> None:
+    def __init__(self, acquisition_times: torch.Tensor, echo_time: float) -> None:
         """Initialize the Cardiac MR Fingerprinting signal model.
 
         Parameters
         ----------
         acquisition_times
             Acquisition times in s
-        te
-            Echo time in s
+            Times of all acquisitions. Only the first acquisition time of each block is used to determine the
+            heart rate dependent delays.
+        echo_time
+            TE in s
 
         Returns
         -------
@@ -737,7 +731,7 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
         ]
         if len(acquisition_times) != 705:
             raise ValueError(f'Expected 705 acquisition times. Got {acquisition_times.size(-1)}')
-        block_time = acquisition_times[::47]
+        block_time = acquisition_times[::47]  # Start time of each acquisition block. Varies due to heart rate.
         for i in range(block_time.size(-1)):
             block = EPGSequence()
             match i % 5:
@@ -754,7 +748,7 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             flip_angles = torch.deg2rad(
                 torch.cat((torch.linspace(4, max_flip_angles_deg[i], 16), torch.full((31,), max_flip_angles_deg[i])))
             )
-            block.append(FispBlock(flip_angles, 0.0, tr=0.01, te=te))
+            block.append(FispBlock(flip_angles, 0.0, tr=0.01, te=echo_time))
             if i > 0:
                 delay = (block_time[i] - block_time[i - 1]) - block.duration
                 sequence.append(DelayBlock(delay))
