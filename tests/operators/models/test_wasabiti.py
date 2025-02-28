@@ -53,9 +53,9 @@ def test_WASABITI_asymmetry_for_non_unique_recovery_time():
 @pytest.mark.parametrize('t1', [(1), (2), (3)])
 def test_WASABITI_relaxation_term(t1):
     """Test relaxation term (Mzi) of WASABITI model."""
-    offset, b0_shift, relative_b1, t1 = create_data(offset_max=50000, n_offsets=1, t1=t1)
-    recovery_time = torch.ones_like(offset) * t1
-    wasabiti_model = WASABITI(offsets=offset, recovery_time=recovery_time)
+    offsets, b0_shift, relative_b1, t1 = create_data(offset_max=50000, n_offsets=1, t1=t1)
+    recovery_time = torch.ones_like(offsets) * t1
+    wasabiti_model = WASABITI(offsets=offsets, recovery_time=recovery_time)
     sig = wasabiti_model(b0_shift, relative_b1, t1)
 
     assert torch.isclose(sig[0], torch.FloatTensor([1 - torch.exp(torch.FloatTensor([-1]))]), rtol=1e-8)
@@ -72,8 +72,8 @@ def test_WASABITI_offsets_recovery_time_mismatch():
 @SHAPE_VARIATIONS_SIGNAL_MODELS
 def test_WASABITI_shape(parameter_shape, contrast_dim_shape, signal_shape):
     """Test correct signal shapes."""
-    ti, recovery_time = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=2)
-    model_op = WASABITI(ti, recovery_time)
+    offsets, recovery_time = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=2)
+    model_op = WASABITI(offsets=offsets, recovery_time=recovery_time)
     b0_shift, relative_b1, t1 = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=3)
     (signal,) = model_op(b0_shift, relative_b1, t1)
     assert signal.shape == signal_shape
@@ -81,7 +81,31 @@ def test_WASABITI_shape(parameter_shape, contrast_dim_shape, signal_shape):
 
 def test_autodiff_WASABITI():
     """Test autodiff works for WASABITI model."""
-    offset, b0_shift, relative_b1, t1 = create_data(offset_max=300, n_offsets=2)
-    recovery_time = torch.ones_like(offset) * t1
-    wasabiti_model = WASABITI(offsets=offset, recovery_time=recovery_time)
+    offsets, b0_shift, relative_b1, t1 = create_data(offset_max=300, n_offsets=2)
+    recovery_time = torch.ones_like(offsets) * t1
+    wasabiti_model = WASABITI(offsets=offsets, recovery_time=recovery_time)
     autodiff_test(wasabiti_model, b0_shift, relative_b1, t1)
+
+
+@pytest.mark.cuda
+def test_wasabiti_cuda():
+    """Test the WASABITI model works on cuda devices."""
+    offsets, b0_shift, relative_b1, t1 = create_data(offset_max=300, n_offsets=2)
+    recovery_time = torch.ones_like(offsets) * t1
+
+    # Create on CPU, transfer to GPU and run on GPU
+    model = WASABITI(offsets=offsets, recovery_time=recovery_time)
+    model.cuda()
+    (signal,) = model(b0_shift.cuda(), relative_b1.cuda(), t1.cuda())
+    assert signal.is_cuda
+
+    # Create on GPU and run on GPU
+    model = WASABITI(offsets=offsets.cuda(), recovery_time=recovery_time)
+    (signal,) = model(b0_shift.cuda(), relative_b1.cuda(), t1.cuda())
+    assert signal.is_cuda
+
+    # Create on GPU, transfer to CPU and run on CPU
+    model = WASABITI(offsets=offsets.cuda(), recovery_time=recovery_time)
+    model.cpu()
+    (signal,) = model(b0_shift, relative_b1, t1)
+    assert signal.is_cpu
