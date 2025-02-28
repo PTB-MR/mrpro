@@ -128,21 +128,23 @@ class ImageIdx(MoveDataMixin):
         idx
             Acquisition indices.
         """
+        # TODO: the unsqueeze adds the coil dimension, as IHeader already always at least 5D with
+        # other, coil, z, y, x. must be removed when KHeader move to the same format.
         return cls(
-            average=try_reduce_repeat(idx.average),
-            slice=try_reduce_repeat(idx.slice),
-            contrast=try_reduce_repeat(idx.contrast),
-            phase=try_reduce_repeat(idx.phase),
-            repetition=try_reduce_repeat(idx.repetition),
-            set=try_reduce_repeat(idx.set),
-            user0=try_reduce_repeat(idx.user0),
-            user1=try_reduce_repeat(idx.user1),
-            user2=try_reduce_repeat(idx.user2),
-            user3=try_reduce_repeat(idx.user3),
-            user4=try_reduce_repeat(idx.user4),
-            user5=try_reduce_repeat(idx.user5),
-            user6=try_reduce_repeat(idx.user6),
-            user7=try_reduce_repeat(idx.user7),
+            average=try_reduce_repeat(idx.average.unsqueeze(-4)),
+            slice=try_reduce_repeat(idx.slice.unsqueeze(-4)),
+            contrast=try_reduce_repeat(idx.contrast.unsqueeze(-4)),
+            phase=try_reduce_repeat(idx.phase.unsqueeze(-4)),
+            repetition=try_reduce_repeat(idx.repetition.unsqueeze(-4)),
+            set=try_reduce_repeat(idx.set.unsqueeze(-4)),
+            user0=try_reduce_repeat(idx.user0.unsqueeze(-4)),
+            user1=try_reduce_repeat(idx.user1.unsqueeze(-4)),
+            user2=try_reduce_repeat(idx.user2.unsqueeze(-4)),
+            user3=try_reduce_repeat(idx.user3.unsqueeze(-4)),
+            user4=try_reduce_repeat(idx.user4.unsqueeze(-4)),
+            user5=try_reduce_repeat(idx.user5.unsqueeze(-4)),
+            user6=try_reduce_repeat(idx.user6.unsqueeze(-4)),
+            user7=try_reduce_repeat(idx.user7.unsqueeze(-4)),
         )
 
 
