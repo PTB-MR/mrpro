@@ -273,8 +273,10 @@ class IHeader(MoveDataMixin):
             x=pixel_spacing[0][0],
         ).apply_(mm_to_m)
 
-        datasets_are_3d = number_of_frames[0] is not None and number_of_frames[0] > 1 and mr_acquisition_type[0] == '3D'
-        n_volumes = number_of_frames[0] if datasets_are_3d else 1
+        datasets_are_3d = (
+            number_of_frames and number_of_frames[0] > 1 and mr_acquisition_type and mr_acquisition_type[0] == '3D'
+        )
+        n_volumes = number_of_frames[0] if number_of_frames and datasets_are_3d else 1
 
         # For 3D datasets we currently want to save only one value per volume of fa, ti, tr, and te
         fa = deg_to_rad(get_items(dataset, 'FlipAngle', float)[::n_volumes])
