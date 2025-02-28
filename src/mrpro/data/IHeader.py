@@ -207,21 +207,34 @@ class IHeader(MoveDataMixin):
             Pixel Spacing
         """
         resolution = header.encoding_fov / header.encoding_matrix
+
         # TODO: how to deal with different values for each acquisition?
+        # The unsqueeze adds the coil dimension, as IHeader already always at least 5D with
+        # other, coil, z, y, x. must be removed when KHeader move to the same format.
         return cls(
             resolution=resolution,
             te=try_reduce_repeat(header.te),
             ti=try_reduce_repeat(header.ti),
             fa=try_reduce_repeat(header.fa),
             tr=try_reduce_repeat(header.tr),
-            orientation=try_reduce_repeat(header.acq_info.orientation),
-            position=try_reduce_repeat(header.acq_info.position),
-            patient_table_position=try_reduce_repeat(header.acq_info.patient_table_position),
-            acquisition_time_stamp=try_reduce_repeat(header.acq_info.acquisition_time_stamp.amin(-2, keepdim=True)),
+            orientation=try_reduce_repeat(header.acq_info.orientation.unsqueeze(-4)),
+            position=try_reduce_repeat(header.acq_info.position.apply(lambda x: x.unsqueeze(-4))),
+            patient_table_position=try_reduce_repeat(
+                header.acq_info.patient_table_position.apply(lambda x: x.unsqueeze(-4))
+            ),
+            acquisition_time_stamp=try_reduce_repeat(
+                header.acq_info.acquisition_time_stamp.amin((-1, -2, -3), True).unsqueeze(-4)
+            ),
             physiology_time_stamps=PhysiologyTimestamps(
-                try_reduce_repeat(header.acq_info.physiology_time_stamps.timestamp1.amin(-2, keepdim=True)),
-                try_reduce_repeat(header.acq_info.physiology_time_stamps.timestamp2.amin(-2, keepdim=True)),
-                try_reduce_repeat(header.acq_info.physiology_time_stamps.timestamp3.amin(-2, keepdim=True)),
+                try_reduce_repeat(
+                    header.acq_info.physiology_time_stamps.timestamp1.amin((-1, -2, -3), True).unsqueeze(-4)
+                ),
+                try_reduce_repeat(
+                    header.acq_info.physiology_time_stamps.timestamp2.amin((-1, -2, -3), True).unsqueeze(-4)
+                ),
+                try_reduce_repeat(
+                    header.acq_info.physiology_time_stamps.timestamp3.amin((-1, -2, -3), True).unsqueeze(-4)
+                ),
             ),
             idx=ImageIdx.from_acqidx(header.acq_info.idx),
         )
