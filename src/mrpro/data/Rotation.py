@@ -2058,9 +2058,10 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         dim
             The position where the new dimension is to be added.
         """
-        if dim < 0:
-            dim = dim + self._is_improper.ndim + dim
-        return self.reshape(self.shape[:dim] + (1,) + self.shape[dim:])
+        quaternion_dim = dim if dim >= 0 else dim - 1  # last dimension are the quaternion components
+        return self.__class__(
+            self._quaternions.unsqueeze(quaternion_dim), inversion=self._is_improper.unsqueeze(dim), copy=True
+        )
 
 
 class RotationBackend(AbstractBackend):
