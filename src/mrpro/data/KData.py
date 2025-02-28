@@ -306,8 +306,8 @@ class KData(
         # Finally, reshape and sort the tensors in acqinfo and acqinfo.idx, and kdata.
         header = self.header.apply(
             lambda field: rearrange(
-                cast(Rotation | torch.Tensor, rearrange(field, '... k2 k1 k0 -> (... k2 k1) k0'))[sort_idx],
-                '(other k2 k1) k0 -> other k2 k1 k0',
+                cast(Rotation | torch.Tensor, rearrange(field, '... coils k2 k1 k0 -> (... k2 k1) coils k0'))[sort_idx],
+                '(other k2 k1) coils k0 -> other coils k2 k1 k0',
                 k1=n_k1,
                 k2=n_k2,
                 k0=1,
@@ -324,13 +324,13 @@ class KData(
         )
 
         kz, ky, kx = rearrange(
-            self.traj.as_tensor(-1).flatten(end_dim=-3)[sort_idx],
-            '(other k2 k1) k0 zyx -> zyx other k2 k1 k0 ',
+            self.traj.as_tensor(-1).flatten(end_dim=-4)[sort_idx],
+            '(other k2 k1) coils k0 zyx -> zyx other coils k2 k1 k0 ',
             k1=n_k1,
             k2=n_k2,
         )
         traj = KTrajectory(kz, ky, kx, self.traj.grid_detection_tolerance, self.traj.repeat_detection_tolerance)
-        return self.__class__(header=header, data=data, traj=traj)
+        return type(self)(header=header, data=data, traj=traj)
 
     def __repr__(self):
         """Representation method for KData class."""
@@ -442,38 +442,6 @@ class KData(
 
         return type(self)(self.header.clone(), kdata_coil_compressed, self.traj.clone())
 
-    def rearrange_k2_k1_into_k1(self: Self) -> Self:
-        """Rearrange kdata from (... k2 k1 ...) to (... 1 (k2 k1) ...).
-
-        Note: This function will be deprecated in the future.
-
-        Parameters
-        ----------
-        kdata
-            K-space data `(other coils k2 k1 k0)`
-
-        Returns
-        -------
-            K-space data `(other  coils 1 (k2 k1) k0)`
-        """
-        # Rearrange data
-        kdat = rearrange(self.data, '... coils k2 k1 k0->... coils 1 (k2 k1) k0')
-
-        # Rearrange trajectory
-        ktraj = rearrange(self.traj.as_tensor(), 'dim ... k2 k1 k0-> dim ... 1 (k2 k1) k0')
-
-        # Create new header with correct shape
-        kheader = copy.deepcopy(self.header)
-
-        # Update shape of acquisition info index
-        kheader.acq_info.apply_(
-            lambda field: rearrange(field, 'other k2 k1 ... -> other 1 (k2 k1) ...')
-            if isinstance(field, torch.Tensor | Rotation)
-            else field
-        )
-
-        return type(self)(kheader, kdat, type(self.traj).from_tensor(ktraj))
-
     def remove_readout_os(self: Self) -> Self:
         """Remove any oversampling along the readout direction.
 
@@ -561,167 +529,84 @@ class KData(
         `ValueError`
             If the subset indices are not available in the data
         """
-        # Make a copy such that the original kdata.header remains the same
-        kheader = copy.deepcopy(self.header)
-        ktraj = self.traj.as_tensor()
+        # Flatten multi-dimensional other
+        n_other = self.data.shape[:-4]  # Assume that data is not broadcasted along other
+        header = self.header.apply(
+            lambda field: rearrange(
+                field.expand(*n_other, *field.shape[-4:]), '... coils k2 k1 k0->(...) coils k2 k1 k0'
+            )
+            if isinstance(field, torch.Tensor | Rotation)
+            else field
+        )
+        traj = self.traj.as_tensor()
+        traj = torch.broadcast_to(traj, (traj.shape[0], *self.data.shape[:-4], *traj.shape[-4:]))  # broadcast "other"
+        traj = traj.flatten(start_dim=1, end_dim=-5)  # flatten "other" dimensions
+        data = self.data.flatten(end_dim=-5)
 
-        # Verify that the subset_idx is available
-        label_idx = getattr(kheader.acq_info.idx, subset_label)
+        # Find elements in the subset
+        label_idx = getattr(header.acq_info.idx, subset_label)
         if not all(el in torch.unique(label_idx) for el in subset_idx):
             raise ValueError('Subset indices are outside of the available index range')
+        other_idx = torch.cat([torch.where(idx == label_idx[:, 0, 0, 0, 0])[0] for idx in subset_idx], dim=0)
 
-        # Find subset index in acq_info index
-        other_idx = torch.cat([torch.where(idx == label_idx[:, 0, 0])[0] for idx in subset_idx], dim=0)
+        # Select subset
+        header.acq_info.apply_(lambda field: field[other_idx] if isinstance(field, torch.Tensor | Rotation) else field)
+        data = data[other_idx]
+        traj = traj[:, other_idx]
+        return type(self)(header, data, type(self.traj).from_tensor(traj))
 
-        # Adapt header
-        kheader.acq_info.apply_(
-            lambda field: field[other_idx, ...] if isinstance(field, torch.Tensor | Rotation) else field
-        )
-
-        # Select data
-        kdat = self.data[other_idx, ...]
-
-        # Select ktraj
-        if ktraj.shape[1] > 1:
-            ktraj = ktraj[:, other_idx, ...]
-
-        return type(self)(kheader, kdat, type(self.traj).from_tensor(ktraj))
-
-    def _split_k2_or_k1_into_other(
+    def split_k1_into_other(
         self,
         split_idx: torch.Tensor,
         other_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
-        split_dir: Literal['k2', 'k1'],
     ) -> Self:
         """Based on an index tensor, split the data in e.g. phases.
 
         Parameters
         ----------
         split_idx
-            2D index describing the k2 or k1 points in each block to be moved to the other dimension
-            `(other_split, k1_per_split)` or `(other_split, k2_per_split)`
+            2D index describing  the k1 points in each block to be moved to the other dimension
+            `(other_split, k1_per_split)`
         other_label
             Label of other dimension, e.g. repetition, phase
-        split_dir
-            Dimension to split, either 'k1' or 'k2'
 
         Returns
         -------
-            K-space data with new shape
-            `((other other_split) coils k2 k1_per_split k0)` or `((other other_split) coils k2_per_split k1 k0)`
+            K-space data with new shape `((other other_split) coils k2 k1_per_split k0)`
 
-        Raises
-        ------
-        `ValueError`
-            Already existing `other_label` can only be of length 1
         """
-        # Number of other
         n_other = split_idx.shape[0]
+        n_k1 = self.data.shape[-2]  # This assumes that data is not broadcasted along k1
 
-        # Set-up splitting
-        if split_dir == 'k1':
-            # Split along k1 dimensions
-            def split_data_traj(dat_traj: torch.Tensor) -> torch.Tensor:
-                return dat_traj[:, :, :, split_idx, :]
+        def split(data: RotationOrTensor) -> RotationOrTensor:
+            # broadcast "k1"
+            expanded = data.expand((*data.shape[:-2], n_k1, data.shape[-1]))
+            # cast due to https://github.com/python/mypy/issues/10817
+            return cast(RotationOrTensor, expanded[..., split_idx, :])
 
-            def split_acq_info(acq_info: RotationOrTensor) -> RotationOrTensor:
-                # cast due to https://github.com/python/mypy/issues/10817
-                return cast(RotationOrTensor, acq_info[:, :, split_idx, ...])
+        data = rearrange(
+            split(self.data.flatten(end_dim=-5)), 'other coils k2 other_split k1 k0->(other other_split) coils k2 k1 k0'
+        )
 
-            # Rearrange other_split and k1 dimension
-            rearrange_pattern_data = 'other coils k2 other_split k1 k0->(other other_split) coils k2 k1 k0'
-            rearrange_pattern_traj = 'dim other k2 other_split k1 k0->dim (other other_split) k2 k1 k0'
-            rearrange_pattern_acq_info = 'other k2 other_split k1 ... -> (other other_split) k2 k1 ...'
+        traj = self.traj.as_tensor()
+        traj = torch.broadcast_to(traj, (traj.shape[0], *self.data.shape[:-4], *traj.shape[-4:]))  # broadcast "other"
+        traj = traj.flatten(start_dim=1, end_dim=-5)  # flatten "other" dimensions
+        traj = rearrange(split(traj), 'dim other coils k2 other_split k1 k0->dim (other other_split) coils k2 k1 k0')
 
-        elif split_dir == 'k2':
-            # Split along k2 dimensions
-            def split_data_traj(dat_traj: torch.Tensor) -> torch.Tensor:
-                return dat_traj[:, :, split_idx, :, :]
-
-            def split_acq_info(acq_info: RotationOrTensor) -> RotationOrTensor:
-                return cast(RotationOrTensor, acq_info[:, split_idx, ...])
-
-            # Rearrange other_split and k1 dimension
-            rearrange_pattern_data = 'other coils other_split k2 k1 k0->(other other_split) coils k2 k1 k0'
-            rearrange_pattern_traj = 'dim other other_split k2 k1 k0->dim (other other_split) k2 k1 k0'
-            rearrange_pattern_acq_info = 'other other_split k2 k1 ... -> (other other_split) k2 k1 ...'
-
-        else:
-            raise ValueError('split_dir has to be "k1" or "k2"')
-
-        # Split data
-        kdat = rearrange(split_data_traj(self.data), rearrange_pattern_data)
-
-        # First we need to make sure the other dimension is the same as data then we can split the trajectory
-        ktraj = self.traj.as_tensor()
-        # Verify that other dimension of trajectory is 1 or matches data
-        if ktraj.shape[1] > 1 and ktraj.shape[1] != self.data.shape[0]:
-            raise ValueError(f'other dimension of trajectory has to be 1 or match data ({self.data.shape[0]})')
-        elif ktraj.shape[1] == 1 and self.data.shape[0] > 1:
-            ktraj = repeat(ktraj, 'dim other k2 k1 k0->dim (other_data other) k2 k1 k0', other_data=self.data.shape[0])
-        ktraj = rearrange(split_data_traj(ktraj), rearrange_pattern_traj)
-
-        # Create new header with correct shape
-        kheader = self.header.clone()
-
-        # Update shape of acquisition info index
-        kheader.acq_info.apply_(
-            lambda field: rearrange(split_acq_info(field), rearrange_pattern_acq_info)
+        header = self.header.apply(
+            lambda field: rearrange(
+                split(  # type: ignore[type-var] # mypy does not recognize return type of rearrange here
+                    rearrange(field, '... coils k2 k1 k0 -> (...) coils k2 k1 k0 ')  # flatten "other" dimensions
+                ),
+                'other coils k2 other_split k1 k0->(other other_split) coils k2 k1 k0',
+            )
             if isinstance(field, Rotation | torch.Tensor)
             else field
         )
 
-        # acq_info for new other dimensions
-        acq_info_other_split = repeat(
-            torch.linspace(0, n_other - 1, n_other), 'other-> other k2 k1 1', k2=kdat.shape[-3], k1=kdat.shape[-2]
+        new_idx = repeat(
+            torch.linspace(0, n_other - 1, n_other), 'other-> other k2 k1 1', k2=data.shape[-3], k1=data.shape[-2]
         )
-        setattr(kheader.acq_info.idx, other_label, acq_info_other_split)
+        setattr(header.acq_info.idx, other_label, new_idx)
 
-        return type(self)(kheader, kdat, type(self.traj).from_tensor(ktraj))
-
-    def split_k1_into_other(
-        self: Self,
-        split_idx: torch.Tensor,
-        other_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
-    ) -> Self:
-        """Based on an index tensor, split the data in e.g. phases.
-
-        Parameters
-        ----------
-        kdata
-            K-space data (other coils k2 k1 k0)
-        split_idx
-            2D index describing the k1 points in each block to be moved to other dimension  (other_split, k1_per_split)
-        other_label
-            Label of other dimension, e.g. repetition, phase
-
-        Returns
-        -------
-            K-space data with new shape ((other other_split) coils k2 k1_per_split k0)
-        """
-        return self._split_k2_or_k1_into_other(split_idx, other_label, split_dir='k1')
-
-    def split_k2_into_other(
-        self: Self,
-        split_idx: torch.Tensor,
-        other_label: Literal['average', 'slice', 'contrast', 'phase', 'repetition', 'set'],
-    ) -> Self:
-        """Based on an index tensor, split the data in e.g. phases.
-
-        Note: This function will be deprecated in the future.
-
-        Parameters
-        ----------
-        kdata
-            K-space data `(other coils k2 k1 k0)`
-        split_idx
-            2D index describing the k2 points in each block to be moved to *other* dimension
-            `(other_split, k2_per_split)`
-        other_label
-            Label of *other* dimension, e.g. repetition, phase
-
-        Returns
-        -------
-            K-space data with new shape `((other other_split) coils k2_per_split k1 k0)`
-        """
-        return self._split_k2_or_k1_into_other(split_idx, other_label, split_dir='k2')
+        return type(self)(header, data, type(self.traj).from_tensor(traj))

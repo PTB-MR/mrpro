@@ -17,10 +17,10 @@ def test_trajectory_repeat_detection_tol(cartesian_grid):
     kz_full, ky_full, kx_full = cartesian_grid(n_k2, n_k1, n_k0, jitter=0.1)
     trajectory_sparse = KTrajectory(kz_full, ky_full, kx_full, repeat_detection_tolerance=0.1)
 
-    assert trajectory_sparse.broadcasted_shape == (1, n_k2, n_k1, n_k0)
-    assert trajectory_sparse.kx.shape == (1, 1, 1, n_k0)
-    assert trajectory_sparse.ky.shape == (1, 1, n_k1, 1)
-    assert trajectory_sparse.kz.shape == (1, n_k2, 1, 1)
+    assert trajectory_sparse.broadcasted_shape == (1, 1, n_k2, n_k1, n_k0)
+    assert trajectory_sparse.kx.shape == (1, 1, 1, 1, n_k0)
+    assert trajectory_sparse.ky.shape == (1, 1, 1, n_k1, 1)
+    assert trajectory_sparse.kz.shape == (1, 1, n_k2, 1, 1)
 
 
 def test_trajectory_repeat_detection_exact(cartesian_grid):
@@ -31,10 +31,10 @@ def test_trajectory_repeat_detection_exact(cartesian_grid):
     kz_full, ky_full, kx_full = cartesian_grid(n_k2, n_k1, n_k0, jitter=0.1)
     trajectory_full = KTrajectory(kz_full, ky_full, kx_full, repeat_detection_tolerance=None)
 
-    assert trajectory_full.broadcasted_shape == (1, n_k2, n_k1, n_k0)
-    assert trajectory_full.kx.shape == (1, n_k2, n_k1, n_k0)
-    assert trajectory_full.ky.shape == (1, n_k2, n_k1, n_k0)
-    assert trajectory_full.kz.shape == (1, n_k2, n_k1, n_k0)
+    assert trajectory_full.broadcasted_shape == (1, 1, n_k2, n_k1, n_k0)
+    assert trajectory_full.kx.shape == (1, 1, n_k2, n_k1, n_k0)
+    assert trajectory_full.ky.shape == (1, 1, n_k2, n_k1, n_k0)
+    assert trajectory_full.kz.shape == (1, 1, n_k2, n_k1, n_k0)
 
 
 def test_trajectory_tensor_conversion(cartesian_grid):
@@ -151,7 +151,7 @@ def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, ty
     """Test identification of traj types."""
 
     # Generate random k-space trajectories
-    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # Find out the type of the kz, ky and kz dimensions
     single_value_dims = [d for d, s in zip((-3, -2, -1), (type_kz, type_ky, type_kx), strict=True) if s == 'zero']
@@ -182,7 +182,7 @@ def test_ktype_along_k210(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, ty
     """Test identification of traj types."""
 
     # Generate random k-space trajectories
-    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # Find out the type of the k2, k1 and k0 dimensions
     single_value_dims = [d for d, s in zip((-3, -2, -1), (type_k2, type_k1, type_k0), strict=True) if s == 'zero']

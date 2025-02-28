@@ -52,6 +52,6 @@ class KTrajectoryCartesian(KTrajectoryCalculator):
         ky = (k1_idx - k1_center).to(torch.float32)
         kz = (k2_idx - k2_center).to(torch.float32)
 
-        kz, ky, kx = unsqueeze_tensors_left(kz, ky, kx, ndim=4)
+        kz, ky, kx = unsqueeze_tensors_left(kz, ky, kx, ndim=5)
 
         return KTrajectory(kz, ky, kx)

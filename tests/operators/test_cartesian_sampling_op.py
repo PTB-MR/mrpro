@@ -20,7 +20,7 @@ def test_cart_sampling_op_data_match():
     type_kx = 'uniform'
     type_ky = 'uniform'
     type_kz = 'uniform'
-    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # Create matching data
     random_generator = RandomGenerator(seed=0)
@@ -115,7 +115,7 @@ def test_cart_sampling_op_fwd_adj(sampling):
     type_kx = 'uniform'
     type_ky = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
     type_kz = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
-    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
     trajectory = subsample_traj(trajectory, sampling, k_shape)
 
     encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
@@ -153,7 +153,7 @@ def test_cart_sampling_op_gram(sampling):
     type_kx = 'uniform'
     type_ky = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
     type_kz = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
-    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
     trajectory = subsample_traj(trajectory, sampling, k_shape)
 
     encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])

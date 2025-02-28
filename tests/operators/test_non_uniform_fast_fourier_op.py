@@ -18,7 +18,7 @@ def create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
     # generate random image
     img = random_generator.complex64_tensor(size=im_shape)
     # create random trajectories
-    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
     return img, trajectory
 
 
@@ -118,7 +118,7 @@ def test_non_uniform_fast_fourier_cartesian_result(ismrmrd_cart_high_res):
 def test_non_uniform_fast_fourier_op_empty_dims():
     """Empty dims do not change the input."""
     nk = (1, 1, 1, 1, 1)
-    traj = create_traj(nk, nkx=nk, nky=nk, nkz=nk, type_kx='non-uniform', type_ky='non-uniform', type_kz='non-uniform')
+    traj = create_traj(nkx=nk, nky=nk, nkz=nk, type_kx='non-uniform', type_ky='non-uniform', type_kz='non-uniform')
     nufft_op = NonUniformFastFourierOp(direction=(), recon_matrix=(), encoding_matrix=(), traj=traj)
 
     random_generator = RandomGenerator(seed=0)

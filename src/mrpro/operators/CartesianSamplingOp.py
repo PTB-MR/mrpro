@@ -50,23 +50,29 @@ class CartesianSamplingOp(LinearOperator):
             kx_idx = ktraj_tensor[-1, ...].round().to(dtype=torch.int64) + sorted_grid_shape.x // 2
         else:
             sorted_grid_shape.x = ktraj_tensor.shape[-1]
-            kx_idx = repeat(torch.arange(ktraj_tensor.shape[-1]), 'k0->other k2 k1 k0', other=1, k2=1, k1=1)
+            kx_idx = repeat(
+                torch.arange(ktraj_tensor.shape[-1]), 'k0->other coils k2 k1 k0', other=1, coils=1, k2=1, k1=1
+            )
 
         if traj_type_kzyx[-2] == TrajType.ONGRID:  # ky
             ky_idx = ktraj_tensor[-2, ...].round().to(dtype=torch.int64) + sorted_grid_shape.y // 2
         else:
             sorted_grid_shape.y = ktraj_tensor.shape[-2]
-            ky_idx = repeat(torch.arange(ktraj_tensor.shape[-2]), 'k1->other k2 k1 k0', other=1, k2=1, k0=1)
+            ky_idx = repeat(
+                torch.arange(ktraj_tensor.shape[-2]), 'k1->other coils k2 k1 k0', other=1, coils=1, k2=1, k0=1
+            )
 
         if traj_type_kzyx[-3] == TrajType.ONGRID:  # kz
             kz_idx = ktraj_tensor[-3, ...].round().to(dtype=torch.int64) + sorted_grid_shape.z // 2
         else:
             sorted_grid_shape.z = ktraj_tensor.shape[-3]
-            kz_idx = repeat(torch.arange(ktraj_tensor.shape[-3]), 'k2->other k2 k1 k0', other=1, k1=1, k0=1)
+            kz_idx = repeat(
+                torch.arange(ktraj_tensor.shape[-3]), 'k2->other coils k2 k1 k0', other=1, coils=1, k1=1, k0=1
+            )
 
         # 1D indices into a flattened tensor.
         kidx = kz_idx * sorted_grid_shape.y * sorted_grid_shape.x + ky_idx * sorted_grid_shape.x + kx_idx
-        kidx = rearrange(kidx, '... kz ky kx -> ... 1 (kz ky kx)')
+        kidx = rearrange(kidx, '... 1 kz ky kx -> ... 1 (kz ky kx)')
 
         # check that all points are inside the encoding matrix
         inside_encoding_matrix = (
@@ -81,7 +87,7 @@ class CartesianSamplingOp(LinearOperator):
                 stacklevel=2,
             )
 
-            inside_encoding_matrix = rearrange(inside_encoding_matrix, '... kz ky kx -> ... 1 (kz ky kx)')
+            inside_encoding_matrix = rearrange(inside_encoding_matrix, '... 1 kz ky kx -> ... 1 (kz ky kx)')
             inside_encoding_matrix_idx = inside_encoding_matrix.nonzero(as_tuple=True)[-1]
             inside_encoding_matrix_idx = torch.reshape(inside_encoding_matrix_idx, (*kidx.shape[:-1], -1))
             self._inside_encoding_matrix_idx: torch.Tensor | None = inside_encoding_matrix_idx
@@ -243,7 +249,7 @@ class CartesianSamplingGramOp(LinearOperator):
         """
         super().__init__()
         if sampling_op._needs_indexing:
-            ones = torch.ones(*sampling_op._trajectory_shape[:-3], 1, *sampling_op._sorted_grid_shape.zyx)
+            ones = torch.ones(*sampling_op._trajectory_shape[:-3], *sampling_op._sorted_grid_shape.zyx)
             (mask,) = sampling_op.adjoint(*sampling_op.forward(ones))
             self._mask: torch.Tensor | None = mask
         else:
