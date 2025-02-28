@@ -2048,6 +2048,20 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
             self._quaternions.expand(*newshape, 4), inversion=self._is_improper.expand(newshape), copy=True
         )
 
+    def unsqueeze(self, dim: int) -> Self:
+        """Unsqueeze the Rotation object in a batch dimension.
+
+        Add a new dimension to the Rotation object at the specified position.
+
+        Parameters
+        ----------
+        dim
+            The position where the new dimension is to be added.
+        """
+        if dim < 0:
+            dim = dim + self._is_improper.ndim + dim
+        return self.reshape(self.shape[:dim] + (1,) + self.shape[dim:])
+
 
 class RotationBackend(AbstractBackend):
     """Einops backend for Rotations."""
@@ -2078,7 +2092,7 @@ class RotationBackend(AbstractBackend):
 
     def add_axis(self, x: Rotation, axis_position: int) -> Rotation:
         """Add a new axis to the Rotation."""
-        return x.reshape(x.shape[:axis_position] + (1,) + x.shape[axis_position:])
+        return x.unsqueeze(axis_position)
 
     def add_axes(self, x: Rotation, n_axes: int, pos2len: dict[int, int]) -> Rotation:
         """Add multiple expanded axes to the Rotation."""
