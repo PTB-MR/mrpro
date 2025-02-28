@@ -106,33 +106,20 @@ functional = mse @ model
 # - calculate the signal curves corresponding to each of these $T_1$ values
 # - compare the signal curves to the signals of each voxel (we use the maximum of the dot-product as a metric of how
 # well the signals fit to each other)
+# - use the $T_1$ value with the best fit as a starting value for the fit. Use the scaling factor of the best fit for
+# the $M_0$ value.
+#
+# This is implemented in the `~mrpro.operators.DictionaryMatchOp` operator.
+
+# %%
 
 # %%
 # Define 100 T1 values between 0.1 and 3.0 s
-t1_dictionary = torch.linspace(0.1, 3.0, 100)
-
-# Calculate the signal corresponding to each of these T1 values. We set M0 to 1, but this is arbitrary because M0 is
-# just a scaling factor and we are going to normalize the signal curves.
-(signal_dictionary,) = model(torch.ones(1), t1_dictionary)
-signal_dictionary = signal_dictionary.to(dtype=torch.complex64)
-signal_dictionary /= torch.linalg.vector_norm(signal_dictionary, dim=0)
-
-# Calculate the dot-product and select for each voxel the T1 values that correspond to the maximum of the dot-product
-import einops
-
-dot_product = einops.einsum(
-    idata_multi_ti.data,
-    signal_dictionary,
-    'ti ..., ti t1 -> t1 ...',
-)
-idx_best_match = dot_product.abs().argmax(dim=0)
-t1_start = t1_dictionary[idx_best_match]
-
-# %% [markdown]
-# The maximum absolute value observed is a good approximation for $M_0$
-
-# %%
-m0_start = idata_multi_ti.data.abs().amax(dim=0)
+t1_values = torch.linspace(0.1, 3.0, 100)
+# Create the dictionary. We set M0 to constant 1, as the scaling is handled by the dictionary matching operator.
+dictionary = mrpro.operators.DictionaryMatchOp(model, 0).append(torch.ones(1), t1_values)
+# Select the closest values in the dictionary for each voxel based on cosine similarity
+m0_start, t1_start = dictionary(idata_multi_ti.data.real)
 
 # %% [markdown]
 # #### Visualize the starting values
@@ -173,7 +160,7 @@ lr = 1e-1
 # Run optimization
 result = mrpro.algorithms.optimizers.adam(functional, [m0_start, t1_start], max_iter=max_iter, lr=lr)
 m0, t1 = (p.detach().cpu() for p in result)
-
+model.cpu()
 # %% [markdown]
 # ### Visualize the final results
 #
@@ -222,8 +209,9 @@ plt.show()
 # as $q(TE) = M_0 e^{-TE/T_2^*}$ with the equilibrium magnetization $M_0$, the echo time $TE$, and $T_2^*$.\
 # Give it a try and see if you can obtain good $T_2^*$ maps!
 # ```{note}
-# The echo times $TE$ can be found in `IData.header.te`. A good starting value for $M_0$ is the signal at the shortest
-# echo time. A good starting value for $T_2^*$ is 20 ms.
+# The echo times $TE$ can be found in `IData.header.te`. Instead of using dictionary matching for starting values,
+# a good starting value for $M_0$ is the signal at the shortest echo time
+# and a good starting value for $T_2^*$ is 20 ms.
 # ```
 
 # %%
