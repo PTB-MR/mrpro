@@ -673,7 +673,7 @@ class KData(
 
         # acq_info for new other dimensions
         acq_info_other_split = repeat(
-            torch.linspace(0, n_other - 1, n_other), 'other-> other k2 k1', k2=kdat.shape[-3], k1=kdat.shape[-2]
+            torch.linspace(0, n_other - 1, n_other), 'other-> other k2 k1 1', k2=kdat.shape[-3], k1=kdat.shape[-2]
         )
         setattr(kheader.acq_info.idx, other_label, acq_info_other_split)
 
