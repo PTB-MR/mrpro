@@ -1611,7 +1611,6 @@ def test_expand() -> None:
 
 def test_einops_rearrange() -> None:
     """Test rearrange"""
-
     r = Rotation.random((1, 2, 3, 4), random_state=0, improper=True)
     rearranged = einops.rearrange(r, 'a b c d -> b (c d) a')
     assert rearranged.shape == (2, 3 * 4, 1)
@@ -1624,8 +1623,26 @@ def test_einops_rearrange() -> None:
 
 def test_einops_reduce() -> None:
     """Test einops.reduce"""
-
     r = Rotation.random((1, 2, 3, 4), random_state=0, improper=False)
     # Only mean is implemented
     mean = einops.reduce(r, 'a b c d -> a c d', 'mean')
     assert r.mean(dim=1).approx_equal(mean, atol=1e-4).all()
+
+
+def test_unqueeze_first() -> None:
+    """Test unsqueeze in the first dimension"""
+    r = Rotation.random((1, 2, 3), random_state=0)
+
+    r2 = r.unsqueeze(0)
+    assert r2.shape == (1, 1, 2, 3)
+    assert r2[0].approx_equal(r).all()
+    assert r._quaternions is not r2._quaternions
+
+
+def test_unqueeze_last() -> None:
+    """test unsqueeze in the last dimension"""
+    r = Rotation.random((1, 2, 3), random_state=0)
+    r2 = r.unsqueeze(-1)
+    assert r2.shape == (1, 2, 3, 1)
+    assert r2[..., 0].approx_equal(r).all()
+    assert r._quaternions is not r2._quaternions
