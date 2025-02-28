@@ -126,7 +126,7 @@ class CartesianSamplingOp(LinearOperator):
         if not self._needs_indexing:
             return (x,)
 
-        x_kflat = rearrange(x, '... coil k2_enc k1_enc k0_enc -> ... coil (k2_enc k1_enc k0_enc)')
+        x_kflat = rearrange(x, '... coils k2_enc k1_enc k0_enc -> ... coils (k2_enc k1_enc k0_enc)')
         # take_along_dim broadcasts, but needs the same number of dimensions
         idx = unsqueeze_left(self._fft_idx, x_kflat.ndim - self._fft_idx.ndim)
         x_inside_encoding_matrix = torch.take_along_dim(x_kflat, idx, dim=-1)
@@ -142,7 +142,7 @@ class CartesianSamplingOp(LinearOperator):
                 self._inside_encoding_matrix_idx,
             )
 
-        # reshape to (... other coil, k2, k1, k0)
+        # reshape to (... other coils, k2, k1, k0)
         x_reshaped = x_indexed.reshape(x.shape[:-3] + self._trajectory_shape[-3:])
 
         return (x_reshaped,)
@@ -165,7 +165,7 @@ class CartesianSamplingOp(LinearOperator):
         if not self._needs_indexing:
             return (y,)
 
-        y_kflat = rearrange(y, '... coil k2 k1 k0 -> ... coil (k2 k1 k0)')
+        y_kflat = rearrange(y, '... coils k2 k1 k0 -> ... coils (k2 k1 k0)')
 
         if self._inside_encoding_matrix_idx is not None:
             idx = unsqueeze_left(self._inside_encoding_matrix_idx, y_kflat.ndim - self._inside_encoding_matrix_idx.ndim)
@@ -175,7 +175,7 @@ class CartesianSamplingOp(LinearOperator):
             y_kflat, self._sorted_grid_shape.z * self._sorted_grid_shape.y * self._sorted_grid_shape.x, self._fft_idx
         )
 
-        # reshape to  ..., other, coil, k2_enc, k1_enc, k0_enc
+        # reshape to  ..., other, coils, k2_enc, k1_enc, k0_enc
         y_reshaped = y_scattered.reshape(
             *y.shape[:-3],
             self._sorted_grid_shape.z,

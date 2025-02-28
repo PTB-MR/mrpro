@@ -24,7 +24,7 @@ def cartesian_grid(request):
             kx = kx + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
             ky = ky + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
             kz = kz + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
-        kz, ky, kz = (unsqueeze_left(x, 2) for x in (kz, ky, kx))
+        kz, ky, kx = (unsqueeze_left(x, 2) for x in (kz, ky, kx))
         return kz, ky, kx
 
     return generate

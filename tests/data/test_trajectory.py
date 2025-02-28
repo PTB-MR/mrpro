@@ -46,9 +46,11 @@ def test_trajectory_tensor_conversion(cartesian_grid):
     tensor = torch.stack((kz_full, ky_full, kx_full), dim=0).to(torch.float32)
 
     tensor_from_traj = trajectory.as_tensor()  # stack_dim=0
-    tensor_from_traj_dim2 = rearrange(trajectory.as_tensor(stack_dim=2), 'other k2 dim k1 k0->dim other k2 k1 k0')
+    tensor_from_traj_dim2 = rearrange(
+        trajectory.as_tensor(stack_dim=2), 'other coils dim k2 k1 k0->dim other coils k2 k1 k0'
+    )
     tensor_from_traj_from_tensor_dim3 = KTrajectory.from_tensor(
-        rearrange(tensor, 'dim other k2 k1 k0->other k2 k1 dim k0'), stack_dim=3
+        rearrange(tensor, 'dim other coils k2 k1 k0->other coils k2 dim k1 k0'), stack_dim=3
     ).as_tensor()
     tensor_from_traj_from_tensor = KTrajectory.from_tensor(tensor).as_tensor()  # stack_dim=0
 
