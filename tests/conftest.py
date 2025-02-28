@@ -10,6 +10,7 @@ import torch
 from ismrmrd import xsd
 from mrpro.data import AcqIdx, AcqInfo, KData, KHeader, KTrajectory, SpatialDimension
 from mrpro.data.enums import AcqFlags
+from mrpro.utils.reshape import unsqueeze_tensors_left
 from xsdata.models.datatype import XmlDate, XmlTime
 
 from tests import RandomGenerator
@@ -228,7 +229,8 @@ def create_traj(
         elif spacing == 'zero':
             k = torch.zeros(nk)
         k_list.append(k)
-    trajectory = KTrajectory(k_list[0], k_list[1], k_list[2], repeat_detection_tolerance=None)
+    kz, ky, kx = unsqueeze_tensors_left(k_list[0], k_list[1], k_list[2], ndim=5)
+    trajectory = KTrajectory(kz, ky, kx, repeat_detection_tolerance=None)
     return trajectory
 
 

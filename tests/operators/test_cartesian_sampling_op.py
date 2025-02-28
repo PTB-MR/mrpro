@@ -109,9 +109,9 @@ def test_cart_sampling_op_fwd_adj(sampling):
 
     # Create 3D uniform trajectory
     k_shape = (2, 5, 20, 40, 60)
-    nkx = (2, 1, 1, 60)
-    nky = (2, 1, 40, 1)
-    nkz = (2, 20, 1, 1)
+    nkx = (2, 1, 1, 1, 60)
+    nky = (2, 1, 1, 40, 1)
+    nkz = (2, 1, 20, 1, 1)
     type_kx = 'uniform'
     type_ky = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
     type_kz = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
@@ -124,7 +124,7 @@ def test_cart_sampling_op_fwd_adj(sampling):
     # Test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v
     random_generator = RandomGenerator(seed=0)
     u = random_generator.complex64_tensor(size=k_shape)
-    v = random_generator.complex64_tensor(size=k_shape[:2] + trajectory.as_tensor().shape[2:])
+    v = random_generator.complex64_tensor(size=k_shape[:-3] + trajectory.broadcasted_shape[-3:])
     dotproduct_adjointness_test(sampling_op, u, v)
 
 
@@ -147,9 +147,9 @@ def test_cart_sampling_op_gram(sampling):
 
     # Create 3D uniform trajectory
     k_shape = (2, 5, 20, 40, 60)
-    nkx = (2, 1, 1, 60)
-    nky = (2, 1, 40, 1)
-    nkz = (2, 20, 1, 1)
+    nkx = (2, 1, 1, 1, 60)
+    nky = (2, 1, 1, 40, 1)
+    nkz = (2, 1, 20, 1, 1)
     type_kx = 'uniform'
     type_ky = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
     type_kz = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
@@ -172,10 +172,10 @@ def test_cart_sampling_op_oversampling(k0_min, k0_max, k2_min, k2_max):
 
     # Create kx and kz sampling which are asymmetric and larger than the encoding matrix on one side
     # The indices are inverted to ensure CartesianSamplingOp acts on them
-    kx = rearrange(torch.linspace(k0_max, k0_min, 20), 'kx->1 1 1 kx')
-    ky = torch.ones(1, 1, 1, 1)
-    kz = rearrange(torch.linspace(k2_max, k2_min, 40), 'kz-> kz 1 1')
-    kz = torch.stack([kz, -kz], dim=0)  # different kz values for two other elements
+    kx = rearrange(torch.linspace(k0_max, k0_min, 20), 'kx -> 1 1 1 1 kx')
+    ky = torch.ones(1, 1, 1, 1, 1)
+    kz = rearrange(torch.linspace(k2_max, k2_min, 40), 'kz -> 1 1 kz 1 1')
+    kz = torch.concat([kz, -kz], dim=0)  # different kz values for two other elements
     trajectory = KTrajectory(kz=kz, ky=ky, kx=kx)
 
     with pytest.warns(UserWarning, match='K-space points lie outside of the encoding_matrix'):

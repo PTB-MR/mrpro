@@ -133,7 +133,7 @@ def test_non_uniform_fast_fourier_op_directions():
     img_shape = (2, 3, 1, 20, 30)
 
     # generate random traj and image
-    nk = [2, 1, 30, 40]
+    nk = [2, 1, 1, 30, 40]
     img, traj = create_data(
         img_shape,
         kdata_shape,
