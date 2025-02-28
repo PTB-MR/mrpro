@@ -1632,7 +1632,6 @@ def test_einops_reduce() -> None:
 def test_unqueeze_first() -> None:
     """Test unsqueeze in the first dimension"""
     r = Rotation.random((1, 2, 3), random_state=0)
-
     r2 = r.unsqueeze(0)
     assert r2.shape == (1, 1, 2, 3)
     assert r2[0].approx_equal(r).all()
