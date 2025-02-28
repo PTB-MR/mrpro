@@ -130,7 +130,7 @@ class UserValues(MoveDataMixin):
 
 
 @dataclass(slots=True)
-class PhysiologyTimestamps:
+class PhysiologyTimestamps(MoveDataMixin):
     """Time stamps relative to physiological triggering, e.g. ECG. Not in s but in vendor-specific time units."""
 
     timestamp1: torch.Tensor = field(default_factory=_float_factory)
