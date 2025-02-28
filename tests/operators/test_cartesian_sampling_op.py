@@ -14,9 +14,9 @@ from tests.conftest import create_traj
 def test_cart_sampling_op_data_match():
     # Create 3D uniform trajectory
     k_shape = (1, 5, 20, 40, 60)
-    nkx = (1, 1, 1, 60)
-    nky = (1, 1, 40, 1)
-    nkz = (1, 20, 1, 1)
+    nkx = (1, 1, 1, 1, 60)
+    nky = (1, 1, 1, 40, 1)
+    nkz = (1, 1, 20, 1, 1)
     type_kx = 'uniform'
     type_ky = 'uniform'
     type_kz = 'uniform'
@@ -31,11 +31,11 @@ def test_cart_sampling_op_data_match():
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
 
     # Subsample data and trajectory
-    kdata_sub = kdata[:, :, ::2, ::4, ::3]
+    kdata_sub = kdata[..., ::2, ::4, ::3]
     trajectory_sub = KTrajectory(
-        kz=trajectory.kz[:, ::2, :, :],
-        ky=trajectory.ky[:, :, ::4, :],
-        kx=trajectory.kx[:, :, :, ::3],
+        kz=trajectory.kz[..., ::2, :, :],
+        ky=trajectory.ky[..., :, ::4, :],
+        kx=trajectory.kx[..., :, :, ::3],
     )
     sampling_op_sub = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory_sub)
 
@@ -48,7 +48,7 @@ def test_cart_sampling_op_data_match():
     assert k.shape == k_sub.shape
 
     # Verify data is correctly sorted
-    torch.testing.assert_close(kdata[:, :, ::2, ::4, ::3], k_sub[:, :, ::2, ::4, ::3])
+    torch.testing.assert_close(kdata[..., ::2, ::4, ::3], k_sub[..., ::2, ::4, ::3])
 
 
 def subsample_traj(
