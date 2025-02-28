@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
-from typing import assert_type
 
 import pytest
 from mrpro.utils import getnestedattr, getnesteditem
+from typing_extensions import assert_type
 
 
 @dataclass

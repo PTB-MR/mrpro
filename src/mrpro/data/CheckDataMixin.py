@@ -376,17 +376,17 @@ class HasShapeAndDtype(HasDtype, HasShape):
     """Has both a shape and a dtype attribute."""
 
 
-@dataclass(slots=True, init=False)
+@dataclass(slots=True, init=False, frozen=True)
 class Annotation:
     """A shape and dtype annotation for a tensor-like object."""
 
-    dtype: tuple[torch.dtype, ...] | None = None
+    dtype: tuple[torch.dtype, ...] | None
     """The acceptable dtype(s) for the object."""
 
-    shape: tuple[_DimType, ...] | None = None
+    shape: tuple[_DimType, ...] | None
     """The parsed shape specification."""
 
-    index_variadic: int | None = None
+    index_variadic: int | None
     """The index of the variadic dimension in the shape specification if one exists; otherwise, `None`."""
 
     def __init__(self, dtype: torch.dtype | Sequence[torch.dtype] | None = None, shape: str | None = None) -> None:
@@ -418,16 +418,21 @@ class Annotation:
             For more information, see `jaxtyping <https://docs.kidger.site/jaxtyping/api/array/>`__
         """
         if shape is not None:
-            self.shape, self.index_variadic = string_to_shape_specification(shape)
+            parsed_shape, index_variadic = string_to_shape_specification(shape)
         else:
-            self.shape = None
+            parsed_shape = None
+            index_variadic = None
+        object.__setattr__(self, 'shape', parsed_shape)
+        object.__setattr__(self, 'index_variadic', index_variadic)
+
         if dtype is not None:
             if isinstance(dtype, Sequence):
-                self.dtype = tuple(dtype)
+                dtype = tuple(dtype)
             else:
-                self.dtype = (dtype,)
+                dtype = (dtype,)
         else:
-            self.dtype = None
+            dtype = None
+        object.__setattr__(self, 'dtype', dtype)
 
     def assert_dtype(self, obj: HasDtype) -> None:
         """Raise a DtypeError if the object does not have the expected dtype.
