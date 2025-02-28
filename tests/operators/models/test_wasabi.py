@@ -1,5 +1,6 @@
 """Tests for the WASABI signal model."""
 
+import pytest
 import torch
 from mrpro.operators.models import WASABI
 from tests import autodiff_test
@@ -53,3 +54,26 @@ def test_autodiff_WASABI():
     offset, b0_shift, rb1, c, d = create_data(offset_max=300, n_offsets=2)
     wasabi_model = WASABI(offsets=offset)
     autodiff_test(wasabi_model, b0_shift, rb1, c, d)
+
+
+@pytest.mark.cuda
+def test_wasabi_cuda():
+    """Test the WASABI model works on cuda devices."""
+    offset, b0_shift, rb1, c, d = create_data(offset_max=300, n_offsets=2)
+
+    # Create on CPU, transfer to GPU and run on GPU
+    model = WASABI(offset)
+    model.cuda()
+    (signal,) = model(b0_shift.cuda(), rb1.cuda(), c.cuda(), d.cuda())
+    assert signal.is_cuda
+
+    # Create on GPU and run on GPU
+    model = WASABI(offset.cuda())
+    (signal,) = model(b0_shift.cuda(), rb1.cuda(), c.cuda(), d.cuda())
+    assert signal.is_cuda
+
+    # Create on GPU, transfer to CPU and run on CPU
+    model = WASABI(offset.cuda())
+    model.cpu()
+    (signal,) = model(b0_shift, rb1, c, d)
+    assert signal.is_cpu
