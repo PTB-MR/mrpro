@@ -11,11 +11,23 @@ from mrpro.data import KTrajectory
 
 def example_traj_rad_2d(n_kr, n_ka, phi0=0.0, broadcast=True):
     """Create 2D radial trajectory with uniform angular gap."""
-    krad = repeat(torch.linspace(-n_kr // 2, n_kr // 2 - 1, n_kr) / n_kr, 'k0 -> other k2 k1 k0', other=1, k2=1, k1=1)
-    kang = repeat(
-        torch.linspace(0, n_ka - 1, n_ka) * (torch.pi / n_ka) + phi0, 'k1 -> other k2 k1 k0', other=1, k2=1, k0=1
+    krad = repeat(
+        torch.linspace(-n_kr // 2, n_kr // 2 - 1, n_kr) / n_kr,
+        'k0 -> other coils k2 k1 k0',
+        other=1,
+        coils=1,
+        k2=1,
+        k1=1,
     )
-    kz = torch.zeros(1, 1, 1, 1)
+    kang = repeat(
+        torch.linspace(0, n_ka - 1, n_ka) * (torch.pi / n_ka) + phi0,
+        'k1 -> other coils k2 k1 k0',
+        other=1,
+        coils=1,
+        k2=1,
+        k0=1,
+    )
+    kz = torch.zeros(1, 1, 1, 1, 1)
     ky = torch.sin(kang) * krad
     kx = torch.cos(kang) * krad
     trajectory = KTrajectory(kz, ky, kx, repeat_detection_tolerance=1e-8 if broadcast else None)
@@ -40,7 +52,7 @@ def test_dcf_rad_traj_voronoi(n_kr, n_ka, phi0, broadcast):
     trajectory = traj.as_tensor()
 
     if n_ka > 1:  # only for for multiple spokes, analytical dcf is defined
-        dcf = dcf_2d3d_voronoi(trajectory[1:3, 0, ...])
+        dcf = dcf_2d3d_voronoi(trajectory[1:3, 0, 0, ...])
         krad_idx = torch.linspace(-n_kr // 2, n_kr // 2 - 1, n_kr)
         dcf_analytical = torch.pi / n_ka * torch.abs(krad_idx) * (1 / n_kr) ** 2
         dcf_analytical[krad_idx == 0] = 2 * torch.pi / n_ka * 1 / 8 * (1 / n_kr) ** 2
@@ -49,7 +61,7 @@ def test_dcf_rad_traj_voronoi(n_kr, n_ka, phi0, broadcast):
         # accurately using voronoi
         torch.testing.assert_close(dcf_analytical[:, :, 1:-1], dcf[:, :, 1:-1])
     else:
-        dcf = dcf_1d(trajectory[0, ...])
+        dcf = dcf_1d(trajectory[0, 0, ...])
         dcf_ptp = dcf.max() - dcf.min()
         assert dcf_ptp / dcf.max() < 0.1, 'DCF for a single spoke should be constant-ish'
         assert dcf.sum() > 1e-3, 'DCF sum should not be zero'
@@ -62,18 +74,24 @@ def test_dcf_3d_cart_traj_broadcast_voronoi(n_k2, n_k1, n_k0):
     Cartesian trajectory to analytical solution which is 1 for each k-space
     point."""
     # 3D trajectory with points on Cartesian grid with step size of 1
-    kx = repeat(torch.linspace(-n_k0 // 2, n_k0 // 2 - 1, n_k0), 'k0 -> other k2 k1 k0', other=1, k2=1, k1=1)
-    ky = repeat(torch.linspace(-n_k1 // 2, n_k1 // 2 - 1, n_k1), 'k1 -> other k2 k1 k0', other=1, k2=1, k0=1)
-    kz = repeat(torch.linspace(-n_k2 // 2, n_k2 // 2 - 1, n_k2), 'k2 -> other k2 k1 k0', other=1, k1=1, k0=1)
+    kx = repeat(
+        torch.linspace(-n_k0 // 2, n_k0 // 2 - 1, n_k0), 'k0 -> other coils k2 k1 k0', other=1, coils=1, k2=1, k1=1
+    )
+    ky = repeat(
+        torch.linspace(-n_k1 // 2, n_k1 // 2 - 1, n_k1), 'k1 -> other  coils k2 k1 k0', other=1, coils=1, k2=1, k0=1
+    )
+    kz = repeat(
+        torch.linspace(-n_k2 // 2, n_k2 // 2 - 1, n_k2), 'k2 -> other  coils k2 k1 k0', other=1, coils=1, k1=1, k0=1
+    )
     trajectory = KTrajectory(kx, ky, kz)
 
     # Analytical dcf
-    dcf_analytical = torch.ones((1, n_k2, n_k1, n_k0))
+    dcf_analytical = torch.ones((1, 1, n_k2, n_k1, n_k0))
     # calculate dcf
     dcf = dcf_2d3d_voronoi(trajectory.as_tensor())
     # Do not test outer points because they have to be approximated and cannot be calculated
     # accurately using voronoi.
-    torch.testing.assert_close(dcf[:, 1:-1, 1:-1, 1:-1], dcf_analytical[:, 1:-1, 1:-1, 1:-1])
+    torch.testing.assert_close(dcf[..., 1:-1, 1:-1, 1:-1], dcf_analytical[..., 1:-1, 1:-1, 1:-1])
 
 
 @pytest.mark.parametrize(('n_k2', 'n_k1', 'n_k0'), [(4, 6, 8), (1, 2, 2)])
@@ -122,9 +140,9 @@ def test_dcf_3d_cart_nonuniform_traj_voronoi(n_k2, n_k1, n_k0, k2_steps, k1_step
 
     ky_full, kz_full, kx_full = torch.meshgrid(k1_range, k2_range, k0_range, indexing='xy')
     trajectory_full = KTrajectory(
-        repeat(kz_full, '... -> other ...', other=1),
-        repeat(ky_full, '... -> other ...', other=1),
-        repeat(kx_full, '... -> other ...', other=1),
+        repeat(kz_full, '... -> other  coils ...', other=1, coils=1),
+        repeat(ky_full, '... -> other  coils ...', other=1, coils=1),
+        repeat(kx_full, '... -> other  coils ...', other=1, coils=1),
         repeat_detection_tolerance=None,
     )
 
@@ -132,15 +150,15 @@ def test_dcf_3d_cart_nonuniform_traj_voronoi(n_k2, n_k1, n_k0, k2_steps, k1_step
     ky_broadcast = repeat(k1_range, 'k1 -> k2 k1 k0', k2=1, k0=1)
     kz_broadcast = repeat(k2_range, 'k2 -> k2 k1 k0', k1=1, k0=1)
     trajectory_broadcast = KTrajectory(
-        repeat(kz_broadcast, '... -> other ...', other=1),
-        repeat(ky_broadcast, '... -> other ...', other=1),
-        repeat(kx_broadcast, '... -> other ...', other=1),
+        repeat(kz_broadcast, '... -> other  coils ...', other=1, coils=1),
+        repeat(ky_broadcast, '... -> other  coils ...', other=1, coils=1),
+        repeat(kx_broadcast, '... -> other  coils ...', other=1, coils=1),
         repeat_detection_tolerance=None,
     )
 
     # Sanity check inputs
     torch.testing.assert_close(trajectory_full.as_tensor(), trajectory_broadcast.as_tensor())
-    assert trajectory_full.broadcasted_shape == (1, len(k2_range), len(k1_range), len(k0_range))
+    assert trajectory_full.broadcasted_shape == (1, 1, len(k2_range), len(k1_range), len(k0_range))
     torch.testing.assert_close(kx_full[0, 0, :], k0_range)  # kx changes along k0
     torch.testing.assert_close(ky_full[0, :, 0], k1_range)  # ky changes along k1
     torch.testing.assert_close(kz_full[:, 0, 0], k2_range)  # kz changes along k2
