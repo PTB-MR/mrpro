@@ -166,11 +166,11 @@ def autodiff_test(
     with torch.autograd.detect_anomaly():
         v_range, jvp = torch.func.jvp(operator.forward, u, u)
     assert all(x.isfinite().all() for x in v_range), 'result is not finite'
-    assert all(x.isftinite().all() for x in jvp), 'JVP is not finite'
+    assert all(x.isfinite().all() for x in jvp), 'JVP is not finite'
 
     # Reverse-mode autodiff using vjp
     with torch.autograd.detect_anomaly():
         (output, vjpfunc) = torch.func.vjp(operator.forward, *u)
         vjp = vjpfunc(v_range)
-    assert all(x.isftinite().all() for x in output), 'result is not finite'
-    assert all(x.isftinite().all() for x in vjp), 'VJP is not finite'
+    assert all(x.isfinite().all() for x in output), 'result is not finite'
+    assert all(x.isfinite().all() for x in vjp), 'VJP is not finite'
