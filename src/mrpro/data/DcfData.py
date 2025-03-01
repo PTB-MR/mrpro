@@ -23,7 +23,7 @@ class DcfData(MoveDataMixin):
     """Density compensation data (DcfData) class."""
 
     data: torch.Tensor
-    """Density compensation values. Shape (... other, k2, k1, k0)"""
+    """Density compensation values. Shape `(... other, k2, k1, k0)`"""
 
     @classmethod
     def from_traj_voronoi(cls, traj: KTrajectory) -> Self:
@@ -56,7 +56,7 @@ class DcfData(MoveDataMixin):
 
         if ks_needing_voronoi:
             # Handle full dimensions needing voronoi
-            dcfs.append(smap(dcf_2d3d_voronoi, torch.stack(list(ks_needing_voronoi), -4), 4))
+            dcfs.append(smap(dcf_2d3d_voronoi, torch.stack(torch.broadcast_tensors(*ks_needing_voronoi), -4), 4))
 
         if dcfs:
             # Multiply all dcfs together

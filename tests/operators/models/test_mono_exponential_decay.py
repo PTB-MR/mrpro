@@ -3,6 +3,7 @@
 import pytest
 import torch
 from mrpro.operators.models import MonoExponentialDecay
+from tests import autodiff_test
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
 
 
@@ -41,3 +42,33 @@ def test_mono_exponential_decay_shape(parameter_shape, contrast_dim_shape, signa
     m0, decay_constant = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=2)
     (signal,) = model_op(m0, decay_constant)
     assert signal.shape == signal_shape
+
+
+def test_autodiff_mono_exponential_decay():
+    """Test autodiff works for mono-exponential decay model."""
+    model = MonoExponentialDecay(decay_time=20)
+    m0, decay_constant = create_parameter_tensor_tuples(parameter_shape=(2, 5, 10, 10, 10), number_of_tensors=2)
+    autodiff_test(model, m0, decay_constant)
+
+
+@pytest.mark.cuda
+def test_mono_exponential_deay_cuda():
+    """Test the mono-exponential decay model works on cuda devices."""
+    m0, decay_constant = create_parameter_tensor_tuples(parameter_shape=(2, 5, 10, 10, 10), number_of_tensors=2)
+
+    # Create on CPU, transfer to GPU and run on GPU
+    model = MonoExponentialDecay(decay_time=10)
+    model.cuda()
+    (signal,) = model(m0.cuda(), decay_constant.cuda())
+    assert signal.is_cuda
+
+    # Create on GPU and run on GPU
+    model = MonoExponentialDecay(decay_time=torch.as_tensor(10).cuda())
+    (signal,) = model(m0.cuda(), decay_constant.cuda())
+    assert signal.is_cuda
+
+    # Create on GPU, transfer to CPU and run on CPU
+    model = MonoExponentialDecay(decay_time=torch.as_tensor(10).cuda())
+    model.cpu()
+    (signal,) = model(m0, decay_constant)
+    assert signal.is_cpu
