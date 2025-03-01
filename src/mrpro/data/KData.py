@@ -605,7 +605,7 @@ class KData(
         )
 
         new_idx = repeat(
-            torch.linspace(0, n_other - 1, n_other), 'other-> other k2 k1 1', k2=data.shape[-3], k1=data.shape[-2]
+            torch.linspace(0, n_other - 1, n_other), 'other-> other 1 k2 k1 1', k2=data.shape[-3], k1=data.shape[-2]
         )
         setattr(header.acq_info.idx, other_label, new_idx)
 

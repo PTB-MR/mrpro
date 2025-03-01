@@ -342,6 +342,8 @@ def test_KData_split_k1_into_other(consistently_shaped_kdata, monkeypatch, n_oth
     assert kdata_split.data.shape == (idx_split.shape[0] * n_other, n_coils, n_k2, k1_per_block, n_k0)
     # Verify shape of trajectory
     assert kdata_split.traj.broadcasted_shape == (idx_split.shape[0] * n_other, 1, n_k2, k1_per_block, n_k0)
+    new_idx = getattr(kdata_split.header.acq_info.idx, other_label)
+    assert new_idx.shape == (idx_split.shape[0] * n_other, 1, n_k2, n_k1, 1)
 
 
 @pytest.mark.parametrize(

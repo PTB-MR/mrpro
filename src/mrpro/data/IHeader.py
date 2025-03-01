@@ -68,7 +68,8 @@ def try_reduce_repeat(value: T) -> T:
             return cast(T, list(value))
         case _:
             raise NotImplementedError('Unsupported Type')
-    raise ValueError('Spatial or coil dimension remains')
+
+    raise ValueError(f'Dimension mismatch. Spatial or coil dimension should be reduced to a single value. {value}')
 
 
 @dataclass(slots=True)
