@@ -1,7 +1,7 @@
 """Acquisition information dataclass."""
 
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import Literal, TypeAlias, overload
 
 import ismrmrd
@@ -104,6 +104,16 @@ class AcqIdx(MoveDataMixin):
 
     user7: torch.Tensor = field(default_factory=_int_factory)
     """User index 7."""
+
+    def __post_init__(self) -> None:
+        """Ensure that all indices are broadcastable."""
+        f = [getattr(self, field.name) for field in fields(self)]
+        try:
+            torch.broadcast_shapes(*[field.shape for field in f])
+        except RuntimeError:
+            raise ValueError('The acquisition index dimensions must be broadcastable.') from None
+        if any(x.ndim < 5 for x in f):
+            raise ValueError('The acquisition index tensors should each have at least 5 dimensions.')
 
 
 @dataclass(slots=True)

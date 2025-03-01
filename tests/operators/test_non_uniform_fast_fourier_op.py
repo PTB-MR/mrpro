@@ -169,7 +169,7 @@ def test_non_uniform_fast_fourier_op_error_directions():
             direction=(-2, -1, 'x'),
             recon_matrix=[1, 1],
             encoding_matrix=[1, 1],
-            traj=KTrajectory.from_tensor(torch.randn((3, 1, 1, 1, 1))),
+            traj=KTrajectory.from_tensor(torch.ones((3, 1, 1, 1, 1, 1))),
         )
 
 
@@ -180,7 +180,7 @@ def test_non_uniform_fast_fourier_op_error_matrix():
             direction=(-2, -1),
             recon_matrix=[1, 1, 1],
             encoding_matrix=[1, 1],
-            traj=KTrajectory.from_tensor(torch.randn((3, 1, 1, 1, 1))),
+            traj=KTrajectory.from_tensor(torch.ones((3, 1, 1, 1, 1, 1))),
         )
 
     with pytest.raises(ValueError, match='encoding_matrix should have'):
@@ -188,5 +188,5 @@ def test_non_uniform_fast_fourier_op_error_matrix():
             direction=(-2, -1),
             recon_matrix=[1, 1],
             encoding_matrix=[1],
-            traj=KTrajectory.from_tensor(torch.randn((3, 1, 1, 1, 1))),
+            traj=KTrajectory.from_tensor(torch.ones((3, 1, 1, 1, 1, 1))),
         )

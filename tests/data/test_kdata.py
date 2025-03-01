@@ -398,9 +398,9 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader):
     k_tensor = repeat(kdata_os, 'k1 k0 -> other coils k2 k1 k0', other=1, coils=n_coils, k2=1)
 
     # Create random 2D Cartesian trajectory
-    kx = random_generator.float32_tensor(size=(1, 1, 1, n_k0_oversampled))
-    ky = random_generator.float32_tensor(size=(1, 1, n_k1, 1))
-    kz = random_generator.float32_tensor(size=(1, 1, 1, 1))
+    kx = random_generator.float32_tensor(size=(1, 1, 1, 1, n_k0_oversampled))
+    ky = random_generator.float32_tensor(size=(1, 1, 1, n_k1, 1))
+    kz = random_generator.float32_tensor(size=(1, 1, 1, 1, 1))
     trajectory = KTrajectory(kz, ky, kx)
 
     # Create KData

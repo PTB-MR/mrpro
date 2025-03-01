@@ -94,7 +94,7 @@ def test_trajectory_to_float64(cartesian_grid):
 @pytest.mark.parametrize('dtype', [torch.float32, torch.float64, torch.int32, torch.int64])
 def test_trajectory_floating_dtype(dtype):
     """Test if the trajectory will always be converted to float"""
-    ks = torch.ones(3, 1, 1, 1, 1, dtype=dtype)
+    ks = torch.ones(3, 1, 1, 1, 1, 1, dtype=dtype)
     traj = KTrajectory(*ks)
     if dtype.is_floating_point:
         # keep as as

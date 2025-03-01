@@ -61,7 +61,7 @@ def test_dcf_rad_traj_voronoi(n_kr, n_ka, phi0, broadcast):
         # accurately using voronoi
         torch.testing.assert_close(dcf_analytical[:, :, 1:-1], dcf[:, :, 1:-1])
     else:
-        dcf = dcf_1d(trajectory[0, 0, ...])
+        dcf = dcf_1d(trajectory[0, ...])
         dcf_ptp = dcf.max() - dcf.min()
         assert dcf_ptp / dcf.max() < 0.1, 'DCF for a single spoke should be constant-ish'
         assert dcf.sum() > 1e-3, 'DCF sum should not be zero'
@@ -106,13 +106,13 @@ def test_dcf_3d_cart_full_traj_voronoi(n_k2, n_k1, n_k0):
         indexing='xy',
     )
     trajectory = KTrajectory(
-        repeat(kz, '... -> other ...', other=1),
-        repeat(ky, '... -> other ...', other=1),
-        repeat(kx, '... -> other ...', other=1),
+        repeat(kz, '... -> other coils ...', other=1, coils=1),
+        repeat(ky, '... -> other coils ...', other=1, coils=1),
+        repeat(kx, '... -> other coils ...', other=1, coils=1),
         repeat_detection_tolerance=None,
     )
     # Analytical dcf
-    dcf_analytical = torch.ones((1, n_k2, n_k1, n_k0))
+    dcf_analytical = torch.ones((1, 1, n_k2, n_k1, n_k0))
     dcf = dcf_2d3d_voronoi(trajectory.as_tensor())
     # Do not test outer points because they have to be approximated and cannot be calculated
     # accurately using voronoi
