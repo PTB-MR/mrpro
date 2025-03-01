@@ -160,13 +160,17 @@ def autodiff_test(
     Raises
     ------
     AssertionError
-        if autodiff fails
+        if autodiff fails or the result is not finite
     """
     # Forward-mode autodiff using jvp
     with torch.autograd.detect_anomaly():
-        v_range, _ = torch.func.jvp(operator.forward, u, u)
+        v_range, jvp = torch.func.jvp(operator.forward, u, u)
+    assert torch.stack(v_range).isfinite().all(), 'result is not finite'
+    assert torch.stack(jvp).isfinite().all(), 'JVP is not finite'
 
-    # Backward-mode autodiff using vjp
+    # Reverse-mode autodiff using vjp
     with torch.autograd.detect_anomaly():
-        (_, vjpfunc) = torch.func.vjp(operator.forward, *u)
-        vjpfunc(v_range)
+        (output, vjpfunc) = torch.func.vjp(operator.forward, *u)
+        vjp = vjpfunc(v_range)
+    assert torch.stack(vjp).isfinite().all(), 'VJP is not finite'
+    assert torch.stack(output).isfinite().all(), 'result is not finite'
