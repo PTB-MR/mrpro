@@ -18,6 +18,7 @@ from mrpro.algorithms.reconstruction import (
 from mrpro.data import CsmData, IData, KData
 from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 from mrpro.operators import FiniteDifferenceOp
+from mrpro.operators.functionals import L1NormViewAsReal
 from mrpro.utils import split_idx
 
 
@@ -66,6 +67,7 @@ tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
 data_folder = Path(tmp.name)
 zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
 
+
 # %%
 # Read raw data and trajectory
 kdata = KData.from_file(data_folder / '2D_GRad_map_t1.h5', KTrajectoryIsmrmrd())
@@ -105,19 +107,18 @@ show_dynamic_images(img_direct.rss())
 # For more information on this reconstruction method have a look at <project:tv_minimization_reconstruction_pdhg.ipynb>.
 
 # %%
-regularization_weight_space = 5e-6
-regularization_weight_time = 5e-6
+regularization_weight = 5e-6
 tv_reconstruction = TotalVariationRegularizedReconstruction(
     kdata_dynamic,
     csm=csm,
     max_iterations=100,
-    regularization_weight=(regularization_weight_time, 0, 0, regularization_weight_space, regularization_weight_space),
+    regularization_weights=(regularization_weight, 0, 0, regularization_weight, regularization_weight),
 )
 img_tv = tv_reconstruction(kdata_dynamic)
 show_dynamic_images(img_tv.rss())
 
 # %% [markdown]
-# #### TV-regularized reconstruction using ADMM
+# #### TV-regularized reconstruction using ADMM - Version 1
 # In the above example, PDHG repeatedly applies the acquisition operator and its adjoint during the iterations, which
 # is computationally demanding and hence takes a long time. Another option is to use the Alternating Direction Method
 # of Multipliers (ADMM) [[S. Boyd et al, 2011](http://dx.doi.org/10.1561/2200000016)], which solves the general problem
@@ -132,9 +133,9 @@ show_dynamic_images(img_tv.rss())
 #
 # by doing
 #
-# $x_{k+1} = \argmin_x \lambda \| \nabla x \|_1 + \frac{\rho}{2}||x - z_k + u_k||_2^2$
+# $x_{k+1} = \mathrm{argmin}_x \lambda \| \nabla x \|_1 + \frac{\rho}{2}||x - z_k + u_k||_2^2$
 #
-# $z_{k+1} = \argmin_z \frac{1}{2}||Ez - y||_2^2 + \frac{\rho}{2}||x_{k+1} - z + u_k||_2^2$
+# $z_{k+1} = \mathrm{argmin}_z \frac{1}{2}||Ez - y||_2^2 + \frac{\rho}{2}||x_{k+1} - z + u_k||_2^2$
 #
 # $u_{k+1} = u_k + x_{k+1} - z_{k+1}$
 #
@@ -145,12 +146,12 @@ show_dynamic_images(img_tv.rss())
 data_weight = 0.5
 n_admm_iterations = 4
 tv_denoising = TotalVariationDenoising(
-    regularization_weight=(
-        regularization_weight_time / data_weight,
+    regularization_weights=(
+        regularization_weight / data_weight,
         0,
         0,
-        regularization_weight_space / data_weight,
-        regularization_weight_space / data_weight,
+        regularization_weight / data_weight,
+        regularization_weight / data_weight,
     ),
     max_iterations=100,
 )
@@ -182,7 +183,7 @@ img_tv_admm = img_z.rss()
 
 
 # %% [markdown]
-# #### TV-regularized reconstruction using ADMM
+# #### TV-regularized reconstruction using ADMM - Version 2
 # Another option which avoids pdhg altogether is to use
 #
 # $f(x) = \lambda \| x \|_1$, $g(z)= \frac{1}{2}||Ez - y||_2^2$, $A = I$, $B= -\nabla$ and $c = 0$
@@ -193,19 +194,20 @@ img_tv_admm = img_z.rss()
 #
 # by doing
 #
-# $x_{k+1} = \argmin_x \lambda \| x \|_1 + \frac{\rho}{2}||x - \nabla z_k + u_k||_2^2$
+# $x_{k+1} = \mathrm{argmin}_x \lambda \| x \|_1 + \frac{\rho}{2}||x - \nabla z_k + u_k||_2^2$
 #
-# $z_{k+1} = \argmin_z \frac{1}{2}||Ez - y||_2^2 + \frac{\rho}{2}||x_{k+1} - \nabla z + u_k||_2^2$
+# $z_{k+1} = \mathrm{argmin}_z \frac{1}{2}||Ez - y||_2^2 + \frac{\rho}{2}||x_{k+1} - \nabla z + u_k||_2^2$
 #
 # $u_{k+1} = u_k + x_{k+1} - \nabla z_{k+1}$
 #
-# The first step is soft-thresholding of $x$: $S_{\lambda/\rho}(\nabla z_k - u_k)$, the second step is a regularized
-# iterative SENSE update of $z$ and the final step updates the dual variable $u$.
+# The first step is the poximal mapping of the L1-norm of x which is a soft-thresholding of $x$:
+# $S_{\lambda/\rho}(\nabla z_k - u_k)$. The second step is a regularized iterative SENSE update of $z$ and the final
+# step updates the dual variable $u$.
 
 # %%
 nabla_operator = FiniteDifferenceOp(dim=(0, -2, -1), mode='forward')
 data_weight = 0.5
-regularization_weight = regularization_weight_time / (data_weight)
+l1_norm_of_x = L1NormViewAsReal(divide_by_n=False)
 
 regularized_iterative_sense = RegularizedIterativeSENSEReconstruction(
     kdata_dynamic,
@@ -219,10 +221,8 @@ regularized_iterative_sense.dcf = None
 img_z = img_direct.clone()
 img_u = torch.zeros_like(img_direct.data)
 for _ in range(n_admm_iterations):
-    # Denoising by soft-thresholding
-    img_x_nabla = torch.view_as_complex(
-        torch.nn.functional.softshrink(torch.view_as_real(nabla_operator(img_z.data)[0] - img_u), regularization_weight)
-    )
+    # Proximal mapping of x (soft-thresholding)
+    img_x_nabla = l1_norm_of_x.prox(nabla_operator(img_z.data)[0] - img_u, regularization_weight / data_weight)[0]
 
     # Regularized iterative SENSE
     regularized_iterative_sense.regularization_data = img_x_nabla + img_u

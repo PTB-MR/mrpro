@@ -23,17 +23,18 @@ from mrpro.operators.LinearOperator import LinearOperator
 class TotalVariationRegularizedReconstruction(DirectReconstruction):
     r"""TV-regularized reconstruction.
 
-    This algorithm solves the problem :math:`min_x \frac{1}{2}||(Ax - y)||_2^2 + ||L\nabla x||_1`
+    This algorithm solves the problem :math:`min_x \frac{1}{2}||(Ax - y)||_2^2 + \sum_i l_i ||\nabla_i x||_1`
     by using the PDHG-algorithm. :math:`A` is the acquisition model (coil sensitivity maps, Fourier operator,
-    k-space sampling), :math:`y` is the acquired k-space data, :math:`L` is the strength of the regularization and
-    :math:`\nabla` is the finite difference operator applied to :math:`x`.
+    k-space sampling), :math:`y` is the acquired k-space data, :math:`l_i` are the strengths of the regularization
+    along the different dimensions and :math:`\nabla_i` is the finite difference operator applied to :math:`x` along
+    different dimensions :math:`i`.
     """
 
     max_iterations: int
     """Maximum number of PDHG iterations."""
 
-    regularization_weight: torch.Tensor
-    """Strength of the regularization :math:`L`."""
+    regularization_weights: torch.Tensor
+    """Strengths of the regularization along different dimensions :math:`l_i`."""
 
     def __init__(
         self,
@@ -44,7 +45,7 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         dcf: DcfData | None = None,
         *,
         max_iterations: int = 32,
-        regularization_weight: Sequence[float] | Sequence[torch.Tensor],
+        regularization_weights: Sequence[float] | Sequence[torch.Tensor],
     ) -> None:
         """Initialize TotalVariationRegularizedReconstruction.
 
@@ -68,10 +69,10 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
             starting estimate for PDHG.
         max_iterations
             Maximum number of PDHG iterations
-        regularization_weight
-            Strength of the regularization (:math:`L`). Each entry is the regularization weight along a dimension of
-            the reconstructed image starting at the back. E.g. (1,) will apply TV with L=1 along dimension (-1,).
-            (3,0,2) will apply TV with L=2 along dimension (-1) and TV with L=3 along (-3).
+        regularization_weights
+            Strengths of the regularization (:math:`l_i`). Each entry is the regularization weight along a dimension of
+            the reconstructed image starting at the back. E.g. (1,) will apply TV with l=1 along dimension (-1,).
+            (3,0,2) will apply TV with l=2 along dimension (-1) and TV with l=3 along (-3).
 
         Raises
         ------
@@ -80,7 +81,7 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         """
         super().__init__(kdata, fourier_op, csm, noise, dcf)
         self.max_iterations = max_iterations
-        self.regularization_weight = torch.as_tensor(regularization_weight)
+        self.regularization_weights = torch.as_tensor(regularization_weights)
 
     def forward(self, kdata: KData) -> IData:
         """Apply the reconstruction.
@@ -105,11 +106,11 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
 
         # Finite difference operator and corresponding L1-norm
         nabla_operator = [
-            (FiniteDifferenceOp(dim=(dim - len(self.regularization_weight),), mode='forward'),)
-            for dim, weight in enumerate(self.regularization_weight)
+            (FiniteDifferenceOp(dim=(dim - len(self.regularization_weights),), mode='forward'),)
+            for dim, weight in enumerate(self.regularization_weights)
             if weight != 0
         ]
-        l1 = [weight * L1NormViewAsReal(divide_by_n=False) for weight in self.regularization_weight if weight != 0]
+        l1 = [weight * L1NormViewAsReal(divide_by_n=False) for weight in self.regularization_weights if weight != 0]
 
         f = ProximableFunctionalSeparableSum(l2, *l1)
         g = ZeroFunctional()
