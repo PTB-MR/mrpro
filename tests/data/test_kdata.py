@@ -326,10 +326,10 @@ def test_KData_clone(ismrmrd_cart):
 )
 def test_KData_split_k1_into_other(consistently_shaped_kdata, monkeypatch, n_other_split, other_label):
     """Test splitting of the k1 dimension into other."""
-    # Create KData
     *n_others, n_coils, n_k2, n_k1, n_k0 = consistently_shaped_kdata.data.shape
+    n_other = torch.tensor(n_others).prod().item()
 
-    # Create split index
+    # Split index
     k1_per_block = n_k1 // n_other_split
     idx_k1 = torch.linspace(0, n_k1 - 1, n_k1, dtype=torch.int32)
     idx_split = split_idx(idx_k1, k1_per_block)
@@ -337,13 +337,10 @@ def test_KData_split_k1_into_other(consistently_shaped_kdata, monkeypatch, n_oth
     # Split data
     kdata_split = consistently_shaped_kdata.split_k1_into_other(idx_split, other_label)
 
-    # Verify shape of k-space data
-    n_other = torch.tensor(n_others).prod().item()
     assert kdata_split.data.shape == (idx_split.shape[0] * n_other, n_coils, n_k2, k1_per_block, n_k0)
-    # Verify shape of trajectory
     assert kdata_split.traj.broadcasted_shape == (idx_split.shape[0] * n_other, 1, n_k2, k1_per_block, n_k0)
     new_idx = getattr(kdata_split.header.acq_info.idx, other_label)
-    assert new_idx.shape == (idx_split.shape[0] * n_other, 1, n_k2, n_k1, 1)
+    assert new_idx.shape == (idx_split.shape[0] * n_other, 1, n_k2, k1_per_block, 1)
 
 
 @pytest.mark.parametrize(

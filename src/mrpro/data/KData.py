@@ -575,7 +575,7 @@ class KData(
             K-space data with new shape `((other other_split) coils k2 k1_per_split k0)`
 
         """
-        n_other = split_idx.shape[0]
+        n_other_split, n_k1_per_split = split_idx.shape
         n_k1 = self.data.shape[-2]  # This assumes that data is not broadcasted along k1
 
         def split(data: RotationOrTensor) -> RotationOrTensor:
@@ -605,7 +605,11 @@ class KData(
         )
 
         new_idx = repeat(
-            torch.linspace(0, n_other - 1, n_other), 'other-> other 1 k2 k1 1', k2=data.shape[-3], k1=data.shape[-2]
+            torch.arange(n_other_split),
+            'other_split-> (other_split other) 1 k2 k1 1',
+            other=data.shape[0] // n_other_split,
+            k2=data.shape[-3],
+            k1=n_k1_per_split,
         )
         setattr(header.acq_info.idx, other_label, new_idx)
 
