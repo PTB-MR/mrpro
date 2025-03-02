@@ -67,7 +67,7 @@ class KTrajectory(MoveDataMixin):
         except RuntimeError:
             raise ValueError('The k-space trajectory dimensions must be broadcastable.') from None
 
-        if len(shape) < 4:
+        if len(shape) < 5:
             raise ValueError('The k-space trajectory tensors should each have at least 4 dimensions.')
 
     @classmethod

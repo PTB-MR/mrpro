@@ -4,6 +4,7 @@ import pytest
 import torch
 from ismrmrd import xsd
 from mrpro.data import Rotation, SpatialDimension
+from mrpro.utils import unsqueeze_left
 
 from tests import RandomGenerator
 from tests.conftest import generate_random_data
@@ -23,7 +24,8 @@ def cartesian_grid(request):
             kx = kx + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
             ky = ky + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
             kz = kz + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
-        return kz.unsqueeze(0), ky.unsqueeze(0), kx.unsqueeze(0)
+        kz, ky, kx = (unsqueeze_left(x, 2) for x in (kz, ky, kx))
+        return kz, ky, kx
 
     return generate
 

@@ -69,5 +69,5 @@ class KTrajectoryIsmrmrd:
         ky = ktraj_mrd[..., 1]
         kx = ktraj_mrd[..., 0]
 
-        kz, ky, kx = unsqueeze_tensors_at(kz, ky, kx, dim=-2, ndim=4)
+        kz, ky, kx = unsqueeze_tensors_at(kz, ky, kx, dim=-2, ndim=5)
         return KTrajectory(kz, ky, kx)
