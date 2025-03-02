@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
@@ -14,11 +14,10 @@ from typing_extensions import Self
 
 from mrpro.data import enums
 from mrpro.data.AcqInfo import AcqInfo
-from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
-from mrpro.utils.unit_conversion import mm_to_m, ms_to_s
+from mrpro.utils.unit_conversion import deg_to_rad, mm_to_m, ms_to_s
 
 if TYPE_CHECKING:
     # avoid circular imports by importing only when type checking
@@ -37,46 +36,43 @@ class KHeader(MoveDataMixin):
     is not guaranteed to be correct or tested.
     """
 
-    trajectory: KTrajectoryCalculator
-    """Function to calculate the k-space trajectory."""
-
-    encoding_limits: EncodingLimits
-    """K-space encoding limits."""
-
     recon_matrix: SpatialDimension[int]
     """Dimensions of the reconstruction matrix."""
-
-    recon_fov: SpatialDimension[float]
-    """Field-of-view of the reconstructed image [m]."""
 
     encoding_matrix: SpatialDimension[int]
     """Dimensions of the encoded k-space matrix."""
 
+    recon_fov: SpatialDimension[float]
+    """Field-of-view of the reconstructed image [m]."""
+
     encoding_fov: SpatialDimension[float]
     """Field of view of the image encoded by the k-space trajectory [m]."""
 
-    acq_info: AcqInfo
+    acq_info: AcqInfo = field(default_factory=AcqInfo)
     """Information of the acquisitions (i.e. readout lines)."""
 
-    lamor_frequency_proton: float
+    trajectory: KTrajectoryCalculator | None = None
+    """Function to calculate the k-space trajectory."""
+
+    lamor_frequency_proton: float | None = None
     """Lamor frequency of hydrogen nuclei [Hz]."""
 
     datetime: datetime.datetime | None = None
     """Date and time of acquisition."""
 
-    te: torch.Tensor | None = None
+    te: list[float] | torch.Tensor = field(default_factory=list)
     """Echo time [s]."""
 
-    ti: torch.Tensor | None = None
+    ti: list[float] | torch.Tensor = field(default_factory=list)
     """Inversion time [s]."""
 
-    fa: torch.Tensor | None = None
+    fa: list[float] | torch.Tensor = field(default_factory=list)
     """Flip angle [rad]."""
 
-    tr: torch.Tensor | None = None
+    tr: list[float] | torch.Tensor = field(default_factory=list)
     """Repetition time [s]."""
 
-    echo_spacing: torch.Tensor | None = None
+    echo_spacing: list[float] | torch.Tensor = field(default_factory=list)
     """Echo spacing [s]."""
 
     echo_train_length: int = 1
@@ -94,12 +90,6 @@ class KHeader(MoveDataMixin):
     protocol_name: str = UNKNOWN
     """Name of the acquisition protocol."""
 
-    calibration_mode: enums.CalibrationMode = enums.CalibrationMode.OTHER
-    """Mode of how calibration data is acquired. """
-
-    interleave_dim: enums.InterleavingDimension = enums.InterleavingDimension.OTHER
-    """Interleaving dimension."""
-
     trajectory_type: enums.TrajectoryType = enums.TrajectoryType.OTHER
     """Type of trajectory."""
 
@@ -109,18 +99,20 @@ class KHeader(MoveDataMixin):
     patient_name: str = UNKNOWN
     """Name of the patient."""
 
-    _misc: dict = dataclasses.field(default_factory=dict)  # do not use {} here!
+    _misc: dict = field(default_factory=dict)
     """Dictionary with miscellaneous parameters. These parameters are for information purposes only. Reconstruction
     algorithms should not rely on them."""
 
     @property
-    def fa_degree(self) -> torch.Tensor | None:
+    def fa_degree(self) -> torch.Tensor | list[float]:
         """Flip angle in degree."""
-        if self.fa is None:
-            warnings.warn('Flip angle is not defined.', stacklevel=1)
-            return None
-        else:
+        if isinstance(self.fa, torch.Tensor):
             return torch.rad2deg(self.fa)
+        elif not len(self.fa):
+            warnings.warn('Flip angle is not defined.', stacklevel=1)
+            return []
+        else:
+            return torch.rad2deg(torch.as_tensor(self.fa)).tolist()
 
     @classmethod
     def from_ismrmrd(
@@ -162,15 +154,15 @@ class KHeader(MoveDataMixin):
 
         if header.sequenceParameters is not None:
             if header.sequenceParameters.TR:
-                parameters['tr'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TR))
+                parameters['tr'] = ms_to_s(header.sequenceParameters.TR)
             if header.sequenceParameters.TE:
-                parameters['te'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TE))
+                parameters['te'] = ms_to_s(header.sequenceParameters.TE)
             if header.sequenceParameters.TI:
-                parameters['ti'] = ms_to_s(torch.as_tensor(header.sequenceParameters.TI))
+                parameters['ti'] = ms_to_s(header.sequenceParameters.TI)
             if header.sequenceParameters.flipAngle_deg:
-                parameters['fa'] = torch.deg2rad(torch.as_tensor(header.sequenceParameters.flipAngle_deg))
+                parameters['fa'] = deg_to_rad(header.sequenceParameters.flipAngle_deg)
             if header.sequenceParameters.echo_spacing:
-                parameters['echo_spacing'] = ms_to_s(torch.as_tensor(header.sequenceParameters.echo_spacing))
+                parameters['echo_spacing'] = ms_to_s(header.sequenceParameters.echo_spacing)
 
             if header.sequenceParameters.sequence_type is not None:
                 parameters['sequence_type'] = header.sequenceParameters.sequence_type
@@ -185,20 +177,8 @@ class KHeader(MoveDataMixin):
             )
             parameters['encoding_matrix'] = SpatialDimension[int].from_xyz(enc.encodedSpace.matrixSize)
 
-        if enc.encodingLimits is not None:
-            parameters['encoding_limits'] = EncodingLimits.from_ismrmrd_encoding_limits_type(enc.encodingLimits)
-
         if enc.echoTrainLength is not None:
             parameters['echo_train_length'] = enc.echoTrainLength
-
-        if enc.parallelImaging is not None:
-            if enc.parallelImaging.calibrationMode is not None:
-                parameters['calibration_mode'] = enums.CalibrationMode(enc.parallelImaging.calibrationMode.value)
-
-            if enc.parallelImaging.interleavingDimension is not None:
-                parameters['interleave_dim'] = enums.InterleavingDimension(
-                    enc.parallelImaging.interleavingDimension.value,
-                )
 
         if enc.trajectory is not None:
             parameters['trajectory_type'] = enums.TrajectoryType(enc.trajectory.value)

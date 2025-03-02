@@ -1,5 +1,7 @@
 """Inversion recovery signal model for T1 mapping."""
 
+from collections.abc import Sequence
+
 import torch
 
 from mrpro.operators.SignalModel import SignalModel
@@ -9,7 +11,7 @@ from mrpro.utils import unsqueeze_right
 class InversionRecovery(SignalModel[torch.Tensor, torch.Tensor]):
     """Inversion recovery signal model."""
 
-    def __init__(self, ti: float | torch.Tensor):
+    def __init__(self, ti: float | torch.Tensor | Sequence[float]):
         """Initialize inversion recovery signal model for T1 mapping.
 
         Parameters

@@ -3,10 +3,10 @@
 from pathlib import Path
 
 import torch
-from einops import rearrange
+from einops import repeat
 
-from mrpro.data.KHeader import KHeader
-from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
+from mrpro.data.KTrajectory import KTrajectory
+from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 
 
@@ -27,37 +27,38 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         self.seq_path = seq_path
         self.repeat_detection_tolerance = repeat_detection_tolerance
 
-    def __call__(self, kheader: KHeader) -> KTrajectoryRawShape:
+    def __call__(
+        self,
+        *,
+        n_k0: int,
+        encoding_matrix: SpatialDimension,
+        **_,
+    ) -> KTrajectory:
         """Calculate trajectory from given .seq file and header information.
 
         Parameters
         ----------
-        kheader
-           MR raw data header (KHeader) containing required meta data
+        n_k0
+            number of samples in k0
+        encoding_matrix
+            encoding matrix
 
         Returns
         -------
-            trajectory of type KTrajectoryRawShape
+            trajectory of type KTrajectory
         """
         from pypulseq import Sequence
 
-        # create PyPulseq Sequence object and read .seq file
+        # calculate k-space trajectory using PyPulseq
         seq = Sequence()
         seq.read(file_path=str(self.seq_path))
-
-        # calculate k-space trajectory using PyPulseq
-        k_traj_adc_numpy, _, _, _, _ = seq.calculate_kspace()
+        k_traj_adc_numpy = seq.calculate_kspace()[0]
         k_traj_adc = torch.tensor(k_traj_adc_numpy, dtype=torch.float32)
+        k_traj_reshaped = repeat(k_traj_adc, 'xyz (other k0) -> xyz other k2 k1 k0', k2=1, k1=1, k0=n_k0)
 
-        n_samples = kheader.acq_info.number_of_samples
-        n_samples = torch.unique(n_samples)
-        if len(n_samples) > 1:
-            raise ValueError('We currently only support constant number of samples')
-
-        k_traj_reshaped = rearrange(k_traj_adc, 'xyz (other k0) -> xyz other k0', k0=int(n_samples.item()))
-        return KTrajectoryRawShape.from_tensor(
+        return KTrajectory.from_tensor(
             k_traj_reshaped,
             axes_order='xyz',
-            scaling_matrix=kheader.encoding_matrix,
+            scaling_matrix=encoding_matrix,
             repeat_detection_tolerance=self.repeat_detection_tolerance,
         )

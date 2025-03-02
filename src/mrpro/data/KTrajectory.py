@@ -64,7 +64,7 @@ class KTrajectory(MoveDataMixin):
 
         try:
             shape = self.broadcasted_shape
-        except ValueError:
+        except RuntimeError:
             raise ValueError('The k-space trajectory dimensions must be broadcastable.') from None
 
         if len(shape) < 4:
@@ -130,15 +130,15 @@ class KTrajectory(MoveDataMixin):
         )
 
     @property
-    def broadcasted_shape(self) -> tuple[int, ...]:
+    def broadcasted_shape(self) -> torch.Size:
         """The broadcasted shape of the trajectory.
 
         Returns
         -------
             broadcasted shape of trajectory
         """
-        shape = np.broadcast_shapes(self.kx.shape, self.ky.shape, self.kz.shape)
-        return tuple(shape)
+        shape = torch.broadcast_shapes(self.kx.shape, self.ky.shape, self.kz.shape)
+        return shape
 
     @property
     def type_along_kzyx(self) -> tuple[TrajType, TrajType, TrajType]:
