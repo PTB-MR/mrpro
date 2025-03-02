@@ -79,6 +79,7 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
             Noise used for prewhitening. If `None`, no prewhitening is performed
         dcf
             K-space sampling density compensation. If `None`, set up based on `kdata`.
+            Used to obtain a good starting point for the CG algorithm.
         n_iterations
             Number of CG iterations
         regularization_data
@@ -115,26 +116,38 @@ class RegularizedIterativeSENSEReconstruction(DirectReconstruction):
         if self.noise is not None:
             kdata = prewhiten_kspace(kdata, self.noise)
 
-        # Create the normal operator as H = A^H W A if the DCF is not None otherwise as H = A^H A.
-        # The acquisition model is A = F S if the CSM S is defined otherwise A = F with the Fourier operator F
-        csm_op = self.csm.as_operator() if self.csm is not None else IdentityOp()
-        precondition_op = self.dcf.as_operator() if self.dcf is not None else IdentityOp()
-        operator = (self.fourier_op @ csm_op).H @ precondition_op @ (self.fourier_op @ csm_op)
+        acquisition_model = self.fourier_op
+        if self.csm is not None:
+            acquisition_model = acquisition_model @ self.csm.as_operator()
 
-        # Calculate the right-hand-side as b = A^H W y if the DCF is not None otherwise as b = A^H y.
-        (right_hand_side,) = (self.fourier_op @ csm_op).H(precondition_op(kdata.data)[0])
+        operator = acquisition_model.gram
+        (right_hand_side,) = acquisition_model.H(kdata.data)
 
-        # Add regularization
-        if not torch.all(self.regularization_weight == 0):
-            operator = operator + self.regularization_weight * self.regularization_op.H @ self.regularization_op
-            right_hand_side += self.regularization_weight * self.regularization_op.H(self.regularization_data)[0]
+        if not torch.all(self.regularization_weight == 0):  # Has Regularization
+            operator = operator + self.regularization_weight * self.regularization_op.gram
+            right_hand_side = (
+                right_hand_side + self.regularization_weight * self.regularization_op.H(self.regularization_data)[0]
+            )
 
+        if self.dcf is not None:
+            # The DCF is used to obtain a good starting point for the CG algorithm.
+            # This is equivalten to running the CG algorithm with H = A^H DCF A and b = A^H DCF y
+            # for a single iteration.
+            dcf_op = self.dcf.as_operator()
+            (u,) = (acquisition_model.H @ dcf_op)(kdata.data)
+            (v,) = (acquisition_model.H @ dcf_op @ acquisition_model)(u)
+            u_flat = u.flatten(start_dim=-3)
+            v_flat = v.flatten(start_dim=-3)
+            initial_value = torch.linalg.vecdot(u_flat, u_flat) / torch.linalg.vecdot(v_flat, u_flat) * u
+        else:
+            # The right and side is not a good starting point without DCF.
+            initial_value = torch.zeros_like(right_hand_side)
         img_tensor = cg(
             operator,
             right_hand_side,
-            initial_value=right_hand_side,
+            initial_value=initial_value,
             max_iterations=self.n_iterations,
-            tolerance=0.0,
+            tolerance=0,  # run for a fixed number of iterations
         )
         img = IData.from_tensor_and_kheader(img_tensor, kdata.header)
         return img
