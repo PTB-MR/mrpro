@@ -1,6 +1,8 @@
 """PyTest fixtures for the mrpro package."""
 
 import tempfile
+from collections.abc import Sequence
+from typing import Any
 
 import ismrmrd
 import pytest
@@ -15,7 +17,7 @@ from tests.data import IsmrmrdRawTestData
 from tests.phantoms import EllipsePhantomTestData
 
 
-def generate_random_encodingcounter_properties(generator: RandomGenerator):
+def generate_random_encodingcounter_properties(generator: RandomGenerator) -> dict[str, Any]:
     return {
         'kspace_encode_step_1': generator.uint16(),
         'kspace_encode_step_2': generator.uint16(),
@@ -30,7 +32,7 @@ def generate_random_encodingcounter_properties(generator: RandomGenerator):
     }
 
 
-def generate_random_acquisition_properties(generator: RandomGenerator):
+def generate_random_acquisition_properties(generator: RandomGenerator) -> dict[str, Any]:
     idx_properties = generate_random_encodingcounter_properties(generator)
     return {
         'flags': generator.uint64(high=2**38 - 1),
@@ -56,11 +58,11 @@ def generate_random_acquisition_properties(generator: RandomGenerator):
     }
 
 
-def generate_random_trajectory(generator: RandomGenerator, shape=(256, 2)):
+def generate_random_trajectory(generator: RandomGenerator, shape=(256, 2)) -> torch.Tensor:
     return generator.float32_tensor(shape)
 
 
-def generate_random_data(generator: RandomGenerator, shape=(32, 256)):
+def generate_random_data(generator: RandomGenerator, shape=(32, 256)) -> torch.Tensor:
     return generator.complex64_tensor(shape)
 
 
@@ -172,7 +174,7 @@ def random_ismrmrd_file(random_acquisition, random_noise_acquisition, full_heade
 
 
 @pytest.fixture(params=({'seed': 0},))
-def random_kheader(request, random_full_ismrmrd_header, random_acq_info):
+def random_kheader(request, random_full_ismrmrd_header, random_acq_info) -> KHeader:
     """Random (not necessarily valid) KHeader."""
     seed = request.param['seed']
     generator = RandomGenerator(seed)
@@ -186,14 +188,16 @@ def random_kheader(request, random_full_ismrmrd_header, random_acq_info):
 
 
 @pytest.fixture
-def random_acq_info(random_acquisition):
+def random_acq_info(random_acquisition) -> AcqInfo:
     """Random (not necessarily valid) AcqInfo."""
-    acq_info = AcqInfo.from_ismrmrd_acquisitions([random_acquisition])
+    acq_info = AcqInfo.from_ismrmrd_acquisitions([random_acquisition])  # type:ignore[call-overload] # ismrmrd is not typed
     return acq_info
 
 
-@pytest.fixture(params=({'seed': 0, 'n_other': 4, 'n_k2': 12, 'n_k1': 14},))
-def random_kheader_shape(request, random_acquisition, random_full_ismrmrd_header):
+@pytest.fixture(params=({'seed': 0, 'n_other': 2, 'n_k2': 12, 'n_k1': 14, 'n_k0': 32, 'n_coils': 4},))
+def random_kheader_shape(
+    request, random_acquisition, random_full_ismrmrd_header
+) -> tuple[KHeader, int, int, int, int, int]:
     """Random (not necessarily valid) KHeader with defined shape."""
     # Get dimensions
     seed, n_other, n_k2, n_k1 = (
@@ -205,35 +209,43 @@ def random_kheader_shape(request, random_acquisition, random_full_ismrmrd_header
     generator = RandomGenerator(seed)
 
     # Generate acquisitions
-    random_acq_info = AcqInfo.from_ismrmrd_acquisitions([random_acquisition for _ in range(n_k1 * n_k2 * n_other)])
-    n_k0 = int(random_acq_info.number_of_samples[0])
-    n_coils = int(random_acq_info.active_channels[0])
+    random_acq_info = AcqInfo.from_ismrmrd_acquisitions([random_acquisition for _ in range(n_k1 * n_k2 * n_other)])  # type:ignore[call-overload]
 
     # Generate trajectory
+    n_k0 = int(request.param['n_k0'])
     ktraj = [generate_random_trajectory(generator, shape=(n_k0, 2)) for _ in range(n_k1 * n_k2 * n_other)]
 
     # Put it all together to a KHeader object
     kheader = KHeader.from_ismrmrd(random_full_ismrmrd_header, acq_info=random_acq_info, defaults={'trajectory': ktraj})
+    n_coils = int(request.param['n_coils'])
+
     return kheader, n_other, n_coils, n_k2, n_k1, n_k0
 
 
 def create_uniform_traj(nk):
     """Create a tensor of uniform points with predefined shape nk."""
-    kidx = torch.where(torch.tensor(nk[1:]) > 1)[0]
+    kidx = [i - 3 for i, n in enumerate(nk[-3:]) if n > 1]
     if len(kidx) > 1:
         raise ValueError('nk is allowed to have at most one non-singleton dimension')
-    if len(kidx) >= 1:
-        # kidx+1 because we searched in nk[1:]
-        n_kpoints = nk[kidx + 1]
+    if len(kidx) == 1:
+        n_kpoints = nk[kidx[0]]
         k = torch.linspace(-n_kpoints // 2, n_kpoints // 2 - 1, n_kpoints, dtype=torch.float32)
         views = [1 if i != n_kpoints else -1 for i in nk]
-        k = k.view(*views).expand(list(nk))
+        k = k.view(*views).expand(nk)
     else:
         k = torch.zeros(nk)
     return k
 
 
-def create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
+def create_traj(
+    k_shape: Sequence[int],
+    nkx: Sequence[int],
+    nky: Sequence[int],
+    nkz: Sequence[int],
+    type_kx: str,
+    type_ky: str,
+    type_kz: str,
+) -> KTrajectory:
     """Create trajectory with random entries."""
     random_generator = RandomGenerator(seed=0)
     k_list = []
