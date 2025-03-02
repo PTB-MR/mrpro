@@ -54,7 +54,7 @@ def test_inversion_recovery_shape(
     assert signal.shape == signal_shape
 
 
-def test_autodiff_inversion_recovery(parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)) -> None:
+def test_autodiff_inversion_recovery(parameter_shape: Sequence[int] = (2, 5, 10, 10)) -> None:
     """Test autodiff works for inversion_recovery model."""
     model = InversionRecovery(ti=10)
     rng = RandomGenerator(0)

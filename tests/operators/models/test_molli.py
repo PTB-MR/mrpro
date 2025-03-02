@@ -56,7 +56,7 @@ def test_molli_shape(
     assert signal.shape == signal_shape
 
 
-def test_autodiff_molli(parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)) -> None:
+def test_autodiff_molli(parameter_shape: Sequence[int] = (2, 5, 10, 10)) -> None:
     """Test autodiff works for molli model."""
     model = MOLLI(ti=10)
     rng = RandomGenerator(2)
