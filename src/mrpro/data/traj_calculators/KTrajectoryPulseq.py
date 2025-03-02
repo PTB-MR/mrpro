@@ -54,7 +54,7 @@ class KTrajectoryPulseq(KTrajectoryCalculator):
         seq.read(file_path=str(self.seq_path))
         k_traj_adc_numpy = seq.calculate_kspace()[0]
         k_traj_adc = torch.tensor(k_traj_adc_numpy, dtype=torch.float32)
-        k_traj_reshaped = repeat(k_traj_adc, 'xyz (other k0) -> xyz other k2 k1 k0', k2=1, k1=1, k0=n_k0)
+        k_traj_reshaped = repeat(k_traj_adc, 'xyz (other k0) -> xyz other coils k2 k1 k0', coils=1, k2=1, k1=1, k0=n_k0)
 
         return KTrajectory.from_tensor(
             k_traj_reshaped,
