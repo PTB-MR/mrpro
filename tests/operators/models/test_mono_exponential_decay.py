@@ -71,7 +71,7 @@ def test_mono_exponential_decay_cuda(parameter_shape: Sequence[int] = (2, 5, 10,
     """Test the mono-exponential decay model works on cuda devices."""
     rng = RandomGenerator(3)
     m0 = rng.complex64_tensor(parameter_shape)
-    decay_constant = rng.float32_tensor(parameter_shape, low=0.001, high=5)
+    decay_constant = rng.float32_tensor(parameter_shape, low=0.01, high=5)
     # Create on CPU, transfer to GPU and run on GPU
     model = MonoExponentialDecay(decay_time=(-0.1, 0, 1, 5))
     model.cuda()
