@@ -91,15 +91,7 @@ def test_fourier_op_forward_mode_autodiff(
 @COMMON_MR_TRAJECTORIES
 def test_fourier_op_gram(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2):
     """Test gram of Fourier operator."""
-    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
-
-    recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
-    encoding_matrix = SpatialDimension(
-        int(trajectory.kz.max() - trajectory.kz.min() + 1),
-        int(trajectory.ky.max() - trajectory.ky.min() + 1),
-        int(trajectory.kx.max() - trajectory.kx.min() + 1),
-    )
-    fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
+    fourier_op, img, _ = create_fourier_op_and_range_domain(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     (expected,) = (fourier_op.H @ fourier_op)(img)
     (actual,) = fourier_op.gram(img)
