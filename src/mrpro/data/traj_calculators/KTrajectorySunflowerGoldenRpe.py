@@ -4,90 +4,93 @@ import numpy as np
 import torch
 from einops import repeat
 
-from mrpro.data.KHeader import KHeader
-from mrpro.data.traj_calculators.KTrajectoryRpe import KTrajectoryRpe
+from mrpro.data.KTrajectory import KTrajectory
+from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
+
+GOLDEN_RATIO = 0.5 * (5**0.5 + 1)
 
 
-class KTrajectorySunflowerGoldenRpe(KTrajectoryRpe):
+class KTrajectorySunflowerGoldenRpe(KTrajectoryCalculator):
     """Radial phase encoding trajectory with a sunflower pattern."""
 
-    def __init__(self, rad_us_factor: float = 1.0) -> None:
+    def __init__(self) -> None:
         """Initialize KTrajectorySunflowerGoldenRpe.
 
-        Parameters
         ----------
-        rad_us_factor
+        radial_undersampling_factor
             undersampling factor along radial phase encoding direction.
         """
-        super().__init__(angle=torch.pi * 0.618034)
-        self.rad_us_factor: float = rad_us_factor
+        self.angle = torch.pi * 0.618034
 
     def _apply_sunflower_shift_between_rpe_lines(
         self,
-        krad: torch.Tensor,
-        kang: torch.Tensor,
-        kheader: KHeader,
+        radial: torch.Tensor,
+        angles: torch.Tensor,
+        k2_idx: torch.Tensor,
     ) -> torch.Tensor:
         """Shift radial phase encoding lines relative to each other.
 
         The shifts are applied to create a sunflower pattern of k-space points in the ky-kz phase encoding plane.
-        The applied shifts can lead to a scaling of the FOV. This scaling depends on the undersampling factor along the
-        radial phase encoding direction and is compensated for at the end.
 
         Parameters
         ----------
-        krad
-            k-space positions along each phase encoding line
-        kang
-            angles of the radial phase encoding lines
-        kheader
-            MR raw data header (KHeader) containing required meta data
+        radial
+            position along radial direction
+        angles
+            angle of spokes
+        k2_idx
+            indices in k2
         """
-        kang = kang.flatten()
-        _, indices = np.unique(kang, return_index=True)
+        angles = angles.flatten()
+        _, indices = np.unique(angles, return_index=True)
         shift_idx = np.argsort(indices)
-
-        # Apply sunflower shift
-        golden_ratio = 0.5 * (np.sqrt(5) + 1)
+        k2_idx, radial = torch.broadcast_tensors(k2_idx, radial)
+        radial = radial.contiguous()
         for ind, shift in enumerate(shift_idx):
-            krad[kheader.acq_info.idx.k2 == ind] += ((shift * golden_ratio) % 1) - 0.5
+            radial[k2_idx == ind] += ((shift * GOLDEN_RATIO) % 1) - 0.5
+        return radial
 
-        # Set asym k-space point to 0 because this point was used to obtain a self-navigator signal.
-        krad[kheader.acq_info.idx.k1 == 0] = 0
-
-        return krad
-
-    def _kang(self, kheader: KHeader) -> torch.Tensor:
-        """Calculate the angles of the phase encoding lines.
-
-        Parameters
-        ----------
-        kheader
-            MR raw data header (KHeader) containing required meta data
-
-        Returns
-        -------
-            angles of phase encoding lines
-        """
-        return repeat((kheader.acq_info.idx.k2 * self.angle) % torch.pi, '... k2 k1 -> ... k2 k1 k0', k0=1)
-
-    def _krad(self, kheader: KHeader) -> torch.Tensor:
-        """Calculate the k-space locations along the phase encoding lines.
+    def __call__(
+        self,
+        *,
+        n_k0: int,
+        k0_center: int | torch.Tensor,
+        k1_idx: torch.Tensor,
+        k1_center: int | torch.Tensor,
+        k2_idx: torch.Tensor,
+        reversed_readout_mask: torch.Tensor | None = None,
+        **_,
+    ) -> KTrajectory:
+        """Calculate radial phase encoding trajectory for given header information.
 
         Parameters
         ----------
-        kheader
-            MR raw data header (KHeader) containing required meta data
+        n_k0
+            number of samples in k0
+        k0_center
+            position of k-space center in k0
+        k1_idx
+            indices of k1 (radial)
+        k1_center
+            position of k-space center in k1
+        k2_idx
+            indices of k2 (angle)
+        reversed_readout_mask
+            boolean tensor indicating reversed readout
 
         Returns
         -------
-            k-space locations along the phase encoding lines
+            radial phase encoding trajectory for given KHeader
         """
-        kang = self._kang(kheader)
-        krad = repeat(
-            (kheader.acq_info.idx.k1 - kheader.encoding_limits.k1.center).to(torch.float32),
-            '... k2 k1 -> ... k2 k1 k0',
-            k0=1,
-        )
-        krad = self._apply_sunflower_shift_between_rpe_lines(krad, kang, kheader)
-        return krad
+        angles = repeat((k2_idx * self.angle) % torch.pi, '... k2 k1 -> ... k2 k1 k0', k0=1)
+
+        radial = (k1_idx - k1_center).to(torch.float32)
+        radial = self._apply_sunflower_shift_between_rpe_lines(radial, angles, k2_idx)
+        # Asymmetric k-space point is used to obtain a self-navigator signal, thus should be in k-space center
+        radial[(k1_idx == 0).broadcast_to(radial.shape)] = 0
+        radial = repeat(radial, '... k2 k1 -> ... k2 k1 k0', k0=1)
+
+        kz = radial * torch.sin(angles)
+        ky = radial * torch.cos(angles)
+        kx = self._readout(n_k0, k0_center, reversed_readout_mask=reversed_readout_mask)
+        return KTrajectory(kz, ky, kx)
