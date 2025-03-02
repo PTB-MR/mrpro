@@ -1,9 +1,9 @@
 """Encoding limits dataclass."""
 
 import dataclasses
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
-from ismrmrd.xsd.ismrmrdschema.ismrmrd import encodingLimitsType, limitType
+from ismrmrd.xsd.ismrmrdschema.ismrmrd import encodingLimitsType, encodingType, ismrmrdHeader, limitType
 from typing_extensions import Self
 
 
@@ -21,7 +21,7 @@ class Limits:
     """Center."""
 
     @classmethod
-    def from_ismrmrd(cls, limit_type: limitType) -> Self:
+    def from_ismrmrd(cls, limit_type: limitType | None) -> Self:
         """Create Limits from ismrmrd.limitType."""
         if limit_type is None:
             return cls()
@@ -44,62 +44,90 @@ class EncodingLimits:
 
     """
 
-    k0: Limits = dataclasses.field(default_factory=Limits)
+    k0: Limits = field(default_factory=Limits)
     """First k-space encoding."""
 
-    k1: Limits = dataclasses.field(default_factory=Limits)
+    k1: Limits = field(default_factory=Limits)
     """Second k-space encoding."""
 
-    k2: Limits = dataclasses.field(default_factory=Limits)
+    k2: Limits = field(default_factory=Limits)
     """Third k-space encoding."""
 
-    average: Limits = dataclasses.field(default_factory=Limits)
+    average: Limits = field(default_factory=Limits)
     """Signal average."""
 
-    slice: Limits = dataclasses.field(default_factory=Limits)
+    slice: Limits = field(default_factory=Limits)
     """Slice number (multi-slice 2D)."""
 
-    contrast: Limits = dataclasses.field(default_factory=Limits)
+    contrast: Limits = field(default_factory=Limits)
     """Echo number in multi-echo."""
 
-    phase: Limits = dataclasses.field(default_factory=Limits)
+    phase: Limits = field(default_factory=Limits)
     """Cardiac phase."""
 
-    repetition: Limits = dataclasses.field(default_factory=Limits)
+    repetition: Limits = field(default_factory=Limits)
     """Repeated/dynamic acquisitions."""
 
-    set: Limits = dataclasses.field(default_factory=Limits)
+    set: Limits = field(default_factory=Limits)
     """Sets of different preparation."""
 
-    segment: Limits = dataclasses.field(default_factory=Limits)
+    segment: Limits = field(default_factory=Limits)
     """Segments of segmented acquisition."""
 
-    user_0: Limits = dataclasses.field(default_factory=Limits)
+    user_0: Limits = field(default_factory=Limits)
     """User index 0."""
 
-    user_1: Limits = dataclasses.field(default_factory=Limits)
+    user_1: Limits = field(default_factory=Limits)
     """User index 1."""
 
-    user_2: Limits = dataclasses.field(default_factory=Limits)
+    user_2: Limits = field(default_factory=Limits)
     """User index 2."""
 
-    user_3: Limits = dataclasses.field(default_factory=Limits)
+    user_3: Limits = field(default_factory=Limits)
     """User index 3."""
 
-    user_4: Limits = dataclasses.field(default_factory=Limits)
+    user_4: Limits = field(default_factory=Limits)
     """User index 4."""
 
-    user_5: Limits = dataclasses.field(default_factory=Limits)
+    user_5: Limits = field(default_factory=Limits)
     """User index 5."""
 
-    user_6: Limits = dataclasses.field(default_factory=Limits)
+    user_6: Limits = field(default_factory=Limits)
     """User index 6."""
 
-    user_7: Limits = dataclasses.field(default_factory=Limits)
+    user_7: Limits = field(default_factory=Limits)
     """User index 7."""
 
     @classmethod
-    def from_ismrmrd_encoding_limits_type(cls, encoding_limits: encodingLimitsType):
+    def from_ismrmrd_header(
+        cls,
+        header: ismrmrdHeader,
+        encoding_number: int = 0,
+    ) -> Self:
+        """
+        Extract EncodingLimits from ismrmrd.ismrmrdHeader.
+
+        Parameters
+        ----------
+        header
+            ISMRMRD header
+        encoding_number
+            Encoding number. An ValueError is raised if the encoding number is out of range for the header.
+
+        Returns
+        -------
+        Extracted EncodingLimits if header.encoding.encodingLimits is not None,
+        otherwise an empty EncodingLimits.
+        """
+        if not 0 <= encoding_number < len(header.encoding):
+            raise ValueError(f'encoding_number must be between 0 and {len(header.encoding)}')
+        enc: encodingType = header.encoding[encoding_number]
+        if enc.encodingLimits is None:
+            return cls()
+        return cls.from_ismrmrd_encoding_limits_type(enc.encodingLimits)
+
+    @classmethod
+    def from_ismrmrd_encoding_limits_type(cls, encoding_limits: encodingLimitsType) -> Self:
         """Generate EncodingLimits from ismrmrd.encodingLimitsType."""
         values = {
             field.name: Limits.from_ismrmrd(getattr(encoding_limits, field.name))
