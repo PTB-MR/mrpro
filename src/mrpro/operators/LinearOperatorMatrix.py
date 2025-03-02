@@ -197,10 +197,16 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
             operators.append([cast(LinearOperator, o * op) for op in row])
         return self.__class__(operators)
 
+    def __rmatmul__(self, other: LinearOperator) -> Self:  # type: ignore[misc]
+        """Composition of operators."""
+        operators = [[op @ other for op in row] for row in self._operators]
+        return self.__class__(operators)
+
     def __matmul__(self, other: LinearOperator | Self) -> Self:  # type: ignore[override]
         """Composition of operators."""
         if isinstance(other, LinearOperator):
-            return self._binary_operation(other, '__matmul__')
+            operators = [[other @ op for op in row] for row in self._operators]
+            return self.__class__(operators)
         elif isinstance(other, LinearOperatorMatrix):
             if self.shape[1] != other.shape[0]:
                 raise ValueError('OperatorMatrix shapes do not match.')
@@ -339,8 +345,7 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
         if isinstance(other, LinearOperator):
             if cols := self.shape[1] > 1:
                 raise ValueError(
-                    'Shape mismatch in horizontal stacking:'
-                    f'cannot stack LinearOperator and matrix with {cols} columns.'
+                    f'Shape mismatch in horizontal stacking:cannot stack LinearOperator and matrix with {cols} columns.'
                 )
             operators = [*self._operators, [other]]
             return self.__class__(operators)

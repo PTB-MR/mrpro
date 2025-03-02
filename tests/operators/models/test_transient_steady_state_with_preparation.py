@@ -94,3 +94,36 @@ def test_autodiff_transient_steady_state():
     )
     m0, t1, flip_angle = create_parameter_tensor_tuples(parameter_shape=(2, 5, 10, 10, 10), number_of_tensors=3)
     autodiff_test(model, m0, t1, flip_angle)
+
+
+@pytest.mark.cuda
+def test_transient_steady_state_cuda():
+    """Test the transient steady state model works on cuda devices."""
+    m0, t1, flip_angle = create_parameter_tensor_tuples(parameter_shape=(2, 5, 10, 10, 10), number_of_tensors=3)
+    contrast_dim_shape = (6,)
+    (sampling_time,) = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=1)
+    repetition_time, m0_scaling_preparation, delay_after_preparation = create_parameter_tensor_tuples(
+        contrast_dim_shape[1:], number_of_tensors=3
+    )
+    # Create on CPU, transfer to GPU and run on GPU
+    model = TransientSteadyStateWithPreparation(
+        sampling_time, repetition_time, m0_scaling_preparation, delay_after_preparation
+    )
+    model.cuda()
+    (signal,) = model(m0.cuda(), t1.cuda(), flip_angle.cuda())
+    assert signal.is_cuda
+
+    # Create on GPU and run on GPU
+    model = TransientSteadyStateWithPreparation(
+        sampling_time.cuda(), repetition_time, m0_scaling_preparation, delay_after_preparation
+    )
+    (signal,) = model(m0.cuda(), t1.cuda(), flip_angle.cuda())
+    assert signal.is_cuda
+
+    # Create on GPU, transfer to CPU and run on CPU
+    model = TransientSteadyStateWithPreparation(
+        sampling_time.cuda(), repetition_time, m0_scaling_preparation, delay_after_preparation
+    )
+    model.cpu()
+    (signal,) = model(m0, t1, flip_angle)
+    assert signal.is_cpu

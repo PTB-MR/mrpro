@@ -45,7 +45,7 @@ from __future__ import annotations
 import math
 import re
 import warnings
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from typing import Literal, cast
 
 import numpy as np
@@ -378,7 +378,7 @@ def _axisangle_to_matrix(axis: torch.Tensor, angle: torch.Tensor) -> torch.Tenso
     return matrix
 
 
-class Rotation(torch.nn.Module):
+class Rotation(torch.nn.Module, Iterable['Rotation']):
     """A container for Rotations.
 
     A pytorch implementation of scipy.spatial.transform.Rotation.
@@ -435,7 +435,7 @@ class Rotation(torch.nn.Module):
             # integer or boolean dtypes
             quaternions_ = quaternions_.float()
         if quaternions_.shape[-1] != 4:
-            raise ValueError('Expected `quaternions` to have shape (..., 4), ' f'got {quaternions_.shape}.')
+            raise ValueError(f'Expected `quaternions` to have shape (..., 4), got {quaternions_.shape}.')
 
         reflection_ = torch.as_tensor(reflection)
         inversion_ = torch.as_tensor(inversion)
@@ -766,15 +766,15 @@ class Rotation(torch.nn.Module):
         """
         n_axes = len(seq)
         if n_axes < 1 or n_axes > 3:
-            raise ValueError('Expected axis specification to be a non-empty ' f'string of upto 3 characters, got {seq}')
+            raise ValueError(f'Expected axis specification to be a non-empty string of upto 3 characters, got {seq}')
 
         intrinsic = re.match(r'^[XYZ]{1,3}$', seq) is not None
         extrinsic = re.match(r'^[xyz]{1,3}$', seq) is not None
         if not (intrinsic or extrinsic):
-            raise ValueError("Expected axes from `seq` to be from ['x', 'y', " f"'z'] or ['X', 'Y', 'Z'], got {seq}")
+            raise ValueError(f"Expected axes from `seq` to be from ['x', 'y', 'z'] or ['X', 'Y', 'Z'], got {seq}")
 
         if any(seq[i] == seq[i + 1] for i in range(n_axes - 1)):
-            raise ValueError('Expected consecutive axes to be different, ' f'got {seq}')
+            raise ValueError(f'Expected consecutive axes to be different, got {seq}')
         seq = seq.lower()
 
         angles = torch.as_tensor(angles)
@@ -789,7 +789,7 @@ class Rotation(torch.nn.Module):
         else:
             is_single = False
         if angles.ndim < 2 or angles.shape[-1] != n_axes:
-            raise ValueError('Expected angles to have shape (..., ' f'n_axes), got {angles.shape}.')
+            raise ValueError(f'Expected angles to have shape (..., n_axes), got {angles.shape}.')
 
         quaternions = _make_elementary_quat(seq[0], angles[..., 0])
         for axis, angle in zip(seq[1:], angles[..., 1:].unbind(-1), strict=False):
@@ -1060,7 +1060,7 @@ class Rotation(torch.nn.Module):
             shape `(3,)` or `(..., 3)`, depending on shape of inputs used to initialize object.
             The returned angles are in the range:
 
-            - First angle belongs to`` [-180, 180]`` degrees (both inclusive)
+            - First angle belongs to ``[-180, 180]`` degrees (both inclusive)
             - Third angle belongs to ``[-180, 180]`` degrees (both inclusive)
             - Second angle belongs to:
 
@@ -1080,10 +1080,10 @@ class Rotation(torch.nn.Module):
         intrinsic = re.match(r'^[XYZ]{1,3}$', seq) is not None
         extrinsic = re.match(r'^[xyz]{1,3}$', seq) is not None
         if not (intrinsic or extrinsic):
-            raise ValueError('Expected axes from `seq` to be from ' "['x', 'y', 'z'] or ['X', 'Y', 'Z'], " f'got {seq}')
+            raise ValueError(f"Expected axes from `seq` to be from ['x', 'y', 'z'] or ['X', 'Y', 'Z'], got {seq}")
 
         if any(seq[i] == seq[i + 1] for i in range(2)):
-            raise ValueError('Expected consecutive axes to be different, ' f'got {seq}')
+            raise ValueError(f'Expected consecutive axes to be different, got {seq}')
 
         seq = seq.lower()
         if improper == 'reflection' or improper == 'inversion':
@@ -1611,6 +1611,16 @@ class Rotation(torch.nn.Module):
         else:
             indexer_quat = (indexer, slice(None))
         return self.__class__(self._quaternions[indexer_quat], normalize=False, inversion=self._is_improper[indexer])
+
+    def __iter__(self) -> Iterator[Self]:
+        """Provide an explicit iterator."""
+        index = 0
+        while True:
+            try:
+                yield self[index]
+                index += 1
+            except IndexError:
+                break
 
     @property
     def quaternion_x(self) -> torch.Tensor:

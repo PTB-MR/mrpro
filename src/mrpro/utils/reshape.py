@@ -6,6 +6,8 @@ from math import prod
 
 import torch
 
+from mrpro.utils.typing import endomorph
+
 
 def unsqueeze_right(x: torch.Tensor, n: int) -> torch.Tensor:
     """Unsqueeze multiple times in the rightmost dimension.
@@ -48,12 +50,58 @@ def unsqueeze_left(x: torch.Tensor, n: int) -> torch.Tensor:
     return x.reshape(*(n * (1,)), *x.shape)
 
 
+@endomorph
+def unsqueeze_tensors_left(*x: torch.Tensor, ndim: int | None = None) -> tuple[torch.Tensor, ...]:
+    """Unsqueeze tensors on the left to the same number of dimensions.
+
+    Parameters
+    ----------
+    x
+        tensors to unsqueeze
+    ndim
+        number of dimensions to unsqueeze to. If `None`, unsqueeze to the maximum number of dimensions
+        of the input tensors.
+
+
+    Returns
+    -------
+        unsqueezed tensors (views)
+    """
+    ndim_ = max(el.ndim for el in x) if ndim is None else ndim
+    return tuple(unsqueeze_left(el, ndim_ - el.ndim) for el in x)
+
+
+@endomorph
+def unsqueeze_tensors_right(*x: torch.Tensor, ndim: int | None = None) -> tuple[torch.Tensor, ...]:
+    """Unsqueeze tensors on the right to the same number of dimensions.
+
+    Parameters
+    ----------
+    x
+        tensors to unsqueeze
+    ndim
+        number of dimensions to unsqueeze to. If `None`, unsqueeze to the maximum number of dimensions
+        of the input tensors.
+
+    Returns
+    -------
+        unsqueezed tensors (views)
+    """
+    ndim_ = max(el.ndim for el in x) if ndim is None else ndim
+    return tuple(unsqueeze_right(el, ndim_ - el.ndim) for el in x)
+
+
+@endomorph
 def broadcast_right(*x: torch.Tensor) -> tuple[torch.Tensor, ...]:
     """Broadcasting on the right.
 
     Given multiple tensors, apply broadcasting with unsqueezed on the right.
     First, tensors are unsqueezed on the right to the same number of dimensions.
     Then, `torch.broadcast_tensors` is used.
+
+    ```{note}
+    `broadcast_left` is regular `torch.broadcast_tensors`
+    ```
 
     Example:
         Tensors with shapes `(1,2,3), (1,2), (2)` results in tensors with shape `(2,2,3)`.
@@ -200,3 +248,25 @@ def reshape_broadcasted(tensor: torch.Tensor, *shape: int) -> torch.Tensor:
         # finally, we can expand the broadcasted dimensions to the requested shape
         semicontiguous = semicontiguous.expand(tensor.shape)
         return semicontiguous.view(shape)
+
+
+def ravel_multi_index(multi_index: Sequence[torch.Tensor], dims: Sequence[int]) -> torch.Tensor:
+    """
+    Convert a multi-dimensional index into a flat index.
+
+    Parameters
+    ----------
+    multi_index
+        Sequence of integer index tensors.
+    dims
+        The shape of the tensor being indexed.
+
+    Returns
+    -------
+    index
+        Flattened index.
+    """
+    flat_index = multi_index[0]
+    for idx, dim in zip(multi_index[1:], dims[1:], strict=True):
+        flat_index = flat_index * dim + idx
+    return flat_index
