@@ -219,12 +219,11 @@ def random_kheader_shape(request, random_acquisition, random_full_ismrmrd_header
 
 def create_uniform_traj(nk):
     """Create a tensor of uniform points with predefined shape nk."""
-    kidx = torch.where(torch.tensor(nk[1:]) > 1)[0]
+    kidx = torch.where(torch.tensor(nk[-3:]) > 1)[0]
     if len(kidx) > 1:
         raise ValueError('nk is allowed to have at most one non-singleton dimension')
     if len(kidx) >= 1:
-        # kidx+1 because we searched in nk[1:]
-        n_kpoints = nk[kidx + 1]
+        n_kpoints = nk[-3 + kidx]
         k = torch.linspace(-n_kpoints // 2, n_kpoints // 2 - 1, n_kpoints, dtype=torch.float32)
         views = [1 if i != n_kpoints else -1 for i in nk]
         k = k.view(*views).expand(list(nk))

@@ -51,7 +51,7 @@ def random_mandatory_ismrmrd_header(request) -> xsd.ismrmrdschema.ismrmrdHeader:
     return xsd.ismrmrdschema.ismrmrdHeader(encoding=[encoding], experimentalConditions=experimental_conditions)
 
 
-@pytest.fixture(params=({'seed': 0, 'n_other': 2, 'n_coils': 8, 'n_z': 16, 'n_y': 32, 'n_x': 64},))
+@pytest.fixture(params=({'seed': 0, 'n_other': (2, 3), 'n_coils': 8, 'n_z': 16, 'n_y': 32, 'n_x': 64},))
 def random_test_data(request):
     seed, n_other, n_coils, n_z, n_y, n_x = (
         request.param['seed'],
@@ -62,7 +62,7 @@ def random_test_data(request):
         request.param['n_x'],
     )
     generator = RandomGenerator(seed)
-    test_data = generate_random_data(generator, (n_other, n_coils, n_z, n_y, n_x))
+    test_data = generate_random_data(generator, (*n_other, n_coils, n_z, n_y, n_x))
     return test_data
 
 
