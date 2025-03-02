@@ -10,10 +10,14 @@ from mrpro.utils.zero_pad_or_crop import zero_pad_or_crop
 from mrpro.utils.split_idx import split_idx
 from mrpro.utils.reshape import broadcast_right, unsqueeze_left, unsqueeze_right, reduce_view, reshape_broadcasted, ravel_multi_index, unsqueeze_tensors_left, unsqueeze_tensors_right
 from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
+from mrpro.utils.getnested import getnestedattr, getnesteditem
+
 __all__ = [
     "TensorAttributeMixin",
     "broadcast_right",
     "fill_range_",
+    "getnestedattr",
+    "getnesteditem",
     "ravel_multi_index",
     "reduce_view",
     "remove_repeat",
