@@ -166,7 +166,7 @@ acquisition_operator = fourier_operator @ csm_operator @ wavelet_operator.H
 # Thus, we apply the adjoint of the wavelet transform and obtain the solution $x_{\text{opt}}$
 # in image domain as
 #
-# $x_{\text{opt}} := W^H x_{T}$.
+# $x_{\text{opt}} := W^H \tilde{x}_{T}$.
 
 
 # %%
@@ -237,7 +237,7 @@ stepsize = 0.9 * (1 / op_norm**2)
 # $f_N(\tilde{x}) = 1/N\,\|\tilde{A}\tilde{x} - y\|_2^2$, where $y\in\mathbb{C}^N$, is no longer given
 # by the squared operator norm of $\tilde{A}$, but rather by the squared operator norm of the scaled
 # operator $1/N \cdot \tilde{A}$. Thus, the Lipschitz constant $L(\nabla f_N))$ must be appropriately scaled,
-# i.e.\ $L(\nabla f_N) = N \cdot L( \nabla f)$.
+# i.e. $L(\nabla f_N) = N \cdot L( \nabla f)$.
 # ```
 
 
