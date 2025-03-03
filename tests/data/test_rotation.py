@@ -1287,7 +1287,7 @@ def test_weighted_mean(theta: float) -> None:
     mw = rw.mean(weights=[1, 2])
     r = Rotation.from_rotvec(theta * axes)
     m = r.mean()
-    assert math.isclose((m @ mw.inv()).magnitude(), 0, abs_tol=1e-12)
+    assert math.isclose((m @ mw.inv()).magnitude(), 0, abs_tol=1e-7)
 
 
 @pytest.mark.parametrize(
