@@ -52,9 +52,13 @@ class PulseqRadialTestSeq:
         self.seq_filename = seq_filename
         self.encoding_matrix = SpatialDimension(1, n_k0, n_k0)
 
-        angle = repeat(torch.pi / n_spokes * torch.arange(n_spokes), 'k1 -> other k2 k1 k0', other=1, k2=1, k0=1)
-        k0 = repeat(delta_k * torch.arange(-n_k0 / 2, n_k0 / 2), 'k0 -> other k2 k1 k0', other=1, k2=1, k1=1)
-        kz = torch.zeros(1, 1, n_spokes, n_k0)
+        angle = repeat(
+            torch.pi / n_spokes * torch.arange(n_spokes), 'k1 -> other coils k2 k1 k0', other=1, coils=1, k2=1, k0=1
+        )
+        k0 = repeat(
+            delta_k * torch.arange(-n_k0 / 2, n_k0 / 2), 'k0 -> other coils k2 k1 k0', other=1, coils=1, k2=1, k1=1
+        )
+        kz = torch.zeros(1, 1, 1, n_spokes, n_k0)
         ky = torch.sin(angle) * k0
         kx = torch.cos(angle) * k0
         self.traj_analytical = KTrajectory(kz, ky, kx)
