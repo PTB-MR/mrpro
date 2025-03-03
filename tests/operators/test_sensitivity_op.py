@@ -19,7 +19,7 @@ def test_sensitivity_op_adjointness():
 
     # Generate sensitivity operator
     random_tensor = random_generator.complex64_tensor(size=(*n_other, n_coils, *n_zyx))
-    random_csmdata = CsmData(data=random_tensor, header=QHeader(fov=SpatialDimension(1.0, 1.0, 1.0)))
+    random_csmdata = CsmData(data=random_tensor, header=QHeader(resolution=SpatialDimension(1.0, 1.0, 1.0)))
     sensitivity_op = SensitivityOp(random_csmdata)
 
     # Check adjoint property
@@ -39,7 +39,7 @@ def test_sensitivity_op_csmdata_tensor():
 
     # Generate sensitivity operators
     random_tensor = random_generator.complex64_tensor(size=(*n_other, n_coils, *n_zyx))
-    random_csmdata = CsmData(data=random_tensor, header=QHeader(fov=SpatialDimension(1.0, 1.0, 1.0)))
+    random_csmdata = CsmData(data=random_tensor, header=QHeader(resolution=SpatialDimension(1.0, 1.0, 1.0)))
     sensitivity_op_csmdata = SensitivityOp(random_csmdata)
     sensitivity_op_tensor = SensitivityOp(random_tensor)
 
@@ -62,7 +62,7 @@ def test_sensitivity_op_other_dim_compatibility_pass(n_other_csm, n_other_img):
 
     # Generate sensitivity operator
     random_tensor = random_generator.complex64_tensor(size=(n_other_csm, n_coils, *n_zyx))
-    random_csmdata = CsmData(data=random_tensor, header=QHeader(fov=SpatialDimension(1.0, 1.0, 1.0)))
+    random_csmdata = CsmData(data=random_tensor, header=QHeader(resolution=SpatialDimension(1.0, 1.0, 1.0)))
     sensitivity_op = SensitivityOp(random_csmdata)
 
     # Apply to n_other_img shape
@@ -83,7 +83,7 @@ def test_sensitivity_op_other_dim_compatibility_fail(n_other_csm, n_other_img):
 
     # Generate sensitivity operator with n_other_csm shape
     random_tensor = random_generator.complex64_tensor(size=(n_other_csm, n_coils, *n_zyx))
-    random_csmdata = CsmData(data=random_tensor, header=QHeader(fov=SpatialDimension(1.0, 1.0, 1.0)))
+    random_csmdata = CsmData(data=random_tensor, header=QHeader(resolution=SpatialDimension(1.0, 1.0, 1.0)))
     sensitivity_op = SensitivityOp(random_csmdata)
 
     # Apply to n_other_img shape
