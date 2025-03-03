@@ -2,10 +2,9 @@
 
 import pytest
 import torch
-from einops import repeat
-from mrpro.data import KData, KTrajectory, SpatialDimension
+from einops import rearrange, repeat
+from mrpro.data import KData, KTrajectory, Rotation, SpatialDimension
 from mrpro.data.acq_filters import has_n_coils, is_coil_calibration_acquisition, is_image_acquisition
-from mrpro.data.AcqInfo import rearrange_acq_info_fields
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
 from mrpro.utils import split_idx
@@ -80,9 +79,9 @@ def consistently_shaped_kdata(request, random_kheader_shape):
     kheader, n_other, n_coils, n_k2, n_k1, n_k0 = random_kheader_shape
 
     kheader.acq_info.apply_(
-        lambda field: rearrange_acq_info_fields(
-            field, '(other k2 k1) ... -> other k2 k1 ...', other=n_other, k2=n_k2, k1=n_k1
-        )
+        lambda field: rearrange(field, '(other k2 k1) ... -> other k2 k1 ...', other=n_other, k2=n_k2, k1=n_k1)
+        if isinstance(field, torch.Tensor | Rotation)
+        else field
     )
 
     # Create kdata with consistent shape
@@ -121,7 +120,7 @@ def test_KData_random_cart_undersampling_shape(ismrmrd_cart_random_us):
 
 def test_KData_raise_wrong_trajectory_shape(ismrmrd_cart):
     """Wrong KTrajectory shape raises exception."""
-    kx = ky = kz = torch.zeros(1, 2, 3, 4)
+    kx = ky = kz = torch.zeros(5, 1, 2, 3, 4)
     trajectory = KTrajectory(kz, ky, kx, repeat_detection_tolerance=None)
     with pytest.raises(ValueError):
         _ = KData.from_file(ismrmrd_cart.filename, trajectory)
@@ -197,8 +196,8 @@ def test_KData_kspace(ismrmrd_cart_high_res):
     assert relative_image_difference(reconstructed_img[0, 0, 0, ...], ismrmrd_cart_high_res.img_ref) <= 0.05
 
 
-@pytest.mark.parametrize(('field', 'value'), [('lamor_frequency_proton', 42.88 * 1e6), ('tr', torch.tensor([24.3]))])
-def test_KData_modify_header(ismrmrd_cart, field, value):
+@pytest.mark.parametrize(('field', 'value'), [('lamor_frequency_proton', 42.88 * 1e6), ('tr', [24.3])])
+def test_KData_overwrite_header(ismrmrd_cart, field, value):
     """Overwrite some parameters in the header."""
     parameter_dict = {field: value}
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory(), header_overwrites=parameter_dict)
@@ -264,8 +263,8 @@ def test_KData_to_complex128_header(ismrmrd_cart):
     """Change KData dtype complex128: test header"""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     kdata_complex128 = kdata.to(dtype=torch.complex128)
-    assert kdata_complex128.header.acq_info.user_float.dtype == torch.float64
-    assert kdata_complex128.header.acq_info.user_int.dtype == torch.int32
+    assert kdata_complex128.header.acq_info.user.float1.dtype == torch.float64
+    assert kdata_complex128.header.acq_info.user.int1.dtype == torch.int32
 
 
 @pytest.mark.cuda
@@ -289,7 +288,7 @@ def test_KData_cuda(ismrmrd_cart):
     assert kdata_cuda.traj.kz.is_cuda
     assert kdata_cuda.traj.ky.is_cuda
     assert kdata_cuda.traj.kx.is_cuda
-    assert kdata_cuda.header.acq_info.user_int.is_cuda
+    assert kdata_cuda.header.acq_info.user.int1.is_cuda
     assert kdata_cuda.device == torch.device(torch.cuda.current_device())
     assert kdata_cuda.header.acq_info.device == torch.device(torch.cuda.current_device())
     assert kdata_cuda.is_cuda
@@ -305,7 +304,7 @@ def test_KData_cpu(ismrmrd_cart):
     assert kdata_cpu.traj.kz.is_cpu
     assert kdata_cpu.traj.ky.is_cpu
     assert kdata_cpu.traj.kx.is_cpu
-    assert kdata_cpu.header.acq_info.user_int.is_cpu
+    assert kdata_cpu.header.acq_info.user.int1.is_cpu
     assert kdata_cpu.device == torch.device('cpu')
     assert kdata_cpu.header.acq_info.device == torch.device('cpu')
 
@@ -368,11 +367,6 @@ def test_KData_split_k1_into_other(consistently_shaped_kdata, monkeypatch, n_oth
     # Create KData
     n_other, n_coils, n_k2, n_k1, n_k0 = consistently_shaped_kdata.data.shape
 
-    # Make sure that the other dimension/label used for the split data is not used yet
-    monkeypatch.setattr(getattr(consistently_shaped_kdata.header.encoding_limits, other_label), 'center', 0)
-    monkeypatch.setattr(getattr(consistently_shaped_kdata.header.encoding_limits, other_label), 'max', 0)
-    monkeypatch.setattr(getattr(consistently_shaped_kdata.header.encoding_limits, other_label), 'min', 0)
-
     # Create split index
     ni_per_block = n_k1 // n_other_split
     idx_k1 = torch.linspace(0, n_k1 - 1, n_k1, dtype=torch.int32)
@@ -385,8 +379,6 @@ def test_KData_split_k1_into_other(consistently_shaped_kdata, monkeypatch, n_oth
     assert kdata_split.data.shape == (idx_split.shape[0] * n_other, n_coils, n_k2, ni_per_block, n_k0)
     # Verify shape of trajectory
     assert kdata_split.traj.broadcasted_shape == (idx_split.shape[0] * n_other, n_k2, ni_per_block, n_k0)
-    # Verify new other label describes split data
-    assert getattr(kdata_split.header.encoding_limits, other_label).length == idx_split.shape[0]
 
 
 @pytest.mark.parametrize(
@@ -402,11 +394,6 @@ def test_KData_split_k2_into_other(consistently_shaped_kdata, monkeypatch, n_oth
     # Create KData
     n_other, n_coils, n_k2, n_k1, n_k0 = consistently_shaped_kdata.data.shape
 
-    # Make sure that the other dimension/label used for the split data is not used yet
-    monkeypatch.setattr(getattr(consistently_shaped_kdata.header.encoding_limits, other_label), 'center', 0)
-    monkeypatch.setattr(getattr(consistently_shaped_kdata.header.encoding_limits, other_label), 'max', 0)
-    monkeypatch.setattr(getattr(consistently_shaped_kdata.header.encoding_limits, other_label), 'min', 0)
-
     # Create split index
     ni_per_block = n_k2 // n_other_split
     idx_k2 = torch.linspace(0, n_k2 - 1, n_k2, dtype=torch.int32)
@@ -419,16 +406,14 @@ def test_KData_split_k2_into_other(consistently_shaped_kdata, monkeypatch, n_oth
     assert kdata_split.data.shape == (idx_split.shape[0] * n_other, n_coils, ni_per_block, n_k1, n_k0)
     # Verify shape of trajectory
     assert kdata_split.traj.broadcasted_shape == (idx_split.shape[0] * n_other, ni_per_block, n_k1, n_k0)
-    # Verify new other label describes split data
-    assert getattr(kdata_split.header.encoding_limits, other_label).length == idx_split.shape[0]
 
 
 @pytest.mark.parametrize(
     ('subset_label', 'subset_idx'),
     [
         ('repetition', torch.tensor([1], dtype=torch.int32)),
-        ('average', torch.tensor([1, 2, 3], dtype=torch.int32)),
-        ('phase', torch.tensor([2, 2, 3], dtype=torch.int32)),
+        ('average', torch.tensor([0, 1], dtype=torch.int32)),
+        ('phase', torch.tensor([1, 0, 0], dtype=torch.int32)),
     ],
 )
 def test_KData_select_other_subset(consistently_shaped_kdata, monkeypatch, subset_label, subset_idx):
@@ -455,21 +440,12 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader):
     n_k0 = 240
     n_k1 = 240
     n_k0_oversampled = 320
-    discard_pre = 10
-    discard_post = 20
 
     random_generator = RandomGenerator(seed=0)
-
-    # List of k1 indices in the shape
-    idx_k1 = repeat(torch.arange(n_k1, dtype=torch.int32), 'k1 -> other k2 k1', other=1, k2=1)
 
     # Set parameters need in remove_os
     monkeypatch.setattr(random_kheader.encoding_matrix, 'x', n_k0_oversampled)
     monkeypatch.setattr(random_kheader.recon_matrix, 'x', n_k0)
-    monkeypatch.setattr(random_kheader.acq_info, 'center_sample', torch.zeros_like(idx_k1) + n_k0_oversampled // 2)
-    monkeypatch.setattr(random_kheader.acq_info, 'number_of_samples', torch.zeros_like(idx_k1) + n_k0_oversampled)
-    monkeypatch.setattr(random_kheader.acq_info, 'discard_pre', torch.tensor(discard_pre, dtype=torch.int32))
-    monkeypatch.setattr(random_kheader.acq_info, 'discard_post', torch.tensor(discard_post, dtype=torch.int32))
 
     # Create kspace and image with oversampling
     phantom_os = EllipsePhantomTestData(n_y=n_k1, n_x=n_k0_oversampled)
@@ -504,24 +480,6 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader):
     # testing functions such as numpy.testing.assert_almost_equal fails because there are few voxels with high
     # differences along the edges of the elliptic objects.
     assert relative_image_difference(torch.abs(img_recon), img_tensor[:, 0, ...]) <= 0.05
-
-
-def test_modify_acq_info(random_kheader_shape):
-    """Test the modification of the acquisition info."""
-    # Create random header where AcqInfo fields are of shape [n_k1*n_k2] and reshape to [n_other, n_k2, n_k1]
-    kheader, n_other, _, n_k2, n_k1, _ = random_kheader_shape
-
-    kheader.acq_info.apply_(
-        lambda field: rearrange_acq_info_fields(
-            field, '(other k2 k1) ... -> other k2 k1 ...', other=n_other, k2=n_k2, k1=n_k1
-        )
-    )
-
-    # Verify shape
-    assert kheader.acq_info.center_sample.shape == (n_other, n_k2, n_k1, 1)
-    assert kheader.acq_info.idx.k1.shape == (n_other, n_k2, n_k1)
-    assert kheader.acq_info.orientation.shape == (n_other, n_k2, n_k1, 1)
-    assert kheader.acq_info.position.z.shape == (n_other, n_k2, n_k1, 1)
 
 
 def test_KData_compress_coils(ismrmrd_cart_high_res):
@@ -563,7 +521,7 @@ def test_KData_compress_coils(ismrmrd_cart_high_res):
 )
 def test_KData_compress_coils_diff_batch_joint_dims(consistently_shaped_kdata, batch_dims, joint_dims):
     """Test that all of these options work and yield the same shape."""
-    n_compressed_coils = 4
+    n_compressed_coils = 2
     orig_kdata_shape = consistently_shaped_kdata.data.shape
     kdata = consistently_shaped_kdata.compress_coils(n_compressed_coils, batch_dims, joint_dims)
     assert kdata.data.shape == (*orig_kdata_shape[:-4], n_compressed_coils, *orig_kdata_shape[-3:])
