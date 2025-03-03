@@ -120,5 +120,5 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         kz = radial * torch.sin(angles)
         ky = radial * torch.cos(angles)
         kx = self._readout(n_k0, k0_center, reversed_readout_mask=reversed_readout_mask)
-        kz, ky, kx = unsqueeze_tensors_left(kz, ky, kx, ndim=4)
+        kz, ky, kx = unsqueeze_tensors_left(kz, ky, kx, ndim=5)
         return KTrajectory(kz, ky, kx)
