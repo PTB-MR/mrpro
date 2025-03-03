@@ -140,7 +140,7 @@ class UserValues(MoveDataMixin):
 
 @dataclass(slots=True)
 class PhysiologyTimestamps(MoveDataMixin):
-    """Time stamps relative to physiological triggering, e.g. ECG. Not in s but in vendor-specific time units."""
+    """Time stamps relative to physiological triggering, e.g. ECG, in seconds."""
 
     timestamp1: torch.Tensor = field(default_factory=_float_factory)
     timestamp2: torch.Tensor = field(default_factory=_float_factory)
@@ -155,8 +155,8 @@ class AcqInfo(MoveDataMixin):
     """Indices describing acquisitions (i.e. readouts)."""
 
     acquisition_time_stamp: torch.Tensor = field(default_factory=_float_factory)
-    """Clock time stamp. Usually in seconds (Siemens: seconds since midnight)"""
-    # TODO: check dtype
+    """Clock time stamp [s] (Siemens: seconds since midnight)"""
+
     flags: torch.Tensor = field(default_factory=_int_factory)
     """A bit mask of common attributes applicable to individual acquisition readouts."""
 
@@ -167,7 +167,7 @@ class AcqInfo(MoveDataMixin):
     """Offset position of the patient table, in LPS coordinates [m]."""
 
     physiology_time_stamps: PhysiologyTimestamps = field(default_factory=PhysiologyTimestamps)
-    """Time stamps relative to physiological triggering, e.g. ECG. Not in s but in vendor-specific time units"""
+    """Time stamps relative to physiological triggering, e.g. ECG [s]."""
 
     position: SpatialDimension[torch.Tensor] = field(default_factory=_position_factory)
     """Center of the excited volume, in LPS coordinates relative to isocenter [m]."""
@@ -220,7 +220,6 @@ class AcqInfo(MoveDataMixin):
         """
         # Idea: create array of structs, then a struct of arrays,
         # convert it into tensors to store in our dataclass.
-        # TODO: there might be a faster way to do this.
 
         if len(acquisitions) == 0:
             raise ValueError('Acquisition list must not be empty.')

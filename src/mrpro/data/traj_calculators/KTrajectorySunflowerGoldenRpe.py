@@ -41,6 +41,10 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryCalculator):
             angle of spokes
         k2_idx
             indices in k2
+
+        Returns
+        -------
+            shifted radial positions
         """
         angles = angles.flatten()
         _, indices = np.unique(angles, return_index=True)
