@@ -494,8 +494,8 @@ def consistently_shaped_kdata(request):
     recon_fov = SpatialDimension(rng.float32(10, 100), rng.float32(10, 100), rng.float32(10, 100))
     encoding_fov = SpatialDimension(rng.float32(10, 100), rng.float32(10, 100), rng.float32(10, 100))
     idx = AcqIdx(
-        k1=rng.uint8_tensor((n_other[0], 1, 1, 1, n_k1, 1)),
-        k2=rng.uint8_tensor((n_other[0], 1, 1, n_k2, 1, 1)),
+        k1=rng.uint8_tensor((n_other[0], 1, 1, 1, n_k1, 1)).int(),
+        k2=rng.uint8_tensor((n_other[0], 1, 1, n_k2, 1, 1)).int(),
     )
     acq_info = AcqInfo(idx=idx)
     header = KHeader(
