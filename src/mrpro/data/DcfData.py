@@ -1,7 +1,5 @@
 """Density compensation data (DcfData) class."""
 
-from __future__ import annotations
-
 import dataclasses
 from functools import reduce
 from typing import TYPE_CHECKING
@@ -67,7 +65,7 @@ class DcfData(MoveDataMixin):
 
         return cls(data=dcf)
 
-    def as_operator(self) -> DensityCompensationOp:
+    def as_operator(self) -> 'DensityCompensationOp':
         """Create a density compensation operator using a copy of the DCF."""
         from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 
