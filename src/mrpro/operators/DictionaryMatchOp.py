@@ -25,7 +25,7 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
 
     At initialization, a signal model needs to be provided.
     Afterwards `append` with different `x` values should be called to add entries to the dictionary.
-    This operator than calculates for each `x` value the signal returned by the model.
+    This operator then calculates for each `x` value the signal returned by the model.
     To perform a match, use `__call__` and supply some `y` values. The operator will then perform the
     dot product matching and return the associated `x` values.
     """
