@@ -214,7 +214,7 @@ class KData(MoveDataMixin, CheckDataMixin):
         # Calculate trajectory and check if it matches the kdata shape
         match trajectory:
             case KTrajectoryIsmrmrd():
-                trajectory_ = trajectory(acquisitions)
+                trajectory_ = trajectory(acquisitions, encoding_matrix=header.encoding_matrix)
             case KTrajectoryCalculator():
                 reversed_readout_mask = (header.acq_info.flags[..., 0] & AcqFlags.ACQ_IS_REVERSE.value).bool()
                 n_k0_unique = torch.unique(n_k0_tensor)
