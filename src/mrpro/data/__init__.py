@@ -31,7 +31,6 @@ __all__ = [
     "KHeader",
     "KNoise",
     "KTrajectory",
-    "KTrajectory",
     "Limits",
     "MoveDataMixin",
     "QData",
