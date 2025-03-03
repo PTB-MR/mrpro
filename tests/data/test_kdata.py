@@ -9,67 +9,8 @@ from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 from mrpro.operators import FastFourierOp
 from mrpro.utils import split_idx
 
-from tests import relative_image_difference
-from tests.conftest import RandomGenerator
-from tests.data import IsmrmrdRawTestData
+from tests import RandomGenerator, relative_image_difference
 from tests.phantoms import EllipsePhantomTestData
-
-
-@pytest.fixture(scope='session')
-def ismrmrd_cart_bodycoil_and_surface_coil(ellipse_phantom, tmp_path_factory):
-    """Fully sampled cartesian data set with bodycoil and surface coil data."""
-    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
-    ismrmrd_kdata = IsmrmrdRawTestData(
-        filename=ismrmrd_filename,
-        noise_level=0.0,
-        repetitions=3,
-        phantom=ellipse_phantom.phantom,
-        add_bodycoil_acquisitions=True,
-    )
-    return ismrmrd_kdata
-
-
-@pytest.fixture(scope='session')
-def ismrmrd_cart_with_calibration_lines(ellipse_phantom, tmp_path_factory):
-    """Undersampled Cartesian data set with calibration lines."""
-    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
-    ismrmrd_kdata = IsmrmrdRawTestData(
-        filename=ismrmrd_filename,
-        noise_level=0.0,
-        repetitions=1,
-        acceleration=2,
-        phantom=ellipse_phantom.phantom,
-        n_separate_calibration_lines=16,
-    )
-    return ismrmrd_kdata
-
-
-@pytest.fixture(scope='session')
-def ismrmrd_cart_invalid_reps(tmp_path_factory):
-    """Fully sampled cartesian data set."""
-    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
-    ismrmrd_kdata = IsmrmrdRawTestData(
-        filename=ismrmrd_filename,
-        noise_level=0.0,
-        repetitions=3,
-        flag_invalid_reps=True,
-    )
-    return ismrmrd_kdata
-
-
-@pytest.fixture(scope='session')
-def ismrmrd_cart_random_us(ellipse_phantom, tmp_path_factory):
-    """Randomly undersampled cartesian data set with repetitions."""
-    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
-    ismrmrd_kdata = IsmrmrdRawTestData(
-        filename=ismrmrd_filename,
-        noise_level=0.0,
-        repetitions=3,
-        acceleration=4,
-        sampling_order='random',
-        phantom=ellipse_phantom.phantom,
-    )
-    return ismrmrd_kdata
 
 
 def test_KData_from_file(ismrmrd_cart):

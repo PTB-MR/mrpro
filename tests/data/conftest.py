@@ -7,8 +7,7 @@ from mrpro.data import Rotation, SpatialDimension
 from mrpro.utils import unsqueeze_left
 
 from tests import RandomGenerator
-from tests.conftest import generate_random_data
-from tests.data import DicomTestImage
+from tests.data import DicomTestImage, IsmrmrdRawTestData
 
 
 @pytest.fixture(params=({'seed': 0},))
@@ -64,7 +63,7 @@ def random_test_data(request):
         request.param['n_x'],
     )
     generator = RandomGenerator(seed)
-    test_data = generate_random_data(generator, (n_other, n_coils, n_z, n_y, n_x))
+    test_data = generator.complex64_tensor((n_other, n_coils, n_z, n_y, n_x))
     return test_data
 
 
@@ -210,3 +209,60 @@ def dcm_3d_multi_orientation(ellipse_phantom, tmp_path_factory):
             )
         )
     return dcm_image_data
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_bodycoil_and_surface_coil(ellipse_phantom, tmp_path_factory):
+    """Fully sampled cartesian data set with bodycoil and surface coil data."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        phantom=ellipse_phantom.phantom,
+        add_bodycoil_acquisitions=True,
+    )
+    return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_with_calibration_lines(ellipse_phantom, tmp_path_factory):
+    """Undersampled Cartesian data set with calibration lines."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=1,
+        acceleration=2,
+        phantom=ellipse_phantom.phantom,
+        n_separate_calibration_lines=16,
+    )
+    return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_invalid_reps(tmp_path_factory):
+    """Fully sampled cartesian data set."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        flag_invalid_reps=True,
+    )
+    return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_random_us(ellipse_phantom, tmp_path_factory):
+    """Randomly undersampled cartesian data set with repetitions."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        acceleration=4,
+        sampling_order='random',
+        phantom=ellipse_phantom.phantom,
+    )
+    return ismrmrd_kdata
