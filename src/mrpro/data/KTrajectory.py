@@ -10,7 +10,7 @@ from typing_extensions import Self
 from mrpro.data.enums import TrajType
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.utils import reduce_repeat
+from mrpro.utils import remove_repeat
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 
 
@@ -54,7 +54,7 @@ class KTrajectory(MoveDataMixin):
 
         if self.repeat_detection_tolerance is not None:
             kz, ky, kx = (
-                as_any_float(reduce_repeat(tensor, self.repeat_detection_tolerance))
+                as_any_float(remove_repeat(tensor, self.repeat_detection_tolerance))
                 for tensor in (self.kz, self.ky, self.kx)
             )
             # use of setattr due to frozen dataclass
