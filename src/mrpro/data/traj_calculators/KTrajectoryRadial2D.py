@@ -52,5 +52,5 @@ class KTrajectoryRadial2D(KTrajectoryCalculator):
         kx = radial * torch.cos(angle)
         ky = radial * torch.sin(angle)
         kz = torch.zeros(1)
-        kz, ky, kx = unsqueeze_tensors_left(kz, ky, kx, ndim=4)
+        kz, ky, kx = unsqueeze_tensors_left(kz, ky, kx, ndim=5)
         return KTrajectory(kz, ky, kx)
