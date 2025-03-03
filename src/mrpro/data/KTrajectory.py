@@ -1,12 +1,13 @@
 """KTrajectory dataclass."""
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Annotated, Literal
 
 import numpy as np
 import torch
 from typing_extensions import Self
 
+from mrpro.data.CheckDataMixin import Annotation, CheckDataMixin, string_to_size
 from mrpro.data.enums import TrajType
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
@@ -15,7 +16,7 @@ from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 
 
 @dataclass(slots=True, frozen=True)
-class KTrajectory(MoveDataMixin):
+class KTrajectory(MoveDataMixin, CheckDataMixin):
     """K-space trajectory.
 
     Contains the trajectory in k-space along the three dimensions `kz`, `ky`, `kx`,
@@ -31,13 +32,13 @@ class KTrajectory(MoveDataMixin):
         - `kz` is zero with shape `(1,1,1,1)`
     """
 
-    kz: torch.Tensor
+    kz: Annotated[torch.Tensor, Annotation(shape='*#other 1 #k2 #k1 #k0')]
     """Trajectory in z direction / phase encoding direction k2 if Cartesian. Shape `(*other, k2, k1, k0)`"""
 
-    ky: torch.Tensor
+    ky: Annotated[torch.Tensor, Annotation(shape='*#other 1 #k2 #k1 #k0')]
     """Trajectory in y direction / phase encoding direction k1 if Cartesian. Shape `(*other, k2, k1, k0)`"""
 
-    kx: torch.Tensor
+    kx: Annotated[torch.Tensor, Annotation(shape='*#other 1 #k2 #k1 #k0')]
     """Trajectory in x direction / phase encoding direction k0 if Cartesian. Shape `(*other, k2, k1, k0)`"""
 
     grid_detection_tolerance: float = 1e-3
@@ -209,3 +210,10 @@ class KTrajectory(MoveDataMixin):
         x = summarize_tensorvalues(torch.tensor(self.kx.shape))
         out = f'{type(self).__name__} with shape: kz={z}, ky={y}, kx={x}'
         return out
+
+    @property
+    def shape(self) -> torch.Size:
+        """Return shape of the KData object."""
+        if not hasattr(self, '_memo'):
+            self.check_invariants()
+        return torch.Size(string_to_size('*#other 1 #k2 #k1 #k0', self._memo))
