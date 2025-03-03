@@ -35,8 +35,10 @@
 import copy
 import math
 import pickle
+from collections.abc import Sequence
 from itertools import permutations
 from math import sqrt
+from typing import cast
 
 import einops
 import numpy as np
@@ -538,7 +540,7 @@ def _test_stats(error: torch.Tensor, mean_max: float, rms_max: float) -> None:
 
 @pytest.mark.parametrize('seq_tuple', permutations('xyz'), ids=str)
 @pytest.mark.parametrize('intrinsic', [False, True])
-def test_as_euler_asymmetric_axes(seq_tuple, intrinsic):
+def test_as_euler_asymmetric_axes(seq_tuple: Sequence[str], intrinsic: bool) -> None:
     rnd = RandomGenerator(0)
     n = 1000
     angles = torch.empty((n, 3), dtype=torch.float64)
@@ -558,7 +560,7 @@ def test_as_euler_asymmetric_axes(seq_tuple, intrinsic):
 
 @pytest.mark.parametrize('seq_tuple', permutations('xyz'), ids=str)
 @pytest.mark.parametrize('intrinsic', [False, True])
-def test_as_euler_symmetric_axes(seq_tuple, intrinsic):
+def test_as_euler_symmetric_axes(seq_tuple: Sequence[str], intrinsic: bool) -> None:
     rnd = RandomGenerator(0)
     n = 1000
     angles = torch.empty((n, 3), dtype=torch.float64)
@@ -579,7 +581,7 @@ def test_as_euler_symmetric_axes(seq_tuple, intrinsic):
 
 @pytest.mark.parametrize('seq_tuple', permutations('xyz'), ids=str)
 @pytest.mark.parametrize('intrinsic', [False, True])
-def test_as_euler_degenerate_asymmetric_axes(seq_tuple, intrinsic):
+def test_as_euler_degenerate_asymmetric_axes(seq_tuple: Sequence[str], intrinsic: bool) -> None:
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
     angles = torch.tensor([[45, 90, 35], [35, -90, 20], [35, 90, 25], [25, -90, 15]])
@@ -601,7 +603,7 @@ def test_as_euler_degenerate_asymmetric_axes(seq_tuple, intrinsic):
 
 @pytest.mark.parametrize('seq_tuple', permutations('xyz'), ids=str)
 @pytest.mark.parametrize('intrinsic', [False, True])
-def test_as_euler_degenerate_symmetric_axes(seq_tuple, intrinsic):
+def test_as_euler_degenerate_symmetric_axes(seq_tuple: Sequence[str], intrinsic: bool) -> None:
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
     angles = torch.tensor([[15, 0, 60], [35, 0, 75], [60, 180, 35], [15, -180, 25]])
@@ -1125,7 +1127,7 @@ def test_multiplication_stability() -> None:
 
 
 @pytest.mark.parametrize('n', [-5, -2, -1, 0, 1, 2, 5])
-def test_pow_integer(n):
+def test_pow_integer(n: int) -> None:
     """Test Rotation**n"""
     # Test the short-cuts and other integers
     atol = 1e-6
@@ -1148,7 +1150,7 @@ def test_pow_integer(n):
 
 
 @pytest.mark.parametrize('n', [-1.5, -0.5, -0.0, 0.0, 0.5, 1.5])
-def test_pow_fraction(n):
+def test_pow_fraction(n: int):
     """Large angle test cases for pow"""
     atol = 1e-7
     p = Rotation.random(10, random_state=0)
@@ -1270,17 +1272,17 @@ def test_len_and_bool() -> None:
 
 
 @pytest.mark.parametrize('theta', [0.0, np.pi / 8, np.pi / 4, np.pi / 3, np.pi / 2])
-def test_mean(theta):
+def test_mean(theta: float) -> None:
     "Basic test for mean"
-    axes = np.concatenate((-np.eye(3), np.eye(3)))
+    axes = torch.cat((-torch.eye(3), torch.eye(3)))
     r = Rotation.from_rotvec(theta * axes)
     assert math.isclose(r.mean().magnitude(), 0.0)
 
 
 @pytest.mark.parametrize('theta', [0.0, np.pi / 8, np.pi / 4, np.pi / 3, np.pi / 2])
-def test_weighted_mean(theta):
+def test_weighted_mean(theta: float) -> None:
     """Test that doubling a weight is equivalent to including a rotation twice."""
-    axes = np.array([[0, 0, 0], [1, 0, 0], [1, 0, 0]])
+    axes = torch.tensor([[0, 0, 0], [1, 0, 0], [1, 0, 0]])
     rw = Rotation.from_rotvec(theta * axes[:2])
     mw = rw.mean(weights=[1, 2])
     r = Rotation.from_rotvec(theta * axes)
@@ -1300,7 +1302,9 @@ def test_weighted_mean(theta):
         ((3,), False, -1, ()),
     ],
 )
-def test_weighted_mean_dims(shape, keepdim, dim, expected_shape):
+def test_weighted_mean_dims(
+    shape: Sequence[int], keepdim: bool, dim: Sequence[int] | int | None, expected_shape: Sequence[int]
+) -> None:
     """Tests Rotation.mean for different combinations dim and shape.
 
     Checks the resulting shape and tests if multiplying a weight by N is
@@ -1627,6 +1631,17 @@ def test_einops_reduce() -> None:
     # Only mean is implemented
     mean = einops.reduce(r, 'a b c d -> a c d', 'mean')
     assert r.mean(dim=1).approx_equal(mean, atol=1e-4).all()
+
+
+def test_einops_repeat() -> None:
+    """Test einops.repeat and input stacking"""
+    r1 = Rotation.random((1, 4), random_state=0, improper=False)
+    r2 = Rotation.random((1, 4), random_state=1, improper=True)
+    # mypy does not recognize the return type if a list of tensors is passed into einops (pyright does)
+    stacked = cast(Rotation, einops.repeat([r1, r2], 'stack 1 ... -> stack repeat ...', repeat=3))
+    assert stacked.shape == (2, 3, 4)
+    assert stacked[0, 0].approx_equal(r1).all()
+    assert stacked[1, 1].approx_equal(r2).all()
 
 
 def test_unqueeze_first() -> None:
