@@ -1,72 +1,88 @@
 """Tests for inversion recovery signal model."""
 
+from collections.abc import Sequence
+
 import pytest
 import torch
 from mrpro.operators.models import InversionRecovery
-from tests import autodiff_test
-from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS, create_parameter_tensor_tuples
+from tests import RandomGenerator, autodiff_test
+from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 
 
 @pytest.mark.parametrize(
     ('ti', 'result'),
     [
         (0, '-m0'),  # short ti
-        (20, 'm0'),  # long ti
+        (60, 'm0'),  # long ti
     ],
 )
-def test_inversion_recovery(ti, result):
+def test_inversion_recovery_special_values(
+    ti: float, result: str, parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)
+) -> None:
     """Test for inversion recovery.
 
     Checking that idata output tensor at ti=0 is close to -m0. Checking
     that idata output tensor at large ti is close to m0.
     """
     model = InversionRecovery(ti)
-    m0, t1 = create_parameter_tensor_tuples()
+    rng = RandomGenerator(0)
+    m0 = rng.complex64_tensor(parameter_shape)
+    t1 = rng.float32_tensor(parameter_shape, low=0.01, high=1)
     (image,) = model(m0, t1)
 
     # Assert closeness to -m0 for ti=0
     if result == '-m0':
-        torch.testing.assert_close(image[0, ...], -m0)
+        torch.testing.assert_close(image[0, ...], -m0, atol=1e-5, rtol=1e-5)
     # Assert closeness to m0 for large ti
     elif result == 'm0':
         torch.testing.assert_close(image[0, ...], m0)
+    else:
+        raise ValueError(f'Unknown result {result}')
 
 
 @SHAPE_VARIATIONS_SIGNAL_MODELS
-def test_inversion_recovery_shape(parameter_shape, contrast_dim_shape, signal_shape):
+def test_inversion_recovery_shape(
+    parameter_shape: Sequence[int], contrast_dim_shape: Sequence[int], signal_shape: Sequence[int]
+) -> None:
     """Test correct signal shapes."""
-    (ti,) = create_parameter_tensor_tuples(contrast_dim_shape, number_of_tensors=1)
-    model_op = InversionRecovery(ti)
-    m0, t1 = create_parameter_tensor_tuples(parameter_shape, number_of_tensors=2)
-    (signal,) = model_op(m0, t1)
+    rng = RandomGenerator(0)
+    m0 = rng.complex64_tensor(parameter_shape)
+    t1 = rng.float32_tensor(parameter_shape, low=1e-10, high=10)
+    ti = rng.float32_tensor(contrast_dim_shape, low=1e-10, high=10)
+    model = InversionRecovery(ti)
+    (signal,) = model(m0, t1)
     assert signal.shape == signal_shape
 
 
-def test_autodiff_inversion_recovery():
+def test_autodiff_inversion_recovery(parameter_shape: Sequence[int] = (2, 5, 10, 10)) -> None:
     """Test autodiff works for inversion_recovery model."""
     model = InversionRecovery(ti=10)
-    m0, t1 = create_parameter_tensor_tuples(parameter_shape=(2, 5, 10, 10, 10), number_of_tensors=2)
+    rng = RandomGenerator(0)
+    m0 = rng.complex64_tensor(parameter_shape)
+    t1 = rng.float32_tensor(parameter_shape, low=1e-10, high=10)
     autodiff_test(model, m0, t1)
 
 
 @pytest.mark.cuda
-def test_inversion_recovery_cuda():
+def test_inversion_recovery_cuda(parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)) -> None:
     """Test the inversion recovery model works on cuda devices."""
-    m0, t1 = create_parameter_tensor_tuples(parameter_shape=(2, 5, 10, 10, 10), number_of_tensors=2)
+    rng = RandomGenerator(0)
+    m0 = rng.complex64_tensor(parameter_shape)
+    t1 = rng.float32_tensor(parameter_shape, low=1e-10, high=10)
 
     # Create on CPU, transfer to GPU and run on GPU
-    model = InversionRecovery(ti=10)
+    model = InversionRecovery(ti=[5, 10])
     model.cuda()
     (signal,) = model(m0.cuda(), t1.cuda())
     assert signal.is_cuda
 
     # Create on GPU and run on GPU
-    model = InversionRecovery(ti=torch.as_tensor(10).cuda())
+    model = InversionRecovery(ti=torch.tensor((5, 10)).cuda())
     (signal,) = model(m0.cuda(), t1.cuda())
     assert signal.is_cuda
 
     # Create on GPU, transfer to CPU and run on CPU
-    model = InversionRecovery(ti=torch.as_tensor(10).cuda())
+    model = InversionRecovery(ti=torch.tensor((5, 10)).cuda())
     model.cpu()
     (signal,) = model(m0, t1)
     assert signal.is_cpu
