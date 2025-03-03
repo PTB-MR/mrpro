@@ -46,6 +46,6 @@ class KTrajectoryIsmrmrd:
             zero = torch.zeros_like(traj[..., :1])
             traj = torch.cat([traj, *([zero] * (3 - traj.shape[-1]))], dim=-1)
 
-        traj = unsqueeze_at(traj, dim=-3, n=4 - traj.ndim + 1)  # +1 due to stack dim
+        traj = unsqueeze_at(traj, dim=-3, n=5 - traj.ndim + 1)  # +1 due to stack dim
 
         return KTrajectory.from_tensor(traj, stack_dim=-1, axes_order='xyz', scaling_matrix=encoding_matrix)

@@ -1,7 +1,7 @@
 """Acquisition information dataclass."""
 
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import Literal, TypeAlias, overload
 
 import ismrmrd
@@ -35,18 +35,18 @@ def convert_time_stamp_siemens(
 
 
 def _int_factory() -> torch.Tensor:
-    return torch.zeros(1, 1, 1, 1, dtype=torch.int64)
+    return torch.zeros(1, 1, 1, 1, 1, dtype=torch.int64)
 
 
 def _float_factory() -> torch.Tensor:
-    return torch.zeros(1, 1, 1, 1, dtype=torch.float)
+    return torch.zeros(1, 1, 1, 1, 1, dtype=torch.float)
 
 
 def _position_factory() -> SpatialDimension[torch.Tensor]:
     return SpatialDimension(
-        torch.zeros(1, 1, 1, 1, dtype=torch.float),
-        torch.zeros(1, 1, 1, 1, dtype=torch.float),
-        torch.zeros(1, 1, 1, 1, dtype=torch.float),
+        torch.zeros(1, 1, 1, 1, 1, dtype=torch.float),
+        torch.zeros(1, 1, 1, 1, 1, dtype=torch.float),
+        torch.zeros(1, 1, 1, 1, 1, dtype=torch.float),
     )
 
 
@@ -105,6 +105,16 @@ class AcqIdx(MoveDataMixin):
     user7: torch.Tensor = field(default_factory=_int_factory)
     """User index 7."""
 
+    def __post_init__(self) -> None:
+        """Ensure that all indices are broadcastable."""
+        f = [getattr(self, field.name) for field in fields(self)]
+        try:
+            torch.broadcast_shapes(*[field.shape for field in f])
+        except RuntimeError:
+            raise ValueError('The acquisition index dimensions must be broadcastable.') from None
+        if any(x.ndim < 5 for x in f):
+            raise ValueError('The acquisition index tensors should each have at least 5 dimensions.')
+
 
 @dataclass(slots=True)
 class UserValues(MoveDataMixin):
@@ -150,7 +160,7 @@ class AcqInfo(MoveDataMixin):
     flags: torch.Tensor = field(default_factory=_int_factory)
     """A bit mask of common attributes applicable to individual acquisition readouts."""
 
-    orientation: Rotation = field(default_factory=lambda: Rotation.identity((1, 1, 1, 1)))
+    orientation: Rotation = field(default_factory=lambda: Rotation.identity((1, 1, 1, 1, 1)))
     """Rotation describing the orientation of the readout, phase and slice encoding direction."""
 
     patient_table_position: SpatialDimension[torch.Tensor] = field(default_factory=_position_factory)
@@ -237,73 +247,73 @@ class AcqInfo(MoveDataMixin):
             # Remove any unnecessary dimensions
             return torch.tensor(np.squeeze(data))
 
-        def tensor_4d(data: np.ndarray) -> torch.Tensor:
+        def tensor_5d(data: np.ndarray) -> torch.Tensor:
             # Convert tensor to torch dtypes and ensure it is 5D
             data_tensor = tensor(data)
-            return unsqueeze_right(data_tensor, 4 - data_tensor.ndim)
+            return unsqueeze_right(data_tensor, 5 - data_tensor.ndim)
 
-        def spatialdimension_4d(data: np.ndarray) -> SpatialDimension[torch.Tensor]:
+        def spatialdimension_5d(data: np.ndarray) -> SpatialDimension[torch.Tensor]:
             data_tensor = torch.tensor(data, dtype=torch.float32)
-            data_tensor = unsqueeze_at(data_tensor, -2, 4 - data_tensor.ndim + 1)
+            data_tensor = unsqueeze_at(data_tensor, -2, 5 - data_tensor.ndim + 1)
             # all spatial dimensions are float32
             return SpatialDimension.from_array_xyz(data_tensor)
 
         acq_idx = AcqIdx(
-            k1=tensor_4d(idx['kspace_encode_step_1']),
-            k2=tensor_4d(idx['kspace_encode_step_2']),
-            average=tensor_4d(idx['average']),
-            slice=tensor_4d(idx['slice']),
-            contrast=tensor_4d(idx['contrast']),
-            phase=tensor_4d(idx['phase']),
-            repetition=tensor_4d(idx['repetition']),
-            set=tensor_4d(idx['set']),
-            segment=tensor_4d(idx['segment']),
-            user0=tensor_4d(idx['user'][:, 0]),
-            user1=tensor_4d(idx['user'][:, 1]),
-            user2=tensor_4d(idx['user'][:, 2]),
-            user3=tensor_4d(idx['user'][:, 3]),
-            user4=tensor_4d(idx['user'][:, 4]),
-            user5=tensor_4d(idx['user'][:, 5]),
-            user6=tensor_4d(idx['user'][:, 6]),
-            user7=tensor_4d(idx['user'][:, 7]),
+            k1=tensor_5d(idx['kspace_encode_step_1']),
+            k2=tensor_5d(idx['kspace_encode_step_2']),
+            average=tensor_5d(idx['average']),
+            slice=tensor_5d(idx['slice']),
+            contrast=tensor_5d(idx['contrast']),
+            phase=tensor_5d(idx['phase']),
+            repetition=tensor_5d(idx['repetition']),
+            set=tensor_5d(idx['set']),
+            segment=tensor_5d(idx['segment']),
+            user0=tensor_5d(idx['user'][:, 0]),
+            user1=tensor_5d(idx['user'][:, 1]),
+            user2=tensor_5d(idx['user'][:, 2]),
+            user3=tensor_5d(idx['user'][:, 3]),
+            user4=tensor_5d(idx['user'][:, 4]),
+            user5=tensor_5d(idx['user'][:, 5]),
+            user6=tensor_5d(idx['user'][:, 6]),
+            user7=tensor_5d(idx['user'][:, 7]),
         )
         user = UserValues(
-            tensor_4d(headers['user_float'][:, 0]),
-            tensor_4d(headers['user_float'][:, 1]),
-            tensor_4d(headers['user_float'][:, 2]),
-            tensor_4d(headers['user_float'][:, 3]),
-            tensor_4d(headers['user_float'][:, 4]),
-            tensor_4d(headers['user_float'][:, 5]),
-            tensor_4d(headers['user_float'][:, 6]),
-            tensor_4d(headers['user_float'][:, 7]),
-            tensor_4d(headers['user_int'][:, 0]),
-            tensor_4d(headers['user_int'][:, 1]),
-            tensor_4d(headers['user_int'][:, 2]),
-            tensor_4d(headers['user_int'][:, 3]),
-            tensor_4d(headers['user_int'][:, 4]),
-            tensor_4d(headers['user_int'][:, 5]),
-            tensor_4d(headers['user_int'][:, 6]),
-            tensor_4d(headers['user_int'][:, 7]),
+            tensor_5d(headers['user_float'][:, 0]),
+            tensor_5d(headers['user_float'][:, 1]),
+            tensor_5d(headers['user_float'][:, 2]),
+            tensor_5d(headers['user_float'][:, 3]),
+            tensor_5d(headers['user_float'][:, 4]),
+            tensor_5d(headers['user_float'][:, 5]),
+            tensor_5d(headers['user_float'][:, 6]),
+            tensor_5d(headers['user_float'][:, 7]),
+            tensor_5d(headers['user_int'][:, 0]),
+            tensor_5d(headers['user_int'][:, 1]),
+            tensor_5d(headers['user_int'][:, 2]),
+            tensor_5d(headers['user_int'][:, 3]),
+            tensor_5d(headers['user_int'][:, 4]),
+            tensor_5d(headers['user_int'][:, 5]),
+            tensor_5d(headers['user_int'][:, 6]),
+            tensor_5d(headers['user_int'][:, 7]),
         )
         physiology_time_stamps = PhysiologyTimestamps(
-            convert_time_stamp(tensor_4d(headers['physiology_time_stamp'][:, 0]), 'physiology_time_stamp_1'),
-            convert_time_stamp(tensor_4d(headers['physiology_time_stamp'][:, 1]), 'physiology_time_stamp_2'),
-            convert_time_stamp(tensor_4d(headers['physiology_time_stamp'][:, 2]), 'physiology_time_stamp_3'),
+            convert_time_stamp(tensor_5d(headers['physiology_time_stamp'][:, 0]), 'physiology_time_stamp_1'),
+            convert_time_stamp(tensor_5d(headers['physiology_time_stamp'][:, 1]), 'physiology_time_stamp_2'),
+            convert_time_stamp(tensor_5d(headers['physiology_time_stamp'][:, 2]), 'physiology_time_stamp_3'),
         )
         acq_info = cls(
             idx=acq_idx,
             acquisition_time_stamp=convert_time_stamp(
-                tensor_4d(headers['acquisition_time_stamp']), 'acquisition_time_stamp'
+                tensor_5d(headers['acquisition_time_stamp']), 'acquisition_time_stamp'
             ),
-            flags=tensor_4d(headers['flags']),
+            flags=tensor_5d(headers['flags']),
             orientation=Rotation.from_directions(
-                spatialdimension_4d(headers['slice_dir']),
-                spatialdimension_4d(headers['phase_dir']),
-                spatialdimension_4d(headers['read_dir']),
+                spatialdimension_5d(headers['slice_dir']),
+                spatialdimension_5d(headers['phase_dir']),
+                spatialdimension_5d(headers['read_dir']),
             ),
-            patient_table_position=spatialdimension_4d(headers['patient_table_position']).apply_(mm_to_m),
-            position=spatialdimension_4d(headers['position']).apply_(mm_to_m),
-            sample_time_us=tensor_4d(headers['sample_time_us']),
+            patient_table_position=spatialdimension_5d(headers['patient_table_position']).apply_(mm_to_m),
+            position=spatialdimension_5d(headers['position']).apply_(mm_to_m),
+            sample_time_us=tensor_5d(headers['sample_time_us']),
             user=user,
             physiology_time_stamps=physiology_time_stamps,
         )
@@ -311,5 +321,5 @@ class AcqInfo(MoveDataMixin):
         if additional_fields is None:
             return acq_info
         else:
-            additional_values = tuple(tensor_4d(headers[field]) for field in additional_fields)
+            additional_values = tuple(tensor_5d(headers[field]) for field in additional_fields)
             return acq_info, additional_values

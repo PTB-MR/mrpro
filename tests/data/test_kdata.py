@@ -257,20 +257,6 @@ def test_KData_clone(ismrmrd_cart):
     assert torch.equal(kdata.traj.kx, kdata2.traj.kx)
 
 
-def test_KData_rearrange_k2_k1_into_k1(consistently_shaped_kdata):
-    """Test rearranging of k2 and k1 dimension into k1."""
-    # Create KData
-    n_other, n_coils, n_k2, n_k1, n_k0 = consistently_shaped_kdata.data.shape
-
-    # Combine data
-    kdata_combined = consistently_shaped_kdata.rearrange_k2_k1_into_k1()
-
-    # Verify shape of k-space data
-    assert kdata_combined.data.shape == (n_other, n_coils, 1, n_k2 * n_k1, n_k0)
-    # Verify shape of trajectory (it is the same for all other)
-    assert kdata_combined.traj.broadcasted_shape == (1, 1, n_k2 * n_k1, n_k0)
-
-
 @pytest.mark.parametrize(
     ('n_other_split', 'other_label'),
     [
@@ -281,48 +267,21 @@ def test_KData_rearrange_k2_k1_into_k1(consistently_shaped_kdata):
 )
 def test_KData_split_k1_into_other(consistently_shaped_kdata, monkeypatch, n_other_split, other_label):
     """Test splitting of the k1 dimension into other."""
-    # Create KData
-    n_other, n_coils, n_k2, n_k1, n_k0 = consistently_shaped_kdata.data.shape
+    *n_others, n_coils, n_k2, n_k1, n_k0 = consistently_shaped_kdata.data.shape
+    n_other = torch.tensor(n_others).prod().item()
 
-    # Create split index
-    ni_per_block = n_k1 // n_other_split
+    # Split index
+    k1_per_block = n_k1 // n_other_split
     idx_k1 = torch.linspace(0, n_k1 - 1, n_k1, dtype=torch.int32)
-    idx_split = split_idx(idx_k1, ni_per_block)
+    idx_split = split_idx(idx_k1, k1_per_block)
 
     # Split data
     kdata_split = consistently_shaped_kdata.split_k1_into_other(idx_split, other_label)
 
-    # Verify shape of k-space data
-    assert kdata_split.data.shape == (idx_split.shape[0] * n_other, n_coils, n_k2, ni_per_block, n_k0)
-    # Verify shape of trajectory
-    assert kdata_split.traj.broadcasted_shape == (idx_split.shape[0] * n_other, n_k2, ni_per_block, n_k0)
-
-
-@pytest.mark.parametrize(
-    ('n_other_split', 'other_label'),
-    [
-        (10, 'average'),
-        (5, 'repetition'),
-        (7, 'contrast'),
-    ],
-)
-def test_KData_split_k2_into_other(consistently_shaped_kdata, monkeypatch, n_other_split, other_label):
-    """Test splitting of the k2 dimension into other."""
-    # Create KData
-    n_other, n_coils, n_k2, n_k1, n_k0 = consistently_shaped_kdata.data.shape
-
-    # Create split index
-    ni_per_block = n_k2 // n_other_split
-    idx_k2 = torch.linspace(0, n_k2 - 1, n_k2, dtype=torch.int32)
-    idx_split = split_idx(idx_k2, ni_per_block)
-
-    # Split data
-    kdata_split = consistently_shaped_kdata.split_k2_into_other(idx_split, other_label)
-
-    # Verify shape of k-space data
-    assert kdata_split.data.shape == (idx_split.shape[0] * n_other, n_coils, ni_per_block, n_k1, n_k0)
-    # Verify shape of trajectory
-    assert kdata_split.traj.broadcasted_shape == (idx_split.shape[0] * n_other, ni_per_block, n_k1, n_k0)
+    assert kdata_split.data.shape == (idx_split.shape[0] * n_other, n_coils, n_k2, k1_per_block, n_k0)
+    assert kdata_split.traj.broadcasted_shape == (idx_split.shape[0] * n_other, 1, n_k2, k1_per_block, n_k0)
+    new_idx = getattr(kdata_split.header.acq_info.idx, other_label)
+    assert new_idx.shape == (idx_split.shape[0] * n_other, 1, n_k2, k1_per_block, 1)
 
 
 @pytest.mark.parametrize(
@@ -336,11 +295,13 @@ def test_KData_split_k2_into_other(consistently_shaped_kdata, monkeypatch, n_oth
 def test_KData_select_other_subset(consistently_shaped_kdata, monkeypatch, subset_label, subset_idx):
     """Test selection of a subset from other dimension."""
     # Create KData
-    n_other, n_coils, n_k2, n_k1, n_k0 = consistently_shaped_kdata.data.shape
+    *n_other, n_coils, n_k2, n_k1, n_k0 = consistently_shaped_kdata.data.shape
 
     # Set required parameters used in sel_kdata_subset.
-    _, iother, _ = torch.meshgrid(torch.arange(n_k2), torch.arange(n_other), torch.arange(n_k1), indexing='xy')
-    monkeypatch.setattr(consistently_shaped_kdata.header.acq_info.idx, subset_label, iother)
+    idx = (
+        torch.arange(torch.tensor(n_other).prod().item()).view(*n_other, 1, 1, 1, 1).expand(*n_other, 1, n_k2, n_k1, 1)
+    )
+    monkeypatch.setattr(consistently_shaped_kdata.header.acq_info.idx, subset_label, idx)
 
     # Select subset of data
     kdata_subset = consistently_shaped_kdata.select_other_subset(subset_idx, subset_label)
@@ -378,9 +339,9 @@ def test_KData_remove_readout_os(monkeypatch, random_kheader):
     k_tensor = repeat(kdata_os, 'k1 k0 -> other coils k2 k1 k0', other=1, coils=n_coils, k2=1)
 
     # Create random 2D Cartesian trajectory
-    kx = random_generator.float32_tensor(size=(1, 1, 1, n_k0_oversampled))
-    ky = random_generator.float32_tensor(size=(1, 1, n_k1, 1))
-    kz = random_generator.float32_tensor(size=(1, 1, 1, 1))
+    kx = random_generator.float32_tensor(size=(1, 1, 1, 1, n_k0_oversampled))
+    ky = random_generator.float32_tensor(size=(1, 1, 1, n_k1, 1))
+    kz = random_generator.float32_tensor(size=(1, 1, 1, 1, 1))
     trajectory = KTrajectory(kz, ky, kx)
 
     # Create KData

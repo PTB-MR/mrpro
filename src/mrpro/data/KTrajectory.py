@@ -71,8 +71,8 @@ class KTrajectory(MoveDataMixin):
         except RuntimeError:
             raise ValueError('The k-space trajectory dimensions must be broadcastable.') from None
 
-        if len(shape) < 4:
-            raise ValueError('The k-space trajectory tensors should each have at least 4 dimensions.')
+        if len(shape) < 5:
+            raise ValueError('The k-space trajectory tensors should each have at least 5 dimensions.')
 
     @classmethod
     def from_tensor(
@@ -185,7 +185,7 @@ class KTrajectory(MoveDataMixin):
         if traj.shape[-1] != 3:  # enforce 3D trajectory
             zero = torch.zeros_like(traj[..., :1])
             traj = torch.cat([traj, *([zero] * (3 - traj.shape[-1]))], dim=-1)
-        traj = unsqueeze_at(traj, dim=-3, n=4 - traj.ndim + 1)  # +1 due to stack_dim
+        traj = unsqueeze_at(traj, dim=-3, n=5 - traj.ndim + 1)  # +1 due to stack_dim
 
         return cls.from_tensor(traj, stack_dim=-1, axes_order='xyz', scaling_matrix=scaling_matrix)
 
