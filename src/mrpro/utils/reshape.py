@@ -83,6 +83,13 @@ def unsqueeze_at(x: torch.Tensor, dim: int, n: int) -> torch.Tensor:
 def unsqueeze_tensors_at(*x, dim: int, ndim: int | None = None) -> tuple[torch.Tensor, ...]:
     """Unsqueeze tensors at a specific dimension to the same number of dimensions.
 
+    Example:
+        - Tensors with shapes `(1,2,3)` and `(1,3)` and `dim=-2`
+          results in tensors with shape `(1,2,3)` and `(1,1,3)`, as the maximum number
+          of input dimensions is 3.
+        - Tensors with shapes `(1,2,3)` and `(1,3)` and `dim=1` and `ndim=4`
+          results in tensors with shape `(1,1,2,3)` and `(1,1,1,3)`.
+
     Parameters
     ----------
     x
@@ -95,9 +102,11 @@ def unsqueeze_tensors_at(*x, dim: int, ndim: int | None = None) -> tuple[torch.T
 
     Returns
     -------
-        unsqueezed tensors (views)
+        unsqueezed tensors (views) with the same number of dimensions
     """
     ndim_ = max(el.ndim for el in x) if ndim is None else ndim
+    if ndim < min(el.ndim for el in x):
+        raise ValueError('ndim must be greater or equal to the minimum number of dimensions of the input tensors')
     return tuple(unsqueeze_at(el, dim, n=ndim_ - el.ndim) for el in x)
 
 
