@@ -70,32 +70,21 @@ class IData(Data):
         return self.data.abs().square().sum(dim=coildim, keepdim=keepdim).sqrt()
 
     @classmethod
-    def from_tensor_and_kheader(cls, data: torch.Tensor, kheader: KHeader) -> Self:
+    def from_tensor_and_kheader(cls, data: torch.Tensor, header: KHeader) -> Self:
         """Create IData object from a tensor and a KHeader object.
 
         Parameters
         ----------
         data
             image data with dimensions (broadcastable to) `(other, coils, z, y, x)`.
-        kheader
+        header
             MR raw data header containing required meta data for the image header.
         """
-        header = IHeader.from_kheader(kheader)
-        return cls(header=header, data=data)
+        iheader = IHeader.from_kheader(header)
+        return cls(header=iheader, data=data)
 
     @classmethod
-    def from_single_dicom(cls, filename: str | Path) -> Self:
-        """Read single DICOM file and return IData object.
-
-        Parameters
-        ----------
-        filename
-            path to DICOM file.
-        """
-        return cls.from_dicom_files(filenames=(Path(filename),))
-
-    @classmethod
-    def from_dicom_files(cls, filenames: Sequence[str] | Sequence[Path] | Generator[Path, None, None]) -> Self:
+    def from_dicom_files(cls, filenames: Sequence[str | Path] | Generator[Path, None, None] | str | Path) -> Self:
         """Read multiple DICOM files and return IData object.
 
         DICOM images can be saved as single-frame or multi-frame images [DCMMF]_.
@@ -109,41 +98,42 @@ class IData(Data):
         Parameters
         ----------
         filenames
-            List of DICOM filenames.
+            Filename or sequence of DICOM filenames.
 
         References
         ----------
         .. [DCMMF] https://dicom.nema.org/medical/dicom/2020b/output/chtml/part03/sect_C.7.6.16.html
         """
-        # Read in all files
-        dataset_list = [dcmread(filename) for filename in filenames]
-
-        # We do the check here to allow for filenames to be a Generator
-        if not dataset_list:
+        if isinstance(filenames, str | Path):
+            datasets = [dcmread(filenames)]
+        else:
+            datasets = [dcmread(filename) for filename in filenames]
+        if not datasets:  # check datasets (not filenames) to allow for filenames to be a Generator
             raise ValueError('No dicom files specified')
 
-        header = IHeader.from_dicom_list(dataset_list)
+        header = IHeader.from_dicom(*datasets)
 
         # Ensure that data has the same shape and can be stacked
-        if not all(ds.pixel_array.shape == dataset_list[0].pixel_array.shape for ds in dataset_list):
+        if not all(ds.pixel_array.shape == datasets[0].pixel_array.shape for ds in datasets):
             raise ValueError('Only dicom files with data of the same shape can be stacked.')
 
-        # Stack required due to mypy: einops rearrange list[tensor]->tensor not recognized
-        idata = torch.stack([_dcm_pixelarray_to_tensor(ds) for ds in dataset_list])
+        data = torch.stack([_dcm_pixelarray_to_tensor(ds) for ds in datasets])
 
-        # Tag NumberofFrames (0028|0008) is used to determine if data is multi-frame and tag MRAcquisitionType
-        # (0018|0023) is used to determine if the data is 3D.
-        number_of_frames = [item.value for item in dataset_list[0].iterall() if item.tag == 0x00280008]
-        mr_acquisition_type = [item.value for item in dataset_list[0].iterall() if item.tag == 0x00180023]
+        # NumberofFrames (0028|0008) he total number of frames contained within a Multi-frame Image
+        number_of_frames = [item.value for item in datasets[0].iterall() if item.tag == 0x00280008]
+
         if len(number_of_frames) > 0 and float(number_of_frames[0]) > 1:  # multi-frame data
-            if len(mr_acquisition_type) > 0 and mr_acquisition_type[0] == '3D':  # multi-frame 3D data
-                idata = repeat(idata, 'other z y x -> other coils z y x', coils=1)
-            else:  # multi-frame 2D data
-                idata = repeat(idata, 'other frame y x -> other frame coils z y x', coils=1, z=1)
-        else:  # single-frame data
-            idata = repeat(idata, 'other y x -> other coils z y x', coils=1, z=1)
+            # MRAcquisitionType (0018|0023) is 1D/2D/3D
+            mr_acquisition_type = [item.value for item in datasets[0].iterall() if item.tag == 0x00180023]
 
-        return cls(data=idata, header=header)
+            if len(mr_acquisition_type) > 0 and mr_acquisition_type[0] == '3D':  # multi-frame 3D data
+                data = repeat(data, 'other z y x -> other coils z y x', coils=1)
+            else:  # multi-frame 2D data
+                data = repeat(data, 'other frame y x -> other frame coils z y x', coils=1, z=1)
+        else:  # single-frame data
+            data = repeat(data, 'other y x -> other coils z y x', coils=1, z=1)
+
+        return cls(data=data, header=header)
 
     @classmethod
     def from_dicom_folder(cls, foldername: str | Path, suffix: str | None = 'dcm') -> Self:
@@ -157,9 +147,7 @@ class IData(Data):
             file extension (without period/full stop) to identify the DICOM files.
             If `None`, then all files in the folder are read in.
         """
-        # Get files
         file_paths = list(Path(foldername).glob('*')) if suffix is None else list(Path(foldername).glob('*.' + suffix))
-
         if len(file_paths) == 0:
             raise ValueError(f'No dicom files with suffix {suffix} found in {foldername}')
 

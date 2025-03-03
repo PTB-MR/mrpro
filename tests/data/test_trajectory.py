@@ -17,10 +17,10 @@ def test_trajectory_repeat_detection_tol(cartesian_grid):
     kz_full, ky_full, kx_full = cartesian_grid(n_k2, n_k1, n_k0, jitter=0.1)
     trajectory_sparse = KTrajectory(kz_full, ky_full, kx_full, repeat_detection_tolerance=0.1)
 
-    assert trajectory_sparse.broadcasted_shape == (1, n_k2, n_k1, n_k0)
-    assert trajectory_sparse.kx.shape == (1, 1, 1, n_k0)
-    assert trajectory_sparse.ky.shape == (1, 1, n_k1, 1)
-    assert trajectory_sparse.kz.shape == (1, n_k2, 1, 1)
+    assert trajectory_sparse.broadcasted_shape == (1, 1, n_k2, n_k1, n_k0)
+    assert trajectory_sparse.kx.shape == (1, 1, 1, 1, n_k0)
+    assert trajectory_sparse.ky.shape == (1, 1, 1, n_k1, 1)
+    assert trajectory_sparse.kz.shape == (1, 1, n_k2, 1, 1)
 
 
 def test_trajectory_repeat_detection_exact(cartesian_grid):
@@ -31,10 +31,10 @@ def test_trajectory_repeat_detection_exact(cartesian_grid):
     kz_full, ky_full, kx_full = cartesian_grid(n_k2, n_k1, n_k0, jitter=0.1)
     trajectory_full = KTrajectory(kz_full, ky_full, kx_full, repeat_detection_tolerance=None)
 
-    assert trajectory_full.broadcasted_shape == (1, n_k2, n_k1, n_k0)
-    assert trajectory_full.kx.shape == (1, n_k2, n_k1, n_k0)
-    assert trajectory_full.ky.shape == (1, n_k2, n_k1, n_k0)
-    assert trajectory_full.kz.shape == (1, n_k2, n_k1, n_k0)
+    assert trajectory_full.broadcasted_shape == (1, 1, n_k2, n_k1, n_k0)
+    assert trajectory_full.kx.shape == (1, 1, n_k2, n_k1, n_k0)
+    assert trajectory_full.ky.shape == (1, 1, n_k2, n_k1, n_k0)
+    assert trajectory_full.kz.shape == (1, 1, n_k2, n_k1, n_k0)
 
 
 def test_trajectory_tensor_conversion(cartesian_grid):
@@ -46,9 +46,11 @@ def test_trajectory_tensor_conversion(cartesian_grid):
     tensor = torch.stack((kz_full, ky_full, kx_full), dim=0).to(torch.float32)
 
     tensor_from_traj = trajectory.as_tensor()  # stack_dim=0
-    tensor_from_traj_dim2 = rearrange(trajectory.as_tensor(stack_dim=2), 'other k2 dim k1 k0->dim other k2 k1 k0')
+    tensor_from_traj_dim2 = rearrange(
+        trajectory.as_tensor(stack_dim=2), 'other coils dim k2 k1 k0->dim other coils k2 k1 k0'
+    )
     tensor_from_traj_from_tensor_dim3 = KTrajectory.from_tensor(
-        rearrange(tensor, 'dim other k2 k1 k0->other k2 k1 dim k0'), stack_dim=3
+        rearrange(tensor, 'dim other coils k2 k1 k0->other coils k2 dim k1 k0'), stack_dim=3
     ).as_tensor()
     tensor_from_traj_from_tensor = KTrajectory.from_tensor(tensor).as_tensor()  # stack_dim=0
 
@@ -92,7 +94,7 @@ def test_trajectory_to_float64(cartesian_grid):
 @pytest.mark.parametrize('dtype', [torch.float32, torch.float64, torch.int32, torch.int64])
 def test_trajectory_floating_dtype(dtype):
     """Test if the trajectory will always be converted to float"""
-    ks = torch.ones(3, 1, 1, 1, 1, dtype=dtype)
+    ks = torch.ones(3, 1, 1, 1, 1, 1, dtype=dtype)
     traj = KTrajectory(*ks)
     if dtype.is_floating_point:
         # keep as as
@@ -151,7 +153,7 @@ def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, ty
     """Test identification of traj types."""
 
     # Generate random k-space trajectories
-    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # Find out the type of the kz, ky and kz dimensions
     single_value_dims = [d for d, s in zip((-3, -2, -1), (type_kz, type_ky, type_kx), strict=True) if s == 'zero']
@@ -182,7 +184,7 @@ def test_ktype_along_k210(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, ty
     """Test identification of traj types."""
 
     # Generate random k-space trajectories
-    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # Find out the type of the k2, k1 and k0 dimensions
     single_value_dims = [d for d, s in zip((-3, -2, -1), (type_k2, type_k1, type_k0), strict=True) if s == 'zero']
