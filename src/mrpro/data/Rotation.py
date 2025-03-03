@@ -1131,7 +1131,7 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         if not all(isinstance(x, Rotation) for x in rotations):
             raise TypeError('input must contain Rotation objects only')
 
-        quats = torch.cat([torch.atleast_2d(x.as_quat()) for x in rotations])
+        quats = torch.cat([torch.atleast_2d(x.as_quat(improper='ignore')) for x in rotations])
         inversions = torch.cat([torch.atleast_1d(x._is_improper) for x in rotations])
         return cls(quats, normalize=False, copy=False, inversion=inversions, reflection=False)
 
