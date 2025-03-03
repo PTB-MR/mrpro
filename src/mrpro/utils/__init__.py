@@ -5,6 +5,7 @@ from mrpro.utils import typing
 from mrpro.utils import unit_conversion
 from mrpro.utils.fill_range import fill_range_
 from mrpro.utils.smap import smap
+from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.indexing import Indexer
 from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.zero_pad_or_crop import zero_pad_or_crop
