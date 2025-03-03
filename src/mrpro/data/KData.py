@@ -6,7 +6,7 @@ import datetime
 import warnings
 from collections.abc import Callable, Sequence
 from types import EllipsisType
-from typing import Literal, cast
+from typing import Annotated, Literal, cast
 
 import h5py
 import ismrmrd
@@ -17,6 +17,7 @@ from typing_extensions import Self, TypeVar
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
 from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_siemens
+from mrpro.data.CheckDataMixin import Annotation, CheckDataMixin, string_to_size
 from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
@@ -63,18 +64,18 @@ OTHER_LABELS = (
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
-class KData(
-    MoveDataMixin,
-):
+class KData(MoveDataMixin, CheckDataMixin):
     """MR raw data / k-space data class."""
 
-    header: KHeader
+    header: Annotated[KHeader, Annotation(shape='*#other 1 #k2 #k1 1')]
     """Header information for k-space data"""
 
-    data: torch.Tensor
+    data: Annotated[
+        torch.Tensor, Annotation(shape='*#other coils #k2 #k1 #k0', dtype=(torch.complex64, torch.complex128))
+    ]
     """K-space data. Shape `(*other coils k2 k1 k0)`"""
 
-    traj: KTrajectory
+    traj: Annotated[KTrajectory, Annotation(shape='*#other 1 #k2 #k1 #k0')]
     """K-space trajectory along kz, ky and kx. Shape `(*other k2 k1 k0)`"""
 
     @classmethod
@@ -251,6 +252,33 @@ class KData(
         kdata = kdata.reshape_by_idx()
         return kdata
 
+    def __repr__(self):
+        """Representation method for KData class."""
+        traj = KTrajectory(self.traj.kz, self.traj.ky, self.traj.kx)
+        try:
+            device = str(self.device)
+        except RuntimeError:
+            device = 'mixed'
+        out = (
+            f'{type(self).__name__} with shape {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
+            f'Device: {device}\n'
+            f'{traj}\n'
+            f'{self.header}'
+        )
+        return out
+
+    @property
+    def dtype(self) -> torch.dtype:
+        """Data type of the k-space data."""
+        return self.data.dtype
+
+    @property
+    def shape(self) -> torch.Size:
+        """Return shape of the KData object."""
+        if not hasattr(self, '_memo'):
+            self.check_invariants()
+        return torch.Size(string_to_size('*#other coils #k2 #k1 #k0', self._memo))
+
     def reshape_by_idx(self) -> Self:
         """Sort and reshape according to the acquisistion indices.
 
@@ -331,21 +359,6 @@ class KData(
         )
         traj = KTrajectory(kz, ky, kx, self.traj.grid_detection_tolerance, self.traj.repeat_detection_tolerance)
         return type(self)(header=header, data=data, traj=traj)
-
-    def __repr__(self):
-        """Representation method for KData class."""
-        traj = KTrajectory(self.traj.kz, self.traj.ky, self.traj.kx)
-        try:
-            device = str(self.device)
-        except RuntimeError:
-            device = 'mixed'
-        out = (
-            f'{type(self).__name__} with shape {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
-            f'Device: {device}\n'
-            f'{traj}\n'
-            f'{self.header}'
-        )
-        return out
 
     def compress_coils(
         self: Self,
