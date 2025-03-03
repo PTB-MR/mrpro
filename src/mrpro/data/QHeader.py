@@ -19,7 +19,6 @@ from mrpro.utils.unit_conversion import mm_to_m
 class QHeader(MoveDataMixin):
     """MR quantitative data header."""
 
-    # ToDo: decide which attributes to store in the header
     resolution: SpatialDimension[float]
     """Resolution [m/px] of the data."""
 
@@ -39,7 +38,7 @@ class QHeader(MoveDataMixin):
 
     @classmethod
     def from_iheader(cls, header: IHeader) -> Self:
-        """Create QHeader object from KHeader object.
+        """Create QHeader object from IHeader object.
 
         Parameters
         ----------
@@ -56,10 +55,8 @@ class QHeader(MoveDataMixin):
         ----------
         header
             MR raw data header (KHeader) containing required meta data.
-        resolution
-            Resolution of the data in m.
         """
-        resolution = header.encoding_fov / header.encoding_matrix
+        resolution = header.recon_fov / header.recon_matrix
         return cls(resolution=resolution, position=header.acq_info.position, orientation=header.acq_info.orientation)
 
     @classmethod
