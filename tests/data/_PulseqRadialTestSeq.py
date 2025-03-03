@@ -3,11 +3,11 @@
 import pypulseq
 import torch
 from einops import repeat
-from mrpro.data import KTrajectory
+from mrpro.data import KTrajectory, SpatialDimension
 
 
 class PulseqRadialTestSeq:
-    def __init__(self, seq_filename: str, n_x=256, n_spokes=10):
+    def __init__(self, seq_filename: str, n_k0=256, n_spokes=10):
         """A radial 2D trajectory in Pulseq.
 
         Please note: this is not a working sequence as delays, spoiler, etc are nonsense.
@@ -16,7 +16,7 @@ class PulseqRadialTestSeq:
         ----------
         seq_filename
             target filename
-        n_x
+        n_k0
             number of frequency encoding points
         n_spokes
             number of spokes
@@ -30,9 +30,9 @@ class PulseqRadialTestSeq:
         system = pypulseq.Opts()
         rf, gz, _ = pypulseq.make_sinc_pulse(flip_angle=0.1, slice_thickness=1e-3, system=system, return_gz=True)
         gx = pypulseq.make_trapezoid(
-            channel='x', flat_area=n_x * delta_k, flat_time=n_x * system.grad_raster_time, system=system
+            channel='x', flat_area=n_k0 * delta_k, flat_time=n_k0 * system.grad_raster_time, system=system
         )
-        adc = pypulseq.make_adc(num_samples=n_x, duration=gx.flat_time, delay=gx.rise_time, system=system)
+        adc = pypulseq.make_adc(num_samples=n_k0, duration=gx.flat_time, delay=gx.rise_time, system=system)
         gx_pre = pypulseq.make_trapezoid(channel='x', area=-gx.area / 2 - delta_k / 2, duration=2e-3, system=system)
         gz_reph = pypulseq.make_trapezoid(channel='z', area=-gz.area / 2, duration=2e-3, system=system)
 
@@ -46,15 +46,15 @@ class PulseqRadialTestSeq:
 
         seq.write(str(seq_filename))
 
-        self.n_x = n_x
+        self.n_k0 = n_k0
         self.n_spokes = n_spokes
         self.seq = seq
         self.seq_filename = seq_filename
+        self.encoding_matrix = SpatialDimension(1, n_k0, n_k0)
 
-        kz = torch.zeros(1, 1, n_spokes, n_x)
         angle = repeat(torch.pi / n_spokes * torch.arange(n_spokes), 'k1 -> other k2 k1 k0', other=1, k2=1, k0=1)
-        k0 = repeat(delta_k * torch.linspace(-n_x / 2, n_x / 2 - 1, n_x), 'k0 -> other k2 k1 k0', other=1, k2=1, k1=1)
-        kx = torch.cos(angle) * k0
+        k0 = repeat(delta_k * torch.arange(-n_k0 / 2, n_k0 / 2), 'k0 -> other k2 k1 k0', other=1, k2=1, k1=1)
+        kz = torch.zeros(1, 1, n_spokes, n_k0)
         ky = torch.sin(angle) * k0
-
+        kx = torch.cos(angle) * k0
         self.traj_analytical = KTrajectory(kz, ky, kx)
