@@ -5,8 +5,8 @@ from mrpro.utils import typing
 from mrpro.utils import unit_conversion
 from mrpro.utils.fill_range import fill_range_
 from mrpro.utils.smap import smap
-from mrpro.utils.remove_repeat import remove_repeat
 from mrpro.utils.indexing import Indexer
+from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.zero_pad_or_crop import zero_pad_or_crop
 from mrpro.utils.split_idx import split_idx
 from mrpro.utils.reshape import broadcast_right, unsqueeze_left, unsqueeze_right, reduce_view, reshape_broadcasted, ravel_multi_index, unsqueeze_tensors_left, unsqueeze_tensors_right, unsqueeze_at, unsqueeze_tensors_at
@@ -19,8 +19,8 @@ __all__ = [
     "broadcast_right",
     "fill_range_",
     "ravel_multi_index",
+    "reduce_repeat",
     "reduce_view",
-    "remove_repeat",
     "reshape_broadcasted",
     "slice_profiles",
     "smap",
