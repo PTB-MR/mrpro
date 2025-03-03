@@ -104,9 +104,12 @@ def unsqueeze_tensors_at(*x, dim: int, ndim: int | None = None) -> tuple[torch.T
     -------
         unsqueezed tensors (views) with the same number of dimensions
     """
-    ndim_ = max(el.ndim for el in x) if ndim is None else ndim
-    if ndim < min(el.ndim for el in x):
+    if ndim is None:
+        ndim_ = max(el.ndim for el in x)
+    elif ndim < min(el.ndim for el in x):
         raise ValueError('ndim must be greater or equal to the minimum number of dimensions of the input tensors')
+    else:
+        ndim_ = ndim
     return tuple(unsqueeze_at(el, dim, n=ndim_ - el.ndim) for el in x)
 
 
