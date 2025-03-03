@@ -177,7 +177,7 @@ class IHeader(MoveDataMixin):
             torch.zeros(1, 1, 1, 1, 1),
         )
     )
-    """Center of the excited volume"""
+    """Center of the image"""
 
     orientation: Rotation = field(default_factory=lambda: Rotation.identity((1, 1, 1, 1, 1)))
     """Orientation of the image"""
@@ -205,10 +205,8 @@ class IHeader(MoveDataMixin):
         ----------
         header
             MR raw data header (KHeader) containing required meta data.
-        resolution
-            Pixel Spacing
         """
-        resolution = header.encoding_fov / header.encoding_matrix
+        resolution = header.recon_fov / header.recon_matrix
 
         # TODO: how to deal with different values for each acquisition?
         # The unsqueeze adds the coil dimension, as IHeader already always at least 5D with
@@ -225,17 +223,17 @@ class IHeader(MoveDataMixin):
                 header.acq_info.patient_table_position.apply(lambda x: x.unsqueeze(-4))
             ),
             acquisition_time_stamp=try_reduce_repeat(
-                header.acq_info.acquisition_time_stamp.amin((-1, -2, -3), True).unsqueeze(-4)
+                header.acq_info.acquisition_time_stamp.mean((-1, -2, -3), True).unsqueeze(-4)
             ),
             physiology_time_stamps=PhysiologyTimestamps(
                 try_reduce_repeat(
-                    header.acq_info.physiology_time_stamps.timestamp1.amin((-1, -2, -3), True).unsqueeze(-4)
+                    header.acq_info.physiology_time_stamps.timestamp1.mean((-1, -2, -3), True).unsqueeze(-4)
                 ),
                 try_reduce_repeat(
-                    header.acq_info.physiology_time_stamps.timestamp2.amin((-1, -2, -3), True).unsqueeze(-4)
+                    header.acq_info.physiology_time_stamps.timestamp2.mean((-1, -2, -3), True).unsqueeze(-4)
                 ),
                 try_reduce_repeat(
-                    header.acq_info.physiology_time_stamps.timestamp3.amin((-1, -2, -3), True).unsqueeze(-4)
+                    header.acq_info.physiology_time_stamps.timestamp3.mean((-1, -2, -3), True).unsqueeze(-4)
                 ),
             ),
             idx=ImageIdx.from_acqidx(header.acq_info.idx),
