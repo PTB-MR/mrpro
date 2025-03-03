@@ -242,6 +242,8 @@ else:
     class NestedSequence(Protocol[TypeVar('T')]):
         """A nested sequence type."""
 
+        ...
+
     NumpyIndexerType: TypeAlias = Any
     """Numpy indexer type."""
 
@@ -250,9 +252,6 @@ else:
         return f
 
     FileOrPath: TypeAlias = Any
-
-    class DataclassInstance(Protocol):
-        """An instance of a dataclass."""
 
 
 __all__ = ['DataclassInstance', 'FileOrPath', 'NestedSequence', 'NumpyIndexerType', 'TorchIndexerType', 'endomorph']
