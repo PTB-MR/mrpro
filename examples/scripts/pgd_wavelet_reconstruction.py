@@ -1,5 +1,5 @@
 # %% [markdown]
-# # Accelerated Proximal gradient descent (FISTA) reconstruction using wavelets and $\ell_1$-norm minimization
+# # Accelerated proximal gradient descent (FISTA) reconstruction using wavelets and $\ell_1$-norm minimization
 
 # %% [markdown]
 # ### Image reconstruction
@@ -24,7 +24,7 @@
 #
 # The minimization of the functional $\mathcal{F}$ is non-trivial due to
 # the non-differentiable $\ell_1$-norm and the presence of the wavelet operator.
-# A possible algorithm to approach the solution of (1) would be the primal dual hybrid gradient (PDHG)
+# A possible algorithm to approach the solution of $(1)$ would be the primal dual hybrid gradient (PDHG)
 # algorithm [[Chambolle \& Pock, JMIV 2011](https://doi.org/10.1007%2Fs10851-010-0251-1)].
 # However, exploiting the orthonormality of $W$, we can reformulate $(1)$ to solve the minimization problem
 # in the wavelet domain and use a simpler algorithm. By defining the new variable $\tilde{x} = Wx$
@@ -48,10 +48,10 @@
 # $x_{k} = \mathrm{prox}_{\sigma g}(x_{k-1} - \sigma \nabla f({x}_{k-1}))$
 #
 # where $\mathrm{prox}$ denotes the proximal operator and $\sigma$ is
-# an appropriate stepsize, ideally $\sigma=\frac{1}{L}$, with $L$ being
+# an appropriate stepsize, ideally $\sigma=\frac{1}{L}$, with $L=L(\nabla f)$ being
 # the Lipschitz constant of $\nabla f$.
 #
-# Additionally, FISTA has an additional step to accelerate the convergence. The following variable $z_{k+1}$
+# Moreover, FISTA has an additional step to accelerate the convergence. The following variable $z_{k+1}$
 # is included, consisting of a linear interpolation
 # of the previous two steps $x_{k}$ and $x_{k-1}$. So, for $t_1=1, z_1=x_0$:
 #
@@ -199,7 +199,7 @@ def callback(optimizer_status: PGDStatus) -> None:
 # %% [markdown]
 # ### Run FISTA for a certain number of iterations
 # Now we can run the FISTA algorithm to solve the minimization problem. As an initial guess,
-# we use the wavelet-coefficients of the # iterative SENSE image to speed up the convergence.
+# we use the wavelet-coefficients of the iterative SENSE image to speed up the convergence.
 
 # %%
 # compute the stepsize based on the operator norm of the acquisition operator and run FISTA
@@ -236,7 +236,7 @@ stepsize = 0.9 * (1 / op_norm**2)
 # the stepsize to be used in FISTA. The reason is that the Lipschitz-constant of the gradient of the functional
 # $f_N(\tilde{x}) = 1/(2N)\,\|\tilde{A}\tilde{x} - y\|_2^2$, where $y\in\mathbb{C}^N$, is no longer given
 # by the squared operator norm of $\tilde{A}$, but rather by the squared operator norm of the scaled
-# operator $1/N \cdot \tilde{A}$. Thus, the Lipschitz constant $L(\nabla f_N))$ must be appropriately scaled,
+# operator $1/N \cdot \tilde{A}$. Thus, the Lipschitz constant $L(\nabla f_N)$ must be appropriately scaled,
 # i.e. $L(\nabla f_N) = N \cdot L( \nabla f)$.
 # ```
 
@@ -279,7 +279,7 @@ show_images(
 #
 # ### Next steps
 # Not happy with the results? Play around with the regularization weight, the number of iterations, the
-# number of levels in the wavelet decomposition or the backtracing factor to see how they affect the final image.
+# number of levels in the wavelet decomposition or the backtracking factor to see how they affect the final image.
 # Still not happy? Maybe worth giving a try to total variation (TV)-minimization as an alternative
 # regularization method (see <project:tv_minimization_reconstruction_pdhg.ipynb>).
 # You can also try to use the 96 spokes data to see how the reconstruction quality improves with more spokes.
