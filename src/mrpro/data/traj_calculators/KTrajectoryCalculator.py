@@ -77,7 +77,9 @@ class KTrajectoryCalculator(ABC):
 
         """
         if isinstance(k0_center, int):
-            k0_center = repeat(torch.tensor(k0_center), '... -> ... other k2 k1 k0', other=1, k2=1, k1=1, k0=1)
+            k0_center = repeat(
+                torch.tensor(k0_center), '... -> ... other coils k2 k1 k0', other=1, coils=1, k2=1, k1=1, k0=1
+            )
         elif k0_center.ndim < 4:
             raise ValueError(f'Expected k0_center to have at least 4 dimensions, got {k0_center.ndim}.')
         k0 = torch.linspace(0, n_k0 - 1, n_k0, dtype=torch.float32) - k0_center
