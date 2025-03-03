@@ -1,14 +1,15 @@
 """Acquisition information dataclass."""
 
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field, fields
-from typing import Literal, TypeAlias, overload
+from dataclasses import dataclass, field
+from typing import Annotated, Literal, TypeAlias, overload
 
 import ismrmrd
 import numpy as np
 import torch
 from typing_extensions import Self
 
+from mrpro.data.CheckDataMixin import Annotation, CheckDataMixin, string_to_size
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
@@ -50,132 +51,158 @@ def _position_factory() -> SpatialDimension[torch.Tensor]:
     )
 
 
+IntTensor: TypeAlias = Annotated[
+    torch.Tensor, Annotation(shape='*#other 1 #k2 #k1 1', dtype=(torch.int32, torch.int64))
+]
+FloatTensor: TypeAlias = Annotated[
+    torch.Tensor, Annotation(shape='*#other 1 #k2 #k1 1', dtype=(torch.float32, torch.float64))
+]
+Float64Tensor: TypeAlias = Annotated[torch.Tensor, Annotation(shape='*#other 1 #k2 #k1 1', dtype=torch.float64)]
+SpatialDimensionTensor: TypeAlias = Annotated[SpatialDimension[torch.Tensor], Annotation(shape='*#other 1 #k2 #k1 1')]
+ShapeAnnotation = Annotation(shape='*#other 1 #k2 #k1 1')
+
+
 @dataclass(slots=True)
-class AcqIdx(MoveDataMixin):
+class AcqIdx(MoveDataMixin, CheckDataMixin):
     """Acquisition index for each readout."""
 
-    k1: torch.Tensor = field(default_factory=_int_factory)
+    k1: IntTensor = field(default_factory=_int_factory)
     """First phase encoding."""
 
-    k2: torch.Tensor = field(default_factory=_int_factory)
+    k2: IntTensor = field(default_factory=_int_factory)
     """Second phase encoding."""
 
-    average: torch.Tensor = field(default_factory=_int_factory)
+    average: IntTensor = field(default_factory=_int_factory)
     """Signal average."""
 
-    slice: torch.Tensor = field(default_factory=_int_factory)
+    slice: IntTensor = field(default_factory=_int_factory)
     """Slice number (multi-slice 2D)."""
 
-    contrast: torch.Tensor = field(default_factory=_int_factory)
+    contrast: IntTensor = field(default_factory=_int_factory)
     """Echo number in multi-echo."""
 
-    phase: torch.Tensor = field(default_factory=_int_factory)
+    phase: IntTensor = field(default_factory=_int_factory)
     """Cardiac phase."""
 
-    repetition: torch.Tensor = field(default_factory=_int_factory)
+    repetition: IntTensor = field(default_factory=_int_factory)
     """Counter in repeated/dynamic acquisitions."""
 
-    set: torch.Tensor = field(default_factory=_int_factory)
+    set: IntTensor = field(default_factory=_int_factory)
     """Sets of different preparation, e.g. flow encoding, diffusion weighting."""
 
-    segment: torch.Tensor = field(default_factory=_int_factory)
+    segment: IntTensor = field(default_factory=_int_factory)
     """Counter for segmented acquisitions."""
 
-    user0: torch.Tensor = field(default_factory=_int_factory)
+    user0: IntTensor = field(default_factory=_int_factory)
     """User index 0."""
 
-    user1: torch.Tensor = field(default_factory=_int_factory)
+    user1: IntTensor = field(default_factory=_int_factory)
     """User index 1."""
 
-    user2: torch.Tensor = field(default_factory=_int_factory)
+    user2: IntTensor = field(default_factory=_int_factory)
     """User index 2."""
 
-    user3: torch.Tensor = field(default_factory=_int_factory)
+    user3: IntTensor = field(default_factory=_int_factory)
     """User index 3."""
 
-    user4: torch.Tensor = field(default_factory=_int_factory)
+    user4: IntTensor = field(default_factory=_int_factory)
     """User index 4."""
 
-    user5: torch.Tensor = field(default_factory=_int_factory)
+    user5: IntTensor = field(default_factory=_int_factory)
     """User index 5."""
 
-    user6: torch.Tensor = field(default_factory=_int_factory)
+    user6: IntTensor = field(default_factory=_int_factory)
     """User index 6."""
 
-    user7: torch.Tensor = field(default_factory=_int_factory)
+    user7: IntTensor = field(default_factory=_int_factory)
     """User index 7."""
 
-    def __post_init__(self) -> None:
-        """Ensure that all indices are broadcastable."""
-        f = [getattr(self, field.name) for field in fields(self)]
-        try:
-            torch.broadcast_shapes(*[field.shape for field in f])
-        except RuntimeError:
-            raise ValueError('The acquisition index dimensions must be broadcastable.') from None
-        if any(x.ndim < 5 for x in f):
-            raise ValueError('The acquisition index tensors should each have at least 5 dimensions.')
+    @property
+    def shape(self) -> torch.Size:
+        """Return shape of the KData object."""
+        if not hasattr(self, '_memo'):
+            self.check_invariants()
+        return torch.Size(string_to_size('*#other 1 #k2 #k1 1', self._memo))
 
 
 @dataclass(slots=True)
 class UserValues(MoveDataMixin):
     """User Values used in AcqInfo."""
 
-    float1: torch.Tensor = field(default_factory=_float_factory)
-    float2: torch.Tensor = field(default_factory=_float_factory)
-    float3: torch.Tensor = field(default_factory=_float_factory)
-    float4: torch.Tensor = field(default_factory=_float_factory)
-    float5: torch.Tensor = field(default_factory=_float_factory)
-    float6: torch.Tensor = field(default_factory=_float_factory)
-    float7: torch.Tensor = field(default_factory=_float_factory)
-    float8: torch.Tensor = field(default_factory=_float_factory)
-    int1: torch.Tensor = field(default_factory=_int_factory)
-    int2: torch.Tensor = field(default_factory=_int_factory)
-    int3: torch.Tensor = field(default_factory=_int_factory)
-    int4: torch.Tensor = field(default_factory=_int_factory)
-    int5: torch.Tensor = field(default_factory=_int_factory)
-    int6: torch.Tensor = field(default_factory=_int_factory)
-    int7: torch.Tensor = field(default_factory=_int_factory)
-    int8: torch.Tensor = field(default_factory=_int_factory)
+    float1: FloatTensor = field(default_factory=_float_factory)
+    float2: FloatTensor = field(default_factory=_float_factory)
+    float3: FloatTensor = field(default_factory=_float_factory)
+    float4: FloatTensor = field(default_factory=_float_factory)
+    float5: FloatTensor = field(default_factory=_float_factory)
+    float6: FloatTensor = field(default_factory=_float_factory)
+    float7: FloatTensor = field(default_factory=_float_factory)
+    float8: FloatTensor = field(default_factory=_float_factory)
+    int1: IntTensor = field(default_factory=_int_factory)
+    int2: IntTensor = field(default_factory=_int_factory)
+    int3: IntTensor = field(default_factory=_int_factory)
+    int4: IntTensor = field(default_factory=_int_factory)
+    int5: IntTensor = field(default_factory=_int_factory)
+    int6: IntTensor = field(default_factory=_int_factory)
+    int7: IntTensor = field(default_factory=_int_factory)
+    int8: IntTensor = field(default_factory=_int_factory)
+
+    @property
+    def shape(self) -> torch.Size:
+        """Return shape of the KData object."""
+        if not hasattr(self, '_memo'):
+            self.check_invariants()
+        return torch.Size(string_to_size('*#other 1 #k2 #k1 1', self._memo))
 
 
 @dataclass(slots=True)
 class PhysiologyTimestamps(MoveDataMixin):
     """Time stamps relative to physiological triggering, e.g. ECG. Not in s but in vendor-specific time units."""
 
-    timestamp1: torch.Tensor = field(default_factory=_float_factory)
-    timestamp2: torch.Tensor = field(default_factory=_float_factory)
-    timestamp3: torch.Tensor = field(default_factory=_float_factory)
+    timestamp1: FloatTensor = field(default_factory=_float_factory)
+    timestamp2: FloatTensor = field(default_factory=_float_factory)
+    timestamp3: FloatTensor = field(default_factory=_float_factory)
+
+    @property
+    def shape(self) -> torch.Size:
+        """Return shape of the KData object."""
+        if not hasattr(self, '_memo'):
+            self.check_invariants()
+        return torch.Size(string_to_size('*#other 1 #k2 #k1 1', self._memo))
 
 
 @dataclass(slots=True)
 class AcqInfo(MoveDataMixin):
     """Acquisition information for each readout."""
 
-    idx: AcqIdx = field(default_factory=AcqIdx)
+    idx: Annotated[AcqIdx, ShapeAnnotation] = field(default_factory=AcqIdx)
     """Indices describing acquisitions (i.e. readouts)."""
 
-    acquisition_time_stamp: torch.Tensor = field(default_factory=_float_factory)
+    acquisition_time_stamp: Float64Tensor = field(default_factory=_float_factory)
     """Clock time stamp. Usually in seconds (Siemens: seconds since midnight)"""
-    # TODO: check dtype
-    flags: torch.Tensor = field(default_factory=_int_factory)
+
+    flags: IntTensor = field(default_factory=_int_factory)
     """A bit mask of common attributes applicable to individual acquisition readouts."""
 
-    orientation: Rotation = field(default_factory=lambda: Rotation.identity((1, 1, 1, 1, 1)))
+    orientation: Annotated[Rotation, ShapeAnnotation] = field(
+        default_factory=lambda: Rotation.identity((1, 1, 1, 1, 1))
+    )
     """Rotation describing the orientation of the readout, phase and slice encoding direction."""
 
-    patient_table_position: SpatialDimension[torch.Tensor] = field(default_factory=_position_factory)
+    patient_table_position: SpatialDimensionTensor = field(default_factory=_position_factory)
     """Offset position of the patient table, in LPS coordinates [m]."""
 
-    physiology_time_stamps: PhysiologyTimestamps = field(default_factory=PhysiologyTimestamps)
+    physiology_time_stamps: Annotated[PhysiologyTimestamps, ShapeAnnotation] = field(
+        default_factory=PhysiologyTimestamps
+    )
     """Time stamps relative to physiological triggering, e.g. ECG. Not in s but in vendor-specific time units"""
 
-    position: SpatialDimension[torch.Tensor] = field(default_factory=_position_factory)
+    position: SpatialDimensionTensor = field(default_factory=_position_factory)
     """Center of the excited volume, in LPS coordinates relative to isocenter [m]."""
 
-    sample_time_us: torch.Tensor = field(default_factory=_float_factory)
+    sample_time_us: IntTensor = field(default_factory=_float_factory)
     """Readout bandwidth, as time between samples [us]."""
 
-    user: UserValues = field(default_factory=UserValues)
+    user: Annotated[UserValues, ShapeAnnotation] = field(default_factory=UserValues)
     """User defined float or int values"""
 
     @overload
@@ -324,3 +351,10 @@ class AcqInfo(MoveDataMixin):
         else:
             additional_values = tuple(tensor_5d(headers[field]) for field in additional_fields)
             return acq_info, additional_values
+
+    @property
+    def shape(self) -> torch.Size:
+        """Return shape of the KData object."""
+        if not hasattr(self, '_memo'):
+            self.check_invariants()
+        return torch.Size(string_to_size('*#other 1 #k2 #k1 1', self._memo))
