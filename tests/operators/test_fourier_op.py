@@ -19,7 +19,7 @@ def create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
     # generate random image
     img = random_generator.complex64_tensor(size=im_shape)
     # create random trajectories
-    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
     return img, trajectory
 
 
@@ -104,9 +104,9 @@ def test_fourier_op_cartesian_sorting(ismrmrd_cart):
         (  # 3d single shot stack of spiral but cartesian FFT dimension in ky and k2
             (1, 2, 96, 4, 128),  # im_shape
             (1, 2, 4, 1, 192),  # k_shape
-            (1, 1, 1, 192),  # nkx
-            (1, 4, 1, 1),  # nky
-            (1, 1, 1, 192),  # nkz
+            (1, 1, 1, 1, 192),  # nkx
+            (1, 1, 4, 1, 1),  # nky
+            (1, 1, 1, 1, 192),  # nkz
             'non-uniform',  # type_kx
             'uniform',  # type_ky
             'non-uniform',  # type_kz
@@ -114,9 +114,9 @@ def test_fourier_op_cartesian_sorting(ismrmrd_cart):
         (  # radial phase encoding, cartesian FFT dimension not aligned with corresponding k2, k1, k0 dimensions
             (2, 3, 48, 16, 32),  # im_shape
             (2, 3, 96, 18, 64),  # k_shape
-            (2, 1, 18, 64),  # nkx
-            (2, 96, 1, 1),  # nky - Cartesian ky dimension defined along k2 rather than k1
-            (2, 1, 18, 64),  # nkz
+            (2, 1, 1, 18, 64),  # nkx
+            (2, 1, 96, 1, 1),  # nky - Cartesian ky dimension defined along k2 rather than k1
+            (2, 1, 1, 18, 64),  # nkz
             'non-uniform',  # type_kx
             'uniform',  # type_ky
             'non-uniform',  # type_kz
