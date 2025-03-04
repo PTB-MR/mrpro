@@ -12,8 +12,8 @@ from mrpro.operators.Operator import OperatorType
 def adam(
     f: OperatorType,
     initial_parameters: Sequence[torch.Tensor],
-    max_iter: int,
-    lr: float = 1e-3,
+    n_iterations: int,
+    learning_rate: float = 1e-3,
     betas: tuple[float, float] = (0.9, 0.999),
     eps: float = 1e-8,
     weight_decay: float = 0,
@@ -70,9 +70,9 @@ def adam(
         Sequence (for example list) of parameters to be optimized.
         Note that these parameters will not be changed. Instead, we create a copy and
         leave the initial values untouched.
-    max_iter
-        maximum number of iterations
-    lr
+    n_iterations
+        number of iterations
+    learning_rate
         learning rate
     betas
         coefficients used for computing running averages of gradient and its square
@@ -96,9 +96,13 @@ def adam(
     optim: AdamW | Adam
 
     if not decoupled_weight_decay:
-        optim = Adam(params=parameters, lr=lr, betas=betas, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad)
+        optim = Adam(
+            params=parameters, lr=learning_rate, betas=betas, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad
+        )
     else:
-        optim = AdamW(params=parameters, lr=lr, betas=betas, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad)
+        optim = AdamW(
+            params=parameters, lr=learning_rate, betas=betas, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad
+        )
 
     def closure():
         optim.zero_grad()
@@ -111,7 +115,7 @@ def adam(
         return objective
 
     # run adam
-    for iteration in range(max_iter):  # noqa: B007
+    for iteration in range(n_iterations):  # noqa: B007
         optim.step(closure)
 
     return parameters

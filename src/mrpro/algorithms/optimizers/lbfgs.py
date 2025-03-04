@@ -13,9 +13,9 @@ from mrpro.operators.Operator import OperatorType
 def lbfgs(
     f: OperatorType,
     initial_parameters: Sequence[torch.Tensor],
-    lr: float = 1.0,
-    max_iter: int = 100,
-    max_eval: int | None = 100,
+    learning_rate: float = 1.0,
+    max_iterations: int = 100,
+    max_evaluations: int | None = 100,
     tolerance_grad: float = 1e-07,
     tolerance_change: float = 1e-09,
     history_size: int = 10,
@@ -67,11 +67,11 @@ def lbfgs(
         `Sequence` of parameters to be optimized.
         Note that these parameters will not be changed. Instead, we create a copy and
         leave the initial values untouched.
-    lr
+    learning_rate
         learning rate. This should usually be left as ``1.0`` if a line search is used.
-    max_iter
+    max_iterations
         maximal number of iterations
-    max_eval
+    max_evaluations
         maximal number of evaluations of `f` per optimization step
     tolerance_grad
         termination tolerance on first order optimality
@@ -94,10 +94,10 @@ def lbfgs(
     parameters = tuple(p.detach().clone().requires_grad_(True) for p in initial_parameters)
     optim = LBFGS(
         params=parameters,
-        lr=lr,
+        lr=learning_rate,
         history_size=history_size,
-        max_iter=max_iter,
-        max_eval=max_eval,
+        max_iter=max_iterations,
+        max_eval=max_evaluations,
         tolerance_grad=tolerance_grad,
         tolerance_change=tolerance_change,
         line_search_fn=line_search_fn,

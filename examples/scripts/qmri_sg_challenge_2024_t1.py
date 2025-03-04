@@ -171,8 +171,9 @@ max_iter = 2000
 lr = 1e-1
 
 # Run optimization
-result = mrpro.algorithms.optimizers.adam(functional, [m0_start, t1_start], max_iter=max_iter, lr=lr)
+result = mrpro.algorithms.optimizers.adam(functional, [m0_start, t1_start], n_iterations=max_iter, learning_rate=lr)
 m0, t1 = (p.detach().cpu() for p in result)
+model.cpu()
 
 # %% [markdown]
 # ### Visualize the final results
