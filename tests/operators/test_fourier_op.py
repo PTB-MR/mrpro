@@ -223,3 +223,31 @@ def test_fourier_op_fft_nufft_gram(
     (result_normal,) = fourier_op.gram(img)
     (result_nufft,) = nufft_fourier_op.gram(img)
     torch.testing.assert_close(result_normal, result_nufft, atol=3e-4, rtol=5e-3)
+
+
+def test_fourier_op_repr_mixed_fft_nufft():
+    """Test the __repr__ method of FourierOp with both FFT and NUFFT components."""
+
+    # Create a trajectory with both Cartesian (on-grid) and non-Cartesian (off-grid) components
+    k_shape = (1, 5, 20, 40, 60)
+    nkx = (1, 1, 1, 1, 60)
+    nky = (1, 1, 1, 40, 1)
+    nkz = (1, 1, 20, 1, 1)
+    type_kx = 'non-uniform'
+    type_ky = 'uniform'
+    type_kz = 'uniform'
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
+
+    recon_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    encoding_matrix = SpatialDimension(
+        int(trajectory.kz.max() - trajectory.kz.min() + 1),
+        int(trajectory.ky.max() - trajectory.ky.min() + 1),
+        int(trajectory.kx.max() - trajectory.kx.min() + 1),
+    )
+    fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
+    repr_str = repr(fourier_op)
+
+    # Check if __repr__ contains both FFT and NUFFT components
+    assert 'FastFourierOp' in repr_str
+    assert 'NonUniformFastFourierOp' in repr_str
+    assert 'CartesianSamplingOp' in repr_str
