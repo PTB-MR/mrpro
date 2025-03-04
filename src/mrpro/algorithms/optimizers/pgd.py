@@ -68,10 +68,11 @@ def pgd(
 
     References
     ----------
-    .. [BECK2009] Beck A, Teboulle M (2009) A Fast Iterative Shrinkage-Thresholding Algorithm for
-    Linear Inverse Problems. SIAM.
+    .. [BE2009] Beck A, Teboulle M (2009) A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems.
+       SIAM Journal on Imaging Sciences
        https://www.ceremade.dauphine.fr/~carlier/FISTA
-    .. [CHAM2015] Chambolle A, Dossal C (2015) On the convergence of the iterates of "FISTA". JOTA.
+    .. [CHAM2015] Chambolle A, Dossal C (2015) On the convergence of the iterates of "FISTA".
+       Journal of Optimization Theory and Applications
        https://inria.hal.science/hal-01060130v3
 
     Parameters
@@ -87,9 +88,9 @@ def pgd(
     max_iterations
         number of iterations
     backtrack_factor
-        must be :math:`<=1`. if :math:`<1.`, the backtracking rule for stepsize introduced by [BECK2009] is used
+        must be :math:`<=1`. if :math:`<1.`, the backtracking rule for stepsize introduced by [BE2009] is used
     t_for_converging_solution
-        by default, the algorithm updates the variable t as originally described in [BECK2009].
+        by default, the algorithm updates the variable t as originally described in [BE2009].
         If set to `True`, the algorithm updates t as suggested by [CHAM2015],
         i.e. at iteration :math:`n`, :math:`t_n = \frac{n+a-1}{a}`, with chosen :math:`a=3`.
         This choice ensures the theoretical convergence of solution.
