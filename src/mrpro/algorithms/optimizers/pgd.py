@@ -48,6 +48,7 @@ def pgd(
         with :math:`F` being the Fourier Transform, target denoting the acquired data \in k-space and x \in image space,
         :math:`f(x) = 1/2 \|Fx - y\|^2, g(x) = \lambda \|x\|_1`.
         In this case, :math:`||F^T F|| = 1`. ::
+                kspace_data = torch.randn(3, 10, 10 , dtype=torch.complex64)
                 fft = FastFourierOp()
                 l2 = L2NormSquared(target=kspace_data)
                 f = l2 @ fft
@@ -55,7 +56,7 @@ def pgd(
                 g = reg_parameter * L1Norm()
                 operator_norm = 1.
                 stepsize = 0.85 * 1 / operator_norm**2
-                initial_value = torch.ones(image_space_shape)
+                initial_value = torch.ones((3,10,10))
                 pgd_image_solution = pgd(
                     f=f,
                     g=g,
@@ -163,3 +164,6 @@ def pgd(
             )
 
     return x
+
+
+# %%

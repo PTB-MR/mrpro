@@ -196,3 +196,6 @@ def test_pgd_behavior_different_updates_t() -> None:
         t_for_converging_solution=True,
     )
     torch.testing.assert_close(pgd_solution1, pgd_solution2, rtol=5e-4, atol=5e-4)
+
+
+# %%
