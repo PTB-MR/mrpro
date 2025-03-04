@@ -4,6 +4,7 @@ import dataclasses
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import cast
+from datetime import datetime, time, timezone
 
 import numpy as np
 import torch
@@ -280,18 +281,47 @@ class IHeader(MoveDataMixin):
         ti = ms_to_s(get_items(dataset, 'InversionTime', float)[::n_volumes])
         tr = ms_to_s(get_items(dataset, 'RepetitionTime', float)[::n_volumes])
 
+        fov_x = resolution.x * get_items(dataset, 'Rows', int)[0]
+        fov_y = resolution.y * get_items(dataset, 'Columns', int)[0]
+        # Get dicom position in [m] which is defined by the center of the voxel in the upper left corner
+        dcm_position = mm_to_m(
+            torch.tensor(
+                get_items(dataset, 'ImagePositionPatient', lambda x: [float(val) for val in x]),
+            )
+        )
+        # Shift dicom image position to the center by fov
+        position = SpatialDimension(
+            x=(dcm_position[..., 2] + fov_x / 2)[..., None, None, None, None],
+            y=(dcm_position[..., 1] + fov_y / 2)[..., None, None, None, None],
+            z=(dcm_position[..., 0])[..., None, None, None, None],
+        )
+
+        # dcm_orientation = get_items(dataset, 'ImageOrientationPatient', lambda x: [float(val) for val in x])
+
+        # Calculate acquisition time stamps in s according to the reference time 0:00 am
+        frame_time_dt = get_items(
+            dataset,
+            'FrameReferenceDateTime',
+            lambda x: datetime.strptime(x, '%Y%m%d%H%M%S.%f').replace(tzinfo=timezone.utc),
+        )
+        t0 = datetime.combine(frame_time_dt[0].date(), time(0, 0))
+        delta_t = torch.tensor([(ft - t0).total_seconds() for ft in frame_time_dt][::n_volumes])
+
         te_ms = get_items(dataset, 'EchoTime', float)
         if not te_ms:  # Some scanners use 'EchoTime', some use 'EffectiveEchoTime'
             te_ms = get_items(dataset, 'EffectiveEchoTime', float)
         te = ms_to_s(te_ms[::n_volumes])
 
-        # TODO: Orientation, Position, AcquisitionTime, PhysiologyTimeStamps, ImageIdx
+        # TODO: Orientation, PhysiologyTimeStamps, ImageIdx
         return cls(
             resolution=resolution,
             fa=fa,
             ti=ti,
             tr=tr,
             te=te,
+            acquisition_time_stamp=delta_t,
+            position=position,
+            # orientation=dcm_orientation,
         )
 
     def __repr__(self):
