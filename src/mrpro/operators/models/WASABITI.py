@@ -1,5 +1,7 @@
 """WASABITI signal model for mapping of B0, B1 and T1."""
 
+from collections.abc import Sequence
+
 import torch
 from torch import nn
 
@@ -13,8 +15,8 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
 
     def __init__(
         self,
-        offsets: torch.Tensor,
-        recovery_time: torch.Tensor,
+        offsets: torch.Tensor | float | Sequence[float],
+        recovery_time: torch.Tensor | float | Sequence[float],
         rf_duration: float | torch.Tensor = 0.005,
         b1_nominal: float | torch.Tensor = 3.75e-6,
         gamma: float = GYROMAGNETIC_RATIO_PROTON,
@@ -41,22 +43,17 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
            Proceedings of the Annual Meeting of ISMRM
         """
         super().__init__()
-        # convert all parameters to tensors
-        rf_duration = torch.as_tensor(rf_duration)
-        b1_nominal = torch.as_tensor(b1_nominal)
-
-        if recovery_time.shape != offsets.shape:
-            raise ValueError(
-                f'Shape of recovery_time ({recovery_time.shape}) and offsets ({offsets.shape}) needs to be the same.'
-            )
-
-        # nn.Parameters allow for grad calculation
-        self.offsets = nn.Parameter(offsets, requires_grad=offsets.requires_grad)
+        # offsets determines the device
+        offsets_tensor = torch.as_tensor(offsets)
+        self.offsets = nn.Parameter(offsets_tensor, requires_grad=offsets_tensor.requires_grad)
+        recovery_time_tensor = torch.as_tensor(recovery_time)
         self.recovery_time = nn.Parameter(
-            recovery_time.to(device=offsets.device), requires_grad=recovery_time.requires_grad
+            recovery_time_tensor.to(device=offsets_tensor.device), requires_grad=recovery_time_tensor.requires_grad
         )
-        self.rf_duration = nn.Parameter(rf_duration, requires_grad=rf_duration.requires_grad)
-        self.b1_nominal = nn.Parameter(b1_nominal, requires_grad=b1_nominal.requires_grad)
+        rf_duration_tensor = torch.as_tensor(rf_duration, device=offsets_tensor.device)
+        self.rf_duration = nn.Parameter(rf_duration_tensor, requires_grad=rf_duration_tensor.requires_grad)
+        b1_nominal_tensor = torch.as_tensor(b1_nominal, device=offsets_tensor.device)
+        self.b1_nominal = nn.Parameter(b1_nominal_tensor, requires_grad=b1_nominal_tensor.requires_grad)
         self.gamma = gamma
 
     def forward(self, b0_shift: torch.Tensor, relative_b1: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
