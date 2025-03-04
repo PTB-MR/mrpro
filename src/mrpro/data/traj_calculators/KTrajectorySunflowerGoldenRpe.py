@@ -14,12 +14,7 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryCalculator):
     """Radial phase encoding trajectory with a sunflower pattern."""
 
     def __init__(self) -> None:
-        """Initialize KTrajectorySunflowerGoldenRpe.
-
-        ----------
-        radial_undersampling_factor
-            undersampling factor along radial phase encoding direction.
-        """
+        """Initialize KTrajectorySunflowerGoldenRpe."""
         self.angle = torch.pi * 0.618034
 
     def _apply_sunflower_shift_between_rpe_lines(
