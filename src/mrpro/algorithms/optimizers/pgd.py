@@ -69,7 +69,7 @@ def pgd(
     References
     ----------
     .. [BECK2009] Beck A, Teboulle M (2009) A Fast Iterative Shrinkage-Thresholding Algorithm for
-        Linear Inverse Problems. SIAM.
+    Linear Inverse Problems. SIAM.
        https://www.ceremade.dauphine.fr/~carlier/FISTA
     .. [CHAM2015] Chambolle A, Dossal C (2015) On the convergence of the iterates of "FISTA". JOTA.
        https://inria.hal.science/hal-01060130v3
