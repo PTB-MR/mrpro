@@ -9,9 +9,8 @@ from mrpro.operators.SignalModel import SignalModel
 class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
     """Cardiac MR Fingerprinting signal model.
 
-    This model simulates a cardiac MR fingerprinting sequence as described in Hamilton  et al. 'MR fingerprinting
-    for rapid quantification of myocardial T1, T2, and proton spin density'. Magn. Reson. Med. 77, 1446-1458 (2017)
-    [http://doi.wiley.com/10.1002/mrm.26668] using the extended phase graph (`~mrpro.operators.models.EPG`) formalism.
+    This model simulates a cardiac MR fingerprinting sequence as described in [HAMI2017]_ using the extended phase
+    graph (`~mrpro.operators.models.EPG`) formalism.
 
     It is a four-fold repetition of
 
@@ -19,13 +18,18 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
        R-peak                   R-peak                    R-peak                    R-peak                    R-peak
     ---|-------------------------|-------------------------|-------------------------|-------------------------|-----
 
-            [INV TI=20ms][ACQ]                     [ACQ]     [T2-prep TE=40ms][ACQ]    [T2-prep TE=80ms][ACQ]
+            [INV TI=30ms][ACQ]                     [ACQ]     [T2-prep TE=50ms][ACQ]    [T2-prep TE=100ms][ACQ]
 
 
     ```{note}
     This model is on purpose not flexible in all design choices. Instead, consider writing a custom
     `~mrpro.operators.SignalModel` based on this implementation if you need to simulate a different sequence.
     ```
+
+    References
+    ----------
+    .. [HAMI2017] Hamilton, J. I. et al. (2017) MR fingerprinting for rapid quantification of myocardial T1, T2, and
+            proton spin density. Magn. Reson. Med. 77 http://doi.wiley.com/10.1002/mrm.26668
     """
 
     def __init__(self, acquisition_times: torch.Tensor, echo_time: float) -> None:
@@ -89,20 +93,21 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             sequence.append(block)
         self.model = EPGSignalModel(sequence, n_states=20)
 
-    def forward(self, t1: torch.Tensor, t2: torch.Tensor, m0: torch.Tensor) -> tuple[torch.Tensor]:
+    def forward(self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor) -> tuple[torch.Tensor]:
         """Simulate the Cardiac MR Fingerprinting signal.
 
         Parameters
         ----------
-        t1
-            T1 relaxation time [s]
-        t2
-            T2 relaxation time [s]
         m0
             Steady state magnetization (complex)
+        t1
+            longitudinal relaxation time T1
+        t2
+            transversal relaxation time T2
+
 
         Returns
         -------
             Simulated Cardiac MR Fingerprinting signal with the different acquisitions in the first dimension.
         """
-        return self.model(t1, t2, m0, None)
+        return self.model(m0, t1, t2, None)
