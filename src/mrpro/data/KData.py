@@ -138,31 +138,22 @@ class KData(
         if not acquisitions:
             raise ValueError('No acquisitions meeting the given filter criteria were found.')
 
-        if (
-            ismrmrd_header.acquisitionSystemInformation is not None
-            and isinstance(ismrmrd_header.acquisitionSystemInformation.systemVendor, str)
-            and ismrmrd_header.acquisitionSystemInformation.systemVendor.lower() == 'siemens'
+        if ismrmrd_header.acquisitionSystemInformation is not None and isinstance(
+            ismrmrd_header.acquisitionSystemInformation.systemVendor, str
         ):
-            convert_time_stamp = convert_time_stamp_siemens  # 2.5ms time steps
-        if (
-            ismrmrd_header.acquisitionSystemInformation is not None
-            and isinstance(ismrmrd_header.acquisitionSystemInformation.systemVendor, str)
-            and ismrmrd_header.acquisitionSystemInformation.systemVendor.lower() == 'osi2'
-        ):
-            convert_time_stamp = convert_time_stamp_osi2  # 1ms time steps
-        elif (
-            ismrmrd_header.acquisitionSystemInformation is None
-            or ismrmrd_header.acquisitionSystemInformation.systemVendor is None
-        ):
-            warnings.warn('No vendor information found. Assuming Siemens time stamp format.', stacklevel=1)
-            convert_time_stamp = convert_time_stamp_siemens
-
+            match ismrmrd_header.acquisitionSystemInformation.systemVendor.lower():
+                case 'siemens':
+                    convert_time_stamp = convert_time_stamp_siemens  # 2.5ms time steps
+                case 'osi2':
+                    convert_time_stamp = convert_time_stamp_osi2  # 1ms time steps
+                case str(vendor):
+                    warnings.warn(
+                        f'Unknown vendor {vendor}. '
+                        'Assuming Siemens time stamp format. If this is wrong, consider opening an Issue.',
+                        stacklevel=1,
+                    )
         else:
-            warnings.warn(
-                f'Unknown vendor {ismrmrd_header.acquisitionSystemInformation.systemVendor}. '
-                'Assuming Siemens time stamp format. If this is wrong, consider opening an Issue.',
-                stacklevel=1,
-            )
+            warnings.warn('No vendor information found. Assuming Siemens time stamp format.', stacklevel=1)
             convert_time_stamp = convert_time_stamp_siemens
 
         acq_info, (k0_center, n_k0_tensor, discard_pre, discard_post) = AcqInfo.from_ismrmrd_acquisitions(
