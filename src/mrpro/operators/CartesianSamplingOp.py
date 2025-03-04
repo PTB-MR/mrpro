@@ -229,6 +229,25 @@ class CartesianSamplingOp(LinearOperator):
         """
         return CartesianSamplingGramOp(self)
 
+    def __repr__(self) -> str:
+        """Representation method for CartesianSamplingOperator."""
+        device = self._fft_idx.device if self._fft_idx is not None else 'none'
+        if self._inside_encoding_matrix_idx is None:
+            enc_matrix_warning = ''
+        else:
+            enc_matrix_warning = (
+                '\nK-space points lie outside of the encoding_matrix and will be ignored.'
+                '\nIncrease the encoding_matrix to include these points.'
+            )
+
+        out = (
+            f'{type(self).__name__} on device: {device}\n'
+            f'Needs indexing: {self._needs_indexing}\n'
+            f'Sorted grid shape: {self._sorted_grid_shape}'
+            f'{enc_matrix_warning}'
+        )
+        return out
+
 
 class CartesianSamplingGramOp(LinearOperator):
     """Gram operator for the Cartesian Sampling Operator.

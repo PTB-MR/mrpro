@@ -187,3 +187,27 @@ def test_cart_sampling_op_oversampling(k0_min, k0_max, k2_min, k2_max):
 
     assert sampling_op.adjoint(u)[0].shape[-3:] == encoding_matrix.zyx
     assert sampling_op(v)[0].shape[-3:] == (kz.shape[-3], ky.shape[-2], kx.shape[-1])
+
+
+def test_cart_sampling_op_repr():
+    """Test the __repr__ method of Cartesian sampling operator."""
+
+    # Create 3D uniform trajectory
+    k_shape = (1, 5, 20, 40, 60)
+    nkx = (1, 1, 1, 1, 60)
+    nky = (1, 1, 1, 40, 1)
+    nkz = (1, 1, 20, 1, 1)
+    type_kx = 'uniform'
+    type_ky = 'uniform'
+    type_kz = 'uniform'
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
+
+    encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
+    repr_str = repr(sampling_op)
+
+    # Check if the _repr__ string contains expected information
+    assert 'CartesianSamplingOp' in repr_str
+    assert 'Needs indexing' in repr_str
+    assert 'Sorted grid shape' in repr_str
+    assert 'device' in repr_str
