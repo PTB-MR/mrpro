@@ -19,14 +19,14 @@ from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
 class Parameters(MoveDataMixin):
     """Tissue parameters for EPG simulation."""
 
+    m0: torch.Tensor
+    """Steay state magnetization (complex)"""
+
     t1: torch.Tensor
     """T1 relaxation time [s]"""
 
     t2: torch.Tensor
     """T2 relaxation time [s]"""
-
-    m0: torch.Tensor
-    """Steay state magnetization (complex)"""
 
     relative_b1: torch.Tensor | None = None
     """Relative B1 scaling factor (complex)"""
@@ -224,7 +224,10 @@ def initial_state(
     """
     if n_states < 2:
         raise ValueError('Number of states should be at least 2.')
-    return torch.zeros(*shape, 3, n_states, device=device, dtype=dtype)
+    state = torch.zeros(*shape, 3, n_states, device=device, dtype=dtype)
+    # Start in equilibrium state
+    state[..., :, 0] = torch.tensor((0.0, 0, 1.0))
+    return state
 
 
 class EPGBlock(TensorAttributeMixin, ABC):
