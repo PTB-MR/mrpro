@@ -1,0 +1,45 @@
+ARG BASE_IMAGE=ubuntu:22.04
+FROM ${BASE_IMAGE} AS base
+
+ENV GITHUB_PERSONAL_TOKEN ""
+ENV GITHUB_OWNER ""
+ENV GITHUB_REPOSITORY ""
+
+ARG ACTION_RUNNER_URL=https://github.com/actions/runner/releases/download/v2.322.0/actions-runner-linux-x64-2.322.0.tar.gz
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+ARG PYTHON="python3.12"
+
+# install python, curl and jq
+COPY docker/install_system.sh .
+RUN bash install_system.sh && rm install_system.sh
+
+# install actions runner according to the GH guide
+WORKDIR /actions-runner
+RUN curl -o actions-runner-linux-x64-2.322.0.tar.gz -L $ACTION_RUNNER_URL && tar xzf ./actions-runner-linux-x64-2.322.0.tar.gz
+
+RUN ./bin/installdependencies.sh
+COPY docker/runner_entrypoint.sh /actions-runner/entrypoint.sh
+RUN chown -R runner /actions-runner
+RUN chmod +x /actions-runner/entrypoint.sh
+
+RUN mkdir /work && chown runner /work
+
+# install mrpro dependencies
+# forces rebuild if either the version or the pyproject.toml changes
+WORKDIR /
+
+COPY docker/install_dependencies.sh pyproject.toml src/mrpro/VERSION ./
+# the 1st argument for the install_dependencies specifies the cuda version for torch
+RUN bash install_dependencies.sh cu124 && rm install_dependencies.sh pyproject.toml VERSION
+
+# install mrpro
+# forces rebuild on any change in the mrpro directory
+COPY . /mrpro/
+RUN python -m pip install  "/mrpro[notebook]" --no-cache-dir --upgrade --upgrade-strategy "eager" && rm -rf /mrpro
+
+# set user
+USER runner
+
+ENTRYPOINT ["/actions-runner/entrypoint.sh"]
