@@ -121,8 +121,8 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             )
         ]
         # Broadcast shapes not always needed but also does not hurt
-        omega_list = [k.expand(*torch.broadcast_shapes(*[k.shape for k in omega_list])) for k in omega_list]
-        omega = torch.stack(omega_list, dim=-4)  # use the 'coil' dim for the direction
+        omega_list = list(torch.broadcast_tensors(*omega_list))
+        omega = torch.concatenate(omega_list, dim=-4)  # use the 'coil' dim for the direction
         self._traj_broadcast_shape = omega.shape
         keep_dims_210 = [-4, *dimension_210]  # -4 is always coil
         permute_210 = [i for i in range(-omega.ndim, 0) if i not in keep_dims_210] + keep_dims_210

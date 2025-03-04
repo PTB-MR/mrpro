@@ -7,12 +7,14 @@ from mrpro.operators import functionals, models
 from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp
 from mrpro.operators.ConstraintsOp import ConstraintsOp
 from mrpro.operators.DensityCompensationOp import DensityCompensationOp
+from mrpro.operators.DictionaryMatchOp import DictionaryMatchOp
 from mrpro.operators.EinsumOp import EinsumOp
 from mrpro.operators.FastFourierOp import FastFourierOp
 from mrpro.operators.FiniteDifferenceOp import FiniteDifferenceOp
 from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.GridSamplingOp import GridSamplingOp
 from mrpro.operators.IdentityOp import IdentityOp
+from mrpro.operators.Jacobian import Jacobian
 from mrpro.operators.LinearOperatorMatrix import LinearOperatorMatrix
 from mrpro.operators.MagnitudeOp import MagnitudeOp
 from mrpro.operators.MultiIdentityOp import MultiIdentityOp
@@ -28,10 +30,12 @@ from mrpro.operators.WaveletOp import WaveletOp
 from mrpro.operators.ZeroPadOp import ZeroPadOp
 from mrpro.operators.ZeroOp import ZeroOp
 
+
 __all__ = [
     "CartesianSamplingOp",
     "ConstraintsOp",
     "DensityCompensationOp",
+    "DictionaryMatchOp",
     "EinsumOp",
     "ElementaryFunctional",
     "ElementaryProximableFunctional",
@@ -41,6 +45,7 @@ __all__ = [
     "Functional",
     "GridSamplingOp",
     "IdentityOp",
+    "Jacobian",
     "LinearOperator",
     "LinearOperatorMatrix",
     "MagnitudeOp",
