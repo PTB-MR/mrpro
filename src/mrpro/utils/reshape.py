@@ -50,6 +50,69 @@ def unsqueeze_left(x: torch.Tensor, n: int) -> torch.Tensor:
     return x.reshape(*(n * (1,)), *x.shape)
 
 
+def unsqueeze_at(x: torch.Tensor, dim: int, n: int) -> torch.Tensor:
+    """Unsqueeze multiple times at a specific dimension.
+
+    Example:
+        Tensor with shape `(1,2,3)` and `dim=2` and `n=2` would result in tensor with shape `(1,2,1,1,3)`.
+
+    Parameters
+    ----------
+    x
+        tensor to unsqueeze
+    dim
+        dimension to unsqueeze. Negative values are allowed.
+    n
+        number of times to unsqueeze
+    """
+    if n == 0:
+        return x
+    elif n == 1:
+        return x.unsqueeze(dim)
+    elif n < 0:
+        raise ValueError('n must be positive')
+    if not (-x.ndim - 1 <= dim <= x.ndim):
+        raise IndexError(f'Dimension {dim} out of range for tensor of dimension {x.ndim}')
+    if dim < 0:
+        # dim=-1 should index after the last axis, etc. to match unsqueeze
+        dim = x.ndim + dim + 1
+    return x.reshape(*x.shape[:dim], *(n * (1,)), *x.shape[dim:])
+
+
+@endomorph
+def unsqueeze_tensors_at(*x, dim: int, ndim: int | None = None) -> tuple[torch.Tensor, ...]:
+    """Unsqueeze tensors at a specific dimension to the same number of dimensions.
+
+    Example:
+        - Tensors with shapes `(1,2,3)` and `(1,3)` and `dim=-2`
+          results in tensors with shape `(1,2,3)` and `(1,1,3)`, as the maximum number
+          of input dimensions is 3.
+        - Tensors with shapes `(1,2,3)` and `(1,3)` and `dim=1` and `ndim=4`
+          results in tensors with shape `(1,1,2,3)` and `(1,1,1,3)`.
+
+    Parameters
+    ----------
+    x
+        tensors to unsqueeze
+    dim
+        dimension to unsqueeze
+    ndim
+        number of dimensions to unsqueeze to. If `None`, unsqueeze to the maximum number of dimensions
+        of the input tensors.
+
+    Returns
+    -------
+        unsqueezed tensors (views) with the same number of dimensions
+    """
+    if ndim is None:
+        ndim_ = max(el.ndim for el in x)
+    elif ndim < min(el.ndim for el in x):
+        raise ValueError('ndim must be greater or equal to the minimum number of dimensions of the input tensors')
+    else:
+        ndim_ = ndim
+    return tuple(unsqueeze_at(el, dim, n=ndim_ - el.ndim) for el in x)
+
+
 @endomorph
 def unsqueeze_tensors_left(*x: torch.Tensor, ndim: int | None = None) -> tuple[torch.Tensor, ...]:
     """Unsqueeze tensors on the left to the same number of dimensions.
@@ -61,7 +124,6 @@ def unsqueeze_tensors_left(*x: torch.Tensor, ndim: int | None = None) -> tuple[t
     ndim
         number of dimensions to unsqueeze to. If `None`, unsqueeze to the maximum number of dimensions
         of the input tensors.
-
 
     Returns
     -------
