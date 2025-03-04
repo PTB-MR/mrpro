@@ -407,7 +407,10 @@ class FispBlock(EPGBlock):
             EPG configuration states after the block and the acquired signals
         """
         signal = []
-        unsqueezed = unsqueeze_tensors_right(self.flip_angles, self.rf_phases, self.te, self.tr, ndim=parameters.ndim)
+        # +1 for time dimension
+        unsqueezed = unsqueeze_tensors_right(
+            self.flip_angles, self.rf_phases, self.te, self.tr, ndim=parameters.ndim + 1
+        )
         for flip_angle, rf_phase, te, tr in zip(*unsqueezed, strict=True):
             state = rf(state, rf_matrix(flip_angle, rf_phase, parameters.relative_b1))
             state = relax(state, relax_matrix(te, parameters.t1, parameters.t2))
@@ -538,7 +541,7 @@ class DelayBlock(EPGBlock):
         -------
             EPG configuration states after the block and an empty list
         """
-        (delay_time,) = unsqueeze_tensors_right(self.delay_time, ndim=parameters.ndim)
+        (delay_time,) = unsqueeze_tensors_right(self.delay_time, ndim=parameters.ndim + 1)  # +1 for time dimension
         state = relax(state, relax_matrix(delay_time, parameters.t1, parameters.t2))
         return state, []
 
@@ -655,18 +658,18 @@ class EPGSignalModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch
             self.sequence = sequence
 
     def forward(
-        self, t1: torch.Tensor, t2: torch.Tensor, m0: torch.Tensor, relative_b1: torch.Tensor | None = None
+        self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor, relative_b1: torch.Tensor | None = None
     ) -> tuple[torch.Tensor]:
         """Simulate the EPG signal.
 
         Parameters
         ----------
+        m0
+            Steady state magnetization (complex)
         t1
             T1 relaxation time
         t2
             T2 relaxation time
-        m0
-            Steady state magnetization (complex)
         relative_b1
             Relative B1 scaling factor (complex)
 
@@ -674,7 +677,7 @@ class EPGSignalModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch
         -------
             Simulated EPG signal with the different acquisitions in the first dimension.
         """
-        parameters = Parameters(t1, t2, m0, relative_b1)
+        parameters = Parameters(m0, t1, t2, relative_b1)
         state = initial_state(
             parameters.shape, n_states=self.n_states, device=parameters.device, dtype=parameters.dtype.to_complex()
         )

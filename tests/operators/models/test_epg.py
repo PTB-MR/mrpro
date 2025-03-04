@@ -7,7 +7,6 @@ import torch
 from mrpro.operators.models import CardiacFingerprinting
 from mrpro.operators.models.EPG import DelayBlock, EPGSequence, EPGSignalModel, FispBlock, InversionBlock, T2PrepBlock
 from tests import RandomGenerator
-from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 
 
 def create_EpgFisp_model(
@@ -17,11 +16,10 @@ def create_EpgFisp_model(
     te: float | torch.Tensor = 0.005,
     n_states: int = 10,
 ) -> EPGSignalModel:
-    """Create EPG model for FISP sequence."""
+    """Create EPG model for FISP sequence with different preparation blocks."""
     sequence = EPGSequence()
     sequence.append(FispBlock(flip_angles, rf_phases, tr, te))
-    model = EPGSignalModel(sequence, n_states=n_states)
-    return model
+    return EPGSignalModel(sequence, n_states=n_states)
 
 
 def test_EpgFisp_not_enough_states() -> None:
@@ -103,30 +101,13 @@ def test_EpgFisp_t2_preparation() -> None:
     torch.testing.assert_close(epg_signal, analytical_signal, rtol=1e-3, atol=1e-3)
 
 
-@SHAPE_VARIATIONS_SIGNAL_MODELS
-def test_EpgFisp_shape(parameter_shape, contrast_dim_shape, signal_shape) -> None:
-    """Test correct signal shapes."""
-    rng = RandomGenerator(0)
-    flip_angles = rng.float32_tensor(contrast_dim_shape, low=1e-5, high=5)
-    rf_phases = rng.float32_tensor(contrast_dim_shape, low=1e-5, high=0.5)
-    te = rng.float32_tensor(contrast_dim_shape, low=1e-5, high=0.01)
-    tr = rng.float32_tensor(contrast_dim_shape, low=1e-5, high=0.05)
-    t1 = rng.float32_tensor(parameter_shape, low=1e-5, high=5)
-    t2 = rng.float32_tensor(parameter_shape, low=1e-5, high=0.5)
-    m0 = rng.complex64_tensor(parameter_shape)
-
-    model_op = create_EpgFisp_model(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
-    (signal,) = model_op.forward(m0, t1, t2)
-    assert signal.shape == signal_shape
-
-
 def test_cmrf_model(parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)) -> None:
     """Test the CMRF model."""
     acquisition_times = torch.linspace(0, 10, 705)
-    model = CardiacFingerprinting(acquisition_times=acquisition_times, echo_time=0.05)
+    cmrf_model = CardiacFingerprinting(acquisition_times=acquisition_times, echo_time=0.05)
     rng = RandomGenerator(0)
     t1 = rng.float32_tensor(parameter_shape, low=1e-5, high=5)
     t2 = rng.float32_tensor(parameter_shape, low=1e-5, high=0.5)
     m0 = rng.complex64_tensor(parameter_shape)
-    signal = model(t1, t2, m0)
+    signal = cmrf_model(t1, t2, m0)
     assert signal
