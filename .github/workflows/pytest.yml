@@ -21,8 +21,9 @@ jobs:
       - name: Retrieve Docker Image Names
         id: set-matrix
         run: |
-          # search for Dockerfile* in the docker directory, replace "Dockerfile" prefix with "mrpro" and to imagenames
-          imagenames=$(find docker -type f -name 'Dockerfile*' -exec basename {} \; | sed 's/^Dockerfile/mrpro/')
+          # search for Dockerfile_py* in the docker directory, replace "Dockerfile" prefix with "mrpro" and to imagenames
+          # ! with the Dockerfile_py* mask we omit Dockerfile_runner !
+          imagenames=$(find docker -type f -name 'Dockerfile_py*' -exec basename {} \; | sed 's/^Dockerfile/mrpro/')
           echo "image names: $imagenames"
 
           # if imagenames is empty - fail the workflow
