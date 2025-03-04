@@ -244,7 +244,7 @@ class EPGBlock(TensorAttributeMixin, ABC):
 
     @property
     def duration(self) -> torch.Tensor:
-        """Duration of the block in s."""
+        """Duration of the block."""
         raise NotImplementedError
 
 
@@ -284,7 +284,7 @@ class RFBlock(EPGBlock):
 
     @property
     def duration(self) -> torch.Tensor:
-        """Duration of the block in s."""
+        """Duration of the block."""
         return torch.tensor(0.0)
 
 
@@ -309,7 +309,7 @@ class AcquisitionBlock(EPGBlock):
 
     @property
     def duration(self) -> torch.Tensor:
-        """Duration of the block in s."""
+        """Duration of the block."""
         return torch.tensor(0.0)
 
 
@@ -334,7 +334,7 @@ class GradientDephasingBlock(EPGBlock):
 
     @property
     def duration(self) -> torch.Tensor:
-        """Duration of the block in s."""
+        """Duration of the block."""
         return torch.tensor(0.0)
 
 
@@ -370,9 +370,9 @@ class FispBlock(EPGBlock):
         rf_phases
             Phase of the RF pulses in rad
         te
-            Echo time in s
+            Echo time
         tr
-            Repetition time in s
+            Repetition time
         """
         super().__init__()
 
@@ -389,7 +389,7 @@ class FispBlock(EPGBlock):
 
     @property
     def duration(self) -> torch.Tensor:
-        """Duration of the block in s."""
+        """Duration of the block."""
         return self.tr.sum(0)
 
     def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
@@ -429,7 +429,7 @@ class InversionBlock(EPGBlock):
         Parameters
         ----------
         inversion_time
-            Inversion time in s
+            Inversion time
         """
         super().__init__()
 
@@ -455,7 +455,7 @@ class InversionBlock(EPGBlock):
 
     @property
     def duration(self) -> torch.Tensor:
-        """Duration of the block in s."""
+        """Duration of the block."""
         return self.inversion_time
 
 
@@ -506,7 +506,7 @@ class T2PrepBlock(EPGBlock):
 
     @property
     def duration(self) -> torch.Tensor:
-        """Duration of the block in s."""
+        """Duration of the block."""
         return self.te
 
 
@@ -519,7 +519,7 @@ class DelayBlock(EPGBlock):
         Parameters
         ----------
         delay_time
-            Delay time in s
+            Delay time
         """
         super().__init__()
         self.delay_time = torch.as_tensor(delay_time)
@@ -544,7 +544,7 @@ class DelayBlock(EPGBlock):
 
     @property
     def duration(self) -> torch.Tensor:
-        """Duration of the block in s."""
+        """Duration of the block."""
         return self.delay_time
 
 
@@ -554,39 +554,44 @@ class EPGSequence(torch.nn.ModuleList, EPGBlock):
     The sequence as multiple blocks, such as preparation pulses, acquisition blocks and delays.
 
     Classic MRF with a single inversion-pulse at the beginning followed by a train of RF pulses with different flip
-    angles as described in Ma, D. et al. Magnetic resonance fingerprinting. Nature 495, 187-192 (2013)
+    angles as described in [MA2013]_ Ma, D. et al. Magnetic resonance fingerprinting. Nature 495, 187-192 (2013)
     [http://dx.doi.org/10.1038/nature11971] can be simulated by the following sequence:
      - InversionBlock
      - FispBlock with flip_angles
 
     Cardiac MRF where a different preparation is done in each cardiac cycle followed by fixed number of RF pulses as
-    described in Hamilton, J. I. et al. MR fingerprinting for rapid quantification of myocardial T1 , T2 , and proton
-    spin density. Magn. Reson. Med. 77, 1446-1458 (2017) [http://doi.wiley.com/10.1002/mrm.26668]. It is a four-fold
+    described in [HAMI2017]_. It is a four-fold
     repetition of
 
                 Block 0                   Block 1                   Block 2                     Block 3
        R-peak                   R-peak                    R-peak                    R-peak                    R-peak
     ---|-------------------------|-------------------------|-------------------------|-------------------------|-----
 
-            [INV TI=20ms][ACQ]                     [ACQ]     [T2-prep TE=40ms][ACQ]    [T2-prep TE=80ms][ACQ]
+            [INV TI=30ms][ACQ]                     [ACQ]     [T2-prep TE=50ms][ACQ]    [T2-prep TE=100ms][ACQ]
 
     can be simulated as:
-        - InversionBlock with inversion_time=20
-        - FispBlock with 48 flip_angles
+        - InversionBlock with inversion_time=30
+        - FispBlock with 47 flip_angles
         - DelayBlock with delay_time=1000-(inversion_block.duration + fisp_block.duration)
 
-        - FispBlock with 48 flip_angles
+        - FispBlock with 47 flip_angles
         - DelayBlock with delay_time=1000-(fisp_block.duration)
 
-        - T2PrepBlock with te=40
-        - FispBlock with 48 flip_angles
+        - T2PrepBlock with te=50
+        - FispBlock with 47 flip_angles
         - DelayBlock with delay_time=1000-(t2_prep_block.duration + fisp_block.duration)
 
-        - T2PrepBlock with te=80
-        - FispBlock with 48 flip_angles
+        - T2PrepBlock with te=100
+        - FispBlock with 47 flip_angles
         - DelayBlock with delay_time=1000-(t2_prep_block.duration + fisp_block.duration)
 
     See also `CardiacFingerprinting` for an implementation.
+
+    References
+    ----------
+    .. [MA2013] Ma, D et al.(2013) Magnetic resonance fingerprinting. Nature 495 http://dx.doi.org/10.1038/nature11971
+    .. [HAMI2017] Hamilton, J. I. et al. (2017) MR fingerprinting for rapid quantification of myocardial T1, T2, and
+            proton spin density. Magn. Reson. Med. 77 http://doi.wiley.com/10.1002/mrm.26668
 
     """
 
@@ -623,7 +628,7 @@ class EPGSequence(torch.nn.ModuleList, EPGBlock):
 
     @property
     def duration(self) -> torch.Tensor:
-        """Duration of the block in s."""
+        """Duration of the block."""
         return sum(block.duration for block in self)
 
 
