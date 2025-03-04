@@ -13,7 +13,7 @@ from mrpro.data.traj_calculators import (
     KTrajectorySunflowerGoldenRpe,
 )
 
-from tests.data import IsmrmrdRawTestData, PulseqRadialTestSeq
+from tests.data import PulseqRadialTestSeq
 
 
 def test_KTrajectoryRadial2D():
