@@ -28,6 +28,7 @@ def pgd(
     stepsize: float = 1.0,
     max_iterations: int = 128,
     backtrack_factor: float = 1.0,
+    t_for_converging_solution: bool = False,
     callback: Callable[[PGDStatus], None] | None = None,
 ) -> tuple[torch.Tensor, ...]:
     r"""Proximal gradient descent algorithm for solving problem :math:`min_x f(x) + g(x)`.
@@ -80,6 +81,11 @@ def pgd(
     backtrack_factor
         must be :math:`<=1`. if :math:`<1.`, backtracking rule for stepsize following https://www.ceremade.dauphine.fr/~carlier/FISTA
         is used
+    t_for_converging_solution
+        by default, the algorithm updates the variable t as described by Beck and Teboulle in the original FISTA paper.
+        If set to True, the algorithm updates t as suggested by Chambolle and Dossal https://inria.hal.science/hal-01060130v3/document
+        i.e. at iteration :math:`n`, :math:`t_n = \frac{n+a-1}{a}`, with chosen :math:`a=3`.
+        This choice ensures the theoretical convergence of solution.
     callback
         function to be called at each iteration
 
@@ -139,7 +145,10 @@ def pgd(
             else:
                 raise RuntimeError('Stepsize to small.')
 
-        t = (1 + math.sqrt(1 + 4 * t_old**2)) / 2
+        if t_for_converging_solution:
+            t = (iteration + 2) / 3
+        else:
+            t = (1 + math.sqrt(1 + 4 * t_old**2)) / 2
 
         y = tuple(xi + (t_old - 1.0) / t * (xi - xi_old) for xi, xi_old in zip(x, x_old, strict=True))
 

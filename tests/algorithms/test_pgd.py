@@ -1,138 +1,140 @@
 """Tests for the proximal gradient descent."""
 
+import pytest
 import torch
 from mrpro.algorithms.optimizers import pgd
 from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.operators import FastFourierOp, LinearOperatorMatrix, ProximableFunctionalSeparableSum
-from mrpro.operators.functionals import L1Norm, L2NormSquared
+from mrpro.operators import FastFourierOp, LinearOperatorMatrix, ProximableFunctionalSeparableSum, WaveletOp
+from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared
 from mrpro.phantoms import EllipsePhantom
+from tests import RandomGenerator
 
 
-def test_pgd_convergence_fft_example() -> None:
-    """Test if the proximal gradient descent algorithm converges for the
-    problem min_x 1/2 ||Fx - target||^2 + ||x||_1,
-    with F being the Fourier Transform."""
-    dim = SpatialDimension(x=100, y=100, z=1)
-    ellipse = EllipsePhantom()
-    image = ellipse.image_space(dim)
-    fft = FastFourierOp()
-    (kspace,) = fft(image)
+@pytest.mark.parametrize(('stepsize', 'backtrack_factor'), [(1, 1), (1e5, 0.8)])
+def test_pgd_solution_fourier_l1(stepsize, backtrack_factor) -> None:
+    """ "Set up the problem min_x 1/2*|| Fx - y||_2^2 + lambda * ||x||_1,
+    where F is the full FFT and y is sampled on a Cartesian grid. Thus the
+    problem has a closed-form solution given by soft-thresholding. Test
+    if the espected solution and the one obtained by the pgd are close."""
 
-    l2 = L2NormSquared(target=kspace, divide_by_n=True)
-    f = l2 @ fft
-    g = 0.01 * L1Norm(divide_by_n=True)
+    random_generator = RandomGenerator(seed=0)
+    image_shape = (6, 32, 32)
+    image = random_generator.complex64_tensor(size=image_shape)
+    dim = (-3, -2, -1)
 
-    initial_value = torch.ones_like(image)
-    pgd_solution = pgd(
-        f=f,
-        g=g,
-        initial_value=initial_value,
-        stepsize=0.5,
-        max_iterations=200,
-        backtrack_factor=1.0,
-    )
+    fourier_op = FastFourierOp(dim=dim)
+    (kspace,) = fourier_op(image)
 
-    assert f(*pgd_solution)[0] + g(*pgd_solution)[0] < f(*initial_value)[0] + g(*initial_value)[0]
+    l2 = 0.5 * L2NormSquared(target=kspace, divide_by_n=False)
+    f = l2 @ fourier_op
 
-
-def test_pgd_convergence_backtracking_fft_example() -> None:
-    """Test the backtracking stepsize rule in proximal gradient descent algorithm
-    for the problem min_x 1/2 ||Fx - target||^2 + ||x||_1, with F being the
-    Fourier Transform."""
-
-    dim = SpatialDimension(x=100, y=100, z=1)
-    ellipse = EllipsePhantom()
-    image = ellipse.image_space(dim)
-    fft = FastFourierOp()
-    (kspace,) = fft(image)
-
-    l2 = L2NormSquared(target=kspace, divide_by_n=True)
-    f = l2 @ fft
-    g = 0.01 * L1Norm(divide_by_n=True)
+    regularization_parameter = 0.1
+    g = regularization_parameter * L1NormViewAsReal(divide_by_n=False)
 
     initial_value = torch.ones_like(image)
-    pgd_solution = pgd(
+
+    # solution given by soft thresholding
+    expected = torch.view_as_complex(
+        torch.nn.functional.softshrink(torch.view_as_real(fourier_op.H(kspace)[0]), regularization_parameter)
+    )
+
+    max_iterations = 150
+    (pgd_solution,) = pgd(
         f=f,
         g=g,
         initial_value=initial_value,
-        stepsize=2.0,
-        max_iterations=200,
-        backtrack_factor=0.75,
+        stepsize=stepsize,
+        max_iterations=max_iterations,
+        backtrack_factor=backtrack_factor,
+        t_for_converging_solution=False,
     )
+    torch.testing.assert_close(pgd_solution, expected, rtol=5e-4, atol=5e-4)
 
-    assert f(*pgd_solution)[0] + g(*pgd_solution)[0] < f(*initial_value)[0] + g(*initial_value)[0]
 
+@pytest.mark.parametrize(('stepsize', 'backtrack_factor'), [(1, 1), (1e5, 0.8)])
+def test_pgd_solution_fourier_wavelet(stepsize, backtrack_factor) -> None:
+    """Set up the problem min_x 1/2*|| Fx - y||_2^2 + lambda * || W x||_1,
+    where F is the full FFT sampled on a Cartesian grid and W a wavelet transform.
+    Because both F and W are invertible and preserve the norm, the problem has a closed-form solution
+    obtainable by soft-thresholding.
+    """
+    random_generator = RandomGenerator(seed=0)
+    image_shape = (6, 32, 32)
+    image = random_generator.complex64_tensor(size=image_shape)
+    dim = (-3, -2, -1)
 
-def test_pgd_convergence_backtracking_denoising_example() -> None:
-    """Test if the proximal gradient descent algorithm converges for denoising."""
-    dim = SpatialDimension(x=100, y=100, z=1)
-    ellipse = EllipsePhantom()
-    image = ellipse.image_space(dim)
-    noise = torch.randn_like(image)
-    noisy_image = image + noise
+    fourier_op = FastFourierOp(dim=dim)
+    wavelet_op = WaveletOp(domain_shape=image_shape, dim=dim)
 
-    f = L2NormSquared(target=noisy_image, divide_by_n=True)
-    g = 0.01 * L1Norm(divide_by_n=True)
+    (kspace,) = fourier_op(image)
 
-    initial_value = torch.ones_like(image)
-    pgd_solution = pgd(
+    l2 = 0.5 * L2NormSquared(target=kspace, divide_by_n=False)
+    f = l2 @ fourier_op @ wavelet_op.H
+
+    regularization_parameter = 0.1
+    g = regularization_parameter * L1NormViewAsReal(divide_by_n=False)
+
+    # solution given by soft thresholding and back to the image space
+    expected = wavelet_op.H(
+        torch.view_as_complex(
+            torch.nn.functional.softshrink(
+                torch.view_as_real(wavelet_op(fourier_op.H(kspace)[0])[0]), regularization_parameter
+            )
+        )
+    )[0]
+
+    max_iterations = 150
+    initial_value = torch.ones_like(wavelet_op(image)[0])
+
+    (pgd_solution_wave,) = pgd(
         f=f,
         g=g,
         initial_value=initial_value,
-        stepsize=2.0,
-        max_iterations=200,
-        backtrack_factor=0.75,
+        stepsize=stepsize,
+        max_iterations=max_iterations,
+        backtrack_factor=backtrack_factor,
     )
 
-    assert f(*pgd_solution)[0] + g(*pgd_solution)[0] < f(*initial_value)[0] + g(*initial_value)[0]
+    (pgd_solution_image,) = wavelet_op.H(pgd_solution_wave)
+
+    torch.testing.assert_close(pgd_solution_image, expected, rtol=5e-4, atol=5e-4)
 
 
-def test_pgd_convergence_on_functionals_with_multiple_inputs() -> None:
-    """Test if the proximal gradient descent algorithm converges for
-    the problem min_x f(x) + g(x), with f being a function with multiple inputs,
-    g being a ProximableFunctionalSeparableSum."""
-    dim = SpatialDimension(x=100, y=100, z=1)
-    ellipse = EllipsePhantom()
-    image = ellipse.image_space(dim)
-    fft = FastFourierOp()
-    (kspace,) = fft(image)
+def test_callback() -> None:
+    """Check that the callback function is called."""
+    random_generator = RandomGenerator(seed=0)
+    f = L2NormSquared(target=torch.zeros((1, 10, 10)), divide_by_n=False)
+    g = L1NormViewAsReal(divide_by_n=False)
+    initial_values = (random_generator.complex64_tensor(size=(1, 10, 10)),)
 
-    l2 = L2NormSquared(target=kspace, divide_by_n=True)
-    l1 = 0.01 * L1Norm(divide_by_n=True)
+    callback_was_called = False
 
-    # to check on multiple inputs, we will use the same input twice
-    f = ProximableFunctionalSeparableSum(l2, l2) @ LinearOperatorMatrix.from_diagonal(fft, fft)
-    g = ProximableFunctionalSeparableSum(l1, l1)
-    initial_value = (torch.ones_like(image), torch.ones_like(image))
+    # callback function that should be called to change the variable's value to True
+    def callback(solution):
+        nonlocal callback_was_called
+        callback_was_called = True
 
-    pgd_solution = pgd(
-        f=f,
-        g=g,
-        initial_value=initial_value,
-        stepsize=0.5,
-        max_iterations=200,
-        backtrack_factor=1.0,
-    )
-
-    assert f(*pgd_solution)[0] + g(*pgd_solution)[0] < f(*initial_value)[0] + g(*initial_value)[0]
+    pgd(f=f, g=g, initial_value=initial_values, max_iterations=1, callback=callback)
+    assert callback_was_called
 
 
-def test_pgd_convergence_singular_vs_multiple_inputs() -> None:
-    """Test if the proximal gradient descent algorithm converges to the same solution
+def test_pgd_behavior_singular_vs_multiple_inputs() -> None:
+    """Test if the proximal gradient descent algorithm returns the same solution
     in the case of min_x f(x) + g(x) with x single tensor and when f and g are
     separable sum functionals on (x_1,x_2), with x_1 = x_2 = x."""
+
     dim = SpatialDimension(x=100, y=100, z=1)
     ellipse = EllipsePhantom()
     image = ellipse.image_space(dim)
-    fft = FastFourierOp()
-    (kspace,) = fft(image)
+    fourier_op = FastFourierOp()
+    (kspace,) = fourier_op(image)
+
+    l2 = L2NormSquared(target=kspace, divide_by_n=True)
+    l1 = 0.01 * L1NormViewAsReal(divide_by_n=True)
 
     # to check on multiple inputs, we will use the same input twice
-    l2 = L2NormSquared(target=kspace, divide_by_n=True)
-    l1 = 0.01 * L1Norm(divide_by_n=True)
-
     pgd_solution_multiple = pgd(
-        f=ProximableFunctionalSeparableSum(l2, l2) @ LinearOperatorMatrix.from_diagonal(fft, fft),
+        f=ProximableFunctionalSeparableSum(l2, l2) @ LinearOperatorMatrix.from_diagonal(fourier_op, fourier_op),
         g=ProximableFunctionalSeparableSum(l1, l1),
         initial_value=(torch.ones_like(image), torch.ones_like(image)),
         stepsize=0.5,
@@ -141,7 +143,7 @@ def test_pgd_convergence_singular_vs_multiple_inputs() -> None:
     )
 
     pgd_solution_single = pgd(
-        f=l2 @ fft,
+        f=l2 @ fourier_op,
         g=l1,
         initial_value=torch.ones_like(image),
         stepsize=0.5,
@@ -151,3 +153,46 @@ def test_pgd_convergence_singular_vs_multiple_inputs() -> None:
 
     assert torch.allclose(pgd_solution_multiple[0], pgd_solution_single[0])
     assert torch.allclose(pgd_solution_multiple[1], pgd_solution_single[0])
+
+
+def test_pgd_behavior_different_updates_t() -> None:
+    """Test if the proximal gradient descent algorithm returns the same solution
+    for the two different updates of t."""
+
+    random_generator = RandomGenerator(seed=0)
+    image_shape = (6, 32, 32)
+    image = random_generator.complex64_tensor(size=image_shape)
+    dim = (-3, -2, -1)
+    fourier_op = FastFourierOp(dim=dim)
+    (kspace,) = fourier_op(image)
+
+    l2 = 0.5 * L2NormSquared(target=kspace, divide_by_n=False)
+    f = l2 @ fourier_op
+
+    regularization_parameter = 0.1
+    g = regularization_parameter * L1NormViewAsReal(divide_by_n=False)
+
+    initial_value = torch.ones_like(image)
+
+    max_iterations = 100
+
+    (pgd_solution1,) = pgd(
+        f=f,
+        g=g,
+        initial_value=initial_value,
+        stepsize=1.0,
+        max_iterations=max_iterations,
+        backtrack_factor=0.9,
+        t_for_converging_solution=False,
+    )
+
+    (pgd_solution2,) = pgd(
+        f=f,
+        g=g,
+        initial_value=initial_value,
+        stepsize=1.0,
+        max_iterations=max_iterations,
+        backtrack_factor=0.9,
+        t_for_converging_solution=True,
+    )
+    torch.testing.assert_close(pgd_solution1, pgd_solution2, rtol=5e-4, atol=5e-4)
