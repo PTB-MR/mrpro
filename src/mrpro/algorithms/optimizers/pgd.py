@@ -34,7 +34,7 @@ def pgd(
     r"""Proximal gradient descent algorithm for solving problem :math:`min_x f(x) + g(x)`.
 
     f is convex, differentiable, and with L-Lispchitz gradient.
-    g is convex, non-smooth with computable proximal map.
+    g is convex, possibly non-smooth with computable proximal map.
 
     For fixed stepsize t, pgd converges globally when :math:`t \in (0, 1/L)`,
     where L is the Lipschitz constant of the gradient of f.
@@ -56,7 +56,7 @@ def pgd(
                 g = reg_parameter * L1Norm()
                 operator_norm = 1.
                 stepsize = 0.85 * 1 / operator_norm**2
-                initial_value = torch.ones((3,10,10))
+                initial_value = torch.ones(3,10,10)
                 pgd_image_solution = pgd(
                     f=f,
                     g=g,

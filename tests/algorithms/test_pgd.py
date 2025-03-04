@@ -15,7 +15,7 @@ def test_pgd_solution_fourier_l1(stepsize, backtrack_factor) -> None:
     """ "Set up the problem min_x 1/2*|| Fx - y||_2^2 + lambda * ||x||_1,
     where F is the full FFT and y is sampled on a Cartesian grid. Thus the
     problem has a closed-form solution given by soft-thresholding. Test
-    if the espected solution and the one obtained by the pgd are close."""
+    if the expected solution and the one obtained by the pgd are close."""
 
     random_generator = RandomGenerator(seed=0)
     image_shape = (6, 32, 32)

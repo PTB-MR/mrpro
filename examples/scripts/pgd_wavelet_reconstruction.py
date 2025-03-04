@@ -62,7 +62,7 @@
 # $z_{k+1} = x_{k} + \frac{t_k - 1}{t_{k+1}}(x_{k} - x_{k-1}).$
 #
 # As the Lipschitz constant $L$ is in general not known, and
-# the interval of the stepsize $\sigma\in ( 0, \frac{1}{|| \tilde{A}^H \tilde{A}||} )$ is crucial for the convergence,
+# the interval of the stepsize $\sigma\in ( 0, \frac{1}{|| \tilde{A}||_2^2} )$ is crucial for the convergence,
 # a backtracking step can  be performed to update the stepsize $\sigma$ at every iteration. To do so,
 # $\sigma$ is iteratively reduced until reaching a stepsize that is the largest
 # for which the quadratic approximation of $f$ at $z_{k}$
