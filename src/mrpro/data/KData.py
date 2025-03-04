@@ -16,7 +16,7 @@ from einops import rearrange, repeat
 from typing_extensions import Self, TypeVar
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
-from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_siemens
+from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_osi2, convert_time_stamp_siemens
 from mrpro.data.CheckDataMixin import Annotation, CheckDataMixin, string_to_size
 from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.enums import AcqFlags
@@ -145,7 +145,12 @@ class KData(MoveDataMixin, CheckDataMixin):
             and ismrmrd_header.acquisitionSystemInformation.systemVendor.lower() == 'siemens'
         ):
             convert_time_stamp = convert_time_stamp_siemens  # 2.5ms time steps
-        # Here we could include more vendors
+        if (
+            ismrmrd_header.acquisitionSystemInformation is not None
+            and isinstance(ismrmrd_header.acquisitionSystemInformation.systemVendor, str)
+            and ismrmrd_header.acquisitionSystemInformation.systemVendor.lower() == 'osi2'
+        ):
+            convert_time_stamp = convert_time_stamp_osi2  # 1ms time steps
         elif (
             ismrmrd_header.acquisitionSystemInformation is None
             or ismrmrd_header.acquisitionSystemInformation.systemVendor is None
