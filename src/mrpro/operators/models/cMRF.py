@@ -19,7 +19,7 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
        R-peak                   R-peak                    R-peak                    R-peak                    R-peak
     ---|-------------------------|-------------------------|-------------------------|-------------------------|-----
 
-            [INV TI=20ms][ACQ]                     [ACQ]     [T2-prep TE=40ms][ACQ]    [T2-prep TE=80ms][ACQ]
+            [INV TI=20ms][ACQ]                     [ACQ]     [T2-prep TE=40ms][ACQ]    [T2-prep TE=100ms][ACQ]
 
 
     ```{note}
@@ -89,20 +89,21 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             sequence.append(block)
         self.model = EPGSignalModel(sequence, n_states=20)
 
-    def forward(self, t1: torch.Tensor, t2: torch.Tensor, m0: torch.Tensor) -> tuple[torch.Tensor]:
+    def forward(self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor) -> tuple[torch.Tensor]:
         """Simulate the Cardiac MR Fingerprinting signal.
 
         Parameters
         ----------
-        t1
-            T1 relaxation time [s]
-        t2
-            T2 relaxation time [s]
         m0
             Steady state magnetization (complex)
+        t1
+            longitudinal relaxation time T1
+        t2
+            transversal relaxation time T2
+
 
         Returns
         -------
             Simulated Cardiac MR Fingerprinting signal with the different acquisitions in the first dimension.
         """
-        return self.model(t1, t2, m0, None)
+        return self.model(m0, t1, t2, None)

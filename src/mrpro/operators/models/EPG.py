@@ -657,9 +657,9 @@ class EPGSignalModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch
         Parameters
         ----------
         t1
-            T1 relaxation time [s]
+            T1 relaxation time
         t2
-            T2 relaxation time [s]
+            T2 relaxation time
         m0
             Steady state magnetization (complex)
         relative_b1
