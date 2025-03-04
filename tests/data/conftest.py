@@ -2,12 +2,12 @@
 
 import pytest
 import torch
+from einops import rearrange, repeat
 from ismrmrd import xsd
-from mrpro.data import Rotation, SpatialDimension
+from mrpro.data import KData, KTrajectory, Rotation, SpatialDimension
 
 from tests import RandomGenerator
-from tests.conftest import generate_random_data
-from tests.data import DicomTestImage
+from tests.data import DicomTestImage, IsmrmrdRawTestData
 
 
 @pytest.fixture(params=({'seed': 0},))
@@ -62,7 +62,7 @@ def random_test_data(request):
         request.param['n_x'],
     )
     generator = RandomGenerator(seed)
-    test_data = generate_random_data(generator, (n_other, n_coils, n_z, n_y, n_x))
+    test_data = generator.complex64_tensor((n_other, n_coils, n_z, n_y, n_x))
     return test_data
 
 
@@ -208,3 +208,99 @@ def dcm_3d_multi_orientation(ellipse_phantom, tmp_path_factory):
             )
         )
     return dcm_image_data
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_bodycoil_and_surface_coil(ellipse_phantom, tmp_path_factory):
+    """Fully sampled cartesian data set with bodycoil and surface coil data."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        phantom=ellipse_phantom.phantom,
+        add_bodycoil_acquisitions=True,
+    )
+    return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_with_calibration_lines(ellipse_phantom, tmp_path_factory):
+    """Undersampled Cartesian data set with calibration lines."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=1,
+        acceleration=2,
+        phantom=ellipse_phantom.phantom,
+        n_separate_calibration_lines=16,
+    )
+    return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_invalid_reps(tmp_path_factory):
+    """Fully sampled cartesian data set."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        flag_invalid_reps=True,
+    )
+    return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_random_us(ellipse_phantom, tmp_path_factory):
+    """Randomly undersampled cartesian data set with repetitions."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        acceleration=4,
+        sampling_order='random',
+        phantom=ellipse_phantom.phantom,
+    )
+    return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_rad(ellipse_phantom, tmp_path_factory):
+    """Data set with uniform radial k-space sampling."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_rad.h5'
+    ismrmrd_data = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        phantom=ellipse_phantom.phantom,
+        trajectory_type='radial',
+        acceleration=4,
+    )
+    return ismrmrd_data
+
+
+@pytest.fixture(params=({'seed': 0},))
+def consistently_shaped_kdata(request, random_kheader_shape):
+    """KData object with data, header and traj consistent in shape."""
+    # Start with header
+    kheader, n_other, n_coils, n_k2, n_k1, n_k0 = random_kheader_shape
+
+    kheader.acq_info.apply_(
+        lambda field: rearrange(field, '(other k2 k1) ... -> other k2 k1 ...', other=n_other, k2=n_k2, k1=n_k1)
+        if isinstance(field, torch.Tensor | Rotation)
+        else field
+    )
+
+    # Create kdata with consistent shape
+    kdata = RandomGenerator(request.param['seed']).complex64_tensor((n_other, n_coils, n_k2, n_k1, n_k0))
+
+    # Create ktraj with consistent shape
+    kx = repeat(torch.linspace(0, n_k0 - 1, n_k0, dtype=torch.float32), 'k0->other k2 k1 k0', other=1, k2=1, k1=1)
+    ky = repeat(torch.linspace(0, n_k1 - 1, n_k1, dtype=torch.float32), 'k1->other k2 k1 k0', other=1, k2=1, k0=1)
+    kz = repeat(torch.linspace(0, n_k2 - 1, n_k2, dtype=torch.float32), 'k2->other k2 k1 k0', other=1, k1=1, k0=1)
+    ktraj = KTrajectory(kz, ky, kx)
+
+    return KData(header=kheader, data=kdata, traj=ktraj)
