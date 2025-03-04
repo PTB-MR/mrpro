@@ -219,6 +219,16 @@ def test_traj_from_ismrmrd(ismrmrd_cart_random_us) -> None:
     assert traj.kz.shape == (1, 1, 1, 1, 1)
 
 
+def test_traj_from_ismrmrd_normalize(ismrmrd_rad) -> None:
+    """Test reading trajectory from ISMRMRD file with normalization."""
+    traj = KTrajectory.from_ismrmrd(ismrmrd_rad.filename, normalize=True)
+    assert traj.kx.shape == (80, 1, 1, 1, 128)
+    assert traj.ky.shape == (80, 1, 1, 1, 128)
+    assert traj.kz.shape == (1, 1, 1, 1, 1)
+    assert traj.kx.abs().amax() == ismrmrd_rad.matrix_size * ismrmrd_rad.oversampling / 2
+    assert traj.ky.abs().amax() == ismrmrd_rad.matrix_size * ismrmrd_rad.oversampling / 2
+
+
 def test_traj_from_ismrmrd_filter(ismrmrd_cart_bodycoil_and_surface_coil) -> None:
     """Test reading trajectory from ISMRMRD file using a filter."""
     with pytest.raises(ValueError, match='No matching acquisitions found.'):

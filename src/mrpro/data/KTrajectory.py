@@ -140,6 +140,7 @@ class KTrajectory(MoveDataMixin, CheckDataMixin):
         filename: FileOrPath,
         dataset_idx: int = -1,
         acquisition_filter_criterion: Callable[[ismrmrd.Acquisition], bool] | None = None,
+        normalize: bool = False,
     ) -> Self:
         """Read a k-space trajectory from an ISMRMRD file.
 
@@ -156,6 +157,9 @@ class KTrajectory(MoveDataMixin, CheckDataMixin):
             A function that takes an ISMRMRD acquisition and returns a boolean.
             If provided, only acquisitions for which the function returns `True` are included in the trajectory.
             `None` includes all acquisitions.
+        normalize
+            Normalize the trajectory to the encoding matrix. Consider enabling for non-cartesian trajectories or
+            non-normalized ISMRMRD trajectories.
         """
         with ismrmrd.File(filename, 'r') as file:
             datasets = list(file.keys())
@@ -173,15 +177,19 @@ class KTrajectory(MoveDataMixin, CheckDataMixin):
             if not acquisitions:
                 raise ValueError('No matching acquisitions found in the ISMRMRD file.')
             traj = torch.stack([torch.as_tensor(acq.traj, dtype=torch.float32) for acq in acquisitions], dim=0)
-
-            if (  # encoding matrix might not be present
+            if not normalize:
+                scaling_matrix = None
+            elif (
                 dataset.header.encoding
                 and dataset.header.encoding[0].encodedSpace
                 and dataset.header.encoding[0].encodedSpace.matrixSize
             ):
                 scaling_matrix = SpatialDimension.from_xyz(dataset.header.encoding[0].encodedSpace.matrixSize)
             else:
-                scaling_matrix = None
+                raise ValueError(
+                    'Requested normalization, but the ISMRMRD file does not contain an encoding matrix size. '
+                    'Consider adding it to the header.'
+                )
 
         if traj.shape[-1] != 3:  # enforce 3D trajectory
             zero = torch.zeros_like(traj[..., :1])
