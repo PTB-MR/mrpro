@@ -19,11 +19,7 @@ from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 def test_saturation_recovery_special_values(
     ti: float, result: str, parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)
 ) -> None:
-    """Test for saturation recovery.
-
-    Checking that idata output tensor at ti=0 is close to 0. Checking
-    that idata output tensor at large ti is close to m0.
-    """
+    """Test saturation recovery signal at special input values."""
     model = SaturationRecovery(ti)
     rng = RandomGenerator(0)
     m0 = rng.complex64_tensor(parameter_shape)

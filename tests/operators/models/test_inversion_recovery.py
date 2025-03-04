@@ -19,11 +19,7 @@ from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 def test_inversion_recovery_special_values(
     ti: float, result: str, parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)
 ) -> None:
-    """Test for inversion recovery.
-
-    Checking that idata output tensor at ti=0 is close to -m0. Checking
-    that idata output tensor at large ti is close to m0.
-    """
+    """Test inversion recovery signal at special input values."""
     model = InversionRecovery(ti)
     rng = RandomGenerator(0)
     m0 = rng.complex64_tensor(parameter_shape)
@@ -32,7 +28,7 @@ def test_inversion_recovery_special_values(
 
     # Assert closeness to -m0 for ti=0
     if result == '-m0':
-        torch.testing.assert_close(image[0, ...], -m0, atol=1e-5, rtol=1e-5)
+        torch.testing.assert_close(image[0, ...], -m0)
     # Assert closeness to m0 for large ti
     elif result == 'm0':
         torch.testing.assert_close(image[0, ...], m0)
@@ -52,6 +48,7 @@ def test_inversion_recovery_shape(
     model = InversionRecovery(ti)
     (signal,) = model(m0, t1)
     assert signal.shape == signal_shape
+    assert signal.isfinite().all()
 
 
 def test_autodiff_inversion_recovery(parameter_shape: Sequence[int] = (2, 5, 10, 10)) -> None:
@@ -75,14 +72,17 @@ def test_inversion_recovery_cuda(parameter_shape: Sequence[int] = (2, 5, 10, 10,
     model.cuda()
     (signal,) = model(m0.cuda(), t1.cuda())
     assert signal.is_cuda
+    assert signal.isfinite().all()
 
     # Create on GPU and run on GPU
     model = InversionRecovery(ti=torch.tensor((5, 10)).cuda())
     (signal,) = model(m0.cuda(), t1.cuda())
     assert signal.is_cuda
+    assert signal.isfinite().all()
 
     # Create on GPU, transfer to CPU and run on CPU
     model = InversionRecovery(ti=torch.tensor((5, 10)).cuda())
     model.cpu()
     (signal,) = model(m0, t1)
     assert signal.is_cpu
+    assert signal.isfinite().all()
