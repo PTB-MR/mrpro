@@ -156,3 +156,33 @@ def test_autodiff_constraints_operator():
 
     constraints_op = ConstraintsOp(bounds=((None, None), (1.0, None), (None, 1.0)))
     autodiff_test(constraints_op, x1, x2, x3)
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize(
+    'bounds',
+    [
+        ((None, 1.0),),  # case (-infty, 0.)
+        ((1.0, None),),  # case (1, \infty)
+        ((-5.0, 5.0),),  # case (-5, 5)
+        ((None, -1.0),),  # case (-infty, 0.)
+        ((-1.0, None),),  # case (1, \infty)
+    ],
+)
+def test_constraints_operator_cuda(bounds):
+    """Test constraints operator works on cuda devices."""
+    random_generator = RandomGenerator(seed=0)
+
+    # random tensor with arbitrary values
+    x = random_generator.float32_tensor(size=(36,), low=-100, high=100)
+
+    # Create on CPU and run on CPU
+    constraints_op = ConstraintsOp(bounds)
+    (cx,) = constraints_op(x)
+    assert cx.is_cpu
+
+    # Transfer to GPU and run on GPU
+    constraints_op = ConstraintsOp(bounds)
+    constraints_op.cuda()
+    (cx,) = constraints_op(x.cuda())
+    assert cx.is_cuda
