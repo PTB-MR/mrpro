@@ -266,3 +266,18 @@ def ismrmrd_cart_random_us(ellipse_phantom, tmp_path_factory):
         phantom=ellipse_phantom.phantom,
     )
     return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_rad(ellipse_phantom, tmp_path_factory):
+    """Data set with uniform radial k-space sampling."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_rad.h5'
+    ismrmrd_data = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        phantom=ellipse_phantom.phantom,
+        trajectory_type='radial',
+        acceleration=4,
+    )
+    return ismrmrd_data
