@@ -1,10 +1,10 @@
 """Mixin for Indexing of Data"""
 
-import torch
+from typing_extensions import Self
+
+from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.utils.indexing import Indexer
 from mrpro.utils.typing import TorchIndexerType
-from mrpro.data.MoveDataMixin import MoveDataMixin
-from typing_extensions import Self
 
 
 class IndexMixin(MoveDataMixin):
