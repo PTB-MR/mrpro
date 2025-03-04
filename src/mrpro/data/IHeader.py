@@ -176,10 +176,10 @@ class IHeader(MoveDataMixin):
             torch.zeros(1, 1, 1, 1, 1),
         )
     )
-    """Center of the image"""
+    """Center of the image or volume"""
 
     orientation: Rotation = field(default_factory=lambda: Rotation.identity((1, 1, 1, 1, 1)))
-    """Orientation of the image"""
+    """Orientation of the image or volume"""
 
     patient_table_position: SpatialDimension[torch.Tensor] = field(
         default_factory=lambda: SpatialDimension(
@@ -191,10 +191,13 @@ class IHeader(MoveDataMixin):
     """Offset position of the patient table"""
 
     acquisition_time_stamp: torch.Tensor = field(default_factory=lambda: torch.zeros(1, 1, 1, 1, 1))
+    """Clock time stamp of the slice or volume [s]"""
 
     physiology_time_stamps: PhysiologyTimestamps = field(default_factory=PhysiologyTimestamps)
+    """Time stamps relative to physiological triggering, e.g. ECG [s]."""
 
     idx: ImageIdx = field(default_factory=ImageIdx)
+    """Immage Counters"""
 
     @classmethod
     def from_kheader(cls, header: KHeader) -> Self:
