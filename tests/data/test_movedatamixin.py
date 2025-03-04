@@ -35,7 +35,7 @@ class B(MoveDataMixin):
     """Test class B."""
 
     child: A = field(default_factory=A)
-    module: torch.nn.Module = field(default_factory=SharedModule)
+    module: SharedModule = field(default_factory=SharedModule)
     floattensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1.0))
     complextensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1.0, dtype=torch.complex64))
     inttensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1, dtype=torch.int32))
