@@ -35,6 +35,14 @@ def convert_time_stamp_siemens(
     return timestamp.double() * 2.5e-3
 
 
+def convert_time_stamp_osi2(
+    timestamp: torch.Tensor,
+    _: str,
+) -> torch.Tensor:
+    """Convert OSI2 time stamp to seconds."""
+    return timestamp.double() * 1e-3
+
+
 def _int_factory() -> torch.Tensor:
     return torch.zeros(1, 1, 1, 1, 1, dtype=torch.int64)
 
