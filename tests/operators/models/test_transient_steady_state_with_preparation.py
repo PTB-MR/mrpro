@@ -23,7 +23,7 @@ from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 def test_transient_steady_state_special_values(
     sampling_time: float, m0_scaling_preparation: float, result: str, parameter_shape: Sequence[int] = (2, 5, 10)
 ) -> None:
-    """Test transient steady state for very long and very short times."""
+    """Test transient steady state signal at special input values."""
     repetition_time = 5
     model = TransientSteadyStateWithPreparation(sampling_time, repetition_time, m0_scaling_preparation)
     rng = RandomGenerator(0)
