@@ -64,7 +64,7 @@ class Jacobian(LinearOperator):
 
     @property
     def value_at_x0(self) -> tuple[torch.Tensor, ...]:
-        """Value of the operator at x0."""
+        """Evaluation of the operator at the point x0."""
         if self._f_x0 is None:
             self._f_x0 = self._operator(*self._x0)
         assert self._f_x0 is not None  # noqa: S101 (hint for mypy)
