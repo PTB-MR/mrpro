@@ -11,7 +11,7 @@ from tests import RandomGenerator
 
 
 @pytest.mark.parametrize(('stepsize', 'backtrack_factor'), [(1.0, 1.0), (1e5, 0.8)])
-def test_pgd_solution_fourier_l1(stepsize, backtrack_factor) -> None:
+def test_pgd_solution_fourier_l1(stepsize: float, backtrack_factor: float) -> None:
     """ "Set up the problem min_x 1/2*|| Fx - y||_2^2 + lambda * ||x||_1,
     where F is the full FFT and y is sampled on a Cartesian grid. Thus the
     problem has a closed-form solution given by soft-thresholding. Test
@@ -52,7 +52,7 @@ def test_pgd_solution_fourier_l1(stepsize, backtrack_factor) -> None:
 
 
 @pytest.mark.parametrize(('stepsize', 'backtrack_factor'), [(1.0, 1.0), (1e5, 0.8)])
-def test_pgd_solution_fourier_wavelet(stepsize, backtrack_factor) -> None:
+def test_pgd_solution_fourier_wavelet(stepsize: float, backtrack_factor: float) -> None:
     """Set up the problem min_x 1/2*|| Fx - y||_2^2 + lambda * || W x||_1,
     where F is the full FFT sampled on a Cartesian grid and W a wavelet transform.
     Because both F and W are invertible and preserve the norm, the problem has a closed-form solution
