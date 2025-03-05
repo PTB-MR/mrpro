@@ -10,7 +10,7 @@ from mrpro.data.KData import has_n_coils
 from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
 
 
-def test_trajectory_repeat_detection_tol(cartesian_grid):
+def test_trajectory_repeat_detection_tol(cartesian_grid) -> None:
     """Test the automatic detection of repeated values."""
     n_k0 = 10
     n_k1 = 20
@@ -24,7 +24,7 @@ def test_trajectory_repeat_detection_tol(cartesian_grid):
     assert trajectory_sparse.kz.shape == (1, 1, n_k2, 1, 1)
 
 
-def test_trajectory_repeat_detection_exact(cartesian_grid):
+def test_trajectory_repeat_detection_exact(cartesian_grid) -> None:
     """Test the automatic detection of repeated values."""
     n_k0 = 10
     n_k1 = 20
@@ -38,7 +38,7 @@ def test_trajectory_repeat_detection_exact(cartesian_grid):
     assert trajectory_full.kz.shape == (1, 1, n_k2, n_k1, n_k0)
 
 
-def test_trajectory_tensor_conversion(cartesian_grid):
+def test_trajectory_tensor_conversion(cartesian_grid) -> None:
     n_k0 = 10
     n_k1 = 20
     n_k2 = 30
@@ -61,7 +61,7 @@ def test_trajectory_tensor_conversion(cartesian_grid):
     torch.testing.assert_close(tensor, tensor_from_traj_from_tensor_dim3)
 
 
-def test_trajectory_raise_not_broadcastable():
+def test_trajectory_raise_not_broadcastable() -> None:
     """Non broadcastable shapes should raise."""
     kx = ky = torch.arange(1 * 2 * 3 * 4).reshape(1, 2, 3, 4)
     kz = torch.arange(1 * 2 * 3 * 100).reshape(1, 2, 3, 100)
@@ -69,14 +69,14 @@ def test_trajectory_raise_not_broadcastable():
         KTrajectory(kz, ky, kx)
 
 
-def test_trajectory_raise_wrong_dim():
+def test_trajectory_raise_wrong_dim() -> None:
     """Wrong number of dimensions after broadcasting should raise."""
     kx = ky = kz = torch.arange(1 * 2 * 3).reshape(1, 2, 3)
     with pytest.raises(ValueError):
         KTrajectory(kz, ky, kx)
 
 
-def test_trajectory_to_float64(cartesian_grid):
+def test_trajectory_to_float64(cartesian_grid) -> None:
     """Change KTrajectory dtype to float64."""
     n_k0 = 10
     n_k1 = 20
@@ -93,7 +93,7 @@ def test_trajectory_to_float64(cartesian_grid):
 
 
 @pytest.mark.parametrize('dtype', [torch.float32, torch.float64, torch.int32, torch.int64])
-def test_trajectory_floating_dtype(dtype):
+def test_trajectory_floating_dtype(dtype: torch.dtype) -> None:
     """Test if the trajectory will always be converted to float"""
     ks = torch.ones(3, 1, 1, 1, 1, 1, dtype=dtype)
     traj = KTrajectory(*ks)
@@ -110,7 +110,7 @@ def test_trajectory_floating_dtype(dtype):
 
 
 @pytest.mark.cuda
-def test_trajectory_cuda(cartesian_grid):
+def test_trajectory_cuda(cartesian_grid) -> None:
     """Move KTrajectory object to CUDA memory."""
     n_k0 = 10
     n_k1 = 20
@@ -135,7 +135,7 @@ def test_trajectory_cuda(cartesian_grid):
 
 
 @pytest.mark.cuda
-def test_trajectory_cpu(cartesian_grid):
+def test_trajectory_cpu(cartesian_grid) -> None:
     """Move KTrajectory object to CUDA memory and back to CPU memory."""
     n_k0 = 10
     n_k1 = 20
@@ -150,7 +150,9 @@ def test_trajectory_cpu(cartesian_grid):
 
 
 @COMMON_MR_TRAJECTORIES
-def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2):
+def test_ktype_along_kzyx(
+    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
+) -> None:
     """Test identification of traj types."""
 
     # Generate random k-space trajectories
@@ -181,7 +183,9 @@ def test_ktype_along_kzyx(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, ty
 
 
 @COMMON_MR_TRAJECTORIES
-def test_ktype_along_k210(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2):
+def test_ktype_along_k210(
+    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
+) -> None:
     """Test identification of traj types."""
 
     # Generate random k-space trajectories

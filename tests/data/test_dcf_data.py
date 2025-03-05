@@ -8,7 +8,7 @@ from mrpro.data import DcfData, KTrajectory
 from tests import RandomGenerator
 
 
-def example_traj_rpe(n_kr, n_ka, n_k0, broadcast=True):
+def example_traj_rpe(n_kr: int, n_ka: int, n_k0: int, broadcast: bool = True):
     """Create RPE trajectory with uniform angular gap."""
     krad = repeat(
         torch.linspace(-n_kr // 2, n_kr // 2 - 1, n_kr) / n_kr,
@@ -62,7 +62,7 @@ def example_traj_spiral_2d(n_kr: int, n_ki: int, n_ka: int, broadcast: bool = Tr
 
 
 @pytest.mark.parametrize(('n_kr', 'n_ka', 'n_k0'), [(10, 6, 20), (10, 1, 20), (10, 6, 1)])
-def test_dcf_rpe_traj_voronoi(n_kr, n_ka, n_k0):
+def test_dcf_rpe_traj_voronoi(n_kr: int, n_ka: int, n_k0: int) -> None:
     """Voronoi-based dcf calculation for RPE trajectory."""
     trajectory = example_traj_rpe(n_kr, n_ka, n_k0)
     dcf = DcfData.from_traj_voronoi(trajectory)
@@ -70,7 +70,7 @@ def test_dcf_rpe_traj_voronoi(n_kr, n_ka, n_k0):
 
 
 @pytest.mark.parametrize(('n_kr', 'n_ki', 'n_ka'), [(10, 2, 1)])
-def test_dcf_spiral_traj_voronoi(n_kr, n_ki, n_ka):
+def test_dcf_spiral_traj_voronoi(n_kr: int, n_ki: int, n_ka: int) -> None:
     """Voronoi-based dcf calculation for spiral trajectory."""
     # nkr points along each spiral arm, nki turns per spiral arm, nka spiral arms
     trajectory = example_traj_spiral_2d(n_kr, n_ki, n_ka)
@@ -78,7 +78,7 @@ def test_dcf_spiral_traj_voronoi(n_kr, n_ki, n_ka):
     assert dcf.data.shape == trajectory.broadcasted_shape
 
 
-def test_dcf_spiral_traj_voronoi_singlespiral():
+def test_dcf_spiral_traj_voronoi_singlespiral() -> None:
     """For three z-stacked spirals in the x,y plane, the center spiral should
     be the same as a single 2D spiral.
     """
@@ -105,14 +105,14 @@ def test_dcf_spiral_traj_voronoi_singlespiral():
 
 @pytest.mark.cuda
 @pytest.mark.parametrize(('n_kr', 'n_ka', 'n_k0'), [(10, 6, 20)])
-def test_dcf_rpe_traj_voronoi_cuda(n_kr, n_ka, n_k0):
+def test_dcf_rpe_traj_voronoi_cuda(n_kr: int, n_ka: int, n_k0: int) -> None:
     """Voronoi-based dcf calculation for RPE trajectory in CUDA memory."""
     trajectory = example_traj_rpe(n_kr, n_ka, n_k0)
     dcf = DcfData.from_traj_voronoi(trajectory.cuda())
     assert dcf.data.is_cuda
 
 
-def test_dcf_broadcast():
+def test_dcf_broadcast() -> None:
     """Test broadcasting within voronoi dcf calculation."""
     rng = RandomGenerator(0)
     # kx and ky force voronoi calculation and need to be broadcasted
