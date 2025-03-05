@@ -134,7 +134,6 @@ SAMPLING_PARAMETERS = pytest.mark.parametrize(
 )
 
 
-
 @SAMPLING_PARAMETERS
 def test_cart_sampling_op_fwd_adj(sampling: str) -> None:
     """Test adjoint property of the Cartesian sampling operator."""
