@@ -1,4 +1,28 @@
 
+# You need to run a self-hosted runner to run this workflow.
+# The `mrpro_runner` package is a docker image containing all necessary software
+# For automated self-hosted runner registration you need to create an organization fine-granted token
+# with the "Administration:write" and "Self-hosted runners:write".
+#
+# The following environmental variables need to be set:
+# GITHUB_PERSONAL_TOKEN - the organization token 
+# GITHUB_OWNER - the organization (PTB-MR) in this particular case.
+#
+# I would recommend to save this variables to a text file named `runner.env` at the host machine with following content:
+# GITHUB_PERSONAL_TOKEN=XXX
+# GITHUB_OWNER=PTB-MR
+#
+# Run with docker:
+# docker run --gpus <GPU_ID> --env-file runner.env ghcr.io/ptb-mr/mrpro_runner:latest
+#
+# Run with singularity:
+# You can convert the existing docker container to the singularity container via:
+# singularity build --sandbox runner-folder/ docker://ghcr.io/ptb-mr/mrpro_runner:latest
+# Hint: use SINGULARITY_CACHE=... environmental variable for cache
+# The container would require write access to the files in it. Therefore, the --sandbox flag is mandatory.
+#
+# When build is ready you can launch this singularity container via:
+# NVIDIA_VISIBLE_DEVICES=<GPU_ID> singularity run --nv --nvccli --env-file runner.env --pwd /actions-runner --writable runner-folder/
 name: PyTest-selfhosted
 
 on:
@@ -35,7 +59,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pytest-report-cuda
+          name: pytest-report-selfhosted
           path: |
             pytest-coverage.txt
             pytest.xml

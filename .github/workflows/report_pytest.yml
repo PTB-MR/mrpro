@@ -4,6 +4,7 @@ on:
   workflow_run:
     workflows:
       - PyTest
+      - PyTest-selfhosted
     types:
       - completed
 
@@ -19,11 +20,20 @@ jobs:
       actions: read
       pull-requests: write
     steps:
-      # use the results of python 3.12, consider this as target platform
+      - name: Set the artifact name
+        run: |
+          if [ "${{ github.event.workflow.name }}" == "PyTest" ]; then
+            # use the results of python 3.12, consider this as target platform
+            echo "ARTIFACT_NAME=pytest-report-mrpro_py312" >> $GITHUB_ENV
+            echo "UNIQUE_ID=" >> $GITHUB_ENV
+          elif [ "${{ github.event.workflow.name }}" == "PyTest-selfhosted" ]; then
+            echo "ARTIFACT_NAME=pytest-report-selfhosted" >> $GITHUB_ENV
+            echo "UNIQUE_ID=selfhosted" >> $GITHUB_ENV
+          fi
       - name: Download PyTest report artifact for mrpro_py312
         uses: actions/download-artifact@v4
         with:
-          name: pytest-report-mrpro_py312
+          name: ${{ env.ARTIFACT_NAME }}
           run-id: ${{ github.event.workflow_run.id }}
           # needs to be explicitly set
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -52,7 +62,11 @@ jobs:
         id: coverage_comment
         uses: MishaKav/pytest-coverage-comment@v1.1.53
         with:
+          title: Coverage report for ${{ github.event.workflow.name }}
+          # hide badge for the self-hosted pytest instance
+          hide-badge: ${{ env.UNIQUE_ID != '' && 'true' || 'false' }}
           issue-number: ${{ steps.pr-context.outputs.number }}
+          unique-id-for-comment: ${{ env.UNIQUE_ID }}
           pytest-coverage-path: pytest-coverage.txt
           junitxml-path: pytest.xml
 
@@ -66,13 +80,13 @@ jobs:
           # see https://github.com/MishaKav/pytest-coverage-comment/blob/81882822c5b22af01f91bd3eacb1cefb6ad73dc2/src/index.js#L97
           # for the generation of the unique id for comment
           # in this particular case, there is no additional watermarkUniqueId
-          body-includes: '<!-- Pytest Coverage Comment: ${{ github.job }} -->'
+          body-includes: "<!-- Pytest Coverage Comment: ${{ github.job }} ${{ env.UNIQUE_ID != '' && format('| {0} ', env.UNIQUE_ID) || '' }}-->"
           comment-author: 'github-actions[bot]'
           body: |
-            <!-- Pytest Coverage Comment: ${{ github.job }} -->
-            ### :x: PyTest Coverage Report was not found
+            <!-- Pytest Coverage Comment: ${{ github.job }} ${{ env.UNIQUE_ID != '' && format('| {0} ', env.UNIQUE_ID) || '' }}-->
+            ### :x: PyTest Coverage Report for ${{ github.event.workflow.name }} was not found
 
-            Check the PyTest Workflow
+            Check the ${{ github.event.workflow.name }} Workflow
           edit-mode: replace
 
   coverage_report_push_main:
@@ -84,21 +98,36 @@ jobs:
           github.event.workflow_run.conclusion != 'skipped' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Set the artifact name
+        run:
+          if [ "${{ github.event.workflow.name }}" == "PyTest" ]; then
+            # use the results of python 3.12, consider this as target platform
+            echo "ARTIFACT_NAME=pytest-report-mrpro_py312" >> $GITHUB_ENV
+            echo "UNIQUE_ID=" >> $GITHUB_ENV
+          elif [ "${{ github.event.workflow.name }}" == "PyTest-selfhosted" ]; then
+            echo "ARTIFACT_NAME=pytest-report-selfhosted" >> $GITHUB_ENV
+            echo "UNIQUE_ID=selfhosted" >> $GITHUB_ENV
+          fi
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          name: pytest-report-mrpro_py312
+          name: ${{ env.ARTIFACT_NAME }}
 
       - name: Post PyTest Coverage Comment on push main
         id: coverage_comment
         uses: MishaKav/pytest-coverage-comment@v1.1.53
         with:
+          title: Coverage report for ${{ github.event.workflow.name }}
+          # hide badge for the self-hosted pytest instance
+          hide-badge: ${{ env.UNIQUE_ID != '' && 'true' || 'false' }}
+          unique-id-for-comment: ${{ env.UNIQUE_ID }}
           pytest-coverage-path: pytest-coverage.txt
           junitxml-path: pytest.xml
 
       - name: Create Coverage Badge on Main Branch Push
+        if: ${{ github.event.workflow.name  == "PyTest" }}
         uses: schneegans/dynamic-badges-action@v1.7.0
         with:
           auth: ${{ secrets.GIST_SECRET }}
