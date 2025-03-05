@@ -3,8 +3,8 @@
 import dataclasses
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
+from datetime import datetime, time
 from typing import cast
-from datetime import datetime, time, timezone
 
 import numpy as np
 import torch
@@ -18,9 +18,9 @@ from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reduce_repeat import reduce_repeat
+from mrpro.utils.reshape import unsqueeze_right
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 from mrpro.utils.unit_conversion import deg_to_rad, mm_to_m, ms_to_s
-from mrpro.utils.reshape import unsqueeze_right
 
 
 def _int_factory() -> torch.Tensor:
@@ -317,12 +317,17 @@ class IHeader(MoveDataMixin):
         t0 = datetime.combine(frame_time_dt[0].date(), time(0, 0))
         delta_t = torch.tensor([(ft - t0).total_seconds() for ft in frame_time_dt][::n_volumes])
 
+        physiology_time = PhysiologyTimestamps(timestamp1=torch.zeros_like(delta_t))
+
         te_ms = get_items(dataset, 'EchoTime', float)
         if not te_ms:  # Some scanners use 'EchoTime', some use 'EffectiveEchoTime'
             te_ms = get_items(dataset, 'EffectiveEchoTime', float)
         te = ms_to_s(te_ms[::n_volumes])
 
-        # TODO: PhysiologyTimeStamps, ImageIdx
+        dcm_indices = torch.stack(get_items(dataset, 'DimensionIndexValues', torch.tensor))
+        image_idx = ImageIdx(slice=dcm_indices[:, 1])
+
+        # TODO: PhysiologyTimeStamps
         return cls(
             resolution=resolution,
             fa=fa,
@@ -330,8 +335,10 @@ class IHeader(MoveDataMixin):
             tr=tr,
             te=te,
             acquisition_time_stamp=delta_t,
+            physiology_time_stamps=physiology_time,
             position=position,
             orientation=orientation,
+            idx=image_idx,
         )
 
     def __repr__(self):
