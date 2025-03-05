@@ -10,7 +10,7 @@ from tests import RandomGenerator, dotproduct_adjointness_test
 
 
 @pytest.mark.parametrize(('npoints', 'a'), [(100, 20), (300, 20)])
-def test_fast_fourier_op_forward(npoints, a):
+def test_fast_fourier_op_forward(npoints: int, a: int) -> None:
     """Test Fast Fourier Op transformation using a Gaussian."""
     # Utilize that a Fourier transform of a Gaussian function is given by
     # F(exp(-x^2/a)) = sqrt(pi*a)exp(-a*pi^2k^2)
@@ -43,7 +43,7 @@ def test_fast_fourier_op_forward(npoints, a):
         ((100, 200, 50), (13, 221, 64)),
     ],
 )
-def test_fast_fourier_op_adjoint(encoding_matrix, recon_matrix):
+def test_fast_fourier_op_adjoint(encoding_matrix, recon_matrix) -> None:
     """Test adjointness of Fast Fourier Op."""
 
     # Create test data
@@ -56,7 +56,7 @@ def test_fast_fourier_op_adjoint(encoding_matrix, recon_matrix):
     dotproduct_adjointness_test(ff_op, u, v)
 
 
-def test_fast_fourier_op_spatial_dim():
+def test_fast_fourier_op_spatial_dim() -> None:
     """Test for equal results if matrices are spatial dimension or lists"""
     # Create test data
     recon_matrix = SpatialDimension(z=101, y=201, x=61)
@@ -81,7 +81,7 @@ def test_fast_fourier_op_spatial_dim():
     assert torch.equal(*ff_op_list.H(v), *ff_op_spatialdim.H(v))
 
 
-def test_fast_fourier_op_onematrix():
+def test_fast_fourier_op_onematrix() -> None:
     recon_matrix = SpatialDimension(z=101, y=201, x=61)
     encoding_matrix = SpatialDimension(z=14, y=220, x=61)
     with pytest.raises(ValueError, match='None'):
@@ -90,7 +90,7 @@ def test_fast_fourier_op_onematrix():
         FastFourierOp(recon_matrix=None, encoding_matrix=encoding_matrix)
 
 
-def test_invalid_dim():
+def test_invalid_dim() -> None:
     """Tests that dims are in (-3,-2,-1) if recon_matrix
     or encoding_matrix is SpatialDimension"""
 
