@@ -2,13 +2,14 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Literal
+from typing import Annotated, Literal
 
 import ismrmrd
 import numpy as np
 import torch
 from typing_extensions import Self
 
+from mrpro.data.CheckDataMixin import Annotation, CheckDataMixin, string_to_size
 from mrpro.data.enums import TrajType
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
@@ -19,7 +20,7 @@ from mrpro.utils.typing import FileOrPath
 
 
 @dataclass(slots=True, frozen=True)
-class KTrajectory(MoveDataMixin):
+class KTrajectory(MoveDataMixin, CheckDataMixin):
     """K-space trajectory.
 
     Contains the trajectory in k-space along the three dimensions `kz`, `ky`, `kx`,
@@ -277,3 +278,10 @@ class KTrajectory(MoveDataMixin):
         x = summarize_tensorvalues(torch.tensor(self.kx.shape))
         out = f'{type(self).__name__} with shape: kz={z}, ky={y}, kx={x}'
         return out
+
+    @property
+    def shape(self) -> torch.Size:
+        """Return shape of the KData object."""
+        if not hasattr(self, '_memo'):
+            self.check_invariants()
+        return torch.Size(string_to_size('*#other 1 #k2 #k1 #k0', self._memo))
