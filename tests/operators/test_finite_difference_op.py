@@ -1,5 +1,8 @@
 """Tests for finite difference operator."""
 
+from collections.abc import Sequence
+from typing import Literal
+
 import pytest
 import torch
 from einops import repeat
@@ -13,7 +16,9 @@ from tests import (
 )
 
 
-def create_finite_difference_op_and_range_domain(dim, mode, pad_mode):
+def create_finite_difference_op_and_range_domain(
+    dim: Sequence[int], mode: Literal['central', 'forward', 'backward'], pad_mode: Literal['zeros', 'circular']
+) -> tuple[FiniteDifferenceOp, torch.Tensor, torch.Tensor]:
     """Create a finite difference operator and an element from domain and range."""
     random_generator = RandomGenerator(seed=0)
     im_shape = (5, 6, 4, 10, 20, 16)
@@ -27,7 +32,7 @@ def create_finite_difference_op_and_range_domain(dim, mode, pad_mode):
 
 
 @pytest.mark.parametrize('mode', ['central', 'forward', 'backward'])
-def test_finite_difference_op_forward(mode):
+def test_finite_difference_op_forward(mode: Literal['central', 'forward', 'backward']) -> None:
     """Test correct finite difference of simple object."""
     # Test object with positive linear gradient in real and negative linear gradient imaginary part
     linear_gradient_object = (
@@ -47,7 +52,9 @@ def test_finite_difference_op_forward(mode):
 @pytest.mark.parametrize('pad_mode', ['zeros', 'circular'])
 @pytest.mark.parametrize('mode', ['central', 'forward', 'backward'])
 @pytest.mark.parametrize('dim', [(-1,), (-2, -1), (-3, -2, -1), (-4,), (1, 3)])
-def test_finite_difference_op_adjointness(dim, mode, pad_mode):
+def test_finite_difference_op_adjointness(
+    dim: Sequence[int], mode: Literal['central', 'forward', 'backward'], pad_mode: Literal['zeros', 'circular']
+) -> None:
     """Test finite difference operator adjoint property."""
     dotproduct_adjointness_test(*create_finite_difference_op_and_range_domain(dim, mode, pad_mode))
 
@@ -55,7 +62,9 @@ def test_finite_difference_op_adjointness(dim, mode, pad_mode):
 @pytest.mark.parametrize('pad_mode', ['zeros', 'circular'])
 @pytest.mark.parametrize('mode', ['central', 'forward', 'backward'])
 @pytest.mark.parametrize('dim', [(-1,), (-2, -1), (-3, -2, -1), (-4,), (1, 3)])
-def test_finite_difference_op_grad(dim, mode, pad_mode):
+def test_finite_difference_op_grad(
+    dim: Sequence[int], mode: Literal['central', 'forward', 'backward'], pad_mode: Literal['zeros', 'circular']
+) -> None:
     """Test the gradient of finite difference operator."""
     gradient_of_linear_operator_test(*create_finite_difference_op_and_range_domain(dim, mode, pad_mode))
 
@@ -63,6 +72,8 @@ def test_finite_difference_op_grad(dim, mode, pad_mode):
 @pytest.mark.parametrize('pad_mode', ['zeros', 'circular'])
 @pytest.mark.parametrize('mode', ['central', 'forward', 'backward'])
 @pytest.mark.parametrize('dim', [(-1,), (-2, -1), (-3, -2, -1), (-4,), (1, 3)])
-def test_finite_difference_op_forward_mode_autodiff(dim, mode, pad_mode):
+def test_finite_difference_op_forward_mode_autodiff(
+    dim: Sequence[int], mode: Literal['central', 'forward', 'backward'], pad_mode: Literal['zeros', 'circular']
+) -> None:
     """Test the forward-mode autodiff of the finite difference operator."""
     forward_mode_autodiff_of_linear_operator_test(*create_finite_difference_op_and_range_domain(dim, mode, pad_mode))

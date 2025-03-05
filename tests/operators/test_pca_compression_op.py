@@ -1,6 +1,9 @@
 """Tests for PCA Compression Operator."""
 
+from collections.abc import Sequence
+
 import pytest
+import torch
 from mrpro.operators import PCACompressionOp
 
 from tests import (
@@ -11,7 +14,9 @@ from tests import (
 )
 
 
-def create_pca_compression_op_and_domain_range(init_data_shape, input_shape, n_components):
+def create_pca_compression_op_and_domain_range(
+    init_data_shape: Sequence[int], input_shape: Sequence[int], n_components: int
+) -> tuple[PCACompressionOp, torch.Tensor, torch.Tensor]:
     """Create a pca compression operator and an element from domain and range."""
     # Create test data
     generator = RandomGenerator(seed=0)
@@ -37,13 +42,15 @@ SHAPE_PARAMETERS = pytest.mark.parametrize(
 
 
 @SHAPE_PARAMETERS
-def test_pca_compression_op_adjoint(init_data_shape, input_shape, n_components):
+def test_pca_compression_op_adjoint(
+    init_data_shape: Sequence[int], input_shape: Sequence[int], n_components: int
+) -> None:
     """Test adjointness of PCA Compression Op."""
     dotproduct_adjointness_test(*create_pca_compression_op_and_domain_range(init_data_shape, input_shape, n_components))
 
 
 @SHAPE_PARAMETERS
-def test_pca_compression_op_grad(init_data_shape, input_shape, n_components):
+def test_pca_compression_op_grad(init_data_shape: Sequence[int], input_shape: Sequence[int], n_components: int) -> None:
     """Test gradient of PCA Compression Op."""
     gradient_of_linear_operator_test(
         *create_pca_compression_op_and_domain_range(init_data_shape, input_shape, n_components)
@@ -51,14 +58,16 @@ def test_pca_compression_op_grad(init_data_shape, input_shape, n_components):
 
 
 @SHAPE_PARAMETERS
-def test_pca_compression_op_forward_mode_autodiff(init_data_shape, input_shape, n_components):
+def test_pca_compression_op_forward_mode_autodiff(
+    init_data_shape: Sequence[int], input_shape: Sequence[int], n_components: int
+) -> None:
     """Test forward-mode autodiff of PCA Compression Op."""
     forward_mode_autodiff_of_linear_operator_test(
         *create_pca_compression_op_and_domain_range(init_data_shape, input_shape, n_components)
     )
 
 
-def test_pca_compression_op_wrong_shapes():
+def test_pca_compression_op_wrong_shapes() -> None:
     """Test if Operator raises error if shape mismatch."""
     init_data_shape = (10, 6)
     input_shape = (100, 3)

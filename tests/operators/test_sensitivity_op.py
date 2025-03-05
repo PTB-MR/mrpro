@@ -13,7 +13,7 @@ from tests import (
 )
 
 
-def create_sensitivity_op_and_domain_range():
+def create_sensitivity_op_and_domain_range() -> tuple[SensitivityOp, torch.Tensor, torch.Tensor]:
     """Create a sensitivity operator and an element from domain and range."""
     random_generator = RandomGenerator(seed=0)
 
@@ -30,22 +30,22 @@ def create_sensitivity_op_and_domain_range():
     return sensitivity_op, u, v
 
 
-def test_sensitivity_op_adjointness():
+def test_sensitivity_op_adjointness() -> None:
     """Test Sensitivity operator adjoint property."""
     dotproduct_adjointness_test(*create_sensitivity_op_and_domain_range())
 
 
-def test_sensitivity_op_grad():
+def test_sensitivity_op_grad() -> None:
     """Test gradient of sensitivity operator."""
     gradient_of_linear_operator_test(*create_sensitivity_op_and_domain_range())
 
 
-def test_sensitivity_op_forward_mode_autodiff():
+def test_sensitivity_op_forward_mode_autodiff() -> None:
     """Test forward-mode autodiff of sensitivity operator."""
     forward_mode_autodiff_of_linear_operator_test(*create_sensitivity_op_and_domain_range())
 
 
-def test_sensitivity_op_csmdata_tensor():
+def test_sensitivity_op_csmdata_tensor() -> None:
     """Test matching result after creation via tensor and CSMData."""
 
     random_generator = RandomGenerator(seed=0)
@@ -68,7 +68,7 @@ def test_sensitivity_op_csmdata_tensor():
 
 
 @pytest.mark.parametrize(('n_other_csm', 'n_other_img'), [(1, 1), (1, 6), (6, 6)])
-def test_sensitivity_op_other_dim_compatibility_pass(n_other_csm, n_other_img):
+def test_sensitivity_op_other_dim_compatibility_pass(n_other_csm: int, n_other_img: int) -> None:
     """Test paired-dimensions that have to pass applying the sensitivity
     operator."""
 
@@ -89,7 +89,7 @@ def test_sensitivity_op_other_dim_compatibility_pass(n_other_csm, n_other_img):
 
 
 @pytest.mark.parametrize(('n_other_csm', 'n_other_img'), [(6, 3), (3, 6)])
-def test_sensitivity_op_other_dim_compatibility_fail(n_other_csm, n_other_img):
+def test_sensitivity_op_other_dim_compatibility_fail(n_other_csm: int, n_other_img: int) -> None:
     """Test paired-dimensions that have to raise error for the sensitivity
     operator."""
 

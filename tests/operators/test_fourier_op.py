@@ -8,6 +8,7 @@ from mrpro.data import KData, KTrajectory, SpatialDimension
 from mrpro.data.enums import TrajType
 from mrpro.data.traj_calculators import KTrajectoryCartesian
 from mrpro.operators import FourierOp
+from typing_extensions import Unpack
 
 from tests import (
     RandomGenerator,
@@ -18,7 +19,16 @@ from tests import (
 from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
 
 
-def create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
+def create_data(
+    im_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    k_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkx: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nky: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkz: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    type_kx: str,
+    type_ky: str,
+    type_kz: str,
+) -> tuple[torch.Tensor, KTrajectory]:
     random_generator = RandomGenerator(seed=0)
 
     # generate random image
@@ -28,7 +38,16 @@ def create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
     return img, trajectory
 
 
-def create_fourier_op_and_range_domain(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
+def create_fourier_op_and_range_domain(
+    im_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    k_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkx: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nky: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkz: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    type_kx: str,
+    type_ky: str,
+    type_kz: str,
+) -> tuple[FourierOp, torch.Tensor, torch.Tensor]:
     """Create a fourier operator and an element from domain and range."""
     # generate random images and k-space trajectories
     _, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
@@ -62,8 +81,18 @@ class NufftTrajektory(KTrajectory):
 
 @COMMON_MR_TRAJECTORIES
 def test_fourier_op_fwd_adj_property(
-    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
-):
+    im_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    k_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkx: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nky: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkz: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    type_kx: str,
+    type_ky: str,
+    type_kz: str,
+    type_k0: str,
+    type_k1: str,
+    type_k2: str,
+) -> None:
     """Test adjoint property of Fourier operator."""
     dotproduct_adjointness_test(
         *create_fourier_op_and_range_domain(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
@@ -71,7 +100,19 @@ def test_fourier_op_fwd_adj_property(
 
 
 @COMMON_MR_TRAJECTORIES
-def test_fourier_op_grad(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2):
+def test_fourier_op_grad(
+    im_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    k_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkx: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nky: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkz: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    type_kx: str,
+    type_ky: str,
+    type_kz: str,
+    type_k0: str,
+    type_k1: str,
+    type_k2: str,
+) -> None:
     """Test gradient of Fourier operator."""
     gradient_of_linear_operator_test(
         *create_fourier_op_and_range_domain(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
@@ -80,8 +121,18 @@ def test_fourier_op_grad(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, typ
 
 @COMMON_MR_TRAJECTORIES
 def test_fourier_op_forward_mode_autodiff(
-    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
-):
+    im_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    k_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkx: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nky: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkz: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    type_kx: str,
+    type_ky: str,
+    type_kz: str,
+    type_k0: str,
+    type_k1: str,
+    type_k2: str,
+) -> None:
     """Test forward-mode autodiff of Fourier operator."""
     forward_mode_autodiff_of_linear_operator_test(
         *create_fourier_op_and_range_domain(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
@@ -89,7 +140,19 @@ def test_fourier_op_forward_mode_autodiff(
 
 
 @COMMON_MR_TRAJECTORIES
-def test_fourier_op_gram(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2):
+def test_fourier_op_gram(
+    im_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    k_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkx: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nky: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkz: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    type_kx: str,
+    type_ky: str,
+    type_kz: str,
+    type_k0: str,
+    type_k1: str,
+    type_k2: str,
+) -> None:
     """Test gram of Fourier operator."""
     fourier_op, img, _ = create_fourier_op_and_range_domain(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
@@ -99,7 +162,7 @@ def test_fourier_op_gram(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, typ
     torch.testing.assert_close(actual, expected, rtol=1e-3, atol=1e-3)
 
 
-def test_fourier_op_cartesian_sorting(ismrmrd_cart):
+def test_fourier_op_cartesian_sorting(ismrmrd_cart) -> None:
     """Verify correct sorting of Cartesian k-space data before FFT."""
     kdata = KData.from_file(ismrmrd_cart.filename, KTrajectoryCartesian())
     ff_op = FourierOp.from_kdata(kdata)
@@ -144,7 +207,16 @@ def test_fourier_op_cartesian_sorting(ismrmrd_cart):
     ],
     ids=['3d_single_shot_stack_of_spirals_ky_in_k2', 'cartesian_fft_dims_not_aligned_with_k2_k1_k0_dims'],
 )
-def test_fourier_op_not_supported_traj(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
+def test_fourier_op_not_supported_traj(
+    im_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    k_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkx: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nky: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkz: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    type_kx: str,
+    type_ky: str,
+    type_kz: str,
+) -> None:
     """Test trajectory not supported by Fourier operator."""
 
     # generate random images and k-space trajectories
@@ -163,8 +235,18 @@ def test_fourier_op_not_supported_traj(im_shape, k_shape, nkx, nky, nkz, type_kx
 
 @COMMON_MR_TRAJECTORIES
 def test_fourier_op_fft_nufft_forward(
-    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
-):
+    im_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    k_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkx: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nky: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkz: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    type_kx: str,
+    type_ky: str,
+    type_kz: str,
+    type_k0: str,
+    type_k1: str,
+    type_k2: str,
+) -> None:
     """Test Nufft vs FFT for Fourier operator."""
     if not any(t == 'uniform' for t in [type_kx, type_ky, type_kz]):
         return  # only test for uniform trajectories
@@ -192,8 +274,18 @@ def test_fourier_op_fft_nufft_forward(
 
 @COMMON_MR_TRAJECTORIES
 def test_fourier_op_fft_nufft_adjoint(
-    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
-):
+    im_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    k_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkx: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nky: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkz: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    type_kx: str,
+    type_ky: str,
+    type_kz: str,
+    type_k0: str,
+    type_k1: str,
+    type_k2: str,
+) -> None:
     """Test AdjointNufft vs IFFT for Fourier operator."""
     if not any(t == 'uniform' for t in [type_kx, type_ky, type_kz]):
         return  # only test for uniform trajectories
@@ -220,8 +312,18 @@ def test_fourier_op_fft_nufft_adjoint(
 
 @COMMON_MR_TRAJECTORIES
 def test_fourier_op_fft_nufft_gram(
-    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
-):
+    im_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    k_shape: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkx: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nky: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    nkz: tuple[int, int, int, Unpack[tuple[int, ...]]],
+    type_kx: str,
+    type_ky: str,
+    type_kz: str,
+    type_k0: str,
+    type_k1: str,
+    type_k2: str,
+) -> None:
     """Test Nufft gram vs FFt gram for Fourier operator."""
     if not any(t == 'uniform' for t in [type_kx, type_ky, type_kz]):
         return  # only test for uniform trajectories

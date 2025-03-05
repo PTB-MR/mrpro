@@ -1,6 +1,7 @@
 """Tests for projection operator."""
 
 import math
+from typing import Literal
 
 import numpy as np
 import pytest
@@ -17,7 +18,9 @@ from tests import (
 )
 
 
-def create_slice_projection_op_and_domain_range(optimize_for, dtype):
+def create_slice_projection_op_and_domain_range(
+    optimize_for: Literal['forward', 'adjoint', 'both'], dtype: str
+) -> tuple[SliceProjectionOp, torch.Tensor, torch.Tensor]:
     """Create a slice projection operator and an element from domain and range."""
     rng = getattr(RandomGenerator(314), f'{dtype}_tensor')
     operator_dtype = getattr(torch, dtype).to_real()
@@ -38,7 +41,7 @@ def create_slice_projection_op_and_domain_range(optimize_for, dtype):
     return operator, u, v
 
 
-def test_slice_projection_op_cube_basic():
+def test_slice_projection_op_cube_basic() -> None:
     input_shape = SpatialDimension(10, 20, 30)
     slice_rotation = None
     slice_shift = 0.0
@@ -55,7 +58,7 @@ def test_slice_projection_op_cube_basic():
 
 
 @pytest.mark.parametrize('axis', ['x', 'y', 'z'])
-def test_slice_projection_op_cube_rotation(axis):
+def test_slice_projection_op_cube_rotation(axis: Literal['x', 'y', 'z']) -> None:
     input_shape = SpatialDimension(201, 201, 201)
     slice_rotation = Rotation.from_euler(axis, 45, degrees=True)
     slice_shift = 0.0
@@ -86,7 +89,7 @@ def test_slice_projection_op_cube_rotation(axis):
 
 @pytest.mark.parametrize('axis', ['x', 'y', 'z'])
 @pytest.mark.parametrize('match_shift', [True, False])
-def test_slice_projection_op_cube_shift(axis, match_shift):
+def test_slice_projection_op_cube_shift(axis: Literal['x', 'y', 'z'], match_shift: bool) -> None:
     input_shape = SpatialDimension(21, 21, 21)
     slice_profile = 1.0
     slice_rotation = Rotation.from_euler(axis, 90, degrees=True)
@@ -114,7 +117,7 @@ def test_slice_projection_op_cube_shift(axis, match_shift):
     assert (slice2d > 0.01).sum() == match_shift
 
 
-def test_slice_projection_width_error():
+def test_slice_projection_width_error() -> None:
     input_shape = SpatialDimension(1, 1, 1)
     slice_profile = 0.99
     with pytest.raises(ValueError, match='width'):
@@ -123,11 +126,11 @@ def test_slice_projection_width_error():
 
 @pytest.mark.parametrize('dtype', ['complex64', 'float64', 'float32'])
 @pytest.mark.parametrize('optimize_for', ['forward', 'adjoint', 'both'])
-def test_slice_projection_op_basic_adjointness(optimize_for, dtype):
+def test_slice_projection_op_basic_adjointness(optimize_for: Literal['forward', 'adjoint', 'both'], dtype: str) -> None:
     dotproduct_adjointness_test(*create_slice_projection_op_and_domain_range(optimize_for, dtype))
 
 
-def test_slice_projection_op_slice_batching():
+def test_slice_projection_op_slice_batching() -> None:
     rng = RandomGenerator(314).float32_tensor
     input_shape = SpatialDimension(10, 20, 30)
     slice_rotation = Rotation.random((5, 1), 0)
@@ -147,7 +150,7 @@ def test_slice_projection_op_slice_batching():
     dotproduct_adjointness_test(operator, u, v)
 
 
-def test_slice_projection_op_volume_batching():
+def test_slice_projection_op_volume_batching() -> None:
     rng = RandomGenerator(314).float32_tensor
     input_shape = SpatialDimension(10, 20, 30)
     slice_rotation = None
@@ -167,7 +170,9 @@ def test_slice_projection_op_volume_batching():
 @pytest.mark.parametrize('direction', ['forward', 'adjoint'])
 @pytest.mark.parametrize('dtype', ['complex64', 'float64', 'float32'])
 @pytest.mark.parametrize('optimize_for', ['forward', 'adjoint', 'both'])
-def test_slice_projection_op_backward_is_adjoint(optimize_for, dtype, direction):
+def test_slice_projection_op_backward_is_adjoint(
+    optimize_for: Literal['forward', 'adjoint', 'both'], dtype: str, direction: str
+) -> None:
     rng = getattr(RandomGenerator(314), f'{dtype}_tensor')
     operator_dtype = getattr(torch, dtype).to_real()
     input_shape = SpatialDimension(10, 20, 30)
@@ -204,7 +209,7 @@ def test_slice_projection_op_backward_is_adjoint(optimize_for, dtype, direction)
 # Sparse tensors do currently not work with torch.func. See https://github.com/pytorch/pytorch/issues/136357
 @pytest.mark.parametrize('dtype', ['complex64', 'float64', 'float32'])
 @pytest.mark.parametrize('optimize_for', ['forward', 'adjoint', 'both'])
-def test_slice_projection_op_grad(optimize_for, dtype):
+def test_slice_projection_op_grad(optimize_for: Literal['forward', 'adjoint', 'both'], dtype: str) -> None:
     """Test gradient of slice projection operator."""
     with pytest.raises(RuntimeError, match='Sparse CSR tensors'):
         gradient_of_linear_operator_test(*create_slice_projection_op_and_domain_range(optimize_for, dtype))
@@ -212,7 +217,9 @@ def test_slice_projection_op_grad(optimize_for, dtype):
 
 @pytest.mark.parametrize('dtype', ['complex64', 'float64', 'float32'])
 @pytest.mark.parametrize('optimize_for', ['forward', 'adjoint', 'both'])
-def test_slice_projection_op_forward_mode_autodiff(optimize_for, dtype):
+def test_slice_projection_op_forward_mode_autodiff(
+    optimize_for: Literal['forward', 'adjoint', 'both'], dtype: str
+) -> None:
     """Test forward-mode autodiff of slice projection operator."""
     with pytest.raises(RuntimeError, match='Sparse CSR tensors'):
         forward_mode_autodiff_of_linear_operator_test(*create_slice_projection_op_and_domain_range(optimize_for, dtype))

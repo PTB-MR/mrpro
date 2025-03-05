@@ -1,5 +1,7 @@
 """Tests for Rearrange Operator."""
 
+from collections.abc import Sequence
+
 import pytest
 from mrpro.operators.RearrangeOp import RearrangeOp
 
@@ -23,7 +25,9 @@ SHAPE_PARAMETERS = pytest.mark.parametrize(
 
 @pytest.mark.parametrize('dtype', ['float32', 'complex128'])
 @SHAPE_PARAMETERS
-def test_einsum_op_adjointness(input_shape, rule, output_shape, additional_info, dtype):
+def test_einsum_op_adjointness(
+    input_shape: Sequence[int], rule: str, output_shape: Sequence[int], additional_info: dict, dtype: str
+) -> None:
     """Test adjointness and shape of Einsum Op."""
     generator = RandomGenerator(seed=0)
     generate_tensor = getattr(generator, f'{dtype}_tensor')
@@ -35,7 +39,9 @@ def test_einsum_op_adjointness(input_shape, rule, output_shape, additional_info,
 
 @pytest.mark.parametrize('dtype', ['float32', 'complex128'])
 @SHAPE_PARAMETERS
-def test_einsum_op_grad(input_shape, rule, output_shape, additional_info, dtype):
+def test_einsum_op_grad(
+    input_shape: Sequence[int], rule: str, output_shape: Sequence[int], additional_info: dict, dtype: str
+) -> None:
     """Test gradient of Einsum Op."""
     generator = RandomGenerator(seed=0)
     generate_tensor = getattr(generator, f'{dtype}_tensor')
@@ -47,7 +53,9 @@ def test_einsum_op_grad(input_shape, rule, output_shape, additional_info, dtype)
 
 @pytest.mark.parametrize('dtype', ['float32', 'complex128'])
 @SHAPE_PARAMETERS
-def test_einsum_op_forward_mode_autodiff(input_shape, rule, output_shape, additional_info, dtype):
+def test_einsum_op_forward_mode_autodiff(
+    input_shape: Sequence[int], rule: str, output_shape: Sequence[int], additional_info: dict, dtype: str
+) -> None:
     """Test forward-mode autodiff of Einsum Op."""
     generator = RandomGenerator(seed=0)
     generate_tensor = getattr(generator, f'{dtype}_tensor')
@@ -57,7 +65,7 @@ def test_einsum_op_forward_mode_autodiff(input_shape, rule, output_shape, additi
     forward_mode_autodiff_of_linear_operator_test(operator, u, v)
 
 
-def test_einsum_op_invalid():
+def test_einsum_op_invalid() -> None:
     """Test with invalid rule."""
     with pytest.raises(ValueError, match='pattern should match'):
         RearrangeOp('missing arrow')

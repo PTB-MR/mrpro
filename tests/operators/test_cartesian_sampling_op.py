@@ -16,7 +16,7 @@ from tests import (
 from tests.conftest import create_traj
 
 
-def test_cart_sampling_op_data_match():
+def test_cart_sampling_op_data_match() -> None:
     # Create 3D uniform trajectory
     k_shape = (1, 5, 20, 40, 60)
     nkx = (1, 1, 1, 60)
@@ -95,12 +95,13 @@ def subsample_traj(
     return trajectory
 
 
-def create_cart_sampling_op_and_range_domain(sampling):
-    # Create 3D uniform trajectory
-    k_shape = (2, 5, 20, 40, 60)
-    nkx = (2, 1, 1, 60)
-    nky = (2, 1, 40, 1)
-    nkz = (2, 20, 1, 1)
+def create_cart_sampling_op_and_range_domain(
+    sampling: str,
+    k_shape: tuple[int, int, int, Unpack[tuple[int, ...]]] = (2, 5, 10, 40, 60),
+    nkx: tuple[int, int, int, Unpack[tuple[int, ...]]] = (2, 1, 1, 60),
+    nky: tuple[int, int, int, Unpack[tuple[int, ...]]] = (2, 1, 40, 1),
+    nkz: tuple[int, int, int, Unpack[tuple[int, ...]]] = (2, 20, 1, 1),
+) -> tuple[CartesianSamplingOp, torch.Tensor, torch.Tensor]:
     type_kx = 'uniform'
     type_ky = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
     type_kz = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
@@ -134,19 +135,19 @@ SAMPLING_PARAMETERS = pytest.mark.parametrize(
 
 
 @SAMPLING_PARAMETERS
-def test_cart_sampling_op_fwd_adj(sampling):
+def test_cart_sampling_op_fwd_adj(sampling: str) -> None:
     """Test adjoint property of the Cartesian sampling operator."""
     dotproduct_adjointness_test(*create_cart_sampling_op_and_range_domain(sampling))
 
 
 @SAMPLING_PARAMETERS
-def test_cart_sampling_op_grad(sampling):
+def test_cart_sampling_op_grad(sampling: str) -> None:
     """Test the gradient of the Cartesian sampling operator."""
     gradient_of_linear_operator_test(*create_cart_sampling_op_and_range_domain(sampling))
 
 
 @SAMPLING_PARAMETERS
-def test_cart_sampling_op_forward_mode_autodiff(sampling):
+def test_cart_sampling_op_forward_mode_autodiff(sampling: str) -> None:
     """Test forward-mode autodiff of the Cartesian sampling operator."""
     forward_mode_autodiff_of_linear_operator_test(*create_cart_sampling_op_and_range_domain(sampling))
 
@@ -165,7 +166,7 @@ def test_cart_sampling_op_forward_mode_autodiff(sampling):
         'kx_ky_along_k0_undersampling',
     ],
 )
-def test_cart_sampling_op_gram(sampling):
+def test_cart_sampling_op_gram(sampling: str) -> None:
     """Test adjoint gram of Cartesian sampling operator."""
     sampling_op, u, _ = create_cart_sampling_op_and_range_domain(sampling)
     (expected,) = (sampling_op.H @ sampling_op)(u)
@@ -175,7 +176,7 @@ def test_cart_sampling_op_gram(sampling):
 
 @pytest.mark.parametrize(('k2_min', 'k2_max'), [(-1, 21), (-21, 1)])
 @pytest.mark.parametrize(('k0_min', 'k0_max'), [(-6, 13), (-13, 6)])
-def test_cart_sampling_op_oversampling(k0_min, k0_max, k2_min, k2_max):
+def test_cart_sampling_op_oversampling(k0_min: int, k0_max: int, k2_min: int, k2_max: int) -> None:
     """Test trajectory points outside of encoding_matrix."""
     encoding_matrix = SpatialDimension(40, 1, 20)
 

@@ -1,5 +1,7 @@
 """Tests for Einsum Operator."""
 
+from collections.abc import Sequence
+
 import pytest
 import torch
 from mrpro.operators.EinsumOp import EinsumOp
@@ -12,7 +14,9 @@ from tests import (
 )
 
 
-def create_einsum_op_and_range_domain(tensor_shape, input_shape, rule, output_shape, dtype):
+def create_einsum_op_and_range_domain(
+    tensor_shape: Sequence[int], input_shape: Sequence[int], rule: str, output_shape: Sequence[int], dtype: str
+) -> tuple[EinsumOp, torch.Tensor, torch.Tensor]:
     """Create an Einsum operator and an element from range and domain."""
     generator = RandomGenerator(seed=0)
     generate_tensor = getattr(generator, f'{dtype}_tensor')
@@ -37,7 +41,9 @@ EINSUM_PARAMETERS = pytest.mark.parametrize(
 
 @pytest.mark.parametrize('dtype', ['float32', 'complex128'])
 @EINSUM_PARAMETERS
-def test_einsum_op(tensor_shape, input_shape, rule, output_shape, dtype):
+def test_einsum_op(
+    tensor_shape: Sequence[int], input_shape: Sequence[int], rule: str, output_shape: Sequence[int], dtype: str
+) -> None:
     """Test adjointness and shape."""
     dotproduct_adjointness_test(
         *create_einsum_op_and_range_domain(tensor_shape, input_shape, rule, output_shape, dtype)
@@ -46,7 +52,9 @@ def test_einsum_op(tensor_shape, input_shape, rule, output_shape, dtype):
 
 @pytest.mark.parametrize('dtype', ['float32', 'complex128'])
 @EINSUM_PARAMETERS
-def test_einsum_op_grad(tensor_shape, input_shape, rule, output_shape, dtype):
+def test_einsum_op_grad(
+    tensor_shape: Sequence[int], input_shape: Sequence[int], rule: str, output_shape: Sequence[int], dtype: str
+) -> None:
     """Test the gradient of the einsum operator."""
     gradient_of_linear_operator_test(
         *create_einsum_op_and_range_domain(tensor_shape, input_shape, rule, output_shape, dtype)
@@ -55,7 +63,9 @@ def test_einsum_op_grad(tensor_shape, input_shape, rule, output_shape, dtype):
 
 @pytest.mark.parametrize('dtype', ['float32', 'complex128'])
 @EINSUM_PARAMETERS
-def test_einsum_op_forward_mode_autodiff(tensor_shape, input_shape, rule, output_shape, dtype):
+def test_einsum_op_forward_mode_autodiff(
+    tensor_shape: Sequence[int], input_shape: Sequence[int], rule: str, output_shape: Sequence[int], dtype: str
+) -> None:
     """Test forward-mode autodiff of the einsum operator."""
     forward_mode_autodiff_of_linear_operator_test(
         *create_einsum_op_and_range_domain(tensor_shape, input_shape, rule, output_shape, dtype)
@@ -72,7 +82,7 @@ def test_einsum_op_forward_mode_autodiff(tensor_shape, input_shape, rule, output
         '',  # empty string
     ],
 )
-def test_einsum_op_invalid(rule):
+def test_einsum_op_invalid(rule: str) -> None:
     """Test with different invalid rules."""
     with pytest.raises(ValueError, match='pattern should match'):
         EinsumOp(torch.tensor([]), rule)
