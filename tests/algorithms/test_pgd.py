@@ -10,7 +10,7 @@ from mrpro.phantoms import EllipsePhantom
 from tests import RandomGenerator
 
 
-@pytest.mark.parametrize(('stepsize', 'backtrack_factor'), [(1, 1), (1e5, 0.8)])
+@pytest.mark.parametrize(('stepsize', 'backtrack_factor'), [(1.0, 1.0), (1e5, 0.8)])
 def test_pgd_solution_fourier_l1(stepsize, backtrack_factor) -> None:
     """ "Set up the problem min_x 1/2*|| Fx - y||_2^2 + lambda * ||x||_1,
     where F is the full FFT and y is sampled on a Cartesian grid. Thus the
@@ -51,7 +51,7 @@ def test_pgd_solution_fourier_l1(stepsize, backtrack_factor) -> None:
     torch.testing.assert_close(pgd_solution, expected, rtol=5e-4, atol=5e-4)
 
 
-@pytest.mark.parametrize(('stepsize', 'backtrack_factor'), [(1, 1), (1e5, 0.8)])
+@pytest.mark.parametrize(('stepsize', 'backtrack_factor'), [(1.0, 1.0), (1e5, 0.8)])
 def test_pgd_solution_fourier_wavelet(stepsize, backtrack_factor) -> None:
     """Set up the problem min_x 1/2*|| Fx - y||_2^2 + lambda * || W x||_1,
     where F is the full FFT sampled on a Cartesian grid and W a wavelet transform.
