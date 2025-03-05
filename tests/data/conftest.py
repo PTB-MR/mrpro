@@ -1,5 +1,7 @@
 """PyTest fixtures for the data tests."""
 
+from collections.abc import Callable
+
 import pytest
 import torch
 from ismrmrd import xsd
@@ -11,7 +13,12 @@ from tests.data import DicomTestImage, IsmrmrdRawTestData
 
 
 @pytest.fixture(params=({'seed': 0},))
-def cartesian_grid(request):
+def cartesian_grid(request) -> Callable[[int, int, int, float], tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
+    """Cartesian grid generator.
+
+    Generates a 3D cartesian grid with optional jitter.
+    Shape of the returned tensors is `(1, 1, n_k2, n_k1, n_k0)`.
+    """
     generator = RandomGenerator(request.param['seed'])
 
     def generate(n_k2: int, n_k1: int, n_k0: int, jitter: float) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:

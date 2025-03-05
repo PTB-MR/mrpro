@@ -16,7 +16,7 @@ from mrpro.data.traj_calculators import (
 from tests.data import PulseqRadialTestSeq
 
 
-def test_KTrajectoryRadial2D():
+def test_KTrajectoryRadial2D() -> None:
     """Test shapes returned by KTrajectoryRadial2D."""
     n_k0 = 256
     n_k1 = 10
@@ -34,7 +34,7 @@ def test_KTrajectoryRadial2D():
     assert trajectory.kx.shape == (1, 1, 1, n_k1, n_k0)
 
 
-def test_KTrajectoryRpe():
+def test_KTrajectoryRpe() -> None:
     """Test shapes returned by KTrajectoryRpe"""
     n_k0 = 100
     n_k1 = 20
@@ -56,7 +56,7 @@ def test_KTrajectoryRpe():
     assert trajectory.kx.shape == (1, 1, 1, 1, n_k0)
 
 
-def test_KTrajectoryRpe_angle():
+def test_KTrajectoryRpe_angle() -> None:
     """Test that every second line matches a trajectory with double the angular gap."""
     n_k0 = 100
     n_k1 = 20
@@ -92,7 +92,7 @@ def test_KTrajectoryRpe_angle():
     torch.testing.assert_close(tensor1[..., ::2, :, :], tensor2[..., : n_k2 // 2, :, :])
 
 
-def test_KTrajectorySunflowerGoldenRpe():
+def test_KTrajectorySunflowerGoldenRpe() -> None:
     """Test shape returned by KTrajectorySunflowerGoldenRpe"""
     n_k0 = 100
     n_k1 = 20
@@ -112,7 +112,7 @@ def test_KTrajectorySunflowerGoldenRpe():
     assert trajectory.broadcasted_shape == (1, 1, n_k2, n_k1, n_k0)
 
 
-def test_KTrajectoryCartesian():
+def test_KTrajectoryCartesian() -> None:
     """Calculate Cartesian trajectory."""
     n_k0 = 30
     n_k1 = 20
@@ -134,7 +134,7 @@ def test_KTrajectoryCartesian():
     assert trajectory.kx.shape == (1, 1, 1, 1, n_k0)
 
 
-def test_KTrajectoryCartesian_bipolar():
+def test_KTrajectoryCartesian_bipolar() -> None:
     """Verify that the readout for the second part of a bipolar readout is reversed"""
     n_k0 = 30
     n_k1 = 20
@@ -159,7 +159,7 @@ def test_KTrajectoryCartesian_bipolar():
     torch.testing.assert_close(trajectory.kx[..., 0, :], torch.flip(trajectory.kx[..., 1, :], dims=(-1,)))
 
 
-def test_KTrajectoryIsmrmrdRadial(ismrmrd_rad):
+def test_KTrajectoryIsmrmrdRadial(ismrmrd_rad) -> None:
     """Verify ismrmrd trajectory."""
     # Calculate trajectory based on header information
     angle = torch.pi / (ismrmrd_rad.matrix_size // ismrmrd_rad.acceleration)
@@ -180,7 +180,7 @@ def pulseq_example_rad_seq(tmp_path_factory):
     return seq
 
 
-def test_KTrajectoryPulseq(pulseq_example_rad_seq):
+def test_KTrajectoryPulseq(pulseq_example_rad_seq) -> None:
     """Test pulseq File reader with valid seq File."""
     # TODO: Test with invalid seq file
     trajectory_calculator = KTrajectoryPulseq(seq_path=pulseq_example_rad_seq.seq_filename)

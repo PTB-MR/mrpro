@@ -267,18 +267,18 @@ class KData(
         if len(n_acqs_per_other_and_k2) == 1:
             # This is the most common case:
             # All other and k2 combinations have the same number of aquisistions which we can use as k1
-            # to reshape to (other, k2, k1, k0)
+            # to reshape to (other, coils, k2, k1, k0)
             n_k1 = n_acqs_per_other_and_k2[0]
             n_k2 = n_acqs_per_other[0] // n_k1
         elif len(n_acqs_per_other) == 1:
             # We cannot split the data along phase encoding steps into k2 and k1, as there are different numbers of k1.
             # But all "other labels" combinations have the same number of aquisisitions,
-            # so we can reshape to (other, k, 1, k0)
+            # so we can reshape to (other, coils, k, 1, k0)
             n_k1 = 1
             n_k2 = n_acqs_per_other[0]  # total number of k encoding steps
         else:
             # For different other combinations we have different numbers of aquisistions,
-            # so we can only reshape to (acquisitions, 1, 1, k0)
+            # so we can only reshape to (acquisitions, coils, 1, 1, k0)
             # This might be an user error.
             warnings.warn(
                 f'There are different numbers of acquisistions in'
