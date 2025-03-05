@@ -61,7 +61,7 @@ def show_images(*images: torch.Tensor, titles: list[str] | None = None) -> None:
 # Let's have a look at some of the images
 show_images(
     *idata_multi_ti.data[:, 0, 0].abs(),
-    titles=[f'TI = {ti:.3f}s' for ti in idata_multi_ti.header.ti.squeeze()],
+    titles=[f'TI = {ti:.3f}s' for ti in idata_multi_ti.header.ti],
 )
 
 # %% [markdown]
