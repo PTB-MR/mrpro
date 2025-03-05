@@ -21,13 +21,13 @@ def create_finite_difference_op_and_range_domain(
 ) -> tuple[FiniteDifferenceOp, torch.Tensor, torch.Tensor]:
     """Create a finite difference operator and an element from domain and range."""
     random_generator = RandomGenerator(seed=0)
-    im_shape = (5, 6, 4, 10, 20, 16)
+    img_shape = (5, 6, 4, 10, 20, 16)
 
     # Generate finite difference operator
     finite_difference_op = FiniteDifferenceOp(dim, mode, pad_mode)
 
-    u = random_generator.complex64_tensor(size=im_shape)
-    v = random_generator.complex64_tensor(size=(len(dim), *im_shape))
+    u = random_generator.complex64_tensor(size=img_shape)
+    v = random_generator.complex64_tensor(size=(len(dim), *img_shape))
     return finite_difference_op, u, v
 
 

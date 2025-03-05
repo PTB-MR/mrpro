@@ -1,5 +1,7 @@
 """Tests for the Cartesian sampling operator."""
 
+from typing import TypeAlias
+
 import pytest
 import torch
 from einops import rearrange
@@ -14,6 +16,8 @@ from tests import (
     gradient_of_linear_operator_test,
 )
 from tests.conftest import create_traj
+
+AtLeast3Ints: TypeAlias = tuple[Unpack[tuple[int, ...]], int, int, int]
 
 
 def test_cart_sampling_op_data_match() -> None:
@@ -97,24 +101,22 @@ def subsample_traj(
 
 def create_cart_sampling_op_and_range_domain(
     sampling: str,
-    k_shape: tuple[int, int, int, Unpack[tuple[int, ...]]] = (2, 5, 20, 40, 60),
-    nkx: tuple[int, int, int, Unpack[tuple[int, ...]]] = (2, 1, 1, 60),
-    nky: tuple[int, int, int, Unpack[tuple[int, ...]]] = (2, 1, 40, 1),
-    nkz: tuple[int, int, int, Unpack[tuple[int, ...]]] = (2, 20, 1, 1),
+    k_shape: AtLeast3Ints = (2, 5, 20, 40, 60),
+    nkx: AtLeast3Ints = (2, 1, 1, 1, 60),
+    nky: AtLeast3Ints = (2, 1, 1, 40, 1),
+    nkz: AtLeast3Ints = (2, 1, 20, 1, 1),
 ) -> tuple[CartesianSamplingOp, torch.Tensor, torch.Tensor]:
     type_kx = 'uniform'
     type_ky = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
     type_kz = 'non-uniform' if sampling == 'cartesian_and_non_cartesian' else 'uniform'
-    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
     trajectory = subsample_traj(trajectory, sampling, k_shape)
 
     encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
-
-    # Test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v
     random_generator = RandomGenerator(seed=0)
     u = random_generator.complex64_tensor(size=k_shape)
-    v = random_generator.complex64_tensor(size=k_shape[:2] + trajectory.as_tensor().shape[2:])
+    v = random_generator.complex64_tensor(size=(*k_shape[:-3], *trajectory.broadcasted_shape[-3:]))
     return sampling_op, u, v
 
 

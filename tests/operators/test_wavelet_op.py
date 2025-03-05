@@ -22,7 +22,7 @@ from tests import (
 
 
 def create_wavelet_op_and_domain_range(
-    im_shape: Sequence[int],
+    img_shape: Sequence[int],
     domain_shape: Sequence[int],
     dim: tuple[int] | tuple[int, int] | tuple[int, int, int],
     wavelet_name: WaveletType,
@@ -36,18 +36,18 @@ def create_wavelet_op_and_domain_range(
     wavelet_stack_length = torch.sum(torch.as_tensor([(np.prod(shape)) for shape in wavelet_op.coefficients_shape]))
 
     # sorted and normed dimensions needed to correctly calculate range
-    dim_sorted = sorted([d % len(im_shape) for d in dim], reverse=True)
-    range_shape = list(im_shape)
+    dim_sorted = sorted([d % len(img_shape) for d in dim], reverse=True)
+    range_shape = list(img_shape)
     range_shape[dim_sorted[-1]] = int(wavelet_stack_length)
     [range_shape.pop(d) for d in dim_sorted[:-1]]
 
-    u = random_generator.complex64_tensor(size=im_shape)
+    u = random_generator.complex64_tensor(size=img_shape)
     v = random_generator.complex64_tensor(size=range_shape)
     return wavelet_op, u, v
 
 
 @pytest.mark.parametrize(
-    ('im_shape', 'domain_shape', 'dim'),
+    ('img_shape', 'domain_shape', 'dim'),
     [
         ((5, 16, 16, 16), (16,), (-1,)),
         ((5, 16, 16, 16), (16, 16), (-2, -1)),
@@ -55,11 +55,11 @@ def create_wavelet_op_and_domain_range(
     ],
 )
 def test_wavelet_op_coefficient_transform(
-    im_shape: Sequence[int], domain_shape: Sequence[int], dim: tuple[int] | tuple[int, int] | tuple[int, int, int]
+    img_shape: Sequence[int], domain_shape: Sequence[int], dim: tuple[int] | tuple[int, int] | tuple[int, int, int]
 ) -> None:
     """Test transform between ptwt and mrpro coefficient format."""
     random_generator = RandomGenerator(seed=0)
-    img = random_generator.float32_tensor(size=im_shape)
+    img = random_generator.float32_tensor(size=img_shape)
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim)
     if len(dim) == 1:
         coeff_ptwt = wavedec(img, 'haar', level=2, mode='reflect')
@@ -112,12 +112,12 @@ def test_wavelet_op_error_for_odd_domain_shape() -> None:
 
 def test_wavelet_op_complex_real_shape() -> None:
     """Test that the shape of the output tensors is the same for complex/real data."""
-    im_shape = (6, 10, 20, 30)
+    img_shape = (6, 10, 20, 30)
     domain_shape = (20, 30, 6)
     dim = (-2, -1, -4)
     random_generator = RandomGenerator(seed=0)
-    img_complex = random_generator.complex64_tensor(size=im_shape)
-    img_real = random_generator.float32_tensor(size=im_shape)
+    img_complex = random_generator.complex64_tensor(size=img_shape)
+    img_real = random_generator.float32_tensor(size=img_shape)
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name='db4', level=None)
     (coeff_complex,) = wavelet_op(img_complex)
     (coeff_real,) = wavelet_op(img_real)
@@ -126,7 +126,7 @@ def test_wavelet_op_complex_real_shape() -> None:
 
 
 SHAPE_PARAMETERS = pytest.mark.parametrize(
-    ('im_shape', 'domain_shape', 'dim'),
+    ('img_shape', 'domain_shape', 'dim'),
     [
         ((1, 5, 20, 30), (30,), (-1,)),
         ((5, 1, 10, 20, 30), (10,), (-3,)),
@@ -144,14 +144,14 @@ SHAPE_PARAMETERS = pytest.mark.parametrize(
 @pytest.mark.parametrize('wavelet_name', ['haar', 'db4'])
 @SHAPE_PARAMETERS
 def test_wavelet_op_isometry(
-    im_shape: Sequence[int],
+    img_shape: Sequence[int],
     domain_shape: Sequence[int],
     dim: tuple[int] | tuple[int, int] | tuple[int, int, int],
     wavelet_name: WaveletType,
 ) -> None:
     """Test that the wavelet operator is a linear isometry."""
     random_generator = RandomGenerator(seed=0)
-    img = random_generator.complex64_tensor(size=im_shape)
+    img = random_generator.complex64_tensor(size=img_shape)
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name=wavelet_name, level=None)
     operator_isometry_test(wavelet_op, img)
 
@@ -159,26 +159,26 @@ def test_wavelet_op_isometry(
 @pytest.mark.parametrize('wavelet_name', ['haar', 'db4'])
 @SHAPE_PARAMETERS
 def test_wavelet_op_adjointness(
-    im_shape: Sequence[int],
+    img_shape: Sequence[int],
     domain_shape: Sequence[int],
     dim: tuple[int] | tuple[int, int] | tuple[int, int, int],
     wavelet_name: WaveletType,
 ) -> None:
     """Test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v."""
-    dotproduct_adjointness_test(*create_wavelet_op_and_domain_range(im_shape, domain_shape, dim, wavelet_name))
+    dotproduct_adjointness_test(*create_wavelet_op_and_domain_range(img_shape, domain_shape, dim, wavelet_name))
 
 
 @pytest.mark.parametrize('wavelet_name', ['haar', 'db4'])
 @SHAPE_PARAMETERS
 def test_wavelet_op_unitary(
-    im_shape: Sequence[int],
+    img_shape: Sequence[int],
     domain_shape: Sequence[int],
     dim: tuple[int] | tuple[int, int] | tuple[int, int, int],
     wavelet_name: WaveletType,
 ) -> None:
     """Test if wavelet operator is unitary."""
     random_generator = RandomGenerator(seed=0)
-    img = random_generator.complex64_tensor(size=im_shape)
+    img = random_generator.complex64_tensor(size=img_shape)
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name=wavelet_name)
     linear_operator_unitary_test(wavelet_op, img)
 
@@ -186,24 +186,24 @@ def test_wavelet_op_unitary(
 @pytest.mark.parametrize('wavelet_name', ['haar', 'db4'])
 @SHAPE_PARAMETERS
 def test_wavelet_op_grad(
-    im_shape: Sequence[int],
+    img_shape: Sequence[int],
     domain_shape: Sequence[int],
     dim: tuple[int] | tuple[int, int] | tuple[int, int, int],
     wavelet_name: WaveletType,
 ) -> None:
     """Test gradient of wavelet operator."""
-    gradient_of_linear_operator_test(*create_wavelet_op_and_domain_range(im_shape, domain_shape, dim, wavelet_name))
+    gradient_of_linear_operator_test(*create_wavelet_op_and_domain_range(img_shape, domain_shape, dim, wavelet_name))
 
 
 @pytest.mark.parametrize('wavelet_name', ['haar', 'db4'])
 @SHAPE_PARAMETERS
 def test_wavelet_op_forward_mode_autodiff(
-    im_shape: Sequence[int],
+    img_shape: Sequence[int],
     domain_shape: Sequence[int],
     dim: tuple[int] | tuple[int, int] | tuple[int, int, int],
     wavelet_name: WaveletType,
 ) -> None:
     """Test forward-mode autodiff of wavelet operator."""
     forward_mode_autodiff_of_linear_operator_test(
-        *create_wavelet_op_and_domain_range(im_shape, domain_shape, dim, wavelet_name)
+        *create_wavelet_op_and_domain_range(img_shape, domain_shape, dim, wavelet_name)
     )
