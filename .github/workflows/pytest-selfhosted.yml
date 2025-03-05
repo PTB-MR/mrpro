@@ -5,7 +5,7 @@
 # with the "Administration:write" and "Self-hosted runners:write".
 #
 # The following environmental variables need to be set:
-# GITHUB_PERSONAL_TOKEN - the organization token 
+# GITHUB_PERSONAL_TOKEN - the organization token
 # GITHUB_OWNER - the organization (PTB-MR) in this particular case.
 #
 # I would recommend to save this variables to a text file named `runner.env` at the host machine with following content:
@@ -32,6 +32,7 @@ on:
 
 jobs:
   test:
+    name: Run Tests and Coverage Report
     runs-on: [self-hosted] #gpu
     environment: pytest-cuda
     permissions:
