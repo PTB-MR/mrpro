@@ -2,9 +2,8 @@
 
 import pytest
 import torch
-from einops import repeat, rearrange
+from einops import rearrange
 from mrpro.data import KData, SpatialDimension
-from mrpro.data.enums import AcqFlags
 from mrpro.data.traj_calculators import (
     KTrajectoryCartesian,
     KTrajectoryIsmrmrd,
