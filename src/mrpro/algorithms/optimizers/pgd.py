@@ -171,6 +171,3 @@ def pgd(
             )
 
     return x
-
-
-# %%
