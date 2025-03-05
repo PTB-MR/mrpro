@@ -97,7 +97,7 @@ def subsample_traj(
 
 def create_cart_sampling_op_and_range_domain(
     sampling: str,
-    k_shape: tuple[int, int, int, Unpack[tuple[int, ...]]] = (2, 5, 10, 40, 60),
+    k_shape: tuple[int, int, int, Unpack[tuple[int, ...]]] = (2, 5, 20, 40, 60),
     nkx: tuple[int, int, int, Unpack[tuple[int, ...]]] = (2, 1, 1, 60),
     nky: tuple[int, int, int, Unpack[tuple[int, ...]]] = (2, 1, 40, 1),
     nkz: tuple[int, int, int, Unpack[tuple[int, ...]]] = (2, 20, 1, 1),
