@@ -13,7 +13,7 @@ from tests import RandomGenerator, relative_image_difference
 from tests.phantoms import EllipsePhantomTestData
 
 
-def test_KData_from_file(ismrmrd_cart):
+def test_KData_from_file(ismrmrd_cart) -> None:
     """Read in data from file."""
     kdata = KData.from_file(ismrmrd_cart.filename, DummyTrajectory())
     assert kdata is not None
@@ -265,7 +265,7 @@ def test_KData_clone(ismrmrd_cart):
         (7, 'contrast'),
     ],
 )
-def test_KData_split_k1_into_other(consistently_shaped_kdata, monkeypatch, n_other_split, other_label):
+def test_KData_split_k1_into_other(consistently_shaped_kdata, n_other_split: int, other_label: str) -> None:
     """Test splitting of the k1 dimension into other."""
     *n_others, n_coils, n_k2, n_k1, n_k0 = consistently_shaped_kdata.data.shape
     n_other = torch.tensor(n_others).prod().item()
@@ -292,7 +292,9 @@ def test_KData_split_k1_into_other(consistently_shaped_kdata, monkeypatch, n_oth
         ('phase', torch.tensor([1, 0, 0], dtype=torch.int32)),
     ],
 )
-def test_KData_select_other_subset(consistently_shaped_kdata, monkeypatch, subset_label, subset_idx):
+def test_KData_select_other_subset(
+    consistently_shaped_kdata, monkeypatch, subset_label: str, subset_idx: torch.Tensor
+) -> None:
     """Test selection of a subset from other dimension."""
     # Create KData
     *n_other, n_coils, n_k2, n_k1, n_k0 = consistently_shaped_kdata.data.shape
@@ -312,7 +314,7 @@ def test_KData_select_other_subset(consistently_shaped_kdata, monkeypatch, subse
     assert all(torch.unique(getattr(kdata_subset.header.acq_info.idx, subset_label)) == torch.unique(subset_idx))
 
 
-def test_KData_remove_readout_os(monkeypatch, random_kheader):
+def test_KData_remove_readout_os(monkeypatch, random_kheader) -> None:
     # Dimensions
     n_coils = 4
     n_k0 = 240
