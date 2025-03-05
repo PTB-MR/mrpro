@@ -1,8 +1,10 @@
 """KTrajectory dataclass."""
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Literal
 
+import ismrmrd
 import numpy as np
 import torch
 from typing_extensions import Self
@@ -10,8 +12,10 @@ from typing_extensions import Self
 from mrpro.data.enums import TrajType
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.utils import remove_repeat
+from mrpro.utils.reduce_repeat import reduce_repeat
+from mrpro.utils.reshape import unsqueeze_at
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
+from mrpro.utils.typing import FileOrPath
 
 
 @dataclass(slots=True, frozen=True)
@@ -54,7 +58,7 @@ class KTrajectory(MoveDataMixin):
 
         if self.repeat_detection_tolerance is not None:
             kz, ky, kx = (
-                as_any_float(remove_repeat(tensor, self.repeat_detection_tolerance))
+                as_any_float(reduce_repeat(tensor, self.repeat_detection_tolerance))
                 for tensor in (self.kz, self.ky, self.kx)
             )
             # use of setattr due to frozen dataclass
@@ -64,7 +68,7 @@ class KTrajectory(MoveDataMixin):
 
         try:
             shape = self.broadcasted_shape
-        except ValueError:
+        except RuntimeError:
             raise ValueError('The k-space trajectory dimensions must be broadcastable.') from None
 
         if len(shape) < 4:
@@ -129,16 +133,80 @@ class KTrajectory(MoveDataMixin):
             grid_detection_tolerance=grid_detection_tolerance,
         )
 
+    @classmethod
+    def from_ismrmrd(
+        cls,
+        filename: FileOrPath,
+        dataset_idx: int = -1,
+        acquisition_filter_criterion: Callable[[ismrmrd.Acquisition], bool] | None = None,
+        normalize: bool = False,
+    ) -> Self:
+        """Read a k-space trajectory from an ISMRMRD file.
+
+        The trajectory is extracted from an ISMRMRD file. If the encoding matrix is set in the header,
+        the trajectory is rescaled to fit within the dimensions of the matrix.
+
+        Parameters
+        ----------
+        filename
+            The path to the ISMRMRD file.
+        dataset_idx
+            The index of the dataset in the file.
+        acquisition_filter_criterion
+            A function that takes an ISMRMRD acquisition and returns a boolean.
+            If provided, only acquisitions for which the function returns `True` are included in the trajectory.
+            `None` includes all acquisitions.
+        normalize
+            Normalize the trajectory to the encoding matrix. Consider enabling for non-cartesian trajectories or
+            non-normalized ISMRMRD trajectories.
+        """
+        with ismrmrd.File(filename, 'r') as file:
+            datasets = list(file.keys())
+            if not datasets:
+                raise ValueError('No datasets found in the ISMRMRD file.')
+            if not -len(datasets) <= dataset_idx < len(datasets):
+                raise ValueError(f'Dataset index {dataset_idx} out of range, available datasets: {datasets}')
+            dataset = file[datasets[dataset_idx]]
+
+            acquisitions = [
+                acq
+                for acq in dataset.acquisitions
+                if acquisition_filter_criterion is None or acquisition_filter_criterion(acq)
+            ]
+            if not acquisitions:
+                raise ValueError('No matching acquisitions found in the ISMRMRD file.')
+            traj = torch.stack([torch.as_tensor(acq.traj, dtype=torch.float32) for acq in acquisitions], dim=0)
+            if not normalize:
+                scaling_matrix = None
+            elif (
+                dataset.header.encoding
+                and dataset.header.encoding[0].encodedSpace
+                and dataset.header.encoding[0].encodedSpace.matrixSize
+            ):
+                scaling_matrix = SpatialDimension.from_xyz(dataset.header.encoding[0].encodedSpace.matrixSize)
+            else:
+                raise ValueError(
+                    'Requested normalization, but the ISMRMRD file does not contain an encoding matrix size. '
+                    'Consider adding it to the header.'
+                )
+
+        if traj.shape[-1] != 3:  # enforce 3D trajectory
+            zero = torch.zeros_like(traj[..., :1])
+            traj = torch.cat([traj, *([zero] * (3 - traj.shape[-1]))], dim=-1)
+        traj = unsqueeze_at(traj, dim=-3, n=4 - traj.ndim + 1)  # +1 due to stack_dim
+
+        return cls.from_tensor(traj, stack_dim=-1, axes_order='xyz', scaling_matrix=scaling_matrix)
+
     @property
-    def broadcasted_shape(self) -> tuple[int, ...]:
+    def broadcasted_shape(self) -> torch.Size:
         """The broadcasted shape of the trajectory.
 
         Returns
         -------
             broadcasted shape of trajectory
         """
-        shape = np.broadcast_shapes(self.kx.shape, self.ky.shape, self.kz.shape)
-        return tuple(shape)
+        shape = torch.broadcast_shapes(self.kx.shape, self.ky.shape, self.kz.shape)
+        return shape
 
     @property
     def type_along_kzyx(self) -> tuple[TrajType, TrajType, TrajType]:
