@@ -99,7 +99,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set the artifact name
-        run:
+        run: |
           if [ "${{ github.event.workflow.name }}" == "PyTest" ]; then
             # use the results of python 3.12, consider this as target platform
             echo "ARTIFACT_NAME=pytest-report-mrpro_py312" >> $GITHUB_ENV
