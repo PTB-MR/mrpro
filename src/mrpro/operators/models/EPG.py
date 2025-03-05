@@ -541,7 +541,7 @@ class DelayBlock(EPGBlock):
         -------
             EPG configuration states after the block and an empty list
         """
-        (delay_time,) = unsqueeze_tensors_right(self.delay_time, ndim=parameters.ndim + 1)  # +1 for time dimension
+        (delay_time,) = unsqueeze_tensors_right(self.delay_time, ndim=parameters.ndim)
         state = relax(state, relax_matrix(delay_time, parameters.t1, parameters.t2))
         return state, []
 

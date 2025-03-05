@@ -7,6 +7,7 @@ import torch
 from mrpro.operators.models import CardiacFingerprinting
 from mrpro.operators.models.EPG import DelayBlock, EPGSequence, EPGSignalModel, FispBlock, InversionBlock, T2PrepBlock
 from tests import RandomGenerator
+from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 
 
 def create_EpgFisp_model(
@@ -45,6 +46,23 @@ def test_EpgFisp_parameter_mismatch() -> None:
     te = torch.ones((1, 3))
     with pytest.raises(ValueError, match='Shapes of flip_angles'):
         create_EpgFisp_model(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
+
+
+@SHAPE_VARIATIONS_SIGNAL_MODELS
+def test_EpgFisp_shape(parameter_shape, contrast_dim_shape, signal_shape) -> None:
+    """Test correct signal shapes."""
+    rng = RandomGenerator(0)
+    flip_angles = rng.float32_tensor(contrast_dim_shape, low=1e-5, high=5)
+    rf_phases = rng.float32_tensor(contrast_dim_shape, low=1e-5, high=0.5)
+    te = rng.float32_tensor(contrast_dim_shape, low=1e-5, high=0.01)
+    tr = rng.float32_tensor(contrast_dim_shape, low=1e-5, high=0.05)
+    t1 = rng.float32_tensor(parameter_shape, low=1e-5, high=5)
+    t2 = rng.float32_tensor(parameter_shape, low=1e-5, high=0.5)
+    m0 = rng.complex64_tensor(parameter_shape)
+
+    model_op = create_EpgFisp_model(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
+    (signal,) = model_op.forward(m0, t1, t2)
+    assert signal.shape == signal_shape
 
 
 def test_EpgFisp_inversion_recovery() -> None:
