@@ -42,3 +42,27 @@ def test_finite_difference_op_adjointness(dim, mode, pad_mode):
     u = random_generator.complex64_tensor(size=im_shape)
     v = random_generator.complex64_tensor(size=(len(dim), *im_shape))
     dotproduct_adjointness_test(finite_difference_op, u, v)
+
+
+@pytest.mark.cuda
+def test_finite_difference_op_cuda():
+    """Test finite difference operator works on CUDA devices."""
+
+    # Set dimensional parameters
+    im_shape = (5, 6, 4, 10, 20, 16)
+    dim = (-3, -2, -1)
+
+    # Generate data
+    random_generator = RandomGenerator(seed=0)
+    u = random_generator.complex64_tensor(size=im_shape)
+
+    # Create on CPU, run on CPU
+    finite_difference_op = FiniteDifferenceOp(dim, mode='central', pad_mode='circular')
+    (finite_difference_output,) = finite_difference_op(u)
+    assert finite_difference_output.is_cpu
+
+    # Transfer to GPU, run on GPU
+    finite_difference_op = FiniteDifferenceOp(dim, mode='central', pad_mode='circular')
+    finite_difference_op.cuda()
+    (finite_difference_output,) = finite_difference_op(u.cuda())
+    assert finite_difference_output.is_cuda
