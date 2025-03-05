@@ -86,8 +86,9 @@ def rf_matrix(
         Matrix describing the mixing of the EPG configuration states due to an RF pulse.
     """
     if relative_b1 is not None:
-        flip_angle = flip_angle * relative_b1[None, ...].abs()
-        phase = phase + relative_b1[None, ...].angle()
+        # relative_b1 and flip_angle need to be correctly broadcasted at this point
+        flip_angle = flip_angle * relative_b1.abs()
+        phase = phase + relative_b1.angle()
     cosa = torch.cos(flip_angle)
     sina = torch.sin(flip_angle)
     cosa2 = (cosa + 1) / 2
