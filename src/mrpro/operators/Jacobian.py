@@ -11,7 +11,8 @@ from mrpro.operators.Operator import Operator
 class Jacobian(LinearOperator):
     """Jacobian of an Operator.
 
-    This operator implements the Jacobian of a (non-linear) operator at a given point x0 as a LinearOperator, i.e. a linearization of the operator at the point `x0.`
+    This operator implements the Jacobian of a (non-linear) operator at a given point x0 as a LinearOperator, 
+    i.e. a linearization of the operator at the point `x0.`
     """
 
     def __init__(self, operator: Operator[torch.Tensor, tuple[torch.Tensor]], *x0: torch.Tensor):
