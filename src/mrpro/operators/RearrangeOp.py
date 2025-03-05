@@ -11,7 +11,7 @@ from mrpro.operators.LinearOperator import LinearOperator
 class RearrangeOp(LinearOperator):
     """A Linear Operator that implements rearranging of axes.
 
-    Wraps the einops.rearrange function to rearrange the axes of a tensor.
+    Wraps the `einops.rearrange` function to rearrange the axes of a tensor.
     """
 
     def __init__(self, pattern: str, additional_info: dict[str, int] | None = None) -> None:
@@ -21,7 +21,7 @@ class RearrangeOp(LinearOperator):
         ----------
         pattern
             Pattern describing the forward of the operator.
-            Also see einops.rearrange for more information.
+            Also see `einops.rearrange` for more information.
             Example: "... h w -> ... (w h)"
         additional_info
             Additional information passed to the rearrange function,

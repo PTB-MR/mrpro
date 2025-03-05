@@ -34,7 +34,7 @@ class ConstraintsOp(EndomorphOperator):
             the value is not constrained from above.
             If the bounds are set to (None, None) or (-inf, inf), the value is not constrained at all.
         beta_sigmoid
-            beta parameter for the sigmoid transformation (used an input has two bounds).
+            beta parameter for the sigmoid transformation (used if an input has two bounds).
             A higher value leads to a steeper sigmoid.
         beta_softplus
             parameter for the softplus transformation (used if an input is either bounded from below or above).
@@ -56,7 +56,7 @@ class ConstraintsOp(EndomorphOperator):
         for lb, ub in bounds:
             if lb is not None and ub is not None:
                 if torch.isnan(torch.tensor(lb)) or torch.isnan(torch.tensor(ub)):
-                    raise ValueError(' "nan" is not a valid lower or upper bound;' f'\nbound tuple {lb, ub} is invalid')
+                    raise ValueError(f' "nan" is not a valid lower or upper bound;\nbound tuple {lb, ub} is invalid')
 
                 if lb >= ub:
                     raise ValueError(
@@ -81,8 +81,8 @@ class ConstraintsOp(EndomorphOperator):
 
     @staticmethod
     def softplus_inverse(x: torch.Tensor, beta: float = 1.0) -> torch.Tensor:
-        """Inverse of 'softplus_transformation."""
-        return beta * x + torch.log(-torch.expm1(-beta * x))
+        """Inverse of `softplus_transformation`."""
+        return x + torch.log(-torch.expm1(-beta * x)) / beta
 
     @endomorph
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:

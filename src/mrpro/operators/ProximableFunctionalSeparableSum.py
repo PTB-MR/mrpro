@@ -15,7 +15,7 @@ from mrpro.operators.Operator import Operator
 
 
 class ProximableFunctionalSeparableSum(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torch.Tensor]]):
-    r"""Separabke Sum of Proximable Functionals.
+    r"""Separable Sum of Proximable Functionals.
 
     This is a separable sum of the functionals. The forward method returns the sum of the functionals
     evaluated at the inputs, :math:`\sum_i f_i(x_i)`.

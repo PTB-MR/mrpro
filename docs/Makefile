@@ -18,6 +18,7 @@ help:
 # be removed when https://github.com/sphinx-doc/sphinx/issues/1999 is fixed.
 clean:
 	rm -rfv "$(SOURCEDIR)/_autosummary"
+	rm -rfv "$(SOURCEDIR)/_notebooks"
 	$(SPHINXBUILD)  -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 # Catch-all target: route all unknown targets to Sphinx using the new

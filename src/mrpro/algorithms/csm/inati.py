@@ -10,11 +10,11 @@ def inati(
     coil_images: torch.Tensor,
     smoothing_width: SpatialDimension[int] | int,
 ) -> torch.Tensor:
-    """Calculate a coil sensitivity map (csm) using an the Inati method [INA2013]_ [INA2014]_.
+    """Calculate a coil sensitivity map (csm) using the Inati method [INA2013]_ [INA2014]_.
 
-    This is for a single set of coil images. The input should be a tensor with dimensions (coils, z, y, x). The output
+    This is for a single set of coil images. The input should be a tensor with dimensions `(coils, z, y, x)`. The output
     will have the same dimensions. Either apply this function individually to each set of coil images, or see
-    CsmData.from_idata_inati which performs this operation on a whole dataset.
+    `~mrpro.data.CsmData.from_idata_inati` which performs this operation on a whole dataset.
 
     .. [INA2013] Inati S, Hansen M, Kellman P (2013) A solution to the phase problem in adaptvie coil combination.
        in Proceedings of the 21st Annual Meeting of ISMRM, Salt Lake City, USA, 2672.

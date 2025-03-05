@@ -5,7 +5,7 @@ from typing import Literal
 
 import pytest
 import torch
-from mrpro.operators import ProximableFunctional, functionals
+from mrpro.operators import functionals
 from mrpro.operators.Functional import ElementaryFunctional, ElementaryProximableFunctional
 
 from tests import RandomGenerator
@@ -19,7 +19,7 @@ class FunctionalTestCase:
 
     """
 
-    functional: ProximableFunctional
+    functional: ElementaryProximableFunctional
     x_dtype: torch.dtype
     x_shape: torch.Size
     rng: RandomGenerator

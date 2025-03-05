@@ -250,6 +250,10 @@ class RandomGenerator:
             tensor = self._randint(shape, low, high, dtype)
         return tensor
 
+    def randn_tensor(self, shape: Sequence[int], dtype: torch.dtype) -> torch.Tensor:
+        """Generate random normal distributed tensor of given shape and dtype."""
+        return torch.randn(size=shape, generator=self.generator, dtype=dtype)
+
     def randperm(self, n, *, dtype=torch.int64) -> torch.Tensor:
         """Generate random permutation of integers from 0 to n-1."""
         return torch.randperm(n, generator=self.generator, dtype=dtype)

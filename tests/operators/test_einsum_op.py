@@ -18,7 +18,7 @@ from tests import RandomGenerator, dotproduct_adjointness_test
         ((3, 5, 4, 2), (3, 2, 5), 'l ... i j, l j k -> k i l', (5, 4, 3)),  # general tensor contraction
     ],
 )
-def test_einsum_op(tensor_shape, input_shape, rule, output_shape, dtype):
+def test_einsum_op(tensor_shape, input_shape, rule, output_shape, dtype) -> None:
     """Test adjointness and shape."""
     generator = RandomGenerator(seed=0)
     generate_tensor = getattr(generator, f'{dtype}_tensor')
@@ -39,7 +39,7 @@ def test_einsum_op(tensor_shape, input_shape, rule, output_shape, dtype):
         '',  # empty string
     ],
 )
-def test_einsum_op_invalid(rule):
+def test_einsum_op_invalid(rule) -> None:
     """Test with different invalid rules."""
     with pytest.raises(ValueError, match='pattern should match'):
         EinsumOp(torch.tensor([]), rule)

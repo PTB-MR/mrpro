@@ -6,12 +6,14 @@ from math import prod
 
 import torch
 
+from mrpro.utils.typing import endomorph
+
 
 def unsqueeze_right(x: torch.Tensor, n: int) -> torch.Tensor:
     """Unsqueeze multiple times in the rightmost dimension.
 
     Example:
-        tensor with shape (1,2,3) and n=2 would result in tensor with shape (1,2,3,1,1)
+        Tensor with shape `(1,2,3)` and `n=2` would result in tensor with shape `(1,2,3,1,1)`.
 
     Parameters
     ----------
@@ -22,16 +24,16 @@ def unsqueeze_right(x: torch.Tensor, n: int) -> torch.Tensor:
 
     Returns
     -------
-    unsqueezed tensor (view)
+        unsqueezed tensor (view)
     """
     return x.reshape(*x.shape, *(n * (1,)))
 
 
 def unsqueeze_left(x: torch.Tensor, n: int) -> torch.Tensor:
-    """Unsqueze multiple times in the leftmost dimension.
+    """Unsqueeze multiple times in the leftmost dimension.
 
     Example:
-        tensor with shape (1,2,3) and n=2 would result in tensor with shape (1,1,1,2,3)
+        Tensor with shape `(1,2,3)` and `n=2` would result in tensor with shape `(1,1,1,2,3)`.
 
 
     Parameters
@@ -43,21 +45,128 @@ def unsqueeze_left(x: torch.Tensor, n: int) -> torch.Tensor:
 
     Returns
     -------
-    unsqueezed tensor (view)
+        unsqueezed tensor (view)
     """
     return x.reshape(*(n * (1,)), *x.shape)
 
 
+def unsqueeze_at(x: torch.Tensor, dim: int, n: int) -> torch.Tensor:
+    """Unsqueeze multiple times at a specific dimension.
+
+    Example:
+        Tensor with shape `(1,2,3)` and `dim=2` and `n=2` would result in tensor with shape `(1,2,1,1,3)`.
+
+    Parameters
+    ----------
+    x
+        tensor to unsqueeze
+    dim
+        dimension to unsqueeze. Negative values are allowed.
+    n
+        number of times to unsqueeze
+    """
+    if n == 0:
+        return x
+    elif n == 1:
+        return x.unsqueeze(dim)
+    elif n < 0:
+        raise ValueError('n must be positive')
+    if not (-x.ndim - 1 <= dim <= x.ndim):
+        raise IndexError(f'Dimension {dim} out of range for tensor of dimension {x.ndim}')
+    if dim < 0:
+        # dim=-1 should index after the last axis, etc. to match unsqueeze
+        dim = x.ndim + dim + 1
+    return x.reshape(*x.shape[:dim], *(n * (1,)), *x.shape[dim:])
+
+
+@endomorph
+def unsqueeze_tensors_at(*x, dim: int, ndim: int | None = None) -> tuple[torch.Tensor, ...]:
+    """Unsqueeze tensors at a specific dimension to the same number of dimensions.
+
+    Example:
+        - Tensors with shapes `(1,2,3)` and `(1,3)` and `dim=-2`
+          results in tensors with shape `(1,2,3)` and `(1,1,3)`, as the maximum number
+          of input dimensions is 3.
+        - Tensors with shapes `(1,2,3)` and `(1,3)` and `dim=1` and `ndim=4`
+          results in tensors with shape `(1,1,2,3)` and `(1,1,1,3)`.
+
+    Parameters
+    ----------
+    x
+        tensors to unsqueeze
+    dim
+        dimension to unsqueeze
+    ndim
+        number of dimensions to unsqueeze to. If `None`, unsqueeze to the maximum number of dimensions
+        of the input tensors.
+
+    Returns
+    -------
+        unsqueezed tensors (views) with the same number of dimensions
+    """
+    if ndim is None:
+        ndim_ = max(el.ndim for el in x)
+    elif ndim < min(el.ndim for el in x):
+        raise ValueError('ndim must be greater or equal to the minimum number of dimensions of the input tensors')
+    else:
+        ndim_ = ndim
+    return tuple(unsqueeze_at(el, dim, n=ndim_ - el.ndim) for el in x)
+
+
+@endomorph
+def unsqueeze_tensors_left(*x: torch.Tensor, ndim: int | None = None) -> tuple[torch.Tensor, ...]:
+    """Unsqueeze tensors on the left to the same number of dimensions.
+
+    Parameters
+    ----------
+    x
+        tensors to unsqueeze
+    ndim
+        number of dimensions to unsqueeze to. If `None`, unsqueeze to the maximum number of dimensions
+        of the input tensors.
+
+    Returns
+    -------
+        unsqueezed tensors (views)
+    """
+    ndim_ = max(el.ndim for el in x) if ndim is None else ndim
+    return tuple(unsqueeze_left(el, ndim_ - el.ndim) for el in x)
+
+
+@endomorph
+def unsqueeze_tensors_right(*x: torch.Tensor, ndim: int | None = None) -> tuple[torch.Tensor, ...]:
+    """Unsqueeze tensors on the right to the same number of dimensions.
+
+    Parameters
+    ----------
+    x
+        tensors to unsqueeze
+    ndim
+        number of dimensions to unsqueeze to. If `None`, unsqueeze to the maximum number of dimensions
+        of the input tensors.
+
+    Returns
+    -------
+        unsqueezed tensors (views)
+    """
+    ndim_ = max(el.ndim for el in x) if ndim is None else ndim
+    return tuple(unsqueeze_right(el, ndim_ - el.ndim) for el in x)
+
+
+@endomorph
 def broadcast_right(*x: torch.Tensor) -> tuple[torch.Tensor, ...]:
     """Broadcasting on the right.
 
     Given multiple tensors, apply broadcasting with unsqueezed on the right.
     First, tensors are unsqueezed on the right to the same number of dimensions.
-    Then, torch.broadcasting is used.
+    Then, `torch.broadcast_tensors` is used.
+
+    ```{note}
+    `broadcast_left` is regular `torch.broadcast_tensors`
+    ```
 
     Example:
-        tensors with shapes (1,2,3), (1,2), (2)
-        results in tensors with shape (2,2,3)
+        Tensors with shapes `(1,2,3), (1,2), (2)` results in tensors with shape `(2,2,3)`.
 
     Parameters
     ----------
@@ -78,15 +187,15 @@ def reduce_view(x: torch.Tensor, dim: int | Sequence[int] | None = None) -> torc
 
     Reduce either all or specific dimensions to a singleton if it
     points to the same memory address.
-    This undoes expand.
+    This undoes `torch.Tensor.expand`.
 
     Parameters
     ----------
     x
         input tensor
     dim
-        only reduce expanded dimensions in the specified dimensions.
-        If None, reduce all expanded dimensions.
+        Only reduce expanded dimensions in the specified dimensions.
+        If `None`, reduce all expanded dimensions.
     """
     if dim is None:
         dim_: Sequence[int] = range(x.ndim)
@@ -105,7 +214,7 @@ def reduce_view(x: torch.Tensor, dim: int | Sequence[int] | None = None) -> torc
 
 @lru_cache
 def _reshape_idx(old_shape: tuple[int, ...], new_shape: tuple[int, ...], old_stride: tuple[int, ...]) -> list[slice]:
-    """Get reshape reduce index (Cached helper function for reshape_broadcasted).
+    """Get reshape reduce index (Cached helper function for `reshape_broadcasted`).
 
     This function tries to group axes from new_shape and old_shape into the smallest groups that have
     the same number of elements, starting from the right.
@@ -113,7 +222,7 @@ def _reshape_idx(old_shape: tuple[int, ...], new_shape: tuple[int, ...], old_str
 
     Example:
         old_shape = (30, 2, 2, 3)
-        new_shape = (6, 5, 4, 3)
+        new_shape = `(6, 5, 4, 3)`
         Will results in the groups (starting from the right):
             - old: 3     new: 3
             - old: 2, 2  new: 4
@@ -121,6 +230,7 @@ def _reshape_idx(old_shape: tuple[int, ...], new_shape: tuple[int, ...], old_str
         Only the "old" groups are important.
         If all axes that are grouped together in an "old" group are stride 0 (=broadcasted)
         we can collapse them to singleton dimensions.
+
     This function returns the indexer that either collapses dimensions to singleton or keeps all
     elements, i.e. the slices in the returned list are all either slice(1) or slice(None).
     """
@@ -160,7 +270,7 @@ def reshape_broadcasted(tensor: torch.Tensor, *shape: int) -> torch.Tensor:
     tensor
         The input tensor to reshape.
     shape
-        The target shape for the tensor. One of the values can be `-1` and its size will be inferred.
+        The target shape for the tensor. One of the values can be ``-1`` and its size will be inferred.
 
     Returns
     -------
@@ -200,3 +310,25 @@ def reshape_broadcasted(tensor: torch.Tensor, *shape: int) -> torch.Tensor:
         # finally, we can expand the broadcasted dimensions to the requested shape
         semicontiguous = semicontiguous.expand(tensor.shape)
         return semicontiguous.view(shape)
+
+
+def ravel_multi_index(multi_index: Sequence[torch.Tensor], dims: Sequence[int]) -> torch.Tensor:
+    """
+    Convert a multi-dimensional index into a flat index.
+
+    Parameters
+    ----------
+    multi_index
+        Sequence of integer index tensors.
+    dims
+        The shape of the tensor being indexed.
+
+    Returns
+    -------
+    index
+        Flattened index.
+    """
+    flat_index = multi_index[0]
+    for idx, dim in zip(multi_index[1:], dims[1:], strict=True):
+        flat_index = flat_index * dim + idx
+    return flat_index

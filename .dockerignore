@@ -1,6 +1,5 @@
 .github
 .vscode
-binder
 examples
 docs
 tests

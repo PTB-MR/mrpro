@@ -10,7 +10,8 @@ The data was acquired with partial Fourier along the readout and the readout (k0
 direction. In addition the acquired resolution along the phase encoding direction was lower than for the final image.
 I.e the highest sampled k-space frequency along k1 was lower than required based on the desired image resolution.
 
-.. image:: _static/encoded_recon_space.png
+.. image:: _static/encoded_recon_space.svg
+   :scale: 150%
    :alt: Relationship between acquired data, encoding-space, recon-space and image
    :align: center
 
@@ -22,7 +23,7 @@ ensure the correct voxel size.
 Finally the acquired data was also oversampled by a factor of 2 along the readout. This then needs to be cropped. The
 recon-space is therefore half the encoded-space along k1.
 
-More information on this can also be found here: `MRD-docu <https://ismrmrd.readthedocs.io/en/latest/mrd_header.html>`_
+More information on this can also be found `here <https://ismrmrd.readthedocs.io/en/latest/mrd_header.html>`_
 
 Some parameters in my MRD-file are wrong. What shall I do?
 ==========================================================
@@ -53,7 +54,6 @@ script such as e.g.:
     for acq in acquisitions:
         ds.append_acquisition(acq)
     ds.close()
-   ...
 
 the header information of the raw-data file can be adapted. This can also be used to add trajectory information to the
 raw-data or select only a subset of the acquired data.

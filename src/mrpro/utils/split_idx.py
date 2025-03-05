@@ -3,19 +3,19 @@
 import torch
 
 
-def split_idx(idx: torch.Tensor, np_per_block: int, np_overlap: int = 0, cyclic: bool = False) -> torch.Tensor:
+def split_idx(idx: torch.Tensor, blocksize: int, overlap: int = 0, cyclic: bool = False) -> torch.Tensor:
     """Split a tensor of indices into different blocks.
 
     Parameters
     ----------
     idx
         1D indices to be split into different blocks.
-    np_per_block
+    blocksize
         Number of points per block.
-    np_overlap
-        Number of points overlapping between blocks, default of 0 means no overlap between blocks
+    overlap
+        Number of points overlapping between blocks, default of ``0`` means no overlap between blocks.
     cyclic
-        Last block is filled up with points from the first block, e.g. due to cyclic cardiac motion
+        Last block is filled up with points from the first block, e.g. due to cyclic cardiac motion.
 
 
     Example:
@@ -29,21 +29,21 @@ def split_idx(idx: torch.Tensor, np_per_block: int, np_overlap: int = 0, cyclic:
 
     Returns
     -------
-        2D indices to split data into different blocks in the shape [block, index].
+        2D indices to split data into different blocks in the shape `[block, index]`.
 
     Raises
     ------
-    ValueError
-        If the provided idx is not 1D
-    ValueError
-        If the overlap is smaller than the number of points per block
+    `ValueError`
+        If the provided idx is not 1D.
+    `ValueError`
+        If the overlap is smaller than the number of points per block.
     """
     # Make sure idx is 1D
     if idx.ndim != 1:
         raise ValueError('idx should be a 1D vector.')
 
     # Make sure overlap is not larger than the number of points in a block
-    if np_overlap >= np_per_block:
+    if overlap >= blocksize:
         raise ValueError('Overlap has to be smaller than the number of points in a block.')
 
     # Calculate number of blocks
@@ -51,10 +51,10 @@ def split_idx(idx: torch.Tensor, np_per_block: int, np_overlap: int = 0, cyclic:
     # x x                       step
     #     x x x                 np_overlap
     # x x x x x                 np_per_block
-    step = np_per_block - np_overlap
+    step = blocksize - overlap
 
     # For cyclic splitting utilize beginning of index to maximize number of blocks
     if cyclic:
         idx = torch.concat((idx, idx[:step]))
 
-    return idx.unfold(dimension=0, size=np_per_block, step=step)
+    return idx.unfold(dimension=0, size=blocksize, step=step)

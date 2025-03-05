@@ -11,14 +11,7 @@ from mrpro.phantoms.phantom_elements import EllipseParameters
 
 
 class EllipsePhantom:
-    """Numerical phantom as the sum of different ellipses.
-
-    Parameters
-    ----------
-        ellipses
-            ellipses defined by their center, radii and intensity.
-            if None, defaults to three ellipses
-    """
+    """Numerical phantom as the sum of different ellipses."""
 
     def __init__(self, ellipses: Sequence[EllipseParameters] | None = None):
         """Initialize ellipse phantom.
@@ -26,8 +19,8 @@ class EllipsePhantom:
         Parameters
         ----------
         ellipses
-            Sequence of EllipseParameters defining the ellipses.
-            if None, defaults to three ellipses with different parameters.
+            Parameters defining the ellipses.
+            If `None`, defaults to three ellipses with different parameters.
         """
         if ellipses is None:
             self.ellipses = [
@@ -41,16 +34,16 @@ class EllipsePhantom:
     def kspace(self, ky: torch.Tensor, kx: torch.Tensor) -> torch.Tensor:
         """Create 2D analytic kspace data based on given k-space locations.
 
-        For a corresponding image with 256 x 256 voxel, the k-space locations should be defined within [-128, 127]
+        For a corresponding image with 256 x 256 voxels, the k-space locations should be defined within ``[-128, 127]``.
 
         The Fourier representation of ellipses can be analytically described by Bessel functions [KOA2007]_.
 
         Parameters
         ----------
         ky
-            k-space locations in ky
+            k-space locations in ky (phase encoding direction).
         kx
-            k-space locations in kx (frequency encoding direction). Same shape as ky.
+            k-space locations in kx (frequency encoding direction).
 
         References
         ----------
@@ -85,8 +78,8 @@ class EllipsePhantom:
         Parameters
         ----------
         image_dimensions
-            number of voxels in the image
-            This is a 2D simulation so the output will be (1 1 1 image_dimensions.y image_dimensions.x)
+            Number of voxels in the image.
+            This is a 2D simulation, so the output will be of shape `(1 1 1 image_dimensions.y image_dimensions.x)`.
         """
         # Calculate image representation of phantom
         ny, nx = image_dimensions.y, image_dimensions.x

@@ -1,3 +1,7 @@
+"""Numerical Phantoms"""
+
 from mrpro.phantoms.EllipsePhantom import EllipsePhantom
 from mrpro.phantoms.phantom_elements import EllipseParameters
-__all__ = ["EllipseParameters", "EllipsePhantom"]
+from mrpro.phantoms import brainweb
+
+__all__ = ["EllipseParameters", "EllipsePhantom", "brainweb"]

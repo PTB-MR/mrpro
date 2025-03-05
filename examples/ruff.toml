@@ -1,9 +1,0 @@
-extend = "../pyproject.toml"
-
-lint.extend-ignore = [
-    "D100",   #undocumented-public-module
-    "T20",    #print
-    "E402",   #module-import-not-at-top-of-file
-    "S101",   #assert
-    "SIM115", #context manager for opening files
-]
