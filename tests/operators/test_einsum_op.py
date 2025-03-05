@@ -43,3 +43,37 @@ def test_einsum_op_invalid(rule):
     """Test with different invalid rules."""
     with pytest.raises(ValueError, match='pattern should match'):
         EinsumOp(torch.tensor([]), rule)
+
+
+@pytest.mark.cuda
+def test_einsum_op_cuda():
+    """Test einsum operator works on cuda devices."""
+    tensor_shape = (3, 5, 4, 2)
+    input_shape = (3, 2, 5)
+    rule = 'l ... i j, l j k -> k i l'
+    generator = RandomGenerator(seed=0)
+    generate_tensor = generator.complex128_tensor
+    tensor = generate_tensor(size=tensor_shape)
+    input_tensor = generate_tensor(size=input_shape)
+
+    # Create on CPU, transfer to GPU, run on GPU
+    einsum_op = EinsumOp(tensor, rule)
+    einsum_op.cuda()
+    (output_tensor,) = einsum_op(input_tensor.cuda())
+    assert output_tensor.is_cuda
+
+    # Create on CPU, run on CPU
+    einsum_op = EinsumOp(tensor, rule)
+    (output_tensor,) = einsum_op(input_tensor)
+    assert output_tensor.is_cpu
+
+    # Create on GPU, run on GPU
+    einsum_op = EinsumOp(tensor.cuda(), rule)
+    (output_tensor,) = einsum_op(input_tensor.cuda())
+    assert output_tensor.is_cuda
+
+    # Create on GPU, transfer to CPU, run on CPU
+    einsum_op = EinsumOp(tensor.cuda(), rule)
+    einsum_op.cpu()
+    (output_tensor,) = einsum_op(input_tensor)
+    assert output_tensor.is_cpu

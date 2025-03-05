@@ -176,12 +176,12 @@ def test_constraints_operator_cuda(bounds):
     # random tensor with arbitrary values
     x = random_generator.float32_tensor(size=(36,), low=-100, high=100)
 
-    # Create on CPU and run on CPU
+    # Create on CPU, run on CPU
     constraints_op = ConstraintsOp(bounds)
     (cx,) = constraints_op(x)
     assert cx.is_cpu
 
-    # Transfer to GPU and run on GPU
+    # Transfer to GPU, run on GPU
     constraints_op = ConstraintsOp(bounds)
     constraints_op.cuda()
     (cx,) = constraints_op(x.cuda())

@@ -84,23 +84,23 @@ def test_density_compensation_op_cuda():
 
     # Test input of random tensor and DcfData
     for input_data in (random_tensor, random_dcf):
-        # Create on CPU, transfer to GPU and run on GPU
+        # Create on CPU, transfer to GPU, run on GPU
         dcf_op = DensityCompensationOp(input_data)
         dcf_op.cuda()
         (dcf_op_output,) = dcf_op(u.cuda())
         assert dcf_op_output.is_cuda
 
-        # Create on CPU and run on CPU
+        # Create on CPU, run on CPU
         dcf_op = DensityCompensationOp(input_data)
         (dcf_op_output,) = dcf_op(u)
         assert dcf_op_output.is_cpu
 
-        # Create on GPU and run on GPU
+        # Create on GPU, run on GPU
         dcf_op = DensityCompensationOp(input_data.cuda())
         (dcf_op_output,) = dcf_op(u.cuda())
         assert dcf_op_output.is_cuda
 
-        # Create on GPU, transfer to CPU and run on CPU
+        # Create on GPU, transfer to CPU, run on CPU
         dcf_op = DensityCompensationOp(input_data.cuda())
         dcf_op.cpu()
         (dcf_op_output,) = dcf_op(u)
