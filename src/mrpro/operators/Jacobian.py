@@ -90,7 +90,8 @@ class Jacobian(LinearOperator):
         delta = tuple(ix - ix0 for ix, ix0 in zip(x, self._x0, strict=False))
         self._f_x0, jvp = torch.func.jvp(self._operator, self._x0, delta)
         assert self._f_x0 is not None  # noqa: S101 (hint for mypy)
-        f_x = tuple(ifx + ijvp for ifx, ijvp in zip(self._f_x0, jvp, strict=False))
+# compute f(x) = f(x_0) + J_f(x_0)(x - x_0)
+f_x = tuple(ifx0 + ijvp for ifx0, ijvp in zip(self._f_x0, jvp, strict=False))
         return f_x
 
     def gauss_newton(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
