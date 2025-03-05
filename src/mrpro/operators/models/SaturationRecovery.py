@@ -11,7 +11,7 @@ from mrpro.utils import unsqueeze_right
 class SaturationRecovery(SignalModel[torch.Tensor, torch.Tensor]):
     """Signal model for saturation recovery."""
 
-    def __init__(self, ti: float | torch.Tensor | Sequence[int]):
+    def __init__(self, ti: float | torch.Tensor | Sequence[int]) -> None:
         """Initialize saturation recovery signal model for T1 mapping.
 
         Parameters
