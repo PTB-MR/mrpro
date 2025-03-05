@@ -76,11 +76,4 @@ def test_callback_optimizers(optimizer):
         assert True
 
     # run optimizer
-    if optimizer == lbfgs:
-        # maximum number of iterations
-        max_iterations = 10
-        _ = optimizer(rosen_brock, parameters, max_iterations=max_iterations, callback=callback)
-    else:
-        # number of iterations
-        n_iterations = 10
-        _ = optimizer(rosen_brock, parameters, n_iterations=n_iterations, callback=callback)
+    _ = optimizer(rosen_brock, parameters, 10, callback=callback)
