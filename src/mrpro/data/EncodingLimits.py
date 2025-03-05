@@ -27,6 +27,10 @@ class Limits:
             return cls()
         return cls(*dataclasses.astuple(limit_type))
 
+    def to_ismrmrd(self) -> limitType:
+        """Convert Limits to ismsmrd.limitType."""
+        return limitType(self.min, self.max, self.center)
+
     @property
     def length(self) -> int:
         """Length of the limits."""
@@ -112,3 +116,14 @@ class EncodingLimits:
         values['k2'] = values.pop('kspace_encoding_step_2')
 
         return cls(**values)
+
+    def to_ismrmrd_encoding_limits_type(self) -> encodingLimitsType:
+        """Convert EncodingLimits to encodingLimitsType."""
+        values = {field.name: Limits.to_ismrmrd(getattr(self, field.name)) for field in dataclasses.fields(self)}
+
+        # adjust from MRPro to ISMRMRD naming convention
+        values['kspace_encoding_step_0'] = values.pop('k0')
+        values['kspace_encoding_step_1'] = values.pop('k1')
+        values['kspace_encoding_step_2'] = values.pop('k2')
+
+        return encodingLimitsType(**values)

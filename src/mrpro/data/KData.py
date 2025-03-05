@@ -265,6 +265,47 @@ class KData(
 
         return cls(kheader, kdata, ktrajectory_final)
 
+    def to_file(self, filename: str | Path) -> None:
+        """Save KData as ISMRMRD dataset to file.
+
+        Parameters
+        ----------
+        filename
+            path to the ISMRMRD file
+        """
+        # Open the dataset
+        dataset = ismrmrd.Dataset(filename, 'dataset', create_if_needed=True)
+
+        # Create ISMRMRD header
+        header = self.header.to_ismrmrd()
+        header.acquisitionSystemInformation.receiverChannels = self.data.shape[-4]
+        dataset.write_xml_header(header.toXML('utf-8'))
+
+        trajectory = self.traj.as_tensor(-1)
+        trajectory_shape = (*self.data[..., 0, :, :, :].shape, 3)  # no coils, 3d
+        trajectory = torch.broadcast_to(trajectory, trajectory_shape)
+
+        # Go through data and save acquisitions
+        acq_shape = [self.data.shape[-1], self.data.shape[-4]]
+        acq = ismrmrd.Acquisition()
+        acq.resize(*acq_shape, trajectory_dimensions=3)
+
+        for other in np.ndindex(self.data.shape[:-4]):
+            for k2 in range(self.data.shape[-3]):
+                for k1 in range(self.data.shape[-2]):
+                    acq.clear_all_flags()
+                    self.header.acq_info.write_to_ismrmrd_acquisition(acq, (*other, k2, k1))
+
+                    # Rearrange, switch from zyx to xyz and set trajectory.
+                    acq.traj[:] = trajectory[(*other, k2, k1)].numpy()[:, ::-1]  # zyx -> xyz
+
+                    # Set the data and append
+                    idx = other + (slice(None),) + (k2, k1)  # python 3.10 and mypy #noqa: RUF005
+                    acq.data[:] = self.data[idx].numpy()
+                    dataset.append_acquisition(acq)
+
+        dataset.close()
+
     def __repr__(self):
         """Representation method for KData class."""
         traj = KTrajectory(self.traj.kz, self.traj.ky, self.traj.kx)
