@@ -31,7 +31,7 @@ def test_IData_content_from_dcm(dcm_data_fixture, request):
 
 def test_IData_from_dcm_file(dcm_2d):
     """IData from dicom file."""
-    idata = IData.from_single_dicom(dcm_2d[0].filename)
+    idata = IData.from_dicom_files(dcm_2d[0].filename)
     # IData uses complex values but dicom only supports real values
     img = torch.real(idata.data[0, 0, 0, ...])
     torch.testing.assert_close(img, dcm_2d[0].img_ref)
@@ -52,7 +52,7 @@ def test_IData_from_multi_echo_dicom(dcm_data_fixture, request):
     # Verify correct echo times
     original_echo_times = torch.as_tensor([ds.te for ds in dcm_data])
     assert idata.header.te is not None
-    assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(idata.header.te)[0])
+    assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(torch.as_tensor(idata.header.te))[0])
     # Verify all images were read in
     assert idata.data.shape[0] == original_echo_times.shape[0]
 
@@ -63,7 +63,7 @@ def test_IData_from_dcm_folder_via_path(dcm_2d_multi_echo_times):
     # Verify correct echo times
     original_echo_times = torch.as_tensor([ds.te for ds in dcm_2d_multi_echo_times])
     assert idata.header.te is not None
-    assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(idata.header.te)[0])
+    assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(torch.as_tensor(idata.header.te))[0])
     # Verify all images were read in
     assert idata.data.shape[0] == len(original_echo_times)
 
@@ -86,7 +86,7 @@ def test_IData_from_dcm_files(dcm_2d_multi_echo_times_multi_folders):
     # Verify correct echo times
     original_echo_times = torch.as_tensor([ds.te for ds in dcm_2d_multi_echo_times_multi_folders])
     assert idata.header.te is not None
-    assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(idata.header.te)[0])
+    assert torch.allclose(torch.sort(original_echo_times)[0], torch.sort(torch.as_tensor(idata.header.te))[0])
     # Verify all images were read in
     assert idata.data.shape[0] == len(original_echo_times)
 
@@ -94,15 +94,16 @@ def test_IData_from_dcm_files(dcm_2d_multi_echo_times_multi_folders):
 def test_IData_from_kheader_and_tensor(random_kheader, random_test_data):
     """IData from KHeader and data tensor."""
     random_kheader.ti = []
-    idata = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
-    torch.testing.assert_close(idata.header.te, torch.as_tensor(random_kheader.te))
-    assert idata.header.ti is None
+    idata = IData.from_tensor_and_kheader(data=random_test_data, header=random_kheader)
+    assert idata.header.te == random_kheader.te
+    assert idata.header.ti == random_kheader.ti
+    assert idata.header.te is not random_kheader.te
     torch.testing.assert_close(idata.data, random_test_data)
 
 
 def test_IData_to_complex128(random_kheader, random_test_data):
     """Change IData dtype complex128."""
-    idata = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
+    idata = IData.from_tensor_and_kheader(data=random_test_data, header=random_kheader)
     idata_complex128 = idata.to(dtype=torch.complex128)
     assert idata_complex128.data.dtype == torch.complex128
 
@@ -110,7 +111,7 @@ def test_IData_to_complex128(random_kheader, random_test_data):
 @pytest.mark.cuda
 def test_IData_cuda(random_kheader, random_test_data):
     """Move IData object to CUDA memory."""
-    idata = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
+    idata = IData.from_tensor_and_kheader(data=random_test_data, header=random_kheader)
     idata_cuda = idata.cuda()
     assert idata_cuda.data.is_cuda
 
@@ -118,7 +119,7 @@ def test_IData_cuda(random_kheader, random_test_data):
 @pytest.mark.cuda
 def test_IData_cpu(random_kheader, random_test_data):
     """Move IData object to CUDA memory and back to CPU memory."""
-    idata = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
+    idata = IData.from_tensor_and_kheader(data=random_test_data, header=random_kheader)
     idata_cpu = idata.cuda().cpu()
     assert idata_cpu.data.is_cpu
 
@@ -126,6 +127,6 @@ def test_IData_cpu(random_kheader, random_test_data):
 def test_IData_rss(random_kheader, random_test_data):
     """Test RSS coil combination."""
     expected = random_test_data.abs().square().sum(dim=-4, keepdim=True).sqrt()
-    idata = IData.from_tensor_and_kheader(data=random_test_data, kheader=random_kheader)
+    idata = IData.from_tensor_and_kheader(data=random_test_data, header=random_kheader)
     torch.testing.assert_close(idata.rss(keepdim=True), expected)
     torch.testing.assert_close(idata.rss(keepdim=False), expected.squeeze(-4))
