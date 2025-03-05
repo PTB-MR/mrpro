@@ -82,6 +82,7 @@ def test_einsum_op_forward_mode_autodiff(
         '',  # empty string
     ],
 )
+
 def test_einsum_op_invalid(rule: str) -> None:
     """Test with different invalid rules."""
     with pytest.raises(ValueError, match='pattern should match'):
