@@ -63,13 +63,14 @@ dependencies = [
     "torch>=2.3",
     "ismrmrd>=1.14.1",
     "einops",
-    "pydicom>=2.3",
+    "pydicom>=3.0.1",
     "pypulseq>=1.4.2",
     "pytorch-finufft>=0.1.0",
     "cufinufft>=2.3.1; platform_system=='Linux'",
     "scipy>=1.12",
     "ptwt>=0.1.8",
     "typing-extensions>=4.12",
+    "torchvision>0.18",
 ]
 
 [project.optional-dependencies]
@@ -139,6 +140,8 @@ module = [
     "zenodo_get",
     "ptwt.*",
     "pywt.*",
+    "torchvision.*",
+    "platformdirs",
 ]
 ignore_missing_imports = true
 
@@ -217,6 +220,7 @@ Reson = "Reson"   # required for Proc. Intl. Soc. Mag. Reson. Med.
 iy = "iy"
 arange = "arange" # torch.arange
 Ba = "Ba"
+wht = "wht"       # Brainweb tissue class
 
 [tool.typos.files]
 extend-exclude = [
