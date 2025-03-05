@@ -1,6 +1,6 @@
 """Tests for Fourier operator."""
 
-from typing import cast, TypeAlias
+from typing import TypeAlias, cast
 
 import pytest
 import torch
@@ -18,7 +18,8 @@ from tests import (
 )
 from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
 
-AtLeast3Ints:TypeAlias = tuple[int, int, int, Unpack[tuple[int, ...]]]
+AtLeast3Ints: TypeAlias = tuple[int, int, int, Unpack[tuple[int, ...]]]
+
 
 def create_data(
     im_shape: AtLeast3Ints,
@@ -204,7 +205,6 @@ def test_fourier_op_cartesian_sorting(ismrmrd_cart) -> None:
     ],
     ids=['3d_single_shot_stack_of_spirals_ky_in_k2', 'cartesian_fft_dims_not_aligned_with_k2_k1_k0_dims'],
 )
-
 def test_fourier_op_not_supported_traj(
     im_shape: AtLeast3Ints,
     k_shape: AtLeast3Ints,
