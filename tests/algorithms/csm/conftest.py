@@ -15,5 +15,5 @@ def multi_coil_image(n_coils, ph_ellipse, random_kheader):
     img = ph_ellipse.phantom.image_space(image_dimensions)
     # +1 to ensure that there is signal everywhere, for voxel == 0 csm cannot be determined.
     img_multi_coil = (img + 1) * csm_ref
-    idata = IData.from_tensor_and_kheader(data=img_multi_coil, kheader=random_kheader)
+    idata = IData.from_tensor_and_kheader(data=img_multi_coil, header=random_kheader)
     return (idata, csm_ref)
