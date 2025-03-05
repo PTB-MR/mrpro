@@ -59,9 +59,10 @@ def test_EpgFisp_shape(parameter_shape, contrast_dim_shape, signal_shape) -> Non
     t1 = rng.float32_tensor(parameter_shape, low=1e-5, high=5)
     t2 = rng.float32_tensor(parameter_shape, low=1e-5, high=0.5)
     m0 = rng.complex64_tensor(parameter_shape)
+    relative_b1 = rng.complex64_tensor(parameter_shape)
 
     model_op = create_EpgFisp_model(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
-    (signal,) = model_op.forward(m0, t1, t2)
+    (signal,) = model_op.forward(m0, t1, t2, relative_b1)
     assert signal.shape == signal_shape
 
 
