@@ -86,7 +86,7 @@ mse = mrpro.operators.functionals.MSE(idata_multi_ti.data.abs())
 # %% [markdown]
 # Now we can simply combine the two into a functional to solve
 #
-# $ \min_{M_0, T_1} || |q(M_0, T_1, TI)| - x||_2^2$
+# $ \min_{M_0, T_1} \big| |q(M_0, T_1, TI)| - x\big|_2^2$
 
 # %%
 functional = mse @ model
@@ -156,7 +156,7 @@ plt.show()
 # %% [markdown]
 # ### Carry out fit
 # We are now ready to carry out the fit. We are going to use the `~mrpro.algorithms.optimizers.adam` optimizer.
-# If there is a GPU available, we can use it ny moving both the data and the model to the GPU.
+# If there is a GPU available, we can use it by moving both the data and the model to the GPU.
 
 # %%
 # Move initial values and model to GPU if available
@@ -182,7 +182,7 @@ model.cpu()
 #
 # To get an impression of how well the fit has worked, we are going to calculate the relative error between
 #
-# $E_{relative} = \sum_{TI}\frac{|(q(M_0, T_1, TI) - x)|}{|x|}$
+# $E_\text{relative} = \sum_{TI}\frac{|(q(M_0, T_1, TI) - x)|}{|x|}$
 #
 # on a voxel-by-voxel basis
 # We also mask out the background by thresholding on $M_0$.
