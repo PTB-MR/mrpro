@@ -170,7 +170,7 @@ def test_autodiff_constraints_operator():
     ],
 )
 def test_constraints_operator_cuda(bounds):
-    """Test constraints operator works on cuda devices."""
+    """Test constraints operator works on CUDA devices."""
     random_generator = RandomGenerator(seed=0)
 
     # random tensor with arbitrary values
