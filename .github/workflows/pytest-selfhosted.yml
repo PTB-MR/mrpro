@@ -9,6 +9,7 @@ on:
 jobs:
   test:
     runs-on: [self-hosted] #gpu
+    environment: pytest-cuda
     permissions:
       pull-requests: write
       contents: write
@@ -17,22 +18,27 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - name: Install MRpro and Dependencies
+        run: pip install --upgrade --upgrade-strategy eager .[test]
+
+      - name: Install PyTest GitHub Annotation Plugin
+        run: pip install pytest-github-actions-annotate-failures
+
+      - name: Run PyTest and Generate Coverage Report
+        # shell bash sets the -o pipefail
+        run: |
+          pytest -n 4 -m "cuda" --junitxml=pytest.xml \
+          --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
+        shell: bash
+
+      - name: Upload PyTest Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install .[test]
-
-
-      - name: Run PyTest
-
-        run: |
-          pytest -n 4 -m "not cuda" --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=mrpro
+          name: pytest-report-cuda
+          path: |
+            pytest-coverage.txt
+            pytest.xml
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 

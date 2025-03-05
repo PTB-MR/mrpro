@@ -21,10 +21,9 @@ RUN curl -o actions-runner-linux-x64-2.322.0.tar.gz -L $ACTION_RUNNER_URL && tar
 
 RUN ./bin/installdependencies.sh
 COPY docker/runner_entrypoint.sh /actions-runner/entrypoint.sh
-RUN chown -R runner /actions-runner
-RUN chmod +x /actions-runner/entrypoint.sh
+RUN chmod 755 /actions-runner
 
-RUN mkdir /work && chown runner /work
+RUN mkdir /work && chmod 777 /work
 
 # install mrpro dependencies
 # forces rebuild if either the version or the pyproject.toml changes
