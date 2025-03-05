@@ -20,6 +20,7 @@ from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 from mrpro.utils.unit_conversion import deg_to_rad, mm_to_m, ms_to_s
+from mrpro.utils.reshape import unsqueeze_right
 
 
 def _int_factory() -> torch.Tensor:
@@ -281,28 +282,37 @@ class IHeader(MoveDataMixin):
         ti = ms_to_s(get_items(dataset, 'InversionTime', float)[::n_volumes])
         tr = ms_to_s(get_items(dataset, 'RepetitionTime', float)[::n_volumes])
 
-        fov_x = resolution.x * get_items(dataset, 'Rows', int)[0]
-        fov_y = resolution.y * get_items(dataset, 'Columns', int)[0]
-        # Get dicom position in [m] which is defined by the center of the voxel in the upper left corner
-        dcm_position = mm_to_m(
-            torch.tensor(
-                get_items(dataset, 'ImagePositionPatient', lambda x: [float(val) for val in x]),
-            )
-        )
-        # Shift dicom image position to the center by fov
-        position = SpatialDimension(
-            x=(dcm_position[..., 2] + fov_x / 2)[..., None, None, None, None],
-            y=(dcm_position[..., 1] + fov_y / 2)[..., None, None, None, None],
-            z=(dcm_position[..., 0])[..., None, None, None, None],
+        # Dicom orientation is described by two vectors in the format (x1, y1, z1, x2, y2, z2)
+        dcm_orientation = get_items(dataset, 'ImageOrientationPatient', lambda x: [float(val) for val in x])
+        basis_x = torch.tensor(dcm_orientation[0][:3])
+        basis_y = torch.tensor(dcm_orientation[0][3:])
+        # Calculate third basis vector by cross product
+        basis_z = torch.cross(basis_x, basis_y, dim=-1)
+        # Get orientation from basis vectors
+        orientation = Rotation.from_directions(
+            SpatialDimension.from_array_xyz(basis_x),
+            SpatialDimension.from_array_xyz(basis_y),
+            SpatialDimension.from_array_xyz(basis_z),
         )
 
-        # dcm_orientation = get_items(dataset, 'ImageOrientationPatient', lambda x: [float(val) for val in x])
+        n_rows = get_items(dataset, 'Rows', int)[0]
+        n_cols = get_items(dataset, 'Columns', int)[0]
+        shift = resolution * SpatialDimension(x=n_rows, y=n_cols, z=0) / 2
+        # Get the shift vector for image position by applying the fov rotation
+        shift = orientation(shift)
+        # Get dicom position in [m] for x, y, z which is defined by the voxel center in the upper left corner
+        dcm_position = SpatialDimension.from_array_xyz(
+            get_items(dataset, 'ImagePositionPatient', lambda x: [float(val) for val in x])
+        ).apply(mm_to_m)
+        # Shift dicom image position to the center by fov
+        position = dcm_position + shift
+        position = position.apply(lambda x: unsqueeze_right(x, 4))
 
         # Calculate acquisition time stamps in s according to the reference time 0:00 am
         frame_time_dt = get_items(
             dataset,
             'FrameReferenceDateTime',
-            lambda x: datetime.strptime(x, '%Y%m%d%H%M%S.%f').replace(tzinfo=timezone.utc),
+            lambda x: datetime.strptime(x, '%Y%m%d%H%M%S.%f'),
         )
         t0 = datetime.combine(frame_time_dt[0].date(), time(0, 0))
         delta_t = torch.tensor([(ft - t0).total_seconds() for ft in frame_time_dt][::n_volumes])
@@ -312,7 +322,7 @@ class IHeader(MoveDataMixin):
             te_ms = get_items(dataset, 'EffectiveEchoTime', float)
         te = ms_to_s(te_ms[::n_volumes])
 
-        # TODO: Orientation, PhysiologyTimeStamps, ImageIdx
+        # TODO: PhysiologyTimeStamps, ImageIdx
         return cls(
             resolution=resolution,
             fa=fa,
@@ -321,7 +331,7 @@ class IHeader(MoveDataMixin):
             te=te,
             acquisition_time_stamp=delta_t,
             position=position,
-            # orientation=dcm_orientation,
+            orientation=orientation,
         )
 
     def __repr__(self):
