@@ -40,7 +40,7 @@ def test_jacobian_gaussnewton():
     torch.testing.assert_close(actual, expected, rtol=1e-3, atol=1e-3)
 
 
-def test_jacobian_valueatx0():
+def test_jacobian_value_at_x0():
     """Test value at x0"""
     rng = RandomGenerator(123)
     x0 = rng.float32_tensor(3)
