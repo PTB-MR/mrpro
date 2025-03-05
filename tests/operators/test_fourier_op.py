@@ -215,7 +215,6 @@ def test_fourier_op_not_supported_traj(
     type_ky: str,
     type_kz: str,
 ) -> None:
-def test_fourier_op_not_supported_traj(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz) -> None:
     """Test trajectory not supported by Fourier operator."""
 
     # generate random images and k-space trajectories
