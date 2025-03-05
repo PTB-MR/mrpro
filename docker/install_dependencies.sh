@@ -1,6 +1,6 @@
 # pre-install cpu-version of torch by default
 # either use the 1st argument as specifier (cu118, cu124 or cu126)
-python -m pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/${1:-cpu}
+python -m pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/${1:-cpu}
 
 #parse dependencies
 python -m pip install --no-cache-dir toml
