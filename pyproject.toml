@@ -63,7 +63,7 @@ dependencies = [
     "torch>=2.3",
     "ismrmrd>=1.14.1",
     "einops",
-    "pydicom>=2.3",
+    "pydicom>=3.0.1",
     "pypulseq>=1.4.2",
     "pytorch-finufft>=0.1.0",
     "cufinufft>=2.3.1; platform_system=='Linux'",
