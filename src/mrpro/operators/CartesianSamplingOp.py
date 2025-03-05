@@ -72,7 +72,7 @@ class CartesianSamplingOp(LinearOperator):
 
         # 1D indices into a flattened tensor.
         kidx = kz_idx * sorted_grid_shape.y * sorted_grid_shape.x + ky_idx * sorted_grid_shape.x + kx_idx
-        kidx = rearrange(kidx, '... 1 kz ky kx -> ... 1 (kz ky kx)')
+        kidx = rearrange(kidx, '... kz ky kx -> ... (kz ky kx)')
 
         # check that all points are inside the encoding matrix
         inside_encoding_matrix = (
@@ -87,7 +87,7 @@ class CartesianSamplingOp(LinearOperator):
                 stacklevel=2,
             )
 
-            inside_encoding_matrix = rearrange(inside_encoding_matrix, '... 1 kz ky kx -> ... 1 (kz ky kx)')
+            inside_encoding_matrix = rearrange(inside_encoding_matrix, '... kz ky kx -> ... (kz ky kx)')
             inside_encoding_matrix_idx = inside_encoding_matrix.nonzero(as_tuple=True)[-1]
             inside_encoding_matrix_idx = torch.reshape(inside_encoding_matrix_idx, (*kidx.shape[:-1], -1))
             self._inside_encoding_matrix_idx: torch.Tensor | None = inside_encoding_matrix_idx

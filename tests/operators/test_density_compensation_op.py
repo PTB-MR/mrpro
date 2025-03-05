@@ -7,7 +7,7 @@ from mrpro.operators import DensityCompensationOp
 from tests import RandomGenerator, dotproduct_adjointness_test
 
 
-def test_density_compensation_op_adjointness():
+def test_density_compensation_op_adjointness() -> None:
     """Test density operator adjoint property."""
     random_generator = RandomGenerator(seed=0)
 
@@ -24,7 +24,7 @@ def test_density_compensation_op_adjointness():
     dotproduct_adjointness_test(dcf_op, u, v)
 
 
-def test_density_compensation_op_dcfdata_tensor():
+def test_density_compensation_op_dcfdata_tensor() -> None:
     """Test matching result after creation via tensor and DcfData."""
     random_generator = RandomGenerator(seed=0)
 
@@ -47,7 +47,7 @@ def test_density_compensation_op_dcfdata_tensor():
     assert torch.equal(*dcf_op_tensor.H(v), *dcf_op_dcfdata_asop.H(v))
 
 
-def test_density_compensation_op_forward():
+def test_density_compensation_op_forward() -> None:
     """Test result of forward."""
     random_generator = RandomGenerator(seed=0)
     n_zyx = (2, 3, 4)

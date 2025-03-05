@@ -15,14 +15,14 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.4
+    rev: v0.9.9
     hooks:
       - id: ruff # linter
         args: [--fix]
       - id: ruff-format # formatter
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.29.4
+    rev: v1.30.0
     hooks:
       - id: typos
         args: [] # empty, to remove write-changes from the default arguments.
@@ -82,7 +82,7 @@ repos:
       files: examples/notebooks
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.14.1
+    rev: v1.15.0
     hooks:
       - id: mypy
         pass_filenames: false
@@ -99,6 +99,7 @@ repos:
           - matplotlib
           - pytest
           - xsdata
+          - types-tqdm
           - "--index-url=https://download.pytorch.org/whl/cpu"
           - "--extra-index-url=https://pypi.python.org/simple"
 
