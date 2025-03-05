@@ -31,9 +31,9 @@ class Indexer:
     - Indexing with a slice
         Behaves like in numpy, always returns a view.
         Negative step sizes are not supported and will raise an IndexError.
-        slice(None), i.e. :, means selecting the whole axis.
+        slice(None), i.e., means selecting the whole axis.
     - Indexing with an integer
-        If the index is in bounds of the broadcasted shape, indexing behaves like slicing with index:index+1.
+        If the index is within the bounds of the broadcasted shape, indexing behaves like slicing with index:index+1.
         Otherwise, an IndexError is raised.
         Always returns a view.
     - Indexing with a boolean mask
@@ -75,9 +75,9 @@ class Indexer:
         Parameters
         ----------
         shape
-            broadcasted shape of the tensors to index. All tensors will be broadcasted to this shape.
+            broadcasted shape of the tensor to index. The tensor will be broadcasted to this shape.
         index
-            The index to apply to the tensors.
+            The index to apply to the tensor.
         """
         normal_index: list[slice | int | None] = []
         """Used in phase 1 of the indexing, where we only consider integers and slices. Always does a view"""
@@ -88,10 +88,10 @@ class Indexer:
         vectorized_shape: None | tuple[int, ...] = None
         """Number of dimensions of the integer indices"""
         expanded_index: list[slice | torch.Tensor | tuple[int, ...] | None | int] = []
-        """"index with ellipsis expanded to full slices"""
+        """"Index with ellipsis expanded to full slices"""
 
         # basics checks and figuring out the number of axes already covered by the index,
-        # which is needed to determine the number of axes that covered by the ellipsis
+        # which is needed to determine the number of axes that are covered by the ellipsis
         has_ellipsis = False
         has_boolean = False
         covered_axes = 0
@@ -116,7 +116,7 @@ class Indexer:
                 raise IndexError(f'Unsupported index type {idx_}')
 
         if covered_axes > len(shape):
-            raise IndexError('Too many indices. Indexing more than the number of axes is not allowed')
+            raise IndexError('Too many indices. Indexing more than the number of available axes is not allowed')
 
         for idx_ in index:
             if idx_ is Ellipsis:
@@ -129,7 +129,7 @@ class Indexer:
                 expanded_index.append(tuple(cast(Sequence[int], idx_)))
 
         if not has_ellipsis:
-            # if there is not ellipsis, we interpret the index as if it was followed by ellipsis
+            # if there is no ellipsis, we interpret the index as if it was followed by ellipsis
             expanded_index.extend([slice(None)] * (len(shape) - covered_axes))
 
         number_of_vectorized_indices: int = 0
