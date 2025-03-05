@@ -5,7 +5,6 @@ from collections.abc import Callable, Sequence
 from typing import Literal
 
 import torch
-from einops import rearrange
 
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
