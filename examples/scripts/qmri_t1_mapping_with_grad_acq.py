@@ -100,7 +100,7 @@ plt.show()
 
 # %%
 
-idx_dynamic = mrpro.utils.split_idx(kdata.header.acq_info.acquisition_time_stamp[0, 0, :, 0].argsort(), 30, 0)
+idx_dynamic = mrpro.utils.split_idx(kdata.header.acq_info.acquisition_time_stamp.squeeze().argsort(), 30, 0)
 kdata_dynamic = kdata.split_k1_into_other(idx_dynamic, other_label='repetition')
 
 # %%

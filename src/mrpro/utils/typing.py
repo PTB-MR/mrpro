@@ -208,7 +208,7 @@ if TYPE_CHECKING:
         def __call__(self, /, *args: torch.Tensor, **kwargs) -> tuple[torch.Tensor, ...]: ...
 
         def __call__(self, /, *args: torch.Tensor, **kwargs) -> tuple[torch.Tensor, ...]:
-            """Apply the Operator."""
+            """Apply the Function."""
 
     def endomorph(f: F, /) -> _EndomorphCallable:
         """Decorate a function to make it an endomorph callable.

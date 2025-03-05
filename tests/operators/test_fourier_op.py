@@ -13,13 +13,11 @@ from tests import RandomGenerator, dotproduct_adjointness_test
 from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
 
 
-def create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
+def create_data(im_shape, nkx, nky, nkz, type_kx, type_ky, type_kz) -> tuple[torch.Tensor, KTrajectory]:
+    """Create k-space trajectory and random image."""
     random_generator = RandomGenerator(seed=0)
-
-    # generate random image
     img = random_generator.complex64_tensor(size=im_shape)
-    # create random trajectories
-    trajectory = create_traj(k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
     return img, trajectory
 
 
@@ -38,11 +36,11 @@ class NufftTrajektory(KTrajectory):
 @COMMON_MR_TRAJECTORIES
 def test_fourier_op_fwd_adj_property(
     im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
-):
+) -> None:
     """Test adjoint property of Fourier operator."""
 
     # generate random images and k-space trajectories
-    _, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    _, trajectory = create_data(im_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # create operator
     recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
@@ -61,9 +59,11 @@ def test_fourier_op_fwd_adj_property(
 
 
 @COMMON_MR_TRAJECTORIES
-def test_fourier_op_gram(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2):
+def test_fourier_op_gram(
+    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
+) -> None:
     """Test gram of Fourier operator."""
-    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    img, trajectory = create_data(im_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
     encoding_matrix = SpatialDimension(
@@ -79,7 +79,7 @@ def test_fourier_op_gram(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, typ
     torch.testing.assert_close(actual, expected, rtol=1e-3, atol=1e-3)
 
 
-def test_fourier_op_cartesian_sorting(ismrmrd_cart):
+def test_fourier_op_cartesian_sorting(ismrmrd_cart) -> None:
     """Verify correct sorting of Cartesian k-space data before FFT."""
     kdata = KData.from_file(ismrmrd_cart.filename, KTrajectoryCartesian())
     ff_op = FourierOp.from_kdata(kdata)
@@ -104,9 +104,9 @@ def test_fourier_op_cartesian_sorting(ismrmrd_cart):
         (  # 3d single shot stack of spiral but cartesian FFT dimension in ky and k2
             (1, 2, 96, 4, 128),  # im_shape
             (1, 2, 4, 1, 192),  # k_shape
-            (1, 1, 1, 192),  # nkx
-            (1, 4, 1, 1),  # nky
-            (1, 1, 1, 192),  # nkz
+            (1, 1, 1, 1, 192),  # nkx
+            (1, 1, 4, 1, 1),  # nky
+            (1, 1, 1, 1, 192),  # nkz
             'non-uniform',  # type_kx
             'uniform',  # type_ky
             'non-uniform',  # type_kz
@@ -114,9 +114,9 @@ def test_fourier_op_cartesian_sorting(ismrmrd_cart):
         (  # radial phase encoding, cartesian FFT dimension not aligned with corresponding k2, k1, k0 dimensions
             (2, 3, 48, 16, 32),  # im_shape
             (2, 3, 96, 18, 64),  # k_shape
-            (2, 1, 18, 64),  # nkx
-            (2, 96, 1, 1),  # nky - Cartesian ky dimension defined along k2 rather than k1
-            (2, 1, 18, 64),  # nkz
+            (2, 1, 1, 18, 64),  # nkx
+            (2, 1, 96, 1, 1),  # nky - Cartesian ky dimension defined along k2 rather than k1
+            (2, 1, 1, 18, 64),  # nkz
             'non-uniform',  # type_kx
             'uniform',  # type_ky
             'non-uniform',  # type_kz
@@ -124,11 +124,11 @@ def test_fourier_op_cartesian_sorting(ismrmrd_cart):
     ],
     ids=['3d_single_shot_stack_of_spirals_ky_in_k2', 'cartesian_fft_dims_not_aligned_with_k2_k1_k0_dims'],
 )
-def test_fourier_op_not_supported_traj(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
+def test_fourier_op_not_supported_traj(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz) -> None:
     """Test trajectory not supported by Fourier operator."""
 
     # generate random images and k-space trajectories
-    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    img, trajectory = create_data(im_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # create operator
     recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
@@ -144,12 +144,12 @@ def test_fourier_op_not_supported_traj(im_shape, k_shape, nkx, nky, nkz, type_kx
 @COMMON_MR_TRAJECTORIES
 def test_fourier_op_fft_nufft_forward(
     im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
-):
+) -> None:
     """Test Nufft vs FFT for Fourier operator."""
     if not any(t == 'uniform' for t in [type_kx, type_ky, type_kz]):
         return  # only test for uniform trajectories
 
-    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    img, trajectory = create_data(im_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
     encoding_matrix = SpatialDimension(
@@ -173,11 +173,11 @@ def test_fourier_op_fft_nufft_forward(
 @COMMON_MR_TRAJECTORIES
 def test_fourier_op_fft_nufft_adjoint(
     im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
-):
+) -> None:
     """Test AdjointNufft vs IFFT for Fourier operator."""
     if not any(t == 'uniform' for t in [type_kx, type_ky, type_kz]):
         return  # only test for uniform trajectories
-    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    img, trajectory = create_data(im_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
     recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
     encoding_matrix = SpatialDimension(
         int(trajectory.kz.max() - trajectory.kz.min() + 1),
@@ -205,7 +205,7 @@ def test_fourier_op_fft_nufft_gram(
     """Test Nufft gram vs FFt gram for Fourier operator."""
     if not any(t == 'uniform' for t in [type_kx, type_ky, type_kz]):
         return  # only test for uniform trajectories
-    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    img, trajectory = create_data(im_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
     recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
     encoding_matrix = SpatialDimension(
         int(trajectory.kz.max() - trajectory.kz.min() + 1),
