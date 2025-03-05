@@ -1,17 +1,24 @@
 """PyTest fixtures for the data tests."""
 
+from collections.abc import Callable
+
 import pytest
 import torch
-from einops import rearrange, repeat
 from ismrmrd import xsd
-from mrpro.data import KData, KTrajectory, Rotation, SpatialDimension
+from mrpro.data import Rotation, SpatialDimension
+from mrpro.utils import unsqueeze_left
 
 from tests import RandomGenerator
 from tests.data import DicomTestImage, IsmrmrdRawTestData
 
 
 @pytest.fixture(params=({'seed': 0},))
-def cartesian_grid(request):
+def cartesian_grid(request) -> Callable[[int, int, int, float], tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
+    """Cartesian grid generator.
+
+    Generates a 3D cartesian grid with optional jitter.
+    Shape of the returned tensors is `(1, 1, n_k2, n_k1, n_k0)`.
+    """
     generator = RandomGenerator(request.param['seed'])
 
     def generate(n_k2: int, n_k1: int, n_k0: int, jitter: float) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -23,7 +30,8 @@ def cartesian_grid(request):
             kx = kx + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
             ky = ky + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
             kz = kz + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
-        return kz.unsqueeze(0), ky.unsqueeze(0), kx.unsqueeze(0)
+        kz, ky, kx = (unsqueeze_left(x, 2) for x in (kz, ky, kx))
+        return kz, ky, kx
 
     return generate
 
@@ -280,27 +288,3 @@ def ismrmrd_rad(ellipse_phantom, tmp_path_factory):
         acceleration=4,
     )
     return ismrmrd_data
-
-
-@pytest.fixture(params=({'seed': 0},))
-def consistently_shaped_kdata(request, random_kheader_shape):
-    """KData object with data, header and traj consistent in shape."""
-    # Start with header
-    kheader, n_other, n_coils, n_k2, n_k1, n_k0 = random_kheader_shape
-
-    kheader.acq_info.apply_(
-        lambda field: rearrange(field, '(other k2 k1) ... -> other k2 k1 ...', other=n_other, k2=n_k2, k1=n_k1)
-        if isinstance(field, torch.Tensor | Rotation)
-        else field
-    )
-
-    # Create kdata with consistent shape
-    kdata = RandomGenerator(request.param['seed']).complex64_tensor((n_other, n_coils, n_k2, n_k1, n_k0))
-
-    # Create ktraj with consistent shape
-    kx = repeat(torch.linspace(0, n_k0 - 1, n_k0, dtype=torch.float32), 'k0->other k2 k1 k0', other=1, k2=1, k1=1)
-    ky = repeat(torch.linspace(0, n_k1 - 1, n_k1, dtype=torch.float32), 'k1->other k2 k1 k0', other=1, k2=1, k0=1)
-    kz = repeat(torch.linspace(0, n_k2 - 1, n_k2, dtype=torch.float32), 'k2->other k2 k1 k0', other=1, k1=1, k0=1)
-    ktraj = KTrajectory(kz, ky, kx)
-
-    return KData(header=kheader, data=kdata, traj=ktraj)
