@@ -6,7 +6,7 @@ from tests import RandomGenerator
 from tests.helper import dotproduct_adjointness_test
 
 
-def test_jacobian_adjointness():
+def test_jacobian_adjointness() -> None:
     """Test adjointness of Jacobian operator."""
     rng = RandomGenerator(123)
     x = rng.float32_tensor(3)
