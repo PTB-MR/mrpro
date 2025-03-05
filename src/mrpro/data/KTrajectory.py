@@ -25,24 +25,24 @@ class KTrajectory(MoveDataMixin):
     Contains the trajectory in k-space along the three dimensions `kz`, `ky`, `kx`,
     i.e. describes where in k-space each data point was acquired.
 
-    The shape of each of `kx`, `ky`, `kz` is `(*other, k2, k1, k0)`,
+    The shape of each of `kx`, `ky`, `kz` is `(*other, coils=1, k2, k1, k0)`,
     where `other` can span multiple dimensions.
 
     Example for 2D-Cartesian trajectories:
 
         - `kx` changes along `k0` and is frequency encoding,
         - `ky` changes along `k1` and is phase encoding
-        - `kz` is zero with shape `(1,1,1,1)`
+        - `kz` is zero with shape `(1, 1, 1, 1, 1)`
     """
 
     kz: torch.Tensor
-    """Trajectory in z direction / phase encoding direction k2 if Cartesian. Shape `(*other, k2, k1, k0)`"""
+    """Trajectory in z direction / phase encoding direction k2 if Cartesian. Shape `(*other, coils=1, k2, k1, k0)`"""
 
     ky: torch.Tensor
-    """Trajectory in y direction / phase encoding direction k1 if Cartesian. Shape `(*other, k2, k1, k0)`"""
+    """Trajectory in y direction / phase encoding direction k1 if Cartesian. Shape `(*other, coils=1, k2, k1, k0)`"""
 
     kx: torch.Tensor
-    """Trajectory in x direction / phase encoding direction k0 if Cartesian. Shape `(*other, k2, k1, k0)`"""
+    """Trajectory in x direction / phase encoding direction k0 if Cartesian. Shape `(*other, coils=1, k2, k1, k0)`"""
 
     grid_detection_tolerance: float = 1e-3
     """tolerance of how close trajectory positions have to be to integer grid points."""
