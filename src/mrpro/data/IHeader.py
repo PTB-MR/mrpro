@@ -53,7 +53,13 @@ class IHeader(MoveDataMixin):
         kheader
             MR raw data header (KHeader) containing required meta data.
         """
-        return cls(fov=kheader.recon_fov, te=kheader.te, ti=kheader.ti, fa=kheader.fa, tr=kheader.tr)
+        return cls(
+            fov=kheader.recon_fov,
+            te=torch.as_tensor(kheader.te) if kheader.te else None,
+            ti=torch.as_tensor(kheader.ti) if kheader.ti else None,
+            fa=torch.as_tensor(kheader.fa) if kheader.fa else None,
+            tr=torch.as_tensor(kheader.tr) if kheader.tr else None,
+        )
 
     @classmethod
     def from_dicom_list(cls, dicom_datasets: Sequence[Dataset]) -> Self:
