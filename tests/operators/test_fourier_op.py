@@ -1,6 +1,6 @@
 """Tests for Fourier operator."""
 
-from typing import cast
+from typing import cast, TypeAlias
 
 import pytest
 import torch
