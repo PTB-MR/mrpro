@@ -187,3 +187,37 @@ def test_non_uniform_fast_fourier_op_error_matrix() -> None:
             encoding_matrix=[1],
             traj=KTrajectory.from_tensor(torch.ones((3, 1, 1, 1, 1, 1))),
         )
+
+
+def test_non_uniform_fast_fourier_op_repr():
+    """Test the __repr__ method of NonUniformFastFourierOp."""
+
+    # Create a trajectory with non-Cartesian (off-grid) components
+    k_shape = (1, 5, 20, 40, 60)
+    nkx = (1, 1, 1, 1, 60)
+    nky = (1, 1, 1, 40, 1)
+    nkz = (1, 1, 20, 1, 1)
+    type_kx = 'non-uniform'
+    type_ky = 'non-uniform'
+    type_kz = 'non-uniform'
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
+
+    recon_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    encoding_matrix = SpatialDimension(
+        int(trajectory.kz.max() - trajectory.kz.min() + 1),
+        int(trajectory.ky.max() - trajectory.ky.min() + 1),
+        int(trajectory.kx.max() - trajectory.kx.min() + 1),
+    )
+    nufft_op = NonUniformFastFourierOp(
+        direction=['x', 'y', 'z'],
+        recon_matrix=recon_matrix,
+        encoding_matrix=encoding_matrix,
+        traj=trajectory,
+    )
+    repr_str = repr(nufft_op)
+
+    # Check if __repr__ contains expected information
+    assert 'NonUniformFastFourierOp' in repr_str
+    assert 'Dimension(s) along which NUFFT is applied' in repr_str
+    assert 'Reconstructed image size' in repr_str
+    assert 'device' in repr_str

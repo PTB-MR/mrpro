@@ -102,3 +102,15 @@ def test_invalid_dim() -> None:
 
     with pytest.raises(NotImplementedError, match='encoding_matrix'):
         FastFourierOp(recon_matrix=None, encoding_matrix=encoding_matrix, dim=(-4, -2, -1))
+
+
+def test_fast_fourier_op_repr():
+    """Test the __repr__ method of FastFourierOp."""
+
+    recon_matrix = SpatialDimension(64, 64, 64)
+    encoding_matrix = SpatialDimension(128, 128, 128)
+    fft_op = FastFourierOp(dim=(-3, -2, -1), recon_matrix=recon_matrix, encoding_matrix=encoding_matrix)
+    repr_str = repr(fft_op)
+
+    # Check if __repr__ contains expected information
+    assert 'Dimension(s) along which FFT is applied' in repr_str

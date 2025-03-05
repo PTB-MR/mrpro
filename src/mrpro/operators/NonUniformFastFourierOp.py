@@ -266,6 +266,23 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         """Return the gram operator."""
         return NonUniformFastFourierOpGramOp(self)
 
+    def __repr__(self) -> str:
+        """Representation method for NUFFT operator."""
+        device = self._omega.device if self._omega is not None else 'none'
+        zyx = ['z', 'y', 'x']
+        k2k1k0 = ['k2', 'k1', 'k0']
+        direction_zyx = tuple(zyx[i] for i in self._direction_zyx if i in range(-3, 0))
+        dimension_210 = tuple(k2k1k0[i] for i in self._dimension_210 if i in range(-3, 0))
+        recon_size_str = ', '.join(f'{dim}={size}' for dim, size in zip(direction_zyx, self._im_size, strict=False))
+        direction_zyx_str = ', '.join(direction_zyx)
+        dimension_210_str = ', '.join(dimension_210)
+        out = (
+            f'{type(self).__name__} on device: {device}\n'
+            f'Dimension(s) along which NUFFT is applied: ({direction_zyx_str}) / ({dimension_210_str})\n'
+            f'Reconstructed image size {recon_size_str}'
+        )
+        return out
+
 
 def symmetrize(kernel: torch.Tensor, rank: int) -> torch.Tensor:
     """Enforce hermitian symmetry on the kernel. Returns only half of the kernel."""
