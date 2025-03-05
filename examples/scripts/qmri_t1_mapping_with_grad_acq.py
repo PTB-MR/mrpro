@@ -138,11 +138,9 @@ plt.show()
 # ```
 
 # %%
+# Calculate the time since the inversion pulse, taking the average over all radial lines in each dynamic.
 sampling_time = kdata_dynamic.header.acq_info.acquisition_time_stamp.squeeze()
-# Subtract time stamp of first radial line and convert to seconds
-sampling_time = (sampling_time - sampling_time[0, 0]) * 2.5e-3
-# Average over radial lines of each dynamic
-sampling_time = sampling_time.mean(-1)
+sampling_time = (sampling_time - sampling_time[0, 0]).mean(-1)
 
 # %% [markdown]
 # We also need the repetition time between two RF-pulses. There is a parameter `tr` in the header, but this describes
@@ -222,7 +220,7 @@ functional = mse_loss @ magnitude_model_op @ constraints_op
 # %%
 m0_start = img_rss_dynamic[0]
 t1_start = torch.ones_like(m0_start)
-flip_angle_start = torch.ones_like(m0_start) * kdata_dynamic.header.fa
+flip_angle_start = torch.ones_like(m0_start) * torch.as_tensor(kdata_dynamic.header.fa)
 # %% [markdown]
 # If we use a `~mrpro.operators.ConstraintsOp`, the start values must be transformed to the
 # unconstrained space before the optimization and back to the original space after the optimization.
