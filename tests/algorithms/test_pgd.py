@@ -46,7 +46,7 @@ def test_pgd_solution_fourier_l1(stepsize, backtrack_factor) -> None:
         stepsize=stepsize,
         max_iterations=max_iterations,
         backtrack_factor=backtrack_factor,
-        t_for_converging_solution=False,
+        convergent_iterates_variant=False,
     )
     torch.testing.assert_close(pgd_solution, expected, rtol=5e-4, atol=5e-4)
 
@@ -183,7 +183,7 @@ def test_pgd_behavior_different_updates_t() -> None:
         stepsize=1.0,
         max_iterations=max_iterations,
         backtrack_factor=0.9,
-        t_for_converging_solution=False,
+        convergent_iterates_variant=False,
     )
 
     (pgd_solution2,) = pgd(
@@ -193,7 +193,7 @@ def test_pgd_behavior_different_updates_t() -> None:
         stepsize=1.0,
         max_iterations=max_iterations,
         backtrack_factor=0.9,
-        t_for_converging_solution=True,
+        convergent_iterates_variant=True,
     )
     torch.testing.assert_close(pgd_solution1, pgd_solution2, rtol=5e-4, atol=5e-4)
 

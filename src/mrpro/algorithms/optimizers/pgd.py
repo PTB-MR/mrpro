@@ -28,7 +28,7 @@ def pgd(
     stepsize: float = 1.0,
     max_iterations: int = 128,
     backtrack_factor: float = 1.0,
-    t_for_converging_solution: bool = False,
+    convergent_iterates_variant: bool = False,
     callback: Callable[[PGDStatus], None] | None = None,
 ) -> tuple[torch.Tensor, ...]:
     r"""Proximal gradient descent algorithm for solving problem :math:`min_x f(x) + g(x)`.
@@ -88,10 +88,10 @@ def pgd(
     max_iterations
         number of iterations
     backtrack_factor
-        must be :math:`<=1`. if :math:`<1.`, the backtracking rule for stepsize introduced by [BE2009] is used
-    t_for_converging_solution
-        by default, the algorithm updates the variable t as originally described in [BE2009].
-        If set to `True`, the algorithm updates t as suggested by [CHAM2015],
+        must be :math:`<=1`. if :math:`<1.`, the backtracking rule for stepsize introduced by [BE2009]_ is used
+    convergent_iterates_variant
+        by default, the algorithm updates the variable t as originally described in [BE2009]_.
+        If set to `True`, the algorithm updates t as suggested by [CHAM2015]_,
         i.e. at iteration :math:`n`, :math:`t_n = \frac{n+a-1}{a}`, with chosen :math:`a=3`.
         This choice ensures the theoretical convergence of solution.
     callback
@@ -153,7 +153,7 @@ def pgd(
             else:
                 raise RuntimeError('Stepsize to small.')
 
-        if t_for_converging_solution:
+        if convergent_iterates_variant:
             t = (iteration + 2) / 3
         else:
             t = (1 + math.sqrt(1 + 4 * t_old**2)) / 2
