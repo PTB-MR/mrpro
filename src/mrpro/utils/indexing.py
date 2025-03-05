@@ -13,7 +13,7 @@ from mrpro.utils.typing import TorchIndexerType
 class Indexer:
     """Custom Indexing with broadcasting.
 
-    This class  is used to index tensors in a way that is consistent
+    This class is used to index tensors in a way that is consistent
     with the shape invariants of the data objects.
 
     On creation, an index and a shape are required.
@@ -33,7 +33,7 @@ class Indexer:
         Negative step sizes are not supported and will raise an IndexError.
         slice(None), i.e. :, means selecting the whole axis.
     - Indexing with an integer
-        If the index in bounds of the broadcasted shape, indexing behaves like slicing with index:index+1.
+        If the index is in bounds of the broadcasted shape, indexing behaves like slicing with index:index+1.
         Otherwise, an IndexError is raised.
         Always returns a view.
     - Indexing with a boolean mask
@@ -221,7 +221,7 @@ class Indexer:
                 if (idx >= shape[shape_position]).any() or (idx < -shape[shape_position]).any():
                     raise IndexError(
                         'Index out of bounds. '
-                        f'Got values in the inerval [{idx.min()}, {idx.max() + 1}) for axis {shape_position} '
+                        f'Got values in the interval [{idx.min()}, {idx.max() + 1}) for axis {shape_position} '
                         f'with shape {shape[shape_position]}'
                     )
                 if vectorized_shape is not None and vectorized_shape != idx.shape:
@@ -263,7 +263,7 @@ class Indexer:
         if self.more_than_one_vectorized_index:
             # torch indexing would remove the dimensions, we want to keep them
             # as singleton dimension -> we need to add a new axis.
-            # inserting it in between the indices forces the dimension adeed by
+            # inserting it in between the indices forces the dimension added by
             # vectorized indices to be always at the beginning of the result.
             self.more_than_one_vectorized_index = True
             new_fancy_index = []
@@ -276,7 +276,7 @@ class Indexer:
             fancy_index = new_fancy_index
 
         elif vectorized_shape is not None and len(vectorized_shape) != 1:
-            # for a single and vectorized index, torch would insert it at the same position
+            # for a single vectorized index, torch would insert it at the same position
             # this would shift the other axes, potentially causing violations of the shape invariants.
             # thus, we move the inserted axis to the beginning of the tensor, after axes inserted by None
             move_source_start = next(i for i, idx in enumerate(fancy_index) if isinstance(idx, torch.Tensor))
