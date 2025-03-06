@@ -12,25 +12,25 @@ from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
 from tests.helper import dotproduct_adjointness_test, relative_image_difference
 
 
-def create_data(im_shape, nkx, nky, nkz, type_kx, type_ky, type_kz) -> tuple[torch.Tensor, KTrajectory]:
+def create_data(img_shape, nkx, nky, nkz, type_kx, type_ky, type_kz) -> tuple[torch.Tensor, KTrajectory]:
     """Create k-space trajectory and random image."""
     random_generator = RandomGenerator(seed=0)
-    img = random_generator.complex64_tensor(size=im_shape)
+    img = random_generator.complex64_tensor(size=img_shape)
     trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
     return img, trajectory
 
 
 @COMMON_MR_TRAJECTORIES
 def test_non_uniform_fast_fourier_op_fwd_adj_property(
-    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
+    img_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
 ) -> None:
     """Test adjoint property of non-uniform Fast Fourier operator."""
 
     # generate random images and k-space trajectories
-    _, trajectory = create_data(im_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    _, trajectory = create_data(img_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # create operator
-    recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
+    recon_matrix = SpatialDimension(img_shape[-3], img_shape[-2], img_shape[-1])
     encoding_matrix = SpatialDimension(
         int(trajectory.kz.max() - trajectory.kz.min() + 1),
         int(trajectory.ky.max() - trajectory.ky.min() + 1),
@@ -46,19 +46,19 @@ def test_non_uniform_fast_fourier_op_fwd_adj_property(
 
     # test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v
     random_generator = RandomGenerator(seed=0)
-    u = random_generator.complex64_tensor(size=im_shape)
+    u = random_generator.complex64_tensor(size=img_shape)
     v = random_generator.complex64_tensor(size=k_shape)
     dotproduct_adjointness_test(nufft_op, u, v)
 
 
 @COMMON_MR_TRAJECTORIES
 def test_non_uniform_fast_fourier_op_gram(
-    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
+    img_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
 ) -> None:
     """Test gram of of non-uniform Fast Fourier operator."""
-    img, trajectory = create_data(im_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    img, trajectory = create_data(img_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
-    recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
+    recon_matrix = SpatialDimension(img_shape[-3], img_shape[-2], img_shape[-1])
     encoding_matrix = SpatialDimension(
         int(trajectory.kz.max() - trajectory.kz.min() + 1),
         int(trajectory.ky.max() - trajectory.ky.min() + 1),
