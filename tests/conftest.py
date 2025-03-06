@@ -262,10 +262,10 @@ def ismrmrd_cart_high_res(ellipse_phantom, tmp_path_factory):
 
 
 COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
-    ('im_shape', 'k_shape', 'nkx', 'nky', 'nkz', 'type_kx', 'type_ky', 'type_kz', 'type_k0', 'type_k1', 'type_k2'),
+    ('img_shape', 'k_shape', 'nkx', 'nky', 'nkz', 'type_kx', 'type_ky', 'type_kz', 'type_k0', 'type_k1', 'type_k2'),
     [
         (  # (0) 2d Cartesian single coil, no oversampling
-            (1, 1, 1, 96, 128),  # im_shape
+            (1, 1, 1, 96, 128),  # img_shape
             (1, 1, 1, 96, 128),  # k_shape
             (1, 1, 1, 1, 128),  # nkx
             (1, 1, 1, 96, 1),  # nky
@@ -278,7 +278,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'zero',  # type_k2
         ),
         (  # (1) 2d Cartesian single coil, with oversampling
-            (1, 1, 1, 96, 128),  # im_shape
+            (1, 1, 1, 96, 128),  # img_shape
             (1, 1, 1, 128, 192),  # k_shape
             (1, 1, 1, 1, 192),  # nkx
             (1, 1, 1, 128, 1),  # nky
@@ -291,7 +291,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'zero',  # type_k2
         ),
         (  # (2) 2d non-Cartesian mri with 2 coils
-            (1, 2, 1, 96, 128),  # im_shape
+            (1, 2, 1, 96, 128),  # img_shape
             (1, 2, 1, 16, 192),  # k_shape
             (1, 1, 1, 16, 192),  # nkx
             (1, 1, 1, 16, 192),  # nky
@@ -304,7 +304,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'zero',  # type_k2
         ),
         (  # (3) 2d Cartesian with irregular sampling
-            (1, 1, 1, 96, 128),  # im_shape
+            (1, 1, 1, 96, 128),  # img_shape
             (1, 1, 1, 1, 192),  # k_shape
             (1, 1, 1, 1, 192),  # nkx
             (1, 1, 1, 1, 192),  # nky
@@ -317,7 +317,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'zero',  # type_k2
         ),
         (  # (4) 2d single shot spiral
-            (1, 2, 1, 96, 128),  # im_shape
+            (1, 2, 1, 96, 128),  # img_shape
             (1, 2, 1, 1, 192),  # k_shape
             (1, 1, 1, 1, 192),  # nkx
             (1, 1, 1, 1, 192),  # nky
@@ -330,7 +330,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'zero',  # type_k2
         ),
         (  # (5) 3d single shot spiral, 4 coils, 2 other
-            (2, 4, 16, 32, 64),  # im_shape
+            (2, 4, 16, 32, 64),  # img_shape
             (2, 4, 1, 64, 1),  # k_shape
             (2, 1, 1, 64, 1),  # nkx
             (2, 1, 1, 64, 1),  # nky
@@ -343,7 +343,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'zero',  # type_k2
         ),
         (  # (6) 3d non-uniform, 3 coils, 2 other
-            (2, 3, 10, 12, 14),  # im_shape
+            (2, 3, 10, 12, 14),  # img_shape
             (2, 3, 6, 8, 10),  # k_shape
             (2, 1, 6, 8, 10),  # nkx
             (2, 1, 6, 8, 10),  # nky
@@ -356,7 +356,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k2
         ),
         (  # (7) 2d non-uniform cine with 2 cardiac phases, 3 coils, same traj for each phase
-            (2, 3, 1, 64, 64),  # im_shape
+            (2, 3, 1, 64, 64),  # img_shape
             (2, 3, 1, 18, 128),  # k_shape
             (1, 1, 1, 18, 128),  # nkx
             (1, 1, 1, 18, 128),  # nky
@@ -369,7 +369,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'zero',  # type_k2
         ),
         (  # (8) 2d non-uniform cine with 2 cardiac phases, 3 coils
-            (2, 3, 1, 64, 64),  # im_shape
+            (2, 3, 1, 64, 64),  # img_shape
             (2, 3, 1, 18, 128),  # k_shape
             (2, 1, 1, 18, 128),  # nkx
             (2, 1, 1, 18, 128),  # nky
@@ -382,7 +382,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'zero',  # type_k2
         ),
         (  # (9) 2d cartesian cine with 2 cardiac phases, 3 coils
-            (2, 3, 1, 96, 128),  # im_shape
+            (2, 3, 1, 96, 128),  # img_shape
             (2, 3, 1, 128, 192),  # k_shape
             (2, 1, 1, 1, 192),  # nkx
             (2, 1, 1, 128, 1),  # nky
@@ -395,7 +395,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'zero',  # type_k2
         ),
         (  # (10) radial phase encoding (RPE), 3 coils, with oversampling in both FFT and non-uniform directions
-            (2, 3, 6, 8, 10),  # im_shape
+            (2, 3, 6, 8, 10),  # img_shape
             (2, 3, 8, 10, 12),  # k_shape
             (2, 1, 1, 1, 12),  # nkx
             (2, 1, 8, 10, 1),  # nky
@@ -408,7 +408,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k2
         ),
         (  # (11) radial phase encoding (RPE), 2 coils with non-Cartesian sampling along readout
-            (2, 2, 6, 8, 10),  # im_shape
+            (2, 2, 6, 8, 10),  # img_shape
             (2, 2, 8, 10, 12),  # k_shape
             (2, 1, 1, 1, 12),  # nkx
             (2, 1, 8, 10, 1),  # nky
@@ -421,7 +421,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'non-uniform',  # type_k2
         ),
         (  # (12) stack of stars, 3 other, 2 coil, oversampling in both FFT and non-uniform directions
-            (3, 2, 10, 8, 8),  # im_shape
+            (3, 2, 10, 8, 8),  # img_shape
             (3, 2, 12, 8, 10),  # k_shape
             (3, 1, 1, 8, 10),  # nkx
             (3, 1, 1, 8, 10),  # nky
@@ -434,7 +434,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'uniform',  # type_k2
         ),
         (  # (13) stack of stars, (2,2,4) other, 3 coil, trajectory is different along second other dimension
-            (2, 2, 4, 3, 8, 6, 6),  # im_shape
+            (2, 2, 4, 3, 8, 6, 6),  # img_shape
             (2, 2, 4, 3, 12, 6, 10),  # k_shape
             (2, 1, 1, 1, 6, 10),  # nkx
             (2, 1, 1, 1, 6, 10),  # nky
@@ -447,7 +447,7 @@ COMMON_MR_TRAJECTORIES = pytest.mark.parametrize(
             'uniform',  # type_k2
         ),
         (  # (14) 2d non-uniform not aligned in kzyx and k210, similar to 3d single shot spiral but with singleton dim
-            (8, 5, 64, 1, 64),  # im_shape
+            (8, 5, 64, 1, 64),  # img_shape
             (8, 5, 1, 18, 128),  # k_shape
             (8, 1, 1, 18, 128),  # nkx
             (8, 1, 1, 1, 1),  # nky

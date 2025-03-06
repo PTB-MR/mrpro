@@ -10,27 +10,27 @@ from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 
 
 @pytest.mark.parametrize(
-    ('ti', 'result'),
+    ('saturation_time', 'result'),
     [
-        (0, '0'),  # short ti
-        (60, 'm0'),  # long ti
+        (0, '0'),  # short saturation_time
+        (60, 'm0'),  # long saturation_time
     ],
 )
 def test_saturation_recovery_special_values(
-    ti: float, result: str, parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)
+    saturation_time: float, result: str, parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)
 ) -> None:
     """Test saturation recovery signal at special input values."""
-    model = SaturationRecovery(ti)
+    model = SaturationRecovery(saturation_time)
     rng = RandomGenerator(0)
     m0 = rng.complex64_tensor(parameter_shape)
     t1 = rng.float32_tensor(parameter_shape, low=0.1, high=2)
 
     (signal,) = model(m0, t1)
 
-    # Assert closeness to zero for ti=0
+    # Assert closeness to zero for saturation_time=0
     if result == '0':
         torch.testing.assert_close(signal[0], torch.zeros_like(m0))
-    # Assert closeness to m0 for large ti
+    # Assert closeness to m0 for large saturation_time
     elif result == 'm0':
         torch.testing.assert_close(signal[0], m0)
     else:
@@ -43,8 +43,8 @@ def test_saturation_recovery_shape(
 ) -> None:
     """Test correct signal shapes."""
     rng = RandomGenerator(1)
-    ti = rng.float32_tensor(contrast_dim_shape, low=-0.1, high=2)
-    model = SaturationRecovery(ti)
+    saturation_time = rng.float32_tensor(contrast_dim_shape, low=-0.1, high=2)
+    model = SaturationRecovery(saturation_time)
     m0 = rng.complex64_tensor(parameter_shape)
     t1 = rng.float32_tensor(parameter_shape, low=0.01, high=2)
     (signal,) = model(m0, t1)
@@ -58,11 +58,11 @@ def test_autodiff_aturation_recovery(
 ) -> None:
     """Test autodiff works for aturation recovery model."""
     rng = RandomGenerator(2)
-    ti = rng.float32_tensor(contrast_dim_shape, low=-0.1, high=2)
-    model = SaturationRecovery(ti)
+    saturation_time = rng.float32_tensor(contrast_dim_shape, low=-0.1, high=2)
+    model = SaturationRecovery(saturation_time)
     m0 = rng.complex64_tensor(parameter_shape)
     t1 = rng.float32_tensor(parameter_shape, low=0.01, high=2)
-    model = SaturationRecovery(ti=10)
+    model = SaturationRecovery(saturation_time=10)
     autodiff_test(model, m0, t1)
 
 
@@ -72,25 +72,25 @@ def test_saturation_recovery_cuda(
 ) -> None:
     """Test the saturation recovery model works on cuda devices."""
     rng = RandomGenerator(3)
-    ti = rng.float32_tensor(contrast_dim_shape, low=-0.1, high=2)
+    saturation_time = rng.float32_tensor(contrast_dim_shape, low=-0.1, high=2)
     m0 = rng.complex64_tensor(parameter_shape)
     t1 = rng.float32_tensor(parameter_shape, low=0.01, high=2)
 
     # Create on CPU, transfer to GPU and run on GPU
-    model = SaturationRecovery(ti.tolist())
+    model = SaturationRecovery(saturation_time.tolist())
     model.cuda()
     (signal,) = model(m0.cuda(), t1.cuda())
     assert signal.is_cuda
     assert signal.isfinite().all()
 
     # Create on GPU and run on GPU
-    model = SaturationRecovery(ti=ti.cuda())
+    model = SaturationRecovery(saturation_time=saturation_time.cuda())
     (signal,) = model(m0.cuda(), t1.cuda())
     assert signal.is_cuda
     assert signal.isfinite().all()
 
     # Create on GPU, transfer to CPU and run on CPU
-    model = SaturationRecovery(ti=ti.cuda())
+    model = SaturationRecovery(saturation_time=saturation_time.cuda())
     model.cpu()
     (signal,) = model(m0, t1)
     assert signal.is_cpu
