@@ -17,8 +17,7 @@ class SaturationRecovery(SignalModel[torch.Tensor, torch.Tensor]):
         Parameters
         ----------
         saturation_time
-            saturation times
-            with shape (time, ...)
+            delay between saturation and acquisition. Shape `(time, ...)`.
         """
         super().__init__()
         saturation_time = torch.as_tensor(saturation_time)
