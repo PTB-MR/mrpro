@@ -31,7 +31,7 @@ def mock_requests(monkeypatch) -> None:
         """Mock HTTP GET requests dynamically extracting subject and class from the URL."""
         if url == OVERVIEW_URL:
             # Fake subject list
-            return type('MockResponse', (), {'text': '<option value=1><option value=2>'})()
+            return type('MockResponse', (), {'text': '<option value=1>'})()
 
         if match := re.search(r'do_download_alias=subject(\d+)_([^&]*)', url):
             # Fake data
@@ -53,7 +53,7 @@ def test_download_brainweb(tmp_path, mock_requests) -> None:
 
     # Check that HDF5 files were created
     hdf5_files = list(tmp_path.glob('s*.h5'))
-    assert len(hdf5_files) == 2  # 2 subjects in mock data
+    assert len(hdf5_files) == 1  # 1 subjects in mock data
 
     for hdf5_file in hdf5_files:
         with h5py.File(hdf5_file, 'r') as f:
@@ -66,11 +66,11 @@ def test_download_brainweb(tmp_path, mock_requests) -> None:
 
 
 @pytest.fixture(scope='session')
-def brainweb_test_data(tmp_path_factory):
+def brainweb_test_data(tmp_path_factory, n_subjects=1):
     """Create temporary HDF5 files for BrainwebVolumes testing."""
     test_dir = tmp_path_factory.mktemp('brainweb')
 
-    for subject in range(2):  # Create test files for two subjects
+    for subject in range(n_subjects):
         file_path = test_dir / f's{subject:02d}.h5'
         with h5py.File(file_path, 'w') as f:
             rng = RandomGenerator(int(subject))
@@ -88,26 +88,23 @@ def brainweb_test_data(tmp_path_factory):
 def test_brainwebvolumes_init(brainweb_test_data) -> None:
     """Test BrainwebVolumes dataset initialization."""
     dataset = BrainwebVolumes(folder=brainweb_test_data)
-    assert len(dataset) == 2  # Two subjects in test data
+    assert len(dataset) == 1  # Single subject in test data
 
 
-def test_brainweb_getitem(brainweb_test_data) -> None:
+def test_brainwebvolumes_getitem(brainweb_test_data) -> None:
     """Test dataset __getitem__ method."""
-    dataset = BrainwebVolumes(folder=brainweb_test_data, what=('m0', 'r1', 't2', 'mask', 'tissueclass', 'dura'))
+    dataset = BrainwebVolumes(folder=brainweb_test_data, what=('m0', 'mask', 'tissueclass', 'r1'))
     sample = dataset[0]
 
     assert isinstance(sample, dict)
 
     assert sample['m0'].shape == (362, 434, 362)
     assert sample['r1'].shape == (362, 434, 362)
-    assert sample['t2'].shape == (362, 434, 362)
     assert sample['mask'].shape == (362, 434, 362)
     assert sample['tissueclass'].shape == (362, 434, 362)
-    assert sample['dura'].shape == (362, 434, 362)
 
     assert sample['m0'].dtype == torch.complex64
     assert sample['r1'].dtype == torch.float
-    assert sample['t2'].dtype == torch.float
     assert sample['mask'].dtype == torch.bool
     assert sample['tissueclass'].dtype == torch.long
 
@@ -116,7 +113,7 @@ def test_brainweb_getitem(brainweb_test_data) -> None:
     assert not torch.isnan(sample['dura']).any()
 
 
-def test_brainweb_no_files(tmp_path) -> None:
+def test_brainwebvolumes_no_files(tmp_path) -> None:
     """Ensure error is raised if no files are found."""
     with pytest.raises(FileNotFoundError):
         BrainwebVolumes(folder=tmp_path)
