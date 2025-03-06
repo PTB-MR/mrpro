@@ -176,7 +176,7 @@ class IData(Data):
         # store orientation and position in affine matrix
         affine = np.eye(4)
         orientation_zyx = self.header.orientation.as_matrix().squeeze().numpy()
-        orientation_xyz = orientation_zyx[[2, 1, 0], :]  # Permute the position vector
+        orientation_xyz = orientation_zyx[[2, 1, 0], :]
         pos_z = self.header.position.zyx[0].item()
         pos_y = self.header.position.zyx[1].item()
         pos_x = self.header.position.zyx[2].item()
