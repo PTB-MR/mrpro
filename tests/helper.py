@@ -181,7 +181,7 @@ def gradient_of_linear_operator_test(
     v: torch.Tensor,
     relative_tolerance: float = 1e-3,
     absolute_tolerance: float = 1e-5,
-):
+) -> None:
     """Test the gradient of a linear operator is the adjoint.
     Note: This property should hold for all u and v.
     Commonly, this function is called with two random vectors u and v.
