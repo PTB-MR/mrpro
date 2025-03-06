@@ -1,7 +1,7 @@
 """Acquisition information dataclass."""
 
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field
+from dataclasses import field
 from typing import Annotated, Literal, TypeAlias, overload
 
 import ismrmrd
@@ -9,8 +9,8 @@ import numpy as np
 import torch
 from typing_extensions import Self
 
-from mrpro.data.CheckDataMixin import Annotation, CheckDataMixin, string_to_size
-from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.Dataclass import Dataclass
+from mrpro.data.mixin.CheckDataMixin import Annotation, string_to_size
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reshape import unsqueeze_at, unsqueeze_right
@@ -70,8 +70,7 @@ SpatialDimensionTensor: TypeAlias = Annotated[SpatialDimension[torch.Tensor], An
 ShapeAnnotation = Annotation(shape='*#other 1 #k2 #k1 1')
 
 
-@dataclass(slots=True)
-class AcqIdx(MoveDataMixin, CheckDataMixin):
+class AcqIdx(Dataclass):
     """Acquisition index for each readout."""
 
     k1: IntTensor = field(default_factory=_int_factory)
@@ -133,8 +132,7 @@ class AcqIdx(MoveDataMixin, CheckDataMixin):
         return torch.Size(string_to_size('*#other 1 #k2 #k1 1', self._memo))
 
 
-@dataclass(slots=True)
-class UserValues(MoveDataMixin):
+class UserValues(Dataclass):
     """User Values used in AcqInfo."""
 
     float1: FloatTensor = field(default_factory=_float_factory)
@@ -162,8 +160,7 @@ class UserValues(MoveDataMixin):
         return torch.Size(string_to_size('*#other 1 #k2 #k1 1', self._memo))
 
 
-@dataclass(slots=True)
-class PhysiologyTimestamps(MoveDataMixin):
+class PhysiologyTimestamps(Dataclass):
     """Time stamps relative to physiological triggering, e.g. ECG, in seconds."""
 
     timestamp1: FloatTensor = field(default_factory=_float_factory)
@@ -178,8 +175,7 @@ class PhysiologyTimestamps(MoveDataMixin):
         return torch.Size(string_to_size('*#other 1 #k2 #k1 1', self._memo))
 
 
-@dataclass(slots=True)
-class AcqInfo(MoveDataMixin):
+class AcqInfo(Dataclass):
     """Acquisition information for each readout."""
 
     idx: Annotated[AcqIdx, ShapeAnnotation] = field(default_factory=AcqIdx)

@@ -3,7 +3,7 @@
 import dataclasses
 import datetime as dt
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import field
 from typing import TYPE_CHECKING
 
 import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
@@ -12,7 +12,7 @@ from typing_extensions import Self
 
 from mrpro.data import enums
 from mrpro.data.AcqInfo import AcqInfo
-from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
@@ -25,8 +25,7 @@ if TYPE_CHECKING:
 UNKNOWN = 'unknown'
 
 
-@dataclass(slots=True)
-class KHeader(MoveDataMixin):
+class KHeader(Dataclass):
     """MR raw data header.
 
     All information that is not covered by the dataclass is stored in

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
 from typing import Generic, get_args
 
 import numpy as np
@@ -12,7 +11,7 @@ from numpy.typing import ArrayLike
 from typing_extensions import Protocol, Self, TypeVar, overload
 
 import mrpro.utils.typing as type_utils
-from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.Dataclass import Dataclass
 
 # Change here to add more types
 VectorTypes = torch.Tensor
@@ -48,8 +47,7 @@ class XYZ(Protocol[T]):
     z: T
 
 
-@dataclass(slots=True)
-class SpatialDimension(MoveDataMixin, Generic[T_co]):
+class SpatialDimension(Dataclass, Generic[T_co]):
     """Spatial dataclass of float/int/tensors (z, y, x)."""
 
     z: T_co
