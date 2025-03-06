@@ -317,17 +317,24 @@ class IHeader(MoveDataMixin):
         t0 = datetime.combine(frame_time_dt[0].date(), time(0, 0))
         delta_t = torch.tensor([(ft - t0).total_seconds() for ft in frame_time_dt][::n_volumes])
 
-        physiology_time = PhysiologyTimestamps(timestamp1=torch.zeros_like(delta_t))
+        dcm_cardiac_trigger = get_items(dataset, 'NominalCardiacTriggerDelayTime', float)
+        if dcm_cardiac_trigger:
+            physiology_time = PhysiologyTimestamps(timestamp1=ms_to_s(torch.tensor(dcm_cardiac_trigger)))
+        else:
+            physiology_time = PhysiologyTimestamps()
 
         te_ms = get_items(dataset, 'EchoTime', float)
         if not te_ms:  # Some scanners use 'EchoTime', some use 'EffectiveEchoTime'
             te_ms = get_items(dataset, 'EffectiveEchoTime', float)
         te = ms_to_s(te_ms[::n_volumes])
 
-        dcm_indices = torch.stack(get_items(dataset, 'DimensionIndexValues', torch.tensor))
-        image_idx = ImageIdx(slice=dcm_indices[:, 1])
+        # The in stack position accounts for the slice position for multi-file data with cardiac phases,
+        # as well as for single file dicom with multiple slices. Index is reduced by 1 to start indexing at 0.
+        image_idx = ImageIdx(
+            phase=torch.tensor(get_items(dataset, 'TemporalPositionIndex', int)) - 1,
+            slice=torch.tensor(get_items(dataset, 'InStackPositionNumber', int)) - 1,
+        )
 
-        # TODO: PhysiologyTimeStamps
         return cls(
             resolution=resolution,
             fa=fa,
