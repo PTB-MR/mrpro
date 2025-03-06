@@ -1,13 +1,15 @@
 """MoveDataMixin."""
 
 import dataclasses
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from copy import copy as shallowcopy
 from copy import deepcopy
-from typing import ClassVar, TypeAlias, cast
+from typing import Callable, Protocol, TypeAlias, cast
 
 import torch
-from typing_extensions import Any, Protocol, Self, TypeVar, overload, runtime_checkable
+from typing_extensions import Any, Self, TypeVar, overload
+
+from mrpro.utils.typing import DataclassInstance
 
 
 class InconsistentDeviceError(ValueError):
@@ -28,17 +30,21 @@ class InconsistentDeviceError(ValueError):
         super().__init__(f'Inconsistent devices found, found at least {", ".join(str(d) for d in devices)}')
 
 
-@runtime_checkable
-class DataclassInstance(Protocol):
-    """An instance of a dataclass."""
-
-    __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
-
-
 T = TypeVar('T')
 
 
-class MoveDataMixin:
+class ApplyProtocol(Protocol):
+    def apply(self: Self, function: Callable[[Any], Any] | None = None, *, recurse: bool = True) -> Self: ...
+    def apply_(
+        self: Self,
+        function: Callable[[Any], Any] | None = None,
+        *,
+        memo: dict[int, Any] | None = None,
+        recurse: bool = True,
+    ) -> Self: ...
+
+
+class MoveDataMixin(ApplyProtocol):
     """Move dataclass fields to cpu/gpu and convert dtypes."""
 
     @overload
@@ -251,64 +257,6 @@ class MoveDataMixin:
         # manual recursion allows us to do the copy only once
         new.apply_(_convert, memo=memo, recurse=False)
         return new
-
-    def apply(
-        self: Self,
-        function: Callable[[Any], Any] | None = None,
-        *,
-        recurse: bool = True,
-    ) -> Self:
-        """Apply a function to all children. Returns a new object.
-
-        Parameters
-        ----------
-        function
-            The function to apply to all fields. `None` is interpreted as a no-op.
-        recurse
-            If `True`, the function will be applied to all children that are `MoveDataMixin` instances.
-        """
-        new = self.clone().apply_(function, recurse=recurse)
-        return new
-
-    def apply_(
-        self: Self,
-        function: Callable[[Any], Any] | None = None,
-        *,
-        memo: dict[int, Any] | None = None,
-        recurse: bool = True,
-    ) -> Self:
-        """Apply a function to all children in-place.
-
-        Parameters
-        ----------
-        function
-            The function to apply to all fields. `None` is interpreted as a no-op.
-        memo
-            A dictionary to keep track of objects that the function has already been applied to,
-            to avoid multiple applications. This is useful if the object has a circular reference.
-        recurse
-            If `True`, the function will be applied to all children that are `MoveDataMixin` instances.
-        """
-        applied: Any
-
-        if memo is None:
-            memo = {}
-
-        if function is None:
-            return self
-
-        for name, data in self._items():
-            if id(data) in memo:
-                # this works even if self is frozen
-                object.__setattr__(self, name, memo[id(data)])
-                continue
-            if recurse and isinstance(data, MoveDataMixin):
-                applied = data.apply_(function, memo=memo)
-            else:
-                applied = function(data)
-            memo[id(data)] = applied
-            object.__setattr__(self, name, applied)
-        return self
 
     def cuda(
         self,

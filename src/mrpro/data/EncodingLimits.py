@@ -1,13 +1,13 @@
 """Encoding limits dataclass."""
 
 import dataclasses
-from dataclasses import dataclass, field
+from dataclasses import field
 
 from ismrmrd.xsd.ismrmrdschema.ismrmrd import encodingLimitsType, encodingType, ismrmrdHeader, limitType
 from typing_extensions import Self
 
 
-@dataclass(slots=True)
+@dataclasses.dataclass
 class Limits:
     """Limits dataclass with min, max, and center attributes."""
 
@@ -33,7 +33,7 @@ class Limits:
         return self.max - self.min + 1
 
 
-@dataclass(slots=True)
+@dataclasses.dataclass
 class EncodingLimits:
     """Encoding limits dataclass with limits for each attribute [INA2016]_.
 
