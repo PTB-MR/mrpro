@@ -7,27 +7,44 @@ import torch
 from mrpro.data import CsmData, QHeader, SpatialDimension
 from mrpro.operators import SensitivityOp
 
-from tests import RandomGenerator, dotproduct_adjointness_test
+from tests import (
+    RandomGenerator,
+    dotproduct_adjointness_test,
+    forward_mode_autodiff_of_linear_operator_test,
+    gradient_of_linear_operator_test,
+)
 
 
-def test_sensitivity_op_adjointness() -> None:
-    """Test Sensitivity operator adjoint property."""
-
+def create_sensitivity_op_and_domain_range() -> tuple[SensitivityOp, torch.Tensor, torch.Tensor]:
+    """Create a sensitivity operator and an element from domain and range."""
     random_generator = RandomGenerator(seed=0)
 
     n_zyx = (2, 3, 4)
     n_other = (5, 6, 7)
     n_coils = 4
-
     # Generate sensitivity operator
     random_tensor = random_generator.complex64_tensor(size=(*n_other, n_coils, *n_zyx))
     random_csmdata = CsmData(data=random_tensor, header=QHeader(resolution=SpatialDimension(1.0, 1.0, 1.0)))
     sensitivity_op = SensitivityOp(random_csmdata)
 
-    # Check adjoint property
     u = random_generator.complex64_tensor(size=(*n_other, 1, *n_zyx))
     v = random_generator.complex64_tensor(size=(*n_other, n_coils, *n_zyx))
-    dotproduct_adjointness_test(sensitivity_op, u, v)
+    return sensitivity_op, u, v
+
+
+def test_sensitivity_op_adjointness() -> None:
+    """Test Sensitivity operator adjoint property."""
+    dotproduct_adjointness_test(*create_sensitivity_op_and_domain_range())
+
+
+def test_sensitivity_op_grad() -> None:
+    """Test gradient of sensitivity operator."""
+    gradient_of_linear_operator_test(*create_sensitivity_op_and_domain_range())
+
+
+def test_sensitivity_op_forward_mode_autodiff() -> None:
+    """Test forward-mode autodiff of sensitivity operator."""
+    forward_mode_autodiff_of_linear_operator_test(*create_sensitivity_op_and_domain_range())
 
 
 def test_sensitivity_op_csmdata_tensor() -> None:

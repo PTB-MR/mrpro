@@ -1,12 +1,33 @@
 """Tests for Fast Fourier Operator class."""
 
+from collections.abc import Sequence
+
 import numpy as np
 import pytest
 import torch
 from mrpro.data import SpatialDimension
 from mrpro.operators import FastFourierOp
 
-from tests import RandomGenerator, dotproduct_adjointness_test
+from tests import (
+    RandomGenerator,
+    dotproduct_adjointness_test,
+    forward_mode_autodiff_of_linear_operator_test,
+    gradient_of_linear_operator_test,
+)
+
+
+def create_fast_fourier_op_and_range_domain(
+    recon_matrix: Sequence[int], encoding_matrix: Sequence[int]
+) -> tuple[FastFourierOp, torch.Tensor, torch.Tensor]:
+    """Create a fast Fourier operator and an element from domain and range."""
+    # Create test data
+    generator = RandomGenerator(seed=0)
+    u = generator.complex64_tensor(recon_matrix)
+    v = generator.complex64_tensor(encoding_matrix)
+
+    # Create operator and apply
+    ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix)
+    return ff_op, u, v
 
 
 @pytest.mark.parametrize(('npoints', 'a'), [(100, 20), (300, 20)])
@@ -34,7 +55,7 @@ def test_fast_fourier_op_forward(npoints: int, a: int) -> None:
     torch.testing.assert_close(igauss_fwd, kgauss)
 
 
-@pytest.mark.parametrize(
+MATRIX_PARAMETERS = pytest.mark.parametrize(
     ('encoding_matrix', 'recon_matrix'),
     [
         ((101, 201, 50), (13, 221, 64)),
@@ -43,17 +64,28 @@ def test_fast_fourier_op_forward(npoints: int, a: int) -> None:
         ((100, 200, 50), (13, 221, 64)),
     ],
 )
-def test_fast_fourier_op_adjoint(encoding_matrix, recon_matrix) -> None:
+
+
+@MATRIX_PARAMETERS
+def test_fast_fourier_op_adjoint(encoding_matrix: Sequence[int], recon_matrix: Sequence[int]) -> None:
     """Test adjointness of Fast Fourier Op."""
+    dotproduct_adjointness_test(*create_fast_fourier_op_and_range_domain(recon_matrix, encoding_matrix))
 
-    # Create test data
-    generator = RandomGenerator(seed=0)
-    u = generator.complex64_tensor(recon_matrix)
-    v = generator.complex64_tensor(encoding_matrix)
 
-    # Create operator and apply
-    ff_op = FastFourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix)
-    dotproduct_adjointness_test(ff_op, u, v)
+@MATRIX_PARAMETERS
+def test_density_compensation_op_grad(encoding_matrix: Sequence[int], recon_matrix: Sequence[int]) -> None:
+    """Test the gradient of the fast Fourier operator."""
+    gradient_of_linear_operator_test(*create_fast_fourier_op_and_range_domain(recon_matrix, encoding_matrix))
+
+
+@MATRIX_PARAMETERS
+def test_density_compensation_op_forward_mode_autodiff(
+    encoding_matrix: Sequence[int], recon_matrix: Sequence[int]
+) -> None:
+    """Test forward-mode autodiff of the fast Fourier operator."""
+    forward_mode_autodiff_of_linear_operator_test(
+        *create_fast_fourier_op_and_range_domain(recon_matrix, encoding_matrix)
+    )
 
 
 def test_fast_fourier_op_spatial_dim() -> None:
@@ -102,3 +134,15 @@ def test_invalid_dim() -> None:
 
     with pytest.raises(NotImplementedError, match='encoding_matrix'):
         FastFourierOp(recon_matrix=None, encoding_matrix=encoding_matrix, dim=(-4, -2, -1))
+
+
+def test_fast_fourier_op_repr():
+    """Test the __repr__ method of FastFourierOp."""
+
+    recon_matrix = SpatialDimension(64, 64, 64)
+    encoding_matrix = SpatialDimension(128, 128, 128)
+    fft_op = FastFourierOp(dim=(-3, -2, -1), recon_matrix=recon_matrix, encoding_matrix=encoding_matrix)
+    repr_str = repr(fft_op)
+
+    # Check if __repr__ contains expected information
+    assert 'Dimension(s) along which FFT is applied' in repr_str
