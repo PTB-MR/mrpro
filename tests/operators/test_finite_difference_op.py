@@ -68,7 +68,7 @@ def test_finite_difference_op_grad(
     """Test the gradient of finite difference operator."""
     gradient_of_linear_operator_test(*create_finite_difference_op_and_range_domain(dim, mode, pad_mode))
 
-    
+
 @pytest.mark.parametrize('pad_mode', ['zeros', 'circular'])
 @pytest.mark.parametrize('mode', ['central', 'forward', 'backward'])
 @pytest.mark.parametrize('dim', [(-1,), (-2, -1), (-3, -2, -1), (-4,), (1, 3)])
@@ -78,7 +78,7 @@ def test_finite_difference_op_forward_mode_autodiff(
     """Test the forward-mode autodiff of the finite difference operator."""
     forward_mode_autodiff_of_linear_operator_test(*create_finite_difference_op_and_range_domain(dim, mode, pad_mode))
 
-    
+
 @pytest.mark.cuda
 def test_finite_difference_op_cuda():
     """Test finite difference operator works on CUDA devices."""

@@ -135,7 +135,7 @@ def test_invalid_dim() -> None:
     with pytest.raises(NotImplementedError, match='encoding_matrix'):
         FastFourierOp(recon_matrix=None, encoding_matrix=encoding_matrix, dim=(-4, -2, -1))
 
-    
+
 def test_fast_fourier_op_repr():
     """Test the __repr__ method of FastFourierOp."""
 
@@ -147,7 +147,7 @@ def test_fast_fourier_op_repr():
     # Check if __repr__ contains expected information
     assert 'Dimension(s) along which FFT is applied' in repr_str
 
-    
+
 @pytest.mark.cuda
 def test_fast_fourier_op_cuda():
     """Test fast Fourier operator works on CUDA devices."""
@@ -179,4 +179,3 @@ def test_fast_fourier_op_cuda():
     ff_op.cpu()
     (y,) = ff_op(x)
     assert y.is_cpu
-    
