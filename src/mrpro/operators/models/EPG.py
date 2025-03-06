@@ -19,14 +19,14 @@ from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
 class Parameters(MoveDataMixin):
     """Tissue parameters for EPG simulation."""
 
+    m0: torch.Tensor
+    """Steay state magnetization (complex)"""
+
     t1: torch.Tensor
     """T1 relaxation time [s]"""
 
     t2: torch.Tensor
     """T2 relaxation time [s]"""
-
-    m0: torch.Tensor
-    """Steay state magnetization (complex)"""
 
     relative_b1: torch.Tensor | None = None
     """Relative B1 scaling factor (complex)"""
@@ -86,8 +86,9 @@ def rf_matrix(
         Matrix describing the mixing of the EPG configuration states due to an RF pulse.
     """
     if relative_b1 is not None:
-        flip_angle = flip_angle * relative_b1[None, ...].abs()
-        phase = phase + relative_b1[None, ...].angle()
+        # relative_b1 and flip_angle need to be correctly broadcasted at this point
+        flip_angle = flip_angle * relative_b1.abs()
+        phase = phase + relative_b1.angle()
     cosa = torch.cos(flip_angle)
     sina = torch.sin(flip_angle)
     cosa2 = (cosa + 1) / 2
@@ -224,7 +225,10 @@ def initial_state(
     """
     if n_states < 2:
         raise ValueError('Number of states should be at least 2.')
-    return torch.zeros(*shape, 3, n_states, device=device, dtype=dtype)
+    state = torch.zeros(*shape, 3, n_states, device=device, dtype=dtype)
+    # Start in equilibrium state
+    state[..., :, 0] = torch.tensor((0.0, 0, 1.0))
+    return state
 
 
 class EPGBlock(TensorAttributeMixin, ABC):
@@ -241,7 +245,7 @@ class EPGBlock(TensorAttributeMixin, ABC):
 
     @property
     def duration(self) -> torch.Tensor:
-        """Duration of the block in s."""
+        """Duration of the block."""
         raise NotImplementedError
 
 
@@ -281,7 +285,7 @@ class RFBlock(EPGBlock):
 
     @property
     def duration(self) -> torch.Tensor:
-        """Duration of the block in s."""
+        """Duration of the block."""
         return torch.tensor(0.0)
 
 
@@ -306,7 +310,7 @@ class AcquisitionBlock(EPGBlock):
 
     @property
     def duration(self) -> torch.Tensor:
-        """Duration of the block in s."""
+        """Duration of the block."""
         return torch.tensor(0.0)
 
 
@@ -331,7 +335,7 @@ class GradientDephasingBlock(EPGBlock):
 
     @property
     def duration(self) -> torch.Tensor:
-        """Duration of the block in s."""
+        """Duration of the block."""
         return torch.tensor(0.0)
 
 
@@ -367,9 +371,9 @@ class FispBlock(EPGBlock):
         rf_phases
             Phase of the RF pulses in rad
         te
-            Echo time in s
+            Echo time
         tr
-            Repetition time in s
+            Repetition time
         """
         super().__init__()
 
@@ -386,7 +390,7 @@ class FispBlock(EPGBlock):
 
     @property
     def duration(self) -> torch.Tensor:
-        """Duration of the block in s."""
+        """Duration of the block."""
         return self.tr.sum(0)
 
     def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
@@ -404,7 +408,10 @@ class FispBlock(EPGBlock):
             EPG configuration states after the block and the acquired signals
         """
         signal = []
-        unsqueezed = unsqueeze_tensors_right(self.flip_angles, self.rf_phases, self.te, self.tr, ndim=parameters.ndim)
+        # +1 for time dimension
+        unsqueezed = unsqueeze_tensors_right(
+            self.flip_angles, self.rf_phases, self.te, self.tr, ndim=parameters.ndim + 1
+        )
         for flip_angle, rf_phase, te, tr in zip(*unsqueezed, strict=True):
             state = rf(state, rf_matrix(flip_angle, rf_phase, parameters.relative_b1))
             state = relax(state, relax_matrix(te, parameters.t1, parameters.t2))
@@ -426,7 +433,7 @@ class InversionBlock(EPGBlock):
         Parameters
         ----------
         inversion_time
-            Inversion time in s
+            Inversion time
         """
         super().__init__()
 
@@ -452,7 +459,7 @@ class InversionBlock(EPGBlock):
 
     @property
     def duration(self) -> torch.Tensor:
-        """Duration of the block in s."""
+        """Duration of the block."""
         return self.inversion_time
 
 
@@ -503,7 +510,7 @@ class T2PrepBlock(EPGBlock):
 
     @property
     def duration(self) -> torch.Tensor:
-        """Duration of the block in s."""
+        """Duration of the block."""
         return self.te
 
 
@@ -516,7 +523,7 @@ class DelayBlock(EPGBlock):
         Parameters
         ----------
         delay_time
-            Delay time in s
+            Delay time
         """
         super().__init__()
         self.delay_time = torch.as_tensor(delay_time)
@@ -541,7 +548,7 @@ class DelayBlock(EPGBlock):
 
     @property
     def duration(self) -> torch.Tensor:
-        """Duration of the block in s."""
+        """Duration of the block."""
         return self.delay_time
 
 
@@ -551,39 +558,44 @@ class EPGSequence(torch.nn.ModuleList, EPGBlock):
     The sequence as multiple blocks, such as preparation pulses, acquisition blocks and delays.
 
     Classic MRF with a single inversion-pulse at the beginning followed by a train of RF pulses with different flip
-    angles as described in Ma, D. et al. Magnetic resonance fingerprinting. Nature 495, 187-192 (2013)
+    angles as described in [MA2013]_ Ma, D. et al. Magnetic resonance fingerprinting. Nature 495, 187-192 (2013)
     [http://dx.doi.org/10.1038/nature11971] can be simulated by the following sequence:
      - InversionBlock
      - FispBlock with flip_angles
 
     Cardiac MRF where a different preparation is done in each cardiac cycle followed by fixed number of RF pulses as
-    described in Hamilton, J. I. et al. MR fingerprinting for rapid quantification of myocardial T1 , T2 , and proton
-    spin density. Magn. Reson. Med. 77, 1446-1458 (2017) [http://doi.wiley.com/10.1002/mrm.26668]. It is a four-fold
+    described in [HAMI2017]_. It is a four-fold
     repetition of
 
                 Block 0                   Block 1                   Block 2                     Block 3
        R-peak                   R-peak                    R-peak                    R-peak                    R-peak
     ---|-------------------------|-------------------------|-------------------------|-------------------------|-----
 
-            [INV TI=20ms][ACQ]                     [ACQ]     [T2-prep TE=40ms][ACQ]    [T2-prep TE=80ms][ACQ]
+            [INV TI=30ms][ACQ]                     [ACQ]     [T2-prep TE=50ms][ACQ]    [T2-prep TE=100ms][ACQ]
 
     can be simulated as:
-        - InversionBlock with inversion_time=20
-        - FispBlock with 48 flip_angles
+        - InversionBlock with inversion_time=30
+        - FispBlock with 47 flip_angles
         - DelayBlock with delay_time=1000-(inversion_block.duration + fisp_block.duration)
 
-        - FispBlock with 48 flip_angles
+        - FispBlock with 47 flip_angles
         - DelayBlock with delay_time=1000-(fisp_block.duration)
 
-        - T2PrepBlock with te=40
-        - FispBlock with 48 flip_angles
+        - T2PrepBlock with te=50
+        - FispBlock with 47 flip_angles
         - DelayBlock with delay_time=1000-(t2_prep_block.duration + fisp_block.duration)
 
-        - T2PrepBlock with te=80
-        - FispBlock with 48 flip_angles
+        - T2PrepBlock with te=100
+        - FispBlock with 47 flip_angles
         - DelayBlock with delay_time=1000-(t2_prep_block.duration + fisp_block.duration)
 
     See also `CardiacFingerprinting` for an implementation.
+
+    References
+    ----------
+    .. [MA2013] Ma, D et al.(2013) Magnetic resonance fingerprinting. Nature 495 http://dx.doi.org/10.1038/nature11971
+    .. [HAMI2017] Hamilton, J. I. et al. (2017) MR fingerprinting for rapid quantification of myocardial T1, T2, and
+            proton spin density. Magn. Reson. Med. 77 http://doi.wiley.com/10.1002/mrm.26668
 
     """
 
@@ -620,7 +632,7 @@ class EPGSequence(torch.nn.ModuleList, EPGBlock):
 
     @property
     def duration(self) -> torch.Tensor:
-        """Duration of the block in s."""
+        """Duration of the block."""
         return sum(block.duration for block in self)
 
 
@@ -647,18 +659,18 @@ class EPGSignalModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch
             self.sequence = sequence
 
     def forward(
-        self, t1: torch.Tensor, t2: torch.Tensor, m0: torch.Tensor, relative_b1: torch.Tensor | None = None
+        self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor, relative_b1: torch.Tensor | None = None
     ) -> tuple[torch.Tensor]:
         """Simulate the EPG signal.
 
         Parameters
         ----------
-        t1
-            T1 relaxation time [s]
-        t2
-            T2 relaxation time [s]
         m0
             Steady state magnetization (complex)
+        t1
+            T1 relaxation time
+        t2
+            T2 relaxation time
         relative_b1
             Relative B1 scaling factor (complex)
 
@@ -666,7 +678,7 @@ class EPGSignalModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch
         -------
             Simulated EPG signal with the different acquisitions in the first dimension.
         """
-        parameters = Parameters(t1, t2, m0, relative_b1)
+        parameters = Parameters(m0, t1, t2, relative_b1)
         state = initial_state(
             parameters.shape, n_states=self.n_states, device=parameters.device, dtype=parameters.dtype.to_complex()
         )
