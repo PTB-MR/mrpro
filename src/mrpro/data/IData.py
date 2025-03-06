@@ -4,6 +4,8 @@ import dataclasses
 from collections.abc import Generator, Sequence
 from pathlib import Path
 
+import ismrmrd
+import nibabel as nib
 import numpy as np
 import torch
 from einops import repeat
@@ -153,6 +155,59 @@ class IData(Data):
 
         # Pass on sorted file list as order of dicom files is often the same as the required order
         return cls.from_dicom_files(filenames=sorted(file_paths))
+
+    def save_as_nifti2(self, filename: str | Path) -> None:
+        """Save image data as NIFTI2 file.
+
+        Parameters
+        ----------
+        filename
+            filename of the NIFTI2 file.
+        """
+        if len(self.data.shape) > 4:
+            num_to_flatten = len(self.data.shape) - 4
+            flattened_size = int(torch.prod(torch.tensor(self.data.shape[:num_to_flatten])).item())
+            new_shape = (flattened_size,) + self.data.shape[num_to_flatten:]
+
+            image_data = self.data.reshape(*new_shape)
+        else:
+            image_data = self.data
+
+        # store orientation and position in affine matrix
+        affine = np.eye(4)
+        orientation_zyx = self.header.orientation.as_matrix().squeeze().numpy()
+        orientation_xyz = orientation_zyx[[2, 1, 0], :]  # Permute the position vector
+        pos_z = self.header.position.zyx[0].item()
+        pos_y = self.header.position.zyx[1].item()
+        pos_x = self.header.position.zyx[2].item()
+        position_xyz = np.array([pos_x, pos_y, pos_z])
+
+        affine[:3, :3] = orientation_xyz
+        affine[:3, 3] = position_xyz
+
+        data_nifti = np.transpose(image_data.squeeze(), (2, 1, 0))
+        magnitude = np.abs(data_nifti).numpy()
+        nifti2_img = nib.Nifti2Image(magnitude, affine)
+
+        hdr = nifti2_img.header
+        hdr['pixdim'][1:4] = [self.header.resolution.x, self.header.resolution.y, self.header.resolution.z]
+        description = f'TE={self.header.te}ms; TI={self.header.ti}ms; TR={self.header.tr}ms; FA={self.header.fa}rad'
+        hdr['descrip'] = description.encode('utf-8')
+
+        nib.save(nifti2_img, f'{filename}.nii')
+
+    def save_as_ismrmrd(self, filename: str | Path) -> None:
+        """Save image data as ISMRMRD file.
+
+        Parameters
+        ----------
+        filename
+            filename of the ISMRMRD file.
+        """
+        dataset = ismrmrd.Dataset(f'{filename}.h5', 'dataset', create_if_needed=True)
+        image = ismrmrd.Image.from_array(self.data.numpy()[0, ...])
+        dataset.append_image(impath=f'{filename}.h5', im=image)
+        dataset.close()
 
     def __repr__(self):
         """Representation method for IData class."""
