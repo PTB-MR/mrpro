@@ -164,8 +164,8 @@ class IData(Data):
         filename
             filename of the NIFTI2 file.
         """
-        if len(self.data.shape) > 4:
-            num_to_flatten = len(self.data.shape) - 4
+        if len(self.data.shape) > 7:
+            num_to_flatten = len(self.data.shape) - 7
             flattened_size = int(torch.prod(torch.tensor(self.data.shape[:num_to_flatten])).item())
             new_shape = (flattened_size,) + self.data.shape[num_to_flatten:]
 
