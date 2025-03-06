@@ -1,22 +1,21 @@
 """MR quantitative data header (QHeader) dataclass."""
 
-from dataclasses import dataclass, field
+from dataclasses import field
 
 import torch
 from pydicom.dataset import Dataset
 from pydicom.tag import Tag
 from typing_extensions import Self
 
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.IHeader import IHeader, ImageIdx
 from mrpro.data.KHeader import KHeader
-from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.unit_conversion import mm_to_m
 
 
-@dataclass(slots=True)
-class QHeader(MoveDataMixin):
+class QHeader(Dataclass):
     """MR quantitative data header."""
 
     resolution: SpatialDimension[float]

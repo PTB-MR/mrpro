@@ -1,16 +1,14 @@
 """Base class for data objects."""
 
-import dataclasses
 from abc import ABC
 
 import torch
 from typing_extensions import Any
 
-from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.Dataclass import Dataclass
 
 
-@dataclasses.dataclass(slots=True, frozen=True)
-class Data(MoveDataMixin, ABC):
+class Data(Dataclass, ABC):
     """A general data class with field data and header."""
 
     data: torch.Tensor

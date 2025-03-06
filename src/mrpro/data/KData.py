@@ -1,7 +1,6 @@
 """MR raw data / k-space data class."""
 
 import copy
-import dataclasses
 import datetime
 import warnings
 from collections.abc import Callable, Sequence
@@ -17,12 +16,12 @@ from typing_extensions import Self, TypeVar
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
 from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_osi2, convert_time_stamp_siemens
-from mrpro.data.CheckDataMixin import Annotation, CheckDataMixin, string_to_size
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
-from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.mixin.CheckDataMixin import Annotation, string_to_size
 from mrpro.data.Rotation import Rotation
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.data.traj_calculators.KTrajectoryIsmrmrd import KTrajectoryIsmrmrd
@@ -63,8 +62,7 @@ OTHER_LABELS = (
 )
 
 
-@dataclasses.dataclass(slots=True, frozen=True)
-class KData(MoveDataMixin, CheckDataMixin):
+class KData(Dataclass):
     """MR raw data / k-space data class."""
 
     header: Annotated[KHeader, Annotation(shape='*#other 1 #k2 #k1 1')]
