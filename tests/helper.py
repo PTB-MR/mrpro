@@ -31,8 +31,8 @@ def dotproduct_adjointness_test(
     u: torch.Tensor,
     v: torch.Tensor,
     relative_tolerance: float = 1e-3,
-    absolute_tolerance=1e-5,
-):
+    absolute_tolerance: float = 1e-5,
+) -> None:
     """Test the adjointness of linear operator and operator.H.
 
     Test if
@@ -42,7 +42,6 @@ def dotproduct_adjointness_test(
 
     Note: This property should hold for all u and v.
     Commonly, this function is called with two random vectors u and v.
-
 
     Parameters
     ----------
@@ -82,8 +81,8 @@ def operator_isometry_test(
     operator: Operator[torch.Tensor, tuple[torch.Tensor]],
     u: torch.Tensor,
     relative_tolerance: float = 1e-3,
-    absolute_tolerance=1e-5,
-):
+    absolute_tolerance: float = 1e-5,
+) -> None:
     """Test the isometry of a operator.
 
     Test if
@@ -113,7 +112,7 @@ def operator_isometry_test(
 
 def linear_operator_unitary_test(
     operator: LinearOperator, u: torch.Tensor, relative_tolerance: float = 1e-3, absolute_tolerance=1e-5
-):
+) -> None:
     """Test if a linear operator is unitary.
 
     Test if
@@ -145,7 +144,7 @@ Tin = TypeVarTuple('Tin')
 def autodiff_test(
     operator: Operator[Unpack[Tin], tuple[torch.Tensor, ...]],
     *u: Unpack[Tin],
-):
+) -> None:
     """Test if autodiff of an operator is working.
     This test does not check that the gradient is correct but simply that it can be calculated using both torch.func.jvp
     and torch.func.vjp.
@@ -174,3 +173,88 @@ def autodiff_test(
         vjp = vjpfunc(v_range)
     assert all(x.isfinite().all() for x in output), 'result is not finite'
     assert all(x.isfinite().all() for x in vjp), 'VJP is not finite'
+
+
+def gradient_of_linear_operator_test(
+    operator: LinearOperator,
+    u: torch.Tensor,
+    v: torch.Tensor,
+    relative_tolerance: float = 1e-3,
+    absolute_tolerance: float = 1e-5,
+) -> None:
+    """Test the gradient of a linear operator is the adjoint.
+    Note: This property should hold for all u and v.
+    Commonly, this function is called with two random vectors u and v.
+
+    Parameters
+    ----------
+    operator
+        linear operator
+    u
+        element of the domain of the operator
+    v
+        element of the range of the operator
+    relative_tolerance
+        default is pytorch's default for float16
+    absolute_tolerance
+        default is pytorch's default for float16
+
+    Raises
+    ------
+    AssertionError
+        if the gradient is not the adjoint
+    """
+    # Gradient of the forward via vjp
+    (_, vjpfunc) = torch.func.vjp(operator.forward, u)
+    assert torch.allclose(vjpfunc((v,))[0], operator.adjoint(v)[0], rtol=relative_tolerance, atol=absolute_tolerance)
+
+    # Gradient of the adjoint via vjp
+    (_, vjpfunc) = torch.func.vjp(operator.adjoint, v)
+    assert torch.allclose(vjpfunc((u,))[0], operator.forward(u)[0], rtol=relative_tolerance, atol=absolute_tolerance)
+
+
+def forward_mode_autodiff_of_linear_operator_test(
+    operator: LinearOperator,
+    u: torch.Tensor,
+    v: torch.Tensor,
+    relative_tolerance: float = 1e-3,
+    absolute_tolerance: float = 1e-5,
+) -> None:
+    """Test the forward-mode autodiff calculation.
+    Verifies that the Jacobian-vector product (jvp) is equivalent to applying the operator.
+    Note: This property should hold for all u and v.
+    Commonly, this function is called with two random vectors u and v.
+
+    Parameters
+    ----------
+    operator
+        linear operator
+    u
+        element of the domain of the operator
+    v
+        element of the range of the operator
+    relative_tolerance
+        default is pytorch's default for float16
+    absolute_tolerance
+        default is pytorch's default for float16
+
+    Raises
+    ------
+    AssertionError
+        if the jvp yields different results than applying the operator
+    """
+    # jvp of the forward
+    assert torch.allclose(
+        torch.func.jvp(operator.forward, (u,), (u,))[0][0],
+        operator.forward(u)[0],
+        rtol=relative_tolerance,
+        atol=absolute_tolerance,
+    )
+
+    # jvp of the adjoint
+    assert torch.allclose(
+        torch.func.jvp(operator.adjoint, (v,), (v,))[0][0],
+        operator.adjoint(v)[0],
+        rtol=relative_tolerance,
+        atol=absolute_tolerance,
+    )
