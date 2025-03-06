@@ -1,6 +1,6 @@
 """Data containers, loading and saving data."""
 
-from mrpro.data import enums, traj_calculators, acq_filters
+from mrpro.data import enums, traj_calculators, acq_filters, mixin
 from mrpro.data.AcqInfo import AcqIdx, AcqInfo
 from mrpro.data.CsmData import CsmData
 from mrpro.data.Data import Data
@@ -12,7 +12,7 @@ from mrpro.data.KData import KData
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KNoise import KNoise
 from mrpro.data.KTrajectory import KTrajectory
-from mrpro.data.MoveDataMixin import MoveDataMixin, InconsistentDeviceError
+from mrpro.data.mixin.MoveDataMixin import MoveDataMixin, InconsistentDeviceError
 from mrpro.data.QData import QData
 from mrpro.data.QHeader import QHeader
 from mrpro.data.Rotation import Rotation
@@ -42,5 +42,6 @@ __all__ = [
     "SpatialDimension",
     "acq_filters",
     "enums",
+    "mixin",
     "traj_calculators"
 ]
