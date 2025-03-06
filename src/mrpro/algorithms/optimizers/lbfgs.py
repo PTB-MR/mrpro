@@ -82,7 +82,8 @@ def lbfgs(
     line_search_fn
         line search algorithm, either ``strong_wolfe`` or `None` (meaning constant step size)
     callback
-        Function to be called after each iteration.
+        Function to be called after each iteration. This can be used to monitor the progress of the algorithm.
+        If it returns `False`, the algorithm stops at that iteration.
         N.B. the callback is not called within the line search of LBFGS.
         You can use the information from the `~mrpro.algorithms.optimizers.OptimizerStatus`
         to display a progress bar.

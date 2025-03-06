@@ -85,7 +85,8 @@ def adam(
     decoupled_weight_decay
         whether to use Adam (default) or AdamW (if set to `True`) [LOS2019]_
     callback
-        function to be called after each iteration
+        function to be called after each iteration. This can be used to monitor the progress of the algorithm.
+        If it returns `False`, the algorithm stops at that iteration.
 
     Returns
     -------

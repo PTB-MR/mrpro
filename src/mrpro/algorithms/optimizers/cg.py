@@ -61,6 +61,7 @@ def cg(
         If the condition number of :math:`H` is large, a small residual may not imply a highly accurate solution.
     callback
         Function to be called at each iteration. This can be used to monitor the progress of the algorithm.
+        If it returns `False`, the algorithm stops at that iteration.
 
     Returns
     -------

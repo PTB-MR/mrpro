@@ -117,7 +117,8 @@ def pdhg(
     initial_duals
         dual variables, used for warm start.
     callback
-        callback function called after each iteration.
+        callback function called after each iteration. This can be used to monitor the progress of the algorithm.
+        If it returns `False`, the algorithm stops at that iteration.
     """
     if f is None and g is None:
         warnings.warn(
