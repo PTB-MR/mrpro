@@ -1,6 +1,5 @@
 """MR quantitative data (QData) class."""
 
-import dataclasses
 from pathlib import Path
 
 import numpy as np
@@ -15,7 +14,6 @@ from mrpro.data.KHeader import KHeader
 from mrpro.data.QHeader import QHeader
 
 
-@dataclasses.dataclass(init=False, slots=True, frozen=True)
 class QData(Data):
     """MR quantitative data (QData) class."""
 

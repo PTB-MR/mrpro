@@ -1,6 +1,5 @@
 """MR image data (IData) class."""
 
-import dataclasses
 from collections.abc import Generator, Sequence
 from pathlib import Path
 
@@ -45,7 +44,6 @@ def _dcm_pixelarray_to_tensor(dataset: Dataset) -> torch.Tensor:
     return slope * torch.as_tensor(dataset.pixel_array.astype(np.complex64)) + intercept
 
 
-@dataclasses.dataclass(slots=True, frozen=True)
 class IData(Data):
     """MR image data (IData) class."""
 
