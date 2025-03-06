@@ -3,11 +3,28 @@
 import pytest
 import torch
 from mrpro.operators import ZeroPadOp
+from typing_extensions import Unpack
 
-from tests import RandomGenerator, dotproduct_adjointness_test
+from tests import (
+    RandomGenerator,
+    dotproduct_adjointness_test,
+    forward_mode_autodiff_of_linear_operator_test,
+    gradient_of_linear_operator_test,
+)
 
 
-def test_zero_pad_op_content():
+def create_zero_pad_op_and_domain_range(
+    u_shape: tuple[int, int, int, Unpack[tuple[int, ...]]], v_shape: tuple[int, int, int, Unpack[tuple[int, ...]]]
+) -> tuple[ZeroPadOp, torch.Tensor, torch.Tensor]:
+    """Create a zero padding operator and an element from domain and range."""
+    generator = RandomGenerator(seed=0)
+    u = generator.complex64_tensor(u_shape)
+    v = generator.complex64_tensor(v_shape)
+    zero_padding_op = ZeroPadOp(dim=(-3, -2, -1), original_shape=u_shape, padded_shape=v_shape)
+    return zero_padding_op, u, v
+
+
+def test_zero_pad_op_content() -> None:
     """Test correct padding and cropping (i.e. negative padding size)."""
     original_shape = (2, 100, 3, 200, 50, 2)
     padded_shape = (2, 80, 3, 100, 240, 2)
@@ -25,7 +42,7 @@ def test_zero_pad_op_content():
     torch.testing.assert_close(original_data[:, 10:90, :, 50:150, :, :], padded_data[:, :, :, :, 95:145, :])
 
 
-@pytest.mark.parametrize(
+SHAPE_PARAMETERS = pytest.mark.parametrize(
     ('u_shape', 'v_shape'),
     [
         ((101, 201, 50), (13, 221, 64)),
@@ -34,10 +51,27 @@ def test_zero_pad_op_content():
         ((100, 200, 50), (13, 221, 64)),
     ],
 )
-def test_zero_pad_op_adjoint(u_shape, v_shape):
+
+
+@SHAPE_PARAMETERS
+def test_zero_pad_op_adjoint(
+    u_shape: tuple[int, int, int, Unpack[tuple[int, ...]]], v_shape: tuple[int, int, int, Unpack[tuple[int, ...]]]
+) -> None:
     """Test adjointness of pad operator."""
-    generator = RandomGenerator(seed=0)
-    u = generator.complex64_tensor(u_shape)
-    v = generator.complex64_tensor(v_shape)
-    zero_padding_op = ZeroPadOp(dim=(-3, -2, -1), original_shape=u_shape, padded_shape=v_shape)
-    dotproduct_adjointness_test(zero_padding_op, u, v)
+    dotproduct_adjointness_test(*create_zero_pad_op_and_domain_range(u_shape, v_shape))
+
+
+@SHAPE_PARAMETERS
+def test_zero_pad_op_grad(
+    u_shape: tuple[int, int, int, Unpack[tuple[int, ...]]], v_shape: tuple[int, int, int, Unpack[tuple[int, ...]]]
+) -> None:
+    """Test gradient of zero padding operator."""
+    gradient_of_linear_operator_test(*create_zero_pad_op_and_domain_range(u_shape, v_shape))
+
+
+@SHAPE_PARAMETERS
+def test_zero_pad_op_forward_mode_autodiff(
+    u_shape: tuple[int, int, int, Unpack[tuple[int, ...]]], v_shape: tuple[int, int, int, Unpack[tuple[int, ...]]]
+) -> None:
+    """Test forward-mode autodiff of zero padding operator."""
+    forward_mode_autodiff_of_linear_operator_test(*create_zero_pad_op_and_domain_range(u_shape, v_shape))
