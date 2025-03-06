@@ -266,6 +266,7 @@ class IHeader(MoveDataMixin):
         if len(set(slice_thickness)) != 1:
             raise ValueError('Slice thickness needs to be defined and the same for all.')
 
+        # The only mandatory field
         resolution = SpatialDimension(
             z=slice_thickness[0],
             y=pixel_spacing[0][1],
@@ -277,81 +278,78 @@ class IHeader(MoveDataMixin):
         )
         n_volumes = number_of_frames[0] if number_of_frames and datasets_are_3d else 1
 
+        header = cls(resolution=resolution)
+
         # For 3D datasets we currently want to save only one value per volume of fa, ti, tr, and te
-        fa = deg_to_rad(get_items(dataset, 'FlipAngle', float)[::n_volumes])
-        ti = ms_to_s(get_items(dataset, 'InversionTime', float)[::n_volumes])
-        tr = ms_to_s(get_items(dataset, 'RepetitionTime', float)[::n_volumes])
-
-        # Dicom orientation is described by two vectors in the format (x1, y1, z1, x2, y2, z2)
-        dcm_orientation = get_items(dataset, 'ImageOrientationPatient', lambda x: [float(val) for val in x])
-        basis_x = torch.tensor(dcm_orientation[0][:3])
-        basis_y = torch.tensor(dcm_orientation[0][3:])
-        # Calculate third basis vector by cross product
-        basis_z = torch.cross(basis_x, basis_y, dim=-1)
-        # Get orientation from basis vectors
-        orientation = Rotation.from_directions(
-            SpatialDimension.from_array_xyz(basis_x),
-            SpatialDimension.from_array_xyz(basis_y),
-            SpatialDimension.from_array_xyz(basis_z),
-        )
-
-        n_rows = get_items(dataset, 'Rows', int)[0]
-        n_cols = get_items(dataset, 'Columns', int)[0]
-        shift = resolution * SpatialDimension(x=n_rows, y=n_cols, z=0) / 2
-        # Get the shift vector for image position by applying the fov rotation
-        shift = orientation(shift)
-        # Get dicom position in [m] for x, y, z which is defined by the voxel center in the upper left corner
-        dcm_position = SpatialDimension.from_array_xyz(
-            get_items(dataset, 'ImagePositionPatient', lambda x: [float(val) for val in x])
-        ).apply(mm_to_m)
-        # Shift dicom image position to the center by fov
-        position = dcm_position + shift
-        position = position.apply(lambda x: unsqueeze_right(x, 4))
-
-        # Calculate acquisition time stamps in s according to the reference time 0:00 am
-        frame_time_dt = get_items(
-            dataset,
-            'FrameReferenceDateTime',
-            lambda x: datetime.strptime(x, '%Y%m%d%H%M%S.%f'),
-        )
-        t0 = datetime.combine(frame_time_dt[0].date(), time(0, 0))
-        delta_t = torch.tensor([(ft - t0).total_seconds() for ft in frame_time_dt][::n_volumes])
-
-        dcm_cardiac_trigger = get_items(dataset, 'NominalCardiacTriggerDelayTime', float)
-        if dcm_cardiac_trigger:
-            physiology_time = PhysiologyTimestamps(timestamp1=ms_to_s(torch.tensor(dcm_cardiac_trigger)))
-        else:
-            physiology_time = PhysiologyTimestamps()
-
+        if fa := deg_to_rad(get_items(dataset, 'FlipAngle', float)[::n_volumes]):
+            header.fa = fa
+        if ti := ms_to_s(get_items(dataset, 'InversionTime', float)[::n_volumes]):
+            header.ti = ti
+        if tr := ms_to_s(get_items(dataset, 'RepetitionTime', float)[::n_volumes]):
+            header.tr = tr
         te_ms = get_items(dataset, 'EchoTime', float)
         if not te_ms:  # Some scanners use 'EchoTime', some use 'EffectiveEchoTime'
             te_ms = get_items(dataset, 'EffectiveEchoTime', float)
-        te = ms_to_s(te_ms[::n_volumes])
+        if te_ms:
+            header.te = ms_to_s(te_ms[::n_volumes])
+
+        # Dicom orientation is described by two vectors in the format (x1, y1, z1, x2, y2, z2)
+        if dcm_orientation := get_items(dataset, 'ImageOrientationPatient', lambda x: [float(val) for val in x]):
+            basis_x = torch.tensor(dcm_orientation[0][:3])
+            basis_y = torch.tensor(dcm_orientation[0][3:])
+            # Calculate third basis vector by cross product
+            basis_z = torch.cross(basis_x, basis_y, dim=-1)
+            # Get orientation from basis vectors
+            orientation = Rotation.from_directions(
+                SpatialDimension.from_array_xyz(basis_x),
+                SpatialDimension.from_array_xyz(basis_y),
+                SpatialDimension.from_array_xyz(basis_z),
+            )
+        else:
+            # Create default orientation for position shift
+            orientation = Rotation.identity((1, 1, 1, 1, 1))
+        header.orientation = orientation
+
+        n_rows = get_items(dataset, 'Rows', int)[0]
+        n_cols = get_items(dataset, 'Columns', int)[0]
+        if n_rows and n_cols:
+            shift = resolution * SpatialDimension(x=n_rows, y=n_cols, z=0) / 2
+            # Get the shift vector for image position by applying the fov rotation
+            shift = orientation(shift)
+            # Get dicom position in [m] for x, y, z which is defined by the voxel center in the upper left corner
+            dcm_position = SpatialDimension.from_array_xyz(
+                get_items(dataset, 'ImagePositionPatient', lambda x: [float(val) for val in x])
+            ).apply(mm_to_m)
+            if dcm_position:
+                # Shift dicom image position to the center by fov
+                position = dcm_position + shift
+                position = position.apply(lambda x: unsqueeze_right(x, 4))
+                header.position = position
+
+        # Calculate acquisition time stamps in s according to the reference time 0:00 am
+        frame_time_dt = get_items(dataset, 'FrameReferenceDateTime', lambda x: datetime.strptime(x, '%Y%m%d%H%M%S.%f'))
+        if frame_time_dt:
+            t0 = datetime.combine(frame_time_dt[0].date(), time(0, 0))
+            header.acquisition_time_stamp = torch.tensor([(ft - t0).total_seconds() for ft in frame_time_dt])
+
+        if dcm_cardiac_trigger := get_items(dataset, 'NominalCardiacTriggerDelayTime', float):
+            header.physiology_time_stamps = PhysiologyTimestamps(timestamp1=ms_to_s(torch.tensor(dcm_cardiac_trigger)))
 
         # The in stack position accounts for the slice position for multi-file data with cardiac phases,
         # as well as for single file dicom with multiple slices. Index is reduced by 1 to start indexing at 0.
-        image_idx = ImageIdx(
-            phase=torch.tensor(get_items(dataset, 'TemporalPositionIndex', int)) - 1,
-            slice=torch.tensor(get_items(dataset, 'InStackPositionNumber', int)) - 1,
-        )
+        if phase_idx := get_items(dataset, 'TemporalPositionIndex', int):
+            header.idx.phase = torch.tensor(phase_idx) - 1
+        if slice_idx := get_items(dataset, 'InStackPositionNumber', int):
+            header.idx.slice = torch.tensor(slice_idx) - 1
 
-        return cls(
-            resolution=resolution,
-            fa=fa,
-            ti=ti,
-            tr=tr,
-            te=te,
-            acquisition_time_stamp=delta_t,
-            physiology_time_stamps=physiology_time,
-            position=position,
-            orientation=orientation,
-            idx=image_idx,
-        )
+        return header
 
     def __repr__(self):
         """Representation method for IHeader class."""
         te = summarize_tensorvalues(self.te)
         ti = summarize_tensorvalues(self.ti)
         fa = summarize_tensorvalues(self.fa)
-        out = f'Resolution [m/pixel]: {self.resolution!s}\nTE [s]: {te}\nTI [s]: {ti}\nFlip angle [rad]: {fa}.'
+        tr = summarize_tensorvalues(self.tr)
+        out = f'Resolution [m/pixel]: {self.resolution!s}\nTE [s]: {te}\nTR [s]: {tr}\nTI [s]: {ti}\n\
+            Flip angle [rad]: {fa}.'
         return out
