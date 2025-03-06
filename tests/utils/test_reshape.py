@@ -8,8 +8,10 @@ from mrpro.utils import (
     ravel_multi_index,
     reduce_view,
     reshape_broadcasted,
+    unsqueeze_at,
     unsqueeze_left,
     unsqueeze_right,
+    unsqueeze_tensors_at,
     unsqueeze_tensors_left,
     unsqueeze_tensors_right,
 )
@@ -151,3 +153,75 @@ def test_ravel_multidex() -> None:
     expected = torch.as_tensor(np.ravel_multi_index([idx.numpy() for idx in indices], dims))
     actual = ravel_multi_index(indices, dims)
     assert torch.equal(expected, actual)
+
+
+@pytest.mark.parametrize(
+    ('shape', 'n', 'dim', 'expected'),
+    [
+        ((2, 3, 4), 0, 1, (2, 3, 4)),
+        ((2, 3, 4), 1, 0, (1, 2, 3, 4)),
+        ((2, 3, 4), 1, -4, (1, 2, 3, 4)),
+        ((2, 3, 4), 1, -1, (2, 3, 4, 1)),
+        ((2, 3, 4), 1, 3, (2, 3, 4, 1)),
+        ((2, 3, 4), 1, -2, (2, 3, 1, 4)),
+        ((2, 3, 4), 1, 1, (2, 1, 3, 4)),
+        ((2, 3, 4), 2, 0, (1, 1, 2, 3, 4)),
+        ((2, 3, 4), 2, -4, (1, 1, 2, 3, 4)),
+        ((2, 3, 4), 2, -1, (2, 3, 4, 1, 1)),
+        ((2, 3, 4), 2, 3, (2, 3, 4, 1, 1)),
+        ((2, 3, 4), 2, -2, (2, 3, 1, 1, 4)),
+        ((2, 3, 4), 2, 1, (2, 1, 1, 3, 4)),
+    ],
+)
+def test_unsqueeze_at(shape: tuple[int, ...], n: int, dim: int, expected: tuple[int, ...]) -> None:
+    """Test unsqueeze_at"""
+    tensor = RandomGenerator(0).float32_tensor(shape)
+    reshaped = unsqueeze_at(tensor, dim, n)
+    assert reshaped.shape == expected
+    assert torch.equal(tensor, reshaped.squeeze())
+
+
+def test_unqueeze_at_errors() -> None:
+    """Test unsqueeze_at with invalid input"""
+    tensor = torch.zeros(1, 2, 3)
+    with pytest.raises(ValueError):
+        unsqueeze_at(tensor, dim=1, n=-1)
+    with pytest.raises(IndexError):
+        # unsqueeze shortcut due to n=1
+        unsqueeze_at(tensor, dim=4, n=1)
+    with pytest.raises(IndexError):
+        # unsqueeze shortcut due to n=1
+        unsqueeze_at(tensor, dim=-5, n=1)
+    with pytest.raises(IndexError):
+        # reshape due to n=2
+        unsqueeze_at(tensor, dim=4, n=2)
+    with pytest.raises(IndexError):
+        # reshape due to n=2
+        unsqueeze_at(tensor, dim=-5, n=2)
+
+
+def test_unsqueeze_tensors_at() -> None:
+    """Test unsqueeze_tensors_at"""
+    rng = RandomGenerator(13)
+    tensor1 = rng.float32_tensor((4, 2, 3))
+    tensor2 = rng.float32_tensor((5, 2))
+    tensor3 = rng.float32_tensor((3,))
+    unsqueezed = unsqueeze_tensors_at(tensor1, tensor2, tensor3, dim=1)
+    assert unsqueezed[0].shape == (4, 2, 3)
+    assert unsqueezed[1].shape == (5, 1, 2)
+    assert unsqueezed[2].shape == (3, 1, 1)
+    assert torch.equal(unsqueezed[0].squeeze(), tensor1)
+    assert torch.equal(unsqueezed[1].squeeze(), tensor2)
+    assert torch.equal(unsqueezed[2].squeeze(), tensor3)
+
+
+def test_unsqueeze_tensors_ndim() -> None:
+    """Test unsqueeze_tensors_at with ndim set"""
+    rng = RandomGenerator(13)
+    tensor1 = rng.float32_tensor((4, 2, 3))
+    tensor2 = rng.float32_tensor((5, 2))
+    unsqueezed = unsqueeze_tensors_at(tensor1, tensor2, ndim=5, dim=2)
+    assert unsqueezed[0].shape == (4, 2, 1, 1, 3)
+    assert unsqueezed[1].shape == (5, 2, 1, 1, 1)
+    assert torch.equal(unsqueezed[0].squeeze(), tensor1)
+    assert torch.equal(unsqueezed[1].squeeze(), tensor2)
