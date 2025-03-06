@@ -50,6 +50,17 @@ class Indexer:
         If the index is in bounds of the broadcasted shape, indexing behaves like slicing with index:index+1.
         Otherwise, an IndexError is raised.
         Always returns a view.
+        
+        Example:
+        >>> a = torch.ones(5,1,6)
+        >>>  indexer = indexer = Indexer(shape=(5,6,6), index = (4, slice(None), slice(None))))
+        >>> indexer(a).shape
+        [1,1,6]
+        
+        >>> a = torch.ones(5,1,6)
+        >>>  indexer = indexer = Indexer(shape=(5,6,6), index = (slice(None), 5, slice(None)))
+        >>> indexer(a).shape
+        [5,1,6]
     - Indexing with a boolean mask
         Singleton dimensions in the mask are interpreted as full slices. This matches broadcasting of the mask to
         the size of the respective axes of the tensor.
