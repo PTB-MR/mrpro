@@ -1,5 +1,7 @@
 """Modified Look-Locker inversion recovery (MOLLI) signal model for T1 mapping."""
 
+from collections.abc import Sequence
+
 import torch
 
 from mrpro.operators.SignalModel import SignalModel
@@ -22,7 +24,7 @@ class MOLLI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
       https://doi.org/10.1002/mrm.20110
     """
 
-    def __init__(self, ti: float | torch.Tensor):
+    def __init__(self, ti: float | torch.Tensor | Sequence[float]):
         """Initialize MOLLI signal model for T1 mapping.
 
         Parameters

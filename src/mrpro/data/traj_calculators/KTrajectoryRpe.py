@@ -1,11 +1,10 @@
 """Radial phase encoding (RPE) trajectory class."""
 
 import torch
-from einops import repeat
 
-from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
+from mrpro.utils.reshape import unsqueeze_tensors_left
 
 
 class KTrajectoryRpe(KTrajectoryCalculator):
@@ -39,7 +38,7 @@ class KTrajectoryRpe(KTrajectoryCalculator):
         self.angle: float = angle
         self.shift_between_rpe_lines: torch.Tensor = torch.as_tensor(shift_between_rpe_lines)
 
-    def _apply_shifts_between_rpe_lines(self, krad: torch.Tensor, kang_idx: torch.Tensor) -> torch.Tensor:
+    def _apply_shifts_between_rpe_lines(self, radial: torch.Tensor, idx: torch.Tensor) -> torch.Tensor:
         """Shift radial phase encoding lines relative to each other.
 
         Example: shift_between_rpe_lines = [0, 0.5, 0.25, 0.75] leads to a shift of the 0th line by 0,
@@ -56,80 +55,70 @@ class KTrajectoryRpe(KTrajectoryCalculator):
 
         Parameters
         ----------
-        krad
-            k-space positions along each phase encoding line
-        kang_idx
-            indices of angles to be used for shift calculation
+        radial
+            k-space positions along each phase encoding line, to be shifted
+        idx
+            indices used for shift calculation
+
+        Returns
+        -------
+            shifted radial k-space positions
 
         References
         ----------
         .. [PRI2010] Prieto C, Schaeffter T (2010) 3D undersampled golden-radial phase encoding
         for DCE-MRA using inherently regularized iterative SENSE. MRM 64(2). https://doi.org/10.1002/mrm.22446
         """
+        radial, idx = torch.broadcast_tensors(radial, idx)
+        radial = radial.clone()
+        not_center = ~torch.isclose(radial, torch.tensor(0.0))
         for ind, shift in enumerate(self.shift_between_rpe_lines):
-            curr_angle_idx = torch.nonzero(
-                torch.fmod(kang_idx, len(self.shift_between_rpe_lines)) == ind,
-                as_tuple=True,
-            )
-            curr_krad = krad[curr_angle_idx]
+            current_mask = (idx % len(self.shift_between_rpe_lines)) == ind
+            # k-space center should not be shifted
+            current_mask &= not_center
+            radial[current_mask] += shift
 
-            # Do not shift the k-space center
-            curr_krad += shift * (curr_krad != 0)
+        return radial
 
-            krad[curr_angle_idx] = curr_krad
-        return krad
-
-    def _kang(self, kheader: KHeader) -> torch.Tensor:
-        """Calculate the angles of the phase encoding lines.
-
-        Parameters
-        ----------
-        kheader
-            MR raw data header (KHeader) containing required meta data
-
-        Returns
-        -------
-            angles of phase encoding lines
-        """
-        return repeat(kheader.acq_info.idx.k2 * self.angle, '... k2 k1 -> ... k2 k1 k0', k0=1)
-
-    def _krad(self, kheader: KHeader) -> torch.Tensor:
-        """Calculate the k-space locations along the phase encoding lines.
+    def __call__(
+        self,
+        *,
+        n_k0: int,
+        k0_center: int | torch.Tensor,
+        k1_idx: torch.Tensor,
+        k1_center: int | torch.Tensor,
+        k2_idx: torch.Tensor,
+        reversed_readout_mask: torch.Tensor | None = None,
+        **_,
+    ) -> KTrajectory:
+        """Calculate radial phase encoding trajectory for given header information.
 
         Parameters
         ----------
-        kheader
-            MR raw data header (KHeader) containing required meta data
+        n_k0
+            number of samples in k0
+        k0_center
+            position of k-space center in k0
+        k1_idx
+            indices of k1
+        k1_center
+            position of k-space center in k1
+        k2_idx
+            indices of k2
+        reversed_readout_mask
+            boolean tensor indicating reversed readout
 
         Returns
         -------
-            k-space locations along the phase encoding lines
+            radial phase encoding trajectory for given header information
         """
-        krad = (kheader.acq_info.idx.k1 - kheader.encoding_limits.k1.center).to(torch.float32)
-        krad = self._apply_shifts_between_rpe_lines(krad, kheader.acq_info.idx.k2)
-        return repeat(krad, '... k2 k1 -> ... k2 k1 k0', k0=1)
+        angles = k2_idx * self.angle
 
-    def __call__(self, kheader: KHeader) -> KTrajectory:
-        """Calculate radial phase encoding trajectory for given KHeader.
+        radial = (k1_idx - k1_center).to(torch.float32)
+        radial = self._apply_shifts_between_rpe_lines(radial, k2_idx)
 
-        Parameters
-        ----------
-        kheader
-           MR raw data header (KHeader) containing required meta data
-
-        Returns
-        -------
-            radial phase encoding trajectory for given KHeader
-        """
-        # Trajectory along readout
-        kx = self._kfreq(kheader)
-
-        # Angles of phase encoding lines
-        kang = self._kang(kheader)
-
-        # K-space locations along phase encoding lines
-        krad = self._krad(kheader)
-
-        kz = krad * torch.sin(kang)
-        ky = krad * torch.cos(kang)
+        kz = radial * torch.sin(angles)
+        ky = radial * torch.cos(angles)
+        kx = self._readout(n_k0, k0_center, reversed_readout_mask=reversed_readout_mask)
+        kz, ky, kx = unsqueeze_tensors_left(kz, ky, kx, ndim=5)
         return KTrajectory(kz, ky, kx)
