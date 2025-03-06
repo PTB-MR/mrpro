@@ -21,7 +21,7 @@ def cg(
     initial_value: torch.Tensor | None = None,
     max_iterations: int = 128,
     tolerance: float = 1e-4,
-    callback: Callable[[CGStatus], None] | None = None,
+    callback: Callable[[CGStatus], bool | None] | None = None,
 ) -> torch.Tensor:
     r"""CG for solving a linear system :math:`Hx=b`.
 
@@ -116,12 +116,14 @@ def cg(
         residual_norm_squared_previous = residual_norm_squared
 
         if callback is not None:
-            callback(
+            continue_iterations = callback(
                 {
                     'solution': (solution,),
                     'iteration_number': iteration,
                     'residual': residual,
                 }
             )
+            if continue_iterations is False:
+                break
 
     return solution

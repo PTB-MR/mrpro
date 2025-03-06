@@ -20,7 +20,7 @@ def lbfgs(
     tolerance_change: float = 1e-09,
     history_size: int = 10,
     line_search_fn: None | Literal['strong_wolfe'] = 'strong_wolfe',
-    callback: Callable[[OptimizerStatus], None] | None = None,
+    callback: Callable[[OptimizerStatus], bool | None] | None = None,
 ) -> tuple[torch.Tensor, ...]:
     r"""
     LBFGS for (non-linear) minimization problems.
@@ -110,15 +110,17 @@ def lbfgs(
         optim.zero_grad()
         (objective,) = f(*parameters)
         objective.backward()
-        if callback is not None:
-            state = optim.state[optim.param_groups[0]['params'][0]]
-            if state['n_iter'] > iteration:
-                callback({'solution': parameters, 'iteration_number': iteration})
-                iteration = state['n_iter']
-
         return objective
 
+    iteration = 0
     # run lbfgs
-    optim.step(closure)
+    while iteration < max_iter:
+        optim.step(closure)
+        iteration += 1
+
+        if callback is not None:
+            continue_iterations = callback({'solution': parameters, 'iteration_number': iteration})
+            if continue_iterations is False:
+                break
 
     return parameters

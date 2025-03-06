@@ -12,7 +12,7 @@ from tests.operators import Rosenbrock
     ('optimizer', 'optimizer_kwargs'),
     [(adam, {'lr': 0.02, 'max_iter': 2000, 'betas': (0.8, 0.999)}), (lbfgs, {'lr': 1.0, 'max_iter': 20})],
 )
-def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1, optimizer_kwargs):
+def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1, optimizer_kwargs) -> None:
     # use Rosenbrock function as test case with 2D test data
     a, b = 1.0, 100.0
     rosen_brock = Rosenbrock(a, b)
@@ -54,7 +54,7 @@ def test_optimizers_rosenbrock(optimizer, enforce_bounds_on_x1, optimizer_kwargs
 
 
 @pytest.mark.parametrize('optimizer', [adam, lbfgs])
-def test_callback_optimizers(optimizer):
+def test_callback_optimizers(optimizer) -> None:
     """Test if a callback function is called within the optimizers."""
 
     # use Rosenbrock function as test case with 2D test data
@@ -77,3 +77,26 @@ def test_callback_optimizers(optimizer):
 
     # run optimizer
     _ = optimizer(rosen_brock, parameters, max_iter=max_iter, callback=callback)
+
+
+@pytest.mark.parametrize('optimizer', [adam, lbfgs])
+def test_callback_early_stop(optimizer) -> None:
+    """Check that when the callback function returns False the optimizer is stopped."""
+    callback_check = 0
+
+    # callback function that returns False to stop the algorithm
+    def callback(solution):
+        nonlocal callback_check
+        callback_check += 1
+        return False
+
+    a, b = 1.0, 100.0
+    rosen_brock = Rosenbrock(a, b)
+
+    # initial point of optimization
+    parameter1 = torch.tensor([a / 3.14], requires_grad=True)
+    parameter2 = torch.tensor([3.14], requires_grad=True)
+    parameters = [parameter1, parameter2]
+    _ = optimizer(rosen_brock, parameters, max_iter=100, callback=callback)
+
+    assert callback_check == 1

@@ -29,7 +29,7 @@ def pgd(
     max_iterations: int = 128,
     backtrack_factor: float = 1.0,
     convergent_iterates_variant: bool = False,
-    callback: Callable[[PGDStatus], None] | None = None,
+    callback: Callable[[PGDStatus], None | bool] | None = None,
 ) -> tuple[torch.Tensor, ...]:
     r"""Proximal gradient descent algorithm for solving problem :math:`min_x f(x) + g(x)`.
 
@@ -164,10 +164,12 @@ def pgd(
         t_old = t
 
         if callback is not None:
-            callback(
+            continue_iterations = callback(
                 PGDStatus(
                     solution=x, iteration_number=iteration, stepsize=stepsize, objective=lambda *x: f(*x)[0] + g(*x)[0]
                 )
             )
+            if continue_iterations is False:
+                break
 
     return x

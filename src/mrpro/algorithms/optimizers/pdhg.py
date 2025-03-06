@@ -48,7 +48,7 @@ def pdhg(
     relaxation: float = 1.0,
     initial_relaxed: Sequence[torch.Tensor] | None = None,
     initial_duals: Sequence[torch.Tensor] | None = None,
-    callback: Callable[[PDHGStatus], None] | None = None,
+    callback: Callable[[PDHGStatus], bool | None] | None = None,
 ) -> tuple[torch.Tensor, ...]:
     r"""Primal-Dual Hybrid Gradient Algorithm (PDHG).
 
@@ -218,6 +218,8 @@ def pdhg(
                 relaxed=primals_relaxed,
                 objective=lambda *x: f_sum.forward(*operator_matrix(*x))[0] + g_sum.forward(*x)[0],
             )
-            callback(status)
+            continue_iterations = callback(status)
+            if continue_iterations is False:
+                break
 
     return tuple(primals)
