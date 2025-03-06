@@ -1,8 +1,6 @@
 """PyTest fixtures for signal models."""
 
 import pytest
-import torch
-from tests import RandomGenerator
 
 # Shape combinations for signal models
 SHAPE_VARIATIONS_SIGNAL_MODELS = pytest.mark.parametrize(
@@ -44,12 +42,3 @@ SHAPE_VARIATIONS_SIGNAL_MODELS = pytest.mark.parametrize(
         'multiple_voxels',
     ],
 )
-
-
-def create_parameter_tensor_tuples(
-    parameter_shape=(10, 5, 12, 14, 16), number_of_tensors=2
-) -> tuple[torch.Tensor, ...]:
-    """Create tuples of tensors as input to operators."""
-    random_generator = RandomGenerator(seed=0)
-    parameter_tensors = random_generator.float32_tensor(size=(number_of_tensors, *parameter_shape), low=1e-10)
-    return torch.unbind(parameter_tensors)
