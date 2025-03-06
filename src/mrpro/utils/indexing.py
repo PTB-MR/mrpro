@@ -32,6 +32,20 @@ class Indexer:
         Behaves like in numpy, always returns a view.
         Negative step sizes are not supported and will raise an IndexError.
         slice(None), i.e. :, means selecting the whole axis.
+        
+        Example:
+        >>> a = torch.ones(5,1,6)
+        >>>  indexer = indexer = Indexer(shape=(5,6,6), index = ((slice(None), slice(None), slice(None))))
+        >>> indexer(a).shape
+        [5,1,6]
+        
+        >>>  indexer = Indexer(shape = (5,6,6), index = ((slice(1,4,2), slice(None), slice(None))))
+        >>> indexer(a).shape
+        [2,1,6]
+        
+        >>>  indexer = Indexer(shape = (5,6,6), index = ((slice(None), slice(2,None,3), slice(None))))
+        >>> indexer(a).shape
+        [5,1,6]
     - Indexing with an integer
         If the index is in bounds of the broadcasted shape, indexing behaves like slicing with index:index+1.
         Otherwise, an IndexError is raised.
