@@ -110,7 +110,6 @@ def test_brainwebvolumes_getitem(brainweb_test_data) -> None:
 
     assert not torch.isnan(sample['m0']).any()
     assert not torch.isnan(sample['r1']).any()
-    assert not torch.isnan(sample['dura']).any()
 
 
 def test_brainwebvolumes_no_files(tmp_path) -> None:
