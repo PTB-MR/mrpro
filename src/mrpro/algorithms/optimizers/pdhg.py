@@ -48,7 +48,7 @@ def pdhg(
     relaxation: float = 1.0,
     initial_relaxed: Sequence[torch.Tensor] | None = None,
     initial_duals: Sequence[torch.Tensor] | None = None,
-    callback: Callable[[PDHGStatus], None] | None = None,
+    callback: Callable[[PDHGStatus], bool | None] | None = None,
 ) -> tuple[torch.Tensor, ...]:
     r"""Primal-Dual Hybrid Gradient Algorithm (PDHG).
 
@@ -117,7 +117,8 @@ def pdhg(
     initial_duals
         dual variables, used for warm start.
     callback
-        callback function called after each iteration.
+        callback function called after each iteration. This can be used to monitor the progress of the algorithm.
+        If it returns `False`, the algorithm stops at that iteration.
     """
     if f is None and g is None:
         warnings.warn(
@@ -218,6 +219,8 @@ def pdhg(
                 relaxed=primals_relaxed,
                 objective=lambda *x: f_sum.forward(*operator_matrix(*x))[0] + g_sum.forward(*x)[0],
             )
-            callback(status)
+            continue_iterations = callback(status)
+            if continue_iterations is False:
+                break
 
     return tuple(primals)
