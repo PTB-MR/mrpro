@@ -1,6 +1,5 @@
 """MR quantitative data (QData) class."""
 
-import dataclasses
 from pathlib import Path
 
 import numpy as np
@@ -9,15 +8,17 @@ from einops import repeat
 from pydicom import dcmread
 from typing_extensions import Self
 
-from mrpro.data.Data import Data
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.IHeader import IHeader
 from mrpro.data.KHeader import KHeader
 from mrpro.data.QHeader import QHeader
 
 
-@dataclasses.dataclass(init=False, slots=True, frozen=True)
-class QData(Data):
+class QData(Dataclass):
     """MR quantitative data (QData) class."""
+
+    data: torch.Tensor
+    """Tensor containing quantitative image data with dimensions `(*other, coils, z, y, x)`."""
 
     header: QHeader
     """Header describing quantitative data."""
@@ -28,7 +29,7 @@ class QData(Data):
         Parameters
         ----------
         data
-            quantitative image data tensor with dimensions `(other, coils, z, y, x)`
+            quantitative image data tensor with dimensions `(*other, coils, z, y, x)`
         header
             MRpro header containing required meta data for the QHeader
         """

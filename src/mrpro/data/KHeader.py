@@ -1,11 +1,9 @@
 """MR raw data / k-space data header dataclass."""
 
-from __future__ import annotations
-
 import dataclasses
-import datetime
+import datetime as dt
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import field
 from typing import TYPE_CHECKING
 
 import ismrmrd.xsd.ismrmrdschema.ismrmrd as ismrmrdschema
@@ -14,8 +12,9 @@ from typing_extensions import Self
 
 from mrpro.data import enums
 from mrpro.data.AcqInfo import AcqInfo
-from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.SpatialDimension import SpatialDimension
+from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 from mrpro.utils.unit_conversion import deg_to_rad, mm_to_m, ms_to_s
 
@@ -26,8 +25,7 @@ if TYPE_CHECKING:
 UNKNOWN = 'unknown'
 
 
-@dataclass(slots=True)
-class KHeader(MoveDataMixin):
+class KHeader(Dataclass):
     """MR raw data header.
 
     All information that is not covered by the dataclass is stored in
@@ -57,7 +55,7 @@ class KHeader(MoveDataMixin):
     lamor_frequency_proton: float | None = None
     """Lamor frequency of hydrogen nuclei [Hz]."""
 
-    datetime: datetime.datetime | None = None
+    datetime: dt.datetime | None = None
     """Date and time of acquisition."""
 
     te: list[float] | torch.Tensor = field(default_factory=list)
@@ -189,13 +187,13 @@ class KHeader(MoveDataMixin):
         elif header.studyInformation is not None and header.studyInformation.studyTime is not None:
             time = header.studyInformation.studyTime.to_time()
         else:  # if no time is given, set to 00:00:00
-            time = datetime.time()
+            time = dt.time()
         if header.measurementInformation is not None and header.measurementInformation.seriesDate is not None:
             date = header.measurementInformation.seriesDate.to_date()
-            parameters['datetime'] = datetime.datetime.combine(date, time)
+            parameters['datetime'] = dt.datetime.combine(date, time)
         elif header.studyInformation is not None and header.studyInformation.studyDate is not None:
             date = header.studyInformation.studyDate.to_date()
-            parameters['datetime'] = datetime.datetime.combine(date, time)
+            parameters['datetime'] = dt.datetime.combine(date, time)
 
         if header.subjectInformation is not None and header.subjectInformation.patientName is not None:
             parameters['patient_name'] = header.subjectInformation.patientName
