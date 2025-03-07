@@ -37,7 +37,6 @@ def test_IData_from_dcm_file(dcm_2d):
     torch.testing.assert_close(img, dcm_2d[0].img_ref)
 
 
-# ToDO: git rebase -i main -> drop all commits i did not do
 def test_IData_save_as_nifti(dcm_2d, tmp_path):
     """Save image data as NIFTI2 file."""
     idata = IData.from_dicom_files(dcm_2d[0].filename)
