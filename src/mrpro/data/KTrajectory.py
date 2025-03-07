@@ -1,7 +1,6 @@
 """KTrajectory dataclass."""
 
 from collections.abc import Callable
-from dataclasses import dataclass
 from typing import Literal
 
 import ismrmrd
@@ -9,8 +8,8 @@ import numpy as np
 import torch
 from typing_extensions import Self
 
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.enums import TrajType
-from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.reshape import unsqueeze_at
@@ -18,8 +17,7 @@ from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 from mrpro.utils.typing import FileOrPath
 
 
-@dataclass(slots=True, frozen=True)
-class KTrajectory(MoveDataMixin):
+class KTrajectory(Dataclass):
     """K-space trajectory.
 
     Contains the trajectory in k-space along the three dimensions `kz`, `ky`, `kx`,
