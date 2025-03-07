@@ -151,7 +151,7 @@ def test_trajectory_cpu(cartesian_grid) -> None:
 
 @COMMON_MR_TRAJECTORIES
 def test_ktype_along_kzyx(
-    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
+    img_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
 ) -> None:
     """Test identification of traj types."""
 
@@ -184,7 +184,7 @@ def test_ktype_along_kzyx(
 
 @COMMON_MR_TRAJECTORIES
 def test_ktype_along_k210(
-    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
+    img_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
 ) -> None:
     """Test identification of traj types."""
 
