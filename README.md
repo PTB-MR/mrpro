@@ -8,7 +8,7 @@
 
 </h1><br>
 
-![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)
+![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Coverage Bagde](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ckolbPTB/48e334a10caf60e6708d7c712e56d241/raw/coverage.json)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14509598.svg)](https://doi.org/10.5281/zenodo.14509598)
@@ -83,13 +83,21 @@ Full example: <https://github.com/PTB-MR/mrpro/blob/main/examples/pulseq_2d_radi
 
 ## Contributing
 
-We are looking forward to your contributions via Pull-Requests.
+We are looking forward to your contributions via "fork and pull requests". If you would like to fix a bug or add a new feature:
 
-### Installation for developers
+1. Create your own copy of MRpro (i.e. create a fork via GitHub)
+2. Clone your forked copy of the MRpro repository
+3. Create/select a python environment (e.g. ``` conda create -n mrpro python=3.12 ```)
+4. Install MRpro in editable mode including test dependencies: ``` pip install -e ".[test]" ```
+5. Setup pre-commit hook: ``` pre-commit install ```
+6. Create a new branch
+7. Implement your changes to MRpro
+8. Commit and push them to GitHub
+9. Open a pull request via GitHub
 
-1. Clone the MRpro repository
-2. Create/select a python environment
-3. Install "MRpro" in editable mode including test dependencies: ``` pip install -e ".[test]" ```
-4. Setup pre-commit hook: ``` pre-commit install ```
+You can find more information on "fork and pull requests" on the [GitHub documentation](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project)
 
-Please look at our [contributor guide](https://ptb-mr.github.io/mrpro/contributor_guide.html) for more information on the repository structure, naming conventions, and other useful information.
+Please also look at our [contributor guide](https://ptb-mr.github.io/mrpro/contributor_guide.html) for more information on the repository structure, naming conventions, and other useful information.
+
+> [!NOTE]  
+> There are a few things which cannot be modified as "fork and pull requests" such as modifications of the docker images. If you think something needs to be changed there, please open up an issue first. 

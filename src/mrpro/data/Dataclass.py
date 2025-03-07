@@ -7,10 +7,11 @@ from typing_extensions import Any, Self, dataclass_transform
 
 from mrpro.data.mixin.CheckDataMixin import CheckDataMixin
 from mrpro.data.mixin.MoveDataMixin import MoveDataMixin
+from mrpro.data.mixin.NoNewAttributesMixin import NoNewAttributesMixin
 
 
-@dataclass_transform(frozen_default=False)
-class Dataclass(MoveDataMixin, CheckDataMixin):
+@dataclass_transform()
+class Dataclass(MoveDataMixin, NoNewAttributesMixin, CheckDataMixin):
     """A supercharged dataclass with additional functionality.
 
     This class extends the functionality of the standard `dataclasses.dataclass` by adding
@@ -25,24 +26,6 @@ class Dataclass(MoveDataMixin, CheckDataMixin):
         """Create a new dataclass subclass."""
         dataclasses.dataclass(cls)
         super().__init_subclass__(**kwargs)
-
-    def apply(
-        self: Self,
-        function: Callable[[Any], Any] | None = None,
-        *,
-        recurse: bool = True,
-    ) -> Self:
-        """Apply a function to all children. Returns a new object.
-
-        Parameters
-        ----------
-        function
-            The function to apply to all fields. `None` is interpreted as a no-op.
-        recurse
-            If `True`, the function will be applied to all children that are `MoveDataMixin` instances.
-        """
-        new = self.clone().apply_(function, recurse=recurse)
-        return new
 
     def apply_(
         self: Self,
@@ -61,7 +44,7 @@ class Dataclass(MoveDataMixin, CheckDataMixin):
             A dictionary to keep track of objects that the function has already been applied to,
             to avoid multiple applications. This is useful if the object has a circular reference.
         recurse
-            If `True`, the function will be applied to all children that are `MoveDataMixin` instances.
+            If `True`, the function will be applied to all children that are `Dataclass` instances.
         """
         applied: Any
 
@@ -76,7 +59,7 @@ class Dataclass(MoveDataMixin, CheckDataMixin):
                 # this works even if self is frozen
                 object.__setattr__(self, name, memo[id(data)])
                 continue
-            if recurse and isinstance(data, MoveDataMixin):
+            if recurse and isinstance(data, Dataclass):
                 applied = data.apply_(function, memo=memo)
             else:
                 applied = function(data)
