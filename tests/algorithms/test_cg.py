@@ -54,7 +54,7 @@ def system(request):
     return operator, right_hand_side, vector
 
 
-def test_cg_convergence(system):
+def test_cg_convergence(system) -> None:
     """Test if CG delivers accurate solution."""
 
     # create operator, right-hand side and ground-truth data
@@ -67,7 +67,7 @@ def test_cg_convergence(system):
     torch.testing.assert_close(cg_solution, solution, rtol=5e-3, atol=5e-3)
 
 
-def test_cg_stopping_after_one_iteration(system):
+def test_cg_stopping_after_one_iteration(system) -> None:
     """Test if cg stops after one iteration if the ground-truth is the initial
     guess."""
     # create operator, right-hand side and ground-truth data
@@ -84,7 +84,7 @@ def test_cg_stopping_after_one_iteration(system):
     assert (xcg_one_iteration == solution).all()
 
 
-def test_compare_cg_to_scipy(system):
+def test_compare_cg_to_scipy(system) -> None:
     """Test if our implementation is close to the one of scipy."""
     # create operator, right-hand side and ground-truth data
     operator, right_hand_side, _ = system
@@ -120,7 +120,7 @@ def test_compare_cg_to_scipy(system):
         torch.testing.assert_close(cg_solution_torch, torch.tensor(cg_solution_scipy), atol=1e-5, rtol=1e-5)
 
 
-def test_invalid_shapes(system):
+def test_invalid_shapes(system) -> None:
     """Test if CG throws error in case of shape-mismatch."""
     # create operator, right-hand side and ground-truth data
     h_operator, right_hand_side, _ = system
@@ -134,7 +134,7 @@ def test_invalid_shapes(system):
         cg(h_operator, right_hand_side, initial_value=initial_value, max_iterations=10)
 
 
-def test_callback(system):
+def test_callback(system) -> None:
     """Test if the callback function is called if a callback function is set."""
     # create operator, right-hand side
     h_operator, right_hand_side, _ = system
@@ -148,7 +148,22 @@ def test_callback(system):
     cg(h_operator, right_hand_side, callback=callback)
 
 
-def test_autograd(system):
+def test_callback_early_stop(system) -> None:
+    h_operator, right_hand_side, _ = system
+    """Check that when the callback function returns False the optimizer is stopped."""
+    callback_check = 0
+
+    # callback function that returns False to stop the algorithm
+    def callback(solution):
+        nonlocal callback_check
+        callback_check += 1
+        return False
+
+    cg(h_operator, right_hand_side, max_iterations=100, callback=callback)
+    assert callback_check == 1
+
+
+def test_autograd(system) -> None:
     """Test autograd through cg"""
     h_operator, right_hand_side, _ = system
     right_hand_side.requires_grad_(True)

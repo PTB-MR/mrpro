@@ -3,7 +3,7 @@
 from mrpro.data import enums, traj_calculators, acq_filters, mixin
 from mrpro.data.AcqInfo import AcqIdx, AcqInfo
 from mrpro.data.CsmData import CsmData
-from mrpro.data.Data import Data
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.DcfData import DcfData
 from mrpro.data.EncodingLimits import EncodingLimits, Limits
 from mrpro.data.IData import IData
@@ -23,7 +23,7 @@ __all__ = [
     "AcqIdx",
     "AcqInfo",
     "CsmData",
-    "Data",
+    "Dataclass",
     "DcfData",
     "EncodingLimits",
     "IData",
