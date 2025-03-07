@@ -67,11 +67,11 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
         ----------
         x
             points where the signal model will be evaluated. For signal models
-            with n inputs, n Tensors should be provided. Broadcasting is supported.
+            with n inputs, n tensors should be provided. Broadcasting is supported.
 
         Returns
         -------
-        Self
+            Self
 
         """
         if self._index_of_scaling_parameter is not None:

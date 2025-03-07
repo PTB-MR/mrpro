@@ -15,8 +15,8 @@ from tests import RandomGenerator
     [None, -2, 0],
     ids=['dont_predict_scale', 'predict_scale_negative_index', 'predict_scale'],
 )
-def test_dictionaryop_matching(shape: tuple[int], dtype: torch.dtype, index_of_scaling_parameter: int | None) -> None:
-    """Test dictionary matching with real-valued signals."""
+def test_dictionary_matching_op(shape: tuple[int], dtype: torch.dtype, index_of_scaling_parameter: int | None) -> None:
+    """Test dictionary matching."""
     rng = RandomGenerator(2)
     model = InversionRecovery(rng.float32_tensor(5))
     m0 = rng.rand_tensor(shape, dtype=dtype, low=0.2, high=1.0)
@@ -40,7 +40,7 @@ def test_dictionaryop_matching(shape: tuple[int], dtype: torch.dtype, index_of_s
     [None, -2, 0],
     ids=['dont_predict_scale', 'predict_scale_negative_index', 'predict_scale'],
 )
-def test_dictionaryop_append(shape: tuple[int], dtype: torch.dtype, index_of_scaling_parameter: int | None) -> None:
+def test_dictionary_matching_op_append(shape: tuple[int], dtype: torch.dtype, index_of_scaling_parameter: int | None) -> None:
     """Test dictionary matching with concatenated entries."""
     rng = RandomGenerator(2)
     m0_1 = rng.rand_tensor(shape, dtype=dtype, low=0.2, high=1.0)
@@ -52,7 +52,6 @@ def test_dictionaryop_append(shape: tuple[int], dtype: torch.dtype, index_of_sca
     model = InversionRecovery(rng.float32_tensor(5))
 
     # dictionary matching when appending the individual tensors
-    # concatenation of the tensors
     m0_cat = torch.cat((m0_1, m0_2))
     t1_cat = torch.cat((t1_1, t1_2))
     operator = DictionaryMatchOp(model, index_of_scaling_parameter=index_of_scaling_parameter)
@@ -77,13 +76,12 @@ def test_dictionaryop_append(shape: tuple[int], dtype: torch.dtype, index_of_sca
     [None, -2, 0],
     ids=['dont_predict_scale', 'predict_scale_negative_index', 'predict_scale'],
 )
-def test_dictionaryop_no_entry(index_of_scaling_parameter: int | None) -> None:
+def test_dictionary_matching_op_empty_dictionary(index_of_scaling_parameter: int | None) -> None:
     """Test dictionary matching when no entries have been appended before."""
     rng = RandomGenerator(2)
     model = InversionRecovery(rng.float32_tensor(5))
 
     operator = DictionaryMatchOp(model, index_of_scaling_parameter=index_of_scaling_parameter)
-    # create empty signal model
     y = torch.zeros(5, 5, 4, 3)
     with pytest.raises(KeyError, match='No keys in the dictionary. Please first add some x values using `append`.'):
         _ = operator(y)
