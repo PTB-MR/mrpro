@@ -40,7 +40,9 @@ def test_dictionary_matching_op(shape: tuple[int], dtype: torch.dtype, index_of_
     [None, -2, 0],
     ids=['dont_predict_scale', 'predict_scale_negative_index', 'predict_scale'],
 )
-def test_dictionary_matching_op_append(shape: tuple[int], dtype: torch.dtype, index_of_scaling_parameter: int | None) -> None:
+def test_dictionary_matching_op_append(
+    shape: tuple[int], dtype: torch.dtype, index_of_scaling_parameter: int | None
+) -> None:
     """Test dictionary matching with concatenated entries."""
     rng = RandomGenerator(2)
     m0_1 = rng.rand_tensor(shape, dtype=dtype, low=0.2, high=1.0)
