@@ -7,7 +7,7 @@ from ismrmrd.xsd.ismrmrdschema.ismrmrd import encodingLimitsType, encodingType, 
 from typing_extensions import Self
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(slots=True)
 class Limits:
     """Limits dataclass with min, max, and center attributes."""
 
@@ -33,7 +33,7 @@ class Limits:
         return self.max - self.min + 1
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(slots=True)
 class EncodingLimits:
     """Encoding limits dataclass with limits for each attribute [INA2016]_.
 
