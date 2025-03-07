@@ -8,6 +8,13 @@ from typing_extensions import Any, assert_type
 from tests import RandomGenerator
 
 
+def test_spatial_dimension_non_existing_attribute() -> None:
+    """Test if setting a non existing attribute raises an error"""
+    spatial_dimension = SpatialDimension(1, 2, 3)
+    with pytest.raises(AttributeError):
+        spatial_dimension.doesnotexist = True
+
+
 def test_spatial_dimension_from_xyz_int():
     """Test creation from an object with x, y, z attributes"""
 
