@@ -1,7 +1,7 @@
 """MR raw data / k-space data header dataclass."""
 
 import dataclasses
-import datetime as dt
+import datetime
 import warnings
 from dataclasses import field
 from typing import TYPE_CHECKING
@@ -55,7 +55,7 @@ class KHeader(Dataclass):
     lamor_frequency_proton: float | None = None
     """Lamor frequency of hydrogen nuclei [Hz]."""
 
-    datetime: dt.datetime | None = None
+    datetime: datetime.datetime | None = None
     """Date and time of acquisition."""
 
     te: list[float] | torch.Tensor = field(default_factory=list)
@@ -187,13 +187,13 @@ class KHeader(Dataclass):
         elif header.studyInformation is not None and header.studyInformation.studyTime is not None:
             time = header.studyInformation.studyTime.to_time()
         else:  # if no time is given, set to 00:00:00
-            time = dt.time()
+            time = datetime.time()
         if header.measurementInformation is not None and header.measurementInformation.seriesDate is not None:
             date = header.measurementInformation.seriesDate.to_date()
-            parameters['datetime'] = dt.datetime.combine(date, time)
+            parameters['datetime'] = datetime.datetime.combine(date, time)
         elif header.studyInformation is not None and header.studyInformation.studyDate is not None:
             date = header.studyInformation.studyDate.to_date()
-            parameters['datetime'] = dt.datetime.combine(date, time)
+            parameters['datetime'] = datetime.datetime.combine(date, time)
 
         if header.subjectInformation is not None and header.subjectInformation.patientName is not None:
             parameters['patient_name'] = header.subjectInformation.patientName
