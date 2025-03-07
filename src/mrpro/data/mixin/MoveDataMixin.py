@@ -49,6 +49,24 @@ class ApplyProtocol(Protocol):
 class MoveDataMixin(ApplyProtocol):
     """Move dataclass fields to cpu/gpu and convert dtypes."""
 
+    def apply(
+        self: Self,
+        function: Callable[[Any], Any] | None = None,
+        *,
+        recurse: bool = True,
+    ) -> Self:
+        """Apply a function to all children. Returns a new object.
+
+        Parameters
+        ----------
+        function
+            The function to apply to all fields. `None` is interpreted as a no-op.
+        recurse
+            If `True`, the function will be applied to all children that are `MoveDataMixin` instances.
+        """
+        new = self.clone().apply_(function, recurse=recurse)
+        return new
+
     @overload
     def to(
         self,
