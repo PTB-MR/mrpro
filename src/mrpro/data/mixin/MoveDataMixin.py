@@ -34,14 +34,16 @@ T = TypeVar('T')
 
 
 class ApplyProtocol(Protocol):
-    def apply(self: Self, function: Callable[[Any], Any] | None = None, *, recurse: bool = True) -> Self: ...
+    """Protocol for the apply_ method."""
+
     def apply_(
         self: Self,
         function: Callable[[Any], Any] | None = None,
         *,
         memo: dict[int, Any] | None = None,
         recurse: bool = True,
-    ) -> Self: ...
+    ) -> Self:
+        """Apply a function to all children in-place."""
 
 
 class MoveDataMixin(ApplyProtocol):

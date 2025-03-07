@@ -1,3 +1,5 @@
+"""Base class for all dataclasses in the `mrpro` package."""
+
 import dataclasses
 from collections.abc import Callable
 
@@ -9,7 +11,18 @@ from mrpro.data.mixin.MoveDataMixin import MoveDataMixin
 
 @dataclass_transform(frozen_default=False)
 class Dataclass(MoveDataMixin, CheckDataMixin):
+    """A supercharged dataclass with additional functionality.
+
+    This class extends the functionality of the standard `dataclasses.dataclass` by adding
+    - a `apply` method to apply a function to all fields
+    - a `~MoveDataMixin.clone` method to create a deep copy of the object
+    - `~MoveDataMixin.to`, `~MoveDataMixin.cpu`, `~MoveDataMixin.cuda` merhods to move all tensor fields to a device
+
+    It is intended to be used as a base class for all dataclasses in the `mrpro` package.
+    """
+
     def __init_subclass__(cls, *args, **kwargs):
+        """Create a new dataclass subclass."""
         dataclasses.dataclass(cls)
         super().__init_subclass__(**kwargs)
 

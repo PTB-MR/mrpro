@@ -116,7 +116,7 @@ class SpatialDimension(Dataclass, Generic[T_co]):
         function
             function to apply
         """
-        return super(SpatialDimension, self).apply_(function)
+        return super().apply_(function)
 
     # This function is mainly for type hinting and docstring
     def apply(self, function: Callable[[T], T] | None = None, **_) -> Self:
@@ -127,11 +127,16 @@ class SpatialDimension(Dataclass, Generic[T_co]):
         function
             function to apply
         """
-        return super(SpatialDimension, self).apply(function)
+        return super().apply(function)
 
     @property
     def zyx(self) -> tuple[T_co, T_co, T_co]:
-        """Return a z,y,x tuple."""
+        """Return a z,y,x tuple.
+
+        ```{note}
+        To access the z, y, x values, use the attributes directly.
+        ```
+        """
         return (self.z, self.y, self.x)
 
     def __str__(self) -> str:
