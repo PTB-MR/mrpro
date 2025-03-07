@@ -25,24 +25,24 @@ class KTrajectory(MoveDataMixin):
     Contains the trajectory in k-space along the three dimensions `kz`, `ky`, `kx`,
     i.e. describes where in k-space each data point was acquired.
 
-    The shape of each of `kx`, `ky`, `kz` is `(*other, k2, k1, k0)`,
+    The shape of each of `kx`, `ky`, `kz` is `(*other, coils=1, k2, k1, k0)`,
     where `other` can span multiple dimensions.
 
     Example for 2D-Cartesian trajectories:
 
         - `kx` changes along `k0` and is frequency encoding,
         - `ky` changes along `k1` and is phase encoding
-        - `kz` is zero with shape `(1,1,1,1)`
+        - `kz` is zero with shape `(1, 1, 1, 1, 1)`
     """
 
     kz: torch.Tensor
-    """Trajectory in z direction / phase encoding direction k2 if Cartesian. Shape `(*other, k2, k1, k0)`"""
+    """Trajectory in z direction / phase encoding direction k2 if Cartesian. Shape `(*other, coils=1, k2, k1, k0)`"""
 
     ky: torch.Tensor
-    """Trajectory in y direction / phase encoding direction k1 if Cartesian. Shape `(*other, k2, k1, k0)`"""
+    """Trajectory in y direction / phase encoding direction k1 if Cartesian. Shape `(*other, coils=1, k2, k1, k0)`"""
 
     kx: torch.Tensor
-    """Trajectory in x direction / phase encoding direction k0 if Cartesian. Shape `(*other, k2, k1, k0)`"""
+    """Trajectory in x direction / phase encoding direction k0 if Cartesian. Shape `(*other, coils=1, k2, k1, k0)`"""
 
     grid_detection_tolerance: float = 1e-3
     """tolerance of how close trajectory positions have to be to integer grid points."""
@@ -139,6 +139,7 @@ class KTrajectory(MoveDataMixin):
         filename: FileOrPath,
         dataset_idx: int = -1,
         acquisition_filter_criterion: Callable[[ismrmrd.Acquisition], bool] | None = None,
+        normalize: bool = False,
     ) -> Self:
         """Read a k-space trajectory from an ISMRMRD file.
 
@@ -155,6 +156,9 @@ class KTrajectory(MoveDataMixin):
             A function that takes an ISMRMRD acquisition and returns a boolean.
             If provided, only acquisitions for which the function returns `True` are included in the trajectory.
             `None` includes all acquisitions.
+        normalize
+            Normalize the trajectory to the encoding matrix. Consider enabling for non-cartesian trajectories or
+            non-normalized ISMRMRD trajectories.
         """
         with ismrmrd.File(filename, 'r') as file:
             datasets = list(file.keys())
@@ -172,15 +176,19 @@ class KTrajectory(MoveDataMixin):
             if not acquisitions:
                 raise ValueError('No matching acquisitions found in the ISMRMRD file.')
             traj = torch.stack([torch.as_tensor(acq.traj, dtype=torch.float32) for acq in acquisitions], dim=0)
-
-            if (  # encoding matrix might not be present
+            if not normalize:
+                scaling_matrix = None
+            elif (
                 dataset.header.encoding
                 and dataset.header.encoding[0].encodedSpace
                 and dataset.header.encoding[0].encodedSpace.matrixSize
             ):
                 scaling_matrix = SpatialDimension.from_xyz(dataset.header.encoding[0].encodedSpace.matrixSize)
             else:
-                scaling_matrix = None
+                raise ValueError(
+                    'Requested normalization, but the ISMRMRD file does not contain an encoding matrix size. '
+                    'Consider adding it to the header.'
+                )
 
         if traj.shape[-1] != 3:  # enforce 3D trajectory
             zero = torch.zeros_like(traj[..., :1])

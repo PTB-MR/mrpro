@@ -22,7 +22,7 @@ from mrpro.utils.unit_conversion import deg_to_rad, mm_to_m, ms_to_s
 
 
 def _int_factory() -> torch.Tensor:
-    return torch.zeros(1, 1, 1, 1, 1, dtype=torch.int64)
+    return torch.zeros(1, 1, 1, 1, 1, dtype=torch.int64)  # other, coil, z, y, x
 
 
 T = TypeVar('T')
@@ -74,7 +74,16 @@ def try_reduce_repeat(value: T) -> T:
 
 @dataclass(slots=True)
 class ImageIdx(MoveDataMixin):
-    """Acquisition index for each readout."""
+    """Indices for each slice or volume.
+
+    The different counters describe the use of each slice or volume in the image data.
+    See MRD Image specification for more information.
+
+    References
+    ----------
+    .. [1] MRD Image Specification
+       https://ismrmrd.readthedocs.io/en/latest/mrd_image_data.html
+    """
 
     average: torch.Tensor = field(default_factory=_int_factory)
     """Signal average."""
@@ -170,31 +179,34 @@ class IHeader(MoveDataMixin):
     """Dictionary with miscellaneous parameters."""
 
     position: SpatialDimension[torch.Tensor] = field(
-        default_factory=lambda: SpatialDimension(
+        default_factory=lambda: SpatialDimension(  # other, coil, z, y, x
             torch.zeros(1, 1, 1, 1, 1),
             torch.zeros(1, 1, 1, 1, 1),
             torch.zeros(1, 1, 1, 1, 1),
         )
     )
-    """Center of the image"""
+    """Center of the image or volume [m]"""
 
     orientation: Rotation = field(default_factory=lambda: Rotation.identity((1, 1, 1, 1, 1)))
-    """Orientation of the image"""
+    """Orientation of the image or volume"""
 
     patient_table_position: SpatialDimension[torch.Tensor] = field(
-        default_factory=lambda: SpatialDimension(
+        default_factory=lambda: SpatialDimension(  # other, coil, z, y, x
             torch.zeros(1, 1, 1, 1, 1),
             torch.zeros(1, 1, 1, 1, 1),
             torch.zeros(1, 1, 1, 1, 1),
         )
     )
-    """Offset position of the patient table"""
+    """Offset position of the patient table [m]"""
 
     acquisition_time_stamp: torch.Tensor = field(default_factory=lambda: torch.zeros(1, 1, 1, 1, 1))
+    """Clock time stamp of the slice or volume [s]"""
 
     physiology_time_stamps: PhysiologyTimestamps = field(default_factory=PhysiologyTimestamps)
+    """Time stamps relative to physiological triggering, e.g. ECG [s]."""
 
     idx: ImageIdx = field(default_factory=ImageIdx)
+    """Image Counters. For each slice or volume, describe its use."""
 
     @classmethod
     def from_kheader(cls, header: KHeader) -> Self:

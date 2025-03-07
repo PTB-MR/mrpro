@@ -1,5 +1,7 @@
 """PyTest fixtures for the data tests."""
 
+from collections.abc import Callable
+
 import pytest
 import torch
 from ismrmrd import xsd
@@ -11,7 +13,12 @@ from tests.data import DicomTestImage, IsmrmrdRawTestData
 
 
 @pytest.fixture(params=({'seed': 0},))
-def cartesian_grid(request):
+def cartesian_grid(request) -> Callable[[int, int, int, float], tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
+    """Cartesian grid generator.
+
+    Generates a 3D cartesian grid with optional jitter.
+    Shape of the returned tensors is `(1, 1, n_k2, n_k1, n_k0)`.
+    """
     generator = RandomGenerator(request.param['seed'])
 
     def generate(n_k2: int, n_k1: int, n_k0: int, jitter: float) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -266,3 +273,18 @@ def ismrmrd_cart_random_us(ellipse_phantom, tmp_path_factory):
         phantom=ellipse_phantom.phantom,
     )
     return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_rad(ellipse_phantom, tmp_path_factory):
+    """Data set with uniform radial k-space sampling."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_rad.h5'
+    ismrmrd_data = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        phantom=ellipse_phantom.phantom,
+        trajectory_type='radial',
+        acceleration=4,
+    )
+    return ismrmrd_data

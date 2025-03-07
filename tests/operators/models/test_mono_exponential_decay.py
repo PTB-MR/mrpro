@@ -19,11 +19,7 @@ from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 def test_mono_exponential_decay_special_values(
     decay_time: float, result: str, parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)
 ) -> None:
-    """Test for mono-exponential decay signal model.
-
-    Check that idata output tensor at ti=0 is close to 0.
-    Check that idata output tensor at large ti is close to m0.
-    """
+    """Test for mono-exponential decay signal at special input values"""
     rng = RandomGenerator(1)
     m0 = rng.complex64_tensor(parameter_shape)
     decay_constant = rng.float32_tensor(parameter_shape, low=1e-3, high=2)

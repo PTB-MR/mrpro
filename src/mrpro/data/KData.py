@@ -16,7 +16,7 @@ from einops import rearrange, repeat
 from typing_extensions import Self, TypeVar
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
-from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_siemens
+from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_osi2, convert_time_stamp_siemens
 from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
@@ -138,26 +138,22 @@ class KData(
         if not acquisitions:
             raise ValueError('No acquisitions meeting the given filter criteria were found.')
 
-        if (
-            ismrmrd_header.acquisitionSystemInformation is not None
-            and isinstance(ismrmrd_header.acquisitionSystemInformation.systemVendor, str)
-            and ismrmrd_header.acquisitionSystemInformation.systemVendor.lower() == 'siemens'
+        if ismrmrd_header.acquisitionSystemInformation is not None and isinstance(
+            ismrmrd_header.acquisitionSystemInformation.systemVendor, str
         ):
-            convert_time_stamp = convert_time_stamp_siemens  # 2.5ms time steps
-        # Here we could include more vendors
-        elif (
-            ismrmrd_header.acquisitionSystemInformation is None
-            or ismrmrd_header.acquisitionSystemInformation.systemVendor is None
-        ):
-            warnings.warn('No vendor information found. Assuming Siemens time stamp format.', stacklevel=1)
-            convert_time_stamp = convert_time_stamp_siemens
-
+            match ismrmrd_header.acquisitionSystemInformation.systemVendor.lower():
+                case 'siemens':
+                    convert_time_stamp = convert_time_stamp_siemens  # 2.5ms time steps
+                case 'osi2':
+                    convert_time_stamp = convert_time_stamp_osi2  # 1ms time steps
+                case str(vendor):
+                    warnings.warn(
+                        f'Unknown vendor {vendor}. '
+                        'Assuming Siemens time stamp format. If this is wrong, consider opening an Issue.',
+                        stacklevel=1,
+                    )
         else:
-            warnings.warn(
-                f'Unknown vendor {ismrmrd_header.acquisitionSystemInformation.systemVendor}. '
-                'Assuming Siemens time stamp format. If this is wrong, consider opening an Issue.',
-                stacklevel=1,
-            )
+            warnings.warn('No vendor information found. Assuming Siemens time stamp format.', stacklevel=1)
             convert_time_stamp = convert_time_stamp_siemens
 
         acq_info, (k0_center, n_k0_tensor, discard_pre, discard_post) = AcqInfo.from_ismrmrd_acquisitions(
@@ -271,18 +267,18 @@ class KData(
         if len(n_acqs_per_other_and_k2) == 1:
             # This is the most common case:
             # All other and k2 combinations have the same number of aquisistions which we can use as k1
-            # to reshape to (other, k2, k1, k0)
+            # to reshape to (other, coils, k2, k1, k0)
             n_k1 = n_acqs_per_other_and_k2[0]
             n_k2 = n_acqs_per_other[0] // n_k1
         elif len(n_acqs_per_other) == 1:
             # We cannot split the data along phase encoding steps into k2 and k1, as there are different numbers of k1.
             # But all "other labels" combinations have the same number of aquisisitions,
-            # so we can reshape to (other, k, 1, k0)
+            # so we can reshape to (other, coils, k, 1, k0)
             n_k1 = 1
             n_k2 = n_acqs_per_other[0]  # total number of k encoding steps
         else:
             # For different other combinations we have different numbers of aquisistions,
-            # so we can only reshape to (acquisitions, 1, 1, k0)
+            # so we can only reshape to (acquisitions, coils, 1, 1, k0)
             # This might be an user error.
             warnings.warn(
                 f'There are different numbers of acquisistions in'

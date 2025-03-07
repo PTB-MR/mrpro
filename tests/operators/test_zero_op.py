@@ -3,10 +3,15 @@ from mrpro.operators import IdentityOp, LinearOperator, MagnitudeOp, Operator, Z
 from mrpro.operators.LinearOperator import LinearOperatorSum
 from typing_extensions import assert_type
 
-from tests import RandomGenerator, dotproduct_adjointness_test
+from tests import (
+    RandomGenerator,
+    dotproduct_adjointness_test,
+    forward_mode_autodiff_of_linear_operator_test,
+    gradient_of_linear_operator_test,
+)
 
 
-def test_zero_op_keepshape():
+def test_zero_op_keepshape() -> None:
     """Test that the zero operator returns zeros."""
     generator = RandomGenerator(seed=0)
     x = generator.complex64_tensor(2, 3, 4)
@@ -16,7 +21,7 @@ def test_zero_op_keepshape():
     torch.testing.assert_close(actual, expected)
 
 
-def test_zero_op_scalar():
+def test_zero_op_scalar() -> None:
     """Test that the zero operator returns single zero."""
     generator = RandomGenerator(seed=0)
     x = generator.complex64_tensor(2, 3, 4)
@@ -26,7 +31,7 @@ def test_zero_op_scalar():
     torch.testing.assert_close(actual, expected)
 
 
-def test_zero_op_neutral_linop():
+def test_zero_op_neutral_linop() -> None:
     """Test that the zero operator is neutral for addition."""
     op = IdentityOp()
     zero = ZeroOp()
@@ -44,7 +49,7 @@ def test_zero_op_neutral_linop():
     assert zero * 1 is zero
 
 
-def test_zero_op_neutral_op():
+def test_zero_op_neutral_op() -> None:
     """Test that the zero operator is neutral for addition."""
     op = MagnitudeOp() @ IdentityOp()
     zero = ZeroOp()
@@ -56,7 +61,7 @@ def test_zero_op_neutral_op():
     assert_type(lsum, Operator[torch.Tensor, tuple[torch.Tensor]])
 
 
-def test_zero_op_adjoint_keepshape():
+def test_zero_op_adjoint_keepshape() -> None:
     """Test that the adjoint of the zero operator is the zero operator."""
     generator = RandomGenerator(seed=0)
     u = generator.complex64_tensor(2, 3, 4)
@@ -65,7 +70,25 @@ def test_zero_op_adjoint_keepshape():
     dotproduct_adjointness_test(operator, u, v)
 
 
-def test_zero_op_adjoint_scalar():
+def test_zero_op_grad_keepshape() -> None:
+    """Test gradient of zero operator."""
+    generator = RandomGenerator(seed=0)
+    u = generator.complex64_tensor(2, 3, 4)
+    v = generator.complex64_tensor(2, 3, 4)
+    operator = ZeroOp(keep_shape=True)
+    gradient_of_linear_operator_test(operator, u, v)
+
+
+def test_zero_op_forward_mode_autodiff_keepshape() -> None:
+    """Test forward-mode autodiff of zero operator."""
+    generator = RandomGenerator(seed=0)
+    u = generator.complex64_tensor(2, 3, 4)
+    v = generator.complex64_tensor(2, 3, 4)
+    operator = ZeroOp(keep_shape=True)
+    forward_mode_autodiff_of_linear_operator_test(operator, u, v)
+
+
+def test_zero_op_adjoint_scalar() -> None:
     """Test that the adjoint of the zero operator is the zero operator."""
     generator = RandomGenerator(seed=0)
     u = generator.complex64_tensor(2, 3, 4)
@@ -77,3 +100,21 @@ def test_zero_op_adjoint_scalar():
     # as ZeroOp is the neutral element of the addition.
     operator = LinearOperatorSum(ZeroOp(keep_shape=False), IdentityOp())
     dotproduct_adjointness_test(operator, u, v)
+
+
+def test_zero_op_grad_scalar() -> None:
+    """Test gradient of zero operator."""
+    generator = RandomGenerator(seed=0)
+    u = generator.complex64_tensor(2, 3, 4)
+    v = generator.complex64_tensor(2, 3, 4)
+    operator = LinearOperatorSum(ZeroOp(keep_shape=False), IdentityOp())
+    gradient_of_linear_operator_test(operator, u, v)
+
+
+def test_zero_op_forward_mode_autodiff_scalar() -> None:
+    """Test forward-mode autodiff of zero operator."""
+    generator = RandomGenerator(seed=0)
+    u = generator.complex64_tensor(2, 3, 4)
+    v = generator.complex64_tensor(2, 3, 4)
+    operator = LinearOperatorSum(ZeroOp(keep_shape=False), IdentityOp())
+    forward_mode_autodiff_of_linear_operator_test(operator, u, v)

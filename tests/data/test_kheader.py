@@ -5,7 +5,7 @@ from mrpro.data import KHeader
 from mrpro.data.traj_calculators.KTrajectoryCalculator import DummyTrajectory
 
 
-def test_kheader_overwrite_missing_parameter(random_mandatory_ismrmrd_header, random_acq_info):
+def test_kheader_overwrite_missing_parameter(random_mandatory_ismrmrd_header, random_acq_info) -> None:
     """KHeader can be created if trajectory is provided."""
     overwrite = {'trajectory': DummyTrajectory()}
     kheader = KHeader.from_ismrmrd(random_mandatory_ismrmrd_header, random_acq_info, overwrite=overwrite)
@@ -13,7 +13,7 @@ def test_kheader_overwrite_missing_parameter(random_mandatory_ismrmrd_header, ra
     assert kheader.trajectory is overwrite['trajectory']
 
 
-def test_kheader_set_missing_defaults(random_mandatory_ismrmrd_header, random_acq_info):
+def test_kheader_set_missing_defaults(random_mandatory_ismrmrd_header, random_acq_info) -> None:
     """KHeader can be created if default trajectory is defined."""
     defaults = {'trajectory': DummyTrajectory()}
     kheader = KHeader.from_ismrmrd(random_mandatory_ismrmrd_header, random_acq_info, defaults=defaults)
@@ -21,7 +21,7 @@ def test_kheader_set_missing_defaults(random_mandatory_ismrmrd_header, random_ac
     assert kheader.trajectory is defaults['trajectory']
 
 
-def test_kheader_verify_None(random_mandatory_ismrmrd_header, random_acq_info):
+def test_kheader_verify_None(random_mandatory_ismrmrd_header, random_acq_info) -> None:
     """Correct handling of `None` and missing values in `KHeader` creation."""
     tr_default = None
     fa_default = torch.as_tensor([0.1])

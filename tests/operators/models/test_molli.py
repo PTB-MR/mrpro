@@ -17,11 +17,7 @@ from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
     ],
 )
 def test_molli_special_values(ti: float, result: str, parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)) -> None:
-    """Test for MOLLI.
-
-    Checking that idata output tensor at ti=0 is close to a. Checking
-    that idata output tensor at large ti is close to a(1-c).
-    """
+    """Test MOLLI signal at special input values."""
     rng = RandomGenerator(1)
     a = rng.complex64_tensor(parameter_shape, low=1e-10, high=10)
     t1 = rng.float32_tensor(parameter_shape, low=1e-10, high=10)
@@ -54,6 +50,7 @@ def test_molli_shape(
     model = MOLLI(ti)
     (signal,) = model(a, c, t1)
     assert signal.shape == signal_shape
+    assert signal.isfinite().all()
 
 
 def test_autodiff_molli(parameter_shape: Sequence[int] = (2, 5, 10, 10)) -> None:
@@ -79,14 +76,17 @@ def test_molli_cuda(parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)) -> None
     model.cuda()
     (signal,) = model(a.cuda(), c.cuda(), t1.cuda())
     assert signal.is_cuda
+    assert signal.isfinite().all()
 
     # Create on GPU and run on GPU
     model = MOLLI(ti=torch.tensor((5, 10)).cuda())
     (signal,) = model(a.cuda(), c.cuda(), t1.cuda())
     assert signal.is_cuda
+    assert signal.isfinite().all()
 
     # Create on GPU, transfer to CPU and run on CPU
     model = MOLLI(ti=torch.tensor((5, 10)).cuda())
     model.cpu()
     (signal,) = model(a, c, t1)
     assert signal.is_cpu
+    assert signal.isfinite().all()

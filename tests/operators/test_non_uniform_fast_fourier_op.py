@@ -12,27 +12,25 @@ from tests.conftest import COMMON_MR_TRAJECTORIES, create_traj
 from tests.helper import dotproduct_adjointness_test, relative_image_difference
 
 
-def create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz):
+def create_data(img_shape, nkx, nky, nkz, type_kx, type_ky, type_kz) -> tuple[torch.Tensor, KTrajectory]:
+    """Create k-space trajectory and random image."""
     random_generator = RandomGenerator(seed=0)
-
-    # generate random image
-    img = random_generator.complex64_tensor(size=im_shape)
-    # create random trajectories
+    img = random_generator.complex64_tensor(size=img_shape)
     trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
     return img, trajectory
 
 
 @COMMON_MR_TRAJECTORIES
 def test_non_uniform_fast_fourier_op_fwd_adj_property(
-    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
-):
+    img_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
+) -> None:
     """Test adjoint property of non-uniform Fast Fourier operator."""
 
     # generate random images and k-space trajectories
-    _, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    _, trajectory = create_data(img_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
     # create operator
-    recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
+    recon_matrix = SpatialDimension(img_shape[-3], img_shape[-2], img_shape[-1])
     encoding_matrix = SpatialDimension(
         int(trajectory.kz.max() - trajectory.kz.min() + 1),
         int(trajectory.ky.max() - trajectory.ky.min() + 1),
@@ -48,19 +46,19 @@ def test_non_uniform_fast_fourier_op_fwd_adj_property(
 
     # test adjoint property; i.e. <Fu,v> == <u, F^Hv> for all u,v
     random_generator = RandomGenerator(seed=0)
-    u = random_generator.complex64_tensor(size=im_shape)
+    u = random_generator.complex64_tensor(size=img_shape)
     v = random_generator.complex64_tensor(size=k_shape)
     dotproduct_adjointness_test(nufft_op, u, v)
 
 
 @COMMON_MR_TRAJECTORIES
 def test_non_uniform_fast_fourier_op_gram(
-    im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
-):
+    img_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz, type_k0, type_k1, type_k2
+) -> None:
     """Test gram of of non-uniform Fast Fourier operator."""
-    img, trajectory = create_data(im_shape, k_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+    img, trajectory = create_data(img_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
 
-    recon_matrix = SpatialDimension(im_shape[-3], im_shape[-2], im_shape[-1])
+    recon_matrix = SpatialDimension(img_shape[-3], img_shape[-2], img_shape[-1])
     encoding_matrix = SpatialDimension(
         int(trajectory.kz.max() - trajectory.kz.min() + 1),
         int(trajectory.ky.max() - trajectory.ky.min() + 1),
@@ -80,7 +78,7 @@ def test_non_uniform_fast_fourier_op_gram(
     torch.testing.assert_close(actual, expected, rtol=1e-3, atol=1e-3)
 
 
-def test_non_uniform_fast_fourier_op_equal_to_fft(ismrmrd_cart_high_res):
+def test_non_uniform_fast_fourier_op_equal_to_fft(ismrmrd_cart_high_res) -> None:
     """Compare nufft result to fft result for Cartesian data."""
     kdata = KData.from_file(ismrmrd_cart_high_res.filename, KTrajectoryIsmrmrd())
     nufft_op = NonUniformFastFourierOp(
@@ -99,7 +97,7 @@ def test_non_uniform_fast_fourier_op_equal_to_fft(ismrmrd_cart_high_res):
     torch.testing.assert_close(nufft_img, fft_img, rtol=1e-3, atol=1e-3)
 
 
-def test_non_uniform_fast_fourier_cartesian_result(ismrmrd_cart_high_res):
+def test_non_uniform_fast_fourier_cartesian_result(ismrmrd_cart_high_res) -> None:
     """Eval result of non-uniform Fast Fourier transform for Cartesian data."""
     kdata = KData.from_file(ismrmrd_cart_high_res.filename, KTrajectoryIsmrmrd())
     nufft_op = NonUniformFastFourierOp(
@@ -115,7 +113,7 @@ def test_non_uniform_fast_fourier_cartesian_result(ismrmrd_cart_high_res):
     assert relative_image_difference(reconstructed_img[0, 0, 0, ...], ismrmrd_cart_high_res.img_ref) <= 0.05
 
 
-def test_non_uniform_fast_fourier_op_empty_dims():
+def test_non_uniform_fast_fourier_op_empty_dims() -> None:
     """Empty dims do not change the input."""
     nk = (1, 1, 1, 1, 1)
     traj = create_traj(nkx=nk, nky=nk, nkz=nk, type_kx='non-uniform', type_ky='non-uniform', type_kz='non-uniform')
@@ -126,7 +124,7 @@ def test_non_uniform_fast_fourier_op_empty_dims():
     torch.testing.assert_close(u, nufft_op(u)[0])
 
 
-def test_non_uniform_fast_fourier_op_directions():
+def test_non_uniform_fast_fourier_op_directions() -> None:
     """Test different direction specifiers of non-uniform fast Fourier operator."""
 
     kdata_shape = (1, 3, 1, 30, 40)
@@ -136,7 +134,6 @@ def test_non_uniform_fast_fourier_op_directions():
     nk = [2, 1, 1, 30, 40]
     img, traj = create_data(
         img_shape,
-        kdata_shape,
         nkx=nk,
         nky=nk,
         nkz=nk,
@@ -162,7 +159,7 @@ def test_non_uniform_fast_fourier_op_directions():
     torch.testing.assert_close(nufft_op_12(img)[0], nufft_op_yx(img)[0])
 
 
-def test_non_uniform_fast_fourier_op_error_directions():
+def test_non_uniform_fast_fourier_op_error_directions() -> None:
     """Test error for duplicate directions of non-uniform fast Fourier operator."""
     with pytest.raises(ValueError, match='Directions must be unique'):
         NonUniformFastFourierOp(
@@ -173,7 +170,7 @@ def test_non_uniform_fast_fourier_op_error_directions():
         )
 
 
-def test_non_uniform_fast_fourier_op_error_matrix():
+def test_non_uniform_fast_fourier_op_error_matrix() -> None:
     """Test error for wrong matrix dimensions of non-uniform fast Fourier operator."""
     with pytest.raises(ValueError, match='recon_matrix should have'):
         NonUniformFastFourierOp(
@@ -190,3 +187,37 @@ def test_non_uniform_fast_fourier_op_error_matrix():
             encoding_matrix=[1],
             traj=KTrajectory.from_tensor(torch.ones((3, 1, 1, 1, 1, 1))),
         )
+
+
+def test_non_uniform_fast_fourier_op_repr():
+    """Test the __repr__ method of NonUniformFastFourierOp."""
+
+    # Create a trajectory with non-Cartesian (off-grid) components
+    k_shape = (1, 5, 20, 40, 60)
+    nkx = (1, 1, 1, 1, 60)
+    nky = (1, 1, 1, 40, 1)
+    nkz = (1, 1, 20, 1, 1)
+    type_kx = 'non-uniform'
+    type_ky = 'non-uniform'
+    type_kz = 'non-uniform'
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
+
+    recon_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    encoding_matrix = SpatialDimension(
+        int(trajectory.kz.max() - trajectory.kz.min() + 1),
+        int(trajectory.ky.max() - trajectory.ky.min() + 1),
+        int(trajectory.kx.max() - trajectory.kx.min() + 1),
+    )
+    nufft_op = NonUniformFastFourierOp(
+        direction=['x', 'y', 'z'],
+        recon_matrix=recon_matrix,
+        encoding_matrix=encoding_matrix,
+        traj=trajectory,
+    )
+    repr_str = repr(nufft_op)
+
+    # Check if __repr__ contains expected information
+    assert 'NonUniformFastFourierOp' in repr_str
+    assert 'Dimension(s) along which NUFFT is applied' in repr_str
+    assert 'Reconstructed image size' in repr_str
+    assert 'device' in repr_str
