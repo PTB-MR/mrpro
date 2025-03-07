@@ -3,7 +3,7 @@ from typing import Annotated, Optional, Union
 
 import pytest
 import torch
-from mrpro.data.CheckDataMixin import (
+from mrpro.data.mixin.CheckDataMixin import (
     Annotation,
     CheckDataMixin,
     DtypeError,
