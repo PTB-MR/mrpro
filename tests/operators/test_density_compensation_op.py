@@ -93,7 +93,7 @@ def test_density_compensation_op_cuda():
 
     # Generate random data
     random_generator = RandomGenerator(seed=0)
-    random_tensor = random_generator.complex64_tensor(size=(*n_other, *n_zyx))
+    random_tensor = random_generator.complex64_tensor(size=(*n_other, 1, *n_zyx))
     random_dcf = DcfData(data=random_tensor)
     u = random_generator.complex64_tensor(size=(*n_other, n_coils, *n_zyx))
 
