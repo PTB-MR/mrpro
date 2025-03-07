@@ -84,3 +84,36 @@ def test_pca_compression_op_wrong_shapes() -> None:
 
     with pytest.raises(RuntimeError, match='Matrix.H'):
         pca_comp_op.adjoint(input_data)
+
+
+@pytest.mark.cuda
+def test_pca_compression_op_cuda() -> None:
+    """Test if PCA compression operator works on CUDA devices."""
+    init_data_shape = (40, 10)
+    n_components = 6
+
+    # Create test data
+    generator = RandomGenerator(seed=0)
+    data_to_calculate_compression_matrix_from = generator.complex64_tensor(init_data_shape)
+
+    # Create on CPU, transfer to GPU, run on GPU
+    pca_comp_op = PCACompressionOp(data=data_to_calculate_compression_matrix_from, n_components=n_components)
+    pca_comp_op.cuda()
+    (comp_result,) = pca_comp_op(data_to_calculate_compression_matrix_from.cuda())
+    assert comp_result.is_cuda
+
+    # Create on CPU, run on CPU
+    pca_comp_op = PCACompressionOp(data=data_to_calculate_compression_matrix_from, n_components=n_components)
+    (comp_result,) = pca_comp_op(data_to_calculate_compression_matrix_from)
+    assert comp_result.is_cpu
+
+    # Create on GPU, run on GPU
+    pca_comp_op = PCACompressionOp(data=data_to_calculate_compression_matrix_from.cuda(), n_components=n_components)
+    (comp_result,) = pca_comp_op(data_to_calculate_compression_matrix_from.cuda())
+    assert comp_result.is_cuda
+
+    # Create on GPU, transfer to CPU, run on CPU
+    pca_comp_op = PCACompressionOp(data=data_to_calculate_compression_matrix_from.cuda(), n_components=n_components)
+    pca_comp_op.cpu()
+    (comp_result,) = pca_comp_op(data_to_calculate_compression_matrix_from)
+    assert comp_result.is_cpu

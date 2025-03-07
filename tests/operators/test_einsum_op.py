@@ -89,7 +89,7 @@ def test_einsum_op_invalid(rule: str) -> None:
 
 
 @pytest.mark.cuda
-def test_einsum_op_cuda():
+def test_einsum_op_cuda() -> None:
     """Test einsum operator works on cuda devices."""
     tensor_shape = (3, 5, 4, 2)
     input_shape = (3, 2, 5)

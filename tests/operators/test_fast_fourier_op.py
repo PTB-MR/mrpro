@@ -149,7 +149,7 @@ def test_fast_fourier_op_repr():
 
 
 @pytest.mark.cuda
-def test_fast_fourier_op_cuda():
+def test_fast_fourier_op_cuda() -> None:
     """Test fast Fourier operator works on CUDA devices."""
 
     # Generate data

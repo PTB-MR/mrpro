@@ -84,7 +84,7 @@ def test_density_compensation_op_forward() -> None:
 
 
 @pytest.mark.cuda
-def test_density_compensation_op_cuda():
+def test_density_compensation_op_cuda() -> None:
     """Test density compensation operator works on CUDA devices."""
 
     n_zyx = (2, 3, 4)

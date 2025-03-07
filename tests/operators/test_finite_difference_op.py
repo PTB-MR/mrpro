@@ -80,7 +80,7 @@ def test_finite_difference_op_forward_mode_autodiff(
 
 
 @pytest.mark.cuda
-def test_finite_difference_op_cuda():
+def test_finite_difference_op_cuda() -> None:
     """Test finite difference operator works on CUDA devices."""
 
     # Set dimensional parameters
