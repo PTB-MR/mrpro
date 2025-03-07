@@ -156,14 +156,15 @@ class IData(Data):
         # Pass on sorted file list as order of dicom files is often the same as the required order
         return cls.from_dicom_files(filenames=sorted(file_paths))
 
-    def save_as_nifti2(self, filename: str | Path) -> None:
-        """Save image data as NIFTI2 file.
+    def save_as_nifti(self, filename: str | Path) -> None:
+        """Save image data as NIFTI file.
 
         Parameters
         ----------
         filename
-            filename of the NIFTI2 file.
+            filename of the NIFTI file.
         """
+        # ToDO: check to make this shorter using torch.flatten
         if len(self.data.shape) > 7:
             num_to_flatten = len(self.data.shape) - 7
             flattened_size = int(torch.prod(torch.tensor(self.data.shape[:num_to_flatten])).item())
@@ -187,14 +188,14 @@ class IData(Data):
 
         data_nifti = np.transpose(image_data.squeeze(), (2, 1, 0))
         magnitude = np.abs(data_nifti).numpy()
-        nifti2_img = nib.Nifti2Image(magnitude, affine)
+        nifti_img = nib.Nifti1Image(magnitude, affine)
 
-        hdr = nifti2_img.header
+        hdr = nifti_img.header
         hdr['pixdim'][1:4] = [self.header.resolution.x, self.header.resolution.y, self.header.resolution.z]
         description = f'TE={self.header.te}ms; TI={self.header.ti}ms; TR={self.header.tr}ms; FA={self.header.fa}rad'
         hdr['descrip'] = description.encode('utf-8')
 
-        nib.save(nifti2_img, f'{filename}.nii')
+        nib.save(nifti_img, f'{filename}.nii')
 
     def save_as_ismrmrd(self, filename: str | Path) -> None:
         """Save image data as ISMRMRD file.
