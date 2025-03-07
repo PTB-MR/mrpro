@@ -3,7 +3,7 @@
 from collections.abc import Callable
 from typing import TYPE_CHECKING, TypeAlias
 
-from typing_extensions import Any, Protocol, TypeVar
+from typing_extensions import Any, Protocol, TypeVar, runtime_checkable
 
 if TYPE_CHECKING:
     from dataclasses import Field
@@ -218,11 +218,6 @@ if TYPE_CHECKING:
         """
         return f
 
-    class DataclassInstance(Protocol):
-        """An instance of a dataclass."""
-
-        __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
-
     class ReadSeekable(Protocol):
         def read(self, size: int | None = -1) -> bytes:
             """Read up to size bytes. Returns fewer if EOF is reached."""
@@ -234,6 +229,12 @@ if TYPE_CHECKING:
 
     FileOrPath: TypeAlias = ReadSeekable | str | PathLike
 
+    @runtime_checkable
+    class DataclassInstance(Protocol):
+        """An instance of a dataclass."""
+
+        __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
+
 
 else:
     TorchIndexerType: TypeAlias = Any
@@ -243,6 +244,12 @@ else:
         """A nested sequence type."""
 
         ...
+
+    @runtime_checkable
+    class DataclassInstance(Protocol):
+        """An instance of a dataclass."""
+
+        __dataclass_fields__: Any
 
     NumpyIndexerType: TypeAlias = Any
     """Numpy indexer type."""
