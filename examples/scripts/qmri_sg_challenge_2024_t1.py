@@ -213,9 +213,8 @@ plt.show()
 # as $q(TE) = M_0 e^{-TE/T_2^*}$ with the equilibrium magnetization $M_0$, the echo time $TE$, and $T_2^*$.\
 # Give it a try and see if you can obtain good $T_2^*$ maps!
 # ```{note}
-# The echo times $TE$ can be found in `IData.header.te`. Instead of using dictionary matching for starting values,
-# a good starting value for $M_0$ is the signal at the shortest echo time
-# and a good starting value for $T_2^*$ is 20 ms.
+# The echo times $TE$ can be found in `IData.header.te`. As starting values, either dictionary matching, or
+# the signal at the shortest echo time for $M_0$ and 20 ms for $T_2^*$ can be used.
 # ```
 
 # %%
