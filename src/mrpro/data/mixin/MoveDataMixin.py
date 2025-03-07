@@ -1,10 +1,10 @@
 """MoveDataMixin."""
 
 import dataclasses
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from copy import copy as shallowcopy
 from copy import deepcopy
-from typing import Callable, Protocol, TypeAlias, cast
+from typing import Protocol, TypeAlias, cast
 
 import torch
 from typing_extensions import Any, Self, TypeVar, overload
@@ -34,14 +34,16 @@ T = TypeVar('T')
 
 
 class ApplyProtocol(Protocol):
-    def apply(self: Self, function: Callable[[Any], Any] | None = None, *, recurse: bool = True) -> Self: ...
+    """Protocol for the apply_ method."""
+
     def apply_(
         self: Self,
         function: Callable[[Any], Any] | None = None,
         *,
         memo: dict[int, Any] | None = None,
         recurse: bool = True,
-    ) -> Self: ...
+    ) -> Self:
+        """Apply a function to all children in-place."""
 
 
 class MoveDataMixin(ApplyProtocol):
