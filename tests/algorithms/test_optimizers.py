@@ -97,6 +97,6 @@ def test_callback_early_stop(optimizer) -> None:
     parameter1 = torch.tensor([a / 3.14], requires_grad=True)
     parameter2 = torch.tensor([3.14], requires_grad=True)
     parameters = [parameter1, parameter2]
-    _ = optimizer(rosen_brock, parameters, max_iter=100, callback=callback)
+    _ = optimizer(rosen_brock, parameters, 100, callback=callback)
 
     assert callback_check == 1

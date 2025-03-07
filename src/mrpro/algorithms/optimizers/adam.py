@@ -113,7 +113,7 @@ def adam(
         return objective
 
     # run adam
-    for iteration in range(n_iterations):  # noqa: B007
+    for iteration in range(n_iterations):
         optim.step(closure)
 
         if callback is not None:

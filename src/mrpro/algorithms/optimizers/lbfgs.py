@@ -115,7 +115,7 @@ def lbfgs(
 
     iteration = 0
     # run lbfgs
-    while iteration < max_iter:
+    while iteration < max_iterations:
         optim.step(closure)
         iteration += 1
 
