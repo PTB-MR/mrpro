@@ -100,6 +100,7 @@ repos:
           - pytest
           - xsdata
           - types-tqdm
+          - scipy-stubs
           - "--index-url=https://download.pytorch.org/whl/cpu"
           - "--extra-index-url=https://pypi.python.org/simple"
 

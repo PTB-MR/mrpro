@@ -132,18 +132,7 @@ warn_unused_ignores = true
 
 
 [[tool.mypy.overrides]]
-module = [
-    "ismrmrd.*",
-    "h5py",
-    "scipy.*",
-    "torchkbnufft",
-    "pypulseq",
-    "zenodo_get",
-    "ptwt.*",
-    "pywt.*",
-    "torchvision.*",
-    "platformdirs",
-]
+module = ["zenodo_get"]
 ignore_missing_imports = true
 
 [tool.ruff]
