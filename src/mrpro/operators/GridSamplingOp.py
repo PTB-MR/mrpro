@@ -5,7 +5,6 @@ from collections.abc import Callable, Sequence
 from typing import Literal
 
 import torch
-from einops import rearrange
 
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
@@ -238,6 +237,12 @@ class GridSamplingOp(LinearOperator):
         self, x: torch.Tensor, inner: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
     ) -> tuple[torch.Tensor]:
         """Do all the reshaping pre- and post- sampling."""
+        if x.is_complex():
+            # apply to real and imaginary part separately
+            (real,) = self.__reshape_wrapper(x.real, inner)
+            (imag,) = self.__reshape_wrapper(x.imag, inner)
+            return (torch.complex(real, imag),)
+
         # First, we need to do a lot of reshaping ..
         dim = self.grid.shape[-1]
         if x.ndim < dim + 2:
@@ -245,12 +250,9 @@ class GridSamplingOp(LinearOperator):
                 f'For a {dim}D sampling operation, x should have at least have {dim + 2} dimensions:'
                 f' batch channel {"z y x" if dim == 3 else "y x"}.'
             )
-
-        #   The gridsample operator only works for real data, thus we handle complex inputs as an additional channel
-        x_real = rearrange(torch.view_as_real(x), '... real_imag  -> real_imag ...') if x.is_complex() else x
         shape_grid_batch = self.grid.shape[: -dim - 1]  # the batch dimensions of grid
         n_batchdim = len(shape_grid_batch)
-        shape_x_batch = x_real.shape[:n_batchdim]  # the batch dimensions of the input
+        shape_x_batch = x.shape[:n_batchdim]  # the batch dimensions of the input
         try:
             shape_batch = torch.broadcast_shapes(shape_x_batch, shape_grid_batch)
         except RuntimeError:
@@ -260,12 +262,12 @@ class GridSamplingOp(LinearOperator):
                 f' (shapes are x: {x.shape}, grid: {self.grid.shape}).'
             ) from None
 
-        shape_channels = x_real.shape[n_batchdim:-dim]
+        shape_channels = x.shape[n_batchdim:-dim]
         #   reshape to 3D: (*batch_dim) z y x 3 or 2D: (*batch_dim) y x 2
         grid_flatbatch = self.grid.broadcast_to(*shape_batch, *self.grid.shape[n_batchdim:]).flatten(
             end_dim=n_batchdim - 1
         )
-        x_flatbatch = x_real.broadcast_to(*shape_batch, *x_real.shape[n_batchdim:]).flatten(end_dim=n_batchdim - 1)
+        x_flatbatch = x.broadcast_to(*shape_batch, *x.shape[n_batchdim:]).flatten(end_dim=n_batchdim - 1)
         #   reshape to 3D: (*batch_dim) (*channel_dim) z y x or 2D: (*batch_dim) (*channel_dim) y x
         x_flatbatch_flatchannel = x_flatbatch.flatten(start_dim=1, end_dim=-dim - 1)
 
@@ -274,8 +276,6 @@ class GridSamplingOp(LinearOperator):
 
         # .. and reshape back.
         result = sampled.reshape(*shape_batch, *shape_channels, *sampled.shape[-dim:])
-        if x.is_complex():
-            result = torch.view_as_complex(rearrange(result, 'real_imag ... -> ... real_imag').contiguous())
         return (result,)
 
     def _forward_implementation(
