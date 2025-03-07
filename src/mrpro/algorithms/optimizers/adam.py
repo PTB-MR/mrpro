@@ -19,7 +19,7 @@ def adam(
     weight_decay: float = 0,
     amsgrad: bool = False,
     decoupled_weight_decay: bool = False,
-    callback: Callable[[OptimizerStatus], None] | None = None,
+    callback: Callable[[OptimizerStatus], bool | None] | None = None,
 ) -> tuple[torch.Tensor, ...]:
     r"""Adam for non-linear minimization problems.
 
@@ -85,7 +85,8 @@ def adam(
     decoupled_weight_decay
         whether to use Adam (default) or AdamW (if set to `True`) [LOS2019]_
     callback
-        function to be called after each iteration
+        function to be called after each iteration. This can be used to monitor the progress of the algorithm.
+        If it returns `False`, the algorithm stops at that iteration.
 
     Returns
     -------
@@ -109,13 +110,15 @@ def adam(
         (objective,) = f(*parameters)
         objective.backward()
 
-        if callback is not None:
-            callback({'solution': parameters, 'iteration_number': iteration})
-
         return objective
 
     # run adam
     for iteration in range(n_iterations):  # noqa: B007
         optim.step(closure)
+
+        if callback is not None:
+            continue_iterations = callback({'solution': parameters, 'iteration_number': iteration})
+            if continue_iterations is False:
+                break
 
     return parameters
