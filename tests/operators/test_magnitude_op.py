@@ -1,5 +1,6 @@
 """Tests for Magnitude Operator."""
 
+import pytest
 import torch
 from mrpro.operators import MagnitudeOp
 
@@ -23,3 +24,25 @@ def test_autodiff_magnitude_operator():
     a = random_generator.complex64_tensor((5, 9, 8))
     b = random_generator.complex64_tensor((10, 11, 12))
     autodiff_test(MagnitudeOp(), a, b)
+
+
+@pytest.mark.cuda
+def test_magnitude_op_cuda():
+    """Test magnitude operator works on CUDA devices."""
+
+    random_generator = RandomGenerator(seed=2)
+    a = random_generator.complex64_tensor((2, 3))
+    b = random_generator.complex64_tensor((3, 10))
+
+    # Create on CPU, run on CPU
+    magnitude_op = MagnitudeOp()
+    magnitude_a, magnitude_b = magnitude_op(a, b)
+    assert magnitude_a.is_cpu
+    assert magnitude_b.is_cpu
+
+    # Transfer to GPU, run on GPU
+    magnitude_op = MagnitudeOp()
+    magnitude_op.cuda()
+    magnitude_a, magnitude_b = magnitude_op(a.cuda(), b.cuda())
+    assert magnitude_a.is_cuda
+    assert magnitude_b.is_cuda

@@ -113,3 +113,39 @@ def test_sensitivity_op_other_dim_compatibility_fail(n_other_csm: int, n_other_i
     v = random_generator.complex64_tensor(size=(n_other_img, n_coils, *n_zyx))
     with pytest.raises(RuntimeError, match='The size of tensor'):
         sensitivity_op.adjoint(v)
+
+
+@pytest.mark.cuda
+def test_sensitivity_op_cuda() -> None:
+    """Test sensitivity operator works on CUDA devices."""
+    random_generator = RandomGenerator(seed=0)
+
+    n_zyx = (2, 3, 4)
+    n_other = (5, 6, 7)
+    n_coils = 4
+    # Generate input tensor and Csm data
+    random_tensor = random_generator.complex64_tensor(size=(*n_other, n_coils, *n_zyx))
+    u = random_generator.complex64_tensor(size=(*n_other, 1, *n_zyx))
+    random_csmdata = CsmData(data=random_tensor, header=QHeader(resolution=SpatialDimension(1.0, 1.0, 1.0)))
+
+    # Create on CPU, transfer to GPU, run on GPU
+    sensitivity_op = SensitivityOp(random_csmdata)
+    sensitivity_op.cuda()
+    (result,) = sensitivity_op(u.cuda())
+    assert result.is_cuda
+
+    # Create on CPU, run on CPU
+    sensitivity_op = SensitivityOp(random_csmdata)
+    (result,) = sensitivity_op(u)
+    assert result.is_cpu
+
+    # Create on GPU, run on GPU
+    sensitivity_op = SensitivityOp(random_csmdata.cuda())
+    (result,) = sensitivity_op(u.cuda())
+    assert result.is_cuda
+
+    # Create on GPU, transfer to CPU, run on CPU
+    sensitivity_op = SensitivityOp(random_csmdata.cuda())
+    sensitivity_op.cpu()
+    (result,) = sensitivity_op(u)
+    assert result.is_cpu

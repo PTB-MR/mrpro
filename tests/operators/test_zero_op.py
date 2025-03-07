@@ -1,3 +1,4 @@
+import pytest
 import torch
 from mrpro.operators import IdentityOp, LinearOperator, MagnitudeOp, Operator, ZeroOp
 from mrpro.operators.LinearOperator import LinearOperatorSum
@@ -118,3 +119,21 @@ def test_zero_op_forward_mode_autodiff_scalar() -> None:
     v = generator.complex64_tensor(2, 3, 4)
     operator = LinearOperatorSum(ZeroOp(keep_shape=False), IdentityOp())
     forward_mode_autodiff_of_linear_operator_test(operator, u, v)
+
+
+@pytest.mark.cuda
+def test_zero_op_cuda() -> None:
+    """Test ZeroOp works on CUDA devices."""
+    generator = RandomGenerator(seed=0)
+    x = generator.complex64_tensor(2, 3, 4)
+
+    # Create on CPU, run on CPU
+    operator = ZeroOp(keep_shape=True)
+    (y,) = operator(x)
+    assert y.is_cpu
+
+    # Create on CPU, transfer to GPU, run on GPU
+    operator = ZeroOp(keep_shape=True)
+    operator.cuda()
+    (y,) = operator(x.cuda())
+    assert y.is_cuda
