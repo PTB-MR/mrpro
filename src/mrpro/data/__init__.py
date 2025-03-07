@@ -12,7 +12,6 @@ from mrpro.data.KData import KData
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KNoise import KNoise
 from mrpro.data.KTrajectory import KTrajectory
-from mrpro.data.KTrajectoryRawShape import KTrajectoryRawShape
 from mrpro.data.MoveDataMixin import MoveDataMixin, InconsistentDeviceError
 from mrpro.data.QData import QData
 from mrpro.data.QHeader import QHeader
@@ -32,7 +31,6 @@ __all__ = [
     "KHeader",
     "KNoise",
     "KTrajectory",
-    "KTrajectoryRawShape",
     "Limits",
     "MoveDataMixin",
     "QData",

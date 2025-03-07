@@ -63,13 +63,14 @@ dependencies = [
     "torch>=2.3",
     "ismrmrd>=1.14.1",
     "einops",
-    "pydicom>=2.3",
+    "pydicom>=3.0.1",
     "pypulseq>=1.4.2",
     "pytorch-finufft>=0.1.0",
     "cufinufft>=2.3.1; platform_system=='Linux'",
     "scipy>=1.12",
     "ptwt>=0.1.8",
     "typing-extensions>=4.12",
+    "torchvision>0.18",
 ]
 
 [project.optional-dependencies]
@@ -82,16 +83,15 @@ test = [
     "pytest-xdist",
 ]
 docs = [
-    "sphinx>8, <8.2",
-    "sphinx_rtd_theme",
-    "sphinx-pyproject",
-    "myst-nb",
-    "sphinx-mathjax-offline",
-    "sphinx_github_style",
-    "sphinx-autodoc-typehints",
-    "sphinx-copybutton",
-    "sphinx-last-updated-by-git",
-
+    "sphinx>=8.1, <8.2",
+    "sphinx_rtd_theme>=3.0, <3.1",
+    "sphinx-pyproject>=0.3, <0.4",
+    "myst-nb>=1.2, <1.3",
+    "sphinx-mathjax-offline<0.1",
+    "sphinx_github_style>=1.2, <1.3",
+    "sphinx-autodoc-typehints>=3, <3.1",
+    "sphinx-copybutton>=0.5, <0.6",
+    "sphinx-last-updated-by-git>=0.3, <0.4",
 ]
 notebook = [
     "zenodo_get",
@@ -140,6 +140,8 @@ module = [
     "zenodo_get",
     "ptwt.*",
     "pywt.*",
+    "torchvision.*",
+    "platformdirs",
 ]
 ignore_missing_imports = true
 
@@ -218,6 +220,7 @@ Reson = "Reson"   # required for Proc. Intl. Soc. Mag. Reson. Med.
 iy = "iy"
 arange = "arange" # torch.arange
 Ba = "Ba"
+wht = "wht"       # Brainweb tissue class
 
 [tool.typos.files]
 extend-exclude = [
