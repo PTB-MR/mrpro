@@ -6,6 +6,7 @@ from einops import repeat
 
 from mrpro.data.KTrajectory import KTrajectory
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
+from mrpro.utils.reshape import unsqueeze_tensors_left
 
 GOLDEN_RATIO = 0.5 * (5**0.5 + 1)
 
@@ -92,4 +93,6 @@ class KTrajectorySunflowerGoldenRpe(KTrajectoryCalculator):
         kz = radial * torch.sin(angles)
         ky = radial * torch.cos(angles)
         kx = self._readout(n_k0, k0_center, reversed_readout_mask=reversed_readout_mask)
+        kz, ky, kx = unsqueeze_tensors_left(kz, ky, kx, ndim=5)
+
         return KTrajectory(kz, ky, kx)
