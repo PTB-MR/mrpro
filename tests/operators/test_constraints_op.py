@@ -172,7 +172,7 @@ def test_constraints_operator_cuda():
     (cx,) = constraints_op(x)
     assert cx.is_cpu
 
-    # Transfer to GPU, run on GPU
+    # Create on CPU, transfer to GPU, run on GPU
     constraints_op = ConstraintsOp(bounds)
     constraints_op.cuda()
     (cx,) = constraints_op(x.cuda())
