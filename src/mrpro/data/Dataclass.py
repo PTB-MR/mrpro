@@ -5,12 +5,13 @@ from collections.abc import Callable
 
 from typing_extensions import Any, Self, dataclass_transform
 
+from mrpro.data.mixin.CheckDataMixin import CheckDataMixin
 from mrpro.data.mixin.MoveDataMixin import MoveDataMixin
 from mrpro.data.mixin.NoNewAttributesMixin import NoNewAttributesMixin
 
 
 @dataclass_transform()
-class Dataclass(MoveDataMixin, NoNewAttributesMixin):
+class Dataclass(MoveDataMixin, NoNewAttributesMixin, CheckDataMixin):
     """A supercharged dataclass with additional functionality.
 
     This class extends the functionality of the standard `dataclasses.dataclass` by adding
