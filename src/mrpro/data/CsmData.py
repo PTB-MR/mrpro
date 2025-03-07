@@ -7,6 +7,7 @@ from typing_extensions import Self
 
 from mrpro.data.IData import IData
 from mrpro.data.QData import QData
+from mrpro.data.QHeader import QHeader
 from mrpro.data.SpatialDimension import SpatialDimension
 
 if TYPE_CHECKING:
@@ -48,7 +49,7 @@ class CsmData(QData):
             chunk_size=chunk_size_otherdim,
         )
         csm_tensor = csm_fun(idata.data.flatten(end_dim=-5)).reshape(idata.data.shape)
-        csm = cls(header=idata.header, data=csm_tensor)
+        csm = cls(header=QHeader.from_iheader(idata.header), data=csm_tensor)
         return csm
 
     @classmethod
@@ -74,7 +75,7 @@ class CsmData(QData):
 
         csm_fun = torch.vmap(lambda img: inati(img, smoothing_width), chunk_size=chunk_size_otherdim)
         csm_tensor = csm_fun(idata.data)
-        csm = cls(header=idata.header, data=csm_tensor)
+        csm = cls(header=QHeader.from_iheader(idata.header), data=csm_tensor)
         return csm
 
     def as_operator(self) -> 'SensitivityOp':

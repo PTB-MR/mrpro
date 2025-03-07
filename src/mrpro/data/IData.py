@@ -10,7 +10,7 @@ from pydicom import dcmread
 from pydicom.dataset import Dataset
 from typing_extensions import Self
 
-from mrpro.data.Data import Data
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.IHeader import IHeader
 from mrpro.data.KHeader import KHeader
 
@@ -44,8 +44,11 @@ def _dcm_pixelarray_to_tensor(dataset: Dataset) -> torch.Tensor:
     return slope * torch.as_tensor(dataset.pixel_array.astype(np.complex64)) + intercept
 
 
-class IData(Data):
+class IData(Dataclass):
     """MR image data (IData) class."""
+
+    data: torch.Tensor
+    """Tensor containing image data with dimensions `(*other, coils, z, y, x)`."""
 
     header: IHeader
     """Header for image data."""
