@@ -1,10 +1,13 @@
 """WASABITI signal model for mapping of B0, B1 and T1."""
 
+from collections.abc import Sequence
+
 import torch
 from torch import nn
 
 from mrpro.operators.SignalModel import SignalModel
 from mrpro.utils import unsqueeze_right
+from mrpro.utils.unit_conversion import GYROMAGNETIC_RATIO_PROTON
 
 
 class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
@@ -12,12 +15,11 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
 
     def __init__(
         self,
-        offsets: torch.Tensor,
-        recovery_time: torch.Tensor,
+        offsets: torch.Tensor | float | Sequence[float],
+        recovery_time: torch.Tensor | float | Sequence[float],
         rf_duration: float | torch.Tensor = 0.005,
-        b1_nominal: float | torch.Tensor = 3.75,
-        gamma: float | torch.Tensor = 42.5764,
-        larmor_frequency: float | torch.Tensor = 127.7292,
+        b1_nominal: float | torch.Tensor = 3.75e-6,
+        gamma: float = GYROMAGNETIC_RATIO_PROTON,
     ) -> None:
         """Initialize WASABITI signal model for mapping of B0, B1 and T1 [SCH2023]_.
 
@@ -30,11 +32,9 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         rf_duration
             RF pulse duration [s]
         b1_nominal
-            nominal B1 amplitude [µT]
+            nominal B1 amplitude [T]
         gamma
-            gyromagnetic ratio [MHz/T]
-        larmor_frequency
-            larmor frequency [MHz]
+            gyromagnetic ratio [Hz/T]
 
         References
         ----------
@@ -43,24 +43,18 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
            Proceedings of the Annual Meeting of ISMRM
         """
         super().__init__()
-        # convert all parameters to tensors
-        rf_duration = torch.as_tensor(rf_duration)
-        b1_nominal = torch.as_tensor(b1_nominal)
-        gamma = torch.as_tensor(gamma)
-        larmor_frequency = torch.as_tensor(larmor_frequency)
-
-        if recovery_time.shape != offsets.shape:
-            raise ValueError(
-                f'Shape of recovery_time ({recovery_time.shape}) and offsets ({offsets.shape}) needs to be the same.'
-            )
-
-        # nn.Parameters allow for grad calculation
-        self.offsets = nn.Parameter(offsets, requires_grad=offsets.requires_grad)
-        self.recovery_time = nn.Parameter(recovery_time, requires_grad=recovery_time.requires_grad)
-        self.rf_duration = nn.Parameter(rf_duration, requires_grad=rf_duration.requires_grad)
-        self.b1_nominal = nn.Parameter(b1_nominal, requires_grad=b1_nominal.requires_grad)
-        self.gamma = nn.Parameter(gamma, requires_grad=gamma.requires_grad)
-        self.larmor_frequency = nn.Parameter(larmor_frequency, requires_grad=larmor_frequency.requires_grad)
+        # offsets determines the device
+        offsets_tensor = torch.as_tensor(offsets)
+        self.offsets = nn.Parameter(offsets_tensor, requires_grad=offsets_tensor.requires_grad)
+        recovery_time_tensor = torch.as_tensor(recovery_time)
+        self.recovery_time = nn.Parameter(
+            recovery_time_tensor.to(device=offsets_tensor.device), requires_grad=recovery_time_tensor.requires_grad
+        )
+        rf_duration_tensor = torch.as_tensor(rf_duration, device=offsets_tensor.device)
+        self.rf_duration = nn.Parameter(rf_duration_tensor, requires_grad=rf_duration_tensor.requires_grad)
+        b1_nominal_tensor = torch.as_tensor(b1_nominal, device=offsets_tensor.device)
+        self.b1_nominal = nn.Parameter(b1_nominal_tensor, requires_grad=b1_nominal_tensor.requires_grad)
+        self.gamma = gamma
 
     def forward(self, b0_shift: torch.Tensor, relative_b1: torch.Tensor, t1: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply WASABITI signal model.
@@ -81,18 +75,20 @@ class WASABITI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
         -------
             signal with shape `(offsets, *other, coils, z, y, x)`
         """
-        delta_ndim = b0_shift.ndim - (self.offsets.ndim - 1)  # -1 for offset
-        offsets = unsqueeze_right(self.offsets, delta_ndim)
-        recovery_time = unsqueeze_right(self.recovery_time, delta_ndim)
+        ndim = max(b0_shift.ndim, relative_b1.ndim, t1.ndim)
+        offsets = unsqueeze_right(self.offsets, ndim - self.offsets.ndim + 1)  # leftmost is offset
+        recovery_time = unsqueeze_right(self.recovery_time, ndim - self.recovery_time.ndim + 1)  # leftmost is offset
+        b1_nominal = unsqueeze_right(self.b1_nominal, ndim - self.b1_nominal.ndim)
+        rf_duration = unsqueeze_right(self.rf_duration, ndim - self.rf_duration.ndim)
 
-        b1 = self.b1_nominal * relative_b1
-        delta_b0 = offsets - b0_shift
+        b1 = b1_nominal * relative_b1
+        offsets_shifted = offsets - b0_shift
         mz_initial = 1.0 - torch.exp(-recovery_time / t1)
 
         signal = mz_initial * (
             1
             - 2
-            * (torch.pi * b1 * self.gamma * self.rf_duration) ** 2
-            * torch.sinc(self.rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + delta_b0**2)) ** 2
+            * (torch.pi * b1 * self.gamma * rf_duration) ** 2
+            * torch.sinc(rf_duration * torch.sqrt((b1 * self.gamma) ** 2 + offsets_shifted**2)) ** 2
         )
         return (signal,)

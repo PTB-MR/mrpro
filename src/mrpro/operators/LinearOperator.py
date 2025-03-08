@@ -12,14 +12,7 @@ import torch
 from typing_extensions import Any, Unpack, overload
 
 import mrpro.operators
-from mrpro.operators.Operator import (
-    Operator,
-    OperatorComposition,
-    OperatorElementwiseProductLeft,
-    OperatorElementwiseProductRight,
-    OperatorSum,
-    Tin2,
-)
+from mrpro.operators.Operator import Operator, OperatorComposition, OperatorSum, Tin2
 
 
 class _AutogradWrapper(torch.autograd.Function):
@@ -178,7 +171,8 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         if max_iterations < 1:
             raise ValueError('The number of iterations should be larger than zero.')
 
-        # check that the norm of the starting value is not zero
+        dim = tuple(dim) if dim is not None else dim  # must be tuple or None for torch.sum
+
         norm_initial_value = torch.linalg.vector_norm(initial_value, dim=dim, keepdim=True)
         if not (norm_initial_value > 0).all():
             if dim is None:
@@ -190,19 +184,18 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
                     should be different from the zero-vector.'
                 )
 
-        # set initial value
-        vector = initial_value
-
         # creaty dummy operator norm value that cannot be correct because by definition, the
         # operator norm is a strictly positive number. This ensures that the first time the
         # change between the old and the new estimate of the operator norm is non-zero and
         # thus prevents the loop from exiting despite a non-correct estimate.
-        op_norm_old = torch.zeros(*tuple([1 for _ in range(vector.ndim)]), device=vector.device)
+        op_norm_old = torch.zeros(*tuple([1 for _ in range(initial_value.ndim)]), device=initial_value.device)
 
-        dim = tuple(dim) if dim is not None else dim
+        gram = self.gram  # self.H@self
+
+        vector = initial_value
         for _ in range(max_iterations):
             # apply the operator to the vector
-            (vector_new,) = self.adjoint(*self(vector))
+            (vector_new,) = gram(vector)
 
             # compute estimate of the operator norm
             product = vector.real * vector_new.real
@@ -234,7 +227,8 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
     ) -> Operator[Unpack[Tin2], tuple[torch.Tensor,]]: ...
 
     def __matmul__(
-        self, other: Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator
+        self,
+        other: Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator,
     ) -> Operator[Unpack[Tin2], tuple[torch.Tensor,]] | LinearOperator:
         """Operator composition.
 
@@ -245,6 +239,9 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
             return self
         elif isinstance(self, mrpro.operators.IdentityOp):
             return other
+        elif isinstance(self, mrpro.operators.ZeroOp) or isinstance(other, mrpro.operators.ZeroOp):
+            # zero operator composition with any operator is zero
+            return mrpro.operators.ZeroOp()
         elif isinstance(other, LinearOperator):
             # LinearOperator@LinearOperator is linear
             return LinearOperatorComposition(self, other)
@@ -364,17 +361,34 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         return self.H @ self
 
 
-class LinearOperatorComposition(
-    LinearOperator,
-    OperatorComposition[torch.Tensor, tuple[torch.Tensor,]],
-):
-    """LinearOperator composition.
+class LinearOperatorComposition(LinearOperator):
+    """Linear operator composition.
 
     Performs operator1(operator2(x))
     """
 
+    def __init__(self, operator1: LinearOperator, operator2: LinearOperator) -> None:
+        """Linear operator composition initialization.
+
+        Returns ``lambda x: operator1(operator2(x))``
+
+        Parameters
+        ----------
+        operator1
+            outer operator
+        operator2
+            inner operator
+        """
+        super().__init__()
+        self._operator1 = operator1
+        self._operator2 = operator2
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Linear operator composition."""
+        return self._operator1(*self._operator2(x))
+
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Adjoint of the operator composition."""
+        """Adjoint of the linear operator composition."""
         # (AB)^H = B^H A^H
         return self._operator2.adjoint(*self._operator1.adjoint(x))
 
@@ -385,22 +399,48 @@ class LinearOperatorComposition(
         return self._operator2.H @ self._operator1.gram @ self._operator2
 
 
-class LinearOperatorSum(LinearOperator, OperatorSum[torch.Tensor, tuple[torch.Tensor,]]):
-    """Operator addition."""
+class LinearOperatorSum(LinearOperator):
+    """Linear operator addition."""
+
+    _operators: list[LinearOperator]
+
+    def __init__(self, operator1: LinearOperator, /, *other_operators: LinearOperator):
+        """Linear operator addition initialization."""
+        super().__init__()
+        ops: list[LinearOperator] = []
+        for op in (operator1, *other_operators):
+            if isinstance(op, LinearOperatorSum):
+                ops.extend(op._operators)
+            else:
+                ops.append(op)
+        self._operators = cast(list[LinearOperator], torch.nn.ModuleList(ops))
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Linear operator addition."""
+        return (functools.reduce(operator.add, (op(x)[0] for op in self._operators)),)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Adjoint of the operator addition."""
+        """Adjoint of the linear operator addition."""
         # (A+B)^H = A^H + B^H
         return (functools.reduce(operator.add, (op.adjoint(x)[0] for op in self._operators)),)
 
 
-class LinearOperatorElementwiseProductRight(
-    LinearOperator, OperatorElementwiseProductRight[torch.Tensor, tuple[torch.Tensor,]]
-):
-    """Operator elementwise right multiplication with a tensor.
+class LinearOperatorElementwiseProductRight(LinearOperator):
+    """Linear operator elementwise right multiplication with a tensor.
 
     Performs Tensor*LinearOperator(x)
     """
+
+    def __init__(self, operator: LinearOperator, scalar: torch.Tensor | complex):
+        """Linear operator elementwise right multiplication initialization."""
+        super().__init__()
+        self._operator = operator
+        self._scalar = scalar
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Linear operator elementwise right multiplication."""
+        (out,) = self._operator(x)
+        return (out * self._scalar,)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Adjoint Operator elementwise multiplication with a tensor/scalar."""
@@ -420,16 +460,24 @@ class LinearOperatorElementwiseProductRight(
         return factor * self._operator.gram
 
 
-class LinearOperatorElementwiseProductLeft(
-    LinearOperator, OperatorElementwiseProductLeft[torch.Tensor, tuple[torch.Tensor,]]
-):
+class LinearOperatorElementwiseProductLeft(LinearOperator):
     """Operator elementwise left multiplication with a tensor.
 
     Performs LinearOperator(Tensor*x)
     """
 
+    def __init__(self, operator: LinearOperator, scalar: torch.Tensor | complex) -> None:
+        """Linear operator elementwise left multiplication initialization."""
+        super().__init__()
+        self._operator = operator
+        self._scalar = scalar
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Linear operator elementwise left multiplication."""
+        return self._operator(x * self._scalar)
+
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Adjoint Operator elementwise multiplication with a tensor/scalar."""
+        """Adjoint linear operator elementwise multiplication with a tensor/scalar."""
         conj = self._scalar.conj() if isinstance(self._scalar, torch.Tensor) else self._scalar.conjugate()
         return (self._operator.adjoint(x)[0] * conj,)
 

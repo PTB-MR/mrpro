@@ -88,8 +88,9 @@ img_direct_402 = direct_reconstruction_402(kdata_402spokes)
 img_direct_24 = direct_reconstruction_24(kdata_24spokes)
 
 # %% [markdown]
-# We also run an iterative SENSE reconstruction (see <project:iterative_sense_reconstruction.ipynb>) with early stopping
-# of the 24 spokes data. we use it as a comparison and as an initial guess for the TV-minimization reconstruction.
+# We also run an iterative SENSE reconstruction (see <project:iterative_sense_reconstruction_radial2D.ipynb>) with early
+# stopping of the 24 spokes data. We use it as a comparison and as an initial guess for the TV-minimization
+# reconstruction.
 
 # %%
 sense_reconstruction = mrpro.algorithms.reconstruction.IterativeSENSEReconstruction(
@@ -181,7 +182,7 @@ def callback(optimizer_status: PDHGStatus) -> None:
     iteration = optimizer_status['iteration_number']
     solution = optimizer_status['solution']
     if iteration % 16 == 0:
-        print(f"Iteration {iteration: >3}: Objective = {optimizer_status['objective'](*solution).item():.3e}")
+        print(f'Iteration {iteration: >3}: Objective = {optimizer_status["objective"](*solution).item():.3e}')
 
 
 # %%

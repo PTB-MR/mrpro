@@ -13,9 +13,11 @@ from mrpro.operators.FiniteDifferenceOp import FiniteDifferenceOp
 from mrpro.operators.FourierOp import FourierOp
 from mrpro.operators.GridSamplingOp import GridSamplingOp
 from mrpro.operators.IdentityOp import IdentityOp
+from mrpro.operators.Jacobian import Jacobian
 from mrpro.operators.LinearOperatorMatrix import LinearOperatorMatrix
 from mrpro.operators.MagnitudeOp import MagnitudeOp
 from mrpro.operators.MultiIdentityOp import MultiIdentityOp
+from mrpro.operators.NonUniformFastFourierOp import NonUniformFastFourierOp
 from mrpro.operators.PCACompressionOp import PCACompressionOp
 from mrpro.operators.PhaseOp import PhaseOp
 from mrpro.operators.ProximableFunctionalSeparableSum import ProximableFunctionalSeparableSum
@@ -40,10 +42,12 @@ __all__ = [
     "Functional",
     "GridSamplingOp",
     "IdentityOp",
+    "Jacobian",
     "LinearOperator",
     "LinearOperatorMatrix",
     "MagnitudeOp",
     "MultiIdentityOp",
+    "NonUniformFastFourierOp",
     "Operator",
     "PCACompressionOp",
     "PhaseOp",

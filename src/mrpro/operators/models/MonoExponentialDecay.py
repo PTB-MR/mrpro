@@ -1,5 +1,7 @@
 """Mono-exponential decay signal model."""
 
+from collections.abc import Sequence
+
 import torch
 
 from mrpro.operators.SignalModel import SignalModel
@@ -9,7 +11,7 @@ from mrpro.utils import unsqueeze_right
 class MonoExponentialDecay(SignalModel[torch.Tensor, torch.Tensor]):
     """Signal model for mono-exponential decay."""
 
-    def __init__(self, decay_time: float | torch.Tensor):
+    def __init__(self, decay_time: float | torch.Tensor | Sequence[float]):
         """Initialize mono-exponential signal model.
 
         Parameters
@@ -38,6 +40,7 @@ class MonoExponentialDecay(SignalModel[torch.Tensor, torch.Tensor]):
         -------
             signal with shape `(time, *other, coils, z, y, x)`
         """
-        decay_time = unsqueeze_right(self.decay_time, m0.ndim - (self.decay_time.ndim - 1))  # -1 for time
+        ndim = max(m0.ndim, decay_constant.ndim)
+        decay_time = unsqueeze_right(self.decay_time, ndim - self.decay_time.ndim + 1)  # leftmost is time
         signal = m0 * torch.exp(-(decay_time / decay_constant))
         return (signal,)

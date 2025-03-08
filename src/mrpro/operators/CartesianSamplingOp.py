@@ -50,23 +50,29 @@ class CartesianSamplingOp(LinearOperator):
             kx_idx = ktraj_tensor[-1, ...].round().to(dtype=torch.int64) + sorted_grid_shape.x // 2
         else:
             sorted_grid_shape.x = ktraj_tensor.shape[-1]
-            kx_idx = repeat(torch.arange(ktraj_tensor.shape[-1]), 'k0->other k2 k1 k0', other=1, k2=1, k1=1)
+            kx_idx = repeat(
+                torch.arange(ktraj_tensor.shape[-1]), 'k0->other coils k2 k1 k0', other=1, coils=1, k2=1, k1=1
+            )
 
         if traj_type_kzyx[-2] == TrajType.ONGRID:  # ky
             ky_idx = ktraj_tensor[-2, ...].round().to(dtype=torch.int64) + sorted_grid_shape.y // 2
         else:
             sorted_grid_shape.y = ktraj_tensor.shape[-2]
-            ky_idx = repeat(torch.arange(ktraj_tensor.shape[-2]), 'k1->other k2 k1 k0', other=1, k2=1, k0=1)
+            ky_idx = repeat(
+                torch.arange(ktraj_tensor.shape[-2]), 'k1->other coils k2 k1 k0', other=1, coils=1, k2=1, k0=1
+            )
 
         if traj_type_kzyx[-3] == TrajType.ONGRID:  # kz
             kz_idx = ktraj_tensor[-3, ...].round().to(dtype=torch.int64) + sorted_grid_shape.z // 2
         else:
             sorted_grid_shape.z = ktraj_tensor.shape[-3]
-            kz_idx = repeat(torch.arange(ktraj_tensor.shape[-3]), 'k2->other k2 k1 k0', other=1, k1=1, k0=1)
+            kz_idx = repeat(
+                torch.arange(ktraj_tensor.shape[-3]), 'k2->other coils k2 k1 k0', other=1, coils=1, k1=1, k0=1
+            )
 
         # 1D indices into a flattened tensor.
         kidx = kz_idx * sorted_grid_shape.y * sorted_grid_shape.x + ky_idx * sorted_grid_shape.x + kx_idx
-        kidx = rearrange(kidx, '... kz ky kx -> ... 1 (kz ky kx)')
+        kidx = rearrange(kidx, '... kz ky kx -> ... (kz ky kx)')
 
         # check that all points are inside the encoding matrix
         inside_encoding_matrix = (
@@ -81,15 +87,15 @@ class CartesianSamplingOp(LinearOperator):
                 stacklevel=2,
             )
 
-            inside_encoding_matrix = rearrange(inside_encoding_matrix, '... kz ky kx -> ... 1 (kz ky kx)')
+            inside_encoding_matrix = rearrange(inside_encoding_matrix, '... kz ky kx -> ... (kz ky kx)')
             inside_encoding_matrix_idx = inside_encoding_matrix.nonzero(as_tuple=True)[-1]
             inside_encoding_matrix_idx = torch.reshape(inside_encoding_matrix_idx, (*kidx.shape[:-1], -1))
-            self.register_buffer('_inside_encoding_matrix_idx', inside_encoding_matrix_idx)
+            self._inside_encoding_matrix_idx: torch.Tensor | None = inside_encoding_matrix_idx
             kidx = torch.take_along_dim(kidx, inside_encoding_matrix_idx, dim=-1)
         else:
-            self._inside_encoding_matrix_idx: torch.Tensor | None = None
+            self._inside_encoding_matrix_idx = None
 
-        self.register_buffer('_fft_idx', kidx)
+        self._fft_idx = kidx
 
         # we can skip the indexing if the data is already sorted
         self._needs_indexing = (
@@ -120,7 +126,7 @@ class CartesianSamplingOp(LinearOperator):
         if not self._needs_indexing:
             return (x,)
 
-        x_kflat = rearrange(x, '... coil k2_enc k1_enc k0_enc -> ... coil (k2_enc k1_enc k0_enc)')
+        x_kflat = rearrange(x, '... coils k2_enc k1_enc k0_enc -> ... coils (k2_enc k1_enc k0_enc)')
         # take_along_dim broadcasts, but needs the same number of dimensions
         idx = unsqueeze_left(self._fft_idx, x_kflat.ndim - self._fft_idx.ndim)
         x_inside_encoding_matrix = torch.take_along_dim(x_kflat, idx, dim=-1)
@@ -136,7 +142,7 @@ class CartesianSamplingOp(LinearOperator):
                 self._inside_encoding_matrix_idx,
             )
 
-        # reshape to (... other coil, k2, k1, k0)
+        # reshape to (... other coils, k2, k1, k0)
         x_reshaped = x_indexed.reshape(x.shape[:-3] + self._trajectory_shape[-3:])
 
         return (x_reshaped,)
@@ -159,7 +165,7 @@ class CartesianSamplingOp(LinearOperator):
         if not self._needs_indexing:
             return (y,)
 
-        y_kflat = rearrange(y, '... coil k2 k1 k0 -> ... coil (k2 k1 k0)')
+        y_kflat = rearrange(y, '... coils k2 k1 k0 -> ... coils (k2 k1 k0)')
 
         if self._inside_encoding_matrix_idx is not None:
             idx = unsqueeze_left(self._inside_encoding_matrix_idx, y_kflat.ndim - self._inside_encoding_matrix_idx.ndim)
@@ -169,7 +175,7 @@ class CartesianSamplingOp(LinearOperator):
             y_kflat, self._sorted_grid_shape.z * self._sorted_grid_shape.y * self._sorted_grid_shape.x, self._fft_idx
         )
 
-        # reshape to  ..., other, coil, k2_enc, k1_enc, k0_enc
+        # reshape to  ..., other, coils, k2_enc, k1_enc, k0_enc
         y_reshaped = y_scattered.reshape(
             *y.shape[:-3],
             self._sorted_grid_shape.z,
@@ -223,6 +229,25 @@ class CartesianSamplingOp(LinearOperator):
         """
         return CartesianSamplingGramOp(self)
 
+    def __repr__(self) -> str:
+        """Representation method for CartesianSamplingOperator."""
+        device = self._fft_idx.device if self._fft_idx is not None else 'none'
+        if self._inside_encoding_matrix_idx is None:
+            enc_matrix_warning = ''
+        else:
+            enc_matrix_warning = (
+                '\nK-space points lie outside of the encoding_matrix and will be ignored.'
+                '\nIncrease the encoding_matrix to include these points.'
+            )
+
+        out = (
+            f'{type(self).__name__} on device: {device}\n'
+            f'Needs indexing: {self._needs_indexing}\n'
+            f'Sorted grid shape: {self._sorted_grid_shape}'
+            f'{enc_matrix_warning}'
+        )
+        return out
+
 
 class CartesianSamplingGramOp(LinearOperator):
     """Gram operator for the Cartesian Sampling Operator.
@@ -243,11 +268,11 @@ class CartesianSamplingGramOp(LinearOperator):
         """
         super().__init__()
         if sampling_op._needs_indexing:
-            ones = torch.ones(*sampling_op._trajectory_shape[:-3], 1, *sampling_op._sorted_grid_shape.zyx)
+            ones = torch.ones(*sampling_op._trajectory_shape[:-3], *sampling_op._sorted_grid_shape.zyx)
             (mask,) = sampling_op.adjoint(*sampling_op.forward(ones))
-            self.register_buffer('_mask', mask)
+            self._mask: torch.Tensor | None = mask
         else:
-            self._mask: torch.Tensor | None = None
+            self._mask = None
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the Gram operator.

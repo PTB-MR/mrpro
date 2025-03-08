@@ -37,19 +37,19 @@ class IsmrmrdRawTestData:
     n_coils
         number of coils
     oversampling
-        oversampling along readout (kx) direction
+        oversampling along readout (k0) direction
     repetitions
         number of repetitions,
     flag_invalid_reps
         flag to indicate that number of phase encoding steps are different for repetitions
     acceleration
-        undersampling along phase encoding (ky)
+        undersampling along phase encoding (k1)
     noise_level
         scaling factor for noise level
     trajectory_type
         cartesian
     sampling_order
-        order how phase encoding points (ky) are obtained
+        order how phase encoding points (k1) are obtained
     phantom
         phantom with different ellipses
     n_separate_calibration_lines
@@ -75,25 +75,26 @@ class IsmrmrdRawTestData:
         if not phantom:
             phantom = EllipsePhantom()
 
-        self.filename: str | Path = filename
-        self.matrix_size: int = matrix_size
-        self.n_coils: int = n_coils
-        self.oversampling: int = oversampling
-        self.repetitions: int = repetitions
-        self.flag_invalid_reps: bool = flag_invalid_reps
-        self.acceleration: int = acceleration
-        self.noise_level: float = noise_level
-        self.trajectory_type: Literal['cartesian', 'radial'] = trajectory_type
-        self.sampling_order: Literal['linear', 'low_high', 'high_low', 'random'] = sampling_order
-        self.phantom: EllipsePhantom = phantom
-        self.img_ref: torch.Tensor
-        self.n_separate_calibration_lines: int = n_separate_calibration_lines
+        self.filename = filename
+        self.matrix_size = matrix_size
+        self.n_coils = n_coils
+        self.oversampling = oversampling
+        self.repetitions = repetitions
+        self.flag_invalid_reps = flag_invalid_reps
+        self.acceleration = acceleration
+        self.noise_level = noise_level
+        self.trajectory_type = trajectory_type
+        self.sampling_order = sampling_order
+        self.phantom = phantom
+        self.n_separate_calibration_lines = n_separate_calibration_lines
+
+        rng = RandomGenerator(0)
 
         # The number of points in image space (x,y) and kspace (fe,pe)
         n_x = self.matrix_size
         n_y = self.matrix_size
-        n_freq_encoding = self.oversampling * n_x
-        n_phase_encoding = n_y
+        n_freq_encoding = self.oversampling * self.matrix_size
+        n_phase_encoding = self.matrix_size
 
         # Go through all repetitions and create a trajectory and k-space
         kpe = []
@@ -120,13 +121,18 @@ class IsmrmrdRawTestData:
                 raise ValueError(f'Trajectory type {trajectory_type} not supported.')
 
             # Create analytic k-space and save trajectory
-            true_kspace.append(self.phantom.kspace(traj_ky_rep, traj_kx_rep))
+            if trajectory_type == 'radial':
+                true_kspace.append(
+                    self.phantom.kspace(traj_ky_rep / oversampling, traj_kx_rep / oversampling) / oversampling
+                )
+            elif trajectory_type == 'cartesian':
+                true_kspace.append(self.phantom.kspace(traj_ky_rep, traj_kx_rep / oversampling) / oversampling)
             kpe.append(kpe_rep)
             traj_kx.append(traj_kx_rep)
             traj_ky.append(traj_ky_rep)
 
         # Reference image is the same for all repetitions
-        image_dimension = SpatialDimension(z=1, y=n_phase_encoding, x=n_freq_encoding)
+        image_dimension = SpatialDimension(z=1, y=n_y, x=n_x)
         self.img_ref = self.phantom.image_space(image_dimension)
 
         # Multi-coil acquisition
@@ -147,6 +153,7 @@ class IsmrmrdRawTestData:
         # Acquisition System Information
         sys = ismrmrd.xsd.acquisitionSystemInformationType()
         sys.receiverChannels = self.n_coils
+        sys.systemVendor = 'Siemens'
         header.acquisitionSystemInformation = sys
 
         # Sequence Information
@@ -167,32 +174,40 @@ class IsmrmrdRawTestData:
 
         # Encoded and recon spaces
         encoding_fov = ismrmrd.xsd.fieldOfViewMm()
-        encoding_fov.x = self.oversampling * matrix_size
-        encoding_fov.y = matrix_size
-        encoding_fov.z = 5
+        encoding_matrix = ismrmrd.xsd.matrixSizeType()
+        if self.trajectory_type == 'radial':
+            encoding_fov.y = self.oversampling * matrix_size
+            encoding_fov.x = self.oversampling * matrix_size
+            encoding_fov.z = 5
+            encoding_matrix.x = self.oversampling * matrix_size
+            encoding_matrix.y = self.oversampling * matrix_size
+            encoding_matrix.z = 1
+        else:
+            encoding_fov.x = self.oversampling * matrix_size
+            encoding_fov.y = matrix_size
+            encoding_fov.z = 5
+            encoding_matrix.x = self.oversampling * matrix_size
+            encoding_matrix.y = matrix_size
+            encoding_matrix.z = 1
+
+        encoding_space = ismrmrd.xsd.encodingSpaceType()
+        encoding_space.matrixSize = encoding_matrix
+        encoding_space.fieldOfView_mm = encoding_fov
+        encoding.encodedSpace = encoding_space
+
         recon_fov = ismrmrd.xsd.fieldOfViewMm()
         recon_fov.x = matrix_size
         recon_fov.y = matrix_size
         recon_fov.z = 5
 
-        encoding_matrix = ismrmrd.xsd.matrixSizeType()
-        encoding_matrix.x = n_freq_encoding
-        encoding_matrix.y = n_phase_encoding
-        encoding_matrix.z = 1
         recon_matrix = ismrmrd.xsd.matrixSizeType()
         recon_matrix.x = n_x
         recon_matrix.y = n_y
         recon_matrix.z = 1
 
-        encoding_space = ismrmrd.xsd.encodingSpaceType()
-        encoding_space.matrixSize = encoding_matrix
-        encoding_space.fieldOfView_mm = encoding_fov
         recon_space = ismrmrd.xsd.encodingSpaceType()
         recon_space.matrixSize = recon_matrix
         recon_space.fieldOfView_mm = recon_fov
-
-        # Set encoded and recon spaces
-        encoding.encodedSpace = encoding_space
         encoding.reconSpace = recon_space
 
         # Encoding limits
@@ -226,27 +241,33 @@ class IsmrmrdRawTestData:
         acq.slice_dir = (-0.57, 0.65, 0.5)
 
         scan_counter = 0
+        time_stamp = 10000
 
         # Write out a few noise scans
         for _ in range(32):
-            noise = self.noise_level * torch.randn(self.n_coils, n_freq_encoding, dtype=torch.complex64)
+            noise = self.noise_level * rng.randn_tensor((self.n_coils, n_freq_encoding), dtype=torch.complex64)
             # here's where we would make the noise correlated
             acq.scan_counter = scan_counter
+            acq.acquisition_time_stamp = time_stamp
             acq.clearAllFlags()
             acq.setFlag(ismrmrd.ACQ_IS_NOISE_MEASUREMENT)
             acq.data[:] = noise.numpy()
             dataset.append_acquisition(acq)
             scan_counter += 1
+            time_stamp += 2
 
         # Add acquisitions obtained with a 2-element body coil (e.g. used for adjustment scans)
         if add_bodycoil_acquisitions:
             acq.resize(n_freq_encoding, 2, trajectory_dimensions=2)
             for _ in range(8):
+                data = rng.randn_tensor((2, n_freq_encoding), dtype=torch.complex64)
                 acq.scan_counter = scan_counter
+                acq.acquisition_time_stamp = time_stamp
                 acq.clearAllFlags()
-                acq.data[:] = torch.randn(2, n_freq_encoding, dtype=torch.complex64)
+                acq.data[:] = data.numpy()
                 dataset.append_acquisition(acq)
                 scan_counter += 1
+                time_stamp += 2
             acq.resize(n_freq_encoding, self.n_coils, trajectory_dimensions=2)
 
         # Calibration lines
@@ -259,13 +280,14 @@ class IsmrmrdRawTestData:
             )
             kspace_calibration = self.phantom.kspace(traj_ky_calibration, traj_kx_calibration)
             kspace_calibration = repeat(kspace_calibration, '... -> coils ... ', coils=self.n_coils)
-            kspace_calibration = kspace_calibration + self.noise_level * torch.randn(
-                self.n_coils, n_freq_encoding, len(kpe_calibration), dtype=torch.complex64
+            kspace_calibration = kspace_calibration + self.noise_level * rng.randn_tensor(
+                (self.n_coils, n_freq_encoding, len(kpe_calibration)), dtype=torch.complex64
             )
 
             for pe_idx, pe_pos in enumerate(kpe_calibration):
                 # Set some fields in the header
                 acq.scan_counter = scan_counter
+                acq.acquisition_time_stamp = time_stamp
 
                 # kpe is in the range [-npe//2, npe//2), the ismrmrd kspace_encoding_step_1 is in the range [0, npe)
                 kspace_encoding_step_1 = pe_pos + n_phase_encoding // 2
@@ -277,10 +299,13 @@ class IsmrmrdRawTestData:
                 acq.data[:] = kspace_calibration[:, :, pe_idx].numpy()
                 dataset.append_acquisition(acq)
                 scan_counter += 1
+                time_stamp += 2
 
         # Loop over the repetitions, add noise and write to disk
         for rep in range(self.repetitions):
-            noise = self.noise_level * torch.randn(self.n_coils, n_freq_encoding, len(kpe[rep]), dtype=torch.complex64)
+            noise = self.noise_level * rng.randn_tensor(
+                (self.n_coils, n_freq_encoding, len(kpe[rep])), dtype=torch.complex64
+            )
             # Here's where we would make the noise correlated
             kspace_with_noise = true_kspace[rep] + noise
             acq.idx.repetition = rep
@@ -288,6 +313,7 @@ class IsmrmrdRawTestData:
                 if not self.flag_invalid_reps or rep == 0 or pe_idx < len(kpe[rep]) // 2:  # fewer lines for rep > 0
                     # Set some fields in the header
                     acq.scan_counter = scan_counter
+                    acq.acquisition_time_stamp = time_stamp
 
                     # kpe is in the range [-npe//2, npe//2), the ismrmrd kspace_encoding_step_1 is in the range [0, npe)
                     kspace_encoding_step_1 = pe_pos + n_phase_encoding // 2
@@ -311,6 +337,7 @@ class IsmrmrdRawTestData:
                     acq.data[:] = kspace_with_noise[:, :, pe_idx].numpy()
                     dataset.append_acquisition(acq)
                     scan_counter += 1
+                    time_stamp += 3
 
         # Clean up
         dataset.close()
@@ -329,7 +356,7 @@ class IsmrmrdRawTestData:
         n_phase_encoding
             number of phase encoding points before undersampling
         n_freq_encoding
-            number of frequency encoding points
+            number of frequency encoding points, including oversampling
         acceleration
             undersampling factor
         sampling_order

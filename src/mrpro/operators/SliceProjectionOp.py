@@ -13,6 +13,7 @@ from torch import Tensor
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
+from mrpro.utils import ravel_multi_index
 from mrpro.utils.slice_profiles import SliceSmoothedRectangular
 from mrpro.utils.typing import NestedSequence
 
@@ -152,11 +153,9 @@ class SliceProjectionOp(LinearOperator):
             test_values = torch.arange(-max_shape, max_shape, max_shape)
             profile = slice_profile(test_values)
             cdf = torch.cumsum(profile, -1) / profile.sum()
-            left = test_values[np.argmax(cdf > 0.01)]
-            right = test_values[np.argmax(cdf > 0.99)]
+            left = test_values[(cdf > 0.01).int().argmax()]
+            right = test_values[(cdf > 0.99).int().argmax()]
             return int(max(left.abs().item(), right.abs().item())) + 1
-
-        widths = np.vectorize(_find_width)(slice_profile_array)
 
         def _at_least_width_1(slice_profile: TensorFunction):
             test_values = torch.linspace(-0.5, 0.5, 100)
@@ -168,14 +167,14 @@ class SliceProjectionOp(LinearOperator):
                 ' i.e. the profile should be greater then 1e-6 in (-0.5,0.5)'
             )
 
-        slice_shift_tensor = torch.atleast_1d(torch.as_tensor(slice_shift))
+        slice_shift_tensor: torch.Tensor = torch.atleast_1d(torch.as_tensor(slice_shift))
         batch_shapes = torch.broadcast_shapes(slice_rotation.shape, slice_shift_tensor.shape, slice_profile_array.shape)
+        assert isinstance(batch_shapes, torch.Size)  # noqa: S101 # mypy
         rotation_quats = torch.broadcast_to(slice_rotation.as_quat(), (*batch_shapes, 4)).reshape(-1, 4)
         slice_rotation = Rotation(rotation_quats, normalize=False, copy=False)
         slice_shift_tensor = torch.broadcast_to(slice_shift_tensor, batch_shapes).flatten()
+        widths = np.broadcast_to(np.vectorize(_find_width)(slice_profile_array), batch_shapes).ravel()
         slice_profile_array = np.broadcast_to(slice_profile_array, batch_shapes).ravel()
-        widths = np.broadcast_to(widths, batch_shapes).ravel()
-
         matrices = [
             SliceProjectionOp.projection_matrix(
                 input_shape,
@@ -194,14 +193,14 @@ class SliceProjectionOp(LinearOperator):
             # beta status in pytorch causes a warning to be printed
             warnings.filterwarnings('ignore', category=UserWarning, message='Sparse')
             if optimize_for == 'forward':
-                self.register_buffer('matrix', matrix.to_sparse_csr())
+                self.matrix = matrix.to_sparse_csr()
                 self.matrix_adjoint = None
             elif optimize_for == 'adjoint':
-                self.register_buffer('matrix_adjoint', matrix.H.to_sparse_csr())
+                self.matrix_adjoint = matrix.H.to_sparse_csr()
                 self.matrix = None
             elif optimize_for == 'both':
-                self.register_buffer('matrix_adjoint', matrix.H.to_sparse_csr())
-                self.register_buffer('matrix', matrix.to_sparse_csr())
+                self.matrix_adjoint = matrix.H.to_sparse_csr()
+                self.matrix = matrix.to_sparse_csr()
 
             else:
                 raise ValueError("optimize_for must be one of 'forward', 'adjoint', 'both'")
@@ -432,9 +431,8 @@ class SliceProjectionOp(LinearOperator):
         # We need this at the edge of the volume to approximate zero padding
         fraction_in_view = (mask * (weight > 0)).sum(-1) / (weight > 0).sum(-1)
 
-        source_index = torch.tensor(
-            np.ravel_multi_index(source[mask].unbind(-1), (input_shape.z, input_shape.y, input_shape.x))
-        )
+        source_index = ravel_multi_index(source[mask].unbind(-1), (input_shape.z, input_shape.y, input_shape.x))
+
         target_index = torch.repeat_interleave(torch.arange(y * x), mask.sum(-1))
 
         with warnings.catch_warnings():

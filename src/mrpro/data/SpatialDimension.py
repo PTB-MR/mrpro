@@ -406,7 +406,7 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
                 raise ValueError('The shapes of the tensors do not match') from None
 
     @property
-    def shape(self) -> tuple[int, ...]:
+    def shape(self) -> torch.Size:
         """Get the shape of the x, y, and z.
 
         Returns
@@ -418,13 +418,13 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
             `ValueError` if the shapes are not equal
         """
         if isinstance(self.x, ScalarTypes) and isinstance(self.y, ScalarTypes) and isinstance(self.z, ScalarTypes):
-            return ()
+            return torch.Size()
         elif (
             isinstance(self.x, VectorTypes)
             and isinstance(self.y, VectorTypes)
             and isinstance(self.z, VectorTypes)
             and self.x.shape == self.y.shape == self.z.shape
         ):
-            return self.x.shape
+            return torch.Size(self.x.shape)
         else:
             raise ValueError('Inconsistent shapes')

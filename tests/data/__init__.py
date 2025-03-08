@@ -1,3 +1,3 @@
 from ._IsmrmrdRawTestData import IsmrmrdRawTestData
-from ._Dicom2DTestImage import Dicom2DTestImage
+from ._DicomTestImage import DicomTestImage
 from ._PulseqRadialTestSeq import PulseqRadialTestSeq

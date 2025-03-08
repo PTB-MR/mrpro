@@ -45,13 +45,14 @@ from __future__ import annotations
 import math
 import re
 import warnings
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from typing import Literal, cast
 
 import numpy as np
 import torch
 import torch.nn.functional as F  # noqa: N812
 from einops import rearrange
+from einops._backends import AbstractBackend
 from scipy._lib._util import check_random_state
 from typing_extensions import Self, Unpack, overload
 
@@ -378,7 +379,7 @@ def _axisangle_to_matrix(axis: torch.Tensor, angle: torch.Tensor) -> torch.Tenso
     return matrix
 
 
-class Rotation(torch.nn.Module):
+class Rotation(torch.nn.Module, Iterable['Rotation']):
     """A container for Rotations.
 
     A pytorch implementation of scipy.spatial.transform.Rotation.
@@ -435,7 +436,7 @@ class Rotation(torch.nn.Module):
             # integer or boolean dtypes
             quaternions_ = quaternions_.float()
         if quaternions_.shape[-1] != 4:
-            raise ValueError('Expected `quaternions` to have shape (..., 4), ' f'got {quaternions_.shape}.')
+            raise ValueError(f'Expected `quaternions` to have shape (..., 4), got {quaternions_.shape}.')
 
         reflection_ = torch.as_tensor(reflection)
         inversion_ = torch.as_tensor(inversion)
@@ -766,15 +767,15 @@ class Rotation(torch.nn.Module):
         """
         n_axes = len(seq)
         if n_axes < 1 or n_axes > 3:
-            raise ValueError('Expected axis specification to be a non-empty ' f'string of upto 3 characters, got {seq}')
+            raise ValueError(f'Expected axis specification to be a non-empty string of upto 3 characters, got {seq}')
 
         intrinsic = re.match(r'^[XYZ]{1,3}$', seq) is not None
         extrinsic = re.match(r'^[xyz]{1,3}$', seq) is not None
         if not (intrinsic or extrinsic):
-            raise ValueError("Expected axes from `seq` to be from ['x', 'y', " f"'z'] or ['X', 'Y', 'Z'], got {seq}")
+            raise ValueError(f"Expected axes from `seq` to be from ['x', 'y', 'z'] or ['X', 'Y', 'Z'], got {seq}")
 
         if any(seq[i] == seq[i + 1] for i in range(n_axes - 1)):
-            raise ValueError('Expected consecutive axes to be different, ' f'got {seq}')
+            raise ValueError(f'Expected consecutive axes to be different, got {seq}')
         seq = seq.lower()
 
         angles = torch.as_tensor(angles)
@@ -789,7 +790,7 @@ class Rotation(torch.nn.Module):
         else:
             is_single = False
         if angles.ndim < 2 or angles.shape[-1] != n_axes:
-            raise ValueError('Expected angles to have shape (..., ' f'n_axes), got {angles.shape}.')
+            raise ValueError(f'Expected angles to have shape (..., n_axes), got {angles.shape}.')
 
         quaternions = _make_elementary_quat(seq[0], angles[..., 0])
         for axis, angle in zip(seq[1:], angles[..., 1:].unbind(-1), strict=False):
@@ -1060,7 +1061,7 @@ class Rotation(torch.nn.Module):
             shape `(3,)` or `(..., 3)`, depending on shape of inputs used to initialize object.
             The returned angles are in the range:
 
-            - First angle belongs to`` [-180, 180]`` degrees (both inclusive)
+            - First angle belongs to ``[-180, 180]`` degrees (both inclusive)
             - Third angle belongs to ``[-180, 180]`` degrees (both inclusive)
             - Second angle belongs to:
 
@@ -1080,10 +1081,10 @@ class Rotation(torch.nn.Module):
         intrinsic = re.match(r'^[XYZ]{1,3}$', seq) is not None
         extrinsic = re.match(r'^[xyz]{1,3}$', seq) is not None
         if not (intrinsic or extrinsic):
-            raise ValueError('Expected axes from `seq` to be from ' "['x', 'y', 'z'] or ['X', 'Y', 'Z'], " f'got {seq}')
+            raise ValueError(f"Expected axes from `seq` to be from ['x', 'y', 'z'] or ['X', 'Y', 'Z'], got {seq}")
 
         if any(seq[i] == seq[i + 1] for i in range(2)):
-            raise ValueError('Expected consecutive axes to be different, ' f'got {seq}')
+            raise ValueError(f'Expected consecutive axes to be different, got {seq}')
 
         seq = seq.lower()
         if improper == 'reflection' or improper == 'inversion':
@@ -1130,7 +1131,7 @@ class Rotation(torch.nn.Module):
         if not all(isinstance(x, Rotation) for x in rotations):
             raise TypeError('input must contain Rotation objects only')
 
-        quats = torch.cat([torch.atleast_2d(x.as_quat()) for x in rotations])
+        quats = torch.cat([torch.atleast_2d(x.as_quat(improper='ignore')) for x in rotations])
         inversions = torch.cat([torch.atleast_1d(x._is_improper) for x in rotations])
         return cls(quats, normalize=False, copy=False, inversion=inversions, reflection=False)
 
@@ -1612,6 +1613,16 @@ class Rotation(torch.nn.Module):
             indexer_quat = (indexer, slice(None))
         return self.__class__(self._quaternions[indexer_quat], normalize=False, inversion=self._is_improper[indexer])
 
+    def __iter__(self) -> Iterator[Self]:
+        """Provide an explicit iterator."""
+        index = 0
+        while True:
+            try:
+                yield self[index]
+                index += 1
+            except IndexError:
+                break
+
     @property
     def quaternion_x(self) -> torch.Tensor:
         """Get x component of the quaternion."""
@@ -1995,3 +2006,99 @@ class Rotation(torch.nn.Module):
         return self.__class__(
             self._quaternions.reshape(*newshape, 4), inversion=self._is_improper.reshape(newshape), copy=True
         )
+
+    def permute(self, dims: Sequence[int]) -> Self:
+        """Permute the batch dimensions of the Rotation object.
+
+        Parameters
+        ----------
+        dims
+            The new order of the dimensions.
+
+        Returns
+        -------
+        permuted
+            The permuted Rotation object.
+        """
+        inversion = self._is_improper.permute(*dims)
+        # negative dimensions should ignore the internal dimension
+        quaternions = self._quaternions.permute(*[d - 1 if d < 0 else d for d in dims], -1)
+        return self.__class__(quaternions, inversion=inversion, copy=True)
+
+    def expand(self, *shape: int | Sequence[int]) -> Self:
+        """Expand the Rotation object in the batch dimensions.
+
+        Parameters
+        ----------
+        shape
+            The new shape of the Rotation object.
+
+        Returns
+        -------
+        expanded
+            The expanded Rotation object.
+        """
+        newshape = []
+        for s in shape:
+            if isinstance(s, int):
+                newshape.append(s)
+            else:
+                newshape.extend(s)
+        return self.__class__(
+            self._quaternions.expand(*newshape, 4), inversion=self._is_improper.expand(newshape), copy=True
+        )
+
+    def unsqueeze(self, dim: int) -> Self:
+        """Unsqueeze the Rotation object in a batch dimension.
+
+        Add a new dimension to the Rotation object at the specified position.
+
+        Parameters
+        ----------
+        dim
+            The position where the new dimension is to be added.
+        """
+        quaternion_dim = dim if dim >= 0 else dim - 1  # last dimension are the quaternion components
+        return self.__class__(
+            self._quaternions.unsqueeze(quaternion_dim), inversion=self._is_improper.unsqueeze(dim), copy=True
+        )
+
+
+class RotationBackend(AbstractBackend):
+    """Einops backend for Rotations."""
+
+    framework_name = 'mrpro'
+
+    def is_appropriate_type(self, x) -> bool:  # noqa: ANN001
+        """Check if the object is a Rotation."""
+        return isinstance(x, Rotation)
+
+    def is_float_type(self, _: Rotation) -> bool:
+        """Return True as Rotations are always float."""
+        return True
+
+    def reduce(self, x: Rotation, operation: str, reduced_axes: int) -> Rotation:
+        """Perform reduction operation on the Rotation."""
+        if operation == 'mean':
+            return x.mean(dim=reduced_axes)
+        raise NotImplementedError(f'Unknown reduction {operation} for Rotations')
+
+    def transpose(self, x: Rotation, axes: Sequence[int]) -> Rotation:
+        """Permute the axes of the Rotation."""
+        return x.permute(axes)
+
+    def stack_on_zeroth_dimension(self, x: Sequence[Rotation]) -> Rotation:
+        """Stack the Rotations on the zeroth dimension."""
+        return Rotation.concatenate([r.reshape(1, *r.shape) for r in x])
+
+    def add_axis(self, x: Rotation, axis_position: int) -> Rotation:
+        """Add a new axis to the Rotation."""
+        return x.unsqueeze(axis_position)
+
+    def add_axes(self, x: Rotation, n_axes: int, pos2len: dict[int, int]) -> Rotation:
+        """Add multiple expanded axes to the Rotation."""
+        repeats = [-1] * n_axes
+        for axis_position, axis_length in pos2len.items():
+            x = self.add_axis(x, axis_position)
+            repeats[axis_position] = axis_length
+        return x.expand(repeats)
