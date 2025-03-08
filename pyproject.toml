@@ -60,7 +60,7 @@ classifiers = [
 ]
 dependencies = [
     "numpy>=1.23, <3.0",
-    "torch>=2.3",
+    "torch>=2.3.1",
     "ismrmrd>=1.14.1",
     "einops",
     "pydicom>=3.0.1",
@@ -70,11 +70,11 @@ dependencies = [
     "scipy>=1.12",
     "ptwt>=0.1.8",
     "typing-extensions>=4.12",
-    "torchvision>0.18",
+    "torchvision>=0.18.1",
 ]
 
 [project.optional-dependencies]
-test = [
+tests = [
     "coverage",
     "codecov",
     "pre-commit",
@@ -83,6 +83,7 @@ test = [
     "pytest-xdist",
 ]
 docs = [
+    "mrpro[notebooks]",
     "sphinx>=8.1, <8.2",
     "sphinx_rtd_theme>=3.0, <3.1",
     "sphinx-pyproject>=0.3, <0.4",
@@ -93,15 +94,12 @@ docs = [
     "sphinx-copybutton>=0.5, <0.6",
     "sphinx-last-updated-by-git>=0.3, <0.4",
 ]
-notebook = [
+notebooks = [
     "zenodo_get",
     "ipykernel",
     "ipywidgets",
     "jupytext",
     "matplotlib",
-    "pip-tools",
-    "sigpy==0.1.26",
-
 ]
 
 [project.urls]
