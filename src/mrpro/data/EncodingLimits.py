@@ -87,28 +87,28 @@ class EncodingLimits:
     segment: Limits = field(default_factory=Limits)
     """Segments of segmented acquisition."""
 
-    user_0: Limits = field(default_factory=Limits)
+    user0: Limits = field(default_factory=Limits)
     """User index 0."""
 
-    user_1: Limits = field(default_factory=Limits)
+    user1: Limits = field(default_factory=Limits)
     """User index 1."""
 
-    user_2: Limits = field(default_factory=Limits)
+    user2: Limits = field(default_factory=Limits)
     """User index 2."""
 
-    user_3: Limits = field(default_factory=Limits)
+    user3: Limits = field(default_factory=Limits)
     """User index 3."""
 
-    user_4: Limits = field(default_factory=Limits)
+    user4: Limits = field(default_factory=Limits)
     """User index 4."""
 
-    user_5: Limits = field(default_factory=Limits)
+    user5: Limits = field(default_factory=Limits)
     """User index 5."""
 
-    user_6: Limits = field(default_factory=Limits)
+    user6: Limits = field(default_factory=Limits)
     """User index 6."""
 
-    user_7: Limits = field(default_factory=Limits)
+    user7: Limits = field(default_factory=Limits)
     """User index 7."""
 
     @classmethod
