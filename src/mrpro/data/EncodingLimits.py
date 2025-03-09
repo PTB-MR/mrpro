@@ -38,7 +38,7 @@ class Limits:
     @classmethod
     def from_tensor(cls, tensor: torch.Tensor) -> Self:
         """Create Limits from min and max of tensor."""
-        return cls(tensor.min(), tensor.max(), 0)
+        return cls(tensor.min().item(), tensor.max().item(), 0)
 
     @property
     def length(self) -> int:
