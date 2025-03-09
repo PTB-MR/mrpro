@@ -138,5 +138,13 @@ class EncodingLimits:
         values['k0'] = values.pop('kspace_encoding_step_0')
         values['k1'] = values.pop('kspace_encoding_step_1')
         values['k2'] = values.pop('kspace_encoding_step_2')
+        values['user0'] = values.pop('user_0')
+        values['user1'] = values.pop('user_1')
+        values['user2'] = values.pop('user_2')
+        values['user3'] = values.pop('user_3')
+        values['user4'] = values.pop('user_4')
+        values['user5'] = values.pop('user_5')
+        values['user6'] = values.pop('user_6')
+        values['user7'] = values.pop('user_7')
 
         return cls(**values)
