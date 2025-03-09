@@ -572,9 +572,7 @@ class Dataclass:
         name = type(self).__name__
         output = f'{name} with (broadcasted) shape {list(self.shape)!s} on device "{device}".\n'
         output += 'Fields:\n'
-        output += '\n'.join(
-            f'   {field.name} <{type(getattr(self, field.name)).__name__}>' for field in dataclasses.fields(self)
-        )
+        output += '\n'.join(f'   {field.name}: {getattr(self, field.name)!s}' for field in dataclasses.fields(self))
         return output
 
     # region Indexing
