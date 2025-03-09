@@ -19,7 +19,7 @@ jobs:
 
       - name: Install MRpro and Dependencies
         # do not update dependencies
-        run: pip install .[test]
+        run: pip install .[tests]
 
       - name: Install PyTest GitHub Annotation Plugin
         run: pip install pytest-github-actions-annotate-failures
