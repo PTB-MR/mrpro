@@ -47,7 +47,7 @@ trajectory = mrpro.data.traj_calculators.KTrajectoryIsmrmrd()
 # Load in the Data from the ISMRMRD file
 kdata = mrpro.data.KData.from_file(data_file.name, trajectory)
 # Perform the reconstruction
-reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction.from_kdata(kdata)
+reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
 img = reconstruction(kdata)
 ```
 
@@ -65,7 +65,7 @@ mse = MSE(idata_multi_ti.data.abs())
 functional = mse @ model
 [...]
 # Run optimization
-params_result = adam(functional, [m0_start, t1_start], max_iter=max_iter, lr=lr)
+params_result = adam(functional, [m0_start, t1_start], n_iterations=n_iterations, learning_rate=learning_rate)
 ```
 
 Full example: <https://github.com/PTB-MR/mrpro/blob/main/examples/qmri_sg_challenge_2024_t1.py>
