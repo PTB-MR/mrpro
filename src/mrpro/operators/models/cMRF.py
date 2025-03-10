@@ -88,7 +88,7 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             )
             block.append(FispBlock(flip_angles, 0.0, tr=0.01, te=echo_time))
             if i > 0:
-                delay = (block_time[i] - block_time[i - 1]) - block.duration
+                delay = ((block_time[i] - block_time[i - 1]) - block.duration).float()
                 sequence.append(DelayBlock(delay))
             sequence.append(block)
         self.model = EPGSignalModel(sequence, n_states=20)
