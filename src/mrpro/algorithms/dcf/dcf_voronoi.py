@@ -154,8 +154,8 @@ def dcf_2dradial(traj: torch.Tensor) -> torch.Tensor:
     if not isinstance(center_idx, int):
         raise TypeError('center_idx should be an integer.')
 
-    # Fix the center value, area = dcf_spoke[center_idx]/2
-    dcf[:, center_idx] = dcf_spoke[center_idx] / 2 / len(angles)
+    # Fix the center value, area = dcf_spoke[center_idx]/4
+    dcf[:, center_idx] = dcf_spoke[center_idx] / 4 / len(angles)
 
     return dcf.unsqueeze(0).unsqueeze(0)
 
