@@ -142,28 +142,29 @@ fourier_operator = mrpro.operators.FourierOp(
 
 # %%
 kykx = torch.stack((kdata.traj.ky[0, 0], kdata.traj.kx[0, 0]))
-dcf_tensor = mrpro.algorithms.dcf.dcf_2d3d_voronoi(kykx)
-
+dcf_tensor_voronoi = mrpro.algorithms.dcf.dcf_2d3d_voronoi(kykx)
+dcf_tensor_analytical = mrpro.algorithms.dcf.dcf_2dradial(kykx)
 # %% [markdown]
 # We use these DCFs to weight the k-space data before performing the adjoint Fourier transform. We can also call
 # `~mrpro.operators.FourierOp.adjoint` on the Fourier operator instead of obtaining an adjoint operator.
 
 # %%
-(img_tensor_coilwise,) = fourier_operator.adjoint(dcf_tensor * kdata.data)
+(img_tensor_coilwise_voronoi,) = fourier_operator.adjoint(dcf_tensor_voronoi * kdata.data)
+(img_tensor_coilwise_analytical,) = fourier_operator.adjoint(dcf_tensor_analytical * kdata.data)
 
 # %% [markdown]
 # Next, we calculate the coil sensitivity maps by using one of the algorithms in `mrpro.algorithms.csm` and set
 # up a `~mrpro.operators.SensitivityOp` operator.
 
 # %%
-csm_data = mrpro.algorithms.csm.walsh(img_tensor_coilwise[0], smoothing_width=5)
+csm_data = mrpro.algorithms.csm.walsh(img_tensor_coilwise_voronoi[0], smoothing_width=5)
 csm_operator = mrpro.operators.SensitivityOp(csm_data)
 
 # %% [markdown]
 # Finally, we perform the coil combination of the coil-wise images and obtain final images.
 
 # %%
-(img_tensor_coilcombined,) = csm_operator.adjoint(img_tensor_coilwise)
+(img_tensor_coilcombined,) = csm_operator.adjoint(img_tensor_coilwise_voronoi)
 img_more_manual = mrpro.data.IData.from_tensor_and_kheader(img_tensor_coilcombined, kdata.header)
 
 # %% [markdown]
