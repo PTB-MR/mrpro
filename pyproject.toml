@@ -143,6 +143,7 @@ module = [
     "pywt.*",
     "torchvision.*",
     "platformdirs",
+    "nibabel",
 ]
 ignore_missing_imports = true
 
