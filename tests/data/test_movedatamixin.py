@@ -1,10 +1,10 @@
 """Tests the MoveDataMixin class."""
 
-from dataclasses import dataclass, field
+from dataclasses import field
 
 import pytest
 import torch
-from mrpro.data import MoveDataMixin
+from mrpro.data import Dataclass
 from typing_extensions import Any
 
 
@@ -18,8 +18,7 @@ class SharedModule(torch.nn.Module):
         self.module2.weight = self.module1.weight
 
 
-@dataclass(slots=True)
-class A(MoveDataMixin):
+class A(Dataclass):
     """Test class A."""
 
     floattensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1.0))
@@ -30,8 +29,7 @@ class A(MoveDataMixin):
     module: torch.nn.Module = field(default_factory=lambda: torch.nn.Linear(1, 1))
 
 
-@dataclass(frozen=True)
-class B(MoveDataMixin):
+class B(Dataclass):
     """Test class B."""
 
     child: A = field(default_factory=A)
