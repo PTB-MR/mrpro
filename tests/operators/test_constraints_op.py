@@ -159,7 +159,7 @@ def test_autodiff_constraints_operator():
 
 
 @pytest.mark.cuda
-def test_constraints_operator_cuda():
+def test_constraints_operator_cuda() -> None:
     """Test constraints operator works on CUDA devices."""
 
     # Generate inputs

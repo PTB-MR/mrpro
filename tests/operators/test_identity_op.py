@@ -72,7 +72,7 @@ def test_multi_identity_is_neutral():
 
 
 @pytest.mark.cuda
-def test_identity_op_cuda():
+def test_identity_op_cuda() -> None:
     """Test identity operator works with CUDA devices."""
 
     # Generate input
@@ -92,7 +92,7 @@ def test_identity_op_cuda():
 
 
 @pytest.mark.cuda
-def test_multi_identity_op_cuda():
+def test_multi_identity_op_cuda() -> None:
     """Test multi identity operator works with CUDA devices."""
 
     # Generate input

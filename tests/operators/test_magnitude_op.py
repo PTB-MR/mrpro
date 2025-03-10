@@ -27,7 +27,7 @@ def test_autodiff_magnitude_operator():
 
 
 @pytest.mark.cuda
-def test_magnitude_op_cuda():
+def test_magnitude_op_cuda() -> None:
     """Test magnitude operator works on CUDA devices."""
 
     random_generator = RandomGenerator(seed=2)

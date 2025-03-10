@@ -27,7 +27,7 @@ def test_autodiff_magnitude_operator():
 
 
 @pytest.mark.cuda
-def test_phase_operator_cuda():
+def test_phase_operator_cuda() -> None:
     """Test that PhaseOp works on CUDA devices."""
     # Generate random tensors
     random_generator = RandomGenerator(seed=2)
