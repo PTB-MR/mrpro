@@ -226,7 +226,7 @@ def test_cart_sampling_op_repr():
 
 
 @pytest.mark.cuda
-def test_cart_sampling_op_cuda():
+def test_cart_sampling_op_cuda() -> None:
     """Move trajectory to CUDA memory."""
 
     # Create 3D uniform trajectory
