@@ -1,0 +1,71 @@
+
+# You need to run a self-hosted runner to run this workflow.
+# The `mrpro_runner` package is a docker image containing all necessary software
+# For automated self-hosted runner registration you need to create an organization fine-granted token
+# with the "Administration:write" and "Self-hosted runners:write".
+#
+# The following environmental variables need to be set:
+# GITHUB_PERSONAL_TOKEN - the organization token
+# GITHUB_OWNER - the organization (PTB-MR) in this particular case.
+#
+# I would recommend to save this variables to a text file named `runner.env` at the host machine with following content:
+# GITHUB_PERSONAL_TOKEN=XXX
+# GITHUB_OWNER=PTB-MR
+#
+# Run with docker:
+# docker run --gpus <GPU_ID> --env-file runner.env ghcr.io/ptb-mr/mrpro_runner:latest
+#
+# Run with singularity:
+# You can convert the existing docker container to the singularity container via:
+# singularity build --sandbox runner-folder/ docker://ghcr.io/ptb-mr/mrpro_runner:latest
+# Hint: use SINGULARITY_CACHE=... environmental variable for cache
+# The container would require write access to the files in it. Therefore, the --sandbox flag is mandatory.
+#
+# When build is ready you can launch this singularity container via:
+# NVIDIA_VISIBLE_DEVICES=<GPU_ID> singularity run --nv --nvccli --env-file runner.env --pwd /actions-runner --writable runner-folder/
+name: PyTest-selfhosted
+
+on:
+  pull_request:
+    paths-ignore:
+      - "**.md"
+
+jobs:
+  test:
+    name: Run Tests and Coverage Report
+    runs-on: [self-hosted] #gpu
+    environment: pytest-cuda
+    permissions:
+      pull-requests: write
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install MRpro and Dependencies
+        run: pip install --upgrade --upgrade-strategy eager .[test]
+
+      - name: Install PyTest GitHub Annotation Plugin
+        run: pip install pytest-github-actions-annotate-failures
+
+      - name: Run PyTest and Generate Coverage Report
+        # shell bash sets the -o pipefail
+        run: |
+          pytest -n 4 -m "cuda" --junitxml=pytest.xml \
+          --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
+        shell: bash
+
+      - name: Upload PyTest Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report-selfhosted
+          path: |
+            pytest-coverage.txt
+            pytest.xml
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+
+  # Cancel in-progress runs when a new workflow with the same group name is triggered
+  cancel-in-progress: true
