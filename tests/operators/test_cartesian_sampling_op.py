@@ -223,3 +223,50 @@ def test_cart_sampling_op_repr():
     assert 'Needs indexing' in repr_str
     assert 'Sorted grid shape' in repr_str
     assert 'device' in repr_str
+
+
+@pytest.mark.cuda
+def test_cart_sampling_op_cuda() -> None:
+    """Move trajectory to CUDA memory."""
+
+    # Create 3D uniform trajectory
+    k_shape = (1, 5, 20, 40, 60)
+    nkx = (1, 1, 1, 1, 60)
+    nky = (1, 1, 1, 40, 1)
+    nkz = (1, 1, 20, 1, 1)
+    type_kx = 'uniform'
+    type_ky = 'uniform'
+    type_kz = 'uniform'
+    trajectory_tensor = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz).as_tensor()
+
+    traj_list = [
+        traj_one_other[..., torch.randperm(k_shape[-2])[: k_shape[-2] // 2], :]
+        for traj_one_other in trajectory_tensor.unbind(1)
+    ]
+    trajectory = KTrajectory.from_tensor(torch.stack(traj_list, dim=1))
+
+    encoding_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    random_generator = RandomGenerator(seed=0)
+    input_data = random_generator.complex64_tensor(size=k_shape)
+
+    # Create on CPU, transfer to GPU and run on GPU
+    sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
+    sampling_op.cuda()
+    (sampling_output,) = sampling_op(input_data.cuda())
+    assert sampling_output.is_cuda
+
+    # Create on CPU and run on CPU
+    sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
+    (sampling_output,) = sampling_op(input_data)
+    assert sampling_output.is_cpu
+
+    # Create on GPU and run on GPU
+    sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory.cuda())
+    (sampling_output,) = sampling_op(input_data.cuda())
+    assert sampling_output.is_cuda
+
+    # Create on GPU, transfer to CPU and run on CPU
+    sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory.cuda())
+    sampling_op.cpu()
+    (sampling_output,) = sampling_op(input_data)
+    assert sampling_output.is_cpu
