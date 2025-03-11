@@ -79,7 +79,7 @@ The trajectory can be calculated directly from a provided pulseq-file.
 kdata = KData.from_file(data_file.name, KTrajectoryPulseq(seq_path=seq_file.name))
 ```
 
-Full example: <https://github.com/PTB-MR/mrpro/blob/main/examples/scripts/pulseq_2d_radial_golden_angle.py>
+Full example: <https://github.com/PTB-MR/mrpro/blob/main/examples/scripts/comparison_trajectory_calculators.py>
 
 ## Contributing
 
