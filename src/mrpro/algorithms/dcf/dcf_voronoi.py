@@ -15,60 +15,7 @@ def _volume(v: ArrayLike):
     return ConvexHull(v).volume
 
 
-def extract_angle_distance_along_spoke_unique(traj: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-    """Extract the constant angle and unique distance along spokes using Singular Value Decomposition (SVD).
-
-    This function computes the principal spoke direction via SVD and projects each k-space
-    (kx, ky) point onto this direction to obtain its signed distance from the origin.
-    It ensures that the computed distances are identical across acquisitions and collapses
-    them into a single 1D vector.
-
-    Parameters
-    ----------
-    traj : torch.Tensor
-        k-space trajectory positions, shaped `[2, 1, acquisitions, spokes]`.
-
-    Returns
-    -------
-    angles : torch.Tensor
-        The computed angles for each acquisition, shaped `[acquisitions]`.
-
-    distances_along_spoke : torch.Tensor
-        The unique signed distances along the spoke, shaped `[spokes]`.
-
-    Raises
-    ------
-    ValueError
-        If the computed distances are not unique across acquisitions.
-    """
-    # Reshape into shape [acquisitions, spokes, 2]
-    m = traj.squeeze(1).permute(1, 2, 0)  # Shape: [acquisitions, spokes, 2]
-
-    # Perform batch SVD: u, s, v^T = svd(m)
-    _, _, v = torch.svd(m)  # s shape: [acquisitions, 2], v shape: [acquisitions, 2, 2]
-
-    # Extract first right singular vector (first column of v)
-    principal_directions = v[:, :, 0]  # Shape: [acquisitions, 2] (unit vectors [vx, vy])
-
-    # Compute the angle using atan2(vy, vx) instead of arccos
-    angles = torch.atan2(principal_directions[:, 1], principal_directions[:, 0])  # Angle from x-axis
-
-    # Compute signed distance along the spoke for each point
-    # Project (kx, ky) onto the principal direction
-    distances_along_spoke = torch.einsum('aji,ai->aj', m, principal_directions)
-    # Shape: [acquisitions, spokes] → Signed distances from (0,0)
-
-    # Ensure all acquisitions have the same distances
-    if not torch.allclose(distances_along_spoke[0], distances_along_spoke):
-        raise ValueError('Distances along spokes are not unique across acquisitions!')
-
-    # Collapse to a single 1D vector of distances
-    distances_along_spoke_unique = distances_along_spoke[0]  # Shape: [spokes]
-
-    return angles, distances_along_spoke_unique  # Shapes: [acquisitions], [spokes]
-
-
-def dcf_1d(traj: torch.Tensor) -> torch.Tensor:
+def dcf_1d(traj: torch.Tensor, periodicity: float | None = None) -> torch.Tensor:
     """Calculate sample density compensation function for 1D trajectory.
 
     This function operates on a single `other` sample.
@@ -78,6 +25,8 @@ def dcf_1d(traj: torch.Tensor) -> torch.Tensor:
     ----------
     traj
         k-space positions, 1D tensor
+    periodicity
+        periodicity of the trajectory, if None, the trajectory is assumed to be non-periodic
 
     Returns
     -------
@@ -101,8 +50,12 @@ def dcf_1d(traj: torch.Tensor) -> torch.Tensor:
 
     if (elements := len(traj_sorted)) >= 3:
         central_diff = torch.nn.functional.conv1d(traj_sorted[None, None, :], kernel)[0, 0]
-        first = traj_sorted[1] - traj_sorted[0]
-        last = traj_sorted[-1] - traj_sorted[-2]
+        if periodicity:
+            first = traj_sorted[1] / 2 - (traj_sorted[-1] - periodicity) / 2
+            last = traj_sorted[0] / 2 - (traj_sorted[-2] - periodicity) / 2
+        else:
+            first = traj_sorted[1] - traj_sorted[0]
+            last = traj_sorted[-1] - traj_sorted[-2]
         central_diff = torch.cat((first[None], central_diff, last[None]), -1)
     elif elements == 2:
         diff = traj_sorted[1] - traj_sorted[0]
@@ -113,51 +66,6 @@ def dcf_1d(traj: torch.Tensor) -> torch.Tensor:
     # Repeated points are reduced by the number of repeats
     dcf = torch.nan_to_num(central_diff / counts)[inverse]
     return dcf
-
-
-def dcf_2dradial(traj: torch.Tensor) -> torch.Tensor:
-    """Calculate sample density compensation function for an 2D radial trajectory.
-
-    Parameters
-    ----------
-    traj
-        k-space positions `(2, 1, k1, k0)`
-
-    Returns
-    -------
-        density compensation values for analytical radial trajectory `(1, 1, k1, k0)`
-    """
-    angles, distances_along_spoke_unique = extract_angle_distance_along_spoke_unique(traj)
-
-    # get dcf along the polar angle dim which should sum to 1 to get the fraction of the areas
-    dcf_polar = dcf_1d(angles)
-    dcf_polar /= dcf_polar.sum()
-
-    # get dcf along the spoke dim, this is mainly pi*r^2 of the outer ring - pi*r^2 of the inner ring according to https://users.fmrib.ox.ac.uk/~karla/reading_group/lecture_notes/AdvRecon_Pauly_read.pdf
-    dcf_spoke = torch.pi * dcf_1d(torch.sign(distances_along_spoke_unique) * distances_along_spoke_unique**2)
-
-    # calculate dcf for each point
-    dcf = torch.outer(dcf_polar, dcf_spoke)
-
-    # fix center value
-    # Get the indices where distances_along_spoke_unique is zero
-    zero_indices = torch.nonzero(distances_along_spoke_unique == 0)
-
-    # Assert that there is only one zero in the array
-    if len(zero_indices) != 1:
-        raise ValueError('The array should contain exactly one zero.')
-
-    # Get the index of the zero value
-    center_idx = zero_indices[0].item()
-
-    # Ensure center_idx is an integer
-    if not isinstance(center_idx, int):
-        raise TypeError('center_idx should be an integer.')
-
-    # Fix the center value, area = dcf_spoke[center_idx]/4
-    dcf[:, center_idx] = dcf_spoke[center_idx] / 4 / len(angles)
-
-    return dcf.unsqueeze(0).unsqueeze(0)
 
 
 def dcf_2d3d_voronoi(traj: torch.Tensor) -> torch.Tensor:
