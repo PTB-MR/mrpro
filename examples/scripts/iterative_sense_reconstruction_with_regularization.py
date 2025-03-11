@@ -151,7 +151,7 @@ show_images(
 # %% [markdown]
 # ### Behind the scenes
 # We now investigate the steps that are done in the regularized iterative SENSE reconstruction and
-# perform them manually. This also demonstrates how to use the `~mrpro` operators and algorithms
+# perform them manually. This also demonstrates how to use the `mrpro` operators and algorithms
 # to build your own reconstruction pipeline.
 
 # %% [markdown]
@@ -161,43 +161,40 @@ show_images(
 # For more details, please refer to that notebook.
 
 # %%
-dcf_operator = mrpro.data.DcfData.from_traj_voronoi(kdata_undersampled.traj).as_operator()
 fourier_operator = mrpro.operators.FourierOp.from_kdata(kdata_undersampled)
 csm_operator = csm.as_operator()
 acquisition_operator = fourier_operator @ csm_operator
 
 # %% [markdown]
 # ##### Calculate the right-hand-side of the linear system
-# We calculated $b = A^H W y + l x_{reg}$.
-# Here, we make use of operator composition using ``@``.
+# We calculate $b = A^H y + l x_{reg}$.
 
 # %%
 regularization_weight = 1.0
 regularization_image = img_iterative_sense.data
 
-(right_hand_side,) = (acquisition_operator.H @ dcf_operator)(kdata_undersampled.data)
+(right_hand_side,) = (acquisition_operator.H)(kdata_undersampled.data)
 right_hand_side = right_hand_side + regularization_weight * regularization_image
 
 # %% [markdown]
 # ##### Set-up the linear self-adjoint operator $H$
-# We define $H= A^H W A + l$. We use the `~mrpro.operators.IdentityOp` and make
-# use of operator composition using ``@``, addition using ``+`` and multiplication using ``*``.
+# We define $H = A^H A + \lambda$. We can use `~mrpro.operators.LinearOperator.gram` to get an efficient
+# implementation of $A^H A$. We use the `~mrpro.operators.IdentityOp` and make
+# use of operator addition using ``+`` and multiplication using ``*``.
 # The resulting operator is a `~mrpro.operators.LinearOperator` object.
 
 # %%
-operator = (
-    acquisition_operator.H @ dcf_operator @ acquisition_operator + mrpro.operators.IdentityOp() * regularization_weight
-)
+operator = acquisition_operator.gram + mrpro.operators.IdentityOp() * regularization_weight
 
 # %% [markdown]
 # ##### Run conjugate gradient
 # We solve the linear system $Hx = b$ using the conjugate gradient method.
-# Here, we use early stopping after 8 iterations. Instead, we could also use a tolerance to stop the iterations when
+# Here, we use a fixed number of 20 iterations. Instead, we could also use a tolerance to stop the iterations when
 # the residual is small enough.
 
 # %%
 img_manual = mrpro.algorithms.optimizers.cg(
-    operator, right_hand_side, initial_value=right_hand_side, max_iterations=8, tolerance=0.0
+    operator, right_hand_side, initial_value=right_hand_side, max_iterations=20, tolerance=0.0
 )
 
 # %% [markdown]
@@ -226,3 +223,5 @@ torch.testing.assert_close(img_us_regularized_iterative_sense.data, img_manual)
 # we would not have that. One option is to apply a low-pass filter to the undersampled k-space data to try to reduce the
 # streaking artifacts and use that as a regularization image. Try that and see if you can also improve the image quality
 # compared to the unregularised images.
+
+# %%
