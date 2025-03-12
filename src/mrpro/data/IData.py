@@ -164,23 +164,16 @@ class IData(Data):
         filename
             filename of the NIFTI file.
         """
-        # ToDO: check to make this shorter using torch.flatten
-        if len(self.data.shape) > 7:
-            num_to_flatten = len(self.data.shape) - 7
-            flattened_size = int(torch.prod(torch.tensor(self.data.shape[:num_to_flatten])).item())
-            new_shape = (flattened_size,) + self.data.shape[num_to_flatten:]
-
-            image_data = self.data.reshape(*new_shape)
-        else:
-            image_data = self.data
+        num_to_flatten = max(0, len(self.data.shape) - 7)
+        image_data = torch.flatten(self.data, end_dim=num_to_flatten - 1) if num_to_flatten else self.data
 
         # store orientation and position in affine matrix
         affine = np.eye(4)
         orientation_zyx = self.header.orientation.as_matrix().squeeze().numpy()
         orientation_xyz = orientation_zyx[[2, 1, 0], :]
-        pos_z = self.header.position.zyx[0].item()
-        pos_y = self.header.position.zyx[1].item()
-        pos_x = self.header.position.zyx[2].item()
+        pos_z = self.header.position.z.item()
+        pos_y = self.header.position.y.item()
+        pos_x = self.header.position.x.item()
         position_xyz = np.array([pos_x, pos_y, pos_z])
 
         affine[:3, :3] = orientation_xyz
