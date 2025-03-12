@@ -366,6 +366,7 @@ class AcqInfo(MoveDataMixin):
         acquisition.position = self.position[idx].apply(m_to_mm).zyx[::-1]
         acquisition.sample_time_us = self.sample_time_us[idx]
         acquisition.user_float = (
+            self.user.float0[idx],
             self.user.float1[idx],
             self.user.float2[idx],
             self.user.float3[idx],
@@ -373,9 +374,9 @@ class AcqInfo(MoveDataMixin):
             self.user.float5[idx],
             self.user.float6[idx],
             self.user.float7[idx],
-            self.user.float8[idx],
         )
         acquisition.user_int = (
+            self.user.int0[idx],
             self.user.int1[idx],
             self.user.int2[idx],
             self.user.int3[idx],
@@ -383,13 +384,12 @@ class AcqInfo(MoveDataMixin):
             self.user.int5[idx],
             self.user.int6[idx],
             self.user.int7[idx],
-            self.user.int8[idx],
         )
         # Time stamps are saved as Siemens time stamps in units of 2.5ms
         acquisition.acquisition_time_stamp = int(self.acquisition_time_stamp[idx] / 0.0025)
         acquisition.physiology_time_stamp = (
+            int(self.physiology_time_stamps.timestamp0[idx] / 0.0025),
             int(self.physiology_time_stamps.timestamp1[idx] / 0.0025),
             int(self.physiology_time_stamps.timestamp2[idx] / 0.0025),
-            int(self.physiology_time_stamps.timestamp3[idx] / 0.0025),
         )
         return acquisition

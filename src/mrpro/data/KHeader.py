@@ -17,7 +17,15 @@ from mrpro.data.AcqInfo import AcqInfo
 from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
-from mrpro.utils.unit_conversion import deg_to_rad, m_to_mm, mm_to_m, ms_to_s, rad_to_deg, s_to_ms
+from mrpro.utils.unit_conversion import (
+    deg_to_rad,
+    lamor_frequency_to_magnetic_field,
+    m_to_mm,
+    mm_to_m,
+    ms_to_s,
+    rad_to_deg,
+    s_to_ms,
+)
 
 if TYPE_CHECKING:
     # avoid circular imports by importing only when type checking
@@ -271,6 +279,8 @@ class KHeader(MoveDataMixin):
         sys = ismrmrdschema.acquisitionSystemInformationType()
         sys.systemModel = self.model
         sys.systemVendor = self.vendor
+        if self.lamor_frequency_proton:
+            sys.systemFieldStrength_T = lamor_frequency_to_magnetic_field(self.lamor_frequency_proton)
         header.acquisitionSystemInformation = sys
 
         # Sequence information
@@ -314,9 +324,6 @@ class KHeader(MoveDataMixin):
         # Set encoded and recon spaces
         encoding.encodedSpace = encoding_space
         encoding.reconSpace = recon_space
-
-        # Encoding limits
-        encoding.encodingLimits = ismrmrdschema.encodingLimitsType()
         header.encoding.append(encoding)
 
         return header

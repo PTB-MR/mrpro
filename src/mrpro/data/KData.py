@@ -18,7 +18,7 @@ from typing_extensions import Self, TypeVar
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
 from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_osi2, convert_time_stamp_siemens
-from mrpro.data.EncodingLimits import EncodingLimits
+from mrpro.data.EncodingLimits import EncodingLimits, Limits
 from mrpro.data.enums import AcqFlags
 from mrpro.data.KHeader import KHeader
 from mrpro.data.KTrajectory import KTrajectory
@@ -344,14 +344,32 @@ class KData(
         header = self.header.to_ismrmrd()
         header.acquisitionSystemInformation.receiverChannels = self.data.shape[-4]
 
-        encoding_limits = EncodingLimits.from_trajectory_and_acq_idx(self.traj, self.header.acq_info.idx)
-        header.encoding.encodingLimits = encoding_limits.to_ismrmrd_encoding_limits_type()
+        trajectory = self.traj.as_tensor(-1)
+        trajectory_shape = (*self.data[..., 0, None, :, :, :].shape, 3)  # no coils
+        trajectory = torch.broadcast_to(trajectory, trajectory_shape)
+
+        # Calculate  the encoding limits as min/max of the acquisition indices
+        def limits_from_acq_idx(acq_idx_tensor: torch.Tensor) -> Limits:
+            return Limits(int(acq_idx_tensor.min().item()), int(acq_idx_tensor.max().item()), 0)
+
+        encoding_limits = EncodingLimits(
+            **{
+                field.name: limits_from_acq_idx(getattr(self.header.acq_info.idx, field.name))
+                for field in dataclasses.fields(self.header.acq_info.idx)
+            }
+        )
+
+        # For the center of k1 and k2 we can only make an educated guess based on where the k-space center is
+        kspace_center_idx = torch.argmin(trajectory.abs().sum(dim=-1))
+        encoding_limits.k1.center = int(
+            self.header.acq_info.idx.k1.broadcast_to(trajectory.shape[:-1]).flatten()[kspace_center_idx].item()
+        )
+        encoding_limits.k2.center = int(
+            self.header.acq_info.idx.k2.broadcast_to(trajectory.shape[:-1]).flatten()[kspace_center_idx].item()
+        )
+        header.encoding[0].encodingLimits = encoding_limits.to_ismrmrd_encoding_limits_type()
 
         dataset.write_xml_header(header.toXML('utf-8'))
-
-        trajectory = self.traj.as_tensor(-1)[..., 0, :, :, :, :]  # without coil dimension
-        trajectory_shape = (*self.data[..., 0, :, :, :].shape, 3)  # no coils, 3d
-        trajectory = torch.broadcast_to(trajectory, trajectory_shape)
 
         # Go through data and save acquisitions
         acq_shape = [self.data.shape[-1], self.data.shape[-4]]
@@ -371,7 +389,7 @@ class KData(
                     self.header.acq_info.write_to_ismrmrd_acquisition(acq, (*other, 0, k2, k1, 0))
 
                     # Rearrange, switch from zyx to xyz and set trajectory
-                    ismrmrd_traj = trajectory[(*other, k2, k1)].numpy()[:, ::-1]  # zyx -> xyz
+                    ismrmrd_traj = trajectory[(*other, 0, k2, k1)].numpy()[:, ::-1]  # zyx -> xyz
                     acq.traj[:] = ismrmrd_traj
                     acq.center_sample = np.argmin(np.abs(ismrmrd_traj[:, 0]))
 

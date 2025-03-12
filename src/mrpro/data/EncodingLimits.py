@@ -3,12 +3,8 @@
 import dataclasses
 from dataclasses import dataclass, field
 
-import torch
 from ismrmrd.xsd.ismrmrdschema.ismrmrd import encodingLimitsType, encodingType, ismrmrdHeader, limitType
 from typing_extensions import Self
-
-from mrpro.data.AcqInfo import AcqIdx
-from mrpro.data.KTrajectory import KTrajectory
 
 
 @dataclass(slots=True)
@@ -34,11 +30,6 @@ class Limits:
     def to_ismrmrd(self) -> limitType:
         """Convert Limits to ismsmrd.limitType."""
         return limitType(self.min, self.max, self.center)
-
-    @classmethod
-    def from_tensor(cls, tensor: torch.Tensor) -> Self:
-        """Create Limits from min and max of tensor."""
-        return cls(tensor.min().item(), tensor.max().item(), 0)
 
     @property
     def length(self) -> int:
@@ -140,11 +131,6 @@ class EncodingLimits:
         return cls.from_ismrmrd_encoding_limits_type(enc.encodingLimits)
 
     @classmethod
-    def from_trajectory_and_acq_idx(cls, trajectory: KTrajectory, acq_idx: AcqIdx) -> Self:
-        values = {field.name: Limits.from_tensor(getattr(acq_idx, field.name)) for field in dataclasses.fields(acq_idx)}
-        return cls(**values)
-
-    @classmethod
     def from_ismrmrd_encoding_limits_type(cls, encoding_limits: encodingLimitsType) -> Self:
         """Generate EncodingLimits from ismrmrd.encodingLimitsType."""
         values = {
@@ -171,9 +157,19 @@ class EncodingLimits:
         """Convert EncodingLimits to encodingLimitsType."""
         values = {field.name: Limits.to_ismrmrd(getattr(self, field.name)) for field in dataclasses.fields(self)}
 
+        # k0 is not supported
+        values.pop('k0')
+
         # adjust from MRPro to ISMRMRD naming convention
-        values['kspace_encoding_step_0'] = values.pop('k0')
         values['kspace_encoding_step_1'] = values.pop('k1')
         values['kspace_encoding_step_2'] = values.pop('k2')
+        values['user_0'] = values.pop('user0')
+        values['user_1'] = values.pop('user1')
+        values['user_2'] = values.pop('user2')
+        values['user_3'] = values.pop('user3')
+        values['user_4'] = values.pop('user4')
+        values['user_5'] = values.pop('user5')
+        values['user_6'] = values.pop('user6')
+        values['user_7'] = values.pop('user7')
 
         return encodingLimitsType(**values)
