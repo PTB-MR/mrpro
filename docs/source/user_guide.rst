@@ -53,8 +53,10 @@ for available trajectory calculators and :doc:`_notebooks/comparison_trajectory_
 .. note::
     In MRpro, we use the convention ``(z, y, x)`` for spatial dimensions and ``(k2, k1, k0)`` for k-space dimensions.
     Here, `k0` is the readout direction, `k1` and `k2` are phase encoding directions.
-    The full shape of a multi-slice 2D k-space data for example is ``(other, coil, 1, k1, k0)`` where `other` will be the different slices.
-    In general, `other` can be any number of additional dimensions.
+    The full shape of a multi-slice 2D k-space data for example is ``(other, coils, 1, k1, k0)`` where `other` will be the different slices.
+    In general, `other` can be any number of additional dimensions. All our data tensors will contain at least 5 dimensions, including
+    at least one `other` and always including a `coils` and `k0` dimension -- even for properties that must be the same for all coils, such
+    as the trajectory. For these tensors, the `coils` dimension will thus always be ``1`` (but still be present).
 
 .. note::
     The trajectory is expected to be defined within the space of the `encoding_matrix`, e.g. if the
@@ -103,6 +105,6 @@ Citation
 ========
 We are currently preparing a manuscript for MRpro. In the meantime, please cite:
 
-Zimmermann, F. F., Schuenke, P., Brahma, S., Guastini, M., Hammacher, J., Kofler, A., Kranich Redshaw, C., Lunin, L., Martin, S., Schote, D., & Kolbitsch, C. (2024).
+Zimmermann, F. F., Schuenke, P., Brahma, S., Guastini, M., Hammacher, J., Kofler, A., Redshaw Kranich, C., Lunin, L., Martin, S., Schote, D., & Kolbitsch, C. (2024).
 MRpro - PyTorch-based MR image reconstruction and processing package
-`10.5281/zenodo.14509599 <https://doi.org/10.5281/zenodo.14509599>`_
+`10.5281/zenodo.14509598 <https://doi.org/10.5281/zenodo.14509598>`_

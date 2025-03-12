@@ -8,14 +8,18 @@ from mrpro.data import IHeader, QData
 def test_QData_from_kheader_and_tensor(random_kheader, random_test_data):
     """QData from KHeader and data tensor."""
     qdata = QData(data=random_test_data, header=random_kheader)
-    assert qdata.header.fov == random_kheader.recon_fov
+    assert qdata.header.resolution == random_kheader.recon_fov / random_kheader.recon_matrix
+    assert qdata.header.position == random_kheader.acq_info.position
+    assert qdata.header.orientation == random_kheader.acq_info.orientation
 
 
 def test_QData_from_iheader_and_tensor(random_kheader, random_test_data):
     """QData from IHeader (created from KHeader) and data tensor."""
     iheader_from_kheader = IHeader.from_kheader(random_kheader)
     qdata = QData(data=random_test_data, header=iheader_from_kheader)
-    assert qdata.header.fov == iheader_from_kheader.fov
+    assert qdata.header.resolution == iheader_from_kheader.resolution
+    assert qdata.header.position == iheader_from_kheader.position
+    assert qdata.header.orientation == iheader_from_kheader.orientation
 
 
 def test_QData_from_dcm_file(dcm_2d):
