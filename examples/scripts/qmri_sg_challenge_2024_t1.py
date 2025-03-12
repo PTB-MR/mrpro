@@ -86,7 +86,7 @@ mse = mrpro.operators.functionals.MSE(idata_multi_ti.data.abs())
 # %% [markdown]
 # Now we can simply combine the two into a functional to solve
 #
-# $ \min_{M_0, T_1} || |q(M_0, T_1, TI)| - x||_2^2$
+# $ \min_{M_0, T_1} \big| |q(M_0, T_1, TI)| - x\big|_2^2$
 
 # %%
 functional = mse @ model
@@ -143,7 +143,7 @@ plt.show()
 # %% [markdown]
 # ### Carry out fit
 # We are now ready to carry out the fit. We are going to use the `~mrpro.algorithms.optimizers.adam` optimizer.
-# If there is a GPU available, we can use it ny moving both the data and the model to the GPU.
+# If there is a GPU available, we can use it by moving both the data and the model to the GPU.
 
 # %%
 # Move initial values and model to GPU if available
@@ -154,11 +154,13 @@ if torch.cuda.is_available():
     t1_start = t1_start.cuda()
 
 # Hyperparameters for optimizer
-max_iter = 2000
-lr = 1e-1
+n_iterations = 2000
+learning_rate = 1e-1
 
 # Run optimization
-result = mrpro.algorithms.optimizers.adam(functional, [m0_start, t1_start], max_iter=max_iter, lr=lr)
+result = mrpro.algorithms.optimizers.adam(
+    functional, [m0_start, t1_start], n_iterations=n_iterations, learning_rate=learning_rate
+)
 m0, t1 = (p.detach().cpu() for p in result)
 model.cpu()
 # %% [markdown]
@@ -166,7 +168,7 @@ model.cpu()
 #
 # To get an impression of how well the fit has worked, we are going to calculate the relative error between
 #
-# $E_{relative} = \sum_{TI}\frac{|(q(M_0, T_1, TI) - x)|}{|x|}$
+# $E_\text{relative} = \sum_{TI}\frac{|(q(M_0, T_1, TI) - x)|}{|x|}$
 #
 # on a voxel-by-voxel basis
 # We also mask out the background by thresholding on $M_0$.

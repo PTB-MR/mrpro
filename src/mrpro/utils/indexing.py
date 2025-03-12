@@ -13,7 +13,7 @@ from mrpro.utils.typing import TorchIndexerType
 class Indexer:
     """Custom Indexing with broadcasting.
 
-    This class  is used to index tensors in a way that is consistent
+    This class is used to index tensors in a way that is consistent
     with the shape invariants of the data objects.
 
     On creation, an index and a shape are required.
@@ -31,9 +31,9 @@ class Indexer:
     - Indexing with a slice
         Behaves like in numpy, always returns a view.
         Negative step sizes are not supported and will raise an IndexError.
-        slice(None), i.e. :, means selecting the whole axis.
+        slice(None), i.e., means selecting the whole axis.
     - Indexing with an integer
-        If the index in bounds of the broadcasted shape, indexing behaves like slicing with index:index+1.
+        If the index is within the bounds of the broadcasted shape, indexing behaves like slicing with index:index+1.
         Otherwise, an IndexError is raised.
         Always returns a view.
     - Indexing with a boolean mask
@@ -69,29 +69,33 @@ class Indexer:
         - remaining broadcasted dimensions are reduced to singleton dimensions.
     """
 
-    def __init__(self, shape: tuple[int, ...], index: tuple[TorchIndexerType, ...]) -> None:
+    def __init__(self, broadcast_shape: tuple[int, ...], index: tuple[TorchIndexerType, ...]) -> None:
         """Initialize the Indexer.
 
         Parameters
         ----------
-        shape
-            broadcasted shape of the tensors to index. All tensors will be broadcasted to this shape.
+        broadcast_shape
+            broadcasted shape of the tensor to index. The tensor will be broadcasted to this shape.
         index
-            The index to apply to the tensors.
+            The index to apply to the tensor.
         """
         normal_index: list[slice | int | None] = []
         """Used in phase 1 of the indexing, where we only consider integers and slices. Always does a view"""
+
         fancy_index: list[slice | torch.Tensor | tuple[int, ...] | None] = []
         """All non normal indices. Might not be possible to do a view."""
+
         has_fancy_index = False
         """Are there any advanced indices, such as boolean or integer array indices?"""
+
         vectorized_shape: None | tuple[int, ...] = None
         """Number of dimensions of the integer indices"""
+
         expanded_index: list[slice | torch.Tensor | tuple[int, ...] | None | int] = []
-        """"index with ellipsis expanded to full slices"""
+        """"Index with ellipsis expanded to full slices"""
 
         # basics checks and figuring out the number of axes already covered by the index,
-        # which is needed to determine the number of axes that covered by the ellipsis
+        # which is needed to determine the number of axes that are covered by the ellipsis
         has_ellipsis = False
         has_boolean = False
         covered_axes = 0
@@ -115,13 +119,13 @@ class Indexer:
             else:
                 raise IndexError(f'Unsupported index type {idx_}')
 
-        if covered_axes > len(shape):
-            raise IndexError('Too many indices. Indexing more than the number of axes is not allowed')
+        if covered_axes > len(broadcast_shape):
+            raise IndexError('Too many indices. Indexing more than the number of available axes is not allowed')
 
         for idx_ in index:
             if idx_ is Ellipsis:
                 # replacing ellipsis with full slices
-                expanded_index.extend([slice(None)] * (len(shape) - covered_axes))
+                expanded_index.extend([slice(None)] * (len(broadcast_shape) - covered_axes))
             elif isinstance(idx_, torch.Tensor | int | slice | None):
                 expanded_index.append(idx_)
             else:  # must be Sequence[int], checked above
@@ -129,8 +133,8 @@ class Indexer:
                 expanded_index.append(tuple(cast(Sequence[int], idx_)))
 
         if not has_ellipsis:
-            # if there is not ellipsis, we interpret the index as if it was followed by ellipsis
-            expanded_index.extend([slice(None)] * (len(shape) - covered_axes))
+            # if there is no ellipsis, we interpret the index as if it was followed by ellipsis
+            expanded_index.extend([slice(None)] * (len(broadcast_shape) - covered_axes))
 
         number_of_vectorized_indices: int = 0
         shape_position: int = 0  # current position in the shape that we are indexing
@@ -142,9 +146,10 @@ class Indexer:
 
             elif isinstance(idx, int):
                 # always convert integers to slices
-                if not -shape[shape_position] <= idx < shape[shape_position]:
+                if not -broadcast_shape[shape_position] <= idx < broadcast_shape[shape_position]:
                     raise IndexError(
-                        f'Index {idx} out of bounds for axis {shape_position} with shape {shape[shape_position]}'
+                        f'Index {idx} out of bounds for axis {shape_position} '
+                        f'with shape {broadcast_shape[shape_position]}'
                     )
                 normal_index.append(slice(idx, idx + 1))
                 fancy_index.append(slice(None))
@@ -185,7 +190,7 @@ class Indexer:
                     for ids, idx_shape, data_shape in zip(
                         idx.nonzero(as_tuple=True),
                         idx.shape,
-                        shape[shape_position : shape_position + idx.ndim],
+                        broadcast_shape[shape_position : shape_position + idx.ndim],
                         strict=True,
                     ):
                         if idx_shape == 1:
@@ -218,11 +223,11 @@ class Indexer:
                 torch.uint64,
             ):
                 # integer array indexing
-                if (idx >= shape[shape_position]).any() or (idx < -shape[shape_position]).any():
+                if (idx >= broadcast_shape[shape_position]).any() or (idx < -broadcast_shape[shape_position]).any():
                     raise IndexError(
                         'Index out of bounds. '
-                        f'Got values in the inerval [{idx.min()}, {idx.max() + 1}) for axis {shape_position} '
-                        f'with shape {shape[shape_position]}'
+                        f'Got values in the interval [{idx.min()}, {idx.max() + 1}) for axis {shape_position} '
+                        f'with shape {broadcast_shape[shape_position]}'
                     )
                 if vectorized_shape is not None and vectorized_shape != idx.shape:
                     raise IndexError(
@@ -237,11 +242,11 @@ class Indexer:
 
             elif isinstance(idx, tuple):
                 # integer Sequence
-                if any(el >= shape[shape_position] or el < -shape[shape_position] for el in idx):
+                if any(el >= broadcast_shape[shape_position] or el < -broadcast_shape[shape_position] for el in idx):
                     raise IndexError(
                         'Index out of bounds. '
                         f'Got values in the interval [{min(idx)}, {max(idx) + 1}) for axis {shape_position} '
-                        f'with shape {shape[shape_position]}'
+                        f'with shape {broadcast_shape[shape_position]}'
                     )
                 if vectorized_shape is not None and vectorized_shape != (len(idx),):
                     raise IndexError('All vectorized indices must have the same shape')
@@ -263,7 +268,7 @@ class Indexer:
         if self.more_than_one_vectorized_index:
             # torch indexing would remove the dimensions, we want to keep them
             # as singleton dimension -> we need to add a new axis.
-            # inserting it in between the indices forces the dimension adeed by
+            # inserting it in between the indices forces the dimension added by
             # vectorized indices to be always at the beginning of the result.
             self.more_than_one_vectorized_index = True
             new_fancy_index = []
@@ -276,7 +281,7 @@ class Indexer:
             fancy_index = new_fancy_index
 
         elif vectorized_shape is not None and len(vectorized_shape) != 1:
-            # for a single and vectorized index, torch would insert it at the same position
+            # for a single vectorized index, torch would insert it at the same position
             # this would shift the other axes, potentially causing violations of the shape invariants.
             # thus, we move the inserted axis to the beginning of the tensor, after axes inserted by None
             move_source_start = next(i for i, idx in enumerate(fancy_index) if isinstance(idx, torch.Tensor))
@@ -289,7 +294,7 @@ class Indexer:
 
         self.fancy_index = tuple(fancy_index) if has_fancy_index else ()
         self.normal_index = tuple(normal_index)
-        self.shape = shape
+        self.shape = broadcast_shape
 
     def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
         """Apply the index to a tensor."""

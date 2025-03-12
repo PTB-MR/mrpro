@@ -21,7 +21,7 @@ def cg(
     initial_value: torch.Tensor | None = None,
     max_iterations: int = 128,
     tolerance: float = 1e-4,
-    callback: Callable[[CGStatus], None] | None = None,
+    callback: Callable[[CGStatus], bool | None] | None = None,
 ) -> torch.Tensor:
     r"""CG for solving a linear system :math:`Hx=b`.
 
@@ -61,6 +61,7 @@ def cg(
         If the condition number of :math:`H` is large, a small residual may not imply a highly accurate solution.
     callback
         Function to be called at each iteration. This can be used to monitor the progress of the algorithm.
+        If it returns `False`, the algorithm stops at that iteration.
 
     Returns
     -------
@@ -116,12 +117,14 @@ def cg(
         residual_norm_squared_previous = residual_norm_squared
 
         if callback is not None:
-            callback(
+            continue_iterations = callback(
                 {
                     'solution': (solution,),
                     'iteration_number': iteration,
                     'residual': residual,
                 }
             )
+            if continue_iterations is False:
+                break
 
     return solution

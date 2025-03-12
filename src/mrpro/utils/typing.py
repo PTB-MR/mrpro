@@ -242,7 +242,8 @@ else:
     class NestedSequence(Protocol[TypeVar('T')]):
         """A nested sequence type."""
 
-        ...
+    class DataclassInstance(Protocol):
+        """An instance of a dataclass."""
 
     NumpyIndexerType: TypeAlias = Any
     """Numpy indexer type."""
