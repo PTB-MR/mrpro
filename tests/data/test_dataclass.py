@@ -264,17 +264,17 @@ def test_dataclass_no_new_attributes() -> None:
 
 def test_dataclass_repr() -> None:
     """Test the repr method of the dataclass."""
-    data = B()
+    data = B(floattensor=torch.arange(10)[:, None])
     actual = repr(data)
-    expected = """B with (broadcasted) shape [10, 20] on device "cpu".
-Fields:
-   child <A>
-   module <SharedModule>
-   floattensor <Tensor>
-   complextensor <Tensor>
-   inttensor <Tensor>
-   booltensor <Tensor>
-   doubletensor <Tensor>"""
+    expected = """B on device "cpu" with (broadcasted) shape [10, 20].
+  Fields:
+   child: A(...)
+   module: SharedModule(...)
+   floattensor: Tensor[10, 1]: x∈[0, 9], [[0], [1], ..., [8], [9]]
+   complextensor: Tensor[1, 1]:
+   inttensor: Tensor[10, 20]: constant 1
+   booltensor: Tensor[10, 1]: constant True
+   doubletensor: Tensor[1, 20]: constant 1.0"""
     assert actual == expected
 
 

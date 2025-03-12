@@ -11,6 +11,7 @@ from typing_extensions import Any, Self, TypeVar, dataclass_transform, overload
 
 from mrpro.utils.indexing import HasIndex, Indexer
 from mrpro.utils.typing import TorchIndexerType
+from mrpro.utils.summarize import summarize_object
 
 
 class InconsistentDeviceError(ValueError):
@@ -565,15 +566,30 @@ class Dataclass:
 
     def __repr__(self) -> str:
         """Representation method for Dataclass."""
+        header = [type(self).__name__]
+
         try:
-            device = str(self.device)
+            if device := self.device:
+                header.append(f'on device "{device}"')
         except RuntimeError:
-            device = 'mixed'
-        name = type(self).__name__
-        output = f'{name} with (broadcasted) shape {list(self.shape)!s} on device "{device}".\n'
-        output += 'Fields:\n'
-        output += '\n'.join(f'   {field.name}: {getattr(self, field.name)!s}' for field in dataclasses.fields(self))
+            header.append('on mixed devices')
+
+        try:
+            if shape := self.shape:
+                header.append(f'with (broadcasted) shape {list(shape)!s}')
+        except RuntimeError:
+            header.append('with inconsistant shape')
+
+        output = ' '.join(header) + '.\n'
+        output += '  Fields:\n'
+        output += '\n'.join(
+            f'   {field.name}: {summarize_object(getattr(self, field.name))}' for field in dataclasses.fields(self)
+        )
+
         return output
+
+    def __str__(self) -> str:
+        return f'{type(self).__name__}(...)'
 
     # region Indexing
     def __getitem__(self, index: TorchIndexerType | Indexer) -> Self:

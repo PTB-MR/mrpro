@@ -6,10 +6,20 @@ import torch
 
 
 def summarize_object(obj: object) -> str:
-    """Summararize object to a human readable representation.
+    """Summarize object to a human readable representation.
 
-    Has special cases for sequences of numeric values and tensors.
-    For other objects, obj.__str__() will be used.
+    Parameters
+    ----------
+    obj
+        The object to summarize.
+        This method has special cases:
+            For sequences of numeric values and tensors, a summary of shape and value is returned.
+            For torch.nn.Modules, only the name is used.
+            For other objects, obj.__str__() will be used.
+
+    Returns
+    -------
+        The string summary/short representation.
 
     """
     if isinstance(obj, torch.Tensor):
@@ -20,6 +30,8 @@ def summarize_object(obj: object) -> str:
         except Exception:  # noqa: BLE001
             return str(obj)
         return summarize_values(obj)
+    if isinstance(obj, torch.nn.Module):
+        return f'{type(obj).__name__}(...)'
     return str(obj)
 
 
@@ -34,6 +46,10 @@ def summarize_values(value: torch.Tensor | Sequence[float], summarization_thresh
         The object to summarize.
     summarization_threshold
         The threshold of total array elements triggering summarization.
+
+    Returns
+    -------
+        A string summary of the shape and values.
     """
     string = []
     if isinstance(value, torch.Tensor):
@@ -57,5 +73,8 @@ def summarize_values(value: torch.Tensor | Sequence[float], summarization_thresh
                 string.append(f'x∈[{min_value}, {max_value}],')
                 edgeitems = 1 if summarization_threshold < 4 else 2
                 with torch._tensor_str.printoptions(threshold=summarization_threshold, edgeitems=edgeitems):
-                    string.append(torch._tensor_str._tensor_str(torch.as_tensor(value, device='cpu'), 0))
+                    values = ''.join(
+                        torch._tensor_str._tensor_str(torch.as_tensor(value, device='cpu'), 0).splitlines()
+                    )
+                    string.append(values)
     return ' '.join(string)

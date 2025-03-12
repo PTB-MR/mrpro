@@ -106,6 +106,12 @@ def test_spatial_dimension_dtype() -> None:
     assert SpatialDimension(torch.ones(1).int(), torch.ones(1).int(), torch.ones(1).int()).dtype == torch.int32
 
 
+def test_spatial_dimension_int_repr() -> None:
+    """Test repr as edgecase without shape and device."""
+    actual = repr(SpatialDimension(1, 2, 3))
+    assert actual == 'SpatialDimension.\n  Fields:\n   z: 1\n   y: 2\n   x: 3'
+
+
 def test_spatial_dimension_apply_() -> None:
     """Test apply_ (in place)"""
 
