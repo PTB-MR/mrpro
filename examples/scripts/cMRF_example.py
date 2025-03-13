@@ -20,18 +20,8 @@
 # - Visualise and evaluate results
 # %% tags=["hide-cell"] mystnb={"code_prompt_show": "Show download details"}
 # Get the raw data from zenodo
-import tempfile
-import zipfile
-from pathlib import Path
-import zenodo_get
 
-dataset = '14251660'
-
-tmp = tempfile.TemporaryDirectory()  # RAII, automatically cleaned up
-data_folder = Path(tmp.name)
-zenodo_get.zenodo_get([dataset, '-r', 5, '-o', data_folder])  # r: retries
-with zipfile.ZipFile(data_folder / Path('open_source_cmrf_scanner_comparison.zip'), 'r') as zip_ref:
-    zip_ref.extractall(data_folder)
+data_folder = '/echo/redsha01/Sequences_Evaluation/mrpro/examples/scripts/cMRF_example_folder/'
 
 # %% [markdown]
 #
@@ -159,25 +149,6 @@ def reco_cMRF_scans(pname, scan_name, fa, t1, t2):
     # Select the closest values in the dictionary for each voxel based on cosine similarity
     m0_start, t1_match, t2_match = dictionary(img.abs())
     return t1_match, t2_match
-# %% [markdown]
-# ## Define evaluation methods
-#
-# The phantom we used for data acquisition consists of nine tubes, each representing a different cardiac tissue type. Now we define a method to calculate the mean value and standard deviation over a circular ROI in each of these tubes.
-
-#Function to calculate the mean and standard deviation of the tubes in the image data
-def image_statistics(idat, mask_name):
-
-    if mask_name is not None:
-        mask = np.squeeze(np.load(mask_name))
-
-    number_of_tubes = 9
-    mean = []
-    std_deviation = []
-    for idx_value in range(number_of_tubes):
-        mean.append(torch.mean(idat[mask==idx_value+1]))
-        std_deviation.append(torch.std(idat[mask==idx_value+1]))
-
-    return mean, std_deviation
 
 # %% [markdown]
 # ## Run through all datasets and calculate $T_1$ and $T_2$ maps
@@ -198,16 +169,14 @@ cmrf_t1_maps = []
 cmrf_t2_maps = []
 
 
-for scanner_idx in range(1):
-    #Current path of data
-    pname = data_folder / Path(f'scanner{scanner_idx+1}/')
 
+#Current path of data
+pname = data_folder / Path(f'scanner1/')
 
-
-    #cMRF T1 and T2 maps
-    t1_map_cmrf, t2_map_cmrf = reco_cMRF_scans(pname, 'cMRF.h5', fa, t1, t2)
-    cmrf_t1_maps.append(t1_map_cmrf)
-    cmrf_t2_maps.append(t2_map_cmrf)
+#cMRF T1 and T2 maps
+t1_map_cmrf, t2_map_cmrf = reco_cMRF_scans(pname, 'cMRF.h5', fa, t1, t2)
+cmrf_t1_maps.append(t1_map_cmrf)
+cmrf_t2_maps.append(t2_map_cmrf)
 
 # %% [markdown]
 # ## Visualise and evaluate results
@@ -219,21 +188,20 @@ cmap_t1 = ListedColormap(np.loadtxt(data_folder / Path('lipari.csv')))
 cmap_t2 = ListedColormap(np.loadtxt(data_folder / Path('navia.csv')))
 
 # Plot T1 and T2 maps
-for scanner_idx in range(1):
-    fig, ax = plt.subplots(2,1)
-    for cax in ax.flatten():
-        cax.set_axis_off()
 
-    im = ax[0].imshow(cmrf_t1_maps[scanner_idx], vmin=0, vmax=2, cmap=cmap_t1)
-    ax[0].set_title('cMRF T1 (ms)')
-    plt.colorbar(im)
-    im = ax[1].imshow(cmrf_t2_maps[scanner_idx], vmin=0, vmax=0.2, cmap=cmap_t2)
-    ax[1].set_title('cMRF T2 (ms)')
-    plt.colorbar(im)
-    plt.tight_layout()
-    plt.show()
+fig, ax = plt.subplots(2,1)
+for cax in ax.flatten():
+    cax.set_axis_off()
+
+im = ax[0].imshow(cmrf_t1_maps[0], vmin=0, vmax=2, cmap=cmap_t1)
+ax[0].set_title('cMRF T1 (ms)')
+plt.colorbar(im)
+im = ax[1].imshow(cmrf_t2_maps[0], vmin=0, vmax=0.2, cmap=cmap_t2)
+ax[1].set_title('cMRF T2 (ms)')
+plt.colorbar(im)
+plt.tight_layout()
+plt.show()
 
 
-np.savetxt(data_folder / Path('cmrf_t1_maps.txt'), cmrf_t1_maps[0])
-np.savetxt(data_folder / Path('cmrf_t2_maps.txt'), cmrf_t2_maps[0])
+
 # %%
