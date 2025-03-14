@@ -262,6 +262,7 @@ class Indexer:
 
         self.move_axes: tuple[tuple[int, ...], tuple[int, ...]] = ((), ())
         """final move-axes operation to move the vectorized indices to the beginning of the tensor"""
+
         self.more_than_one_vectorized_index = number_of_vectorized_indices > 1
         """there is more than one vectorized index, thus a new axis will be added"""
 
