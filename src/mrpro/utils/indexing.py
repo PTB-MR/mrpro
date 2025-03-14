@@ -69,7 +69,7 @@ class Indexer:
         - remaining broadcasted dimensions are reduced to singleton dimensions.
     """
 
-    def __init__(self, broadcast_shape: tuple[int, ...], index: tuple[TorchIndexerType, ...]) -> None:
+    def __init__(self, broadcast_shape: tuple[int, ...], index: TorchIndexerType) -> None:
         """Initialize the Indexer.
 
         Parameters
@@ -96,6 +96,8 @@ class Indexer:
 
         # basics checks and figuring out the number of axes already covered by the index,
         # which is needed to determine the number of axes that are covered by the ellipsis
+        if not isinstance(index, tuple):
+            index = (index,)
         has_ellipsis = False
         has_boolean = False
         covered_axes = 0
