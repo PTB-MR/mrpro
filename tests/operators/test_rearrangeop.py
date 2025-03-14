@@ -25,10 +25,10 @@ SHAPE_PARAMETERS = pytest.mark.parametrize(
 
 @pytest.mark.parametrize('dtype', ['float32', 'complex128'])
 @SHAPE_PARAMETERS
-def test_einsum_op_adjointness(
+def test_rearrange_op_adjointness(
     input_shape: Sequence[int], rule: str, output_shape: Sequence[int], additional_info: dict, dtype: str
 ) -> None:
-    """Test adjointness and shape of Einsum Op."""
+    """Test adjointness and shape of Rearrange Op."""
     generator = RandomGenerator(seed=0)
     generate_tensor = getattr(generator, f'{dtype}_tensor')
     u = generate_tensor(size=input_shape)
@@ -39,10 +39,10 @@ def test_einsum_op_adjointness(
 
 @pytest.mark.parametrize('dtype', ['float32', 'complex128'])
 @SHAPE_PARAMETERS
-def test_einsum_op_grad(
+def test_rearrange_op_grad(
     input_shape: Sequence[int], rule: str, output_shape: Sequence[int], additional_info: dict, dtype: str
 ) -> None:
-    """Test gradient of Einsum Op."""
+    """Test gradient of Rearrange Op."""
     generator = RandomGenerator(seed=0)
     generate_tensor = getattr(generator, f'{dtype}_tensor')
     u = generate_tensor(size=input_shape)
@@ -53,10 +53,10 @@ def test_einsum_op_grad(
 
 @pytest.mark.parametrize('dtype', ['float32', 'complex128'])
 @SHAPE_PARAMETERS
-def test_einsum_op_forward_mode_autodiff(
+def test_rearrange_op_forward_mode_autodiff(
     input_shape: Sequence[int], rule: str, output_shape: Sequence[int], additional_info: dict, dtype: str
 ) -> None:
-    """Test forward-mode autodiff of Einsum Op."""
+    """Test forward-mode autodiff of Rearrange Op."""
     generator = RandomGenerator(seed=0)
     generate_tensor = getattr(generator, f'{dtype}_tensor')
     u = generate_tensor(size=input_shape)
@@ -65,7 +65,7 @@ def test_einsum_op_forward_mode_autodiff(
     forward_mode_autodiff_of_linear_operator_test(operator, u, v)
 
 
-def test_einsum_op_invalid() -> None:
+def test_rearrange_op_invalid() -> None:
     """Test with invalid rule."""
     with pytest.raises(ValueError, match='pattern should match'):
         RearrangeOp('missing arrow')
