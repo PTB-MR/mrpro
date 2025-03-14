@@ -9,8 +9,8 @@ import numpy as np
 import torch
 from typing_extensions import Self
 
-from mrpro.data.Dataclass import Dataclass
 from mrpro.data.CheckDataMixin import Annotation, string_to_size
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reshape import unsqueeze_at, unsqueeze_right
