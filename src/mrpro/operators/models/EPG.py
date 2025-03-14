@@ -10,7 +10,6 @@ from dataclasses import dataclass
 import torch
 
 from mrpro.data.MoveDataMixin import MoveDataMixin
-from mrpro.operators.SignalModel import SignalModel
 from mrpro.utils.reshape import unsqueeze_tensors_right
 from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
 
@@ -552,7 +551,7 @@ class DelayBlock(EPGBlock):
         return self.delay_time
 
 
-class EPGSequence(torch.nn.ModuleList, EPGBlock):
+class EPGSequence(torch.nn.ModuleList):
     """Sequene of EPG blocks.
 
     The sequence as multiple blocks, such as preparation pulses, acquisition blocks and delays.
@@ -609,20 +608,31 @@ class EPGSequence(torch.nn.ModuleList, EPGBlock):
         """
         torch.nn.ModuleList.__init__(self, blocks)
 
-    def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
+    def forward(
+        self, parameters: Parameters, state: torch.Tensor | None = None, n_states: int = 20
+    ) -> tuple[torch.Tensor, list[torch.Tensor]]:
         """Apply the sequence of blocks to the EPG state.
 
         Parameters
         ----------
-        state
-            EPG configuration states
         parameters
             Tissue parameters
+        state
+            EPG configuration states. If ``None``, the equilibrium state (0, 0, 1) will be initialised.
+         n_states
+            Number of EPG configuration states. This model uses a fixed number of states for performance reasons.
+            Should be large enough to capture the signal dynamics. More states increase the accuracy of the simulation
+            but also the computational cost. This will only be used if `state` is ``None``.
+
 
         Returns
         -------
             EPG configuration states after the sequence of blocks and the acquired signals
         """
+        if state is None:
+            state = initial_state(
+                parameters.shape, n_states=n_states, device=parameters.device, dtype=parameters.dtype.to_complex()
+            )
         signals: list[torch.Tensor] = []
         block: EPGBlock
         for block in self:
@@ -634,57 +644,6 @@ class EPGSequence(torch.nn.ModuleList, EPGBlock):
     def duration(self) -> torch.Tensor:
         """Duration of the block."""
         return sum(block.duration for block in self)
-
-
-class EPGSignalModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor | None]):
-    """EPG signal model."""
-
-    def __init__(self, sequence: EPGSequence | Sequence[EPGBlock], n_states: int = 20):
-        """Initialize the EPG signal model.
-
-        Parameters
-        ----------
-        sequence
-            EPG sequence of blocks
-        n_states
-            Number of EPG configuration states. This model uses a fixed number of states for performance reasons.
-            Should be large enough to capture the signal dynamics.
-            More states increase the accuracy of the simulation but also the computational cost.
-        """
-        super().__init__()
-        self.n_states = n_states
-        if not isinstance(sequence, EPGSequence):
-            self.sequence = EPGSequence(sequence)
-        else:
-            self.sequence = sequence
-
-    def forward(
-        self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor, relative_b1: torch.Tensor | None = None
-    ) -> tuple[torch.Tensor]:
-        """Simulate the EPG signal.
-
-        Parameters
-        ----------
-        m0
-            Steady state magnetization (complex)
-        t1
-            T1 relaxation time
-        t2
-            T2 relaxation time
-        relative_b1
-            Relative B1 scaling factor (complex)
-
-        Returns
-        -------
-            Simulated EPG signal with the different acquisitions in the first dimension.
-        """
-        parameters = Parameters(m0, t1, t2, relative_b1)
-        state = initial_state(
-            parameters.shape, n_states=self.n_states, device=parameters.device, dtype=parameters.dtype.to_complex()
-        )
-        _, signals = self.sequence(state, parameters)
-        signal = torch.stack(list(signals), dim=0)
-        return (signal,)
 
 
 __all__ = [
