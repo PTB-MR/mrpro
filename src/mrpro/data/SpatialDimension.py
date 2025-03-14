@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Generic, get_args
+from typing import Generic, cast, get_args
 
 import numpy as np
 import torch
@@ -12,6 +12,7 @@ from typing_extensions import Protocol, Self, TypeVar, overload
 
 import mrpro.utils.typing as type_utils
 from mrpro.data.Dataclass import Dataclass
+from mrpro.utils.indexing import Indexer
 
 # Change here to add more types
 VectorTypes = torch.Tensor
@@ -143,13 +144,11 @@ class SpatialDimension(Dataclass, Generic[T_co]):
         """Return a string representation of the SpatialDimension."""
         return f'z={self.z}, y={self.y}, x={self.x}'
 
-    def __getitem__(
-        self: SpatialDimension[T_co_vector], idx: type_utils.TorchIndexerType
-    ) -> SpatialDimension[T_co_vector]:
+    def __getitem__(self: SpatialDimension[T_co], idx: type_utils.TorchIndexerType | Indexer) -> SpatialDimension[T_co]:
         """Get SpatialDimension item."""
         if not all(isinstance(el, VectorTypes) for el in self.zyx):
-            raise IndexError('Cannot index SpatialDimension with non-indexable members')
-        return SpatialDimension(self.z[idx], self.y[idx], self.x[idx])
+            return self
+        return cast(SpatialDimension[T_co], super().__getitem__(idx))
 
     def __setitem__(self: SpatialDimension[T_co_vector], idx: type_utils.TorchIndexerType, other: SpatialDimension):
         """Set SpatialDimension item."""

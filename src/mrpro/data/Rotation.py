@@ -56,6 +56,7 @@ from einops._backends import AbstractBackend
 from scipy._lib._util import check_random_state
 from typing_extensions import Self, Unpack, overload
 
+from mrpro.data.Dataclass import Indexable
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.indexing import Indexer
 from mrpro.utils.typing import NestedSequence, TorchIndexerType
@@ -380,7 +381,7 @@ def _axisangle_to_matrix(axis: torch.Tensor, angle: torch.Tensor) -> torch.Tenso
     return matrix
 
 
-class Rotation(torch.nn.Module, Iterable['Rotation']):
+class Rotation(torch.nn.Module, Iterable['Rotation'], Indexable):
     """A container for Rotations.
 
     A pytorch implementation of scipy.spatial.transform.Rotation.
@@ -1608,11 +1609,13 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         """
         if self._single:
             raise TypeError('Single rotation is not subscriptable.')
-        if not isinstance(indexer, Indexer):
-            indexer = Indexer(self.shape, indexer)
-
-        quaternions = torch.stack([indexer(q) for q in self._quaternions.unbind(-1)], -1)
-        inversion = indexer(self._is_improper)
+        if isinstance(indexer, Indexer):
+            quaternions = torch.stack([indexer(q) for q in self._quaternions.unbind(-1)], -1)
+            inversion = indexer(self._is_improper)
+        else:
+            indexer_quat = (*indexer, slice(None)) if isinstance(indexer, tuple) else (indexer, slice(None))
+            quaternions = self._quaternions[indexer_quat]
+            inversion = self._is_improper[indexer]
         return self.__class__(quaternions, normalize=False, inversion=inversion)
 
     def __iter__(self) -> Iterator[Self]:
