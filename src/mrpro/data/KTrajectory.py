@@ -10,7 +10,7 @@ from typing_extensions import Self
 
 from mrpro.data.Dataclass import Dataclass
 from mrpro.data.enums import TrajType
-from mrpro.data.mixin.CheckDataMixin import string_to_size
+from mrpro.data.CheckDataMixin import string_to_size
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.reshape import unsqueeze_at
