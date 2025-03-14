@@ -171,6 +171,7 @@ def relax_matrix(relaxation_time: torch.Tensor, t1: torch.Tensor, t2: torch.Tens
     """
     e2 = torch.exp(-relaxation_time / t2)
     e1 = torch.exp(-relaxation_time / t1)
+    e1, e2 = torch.broadcast_tensors(e1, e2)
     return torch.stack([e2, e2, e1], dim=-1)
 
 
