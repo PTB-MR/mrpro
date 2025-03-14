@@ -22,7 +22,10 @@ class AveragingOp(LinearOperator):
     """
 
     def __init__(
-        self, dim: int, idx: Sequence[Sequence[int] | torch.Tensor | slice], domain_size: int | None = None
+        self,
+        dim: int,
+        idx: Sequence[Sequence[int] | torch.Tensor | slice] | torch.Tensor,
+        domain_size: int | None = None,
     ) -> None:
         """Initialize the averaging operator.
 
@@ -72,12 +75,12 @@ class AveragingOp(LinearOperator):
             if isinstance(group, slice):
                 n = len(range(*group.indices(self.domain_size)))
             elif isinstance(group, torch.Tensor) and group.dtype == torch.bool:
-                n = group.sum()
+                n = int(group.sum())
             else:
                 n = len(group)
 
             adjoint[*placeholder, group] += (
-                x[*placeholder, i, None].expand(*x.shape[: self.dim], n, *x.shape[self.dim + 1 :]) / n
+                x[*placeholder, i, None].expand(*x.shape[: self.dim], n, *x.shape[self.dim + 1 :]) / n  # type: ignore[index]
             )
 
         return (adjoint,)
