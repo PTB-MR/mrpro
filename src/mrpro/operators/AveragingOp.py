@@ -24,7 +24,7 @@ class AveragingOp(LinearOperator):
     def __init__(
         self,
         dim: int,
-        idx: Sequence[Sequence[int] | torch.Tensor | slice] | torch.Tensor,
+        idx: Sequence[Sequence[int] | torch.Tensor | slice] | torch.Tensor = (slice(None),),  # noqa: B008
         domain_size: int | None = None,
     ) -> None:
         """Initialize the averaging operator.
