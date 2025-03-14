@@ -1,5 +1,7 @@
 """Class for coil sensitivity maps (csm)."""
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import torch
@@ -78,7 +80,7 @@ class CsmData(QData):
         csm = cls(header=QHeader.from_iheader(idata.header), data=csm_tensor)
         return csm
 
-    def as_operator(self) -> 'SensitivityOp':
+    def as_operator(self) -> SensitivityOp:
         """Create SensitivityOp using a copy of the CSMs."""
         from mrpro.operators.SensitivityOp import SensitivityOp
 

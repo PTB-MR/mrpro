@@ -1276,7 +1276,7 @@ def test_mean(theta: float) -> None:
     "Basic test for mean"
     axes = torch.cat((-torch.eye(3), torch.eye(3)))
     r = Rotation.from_rotvec(theta * axes)
-    assert math.isclose(r.mean().magnitude(), 0.0)
+    assert math.isclose(r.mean().magnitude(), 0.0, abs_tol=1e-7)
 
 
 @pytest.mark.parametrize('theta', [0.0, np.pi / 8, np.pi / 4, np.pi / 3, np.pi / 2])
