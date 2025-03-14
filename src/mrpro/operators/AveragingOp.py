@@ -54,7 +54,7 @@ class AveragingOp(LinearOperator):
         self._last_domain_size = x.shape[self.dim]
 
         placeholder = (slice(None),) * (self.dim % x.ndim)
-        averaged = torch.stack([x[*placeholder, i].mean(self.dim) for i in self.idx], self.dim)
+        averaged = torch.stack([x[(*placeholder, i)].mean(self.dim) for i in self.idx], self.dim)
         return (averaged,)
 
     def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
