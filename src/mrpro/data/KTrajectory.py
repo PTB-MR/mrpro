@@ -10,7 +10,6 @@ from typing_extensions import Self
 
 from mrpro.data.Dataclass import Dataclass
 from mrpro.data.enums import TrajType
-from mrpro.data.mixin.CheckDataMixin import string_to_size
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.reshape import unsqueeze_at
@@ -276,10 +275,3 @@ class KTrajectory(Dataclass):
         x = summarize_tensorvalues(torch.tensor(self.kx.shape))
         out = f'{type(self).__name__} with shape: kz={z}, ky={y}, kx={x}'
         return out
-
-    @property
-    def shape(self) -> torch.Size:
-        """Return shape of the KData object."""
-        if not hasattr(self, '_memo'):
-            self.check_invariants()
-        return torch.Size(string_to_size('*#other 1 #k2 #k1 #k0', self._memo))
