@@ -550,6 +550,38 @@ class DelayBlock(EPGBlock):
         """Duration of the block."""
         return self.delay_time
 
+class BlockSequence(torch.nn.ModuleList, EPGBlock):
+    def __init__(self, blocks: Sequence[EPGBlock] = ()) -> None:
+        """Initialize an EPG Sequence.
+
+        Parameters
+        ----------
+        blocks
+            blocks such as RF, delays, acquisitions etc.
+        """
+        torch.nn.ModuleList.__init__(self, blocks)
+
+    def forward(
+        self, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
+        """Apply the sequence of blocks to the EPG state.
+
+        Parameters
+        ----------
+        parameters
+            Tissue parameters
+
+        Returns
+        -------
+            EPG configuration states after the sequence of blocks and the acquired signals
+        """
+        signals: list[torch.Tensor] = []
+        block: EPGBlock
+        for block in self:
+            state, signal = block(state, parameters)
+            signals.extend(signal)
+        return state, signals
+
+
 
 class EPGSequence(torch.nn.ModuleList):
     """Sequene of EPG blocks.
