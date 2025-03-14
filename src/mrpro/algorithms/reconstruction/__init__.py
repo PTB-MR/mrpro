@@ -5,7 +5,7 @@ from mrpro.algorithms.reconstruction.DirectReconstruction import DirectReconstru
 from mrpro.algorithms.reconstruction.RegularizedIterativeSENSEReconstruction import RegularizedIterativeSENSEReconstruction
 from mrpro.algorithms.reconstruction.IterativeSENSEReconstruction import IterativeSENSEReconstruction
 from mrpro.algorithms.reconstruction.TotalVariationRegularizedReconstruction import TotalVariationRegularizedReconstruction
-from mrpro.algorithms.reconstruction.TotalVariationDenoising import TotalVariationDenoising
+from mrpro.algorithms.TotalVariationDenoising import TotalVariationDenoising
 __all__ = [
     "DirectReconstruction",
     "IterativeSENSEReconstruction",
