@@ -1,9 +1,9 @@
 """Data containers, loading and saving data."""
 
-from mrpro.data import enums, traj_calculators, acq_filters, mixin
+from mrpro.data import enums, traj_calculators, acq_filters
 from mrpro.data.AcqInfo import AcqIdx, AcqInfo
 from mrpro.data.CsmData import CsmData
-from mrpro.data.Dataclass import Dataclass
+from mrpro.data.Dataclass import Dataclass, InconsistentDeviceError
 from mrpro.data.DcfData import DcfData
 from mrpro.data.EncodingLimits import EncodingLimits, Limits
 from mrpro.data.IData import IData
@@ -26,6 +26,7 @@ __all__ = [
     "EncodingLimits",
     "IData",
     "IHeader",
+    "InconsistentDeviceError",
     "KData",
     "KHeader",
     "KNoise",
@@ -37,6 +38,5 @@ __all__ = [
     "SpatialDimension",
     "acq_filters",
     "enums",
-    "mixin",
     "traj_calculators"
 ]
