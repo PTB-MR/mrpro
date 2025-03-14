@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from functools import lru_cache
 from math import prod
 
+import einops
 import torch
 
 from mrpro.utils.typing import endomorph
@@ -332,3 +333,66 @@ def ravel_multi_index(multi_index: Sequence[torch.Tensor], dims: Sequence[int]) 
     for idx, dim in zip(multi_index[1:], dims[1:], strict=True):
         flat_index = flat_index * dim + idx
     return flat_index
+
+
+def broadcasted_rearrange(
+    tensor: torch.Tensor,
+    pattern: str,
+    broadcasted_shape: Sequence[int] | None = None,
+    reduce_views: bool = True,
+    **axes_lengths: dict[str, int],
+) -> torch.Tensor:
+    """Rearrange a tensor with broadcasting.
+
+    Performs the einops rearrange or repeat operation on a tensor while preserving broadcasting.
+
+    Rearranging is a smart element reordering for multidimensional tensors.
+    This operation includes functionality of transpose (axes permutation),
+    reshape (view), squeeze, unsqueeze, repeat, and tile functions.
+
+    Example:
+    ```python
+    >>> tensor = torch.randn(1, 16, 1, 8, 256)
+    >>> broadcasted_rearrange(tensor, '... (phase k1) k0 -> phase ... k1 k0', phase=8).shape
+    torch.Size([8, 1, 16, 1, 96, 256])
+
+    >>> tensor=torch.randn(1, 1, 1, 768, 1)
+    >>> broadcasted_rearrange(tensor, '... (phase k1) k0 -> phase ... k1 k0',
+    >>>    broadcasted_shape=(1, 16, 1, 768, 256), phase=8).shape
+    torch.Size([8, 1, 16, 1, 96, 256]) # Behaves as-if the tensor was of shape (1, 16, 1, 768, 256)
+
+    >>> tensor=torch.randn(1, 1, 1, 768, 1)
+    >>> broadcasted_rearrange(tensor, '... (phase k1) k0 -> phase ... k1 k0',
+    >>>    broadcasted_shape=(1, 16, 1, 768, 256), reduce_view=True, phase=8).shape
+    torch.Size([8, 1, 1, 1, 96, 1]) # Dimensions that are stride-0 are reduced to singleton dimensions
+
+    ```
+
+    If a tensor has stride-0 dimensions, by default they will be preserved as stride-0
+    if possible and not made contiguous, thus saving memory.
+    If `reduce_views` is set to True, then stride-0 dimensions will be reduced to singleton dimensions after rearranging.
+    Optionally performs broadcasting to a specified shape before rearranging.
+
+    Parameters
+    ----------
+    tensor
+        The input tensor to rearrange.
+    pattern
+        The rearrange pattern. See `einops` documentation for more information.
+    broadcasted_shape
+        The shape to broadcast the tensor to before rearranging. If `None`, no additional broadcasting is performed.
+    reduce_views
+        If `True`, reduce stride-0 dimensions to singleton dimensions after rearranging.
+    axes_lengths
+        The lengths of the axes in the pattern. See `einops` documentation for more information.
+
+
+    """
+    tensor = tensor.broadcast_to(broadcasted_shape) if broadcasted_shape is not None else tensor
+    # the broadcast-preservation is done by patching the reshape method of the tensor
+    original_reshape, tensor.reshape = tensor.reshape, lambda shape: reshape_broadcasted(tensor, *shape)  # type: ignore[method-assign, assignment]
+    new_tensor = einops.repeat(tensor, pattern, **axes_lengths)  # allows both repeat and rearrange
+    tensor.reshape = original_reshape  # undo the patch # type: ignore[method-assign]
+    if reduce_views:
+        new_tensor = reduce_view(new_tensor)
+    return new_tensor
