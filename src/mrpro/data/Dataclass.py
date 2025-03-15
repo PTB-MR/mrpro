@@ -2,7 +2,7 @@
 
 import abc
 import dataclasses
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Sequence
 from copy import copy as shallowcopy
 from copy import deepcopy
 from typing import ClassVar, TypeAlias, cast
@@ -10,8 +10,13 @@ from typing import ClassVar, TypeAlias, cast
 import torch
 from typing_extensions import Any, Self, TypeVar, dataclass_transform, overload
 
+from mrpro.data.Rotation import Rotation
+from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.indexing import Indexer
+from mrpro.utils.reduce_repeat import reduce_repeat as remove_repeat_tensor
 from mrpro.utils.typing import DataclassInstance, TorchIndexerType
+
+T = TypeVar('T')
 
 
 class Indexable(abc.ABC):
@@ -85,6 +90,43 @@ class Dataclass:
     def __post_init__(self) -> None:
         """Can be overridden in subclasses to add custom initialization logic."""
         self.__initialized = True
+
+    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None) -> None:
+        """Reduce repeated dimensions in fields to singleton.
+
+        Parameters
+        ----------
+        tol
+            tolerance.
+        dim
+            dimensions to try to reduce to singletons. `None` means all.
+        """
+
+        def implementation(data: T) -> T:
+            match data:
+                case torch.Tensor():
+                    return cast(T, remove_repeat_tensor(data, tol, dim))
+                case SpatialDimension(z, y, x) if (
+                    isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor) and isinstance(z, torch.Tensor)
+                ):
+                    return cast(
+                        T,
+                        data.__class__(
+                            x=remove_repeat_tensor(x, tol, dim),
+                            y=remove_repeat_tensor(y, tol, dim),
+                            z=remove_repeat_tensor(z, tol, dim),
+                        ),
+                    )
+                case Rotation():
+                    tensor = data.as_matrix().flatten(start_dim=-2)
+                    tensor = torch.stack([remove_repeat_tensor(x, tol, dim) for x in tensor.unbind(-1)], -1).unflatten(
+                        -1, (3, 3)
+                    )
+                    return cast(T, data.__class__.from_matrix(tensor))
+                case _:
+                    return data
+
+        self.apply_(lambda x: implementation(x, tol, dim))
 
     def apply_(
         self: Self,
