@@ -1,15 +1,26 @@
 """Base class for all dataclasses in the `mrpro` package."""
 
+import abc
 import dataclasses
 from collections.abc import Callable, Iterator
 from copy import copy as shallowcopy
 from copy import deepcopy
-from typing import TypeAlias, cast
+from typing import ClassVar, TypeAlias, cast
 
 import torch
 from typing_extensions import Any, Self, TypeVar, dataclass_transform, overload
 
-from mrpro.utils.typing import DataclassInstance
+from mrpro.utils.indexing import Indexer
+from mrpro.utils.typing import DataclassInstance, TorchIndexerType
+
+
+class Indexable(abc.ABC):
+    """Interface for objects that can be indexed."""
+
+    @abc.abstractmethod
+    def __getitem__(self, index: Indexer) -> Any:  # noqa: ANN401
+        """Index the object."""
+        raise NotImplementedError
 
 
 class InconsistentDeviceError(ValueError):
@@ -45,6 +56,8 @@ class Dataclass:
     It is intended to be used as a base class for all dataclasses in the `mrpro` package.
     """
 
+    __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
+
     def __init_subclass__(cls, no_new_attributes: bool = True, *args, **kwargs):
         """Create a new dataclass subclass."""
         dataclasses.dataclass(cls)
@@ -53,17 +66,17 @@ class Dataclass:
 
         if no_new_attributes:
 
-            def new_setattr(self, name: str, value: Any) -> None:  # noqa: ANN401
+            def new_setattr(self: object, name: str, value: Any) -> None:  # noqa: ANN401
                 """Set an attribute."""
                 if not hasattr(self, name) and hasattr(self, '_Dataclass__initialized'):
                     raise AttributeError(f'Cannot set attribute {name} on {self.__class__.__name__}')
-                super().__setattr__(name, value)
+                object.__setattr__(self, name, value)
 
             cls.__setattr__ = new_setattr  # type: ignore[method-assign]
 
         if child_post_init and child_post_init is not Dataclass.__post_init__:
 
-            def chained_post_init(self, *args, **kwargs) -> None:
+            def chained_post_init(self: Dataclass, *args, **kwargs) -> None:
                 child_post_init(self, *args, **kwargs)
                 Dataclass.__post_init__(self)
 
@@ -507,4 +520,37 @@ class Dataclass:
             return True
         return device.type == 'cpu'
 
+    @property
+    def shape(self) -> tuple[int, ...]:
+        """Shape of the dataclass."""
+        shapes = []
+        for elem in dataclasses.fields(self):
+            value = getattr(self, elem.name)
+            if hasattr(value, 'shape'):
+                shapes.append(value.shape)
+        shape = torch.broadcast_shapes(*shapes)
+        return shape
+
     # endregion Properties
+    # region Indexing
+    def __getitem__(self, index: TorchIndexerType | Indexer) -> Self:
+        """Index the dataclass."""
+        indexer = index if isinstance(index, Indexer) else Indexer(self.shape, index)
+        memo: dict[int, Any] = {}
+
+        def apply_index(data: T) -> T:
+            if isinstance(data, torch.Tensor):
+                return cast(T, indexer(data))
+            if isinstance(data, Dataclass):
+                indexed = shallowcopy(data)
+                indexed.apply_(apply_index, memo=memo, recurse=False)
+                return cast(T, indexed)
+            if isinstance(data, Indexable):
+                return cast(T, data[indexer])
+            return cast(T, data)
+
+        new = shallowcopy(self)
+        new.apply_(apply_index, memo={}, recurse=False)
+        return new
+
+    # endregion Indexing
