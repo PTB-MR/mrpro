@@ -1,10 +1,10 @@
-"""Tests the MoveDataMixin class."""
+"""Tests the move to device/dtype functionality of  dataclasses."""
 
-from dataclasses import dataclass, field
+from dataclasses import field
 
 import pytest
 import torch
-from mrpro.data import MoveDataMixin
+from mrpro.data import Dataclass
 from typing_extensions import Any
 
 
@@ -18,8 +18,7 @@ class SharedModule(torch.nn.Module):
         self.module2.weight = self.module1.weight
 
 
-@dataclass(slots=True)
-class A(MoveDataMixin):
+class A(Dataclass):
     """Test class A."""
 
     floattensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1.0))
@@ -30,8 +29,7 @@ class A(MoveDataMixin):
     module: torch.nn.Module = field(default_factory=lambda: torch.nn.Linear(1, 1))
 
 
-@dataclass(frozen=True)
-class B(MoveDataMixin):
+class B(Dataclass):
     """Test class B."""
 
     child: A = field(default_factory=A)
@@ -43,7 +41,7 @@ class B(MoveDataMixin):
     doubletensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1.0, dtype=torch.float64))
 
 
-def _test(
+def _assert_attribute_properties(
     original: Any,
     new: Any,
     attribute: str,
@@ -51,7 +49,7 @@ def _test(
     expected_dtype: torch.dtype,
     expected_device: torch.device,
 ) -> None:
-    """Assertion used in the tests below.
+    """Assertion used in the move to device/dtype tests.
 
     Compares the attribute of the original and new object.
     Checks device, dtype and if the data is copied if required
@@ -76,14 +74,14 @@ def _test(
 
 @pytest.mark.parametrize('dtype', [torch.float32, torch.complex64, torch.float64, torch.complex128])
 @pytest.mark.parametrize('copy', [True, False])
-def test_movedatamixin_to(copy: bool, dtype: torch.dtype):
-    """Test MoveDataMixin.to using a nested object."""
+def test_dataclass_to(copy: bool, dtype: torch.dtype) -> None:
+    """Test dataclass.to using a nested object."""
     original = B()
     new = original.to(dtype=dtype, copy=copy)
 
     # Tensor attributes
-    def test(attribute, expected_dtype):
-        return _test(original, new, attribute, copy, expected_dtype, torch.device('cpu'))
+    def test(attribute: str, expected_dtype: torch.dtype) -> None:
+        return _assert_attribute_properties(original, new, attribute, copy, expected_dtype, torch.device('cpu'))
 
     test('floattensor', dtype.to_real())
     test('doubletensor', dtype.to_real())
@@ -92,8 +90,10 @@ def test_movedatamixin_to(copy: bool, dtype: torch.dtype):
     test('booltensor', torch.bool)
 
     # Attributes of child
-    def testchild(attribute, expected_dtype):
-        return _test(original.child, new.child, attribute, copy, expected_dtype, torch.device('cpu'))
+    def testchild(attribute: str, expected_dtype: torch.dtype) -> None:
+        return _assert_attribute_properties(
+            original.child, new.child, attribute, copy, expected_dtype, torch.device('cpu')
+        )
 
     testchild('floattensor', dtype.to_real())
     testchild('complextensor', dtype.to_complex())
@@ -101,7 +101,9 @@ def test_movedatamixin_to(copy: bool, dtype: torch.dtype):
     testchild('booltensor', torch.bool)
 
     # Module attribute
-    _test(original.child.module, new.child.module, 'weight', copy, dtype.to_real(), torch.device('cpu'))
+    _assert_attribute_properties(
+        original.child.module, new.child.module, 'weight', copy, dtype.to_real(), torch.device('cpu')
+    )
 
     # No-copy required for these
     if not copy:
@@ -119,14 +121,14 @@ def test_movedatamixin_to(copy: bool, dtype: torch.dtype):
     ('dtype', 'attribute'), [(torch.float16, 'half'), (torch.float32, 'single'), (torch.float64, 'double')]
 )
 @pytest.mark.parametrize('copy', [True, False])
-def test_movedatamixin_convert(copy: bool, dtype: torch.dtype, attribute: str):
-    """Test MoveDataMixin.half/double/single using a nested object."""
+def test_dataclass_convert(copy: bool, dtype: torch.dtype, attribute: str) -> None:
+    """Test dataclass.half/double/single using a nested object."""
     original = B()
     new = getattr(original, attribute)(copy=copy)
 
     # Tensor attributes
     def test(attribute, expected_dtype):
-        return _test(original, new, attribute, copy, expected_dtype, torch.device('cpu'))
+        return _assert_attribute_properties(original, new, attribute, copy, expected_dtype, torch.device('cpu'))
 
     test('floattensor', dtype.to_real())
     test('doubletensor', dtype.to_real())
@@ -136,7 +138,9 @@ def test_movedatamixin_convert(copy: bool, dtype: torch.dtype, attribute: str):
 
     # Attributes of child
     def testchild(attribute, expected_dtype):
-        return _test(original.child, new.child, attribute, copy, expected_dtype, torch.device('cpu'))
+        return _assert_attribute_properties(
+            original.child, new.child, attribute, copy, expected_dtype, torch.device('cpu')
+        )
 
     testchild('floattensor', dtype.to_real())
     testchild('complextensor', dtype.to_complex())
@@ -144,7 +148,9 @@ def test_movedatamixin_convert(copy: bool, dtype: torch.dtype, attribute: str):
     testchild('booltensor', torch.bool)
 
     # Module attribute
-    _test(original.child.module, new.child.module, 'weight', copy, dtype.to_real(), torch.device('cpu'))
+    _assert_attribute_properties(
+        original.child.module, new.child.module, 'weight', copy, dtype.to_real(), torch.device('cpu')
+    )
 
     # No-copy required for these
     if not copy:
@@ -160,8 +166,8 @@ def test_movedatamixin_convert(copy: bool, dtype: torch.dtype, attribute: str):
 @pytest.mark.cuda
 @pytest.mark.parametrize('already_moved', [True, False])
 @pytest.mark.parametrize('copy', [True, False])
-def test_movedatamixin_cuda(already_moved: bool, copy: bool):
-    """Test MoveDataMixin.cuda using a nested object."""
+def test_dataclass_cuda(already_moved: bool, copy: bool) -> None:
+    """Test dataclass.cuda using a nested object."""
     original = B()
     if already_moved:
         original = original.cuda(torch.cuda.current_device())
@@ -171,7 +177,7 @@ def test_movedatamixin_cuda(already_moved: bool, copy: bool):
 
     # Tensor attributes
     def test(attribute, expected_dtype):
-        return _test(original, new, attribute, copy, expected_dtype, expected_device)
+        return _assert_attribute_properties(original, new, attribute, copy, expected_dtype, expected_device)
 
     # all tensors should be of the same dtype as before
     test('floattensor', torch.float32)
@@ -183,7 +189,7 @@ def test_movedatamixin_cuda(already_moved: bool, copy: bool):
 
     # Attributes of child
     def testchild(attribute, expected_dtype):
-        return _test(original.child, new.child, attribute, copy, expected_dtype, expected_device)
+        return _assert_attribute_properties(original.child, new.child, attribute, copy, expected_dtype, expected_device)
 
     testchild('floattensor', torch.float32)
     testchild('complextensor', torch.complex64)
@@ -191,7 +197,9 @@ def test_movedatamixin_cuda(already_moved: bool, copy: bool):
     testchild('booltensor', torch.bool)
 
     # Module attribute
-    _test(original.child.module, new.child.module, 'weight', copy, torch.float32, expected_device)
+    _assert_attribute_properties(
+        original.child.module, new.child.module, 'weight', copy, torch.float32, expected_device
+    )
 
     # No-copy required for these
     if not copy and already_moved:
@@ -207,8 +215,8 @@ def test_movedatamixin_cuda(already_moved: bool, copy: bool):
     assert new.module.module1.weight is new.module.module1.weight, 'shared module parameters should remain shared'
 
 
-def test_movedatamixin_apply_():
-    """Tests apply_ method of MoveDataMixin."""
+def test_dataclass_apply_() -> None:
+    """Tests apply_ method of dataclass."""
     data = B()
     # make one of the parameters shared to test memo behavior
     data.child.floattensor2 = data.child.floattensor
@@ -225,8 +233,8 @@ def test_movedatamixin_apply_():
     assert data.child.floattensor is data.child.floattensor2, 'shared module parameters should remain shared'
 
 
-def test_movedatamixin_apply():
-    """Tests apply method of MoveDataMixin."""
+def test_dataclass_apply() -> None:
+    """Tests apply method of dataclass."""
     data = B()
     # make one of the parameters shared to test memo behavior
     data.child.floattensor2 = data.child.floattensor
@@ -244,3 +252,10 @@ def test_movedatamixin_apply():
     torch.testing.assert_close(new.child.floattensor2, original.child.floattensor2 * 2)
     assert data.child.floattensor is data.child.floattensor2, 'shared module parameters should remain shared'
     assert new is not data, 'new object should be different from the original'
+
+
+def test_dataclass_no_new_attributes() -> None:
+    """Tests that new attributes are not added to the dataclass."""
+    data = B()
+    with pytest.raises(AttributeError):
+        data.doesnotexist = 1  # type: ignore[attr-defined]

@@ -117,7 +117,7 @@ filterwarnings = [
     "ignore:Anomaly Detection has been enabled:UserWarning",                   # torch.autograd
     "ignore:allow_ops_in_compiled_graph failed to import torch:ImportWarning", # einops and dynamo<2.5
 ]
-addopts = "-n auto"
+addopts = "-n auto --dist loadfile --maxprocesses=4"
 markers = ["cuda : Tests only to be run when cuda device is available"]
 
 # MyPy section
