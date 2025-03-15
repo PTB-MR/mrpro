@@ -21,7 +21,6 @@
 # Get the raw data from zenodo
 
 data_folder = '/echo/redsha01/Sequences_Evaluation/mrpro/examples/scripts/cMRF_example_folder/'
-
 # %% [markdown]
 #
 # We will use the following libraries:
