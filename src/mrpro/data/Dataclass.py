@@ -10,6 +10,7 @@ from typing import ClassVar, TypeAlias, cast
 import torch
 from typing_extensions import Any, Self, TypeVar, dataclass_transform, overload
 
+from mrpro.data.CheckDataMixin import CheckDataMixin
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.indexing import Indexer
@@ -50,7 +51,7 @@ T = TypeVar('T')
 
 
 @dataclass_transform()
-class Dataclass:
+class Dataclass(CheckDataMixin):
     """A supercharged dataclass with additional functionality.
 
     This class extends the functionality of the standard `dataclasses.dataclass` by adding
