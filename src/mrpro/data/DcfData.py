@@ -1,8 +1,5 @@
 """Density compensation data (DcfData) class."""
 
-from __future__ import annotations
-
-import dataclasses
 from functools import reduce
 from typing import TYPE_CHECKING
 
@@ -10,16 +7,15 @@ import torch
 from typing_extensions import Self
 
 from mrpro.algorithms.dcf.dcf_voronoi import dcf_1d, dcf_2d3d_voronoi
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.KTrajectory import KTrajectory
-from mrpro.data.MoveDataMixin import MoveDataMixin
 from mrpro.utils import smap
 
 if TYPE_CHECKING:
     from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 
 
-@dataclasses.dataclass(slots=True, frozen=False)
-class DcfData(MoveDataMixin):
+class DcfData(Dataclass):
     """Density compensation data (DcfData) class."""
 
     data: torch.Tensor
@@ -67,7 +63,7 @@ class DcfData(MoveDataMixin):
 
         return cls(data=dcf)
 
-    def as_operator(self) -> DensityCompensationOp:
+    def as_operator(self) -> 'DensityCompensationOp':
         """Create a density compensation operator using a copy of the DCF."""
         from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 
