@@ -1,11 +1,10 @@
 """Base class for all dataclasses in the `mrpro` package."""
 
-import abc
 import dataclasses
 from collections.abc import Callable, Iterator, Sequence
 from copy import copy as shallowcopy
 from copy import deepcopy
-from typing import ClassVar, TypeAlias, cast
+from typing import ClassVar, Protocol, TypeAlias, cast, runtime_checkable
 
 import torch
 from typing_extensions import Any, Self, TypeVar, dataclass_transform, overload
@@ -15,18 +14,28 @@ from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.indexing import Indexer
 from mrpro.utils.reduce_repeat import reduce_repeat as remove_repeat_tensor
+from mrpro.utils.reshape import broadcasted_rearrange
 from mrpro.utils.typing import DataclassInstance, TorchIndexerType
 
 T = TypeVar('T')
 
 
-class Indexable(abc.ABC):
-    """Interface for objects that can be indexed."""
+@runtime_checkable
+class RotationProtocol(Protocol):
+    """Rotation class."""
 
-    @abc.abstractmethod
-    def __getitem__(self, index: Indexer) -> Any:  # noqa: ANN401
-        """Index the object."""
-        raise NotImplementedError
+    _quaternions: torch.Tensor
+    _is_improper: torch.Tensor
+
+    def __init__(
+        self,
+        quaternions: torch.Tensor,
+        normalize: bool,
+        copy: bool,
+        inversion: torch.Tensor,
+    ) -> None: ...
+
+    def __getitem__(self, index: Indexer) -> Any: ...
 
 
 class InconsistentDeviceError(ValueError):
@@ -564,7 +573,7 @@ class Dataclass(CheckDataMixin):
         return device.type == 'cpu'
 
     @property
-    def shape(self) -> tuple[int, ...]:
+    def shape(self) -> torch.Size:
         """Shape of the dataclass."""
         shapes = []
         for elem in dataclasses.fields(self):
@@ -588,7 +597,7 @@ class Dataclass(CheckDataMixin):
                 indexed = shallowcopy(data)
                 indexed.apply_(apply_index, memo=memo, recurse=False)
                 return cast(T, indexed)
-            if isinstance(data, Indexable):
+            if isinstance(data, RotationProtocol):
                 return cast(T, data[indexer])
             return cast(T, data)
 
@@ -597,3 +606,49 @@ class Dataclass(CheckDataMixin):
         return new
 
     # endregion Indexing
+
+    def rearrange(self, pattern: str, **axes_lengths: dict[str, int]) -> Self:
+        """Rearrange the data according to the specified pattern.
+
+        Similar to einops.rearrange, allowing flexible rearrangement of data dimensions.
+
+        Examples
+        --------
+        >>> # Split the phase encode lines into 8 cardiac phases
+        >>> data.rearrange('batch coils k2 (phase k1) k0 -> batch phase coils k0 k1 k2', phase=8)
+        >>> # Split the k-space samples into 64 k1 and 64 k2 lines
+        >>> data.rearrange('... 1 1 (k2 k1 k0) -> ... k2 k1 k0', k2=64, k1=64, k0=128)
+
+        Parameters
+        ----------
+        pattern
+            String describing the rearrangement pattern. See `einops.rearrange` and the examples above for more details.
+        **axes_lengths : dict
+            Optional dictionary mapping axis names to their lengths.
+            Used when pattern contains unknown dimensions.
+
+        Returns
+        -------
+        Self
+            The rearranged data with the same type as the input.
+
+        """
+        memo: dict = {}
+        shape = self.shape
+
+        def implementation(data: T) -> T:
+            def rearrange_tensor(data: torch.Tensor) -> torch.Tensor:
+                return broadcasted_rearrange(data, pattern, shape, True, **axes_lengths)
+
+            if isinstance(data, torch.Tensor):
+                return cast(T, rearrange_tensor(data))
+            if isinstance(data, RotationProtocol):
+                quaternions = torch.stack([rearrange_tensor(q) for q in data._quaternions.unbind(-1)], -1)
+                inversion = rearrange_tensor(data._is_improper)
+                return cast(T, type(data)(quaternions=quaternions, normalize=False, copy=False, inversion=inversion))
+            elif isinstance(data, Dataclass):
+                return cast(T, shallowcopy(data).apply_(implementation, memo=memo, recurse=False))
+            else:
+                return data
+
+        return self.apply_(implementation, memo=memo, recurse=False)
