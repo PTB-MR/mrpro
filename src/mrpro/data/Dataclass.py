@@ -10,10 +10,8 @@ import torch
 from typing_extensions import Any, Self, TypeVar, dataclass_transform, overload
 
 from mrpro.data.CheckDataMixin import CheckDataMixin
-from mrpro.data.Rotation import Rotation
-from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.indexing import Indexer
-from mrpro.utils.reduce_repeat import reduce_repeat as remove_repeat_tensor
+from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.reshape import broadcasted_rearrange
 from mrpro.utils.typing import DataclassInstance, TorchIndexerType
 
@@ -21,21 +19,21 @@ T = TypeVar('T')
 
 
 @runtime_checkable
-class RotationProtocol(Protocol):
-    """Rotation class."""
+class HasIndex(Protocol):
+    """Objects that can be indexed with an `Indexer`."""
 
-    _quaternions: torch.Tensor
-    _is_improper: torch.Tensor
+    def _index(self, index: Indexer) -> Self: ...
 
-    def __init__(
-        self,
-        quaternions: torch.Tensor,
-        normalize: bool,
-        copy: bool,
-        inversion: torch.Tensor,
-    ) -> None: ...
 
-    def __getitem__(self, index: Indexer) -> Any: ...
+@runtime_checkable
+class HasReduceRepeats(Protocol):
+    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None) -> None: ...
+
+
+class HasBroadcastedRearrange(Protocol):
+    def _broadcasted_rearrange(
+        self, pattern: str, broadcasted_shape: Sequence[int], reduce_view: bool = True, **axes_lengths
+    ) -> Self: ...
 
 
 class InconsistentDeviceError(ValueError):
@@ -100,6 +98,7 @@ class Dataclass(CheckDataMixin):
     def __post_init__(self) -> None:
         """Can be overridden in subclasses to add custom initialization logic."""
         self.__initialized = True
+        self._reduce_repeats_()
 
     def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None) -> None:
         """Reduce repeated dimensions in fields to singleton.
@@ -112,31 +111,14 @@ class Dataclass(CheckDataMixin):
             dimensions to try to reduce to singletons. `None` means all.
         """
 
-        def implementation(data: T) -> T:
-            match data:
-                case torch.Tensor():
-                    return cast(T, remove_repeat_tensor(data, tol, dim))
-                case SpatialDimension(z, y, x) if (
-                    isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor) and isinstance(z, torch.Tensor)
-                ):
-                    return cast(
-                        T,
-                        data.__class__(
-                            x=remove_repeat_tensor(x, tol, dim),
-                            y=remove_repeat_tensor(y, tol, dim),
-                            z=remove_repeat_tensor(z, tol, dim),
-                        ),
-                    )
-                case Rotation():
-                    tensor = data.as_matrix().flatten(start_dim=-2)
-                    tensor = torch.stack([remove_repeat_tensor(x, tol, dim) for x in tensor.unbind(-1)], -1).unflatten(
-                        -1, (3, 3)
-                    )
-                    return cast(T, data.__class__.from_matrix(tensor))
-                case _:
-                    return data
+        def apply_reduce(data: T) -> T:
+            if isinstance(data, torch.Tensor):
+                return cast(T, reduce_repeat(data, tol, dim))
+            if isinstance(data, HasReduceRepeats) and not isinstance(data, Dataclass):
+                data._reduce_repeats_(tol, dim)
+            return cast(T, data)
 
-        self.apply_(lambda x: implementation(x, tol, dim))
+        self.apply_(apply_reduce)
 
     def apply_(
         self: Self,
@@ -597,8 +579,9 @@ class Dataclass(CheckDataMixin):
                 indexed = shallowcopy(data)
                 indexed.apply_(apply_index, memo=memo, recurse=False)
                 return cast(T, indexed)
-            if isinstance(data, RotationProtocol):
-                return cast(T, data[indexer])
+            if isinstance(data, HasIndex):
+                # Rotation
+                return cast(T, data._index(indexer))
             return cast(T, data)
 
         new = shallowcopy(self)
@@ -636,22 +619,21 @@ class Dataclass(CheckDataMixin):
         memo: dict = {}
         shape = self.shape
 
-        def implementation(data: T) -> T:
+        def apply_rearrange(data: T) -> T:
             def rearrange_tensor(data: torch.Tensor) -> torch.Tensor:
                 return broadcasted_rearrange(data, pattern, shape, True, **axes_lengths)
 
             if isinstance(data, torch.Tensor):
                 return cast(T, rearrange_tensor(data))
-            if isinstance(data, RotationProtocol):
-                quaternions = torch.stack([rearrange_tensor(q) for q in data._quaternions.unbind(-1)], -1)
-                inversion = rearrange_tensor(data._is_improper)
-                return cast(T, type(data)(quaternions=quaternions, normalize=False, copy=False, inversion=inversion))
+            if isinstance(data, HasBroadcastedRearrange):
+                return cast(T, data._broadcasted_rearrange(data, pattern, shape, True, **axes_lengths))
             elif isinstance(data, Dataclass):
-                return cast(T, shallowcopy(data).apply_(implementation, memo=memo, recurse=False))
+                return cast(T, shallowcopy(data).apply_(apply_rearrange, memo=memo, recurse=False))
             else:
                 return data
 
-        return self.apply_(implementation, memo=memo, recurse=False)
+        new = shallowcopy(self)
+        return new.apply_(apply_rearrange, memo=memo, recurse=False)
 
 
 
