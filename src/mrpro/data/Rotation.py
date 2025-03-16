@@ -49,7 +49,6 @@ from collections.abc import Callable, Iterable, Iterator, Sequence
 from typing import Literal, cast
 
 import numpy as np
-from sympy import Quaternion
 import torch
 import torch.nn.functional as F  # noqa: N812
 from einops import rearrange
@@ -1644,7 +1643,7 @@ class Rotation(torch.nn.Module, Iterable['Rotation'], HasIndex):
             dimensions to try to reduce to singletons. `None` means all.
         """
         if dim is None:
-            quaternion_dim = range(0, self._quaternions.ndim - 1)
+            quaternion_dim: Sequence[int] = range(self._quaternions.ndim - 1)
         else:
             quaternion_dim = [
                 d - 1 if d < 0 else d for d in dim if d > -self._quaternions.ndim + 1 and d < self._quaternions.ndim - 1
