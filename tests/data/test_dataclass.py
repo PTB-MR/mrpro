@@ -264,23 +264,41 @@ def test_dataclass_no_new_attributes() -> None:
         data.doesnotexist = 1  # type: ignore[attr-defined]
 
 
-def test_dataclass_getitem() -> None:
-    data = B()
-    data2 = data[0]
-    print(data2.shape)
+def check_broadcastable(actual_shape, expected_shape):
+    """Raise a Runtime Error is actual is not boradcastable to expected."""
+    torch.empty(actual_shape).broadcast_to(expected_shape)
 
 
-class Dummy(Dataclass):
-    a: torch.Tensor
-    b: SpatialDimension
-    c: Rotation
-
-    def __post_init__(self) -> None:
-        self.a.ravel()[0] = 1.0
+@pytest.mark.parametrize(
+    ('index', 'expected_shape'),
+    [
+        (0, (1, 20)),
+        (slice(0, 5), (5, 20)),
+        ((Ellipsis, (2, 3)), (10, 2)),
+        (((0, 1), (0, 1)), (2, 1, 1)),
+    ],
+    ids=['single', 'slice', 'ellipsis', 'vectorized'],
+)
+def test_dataclass_getitem(index, expected_shape: tuple[int, ...]) -> None:
+    """Test the __getitem__ method of the dataclass."""
+    # The indexing itself is alreadytested in test_indexer.py
+    # Thus, this test only needs to check that the indexing if performed on the attributes.
+    indexed = B()[index]
+    check_broadcastable(indexed.floattensor.shape, expected_shape)
+    check_broadcastable(indexed.child.floattensor.shape, expected_shape)
+    check_broadcastable(indexed.child.rotation.shape, expected_shape)
+    check_broadcastable(indexed.child.shape, expected_shape)
+    check_broadcastable(indexed.shape, expected_shape)
 
 
 def test_dataclass_reducerepeat() -> None:
-    """Test ReduceRepeatMixin."""
+    """Test reduction of repeated dimensions."""
+
+    class Container(Dataclass):
+        a: torch.Tensor
+        b: SpatialDimension
+        c: Rotation
+
     rng = RandomGenerator(10)
 
     a = rng.float32_tensor((5, 1, 1, 1))
@@ -292,12 +310,10 @@ def test_dataclass_reducerepeat() -> None:
     c_matrix = torch.eye(3).reshape(1, 1, 3, 3)
     c_expanded = Rotation.from_matrix(c_matrix.expand(5, 2, 3, 3))
 
-    test = Dummy(a_expanded, b_expanded, c_expanded)
+    test = Container(a_expanded, b_expanded, c_expanded)
 
     torch.testing.assert_close(test.a, a)
     torch.testing.assert_close(test.b.z, b.z)
     torch.testing.assert_close(test.b.y, b.y)
     torch.testing.assert_close(test.b.x, b.x)
     torch.testing.assert_close(test.c.as_matrix(), c_matrix)
-
-    assert test.a[0, 0, 0, 0] == 1.0, 'subclass post_init not called'
