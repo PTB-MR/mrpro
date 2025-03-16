@@ -49,6 +49,7 @@ from collections.abc import Callable, Iterable, Iterator, Sequence
 from typing import Literal, cast
 
 import numpy as np
+from sympy import Quaternion
 import torch
 import torch.nn.functional as F  # noqa: N812
 from einops import rearrange
@@ -56,8 +57,9 @@ from einops._backends import AbstractBackend
 from scipy._lib._util import check_random_state
 from typing_extensions import Self, Unpack, overload
 
-from mrpro.data.Dataclass import Indexable
+from mrpro.data.Dataclass import HasIndex
 from mrpro.data.SpatialDimension import SpatialDimension
+from mrpro.utils import reduce_repeat
 from mrpro.utils.indexing import Indexer
 from mrpro.utils.typing import NestedSequence, TorchIndexerType
 from mrpro.utils.vmf import sample_vmf
@@ -381,7 +383,7 @@ def _axisangle_to_matrix(axis: torch.Tensor, angle: torch.Tensor) -> torch.Tenso
     return matrix
 
 
-class Rotation(torch.nn.Module, Iterable['Rotation'], Indexable):
+class Rotation(torch.nn.Module, Iterable['Rotation'], HasIndex):
     """A container for Rotations.
 
     A pytorch implementation of scipy.spatial.transform.Rotation.
@@ -1588,7 +1590,7 @@ class Rotation(torch.nn.Module, Iterable['Rotation'], Indexable):
         angles = (other @ self.inv()).magnitude()
         return (angles < atol) & (self._is_improper == other._is_improper)
 
-    def __getitem__(self, indexer: TorchIndexerType | Indexer) -> Self:
+    def __getitem__(self, indexer: TorchIndexerType) -> Self:
         """Extract rotation(s) at given index(es) from object.
 
         Create a new `Rotation` instance containing a subset of rotations
@@ -1609,14 +1611,11 @@ class Rotation(torch.nn.Module, Iterable['Rotation'], Indexable):
         """
         if self._single:
             raise TypeError('Single rotation is not subscriptable.')
-        if isinstance(indexer, Indexer):
-            quaternions = torch.stack([indexer(q) for q in self._quaternions.unbind(-1)], -1)
-            inversion = indexer(self._is_improper)
-        else:
-            indexer_quat = (*indexer, slice(None)) if isinstance(indexer, tuple) else (indexer, slice(None))
-            quaternions = self._quaternions[indexer_quat]
-            inversion = self._is_improper[indexer]
-        return self.__class__(quaternions, normalize=False, inversion=inversion)
+
+        indexer_quat = (*indexer, slice(None)) if isinstance(indexer, tuple) else (indexer, slice(None))
+        quaternions = self._quaternions[indexer_quat]
+        inversion = self._is_improper[indexer]
+        return type(self)(quaternions, normalize=False, inversion=inversion)
 
     def __iter__(self) -> Iterator[Self]:
         """Provide an explicit iterator."""
@@ -1627,6 +1626,31 @@ class Rotation(torch.nn.Module, Iterable['Rotation'], Indexable):
                 index += 1
             except IndexError:
                 break
+
+    def _index(self, indexer: Indexer) -> Self:
+        """Index using a custom indexer."""
+        quaternions = torch.stack([indexer(q) for q in self._quaternions.unbind(-1)], -1)
+        inversion = indexer(self._is_improper)
+        return type(self)(quaternions, normalize=False, inversion=inversion)
+
+    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None) -> None:
+        """Reduce repeated dimensions to singleton.
+
+        Parameters
+        ----------
+        tol
+            tolerance to apply to quanternions
+        dim
+            dimensions to try to reduce to singletons. `None` means all.
+        """
+        if dim is None:
+            quaternion_dim = range(0, self._quaternions.ndim - 1)
+        else:
+            quaternion_dim = [
+                d - 1 if d < 0 else d for d in dim if d > -self._quaternions.ndim + 1 and d < self._quaternions.ndim - 1
+            ]
+        self._quaternions.data = reduce_repeat(self._quaternions, tol, quaternion_dim)
+        self._is_improper.data = reduce_repeat(self._is_improper, tol, dim)
 
     @property
     def quaternion_x(self) -> torch.Tensor:
