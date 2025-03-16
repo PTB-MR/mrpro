@@ -16,7 +16,6 @@ from mrpro.data.QData import QData
 from mrpro.data.QHeader import QHeader
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
-from mrpro.data.ReduceRepeatMixin import ReduceRepeatMixin
 
 __all__ = [
     "AcqIdx",
@@ -35,7 +34,6 @@ __all__ = [
     "Limits",
     "QData",
     "QHeader",
-    "ReduceRepeatMixin",
     "Rotation",
     "SpatialDimension",
     "acq_filters",
