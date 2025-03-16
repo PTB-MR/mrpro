@@ -4,7 +4,7 @@ from dataclasses import field
 
 import pytest
 import torch
-from mrpro.data import Dataclass
+from mrpro.data import Dataclass, Rotation
 from typing_extensions import Any
 
 
@@ -21,12 +21,13 @@ class SharedModule(torch.nn.Module):
 class A(Dataclass):
     """Test class A."""
 
-    floattensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1.0))
-    floattensor2: torch.Tensor = field(default_factory=lambda: torch.tensor(-1.0))
-    complextensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1.0, dtype=torch.complex64))
-    inttensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1, dtype=torch.int32))
-    booltensor: torch.Tensor = field(default_factory=lambda: torch.tensor(True))
+    floattensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 20))
+    floattensor2: torch.Tensor = field(default_factory=lambda: torch.zeros(10, 1))
+    complextensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 1, dtype=torch.complex64))
+    inttensor: torch.Tensor = field(default_factory=lambda: torch.ones(10, 20, dtype=torch.int32))
+    booltensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 1, dtype=torch.bool))
     module: torch.nn.Module = field(default_factory=lambda: torch.nn.Linear(1, 1))
+    rotation: Rotation = field(default_factory=lambda: Rotation.identity((10, 20)))
 
 
 class B(Dataclass):
@@ -34,11 +35,11 @@ class B(Dataclass):
 
     child: A = field(default_factory=A)
     module: SharedModule = field(default_factory=SharedModule)
-    floattensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1.0))
-    complextensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1.0, dtype=torch.complex64))
-    inttensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1, dtype=torch.int32))
-    booltensor: torch.Tensor = field(default_factory=lambda: torch.tensor(True))
-    doubletensor: torch.Tensor = field(default_factory=lambda: torch.tensor(1.0, dtype=torch.float64))
+    floattensor: torch.Tensor = field(default_factory=lambda: torch.ones(10, 20))
+    complextensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 1, dtype=torch.complex64))
+    inttensor: torch.Tensor = field(default_factory=lambda: torch.ones(10, 20, dtype=torch.int32))
+    booltensor: torch.Tensor = field(default_factory=lambda: torch.ones(10, 1, dtype=torch.bool))
+    doubletensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 20, dtype=torch.float64))
 
 
 def _assert_attribute_properties(
@@ -259,3 +260,30 @@ def test_dataclass_no_new_attributes() -> None:
     data = B()
     with pytest.raises(AttributeError):
         data.doesnotexist = 1  # type: ignore[attr-defined]
+
+
+def check_broadcastable(actual_shape, expected_shape):
+    """Raise a Runtime Error is actual is not boradcastable to expected."""
+    torch.empty(actual_shape).broadcast_to(expected_shape)
+
+
+@pytest.mark.parametrize(
+    ('index', 'expected_shape'),
+    [
+        (0, (1, 20)),
+        (slice(0, 5), (5, 20)),
+        ((Ellipsis, (2, 3)), (10, 2)),
+        (((0, 1), (0, 1)), (2, 1, 1)),
+    ],
+    ids=['single', 'slice', 'ellipsis', 'vectorized'],
+)
+def test_dataclass_getitem(index, expected_shape: tuple[int, ...]) -> None:
+    """Test the __getitem__ method of the dataclass."""
+    # The indexing itself is alreadytested in test_indexer.py
+    # Thus, this test only needs to check that the indexing if performed on the attributes.
+    indexed = B()[index]
+    check_broadcastable(indexed.floattensor.shape, expected_shape)
+    check_broadcastable(indexed.child.floattensor.shape, expected_shape)
+    check_broadcastable(indexed.child.rotation.shape, expected_shape)
+    check_broadcastable(indexed.child.shape, expected_shape)
+    check_broadcastable(indexed.shape, expected_shape)
