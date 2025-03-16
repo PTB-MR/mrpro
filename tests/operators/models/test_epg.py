@@ -46,7 +46,7 @@ class EpgFispModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.T
         -------
             Signal of Fisp sequence.
         """
-        parameters = Parameters(m0, t1, t2)
+        parameters = Parameters(m0, t1, t2, b1_relative)
         _, signals = self.sequence(parameters, n_states=self.n_states)
         signal = torch.stack(list(signals), dim=0)
         return (signal,)
@@ -56,7 +56,7 @@ def test_EpgFisp_not_enough_states() -> None:
     """Verify error for less than 2 states."""
     epg_model = EpgFispModel(n_states=1)
     with pytest.raises(ValueError, match='Number of states should be at least 2'):
-        epg_model(torch.ones((1,)), torch.ones((1,)), torch.ones((1,)), None)
+        epg_model(torch.ones((1,)), torch.ones((1,)), torch.ones((1,)), torch.ones((1,)))
 
 
 def test_EpgFisp_parameter_broadcasting() -> None:
@@ -64,8 +64,8 @@ def test_EpgFisp_parameter_broadcasting() -> None:
     te = tr = rf_phases = torch.ones((1,))
     flip_angles = torch.ones((20,))
     epg_model = EpgFispModel(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
-    m0 = t1 = t2 = torch.randn((30,))
-    (epg_signal,) = epg_model.forward(m0, t1, t2, None)
+    m0 = t1 = t2 = b1_relative = torch.randn((30,))
+    (epg_signal,) = epg_model(m0, t1, t2, b1_relative)
     assert epg_signal.shape == (20, 30)
 
 
@@ -91,7 +91,7 @@ def test_EpgFisp_shape(parameter_shape, contrast_dim_shape, signal_shape) -> Non
     relative_b1 = rng.complex64_tensor(parameter_shape)
 
     model_op = EpgFispModel(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
-    (signal,) = model_op.forward(m0, t1, t2, relative_b1)
+    (signal,) = model_op(m0, t1, t2, relative_b1)
     assert signal.shape == signal_shape
 
 
@@ -116,8 +116,9 @@ def test_EpgFisp_inversion_recovery() -> None:
         sequence.append(InversionBlock(inversion_time=ti))
         sequence.append(FispBlock(flip_angles=torch.pi / 2, rf_phases=torch.pi / 2, tr=0.007, te=1e-6))
         sequence.append(DelayBlock(delay_time=40))
-    epg_model = EPGSignalModel(sequence)
-    (epg_signal,) = epg_model(m0, t1, t2, None)
+    parameters = Parameters(m0, t1, t2)
+    _, signals = sequence(parameters)
+    epg_signal = torch.stack(list(signals), dim=0)
 
     torch.testing.assert_close(epg_signal, analytical_signal, rtol=1e-3, atol=1e-3)
 
@@ -143,8 +144,9 @@ def test_EpgFisp_t2_preparation() -> None:
         sequence.append(T2PrepBlock(te=te))
         sequence.append(FispBlock(flip_angles=torch.pi / 2, rf_phases=torch.pi / 2, tr=0.007, te=1e-6))
         sequence.append(DelayBlock(delay_time=40))
-    epg_model = EPGSignalModel(sequence)
-    (epg_signal,) = epg_model(m0, t1, t2, None)
+    parameters = Parameters(m0, t1, t2)
+    _, signals = sequence(parameters)
+    epg_signal = torch.stack(list(signals), dim=0)
 
     torch.testing.assert_close(epg_signal, analytical_signal, rtol=1e-3, atol=1e-3)
 

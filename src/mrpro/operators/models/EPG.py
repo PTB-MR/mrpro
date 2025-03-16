@@ -550,9 +550,10 @@ class DelayBlock(EPGBlock):
         """Duration of the block."""
         return self.delay_time
 
+
 class BlockSequence(torch.nn.ModuleList, EPGBlock):
     def __init__(self, blocks: Sequence[EPGBlock] = ()) -> None:
-        """Initialize an EPG Sequence.
+        """Initialize a sequence of EPG blocks.
 
         Parameters
         ----------
@@ -561,12 +562,13 @@ class BlockSequence(torch.nn.ModuleList, EPGBlock):
         """
         torch.nn.ModuleList.__init__(self, blocks)
 
-    def forward(
-        self, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
+    def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
         """Apply the sequence of blocks to the EPG state.
 
         Parameters
         ----------
+        state
+            EPG configuration states
         parameters
             Tissue parameters
 
@@ -581,6 +583,10 @@ class BlockSequence(torch.nn.ModuleList, EPGBlock):
             signals.extend(signal)
         return state, signals
 
+    @property
+    def duration(self) -> torch.Tensor:
+        """Duration of the block."""
+        return sum(block.duration for block in self)
 
 
 class EPGSequence(torch.nn.ModuleList):
@@ -650,8 +656,8 @@ class EPGSequence(torch.nn.ModuleList):
         parameters
             Tissue parameters
         state
-            EPG configuration states. If ``None``, the equilibrium state (0, 0, 1) will be initialised.
-         n_states
+            EPG configuration states. If ``None``, the equilibrium state (0, 0, 1) will be initialized.
+        n_states
             Number of EPG configuration states. This model uses a fixed number of states for performance reasons.
             Should be large enough to capture the signal dynamics. More states increase the accuracy of the simulation
             but also the computational cost. This will only be used if `state` is ``None``.
@@ -682,7 +688,6 @@ __all__ = [
     'AcquisitionBlock',
     'DelayBlock',
     'EPGSequence',
-    'EPGSignalModel',
     'FispBlock',
     'GradientDephasingBlock',
     'InversionBlock',

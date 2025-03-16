@@ -2,7 +2,15 @@
 
 import torch
 
-from mrpro.operators.models.EPG import DelayBlock, EPGSequence, FispBlock, InversionBlock, Parameters, T2PrepBlock, BlockSequence
+from mrpro.operators.models.EPG import (
+    BlockSequence,
+    DelayBlock,
+    EPGSequence,
+    FispBlock,
+    InversionBlock,
+    Parameters,
+    T2PrepBlock,
+)
 from mrpro.operators.SignalModel import SignalModel
 
 
