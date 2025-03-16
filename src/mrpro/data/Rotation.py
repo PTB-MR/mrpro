@@ -1588,7 +1588,7 @@ class Rotation(torch.nn.Module, Iterable['Rotation'], Indexable):
         angles = (other @ self.inv()).magnitude()
         return (angles < atol) & (self._is_improper == other._is_improper)
 
-    def __getitem__(self, indexer: TorchIndexerType | Indexer) -> Self:
+    def __getitem__(self, indexer: TorchIndexerType) -> Self:
         """Extract rotation(s) at given index(es) from object.
 
         Create a new `Rotation` instance containing a subset of rotations
@@ -1609,14 +1609,11 @@ class Rotation(torch.nn.Module, Iterable['Rotation'], Indexable):
         """
         if self._single:
             raise TypeError('Single rotation is not subscriptable.')
-        if isinstance(indexer, Indexer):
-            quaternions = torch.stack([indexer(q) for q in self._quaternions.unbind(-1)], -1)
-            inversion = indexer(self._is_improper)
-        else:
-            indexer_quat = (*indexer, slice(None)) if isinstance(indexer, tuple) else (indexer, slice(None))
-            quaternions = self._quaternions[indexer_quat]
-            inversion = self._is_improper[indexer]
-        return self.__class__(quaternions, normalize=False, inversion=inversion)
+
+        indexer_quat = (*indexer, slice(None)) if isinstance(indexer, tuple) else (indexer, slice(None))
+        quaternions = self._quaternions[indexer_quat]
+        inversion = self._is_improper[indexer]
+        return type(self)(quaternions, normalize=False, inversion=inversion)
 
     def __iter__(self) -> Iterator[Self]:
         """Provide an explicit iterator."""
@@ -1627,6 +1624,12 @@ class Rotation(torch.nn.Module, Iterable['Rotation'], Indexable):
                 index += 1
             except IndexError:
                 break
+
+    def _index(self, indexer: Indexer) -> Self:
+        """Index using a custom indexer."""
+        quaternions = torch.stack([indexer(q) for q in self._quaternions.unbind(-1)], -1)
+        inversion = indexer(self._is_improper)
+        return type(self)(quaternions, normalize=False, inversion=inversion)
 
     @property
     def quaternion_x(self) -> torch.Tensor:
