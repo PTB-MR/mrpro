@@ -63,13 +63,13 @@ class Dataclass:
 
         if no_new_attributes:
 
-            def new_setattr(self: object, name: str, value: Any) -> None:  # noqa: ANN401
+            def new_setattr(self: Dataclass, name: str, value: Any) -> None:  # noqa: ANN401
                 """Set an attribute."""
                 if not hasattr(self, name) and hasattr(self, '_Dataclass__initialized'):
                     raise AttributeError(f'Cannot set attribute {name} on {self.__class__.__name__}')
                 object.__setattr__(self, name, value)
 
-            cls.__setattr__ = new_setattr  # type: ignore[method-assign]
+            cls.__setattr__ = new_setattr  # type: ignore[method-assign, assignment]
 
         if child_post_init and child_post_init is not Dataclass.__post_init__:
 
