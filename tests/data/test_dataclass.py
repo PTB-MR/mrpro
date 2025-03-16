@@ -4,8 +4,10 @@ from dataclasses import field
 
 import pytest
 import torch
-from mrpro.data import Dataclass, Rotation
+from mrpro.data import Dataclass, Rotation, SpatialDimension
 from typing_extensions import Any
+
+from tests import RandomGenerator
 
 
 class SharedModule(torch.nn.Module):
@@ -287,3 +289,31 @@ def test_dataclass_getitem(index, expected_shape: tuple[int, ...]) -> None:
     check_broadcastable(indexed.child.rotation.shape, expected_shape)
     check_broadcastable(indexed.child.shape, expected_shape)
     check_broadcastable(indexed.shape, expected_shape)
+
+
+def test_dataclass_reducerepeat() -> None:
+    """Test reduction of repeated dimensions."""
+
+    class Container(Dataclass):
+        a: torch.Tensor
+        b: SpatialDimension
+        c: Rotation
+
+    rng = RandomGenerator(10)
+
+    a = rng.float32_tensor((5, 1, 1, 1))
+    a_expanded = a.expand(5, 2, 3, 1)
+
+    b = SpatialDimension(*rng.float32_tensor((3, 1, 1, 3)))
+    b_expanded = SpatialDimension(*[x.expand(1, 2, 3) for x in b.zyx])
+
+    c_matrix = torch.eye(3).reshape(1, 1, 3, 3)
+    c_expanded = Rotation.from_matrix(c_matrix.expand(5, 2, 3, 3))
+
+    test = Container(a_expanded, b_expanded, c_expanded)
+
+    torch.testing.assert_close(test.a, a)
+    torch.testing.assert_close(test.b.z, b.z)
+    torch.testing.assert_close(test.b.y, b.y)
+    torch.testing.assert_close(test.b.x, b.x)
+    torch.testing.assert_close(test.c.as_matrix(), c_matrix)
