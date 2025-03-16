@@ -1,11 +1,10 @@
 """Base class for all dataclasses in the `mrpro` package."""
 
-import abc
 import dataclasses
 from collections.abc import Callable, Iterator
 from copy import copy as shallowcopy
 from copy import deepcopy
-from typing import ClassVar, TypeAlias, cast
+from typing import ClassVar, Protocol, TypeAlias, cast, runtime_checkable
 
 import torch
 from typing_extensions import Any, Self, TypeVar, dataclass_transform, overload
@@ -14,13 +13,11 @@ from mrpro.utils.indexing import Indexer
 from mrpro.utils.typing import DataclassInstance, TorchIndexerType
 
 
-class Indexable(abc.ABC):
-    """Interface for objects that can be indexed."""
+@runtime_checkable
+class Indexable(Protocol):
+    """Objects that can be indexed with an `Indexer`."""
 
-    @abc.abstractmethod
-    def __getitem__(self, index: Indexer) -> Any:  # noqa: ANN401
-        """Index the object."""
-        raise NotImplementedError
+    def _index(self, index: Indexer) -> Self: ...
 
 
 class InconsistentDeviceError(ValueError):
@@ -546,7 +543,8 @@ class Dataclass:
                 indexed.apply_(apply_index, memo=memo, recurse=False)
                 return cast(T, indexed)
             if isinstance(data, Indexable):
-                return cast(T, data[indexer])
+                # Rotation
+                return cast(T, data._index(indexer))
             return cast(T, data)
 
         new = shallowcopy(self)
