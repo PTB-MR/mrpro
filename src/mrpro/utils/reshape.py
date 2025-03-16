@@ -339,8 +339,9 @@ def broadcasted_rearrange(
     tensor: torch.Tensor,
     pattern: str,
     broadcasted_shape: Sequence[int] | None = None,
+    *,
     reduce_views: bool = True,
-    **axes_lengths: dict[str, int],
+    **axes_lengths: int,
 ) -> torch.Tensor:
     """Rearrange a tensor with broadcasting.
 
@@ -370,7 +371,7 @@ def broadcasted_rearrange(
 
     If a tensor has stride-0 dimensions, by default they will be preserved as stride-0
     if possible and not made contiguous, thus saving memory.
-    If `reduce_views` is set to True, then stride-0 dimensions will be reduced to singleton dimensions after rearranging.
+    If `reduce_views` is True, then stride-0 dimensions will be reduced to singleton dimensions after rearranging.
     Optionally performs broadcasting to a specified shape before rearranging.
 
     Parameters
@@ -392,7 +393,7 @@ def broadcasted_rearrange(
     # the broadcast-preservation is done by patching the reshape method of the tensor
     original_reshape, tensor.reshape = tensor.reshape, lambda shape: reshape_broadcasted(tensor, *shape)  # type: ignore[method-assign, assignment]
     new_tensor = einops.repeat(tensor, pattern, **axes_lengths)  # allows both repeat and rearrange
-    tensor.reshape = original_reshape  # undo the patch # type: ignore[method-assign]
+    tensor.reshape = original_reshape  # type: ignore[method-assign]
     if reduce_views:
         new_tensor = reduce_view(new_tensor)
     return new_tensor

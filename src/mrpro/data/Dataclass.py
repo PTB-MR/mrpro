@@ -6,6 +6,7 @@ from copy import copy as shallowcopy
 from copy import deepcopy
 from typing import ClassVar, Protocol, TypeAlias, cast, runtime_checkable
 
+import einops
 import torch
 from typing_extensions import Any, Self, TypeVar, dataclass_transform, overload
 
@@ -27,12 +28,17 @@ class HasIndex(Protocol):
 
 @runtime_checkable
 class HasReduceRepeats(Protocol):
+    """Objects that have a _reduce_repeats method."""
+
     def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None) -> None: ...
 
 
+@runtime_checkable
 class HasBroadcastedRearrange(Protocol):
+    """Objects that have a _broadcasted_rearrange method."""
+
     def _broadcasted_rearrange(
-        self, pattern: str, broadcasted_shape: Sequence[int], reduce_view: bool = True, **axes_lengths
+        self, pattern: str, broadcasted_shape: Sequence[int], reduce_views: bool = True, **axes_lengths
     ) -> Self: ...
 
 
@@ -52,9 +58,6 @@ class InconsistentDeviceError(ValueError):
             The devices of the fields that differ.
         """
         super().__init__(f'Inconsistent devices found, found at least {", ".join(str(d) for d in devices)}')
-
-
-T = TypeVar('T')
 
 
 @dataclass_transform()
@@ -79,13 +82,13 @@ class Dataclass(CheckDataMixin):
 
         if no_new_attributes:
 
-            def new_setattr(self: object, name: str, value: Any) -> None:  # noqa: ANN401
+            def new_setattr(self: Dataclass, name: str, value: Any) -> None:  # noqa: ANN401
                 """Set an attribute."""
                 if not hasattr(self, name) and hasattr(self, '_Dataclass__initialized'):
                     raise AttributeError(f'Cannot set attribute {name} on {self.__class__.__name__}')
                 object.__setattr__(self, name, value)
 
-            cls.__setattr__ = new_setattr  # type: ignore[method-assign]
+            cls.__setattr__ = new_setattr  # type: ignore[method-assign, assignment]
 
         if child_post_init and child_post_init is not Dataclass.__post_init__:
 
@@ -590,7 +593,7 @@ class Dataclass(CheckDataMixin):
 
     # endregion Indexing
 
-    def rearrange(self, pattern: str, **axes_lengths: dict[str, int]) -> Self:
+    def rearrange(self, pattern: str, **axes_lengths: int) -> Self:
         """Rearrange the data according to the specified pattern.
 
         Similar to einops.rearrange, allowing flexible rearrangement of data dimensions.
@@ -621,12 +624,12 @@ class Dataclass(CheckDataMixin):
 
         def apply_rearrange(data: T) -> T:
             def rearrange_tensor(data: torch.Tensor) -> torch.Tensor:
-                return broadcasted_rearrange(data, pattern, shape, True, **axes_lengths)
+                return broadcasted_rearrange(data, pattern, shape, reduce_views=True, **axes_lengths)
 
             if isinstance(data, torch.Tensor):
                 return cast(T, rearrange_tensor(data))
             if isinstance(data, HasBroadcastedRearrange):
-                return cast(T, data._broadcasted_rearrange(data, pattern, shape, True, **axes_lengths))
+                return cast(T, data._broadcasted_rearrange(pattern, shape, reduce_views=True, **axes_lengths))
             elif isinstance(data, Dataclass):
                 return cast(T, shallowcopy(data).apply_(apply_rearrange, memo=memo, recurse=False))
             else:
@@ -634,3 +637,15 @@ class Dataclass(CheckDataMixin):
 
         new = shallowcopy(self)
         return new.apply_(apply_rearrange, memo=memo, recurse=False)
+
+
+class FakeDataclassBackend(einops._backends.AbstractBackend):
+    """Einops backend for Dataclass: Will only raise an error if used."""
+
+    framework_name = 'mrpro'
+
+    def is_appropriate_type(self, x) -> bool:  # noqa: ANN001
+        """Check if the object is a Dataclass."""
+        if isinstance(x, Dataclass):
+            raise NotImplementedError('To use einops with Dataclass, please use the rearrange method of the Dataclass.')
+        return False

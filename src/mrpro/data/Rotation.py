@@ -1643,7 +1643,7 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
             dimensions to try to reduce to singletons. `None` means all.
         """
         if dim is None:
-            quaternion_dim = range(self._quaternions.ndim - 1)
+            quaternion_dim: Sequence[int] = range(self._quaternions.ndim - 1)
         else:
             quaternion_dim = [
                 d - 1 if d < 0 else d for d in dim if d > -self._quaternions.ndim + 1 and d < self._quaternions.ndim - 1
@@ -1652,14 +1652,14 @@ class Rotation(torch.nn.Module, Iterable['Rotation']):
         self._is_improper.data = reduce_repeat(self._is_improper, tol, dim)
 
     def _broadcasted_rearrange(
-        self, pattern: str, broadcasted_shape: Sequence[int], reduce_view: bool = True, **axes_lengths
+        self, pattern: str, broadcasted_shape: Sequence[int], reduce_views: bool = True, **axes_lengths: int
     ) -> Self:
         quaternions = [
-            broadcasted_rearrange(q, pattern, broadcasted_shape, reduce_view, **axes_lengths)
+            broadcasted_rearrange(q, pattern, broadcasted_shape, reduce_views=reduce_views, **axes_lengths)
             for q in self._quaternions.unbind(-1)
         ]
         inversion = broadcasted_rearrange(
-            self._is_improver, pattern, broadcasted_shape=broadcasted_shape, reduce_view=reduce_view, **axes_lengths
+            self._is_improper, pattern, broadcasted_shape=broadcasted_shape, reduce_views=reduce_views, **axes_lengths
         )
         return type(self)(torch.stack(quaternions, -1), False, False, inversion)
 
