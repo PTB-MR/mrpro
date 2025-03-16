@@ -1,13 +1,15 @@
-"""MoveDataMixin."""
+"""Base class for all dataclasses in the `mrpro` package."""
 
 import dataclasses
 from collections.abc import Callable, Iterator
 from copy import copy as shallowcopy
 from copy import deepcopy
-from typing import ClassVar, TypeAlias, cast
+from typing import TypeAlias, cast
 
 import torch
-from typing_extensions import Any, Protocol, Self, TypeVar, overload, runtime_checkable
+from typing_extensions import Any, Self, TypeVar, dataclass_transform, overload
+
+from mrpro.utils.typing import DataclassInstance
 
 
 class InconsistentDeviceError(ValueError):
@@ -28,19 +30,108 @@ class InconsistentDeviceError(ValueError):
         super().__init__(f'Inconsistent devices found, found at least {", ".join(str(d) for d in devices)}')
 
 
-@runtime_checkable
-class DataclassInstance(Protocol):
-    """An instance of a dataclass."""
-
-    __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
-
-
 T = TypeVar('T')
 
 
-class MoveDataMixin:
-    """Move dataclass fields to cpu/gpu and convert dtypes."""
+@dataclass_transform()
+class Dataclass:
+    """A supercharged dataclass with additional functionality.
 
+    This class extends the functionality of the standard `dataclasses.dataclass` by adding
+    - a `apply` method to apply a function to all fields
+    - a `~Dataclass.clone` method to create a deep copy of the object
+    - `~Dataclass.to`, `~Dataclass.cpu`, `~Dataclass.cuda` merhods to move all tensor fields to a device
+
+    It is intended to be used as a base class for all dataclasses in the `mrpro` package.
+    """
+
+    def __init_subclass__(cls, no_new_attributes: bool = True, *args, **kwargs):
+        """Create a new dataclass subclass."""
+        dataclasses.dataclass(cls)
+        super().__init_subclass__(**kwargs)
+        child_post_init = vars(cls).get('__post_init__')
+
+        if no_new_attributes:
+
+            def new_setattr(self, name: str, value: Any) -> None:  # noqa: ANN401
+                """Set an attribute."""
+                if not hasattr(self, name) and hasattr(self, '_Dataclass__initialized'):
+                    raise AttributeError(f'Cannot set attribute {name} on {self.__class__.__name__}')
+                super().__setattr__(name, value)
+
+            cls.__setattr__ = new_setattr  # type: ignore[method-assign]
+
+        if child_post_init and child_post_init is not Dataclass.__post_init__:
+
+            def chained_post_init(self, *args, **kwargs) -> None:
+                child_post_init(self, *args, **kwargs)
+                Dataclass.__post_init__(self)
+
+            cls.__post_init__ = chained_post_init  # type: ignore[method-assign]
+
+    def __post_init__(self) -> None:
+        """Can be overridden in subclasses to add custom initialization logic."""
+        self.__initialized = True
+
+    def apply_(
+        self: Self,
+        function: Callable[[Any], Any] | None = None,
+        *,
+        memo: dict[int, Any] | None = None,
+        recurse: bool = True,
+    ) -> Self:
+        """Apply a function to all children in-place.
+
+        Parameters
+        ----------
+        function
+            The function to apply to all fields. `None` is interpreted as a no-op.
+        memo
+            A dictionary to keep track of objects that the function has already been applied to,
+            to avoid multiple applications. This is useful if the object has a circular reference.
+        recurse
+            If `True`, the function will be applied to all children that are `Dataclass` instances.
+        """
+        applied: Any
+
+        if memo is None:
+            memo = {}
+
+        if function is None:
+            return self
+
+        for name, data in self._items():
+            if id(data) in memo:
+                # this works even if self is frozen
+                object.__setattr__(self, name, memo[id(data)])
+                continue
+            if recurse and isinstance(data, Dataclass):
+                applied = data.apply_(function, memo=memo)
+            else:
+                applied = function(data)
+            memo[id(data)] = applied
+            object.__setattr__(self, name, applied)
+        return self
+
+    def apply(
+        self: Self,
+        function: Callable[[Any], Any] | None = None,
+        *,
+        recurse: bool = True,
+    ) -> Self:
+        """Apply a function to all children. Returns a new object.
+
+        Parameters
+        ----------
+        function
+            The function to apply to all fields. `None` is interpreted as a no-op.
+        recurse
+            If `True`, the function will be applied to all children that are `Dataclass` instances.
+        """
+        new = self.clone().apply_(function, recurse=recurse)
+        return new
+
+    # region Move to device/dtype
     @overload
     def to(
         self,
@@ -83,7 +174,7 @@ class MoveDataMixin:
 
         The conversion will be applied to all Tensor- or Module
         fields of the dataclass, and to all fields that implement
-        the `MoveDataMixin`.
+        the `Dataclass`.
 
         The dtype-type, i.e. float or complex will always be preserved,
         but the precision of floating point dtypes might be changed.
@@ -172,7 +263,7 @@ class MoveDataMixin:
         This method is called by `.to()`, `.cuda()`, `.cpu()`,
         `.double()`, and so on. It should not be called directly.
 
-        See `MoveDataMixin.to()` for more details.
+        See `Dataclass.to()` for more details.
 
         Parameters
         ----------
@@ -225,7 +316,7 @@ class MoveDataMixin:
                 data = deepcopy(data)
             return data._apply(_tensor_to, recurse=True)
 
-        def _mixin_to(obj: MoveDataMixin) -> MoveDataMixin:
+        def _mixin_to(obj: Dataclass) -> Dataclass:
             return obj._to(
                 device=device,
                 dtype=dtype,
@@ -240,7 +331,7 @@ class MoveDataMixin:
             converted: Any  # https://github.com/python/mypy/issues/10817
             if isinstance(data, torch.Tensor):
                 converted = _tensor_to(data)
-            elif isinstance(data, MoveDataMixin):
+            elif isinstance(data, Dataclass):
                 converted = _mixin_to(data)
             elif isinstance(data, torch.nn.Module):
                 converted = _module_to(data)
@@ -251,64 +342,6 @@ class MoveDataMixin:
         # manual recursion allows us to do the copy only once
         new.apply_(_convert, memo=memo, recurse=False)
         return new
-
-    def apply(
-        self: Self,
-        function: Callable[[Any], Any] | None = None,
-        *,
-        recurse: bool = True,
-    ) -> Self:
-        """Apply a function to all children. Returns a new object.
-
-        Parameters
-        ----------
-        function
-            The function to apply to all fields. `None` is interpreted as a no-op.
-        recurse
-            If `True`, the function will be applied to all children that are `MoveDataMixin` instances.
-        """
-        new = self.clone().apply_(function, recurse=recurse)
-        return new
-
-    def apply_(
-        self: Self,
-        function: Callable[[Any], Any] | None = None,
-        *,
-        memo: dict[int, Any] | None = None,
-        recurse: bool = True,
-    ) -> Self:
-        """Apply a function to all children in-place.
-
-        Parameters
-        ----------
-        function
-            The function to apply to all fields. `None` is interpreted as a no-op.
-        memo
-            A dictionary to keep track of objects that the function has already been applied to,
-            to avoid multiple applications. This is useful if the object has a circular reference.
-        recurse
-            If `True`, the function will be applied to all children that are `MoveDataMixin` instances.
-        """
-        applied: Any
-
-        if memo is None:
-            memo = {}
-
-        if function is None:
-            return self
-
-        for name, data in self._items():
-            if id(data) in memo:
-                # this works even if self is frozen
-                object.__setattr__(self, name, memo[id(data)])
-                continue
-            if recurse and isinstance(data, MoveDataMixin):
-                applied = data.apply_(function, memo=memo)
-            else:
-                applied = function(data)
-            memo[id(data)] = applied
-            object.__setattr__(self, name, applied)
-        return self
 
     def cuda(
         self,
@@ -398,12 +431,15 @@ class MoveDataMixin:
         """
         return self._to(dtype=torch.float32, memory_format=memory_format, copy=copy)
 
+    # endregion Move to device/dtype
+
+    # region Properties
     @property
     def device(self) -> torch.device | None:
         """Return the device of the tensors.
 
         Looks at each field of a dataclass implementing a device attribute,
-        such as `torch.Tensor` or `MoveDataMixin` instances. If the devices
+        such as `torch.Tensor` or `Dataclass` instances. If the devices
         of the fields differ, an :py:exc:`~mrpro.data.InconsistentDeviceError` is raised, otherwise
         the device is returned. If no field implements a device attribute,
         None is returned.
@@ -439,7 +475,7 @@ class MoveDataMixin:
         """Return `True` if all tensors are on a single CUDA device.
 
         Checks all tensor attributes of the dataclass for their device,
-        (recursively if an attribute is a `MoveDataMixin`)
+        (recursively if an attribute is a `Dataclass`)
 
 
         Returns `False` if not all tensors are on the same CUDA devices, or if the device is inconsistent,
@@ -458,7 +494,7 @@ class MoveDataMixin:
         """Return True if all tensors are on the CPU.
 
         Checks all tensor attributes of the dataclass for their device,
-        (recursively if an attribute is a `MoveDataMixin`)
+        (recursively if an attribute is a `Dataclass`)
 
         Returns `False` if not all tensors are on cpu or if the device is inconsistent,
         returns `True` if the data class has no tensors as attributes.
@@ -470,3 +506,5 @@ class MoveDataMixin:
         if device is None:
             return True
         return device.type == 'cpu'
+
+    # endregion Properties
