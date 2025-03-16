@@ -40,7 +40,13 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             proton spin density. Magn. Reson. Med. 77 http://doi.wiley.com/10.1002/mrm.26668
     """
 
-    def __init__(self, acquisition_times: torch.Tensor, echo_time: float) -> None:
+    def __init__(
+        self,
+        acquisition_times: torch.Tensor,
+        echo_time: float,
+        repetition_time: float,
+        t2_prep_echo_times: tuple[float, float, float],
+    ) -> None:
         """Initialize the Cardiac MR Fingerprinting signal model.
 
         Parameters
@@ -51,6 +57,10 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             heart rate dependent delays.
         echo_time
             TE in s
+        repetition_time
+            TR in s
+        t2_prep_echo_times
+            Echo times of the three T2 preparation blocks in s
 
         Returns
         -------
@@ -86,15 +96,15 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
                 case 1:
                     pass
                 case 2:
-                    block.append(T2PrepBlock(0.03))
+                    block.append(T2PrepBlock(t2_prep_echo_times[0]))
                 case 3:
-                    block.append(T2PrepBlock(0.05))
+                    block.append(T2PrepBlock(t2_prep_echo_times[1]))
                 case 4:
-                    block.append(T2PrepBlock(0.1))
+                    block.append(T2PrepBlock(t2_prep_echo_times[2]))
             flip_angles = torch.deg2rad(
                 torch.cat((torch.linspace(4, max_flip_angles_deg[i], 16), torch.full((31,), max_flip_angles_deg[i])))
             )
-            block.append(FispBlock(flip_angles, 0.0, tr=0.01, te=echo_time))
+            block.append(FispBlock(flip_angles, 0.0, tr=repetition_time, te=echo_time))
             if i > 0:
                 delay = (block_time[i] - block_time[i - 1]) - block.duration
                 self.sequence.append(DelayBlock(delay))

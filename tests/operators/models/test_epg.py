@@ -154,7 +154,9 @@ def test_EpgFisp_t2_preparation() -> None:
 def test_cmrf_model(parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)) -> None:
     """Test the CMRF model."""
     acquisition_times = torch.linspace(0, 10, 705)
-    cmrf_model = CardiacFingerprinting(acquisition_times=acquisition_times, echo_time=0.05)
+    cmrf_model = CardiacFingerprinting(
+        acquisition_times=acquisition_times, echo_time=0.005, repetition_time=0.01, t2_prep_echo_times=(0.03, 0.05, 0.1)
+    )
     rng = RandomGenerator(0)
     t1 = rng.float32_tensor(parameter_shape, low=1e-5, high=5)
     t2 = rng.float32_tensor(parameter_shape, low=1e-5, high=0.5)
