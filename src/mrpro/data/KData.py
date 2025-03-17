@@ -16,7 +16,7 @@ from typing_extensions import Self, TypeVar
 
 from mrpro.data.acq_filters import has_n_coils, is_image_acquisition
 from mrpro.data.AcqInfo import AcqInfo, convert_time_stamp_osi2, convert_time_stamp_siemens
-from mrpro.data.CheckDataMixin import Annotation, string_to_size
+from mrpro.data.CheckDataMixin import CheckDataMixin, DType, Shape
 from mrpro.data.Dataclass import Dataclass
 from mrpro.data.EncodingLimits import EncodingLimits
 from mrpro.data.enums import AcqFlags
@@ -62,19 +62,17 @@ OTHER_LABELS = (
 )
 
 
-class KData(Dataclass):
+class KData(Dataclass, CheckDataMixin):
     """MR raw data / k-space data class."""
 
-    header: Annotated[KHeader, Annotation(shape='*#other 1 #k2 #k1 1')]
+    header: Annotated[KHeader, Shape('*#other 1 #k2 #k1 1')]
     """Header information for k-space data"""
 
-    data: Annotated[
-        torch.Tensor, Annotation(shape='*#other coils #k2 #k1 #k0', dtype=(torch.complex64, torch.complex128))
-    ]
-    """K-space data. Shape `(*other coils k2 k1 k0)`"""
+    data: Annotated[torch.Tensor, Shape('*#other coils #k2 #k1 #k0'), DType(torch.complex64, torch.complex128)]
+    """K-space data."""
 
-    traj: Annotated[KTrajectory, Annotation(shape='*#other 1 #k2 #k1 #k0')]
-    """K-space trajectory along kz, ky and kx. Shape `(*other k2 k1 k0)`"""
+    traj: Annotated[KTrajectory, Shape('*#other 1 #k2 #k1 #k0')]
+    """K-space trajectory along kz, ky and kx."""
 
     @classmethod
     def from_file(
@@ -265,13 +263,6 @@ class KData(Dataclass):
     def dtype(self) -> torch.dtype:
         """Data type of the k-space data."""
         return self.data.dtype
-
-    @property
-    def shape(self) -> torch.Size:
-        """Return shape of the KData object."""
-        if not hasattr(self, '_memo'):
-            self.check_invariants()
-        return torch.Size(string_to_size('*#other coils #k2 #k1 #k0', self._memo))
 
     def reshape_by_idx(self) -> Self:
         """Sort and reshape according to the acquisistion indices.

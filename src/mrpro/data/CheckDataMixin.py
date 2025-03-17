@@ -1,7 +1,7 @@
 """Dtype and shape checking for dataclasses."""
 
 import weakref
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, fields
 from functools import lru_cache, reduce
 from types import TracebackType, UnionType
@@ -90,7 +90,7 @@ def string_to_shape_specification(dim_str: str) -> tuple[tuple[_DimType, ...], i
         raise SpecificationError('Shape specification must be a string.')
     dims: list[_DimType] = []
     index_variadic = None
-    for index, elem in enumerate(dim_str.split()):
+    for index, elem in enumerate(dim_str.replace(',', ' ').split()):
         if '...' in elem:
             if elem != '...':
                 raise SpecificationError(f"Anonymous multiple axes '...' must be used on its own; got {elem}")
@@ -105,7 +105,9 @@ def string_to_shape_specification(dim_str: str) -> tuple[tuple[_DimType, ...], i
         variadic = '*' in prefix
         anonymous = '_' in prefix
         elem = elem.split('=')[-1]
-        fixed = len(elem) != 0 and not elem.isidentifier()
+        fixed = elem.isnumeric()
+        if elem and not (fixed or elem.isidentifier()):
+            raise SpecificationError(f'Specifier {elem} is invalid. Must be valid identifier or number.')
 
         if fixed:
             dims.append(_FixedDim(elem, broadcastable))
@@ -378,25 +380,69 @@ class HasShapeAndDtype(HasDtype, HasShape):
 
 @dataclass(slots=True, init=False, frozen=True)
 class Annotation:
-    """A shape and dtype annotation for a tensor-like object."""
+    """An annotation for runtime checking properties."""
 
-    dtype: tuple[torch.dtype, ...] | None
+
+@dataclass(slots=True, init=False, frozen=True)
+class DType(Annotation):
+    """A dtype annotation for a tensor-like object."""
+
+    allowed_dtypes: tuple[torch.dtype, ...]
     """The acceptable dtype(s) for the object."""
 
-    shape: tuple[_DimType, ...] | None
-    """The parsed shape specification."""
-
-    index_variadic: int | None
-    """The index of the variadic dimension in the shape specification if one exists; otherwise, `None`."""
-
-    def __init__(self, dtype: torch.dtype | Sequence[torch.dtype] | None = None, shape: str | None = None) -> None:
-        """Initialize the annotation.
+    def __init__(self, *dtype: torch.dtype) -> None:
+        """Initialize the DType annotation.
 
         Parameters
         ----------
         dtype
             the acceptable dtype(s) for the object
-        shape
+        """
+        if not dtype:
+            raise SpecificationError('At least one dtype should be allowed')
+        object.__setattr__(self, 'allowed_dtypes', dtype)
+
+    def check(self, obj: object, /, *, strict: bool = False) -> None:
+        """Raise a DtypeError if the object does not have the expected dtype.
+
+        Parameters
+        ----------
+        obj
+            the object to check
+        strict
+            if true, raise a TypeError is the object does not have a dtype attribute
+        """
+        if not isinstance(obj, HasDtype):
+            if strict:
+                raise TypeError('this object does not have a dtype attribute')
+            return
+        if obj.dtype not in self.allowed_dtypes:
+            raise DtypeError(
+                f'this object has dtype {obj.dtype}, not any of {self.allowed_dtypes} as expected by the type hint'
+            )
+
+
+@dataclass(slots=True, init=False, frozen=True)
+class Shape(Annotation):
+    """A shape and dtype annotation for a tensor-like object."""
+
+    shape: tuple[_DimType, ...]
+    """The parsed shape specification."""
+
+    index_variadic: int | None
+    """The index of the variadic dimension in the shape specification if one exists; otherwise, `None`."""
+
+    @property
+    def shape_specification(self) -> str:
+        """Get a string representation of the shape specification."""
+        return shape_specification_to_string(self.shape)
+
+    def __init__(self, specification: str) -> None:
+        """Initialize the annotation.
+
+        Parameters
+        ----------
+        specification
             a string representation of the shape of the object.
             The string should be a space-separated list of dimensions.
             Each dimension can either be a fixed integer size (`5`) or a named dimension (`batch`),
@@ -417,49 +463,16 @@ class Annotation:
                 using the same memoization object, their shape as to be broadcastable.
             For more information, see `jaxtyping <https://docs.kidger.site/jaxtyping/api/array/>`__
         """
-        if shape is not None:
-            parsed_shape, index_variadic = string_to_shape_specification(shape)
-        else:
-            parsed_shape = None
-            index_variadic = None
+        parsed_shape, index_variadic = string_to_shape_specification(specification)
         object.__setattr__(self, 'shape', parsed_shape)
         object.__setattr__(self, 'index_variadic', index_variadic)
 
-        if dtype is not None:
-            if isinstance(dtype, Sequence):
-                dtype = tuple(dtype)
-            else:
-                dtype = (dtype,)
-        else:
-            dtype = None
-        object.__setattr__(self, 'dtype', dtype)
-
-    def assert_dtype(self, obj: HasDtype) -> None:
-        """Raise a DtypeError if the object does not have the expected dtype.
-
-        Parameters
-        ----------
-        obj
-            the object to check
-        """
-        if self.dtype is None:
-            return
-        if not hasattr(obj, 'dtype'):
-            raise TypeError('this object does not have a dtype attribute')
-        if obj.dtype not in self.dtype:
-            raise DtypeError(f'this object has dtype {obj.dtype}, not any of {self.dtype} as expected by the type hint')
-
     def __repr__(self) -> str:
         """Get a string representation of the annotation."""
-        arguments = []
-        if self.shape is not None:
-            arguments.append(f"shape='{shape_specification_to_string(self.shape)}'")
-        if self.dtype is not None:
-            arguments.append(f'dtype={self.dtype}')
-        representation = f'Annotation({", ".join(arguments)})'
+        representation = f'Shape(specification={self.shape_specification})'
         return representation
 
-    def assert_shape(self, obj: HasShape, memo: ShapeMemo | None = None) -> None | ShapeMemo:
+    def check(self, obj: object, /, *, memo: ShapeMemo | None = None, strict: bool = False) -> None | ShapeMemo:
         """Raise a ShapeError if the object does not have the expected shape.
 
         Parameters
@@ -469,6 +482,8 @@ class Annotation:
         memo
             a memoization object storing the shape of named dimensions from
             previous checks. Will not be modified.
+        strict
+            if true, raise a TypeError if the object does not have a shape attribute
 
         Returns
         -------
@@ -476,12 +491,12 @@ class Annotation:
             a new memoization object storing the shape of named dimensions from
             previous and the current check.
         """
-        if self.shape is None:
+        if not isinstance(obj, HasShape):
+            if strict:
+                raise TypeError('this object does not have a shape attribute')
             return memo
-        if not hasattr(obj, 'shape'):
-            raise TypeError('this object does not have a shape attribute')
-        if memo is None:
-            memo = ShapeMemo()
+
+        memo_ = ShapeMemo() if memo is None else memo
         if self.index_variadic is None:
             # no variadic dimension
             if len(obj.shape) != len(self.shape):
@@ -489,8 +504,8 @@ class Annotation:
                     f'this array has {len(obj.shape)} dimensions, not the {len(self.shape)} expected by the type hint'
                 )
             for dim, size in zip(self.shape, obj.shape, strict=False):
-                memo = _check_dim(memo, dim, size)
-            return memo
+                memo_ = _check_dim(memo_, dim, size)
+            return memo_
         if len(obj.shape) < len(self.shape) - 1:
             raise ShapeError(
                 f'this array has {len(obj.shape)} dimensions, which is fewer than {len(self.shape) - 1} '
@@ -501,64 +516,26 @@ class Annotation:
         post_variadic_shape = obj.shape[index_variadic_end:]
 
         for dim, size in zip(self.shape[: self.index_variadic], pre_variadic_shape, strict=False):
-            memo = _check_dim(memo, dim, size)  # dims before variadic
+            memo_ = _check_dim(memo_, dim, size)  # dims before variadic
         for dim, size in zip(self.shape[self.index_variadic + 1 :], post_variadic_shape, strict=False):
-            memo = _check_dim(memo, dim, size)  # dims after variadic
+            memo_ = _check_dim(memo_, dim, size)  # dims after variadic
 
         variadic_dim = self.shape[self.index_variadic]
         variadic_shape = obj.shape[self.index_variadic : index_variadic_end]
 
         if variadic_dim == _anonymous_variadic_dim:
             # no need to check an anonymous variadic dimension further
-            return memo
+            return memo_
         assert isinstance(variadic_dim, _NamedVariadicDim)  # noqa:S101 # mypy hint
-        memo = _check_named_variadic_dim(memo, variadic_dim, variadic_shape)
-        return memo
-
-    def check(self, obj: object, /, strict: bool = False, memo: ShapeMemo | None = None) -> ShapeMemo | None:
-        """Check that an object satisfies the type hint.
-
-        Parameters
-        ----------
-        obj
-            the object to check
-        strict
-            if False, only check the shape if the object has a shape attribute
-            and only check the dtype if the object has a dtype attribute
-            if True, raise an Exception if the type hint specifies a dtype or shape
-            but the object does not have the corresponding attribute
-        memo
-            a memoization object storing the shape of named dimensions from
-            previous checks. Will not be modified.
-
-        Returns
-        -------
-        memo
-            a new memoization object storing the shape of named dimensions from
-            previous and the current check.
-
-        """
-        if self.dtype is not None:
-            if isinstance(obj, HasDtype):
-                self.assert_dtype(obj)
-            elif strict:
-                raise SpecificationError('this object does not have a dtype attribute')
-        if self.shape is not None:
-            if isinstance(obj, HasShape):
-                memo = self.assert_shape(obj, memo)
-            elif strict:
-                raise SpecificationError('this object does not have a shape attribute')
-        return memo
-
-
-SpecialTensor = Annotated[torch.Tensor, Annotation(dtype=(torch.float32, torch.float64), shape='*#other 1 #k2 #k1 1')]
+        memo_ = _check_named_variadic_dim(memo_, variadic_dim, variadic_shape)
+        return memo_
 
 
 class CheckDataMixin(DataclassInstance):
     """A Mixin to provide shape and dtype checking to dataclasses.
 
     If fields in the dataclass are hinted with an annotated type, for example
-    `Annotated[torch.Tensor, Annotation(dtype=(torch.float32, torch.float64), shape='*#other 1 #k2 #k1 1')]`
+    `Annotated[torch.Tensor, DType(torch.float32, torch.float64), Shape('*#other 1 #k2 #k1 1')]`
     dtype and shape of the field will be checked after creation and whenever `check_invariants `is called.
 
     To pass the checks the following have rules have to be followed by each field:
@@ -747,8 +724,10 @@ def runtime_check(value: object, type_hint: type | str | UnionType, memo: ShapeM
         type_hint, *annotations = get_args(type_hint)
         memo = runtime_check(value, type_hint, memo)
         for annotation in annotations:
-            if isinstance(annotation, Annotation):  # there might be other annotations
+            if isinstance(annotation, Shape):
                 memo = annotation.check(value, memo=memo)
+            if isinstance(annotation, DType):
+                annotation.check(value)
         return memo
     if not isinstance(type_hint, type):
         raise TypeError(f'Expected a type, got {type(type_hint)}')

@@ -9,6 +9,8 @@ import numpy as np
 import torch
 from typing_extensions import Self
 
+from mrpro.data.CheckDataMixin import CheckDataMixin, DType, Shape
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.CheckDataMixin import Annotation, string_to_size
 from mrpro.data.Dataclass import Dataclass
 from mrpro.data.Rotation import Rotation
@@ -53,24 +55,19 @@ def _float_factory() -> torch.Tensor:
 
 def _position_factory() -> SpatialDimension[torch.Tensor]:
     return SpatialDimension(
-        torch.zeros(1, 1, 1, 1, 1, dtype=torch.float),
-        torch.zeros(1, 1, 1, 1, 1, dtype=torch.float),
-        torch.zeros(1, 1, 1, 1, 1, dtype=torch.float),
+        z=torch.zeros(1, 1, 1, 1, 1, dtype=torch.float),
+        y=torch.zeros(1, 1, 1, 1, 1, dtype=torch.float),
+        x=torch.zeros(1, 1, 1, 1, 1, dtype=torch.float),
     )
 
 
-IntTensor: TypeAlias = Annotated[
-    torch.Tensor, Annotation(shape='*#other 1 #k2 #k1 1', dtype=(torch.int32, torch.int64))
-]
-FloatTensor: TypeAlias = Annotated[
-    torch.Tensor, Annotation(shape='*#other 1 #k2 #k1 1', dtype=(torch.float32, torch.float64))
-]
-Float64Tensor: TypeAlias = Annotated[torch.Tensor, Annotation(shape='*#other 1 #k2 #k1 1', dtype=torch.float64)]
-SpatialDimensionTensor: TypeAlias = Annotated[SpatialDimension[torch.Tensor], Annotation(shape='*#other 1 #k2 #k1 1')]
-ShapeAnnotation = Annotation(shape='*#other 1 #k2 #k1 1')
+IntTensor: TypeAlias = Annotated[torch.Tensor, Shape('*#other 1 #k2 #k1 1'), DType(torch.int32, torch.int64)]
+FloatTensor: TypeAlias = Annotated[torch.Tensor, Shape('*#other 1 #k2 #k1 1'), DType(torch.float32, torch.float64)]
+Float64Tensor: TypeAlias = Annotated[torch.Tensor, Shape('*#other 1 #k2 #k1 1'), DType(torch.float64)]
+SpatialDimensionTensor: TypeAlias = Annotated[SpatialDimension[torch.Tensor], Shape('*#other 1 #k2 #k1 1')]
 
 
-class AcqIdx(Dataclass):
+class AcqIdx(Dataclass, CheckDataMixin):
     """Acquisition index for each readout."""
 
     k1: IntTensor = field(default_factory=_int_factory)
@@ -124,15 +121,8 @@ class AcqIdx(Dataclass):
     user7: IntTensor = field(default_factory=_int_factory)
     """User index 7."""
 
-    @property
-    def shape(self) -> torch.Size:
-        """Return shape of the KData object."""
-        if not hasattr(self, '_memo'):
-            self.check_invariants()
-        return torch.Size(string_to_size('*#other 1 #k2 #k1 1', self._memo))
 
-
-class UserValues(Dataclass):
+class UserValues(Dataclass, CheckDataMixin):
     """User Values used in AcqInfo."""
 
     float1: FloatTensor = field(default_factory=_float_factory)
@@ -152,33 +142,19 @@ class UserValues(Dataclass):
     int7: IntTensor = field(default_factory=_int_factory)
     int8: IntTensor = field(default_factory=_int_factory)
 
-    @property
-    def shape(self) -> torch.Size:
-        """Return shape of the KData object."""
-        if not hasattr(self, '_memo'):
-            self.check_invariants()
-        return torch.Size(string_to_size('*#other 1 #k2 #k1 1', self._memo))
 
-
-class PhysiologyTimestamps(Dataclass):
+class PhysiologyTimestamps(Dataclass, CheckDataMixin):
     """Time stamps relative to physiological triggering, e.g. ECG, in seconds."""
 
-    timestamp1: FloatTensor = field(default_factory=_float_factory)
-    timestamp2: FloatTensor = field(default_factory=_float_factory)
-    timestamp3: FloatTensor = field(default_factory=_float_factory)
-
-    @property
-    def shape(self) -> torch.Size:
-        """Return shape of the KData object."""
-        if not hasattr(self, '_memo'):
-            self.check_invariants()
-        return torch.Size(string_to_size('*#other 1 #k2 #k1 1', self._memo))
+    timestamp1: Float64Tensor = field(default_factory=_float_factory)
+    timestamp2: Float64Tensor = field(default_factory=_float_factory)
+    timestamp3: Float64Tensor = field(default_factory=_float_factory)
 
 
-class AcqInfo(Dataclass):
+class AcqInfo(Dataclass, CheckDataMixin):
     """Acquisition information for each readout."""
 
-    idx: Annotated[AcqIdx, ShapeAnnotation] = field(default_factory=AcqIdx)
+    idx: Annotated[AcqIdx, Shape('*#other 1 #k2 #k1 1')] = field(default_factory=AcqIdx)
     """Indices describing acquisitions (i.e. readouts)."""
 
     acquisition_time_stamp: Float64Tensor = field(default_factory=_float_factory)
@@ -187,7 +163,7 @@ class AcqInfo(Dataclass):
     flags: IntTensor = field(default_factory=_int_factory)
     """A bit mask of common attributes applicable to individual acquisition readouts."""
 
-    orientation: Annotated[Rotation, ShapeAnnotation] = field(
+    orientation: Annotated[Rotation, Shape('*#other 1 #k2 #k1 1')] = field(
         default_factory=lambda: Rotation.identity((1, 1, 1, 1, 1))
     )
     """Rotation describing the orientation of the readout, phase and slice encoding direction."""
@@ -195,7 +171,7 @@ class AcqInfo(Dataclass):
     patient_table_position: SpatialDimensionTensor = field(default_factory=_position_factory)
     """Offset position of the patient table, in LPS coordinates [m]."""
 
-    physiology_time_stamps: Annotated[PhysiologyTimestamps, ShapeAnnotation] = field(
+    physiology_time_stamps: Annotated[PhysiologyTimestamps, Shape('*#other 1 #k2 #k1 1')] = field(
         default_factory=PhysiologyTimestamps
     )
     """Time stamps relative to physiological triggering, e.g. ECG [s]."""
@@ -206,7 +182,7 @@ class AcqInfo(Dataclass):
     sample_time_us: IntTensor = field(default_factory=_float_factory)
     """Readout bandwidth, as time between samples [us]."""
 
-    user: Annotated[UserValues, ShapeAnnotation] = field(default_factory=UserValues)
+    user: Annotated[UserValues, Shape('*#other 1 #k2 #k1 1')] = field(default_factory=UserValues)
     """User defined float or int values"""
 
     @overload
@@ -354,10 +330,3 @@ class AcqInfo(Dataclass):
         else:
             additional_values = tuple(tensor_5d(headers[field]) for field in additional_fields)
             return acq_info, additional_values
-
-    @property
-    def shape(self) -> torch.Size:
-        """Return shape of the KData object."""
-        if not hasattr(self, '_memo'):
-            self.check_invariants()
-        return torch.Size(string_to_size('*#other 1 #k2 #k1 1', self._memo))
