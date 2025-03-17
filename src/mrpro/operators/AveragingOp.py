@@ -18,7 +18,7 @@ class AveragingOp(LinearOperator):
     the average of the elements in that group is computed.
 
     For example, this operator can be used to simulate the effect of a sliding window average
-    in a signal model.
+    on a signal model.
     """
 
     def __init__(
