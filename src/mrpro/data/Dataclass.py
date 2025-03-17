@@ -14,7 +14,7 @@ from mrpro.utils.typing import DataclassInstance, TorchIndexerType
 
 
 @runtime_checkable
-class Indexable(Protocol):
+class HasIndex(Protocol):
     """Objects that can be indexed with an `Indexer`."""
 
     def _index(self, index: Indexer) -> Self: ...
@@ -542,7 +542,7 @@ class Dataclass:
                 indexed = shallowcopy(data)
                 indexed.apply_(apply_index, memo=memo, recurse=False)
                 return cast(T, indexed)
-            if isinstance(data, Indexable):
+            if isinstance(data, HasIndex):
                 # Rotation
                 return cast(T, data._index(indexer))
             return cast(T, data)
