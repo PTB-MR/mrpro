@@ -56,7 +56,6 @@ from einops._backends import AbstractBackend
 from scipy._lib._util import check_random_state
 from typing_extensions import Self, Unpack, overload
 
-from mrpro.data.Dataclass import HasIndex
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils import reduce_repeat
 from mrpro.utils.indexing import Indexer
@@ -382,7 +381,7 @@ def _axisangle_to_matrix(axis: torch.Tensor, angle: torch.Tensor) -> torch.Tenso
     return matrix
 
 
-class Rotation(torch.nn.Module, Iterable['Rotation'], HasIndex):
+class Rotation(torch.nn.Module, Iterable['Rotation']):
     """A container for Rotations.
 
     A pytorch implementation of scipy.spatial.transform.Rotation.
