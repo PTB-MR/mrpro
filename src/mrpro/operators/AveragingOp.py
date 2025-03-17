@@ -61,7 +61,7 @@ class AveragingOp(LinearOperator):
         """Apply the adjoint of the averaging operator to the input tensor."""
         if self.domain_size is None:
             if self._last_domain_size is None:
-                raise ValueError('Domain size is not set. Please set it explicitly.')
+                raise ValueError('Domain size is not set. Please set it explicitly or run forward first.')
             warn(
                 'Domain size is not set. Guessing the last used input size of the forward pass. '
                 'Consider setting the domain size explicitly.',
