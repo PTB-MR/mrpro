@@ -74,28 +74,28 @@ class EncodingLimits:
     segment: Limits = field(default_factory=Limits)
     """Segments of segmented acquisition."""
 
-    user_0: Limits = field(default_factory=Limits)
+    user0: Limits = field(default_factory=Limits)
     """User index 0."""
 
-    user_1: Limits = field(default_factory=Limits)
+    user1: Limits = field(default_factory=Limits)
     """User index 1."""
 
-    user_2: Limits = field(default_factory=Limits)
+    user2: Limits = field(default_factory=Limits)
     """User index 2."""
 
-    user_3: Limits = field(default_factory=Limits)
+    user3: Limits = field(default_factory=Limits)
     """User index 3."""
 
-    user_4: Limits = field(default_factory=Limits)
+    user4: Limits = field(default_factory=Limits)
     """User index 4."""
 
-    user_5: Limits = field(default_factory=Limits)
+    user5: Limits = field(default_factory=Limits)
     """User index 5."""
 
-    user_6: Limits = field(default_factory=Limits)
+    user6: Limits = field(default_factory=Limits)
     """User index 6."""
 
-    user_7: Limits = field(default_factory=Limits)
+    user7: Limits = field(default_factory=Limits)
     """User index 7."""
 
     @classmethod
@@ -138,5 +138,13 @@ class EncodingLimits:
         values['k0'] = values.pop('kspace_encoding_step_0')
         values['k1'] = values.pop('kspace_encoding_step_1')
         values['k2'] = values.pop('kspace_encoding_step_2')
+        values['user0'] = values.pop('user_0')
+        values['user1'] = values.pop('user_1')
+        values['user2'] = values.pop('user_2')
+        values['user3'] = values.pop('user_3')
+        values['user4'] = values.pop('user_4')
+        values['user5'] = values.pop('user_5')
+        values['user6'] = values.pop('user_6')
+        values['user7'] = values.pop('user_7')
 
         return cls(**values)
