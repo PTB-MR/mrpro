@@ -80,6 +80,7 @@ class DicomTestImage:
         self.phantom = phantom
         self.series_description = series_description
         self.series_instance_uid = pydicom.uid.generate_uid() if series_instance_uid is None else series_instance_uid
+        dt = datetime.datetime.now(datetime.timezone.utc)
 
         # Create image
         img_dimension = SpatialDimension(z=1, y=matrix_size_y, x=matrix_size_x)
@@ -103,8 +104,8 @@ class DicomTestImage:
         dataset.PatientSex = 'O'
         dataset.Modality = 'MR'
         dataset.StudyDescription = 'MRpro'
-        dataset.SeriesDate = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d')
-        dataset.SeriesTime = datetime.datetime.now(datetime.timezone.utc).strftime('%H%M%S.%f')
+        dataset.SeriesDate = dt.strftime('%Y%m%d')
+        dataset.SeriesTime = dt.strftime('%H%M%S.%f')
         dataset.SeriesDescription = series_description
         dataset.SeriesInstanceUID = self.series_instance_uid
 
@@ -142,6 +143,7 @@ class DicomTestImage:
             dataset.NumberOfFrames = n_slices
             dataset.PerFrameFunctionalGroupsSequence = pydicom.Sequence()
 
+            frame_time_spacing_s = datetime.timedelta(seconds=0.6)
             plane_position_sequence = pydicom.Sequence()
             plane_position_sequence.append(pydicom.Dataset())
             plane_orientation_sequence = pydicom.Sequence()
@@ -155,6 +157,11 @@ class DicomTestImage:
 
             for slice_idx in range(n_slices):
                 dataset.PerFrameFunctionalGroupsSequence.append(pydicom.Dataset())
+
+                dataset.PerFrameFunctionalGroupsSequence[-1].InStackPositionNumber = slice_idx + 1
+                dataset.PerFrameFunctionalGroupsSequence[-1].FrameReferenceDateTime = (
+                    dt + frame_time_spacing_s * slice_idx
+                )
 
                 plane_position_sequence[0].ImagePositionPatient = (
                     patient_position + slice_direction * self.slice_offset[slice_idx].numpy()
@@ -174,6 +181,7 @@ class DicomTestImage:
                 dataset.PerFrameFunctionalGroupsSequence[-1].PixelMeasuresSequence = deepcopy(pixel_measure_sequence)
 
                 mr_timing_parameters_sequence[0].FlipAngle = 15.0
+                mr_timing_parameters_sequence[0].InversionTime = 3.0
                 mr_timing_parameters_sequence[0].RepetitionTime = 25.2
                 mr_timing_parameters_sequence[0].TriggerTime = s_to_ms(self.time_after_rpeak)
                 dataset.PerFrameFunctionalGroupsSequence[-1].MRTimingAndRelatedParametersSequence = deepcopy(
@@ -187,11 +195,14 @@ class DicomTestImage:
             dataset.ImagePositionPatient = (patient_position + slice_direction * self.slice_offset.numpy()).tolist()
             dataset.ImageOrientationPatient = [*readout_direction, *phase_direction]
             dataset.EchoTime = s_to_ms(self.te)
+            dataset.InversionTime = 3.0
             dataset.TriggerTime = s_to_ms(self.time_after_rpeak)
             dataset.PixelSpacing = [inplane_resolution, inplane_resolution]
             dataset.SliceThickness = slice_thickness
+            dataset.InStackPositionNumber = 1
             dataset.FlipAngle = 15.0
             dataset.RepetitionTime = 25.2
+            dataset.FrameReferenceDateTime = dt
 
         dataset.PixelData = (
             repeat(self.img_ref, 'x y -> slices x y', slices=n_slices).numpy().astype(np.uint16).tobytes()

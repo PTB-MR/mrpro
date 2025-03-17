@@ -1,6 +1,7 @@
 """MR image data header (IHeader) dataclass."""
 
 import dataclasses
+import re
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, time
@@ -25,6 +26,26 @@ from mrpro.utils.unit_conversion import deg_to_rad, mm_to_m, ms_to_s
 
 def _int_factory() -> torch.Tensor:
     return torch.zeros(1, 1, 1, 1, 1, dtype=torch.int64)  # other, coil, z, y, x
+
+
+def parse_datetime(datetime_str: str) -> datetime:
+    """Parse datetime string with or without timezone information.
+
+    Parameters
+    ----------
+    datetime_str
+        Datetime string which may has timezone information.
+
+    Returns
+    -------
+        Datetime
+    """
+    # Check if the string has a timezone (e.g., "+0000", "-0800", "Z")
+    if re.search(r'([+-]\d{2}:?\d{2}|Z)$', datetime_str):
+        dt = datetime.strptime(datetime_str, '%Y%m%d%H%M%S.%f%z')
+        return dt.replace(tzinfo=None)  # Remove timezone info
+    else:
+        return datetime.strptime(datetime_str, '%Y%m%d%H%M%S.%f')
 
 
 T = TypeVar('T')
@@ -327,7 +348,7 @@ class IHeader(MoveDataMixin):
                 header.position = position
 
         # Calculate acquisition time stamps in s according to the reference time 0:00 am
-        frame_time_dt = get_items(dataset, 'FrameReferenceDateTime', lambda x: datetime.strptime(x, '%Y%m%d%H%M%S.%f'))
+        frame_time_dt = get_items(dataset, 'FrameReferenceDateTime', parse_datetime)
         if frame_time_dt:
             t0 = datetime.combine(frame_time_dt[0].date(), time(0, 0))
             header.acquisition_time_stamp = torch.tensor([(ft - t0).total_seconds() for ft in frame_time_dt])
@@ -337,6 +358,7 @@ class IHeader(MoveDataMixin):
 
         # The in stack position accounts for the slice position for multi-file data with cardiac phases,
         # as well as for single file dicom with multiple slices. Index is reduced by 1 to start indexing at 0.
+        # ToDO: Reshape indices?
         if phase_idx := get_items(dataset, 'TemporalPositionIndex', int):
             header.idx.phase = torch.tensor(phase_idx) - 1
         if slice_idx := get_items(dataset, 'InStackPositionNumber', int):
