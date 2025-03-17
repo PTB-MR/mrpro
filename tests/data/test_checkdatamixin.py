@@ -4,10 +4,11 @@ from typing import Annotated, Optional, Union
 import pytest
 import torch
 from mrpro.data.CheckDataMixin import (
-    Annotation,
     CheckDataMixin,
+    DType,
     DtypeError,
     RuntimeCheckError,
+    Shape,
     ShapeError,
     ShapeMemo,
     SpecificationError,
@@ -33,10 +34,8 @@ def tuple_to_regex(t: tuple) -> str:
 class CheckedDataClass(CheckDataMixin):
     """A test dataclass."""
 
-    float_tensor: Annotated[
-        torch.Tensor, Annotation(dtype=(torch.float32, torch.float64), shape='*#other coil #k2 #k1 #k0')
-    ]
-    int_tensor: Annotated[torch.Tensor, Annotation(dtype=torch.int, shape='*#other #coil=1 #k2 #k1 k0=1')]
+    float_tensor: Annotated[torch.Tensor, DType(torch.float32, torch.float64), Shape('*#other coil #k2 #k1 #k0')]
+    int_tensor: Annotated[torch.Tensor, DType(torch.int), Shape('*#other #coil=1 #k2 #k1 k0=1')]
     string: str
 
 
@@ -44,15 +43,15 @@ class CheckedDataClass(CheckDataMixin):
 class Slots(CheckDataMixin):
     """A test dataclass with slots"""
 
-    tensor1: Annotated[torch.Tensor, Annotation(shape='dim')]
-    tensor2: Annotated[torch.Tensor, Annotation(shape='... _ 5 dim')]
+    tensor1: Annotated[torch.Tensor, Shape('dim')]
+    tensor2: Annotated[torch.Tensor, Shape('... _ 5 dim')]
 
 
 @dataclass(frozen=True)
 class Frozen(CheckDataMixin):
     """A frozen test dataclass"""
 
-    tensor1: Annotated[torch.Tensor, Annotation(dtype=(torch.float32,))]
+    tensor1: Annotated[torch.Tensor, DType(torch.float32)]
 
 
 @dataclass
@@ -61,25 +60,24 @@ class WithOptional(CheckDataMixin):
 
     tensor: torch.Tensor | None = None
     or_tensor: Annotated[
-        torch.Tensor | None, Annotation(dtype=(torch.float32, torch.float64), shape='*#other coil #k2 #k1 #k0')
+        torch.Tensor | None, DType(torch.float32, torch.float64), Shape('*#other coil #k2 #k1 #k0')
     ] = None
     optional_tensor: Annotated[
-        Optional[torch.Tensor], Annotation(dtype=(torch.float32, torch.float64), shape='*#other coil #k2 #k1 #k0')  # noqa: UP007
+        Optional[torch.Tensor], DType(torch.float32, torch.float64), Shape('*#other coil #k2 #k1 #k0')  # noqa: UP007
     ] = None
     union_tensor: Annotated[
-        Union[None, torch.Tensor], Annotation(dtype=(torch.float32, torch.float64), shape='*#other coil #k2 #k1 #k0')  # noqa: UP007
+        Union[None, torch.Tensor], DType(torch.float32, torch.float64), Shape('*#other coil #k2 #k1 #k0')  # noqa: UP007
     ] = None
     integer: int | None = None
     outer_or_tensor: (
-        Annotated[torch.Tensor, Annotation(dtype=(torch.float32, torch.float64), shape='*#other coil #k2 #k1 #k0')]
-        | None
+        Annotated[torch.Tensor, DType(torch.float32, torch.float64), Shape('*#other coil #k2 #k1 #k0')] | None
     ) = None
     outer_optional_tensor: Optional[  # noqa: UP007
-        Annotated[torch.Tensor, Annotation(dtype=(torch.float32, torch.float64), shape='*#other coil #k2 #k1 #k0')]
+        Annotated[torch.Tensor, DType(torch.float32, torch.float64), Shape('*#other coil #k2 #k1 #k0')]
     ] = None
     outer_union_tensor: Union[  # noqa: UP007
         None,
-        Annotated[torch.Tensor, Annotation(dtype=(torch.float32, torch.float64), shape='*#other coil #k2 #k1 #k0')],
+        Annotated[torch.Tensor, DType(torch.float32, torch.float64), Shape('*#other coil #k2 #k1 #k0')],
     ] = None
 
 

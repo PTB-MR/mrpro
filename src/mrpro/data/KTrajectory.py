@@ -1,14 +1,14 @@
 """KTrajectory dataclass."""
 
 from collections.abc import Callable
-from typing import Literal
+from typing import Annotated, Literal
 
 import ismrmrd
 import numpy as np
 import torch
 from typing_extensions import Self
 
-from mrpro.data.CheckDataMixin import string_to_size
+from mrpro.data.CheckDataMixin import CheckDataMixin, DType, Shape
 from mrpro.data.Dataclass import Dataclass
 from mrpro.data.enums import TrajType
 from mrpro.data.SpatialDimension import SpatialDimension
@@ -18,7 +18,7 @@ from mrpro.utils.summarize_tensorvalues import summarize_tensorvalues
 from mrpro.utils.typing import FileOrPath
 
 
-class KTrajectory(Dataclass):
+class KTrajectory(Dataclass, CheckDataMixin):
     """K-space trajectory.
 
     Contains the trajectory in k-space along the three dimensions `kz`, `ky`, `kx`,
@@ -34,14 +34,14 @@ class KTrajectory(Dataclass):
         - `kz` is zero with shape `(1, 1, 1, 1, 1)`
     """
 
-    kz: torch.Tensor
-    """Trajectory in z direction / phase encoding direction k2 if Cartesian. Shape `(*other, coils=1, k2, k1, k0)`"""
+    kz: Annotated[torch.Tensor, Shape('*#other coils=1 #k2 #k1 #k0'), DType(torch.float32, torch.float64)]
+    """Trajectory in z direction / phase encoding direction k2 if Cartesian."""
 
-    ky: torch.Tensor
-    """Trajectory in y direction / phase encoding direction k1 if Cartesian. Shape `(*other, coils=1, k2, k1, k0)`"""
+    ky: Annotated[torch.Tensor, Shape('*#other coils=1 #k2 #k1 #k0'), DType(torch.float32, torch.float64)]
+    """Trajectory in y direction / phase encoding direction k1 if Cartesian."""
 
-    kx: torch.Tensor
-    """Trajectory in x direction / phase encoding direction k0 if Cartesian. Shape `(*other, coils=1, k2, k1, k0)`"""
+    kx: Annotated[torch.Tensor, Shape('*#other coils=1 #k2 #k1 #k0'), DType(torch.float32, torch.float64)]
+    """Trajectory in x direction / phase encoding direction k0 if Cartesian."""
 
     grid_detection_tolerance: float = 1e-3
     """tolerance of how close trajectory positions have to be to integer grid points."""
@@ -276,10 +276,3 @@ class KTrajectory(Dataclass):
         x = summarize_tensorvalues(torch.tensor(self.kx.shape))
         out = f'{type(self).__name__} with shape: kz={z}, ky={y}, kx={x}'
         return out
-
-    @property
-    def shape(self) -> torch.Size:
-        """Return shape of the KData object."""
-        if not hasattr(self, '_memo'):
-            self.check_invariants()
-        return torch.Size(string_to_size('*#other 1 #k2 #k1 #k0', self._memo))

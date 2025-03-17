@@ -10,7 +10,6 @@ import einops
 import torch
 from typing_extensions import Any, Self, TypeVar, dataclass_transform, overload
 
-from mrpro.data.CheckDataMixin import CheckDataMixin
 from mrpro.utils.indexing import Indexer
 from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.reshape import broadcasted_rearrange
@@ -61,7 +60,7 @@ class InconsistentDeviceError(ValueError):
 
 
 @dataclass_transform()
-class Dataclass(CheckDataMixin):
+class Dataclass:
     """A supercharged dataclass with additional functionality.
 
     This class extends the functionality of the standard `dataclasses.dataclass` by adding
