@@ -229,10 +229,10 @@ class KData(
                 )
             case KTrajectory():
                 try:
-                    torch.broadcast_shapes(trajectory.broadcasted_shape, (data.shape[0], *data.shape[-3:]))
+                    torch.broadcast_shapes(trajectory.shape, (data.shape[0], *data.shape[-3:]))
                 except RuntimeError:
                     raise ValueError(
-                        f'Trajectory shape {trajectory.broadcasted_shape} does not match data shape {data.shape}.'
+                        f'Trajectory shape {trajectory.shape} does not match data shape {data.shape}.'
                     ) from None
                 trajectory_ = trajectory
             case _:

@@ -4,12 +4,10 @@ import dataclasses
 from collections.abc import Callable, Iterator
 from copy import copy as shallowcopy
 from copy import deepcopy
-from typing import TypeAlias, cast
+from typing import ClassVar, TypeAlias, cast
 
 import torch
 from typing_extensions import Any, Self, TypeVar, dataclass_transform, overload
-
-from mrpro.utils.typing import DataclassInstance
 
 
 class InconsistentDeviceError(ValueError):
@@ -45,6 +43,8 @@ class Dataclass:
     It is intended to be used as a base class for all dataclasses in the `mrpro` package.
     """
 
+    __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
+
     def __init_subclass__(cls, no_new_attributes: bool = True, *args, **kwargs):
         """Create a new dataclass subclass."""
         dataclasses.dataclass(cls)
@@ -73,6 +73,13 @@ class Dataclass:
         """Can be overridden in subclasses to add custom initialization logic."""
         self.__initialized = True
 
+    def items(self) -> Iterator[tuple[str, Any]]:
+        """Get an iterator over names and values of fields."""
+        for field in dataclasses.fields(self):
+            name = field.name
+            data = getattr(self, name)
+            yield name, data
+
     def apply_(
         self: Self,
         function: Callable[[Any], Any] | None = None,
@@ -100,7 +107,7 @@ class Dataclass:
         if function is None:
             return self
 
-        for name, data in self._items():
+        for name, data in self.items():
             if id(data) in memo:
                 # this works even if self is frozen
                 object.__setattr__(self, name, memo[id(data)])
@@ -235,18 +242,6 @@ class Dataclass:
             # overload 1 (device and dtype specified)
             device, dtype, non_blocking, copy, memory_format = parse1(*args, **kwargs)
         return self._to(device=device, dtype=dtype, non_blocking=non_blocking, memory_format=memory_format, copy=copy)
-
-    def _items(self) -> Iterator[tuple[str, Any]]:
-        """Return an iterator over fields, parameters, buffers, and modules of the object."""
-        if isinstance(self, DataclassInstance):
-            for field in dataclasses.fields(self):
-                name = field.name
-                data = getattr(self, name)
-                yield name, data
-        if isinstance(self, torch.nn.Module):
-            yield from self._parameters.items()
-            yield from self._buffers.items()
-            yield from self._modules.items()
 
     def _to(
         self,
@@ -454,7 +449,7 @@ class Dataclass:
             The device of the fields or `None` if no field implements a `device` attribute.
         """
         device: None | torch.device = None
-        for _, data in self._items():
+        for _, data in self.items():
             if not hasattr(data, 'device'):
                 continue
             current_device = getattr(data, 'device', None)
@@ -507,4 +502,48 @@ class Dataclass:
             return True
         return device.type == 'cpu'
 
+    @property
+    def shape(self) -> torch.Size:
+        """Return the broadcasted shape of all tensor/data fields.
+
+        Each field of this dataclass will be broadcastable to this shape.
+
+        Returns
+        -------
+            The broadcasted shape of all fields.
+        """
+        shapes = []
+        for _, data in self.items():
+            if not hasattr(data, 'shape'):
+                continue
+            shapes.append(data.shape)
+        return torch.broadcast_shapes(*shapes)
+
+    @property
+    def dtype(self) -> torch.dtype | None:
+        """Return the dtype of the tensors.
+
+        Looks at each field of a dataclass implementing a dtype attribute,
+        such as `torch.Tensor` or `Dataclass` instances.
+        Returns the promoted dtype of all fields. If no field implements a dtype attribute,
+        `None` is returned.
+        """
+        dtype: torch.dtype | None = None
+        for _, data in self.items():
+            if hasattr(data, 'dtype'):
+                if dtype is None:
+                    dtype = data.dtype
+                else:
+                    dtype = torch.promote_types(dtype, data.dtype)
+        return dtype
+
     # endregion Properties
+
+    def __repr__(self):
+        """Representation method for Dataclass."""
+        try:
+            device = str(self.device)
+        except RuntimeError:
+            device = 'mixed'
+        name = type(self).__name__
+        return f'{name} with (broadcasted) shape: {list(self.shape)!s} and dtype {self.dtype}\nDevice: {device}.'
