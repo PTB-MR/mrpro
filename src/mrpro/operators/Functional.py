@@ -169,7 +169,7 @@ class ProximableFunctional(Functional, ABC):
         if not isinstance(sigma, torch.Tensor):
             sigma = torch.as_tensor(1.0 * sigma)
         self._throw_if_negative_or_complex(sigma)
-        sigma[sigma < 1e-8] += 1e-6
+        sigma = sigma.clamp(min=1e-8)
         return (x - sigma * self.prox(x / sigma, 1 / sigma)[0],)
 
     def __rmul__(self, scalar: torch.Tensor | complex) -> ProximableFunctional:
