@@ -1,6 +1,5 @@
 """MR image data (IData) class."""
 
-import dataclasses
 from collections.abc import Generator, Sequence
 from pathlib import Path
 
@@ -11,7 +10,7 @@ from pydicom import dcmread
 from pydicom.dataset import Dataset
 from typing_extensions import Self
 
-from mrpro.data.Data import Data
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.IHeader import IHeader
 from mrpro.data.KHeader import KHeader
 
@@ -45,9 +44,11 @@ def _dcm_pixelarray_to_tensor(dataset: Dataset) -> torch.Tensor:
     return slope * torch.as_tensor(dataset.pixel_array.astype(np.complex64)) + intercept
 
 
-@dataclasses.dataclass(slots=True, frozen=True)
-class IData(Data):
+class IData(Dataclass):
     """MR image data (IData) class."""
+
+    data: torch.Tensor
+    """Tensor containing image data with dimensions `(*other, coils, z, y, x)`."""
 
     header: IHeader
     """Header for image data."""
@@ -153,15 +154,3 @@ class IData(Data):
 
         # Pass on sorted file list as order of dicom files is often the same as the required order
         return cls.from_dicom_files(filenames=sorted(file_paths))
-
-    def __repr__(self):
-        """Representation method for IData class."""
-        try:
-            device = str(self.device)
-        except RuntimeError:
-            device = 'mixed'
-        out = (
-            f'{type(self).__name__} with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
-            f'Device: {device}\n{self.header}'
-        )
-        return out

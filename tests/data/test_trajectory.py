@@ -18,7 +18,7 @@ def test_trajectory_repeat_detection_tol(cartesian_grid) -> None:
     kz_full, ky_full, kx_full = cartesian_grid(n_k2, n_k1, n_k0, jitter=0.1)
     trajectory_sparse = KTrajectory(kz_full, ky_full, kx_full, repeat_detection_tolerance=0.1)
 
-    assert trajectory_sparse.broadcasted_shape == (1, 1, n_k2, n_k1, n_k0)
+    assert trajectory_sparse.shape == (1, 1, n_k2, n_k1, n_k0)
     assert trajectory_sparse.kx.shape == (1, 1, 1, 1, n_k0)
     assert trajectory_sparse.ky.shape == (1, 1, 1, n_k1, 1)
     assert trajectory_sparse.kz.shape == (1, 1, n_k2, 1, 1)
@@ -32,7 +32,7 @@ def test_trajectory_repeat_detection_exact(cartesian_grid) -> None:
     kz_full, ky_full, kx_full = cartesian_grid(n_k2, n_k1, n_k0, jitter=0.1)
     trajectory_full = KTrajectory(kz_full, ky_full, kx_full, repeat_detection_tolerance=None)
 
-    assert trajectory_full.broadcasted_shape == (1, 1, n_k2, n_k1, n_k0)
+    assert trajectory_full.shape == (1, 1, n_k2, n_k1, n_k0)
     assert trajectory_full.kx.shape == (1, 1, n_k2, n_k1, n_k0)
     assert trajectory_full.ky.shape == (1, 1, n_k2, n_k1, n_k0)
     assert trajectory_full.kz.shape == (1, 1, n_k2, n_k1, n_k0)
@@ -243,4 +243,4 @@ def test_traj_from_ismrmrd_filter(ismrmrd_cart_bodycoil_and_surface_coil) -> Non
     traj = KTrajectory.from_ismrmrd(
         ismrmrd_cart_bodycoil_and_surface_coil.filename, acquisition_filter_criterion=lambda x: has_n_coils(2, x)
     )
-    assert traj.broadcasted_shape == (1, 1, 1, 1, 1)  # trajectory is all zeros
+    assert traj.shape == (1, 1, 1, 1, 1)  # trajectory is all zeros

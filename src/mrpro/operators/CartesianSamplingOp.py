@@ -100,11 +100,11 @@ class CartesianSamplingOp(LinearOperator):
         # we can skip the indexing if the data is already sorted
         self._needs_indexing = (
             not torch.all(torch.diff(kidx) == 1)
-            or traj.broadcasted_shape[-3:] != sorted_grid_shape.zyx
+            or traj.shape[-3:] != sorted_grid_shape.zyx
             or self._inside_encoding_matrix_idx is not None
         )
 
-        self._trajectory_shape = traj.broadcasted_shape
+        self._trajectory_shape = traj.shape
         self._sorted_grid_shape = sorted_grid_shape
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
