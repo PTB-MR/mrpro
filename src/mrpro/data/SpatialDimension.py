@@ -401,7 +401,7 @@ class SpatialDimension(Dataclass, Generic[T_co]):
     def __post_init__(self) -> None:
         """Ensure that the data is of matching shape."""
         if not all(isinstance(val, (int | float)) for val in self.zyx):
-            self.z, self.y, self.x = (_as_vectortype(v) for v in self.zyx)
+            self.z, self.y, self.x = (_as_vectortype(v) for v in self.zyx)  # type: ignore[assignment]
             try:
                 torch.broadcast_tensors(self.z, self.y, self.x)
             except RuntimeError:
