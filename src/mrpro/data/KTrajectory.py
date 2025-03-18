@@ -67,7 +67,7 @@ class KTrajectory(Dataclass, CheckDataMixin):
             object.__setattr__(self, 'kx', kx)
 
         try:
-            shape = self.broadcasted_shape
+            shape = self.shape
         except RuntimeError:
             raise ValueError('The k-space trajectory dimensions must be broadcastable.') from None
 
@@ -198,17 +198,6 @@ class KTrajectory(Dataclass, CheckDataMixin):
         return cls.from_tensor(traj, stack_dim=-1, axes_order='xyz', scaling_matrix=scaling_matrix)
 
     @property
-    def broadcasted_shape(self) -> torch.Size:
-        """The broadcasted shape of the trajectory.
-
-        Returns
-        -------
-            broadcasted shape of trajectory
-        """
-        shape = torch.broadcast_shapes(self.kx.shape, self.ky.shape, self.kz.shape)
-        return shape
-
-    @property
     def type_along_kzyx(self) -> tuple[TrajType, TrajType, TrajType]:
         """Type of trajectory along kz-ky-kx."""
         return self._traj_types(self.grid_detection_tolerance)[0]
@@ -267,7 +256,7 @@ class KTrajectory(Dataclass, CheckDataMixin):
         stack_dim
             The dimension to stack the tensor along.
         """
-        shape = self.broadcasted_shape
+        shape = self.shape
         return torch.stack([traj.expand(*shape) for traj in (self.kz, self.ky, self.kx)], dim=stack_dim)
 
     def __repr__(self):
