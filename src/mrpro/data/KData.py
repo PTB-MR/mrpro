@@ -359,7 +359,7 @@ class KData(
             }
         )
 
-        # For the center of k1 and k2 we can only make an educated guess based on where the k-space center is
+        # For the center of k1 and k2 we can only make an educated guess on where the k-space center is
         kspace_center_idx = torch.argmin(trajectory.abs().sum(dim=-1))
         encoding_limits.k1.center = int(
             self.header.acq_info.idx.k1.broadcast_to(trajectory.shape[:-1]).flatten()[kspace_center_idx].item()
