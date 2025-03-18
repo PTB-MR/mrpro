@@ -24,6 +24,7 @@ class DicomTestImage:
         matrix_size_x: int = 32,
         slice_orientation: Rotation | None = None,
         slice_offset: float | Sequence[float] = 0.0,
+        cardiac_trigger_delay: float | None = None,
         te: float = 0.037,
         time_after_rpeak: float = 0.333,
         phantom: EllipsePhantom | None = None,
@@ -45,6 +46,10 @@ class DicomTestImage:
         slice_offset
             Slice offset from isocentre along slice_orientation. The number of slices is determined by the length of
             this parameter. If the length is greater than 1, the dicom will be saved as a 3D volume.
+        cardiac_trigger_delay
+            Cardiac trigger delay time. If set, the slice offset sequence is used for the cardiac phases,
+            i.e. the number of slice_offset determines the number of cardiac phases.
+            Offset values may be equal in this case.
         te
             echo time
         time_after_rpeak
@@ -77,6 +82,7 @@ class DicomTestImage:
         self.slice_offset = torch.atleast_1d(torch.as_tensor(slice_offset))
         self.te = te
         self.time_after_rpeak = time_after_rpeak
+        self.cardiac_trigger_delay = cardiac_trigger_delay
         self.phantom = phantom
         self.series_description = series_description
         self.series_instance_uid = pydicom.uid.generate_uid() if series_instance_uid is None else series_instance_uid
@@ -139,7 +145,7 @@ class DicomTestImage:
         )
 
         if n_slices > 1:
-            dataset.MRAcquisitionType = '3D'
+            dataset.MRAcquisitionType = '3D' if self.cardiac_trigger_delay is None else '2D'
             dataset.NumberOfFrames = n_slices
             dataset.PerFrameFunctionalGroupsSequence = pydicom.Sequence()
 
@@ -158,10 +164,22 @@ class DicomTestImage:
             for slice_idx in range(n_slices):
                 dataset.PerFrameFunctionalGroupsSequence.append(pydicom.Dataset())
 
-                dataset.PerFrameFunctionalGroupsSequence[-1].InStackPositionNumber = slice_idx + 1
-                dataset.PerFrameFunctionalGroupsSequence[-1].FrameReferenceDateTime = (
-                    dt + frame_time_spacing_s * slice_idx
-                )
+                if self.cardiac_trigger_delay is not None:
+                    # In case of cardiac data, the in stack position remains unchanged
+                    # Here a constant index of 1 is used, in practice this dependents on the slice index
+                    dataset.PerFrameFunctionalGroupsSequence[-1].InStackPositionNumber = 1
+                    dataset.PerFrameFunctionalGroupsSequence[-1].FrameReferenceDateTime = dt + datetime.timedelta(
+                        seconds=self.cardiac_trigger_delay * slice_idx
+                    )
+                    dataset.PerFrameFunctionalGroupsSequence[-1].NominalCardiacTriggerDelayTime = s_to_ms(
+                        self.cardiac_trigger_delay * slice_idx
+                    )
+                    dataset.PerFrameFunctionalGroupsSequence[-1].TemporalPositionIndex = slice_idx + 1
+                else:
+                    dataset.PerFrameFunctionalGroupsSequence[-1].InStackPositionNumber = slice_idx + 1
+                    dataset.PerFrameFunctionalGroupsSequence[-1].FrameReferenceDateTime = (
+                        dt + frame_time_spacing_s * slice_idx
+                    )
 
                 plane_position_sequence[0].ImagePositionPatient = (
                     patient_position + slice_direction * self.slice_offset[slice_idx].numpy()
