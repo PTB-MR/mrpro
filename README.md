@@ -88,7 +88,7 @@ We are looking forward to your contributions via "fork and pull requests". If yo
 1. Create your own copy of MRpro (i.e. create a fork via GitHub)
 2. Clone your forked copy of the MRpro repository
 3. Create/select a python environment (e.g. ``` conda create -n mrpro python=3.12 ```)
-4. Install MRpro in editable mode including test dependencies: ``` pip install -e ".[tests]" ```
+4. Install MRpro in editable mode with developer dependencies: ``` pip install -e ".[dev]" ```
 5. Setup pre-commit hook: ``` pre-commit install ```
 6. Create a new branch
 7. Implement your changes to MRpro

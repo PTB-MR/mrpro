@@ -101,6 +101,9 @@ notebooks = [
     "jupytext",
     "matplotlib",
 ]
+dev = [
+    "mrpro[tests, docs]"
+]
 
 [project.urls]
 "Documentation" = "https://ptb-mr.github.io/mrpro/"

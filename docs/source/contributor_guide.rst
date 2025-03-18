@@ -60,7 +60,7 @@ which we have also added to the list of extensions that VSCode should recommend 
 We also run `mypy <https://pypi.org/project/mypy/>`_ as a type checker.
 
 In CI, our linting is driven by `pre-commit <https://pre-commit.com/>`_.
-If you install MRpro via ``pip install -e .[tests]``, pre-commit will be installed in your Python environment.
+If you install MRpro via ``pip install -e .[dev]``, pre-commit will be installed in your Python environment.
 You can either add pre-commit to your git pre-commit hooks, requiring it to pass before each commit (``pre-commit install``),
 or run it manually using ``pre-commit run --all-files`` after making your changes, before requesting a PR review.
 
@@ -79,7 +79,7 @@ for images.
 
 Testing
 =======
-We use pytest for testing. All required packages will be installed if you install MRpro via ``pip install -e .[tests]``.
+We use pytest for testing. All required packages will be installed if you install MRpro via ``pip install -e .[dev]`` or ``pip install -e .[tests]``.
 You can use VSCode's test panel to discover and run tests. All tests must pass before a PR can be merged. By default, we skip running CUDA tests.  You can use ``pytest -m cuda`` to run the CUDA tests if your development machine has a GPU available.
 
 Building the Documentation
