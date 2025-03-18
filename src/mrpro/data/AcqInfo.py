@@ -124,30 +124,30 @@ class AcqIdx(Dataclass, CheckDataMixin):
 class UserValues(Dataclass, CheckDataMixin):
     """User Values used in AcqInfo."""
 
-    float1: FloatTensor = field(default_factory=_float_factory)
-    float2: FloatTensor = field(default_factory=_float_factory)
-    float3: FloatTensor = field(default_factory=_float_factory)
-    float4: FloatTensor = field(default_factory=_float_factory)
-    float5: FloatTensor = field(default_factory=_float_factory)
-    float6: FloatTensor = field(default_factory=_float_factory)
-    float7: FloatTensor = field(default_factory=_float_factory)
-    float8: FloatTensor = field(default_factory=_float_factory)
-    int1: IntTensor = field(default_factory=_int_factory)
-    int2: IntTensor = field(default_factory=_int_factory)
-    int3: IntTensor = field(default_factory=_int_factory)
-    int4: IntTensor = field(default_factory=_int_factory)
-    int5: IntTensor = field(default_factory=_int_factory)
-    int6: IntTensor = field(default_factory=_int_factory)
-    int7: IntTensor = field(default_factory=_int_factory)
-    int8: IntTensor = field(default_factory=_int_factory)
+    float0: torch.Tensor = field(default_factory=_float_factory)
+    float1: torch.Tensor = field(default_factory=_float_factory)
+    float2: torch.Tensor = field(default_factory=_float_factory)
+    float3: torch.Tensor = field(default_factory=_float_factory)
+    float4: torch.Tensor = field(default_factory=_float_factory)
+    float5: torch.Tensor = field(default_factory=_float_factory)
+    float6: torch.Tensor = field(default_factory=_float_factory)
+    float7: torch.Tensor = field(default_factory=_float_factory)
+    int0: torch.Tensor = field(default_factory=_int_factory)
+    int1: torch.Tensor = field(default_factory=_int_factory)
+    int2: torch.Tensor = field(default_factory=_int_factory)
+    int3: torch.Tensor = field(default_factory=_int_factory)
+    int4: torch.Tensor = field(default_factory=_int_factory)
+    int5: torch.Tensor = field(default_factory=_int_factory)
+    int6: torch.Tensor = field(default_factory=_int_factory)
+    int7: torch.Tensor = field(default_factory=_int_factory)
 
 
 class PhysiologyTimestamps(Dataclass, CheckDataMixin):
     """Time stamps relative to physiological triggering, e.g. ECG, in seconds."""
 
-    timestamp1: Float64Tensor = field(default_factory=_float_factory)
-    timestamp2: Float64Tensor = field(default_factory=_float_factory)
-    timestamp3: Float64Tensor = field(default_factory=_float_factory)
+    timestamp0: torch.Tensor = field(default_factory=_float_factory)
+    timestamp1: torch.Tensor = field(default_factory=_float_factory)
+    timestamp2: torch.Tensor = field(default_factory=_float_factory)
 
 
 class AcqInfo(Dataclass, CheckDataMixin):
