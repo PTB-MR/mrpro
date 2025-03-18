@@ -5,9 +5,17 @@ from typing import cast
 
 import torch
 import torch.testing
+from typing_extensions import Protocol, Self, runtime_checkable
 
 from mrpro.utils.reshape import reduce_view
 from mrpro.utils.typing import TorchIndexerType
+
+
+@runtime_checkable
+class HasIndex(Protocol):
+    """Objects that can be indexed with an `Indexer`."""
+
+    def _index(self, index: 'Indexer') -> Self: ...
 
 
 class Indexer:
