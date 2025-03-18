@@ -59,7 +59,7 @@ class DcfData(Dataclass):
             dcf = reduce(torch.mul, dcfs)
         else:
             # Edgecase: Only singleton spatial dimensions
-            dcf = torch.ones(*traj.broadcasted_shape[-3:], 1, 1, 1, device=traj.kx.device)
+            dcf = torch.ones(*traj.shape[-3:], 1, 1, 1, device=traj.kx.device)
 
         return cls(data=dcf)
 
@@ -68,12 +68,3 @@ class DcfData(Dataclass):
         from mrpro.operators.DensityCompensationOp import DensityCompensationOp
 
         return DensityCompensationOp(self.data.clone())
-
-    def __repr__(self):
-        """Representation method for DcfData class."""
-        try:
-            device = str(self.device)
-        except RuntimeError:
-            device = 'mixed'
-        name = type(self).__name__
-        return f'{name} with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\nDevice: {device}.'

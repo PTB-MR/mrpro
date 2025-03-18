@@ -116,7 +116,7 @@ def create_cart_sampling_op_and_range_domain(
     sampling_op = CartesianSamplingOp(encoding_matrix=encoding_matrix, traj=trajectory)
     random_generator = RandomGenerator(seed=0)
     u = random_generator.complex64_tensor(size=k_shape)
-    v = random_generator.complex64_tensor(size=(*k_shape[:-3], *trajectory.broadcasted_shape[-3:]))
+    v = random_generator.complex64_tensor(size=(*k_shape[:-3], *trajectory.shape[-3:]))
     return sampling_op, u, v
 
 
