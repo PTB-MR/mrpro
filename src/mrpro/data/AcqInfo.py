@@ -126,6 +126,7 @@ class AcqIdx(Dataclass):
 class UserValues(Dataclass):
     """User Values used in AcqInfo."""
 
+    float0: torch.Tensor = field(default_factory=_float_factory)
     float1: torch.Tensor = field(default_factory=_float_factory)
     float2: torch.Tensor = field(default_factory=_float_factory)
     float3: torch.Tensor = field(default_factory=_float_factory)
@@ -133,7 +134,7 @@ class UserValues(Dataclass):
     float5: torch.Tensor = field(default_factory=_float_factory)
     float6: torch.Tensor = field(default_factory=_float_factory)
     float7: torch.Tensor = field(default_factory=_float_factory)
-    float8: torch.Tensor = field(default_factory=_float_factory)
+    int0: torch.Tensor = field(default_factory=_int_factory)
     int1: torch.Tensor = field(default_factory=_int_factory)
     int2: torch.Tensor = field(default_factory=_int_factory)
     int3: torch.Tensor = field(default_factory=_int_factory)
@@ -141,15 +142,14 @@ class UserValues(Dataclass):
     int5: torch.Tensor = field(default_factory=_int_factory)
     int6: torch.Tensor = field(default_factory=_int_factory)
     int7: torch.Tensor = field(default_factory=_int_factory)
-    int8: torch.Tensor = field(default_factory=_int_factory)
 
 
 class PhysiologyTimestamps(Dataclass):
     """Time stamps relative to physiological triggering, e.g. ECG, in seconds."""
 
+    timestamp0: torch.Tensor = field(default_factory=_float_factory)
     timestamp1: torch.Tensor = field(default_factory=_float_factory)
     timestamp2: torch.Tensor = field(default_factory=_float_factory)
-    timestamp3: torch.Tensor = field(default_factory=_float_factory)
 
 
 class AcqInfo(Dataclass):
