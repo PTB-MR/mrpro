@@ -60,6 +60,8 @@ OTHER_LABELS = (
     'user7',
 )
 
+T = TypeVar('T', Rotation, torch.Tensor, Rotation | torch.Tensor)
+
 
 class KData(
     Dataclass,
@@ -229,10 +231,10 @@ class KData(
                 )
             case KTrajectory():
                 try:
-                    torch.broadcast_shapes(trajectory.broadcasted_shape, (data.shape[0], *data.shape[-3:]))
+                    torch.broadcast_shapes(trajectory.shape, (data.shape[0], *data.shape[-3:]))
                 except RuntimeError:
                     raise ValueError(
-                        f'Trajectory shape {trajectory.broadcasted_shape} does not match data shape {data.shape}.'
+                        f'Trajectory shape {trajectory.shape} does not match data shape {data.shape}.'
                     ) from None
                 trajectory_ = trajectory
             case _:
@@ -251,13 +253,21 @@ class KData(
         Reshapes the data to ("all other labels", coils, k2, k1, k0).
         Within "all other labels", the order is determined by `KDIM_SORT_LABELS`.
         """
+        shape = self.shape
+
+        def expand(x: T) -> T:
+            return x.expand(*shape[:-4], -1, shape[-3], shape[-2], -1)
+
         # First, determine if we can split into k2 and k1 and how large these should be
-        acq_indices_other = torch.stack([getattr(self.header.acq_info.idx, label) for label in OTHER_LABELS], dim=0)
+        acq_indices_other = torch.stack(
+            [expand(getattr(self.header.acq_info.idx, label)) for label in OTHER_LABELS],
+            dim=0,
+        )
         _, n_acqs_per_other = torch.unique(acq_indices_other, dim=1, return_counts=True)
         # unique counts of acquisitions for each combination of the label values in "other"
         n_acqs_per_other = torch.unique(n_acqs_per_other)
 
-        acq_indices_other_k2 = torch.cat((acq_indices_other, self.header.acq_info.idx.k2.unsqueeze(0)), dim=0)
+        acq_indices_other_k2 = torch.cat((acq_indices_other, expand(self.header.acq_info.idx.k2).unsqueeze(0)), dim=0)
         _, n_acqs_per_other_and_k2 = torch.unique(acq_indices_other_k2, dim=1, return_counts=True)
         # unique counts of acquisitions for each combination of other **and k2**
         n_acqs_per_other_and_k2 = torch.unique(n_acqs_per_other_and_k2)
@@ -294,13 +304,18 @@ class KData(
             n_k2 = 1
 
         # Second, determine the sorting order
-        acq_indices = np.stack([getattr(self.header.acq_info.idx, label).ravel() for label in KDIM_SORT_LABELS], axis=0)
+        acq_indices = np.stack(
+            [expand(getattr(self.header.acq_info.idx, label)).ravel() for label in KDIM_SORT_LABELS],
+            axis=0,
+        )
         sort_idx = torch.as_tensor(np.lexsort(acq_indices))  # torch has no lexsort as of pytorch 2.6 (March 2025)
 
         # Finally, reshape and sort the tensors in acqinfo and acqinfo.idx, and kdata.
         header = self.header.apply(
             lambda field: rearrange(
-                cast(Rotation | torch.Tensor, rearrange(field, '... coils k2 k1 k0 -> (... k2 k1) coils k0'))[sort_idx],
+                cast(Rotation | torch.Tensor, rearrange(expand(field), '... coils k2 k1 k0 -> (... k2 k1) coils k0'))[
+                    sort_idx
+                ],
                 '(other k2 k1) coils k0 -> other coils k2 k1 k0',
                 k1=n_k1,
                 k2=n_k2,
@@ -311,17 +326,20 @@ class KData(
         )
 
         data = rearrange(
-            rearrange(self.data, '... coils k2 k1 k0-> (... k2 k1) coils k0 ')[sort_idx],
+            rearrange(expand(self.data), '... coils k2 k1 k0-> (... k2 k1) coils k0 ')[sort_idx],
             '(other k2 k1) coils k0 -> other coils k2 k1 k0',
             k1=n_k1,
             k2=n_k2,
         )
 
-        kz, ky, kx = rearrange(
-            self.traj.as_tensor(-1).flatten(end_dim=-4)[sort_idx],
-            '(other k2 k1) coils k0 zyx -> zyx other coils k2 k1 k0 ',
-            k1=n_k1,
-            k2=n_k2,
+        kz, ky, kx = (
+            rearrange(
+                expand(t).flatten(end_dim=-3)[sort_idx],
+                '(other k2 k1) coils k0 ->other coils k2 k1 k0 ',
+                k1=n_k1,
+                k2=n_k2,
+            )
+            for t in (self.traj.kz, self.traj.ky, self.traj.kx)
         )
         traj = KTrajectory(kz, ky, kx, self.traj.grid_detection_tolerance, self.traj.repeat_detection_tolerance)
         return type(self)(header=header, data=data, traj=traj)

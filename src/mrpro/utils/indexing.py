@@ -1,13 +1,24 @@
 """Indexer class for custom indexing with broadcasting."""
 
 from collections.abc import Sequence
-from typing import cast
+from typing import TypeVar, cast, overload
 
 import torch
 import torch.testing
+from typing_extensions import Protocol, Self, runtime_checkable
 
 from mrpro.utils.reshape import reduce_view
 from mrpro.utils.typing import TorchIndexerType
+
+
+@runtime_checkable
+class HasIndex(Protocol):
+    """Objects that can be indexed with an `Indexer`."""
+
+    def _index(self, index: 'Indexer') -> Self: ...
+
+
+T = TypeVar('T', bound=HasIndex)
 
 
 class Indexer:
@@ -299,8 +310,14 @@ class Indexer:
         self.normal_index = tuple(normal_index)
         self.shape = broadcast_shape
 
-    def __call__(self, tensor: torch.Tensor) -> torch.Tensor:
-        """Apply the index to a tensor."""
+    @overload
+    def __call__(self, tensor: torch.Tensor) -> torch.Tensor: ...
+    @overload
+    def __call__(self, tensor: T) -> T: ...
+    def __call__(self, tensor: torch.Tensor | T) -> torch.Tensor | T:
+        """Apply the index to a tensor or object implementing _index."""
+        if isinstance(tensor, HasIndex):
+            return cast(T, tensor._index(self))
         try:
             tensor = tensor.broadcast_to(self.shape)
         except RuntimeError:

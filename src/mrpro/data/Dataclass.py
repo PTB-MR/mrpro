@@ -4,23 +4,14 @@ import dataclasses
 from collections.abc import Callable, Iterator, Sequence
 from copy import copy as shallowcopy
 from copy import deepcopy
-from typing import ClassVar, Protocol, TypeAlias, cast, runtime_checkable
+from typing import ClassVar, TypeAlias, cast
 
 import torch
-from typing_extensions import Any, Self, TypeVar, dataclass_transform, overload
+from typing_extensions import Any, Protocol, Self, TypeVar, dataclass_transform, overload, runtime_checkable
 
-from mrpro.utils.indexing import Indexer
+from mrpro.utils.indexing import HasIndex, Indexer
 from mrpro.utils.reduce_repeat import reduce_repeat
-from mrpro.utils.typing import DataclassInstance, TorchIndexerType
-
-T = TypeVar('T')
-
-
-@runtime_checkable
-class HasIndex(Protocol):
-    """Objects that can be indexed with an `Indexer`."""
-
-    def _index(self, index: Indexer) -> Self: ...
+from mrpro.utils.typing import TorchIndexerType
 
 
 @runtime_checkable
@@ -46,6 +37,9 @@ class InconsistentDeviceError(ValueError):
             The devices of the fields that differ.
         """
         super().__init__(f'Inconsistent devices found, found at least {", ".join(str(d) for d in devices)}')
+
+
+T = TypeVar('T')
 
 
 @dataclass_transform()
@@ -111,6 +105,13 @@ class Dataclass:
 
         self.apply_(apply_reduce)
 
+    def items(self) -> Iterator[tuple[str, Any]]:
+        """Get an iterator over names and values of fields."""
+        for field in dataclasses.fields(self):
+            name = field.name
+            data = getattr(self, name)
+            yield name, data
+
     def apply_(
         self: Self,
         function: Callable[[Any], Any] | None = None,
@@ -138,7 +139,7 @@ class Dataclass:
         if function is None:
             return self
 
-        for name, data in self._items():
+        for name, data in self.items():
             if id(data) in memo:
                 # this works even if self is frozen
                 object.__setattr__(self, name, memo[id(data)])
@@ -273,18 +274,6 @@ class Dataclass:
             # overload 1 (device and dtype specified)
             device, dtype, non_blocking, copy, memory_format = parse1(*args, **kwargs)
         return self._to(device=device, dtype=dtype, non_blocking=non_blocking, memory_format=memory_format, copy=copy)
-
-    def _items(self) -> Iterator[tuple[str, Any]]:
-        """Return an iterator over fields, parameters, buffers, and modules of the object."""
-        if isinstance(self, DataclassInstance):
-            for field in dataclasses.fields(self):
-                name = field.name
-                data = getattr(self, name)
-                yield name, data
-        if isinstance(self, torch.nn.Module):
-            yield from self._parameters.items()
-            yield from self._buffers.items()
-            yield from self._modules.items()
 
     def _to(
         self,
@@ -492,7 +481,7 @@ class Dataclass:
             The device of the fields or `None` if no field implements a `device` attribute.
         """
         device: None | torch.device = None
-        for _, data in self._items():
+        for _, data in self.items():
             if not hasattr(data, 'device'):
                 continue
             current_device = getattr(data, 'device', None)
@@ -546,15 +535,50 @@ class Dataclass:
         return device.type == 'cpu'
 
     @property
-    def shape(self) -> tuple[int, ...]:
-        """Shape of the dataclass."""
+    def shape(self) -> torch.Size:
+        """Return the broadcasted shape of all tensor/data fields.
+
+        Each field of this dataclass will be broadcastable to this shape.
+
+        Returns
+        -------
+            The broadcasted shape of all fields.
+        """
         shapes = []
-        for elem in dataclasses.fields(self):
-            value = getattr(self, elem.name)
-            if hasattr(value, 'shape'):
-                shapes.append(value.shape)
-        shape = torch.broadcast_shapes(*shapes)
-        return shape
+        for _, data in self.items():
+            if not hasattr(data, 'shape'):
+                continue
+            shapes.append(data.shape)
+        return torch.broadcast_shapes(*shapes)
+
+    @property
+    def dtype(self) -> torch.dtype | None:
+        """Return the dtype of the tensors.
+
+        Looks at each field of a dataclass implementing a dtype attribute,
+        such as `torch.Tensor` or `Dataclass` instances.
+        Returns the promoted dtype of all fields. If no field implements a dtype attribute,
+        `None` is returned.
+        """
+        dtype: torch.dtype | None = None
+        for _, data in self.items():
+            if hasattr(data, 'dtype'):
+                if dtype is None:
+                    dtype = data.dtype
+                else:
+                    dtype = torch.promote_types(dtype, data.dtype)
+        return dtype
+
+    # endregion Properties
+
+    def __repr__(self):
+        """Representation method for Dataclass."""
+        try:
+            device = str(self.device)
+        except RuntimeError:
+            device = 'mixed'
+        name = type(self).__name__
+        return f'{name} with (broadcasted) shape: {list(self.shape)!s} and dtype {self.dtype}\nDevice: {device}.'
 
     # endregion Properties
     # region Indexing

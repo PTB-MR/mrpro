@@ -88,6 +88,10 @@ class RandomGenerator:
         phase = self.float64_tensor(size, -torch.pi, torch.pi)
         return (amp * torch.exp(1j * phase)).to(dtype=torch.complex128)
 
+    def bool_tensor(self, size: Sequence[int] | int = (1,)) -> torch.Tensor:
+        """Generate boolean tensor of given size."""
+        return self.uint8_tensor(size, low=0, high=1).bool()
+
     def int8_tensor(self, size: Sequence[int] | int = (1,), low: int = -1 << 7, high: int = 1 << 7) -> torch.Tensor:
         """Generate int8 tensor of given size in [low, high)."""
         return self._randint(size, low, high, dtype=torch.int8)
