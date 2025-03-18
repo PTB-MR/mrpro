@@ -1,7 +1,7 @@
 """Base class for all dataclasses in the `mrpro` package."""
 
 import dataclasses
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Sequence
 from copy import copy as shallowcopy
 from copy import deepcopy
 from typing import ClassVar, TypeAlias, cast
@@ -9,15 +9,16 @@ from typing import ClassVar, TypeAlias, cast
 import torch
 from typing_extensions import Any, Protocol, Self, TypeVar, dataclass_transform, overload, runtime_checkable
 
-from mrpro.utils.indexing import Indexer
+from mrpro.utils.indexing import HasIndex, Indexer
+from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.typing import TorchIndexerType
 
 
 @runtime_checkable
-class HasIndex(Protocol):
-    """Objects that can be indexed with an `Indexer`."""
+class HasReduceRepeats(Protocol):
+    """Objects that have a _reduce_repeats method."""
 
-    def _index(self, index: Indexer) -> Self: ...
+    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None) -> None: ...
 
 
 class InconsistentDeviceError(ValueError):
@@ -82,6 +83,27 @@ class Dataclass:
     def __post_init__(self) -> None:
         """Can be overridden in subclasses to add custom initialization logic."""
         self.__initialized = True
+        self._reduce_repeats_()
+
+    def _reduce_repeats_(self, tol: float = 1e-6, dim: Sequence[int] | None = None) -> None:
+        """Reduce repeated dimensions in fields to singleton.
+
+        Parameters
+        ----------
+        tol
+            tolerance.
+        dim
+            dimensions to try to reduce to singletons. `None` means all.
+        """
+
+        def apply_reduce(data: T) -> T:
+            if isinstance(data, torch.Tensor):
+                return cast(T, reduce_repeat(data, tol, dim))
+            if isinstance(data, HasReduceRepeats) and not isinstance(data, Dataclass):
+                data._reduce_repeats_(tol, dim)
+            return cast(T, data)
+
+        self.apply_(apply_reduce)
 
     def items(self) -> Iterator[tuple[str, Any]]:
         """Get an iterator over names and values of fields."""
