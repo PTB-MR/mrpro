@@ -23,13 +23,13 @@ class SharedModule(torch.nn.Module):
 class A(Dataclass):
     """Test class A."""
 
-    floattensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 20))
-    floattensor2: torch.Tensor = field(default_factory=lambda: torch.zeros(10, 1))
-    complextensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 1, dtype=torch.complex64))
-    inttensor: torch.Tensor = field(default_factory=lambda: torch.ones(10, 20, dtype=torch.int32))
-    booltensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 1, dtype=torch.bool))
+    floattensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(0).float32_tensor((1, 20)))
+    floattensor2: torch.Tensor = field(default_factory=lambda: RandomGenerator(1).float32_tensor((10, 1)))
+    complextensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(2).complex64_tensor((1, 1)))
+    inttensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(3).int32_tensor((10, 20)))
+    booltensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(4).bool_tensor((10, 20)))
     module: torch.nn.Module = field(default_factory=lambda: torch.nn.Linear(1, 1))
-    rotation: Rotation = field(default_factory=lambda: Rotation.identity((10, 20)))
+    rotation: Rotation = field(default_factory=lambda: Rotation.random((10, 20), 0))
 
 
 class B(Dataclass):
@@ -37,11 +37,11 @@ class B(Dataclass):
 
     child: A = field(default_factory=A)
     module: SharedModule = field(default_factory=SharedModule)
-    floattensor: torch.Tensor = field(default_factory=lambda: torch.ones(10, 20))
-    complextensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 1, dtype=torch.complex64))
-    inttensor: torch.Tensor = field(default_factory=lambda: torch.ones(10, 20, dtype=torch.int32))
-    booltensor: torch.Tensor = field(default_factory=lambda: torch.ones(10, 1, dtype=torch.bool))
-    doubletensor: torch.Tensor = field(default_factory=lambda: torch.ones(1, 20, dtype=torch.float64))
+    floattensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(0).float32_tensor((10, 20)))
+    complextensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(1).complex64_tensor((1, 1)))
+    inttensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(2).int32_tensor((10, 20)))
+    booltensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(3).bool_tensor((10, 1)))
+    doubletensor: torch.Tensor = field(default_factory=lambda: RandomGenerator(4).float64_tensor((1, 20)))
 
 
 def _assert_attribute_properties(
