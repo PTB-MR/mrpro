@@ -8,7 +8,7 @@ from mrpro.operators.functionals import L1Norm, L1NormViewAsReal, L2NormSquared,
 from tests import RandomGenerator
 
 
-def test_l2_l1_identification1():
+def test_l2_l1_identification1() -> None:
     """Set up the problem min_x 1/2*||x - y||_2^2 + lambda * ||x||_1,
     which has a closed form solution given by the soft-thresholding operator.
 
@@ -39,7 +39,7 @@ def test_l2_l1_identification1():
     torch.testing.assert_close(pdhg_solution, expected, rtol=5e-4, atol=5e-4)
 
 
-def test_l2_l1_identification2():
+def test_l2_l1_identification2() -> None:
     """Set up the problem min_x 1/2*||x - y||_2^2 + lambda * ||x||_1,
     which has a closed form solution given by the soft-thresholding operator.
 
@@ -72,7 +72,7 @@ def test_l2_l1_identification2():
     torch.testing.assert_close(pdhg_solution, expected, rtol=5e-4, atol=5e-4)
 
 
-def test_fourier_l2_l1_():
+def test_fourier_l2_l1_() -> None:
     """Set up the problem min_x 1/2*|| Fx - y||_2^2 + lambda * ||x||_1,
     where F is the full FFT and y is sampled on a Cartesian grid. Thus, again, the
     problem has a closed-form solution given by soft-thresholding.
@@ -107,7 +107,7 @@ def test_fourier_l2_l1_():
     torch.testing.assert_close(pdhg_solution, expected, rtol=5e-4, atol=5e-4)
 
 
-def test_fourier_l2_wavelet_l1_():
+def test_fourier_l2_wavelet_l1_() -> None:
     """Set up the problem min_x 1/2*|| Fx - y||_2^2 + lambda * || W x||_1,
     where F is the full FFT sampled on a Cartesian grid and W a wavelet transform.
     Because both F and W are invertible and preserve the norm, the problem has a closed-form solution
@@ -149,7 +149,7 @@ def test_fourier_l2_wavelet_l1_():
     torch.testing.assert_close(pdhg_solution, expected, rtol=5e-4, atol=5e-4)
 
 
-def test_f_and_g_None():
+def test_f_and_g_None() -> None:
     """Check that the initial guess is returned as solution when f and g are None."""
     random_generator = RandomGenerator(seed=0)
 
@@ -166,7 +166,7 @@ def test_f_and_g_None():
     assert (pdhg_solution == initial_values[0]).all()
 
 
-def test_callback():
+def test_callback() -> None:
     """Check that the callback function is called."""
     random_generator = RandomGenerator(seed=0)
     f = ZeroFunctional()
@@ -185,7 +185,27 @@ def test_callback():
     assert callback_was_called
 
 
-def test_stepsizes():
+def test_callback_early_stop() -> None:
+    """Check that when the callback function returns False the optimizer is stopped."""
+    callback_check = 0
+
+    # callback function that returns False to stop the algorithm
+    def callback(solution):
+        nonlocal callback_check
+        callback_check += 1
+        return False
+
+    random_generator = RandomGenerator(seed=0)
+    f = ZeroFunctional()
+    g = None
+    operator = None
+    initial_values = (random_generator.complex64_tensor(size=(8,)),)
+
+    pdhg(f=f, g=g, operator=operator, initial_values=initial_values, max_iterations=100, callback=callback)
+    assert callback_check == 1
+
+
+def test_stepsizes() -> None:
     """Set up the problem min_x 1/2*||x - y||_2^2 + lambda * ||x||_1,
     which has a closed form solution given by the soft-thresholding operator and check
     that the correct solution is obtained regardless of the chosen stepsizes, i.e.
@@ -256,7 +276,7 @@ def test_stepsizes():
     torch.testing.assert_close(pdhg_solution_only_dual_stepsize, expected, rtol=5e-4, atol=5e-4)
 
 
-def test_value_errors():
+def test_value_errors() -> None:
     """Check that value-errors are caught."""
     random_generator = RandomGenerator(seed=0)
 
@@ -293,7 +313,7 @@ def test_value_errors():
         )
 
 
-def test_pdhg_stopping_after_one_iteration():
+def test_pdhg_stopping_after_one_iteration() -> None:
     """Test if pdhg stops after one iteration if the ground-truth is the initial
     guess and the tolerance is high enough."""
 

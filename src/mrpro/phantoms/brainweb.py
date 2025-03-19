@@ -465,7 +465,7 @@ class BrainwebVolumes(torch.utils.data.Dataset):
             elif el in classnames:
                 result[el] = data[..., classnames.index(el)] / 255
             elif el == 'mask':
-                mask = data.sum(-1) < 150
+                mask = (data < 20).all(-1)
                 mask = (
                     torch.nn.functional.conv3d(mask[None, None].float(), torch.ones(1, 1, 3, 3, 3), padding=1)[0, 0] < 1
                 )

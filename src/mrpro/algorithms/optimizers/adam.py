@@ -12,14 +12,14 @@ from mrpro.operators.Operator import OperatorType
 def adam(
     f: OperatorType,
     initial_parameters: Sequence[torch.Tensor],
-    max_iter: int,
-    lr: float = 1e-3,
+    n_iterations: int,
+    learning_rate: float = 1e-3,
     betas: tuple[float, float] = (0.9, 0.999),
     eps: float = 1e-8,
     weight_decay: float = 0,
     amsgrad: bool = False,
     decoupled_weight_decay: bool = False,
-    callback: Callable[[OptimizerStatus], None] | None = None,
+    callback: Callable[[OptimizerStatus], bool | None] | None = None,
 ) -> tuple[torch.Tensor, ...]:
     r"""Adam for non-linear minimization problems.
 
@@ -70,9 +70,9 @@ def adam(
         Sequence (for example list) of parameters to be optimized.
         Note that these parameters will not be changed. Instead, we create a copy and
         leave the initial values untouched.
-    max_iter
-        maximum number of iterations
-    lr
+    n_iterations
+        number of iterations
+    learning_rate
         learning rate
     betas
         coefficients used for computing running averages of gradient and its square
@@ -85,7 +85,8 @@ def adam(
     decoupled_weight_decay
         whether to use Adam (default) or AdamW (if set to `True`) [LOS2019]_
     callback
-        function to be called after each iteration
+        function to be called after each iteration. This can be used to monitor the progress of the algorithm.
+        If it returns `False`, the algorithm stops at that iteration.
 
     Returns
     -------
@@ -96,22 +97,28 @@ def adam(
     optim: AdamW | Adam
 
     if not decoupled_weight_decay:
-        optim = Adam(params=parameters, lr=lr, betas=betas, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad)
+        optim = Adam(
+            params=parameters, lr=learning_rate, betas=betas, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad
+        )
     else:
-        optim = AdamW(params=parameters, lr=lr, betas=betas, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad)
+        optim = AdamW(
+            params=parameters, lr=learning_rate, betas=betas, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad
+        )
 
     def closure():
         optim.zero_grad()
         (objective,) = f(*parameters)
         objective.backward()
 
-        if callback is not None:
-            callback({'solution': parameters, 'iteration_number': iteration})
-
         return objective
 
     # run adam
-    for iteration in range(max_iter):  # noqa: B007
+    for iteration in range(n_iterations):
         optim.step(closure)
+
+        if callback is not None:
+            continue_iterations = callback({'solution': parameters, 'iteration_number': iteration})
+            if continue_iterations is False:
+                break
 
     return parameters

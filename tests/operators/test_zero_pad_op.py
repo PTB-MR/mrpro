@@ -26,8 +26,8 @@ def create_zero_pad_op_and_domain_range(
 
 def test_zero_pad_op_content() -> None:
     """Test correct padding and cropping (i.e. negative padding size)."""
-    original_shape = (2, 100, 3, 200, 50, 2)
-    padded_shape = (2, 80, 3, 100, 240, 2)
+    original_shape = (2, 30, 3, 40, 50, 2)
+    padded_shape = (2, 10, 3, 30, 80, 2)
     generator = RandomGenerator(seed=0)
     original_data = generator.complex64_tensor(original_shape)
     padding_dimensions = (-5, -3, -2)
@@ -39,7 +39,7 @@ def test_zero_pad_op_content() -> None:
     (padded_data,) = zero_padding_op(original_data)
 
     # Compare overlapping region
-    torch.testing.assert_close(original_data[:, 10:90, :, 50:150, :, :], padded_data[:, :, :, :, 95:145, :])
+    torch.testing.assert_close(original_data[:, 10:20, :, 5:35, :, :], padded_data[:, :, :, :, 15:65, :])
 
 
 SHAPE_PARAMETERS = pytest.mark.parametrize(
