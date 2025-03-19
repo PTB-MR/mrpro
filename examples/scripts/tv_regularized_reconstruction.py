@@ -92,28 +92,17 @@ direct_reconstruction = DirectReconstruction(kdata_dynamic, csm=csm)
 img_direct = direct_reconstruction(kdata_dynamic)
 show_dynamic_images(img_direct.rss())
 
+
 # %%
-# TODO: csm calculation fails for derived recon classes, sigma is single value not list
-from mrpro.algorithms.reconstruction.AlternatingDirectionMethodMultipliersL2 import (
-    AlternatingDirectionMethodMultipliersL2,
-)
-
-admm_l2_tv = AlternatingDirectionMethodMultipliersL2(
-    kdata_dynamic,
-    csm=csm,
-    regularization_weights=(5e-6, 0, 0, 5e-6, 5e-6),
-    regularization_op=FiniteDifferenceOp(dim=(0, -1, -2)),
-    n_iterations=4,
-)
-
-img_admm_l2 = admm_l2_tv(kdata_dynamic)
-show_dynamic_images(img_admm_l2.rss())
+nabla_operator = FiniteDifferenceOp(dim=(-5,), mode='forward')
+show_dynamic_images(img_direct.rss())
+show_dynamic_images(nabla_operator(img_direct.data)[0].abs()[0, ...])
 
 # %% [markdown]
 # #### TV-regularized reconstruction using PDHG
 # Reconstruct images by solving
 #
-# $ \mathcal{F}(x) = \frac{1}{2}||Ex - y||_2^2 + \lambda \| \nabla x \|_1 $
+# $ \mathcal{F}(x) = \frac{1}{2}||Ex - y||_2^2 +  \| \lambda_i \nabla_i x \|_1 $
 #
 # using PDHG.
 #
@@ -125,14 +114,25 @@ show_dynamic_images(img_admm_l2.rss())
 # For more information on this reconstruction method have a look at <project:tv_minimization_reconstruction_pdhg.ipynb>.
 
 # %%
+regularization_weight = 0.1
+tv_reconstruction = TotalVariationRegularizedReconstruction(
+    kdata_dynamic,
+    csm=csm,
+    max_iterations=50,
+    regularization_weights=(regularization_weight * 0, 0, 0, regularization_weight, regularization_weight),
+)
+img_tv = tv_reconstruction(kdata_dynamic)
+show_dynamic_images(img_tv.rss())
+
+
 regularization_weight = 5e-6
 tv_reconstruction = TotalVariationRegularizedReconstruction(
     kdata_dynamic,
     csm=csm,
-    max_iterations=10,
-    regularization_weights=(regularization_weight, 0, 0, regularization_weight, regularization_weight),
+    max_iterations=50,
+    regularization_weights=(regularization_weight * 0, 0, 0, regularization_weight, regularization_weight),
 )
-img_tv = tv_reconstruction(kdata_dynamic)
+img_tv = tv_reconstruction.forward_old(kdata_dynamic)
 show_dynamic_images(img_tv.rss())
 
 # %% [markdown]
@@ -161,6 +161,7 @@ show_dynamic_images(img_tv.rss())
 # final step updates the dual variable $u$.
 
 # %%
+regularization_weight = 5e-6
 data_weight = 0.5
 n_admm_iterations = 4
 tv_denoising = TotalVariationDenoising(
