@@ -114,15 +114,15 @@ show_dynamic_images(nabla_operator(img_direct.data)[0].abs()[0, ...])
 # For more information on this reconstruction method have a look at <project:tv_minimization_reconstruction_pdhg.ipynb>.
 
 # %%
-regularization_weight = 0.1
-tv_reconstruction = TotalVariationRegularizedReconstruction(
-    kdata_dynamic,
-    csm=csm,
-    max_iterations=50,
-    regularization_weights=(regularization_weight * 0, 0, 0, regularization_weight, regularization_weight),
-)
-img_tv = tv_reconstruction(kdata_dynamic)
-show_dynamic_images(img_tv.rss())
+for regularization_weight in [0.01, 0.05, 0.1, 0.2, 0.5]:
+    tv_reconstruction = TotalVariationRegularizedReconstruction(
+        kdata_dynamic,
+        csm=csm,
+        max_iterations=50,
+        regularization_weights=(regularization_weight * 0, 0, 0, regularization_weight, regularization_weight),
+    )
+    img_tv = tv_reconstruction(kdata_dynamic)
+    show_dynamic_images(img_tv.rss())
 
 
 regularization_weight = 5e-6
