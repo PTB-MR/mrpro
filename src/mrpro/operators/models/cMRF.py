@@ -2,7 +2,15 @@
 
 import torch
 
-from mrpro.operators.models.EPG import DelayBlock, EPGSequence, EPGSignalModel, FispBlock, InversionBlock, T2PrepBlock
+from mrpro.operators.models.EPG import (
+    BlockSequence,
+    DelayBlock,
+    EPGSequence,
+    FispBlock,
+    InversionBlock,
+    Parameters,
+    T2PrepBlock,
+)
 from mrpro.operators.SignalModel import SignalModel
 
 
@@ -59,7 +67,7 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             Cardiac MR Fingerprinting signal with the different acquisitions in the first dimension.
         """
         super().__init__()
-        sequence = EPGSequence()
+        self.sequence = EPGSequence()
         max_flip_angles_deg = [
             12.5,
             18.75,
@@ -81,7 +89,7 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             raise ValueError(f'Expected 705 acquisition times. Got {acquisition_times.size(-1)}')
         block_time = acquisition_times[::47]  # Start time of each acquisition block. Varies due to heart rate.
         for i in range(block_time.size(-1)):
-            block = EPGSequence()
+            block = BlockSequence()
             match i % 5:
                 case 0:
                     block.append(InversionBlock(0.020))
@@ -99,9 +107,8 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             block.append(FispBlock(flip_angles, 0.0, tr=repetition_time, te=echo_time))
             if i > 0:
                 delay = (block_time[i] - block_time[i - 1]) - block.duration
-                sequence.append(DelayBlock(delay))
-            sequence.append(block)
-        self.model = EPGSignalModel(sequence, n_states=20)
+                self.sequence.append(DelayBlock(delay))
+            self.sequence.append(block)
 
     def forward(self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor) -> tuple[torch.Tensor]:
         """Simulate the Cardiac MR Fingerprinting signal.
@@ -120,4 +127,7 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
         -------
             Simulated Cardiac MR Fingerprinting signal with the different acquisitions in the first dimension.
         """
-        return self.model(m0, t1, t2, None)
+        parameters = Parameters(m0, t1, t2)
+        _, signals = self.sequence(parameters)
+        signal = torch.stack(list(signals), dim=0)
+        return (signal,)
