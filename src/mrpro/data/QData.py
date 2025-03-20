@@ -28,7 +28,7 @@ class QData(Data):
         Parameters
         ----------
         data
-            quantitative image data tensor with dimensions (other, coils, z, y, x)
+            quantitative image data tensor with dimensions `(other, coils, z, y, x)`
         header
             MRpro header containing required meta data for the QHeader
         """
@@ -68,6 +68,6 @@ class QData(Data):
             device = 'mixed'
         out = (
             f'{type(self).__name__} with shape: {list(self.data.shape)!s} and dtype {self.data.dtype}\n'
-            f'Device: {device}\nFOV [m]: {self.header.fov!s}.'
+            f'Device: {device}\nResolution [m]: {self.header.resolution!s}.'
         )
         return out

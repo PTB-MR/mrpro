@@ -96,7 +96,7 @@ def test_functional_prox_optimality(case: FunctionalTestCase):
 
     (prox,) = functional.prox(x, sigma=case.sigma)
 
-    def prox_criterion(p):
+    def prox_criterion(p: torch.Tensor) -> torch.Tensor:
         diff = x - p
         l2 = torch.sum((diff * diff.conj()).real, dim=functional.dim, keepdim=functional.keepdim)
         return (case.sigma * functional(p)[0] + 1 / 2 * l2).sum()

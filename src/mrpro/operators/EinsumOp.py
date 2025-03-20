@@ -11,31 +11,31 @@ from mrpro.operators.LinearOperator import LinearOperator
 class EinsumOp(LinearOperator):
     r"""A Linear Operator that implements sum products in Einstein notation.
 
-    Implements :math:`A_{indices_A}*x^{indices_x} = y_{indices_y}`
-    with Einstein summation rules over the indices, see torch.einsum or einops.einsum
+    Implements :math:`A_{\mathrm{indices}_A}*x^{\mathrm{indices}_x} = y_{\mathrm{indices}_y}`
+    with Einstein summation rules over the :math:`indices`, see `torch.einsum` or `einops.einsum`
     for more information. Note, that the indices must be space separated (einops convention).
 
 
     It can be used to implement tensor contractions, such as for example, different versions of
-    matrix-vector or matrix-matrix products of the form :math:`A @ x`, depending on the chosen einsum rules and
-    shapes of :math:`A` and :math:`x`.
+    matrix-vector or matrix-matrix products of the form `A @ x`, depending on the chosen einsum rules and
+    shapes of `A` and `x`.
 
     Examples are:
 
-    - matrix-vector multiplication of :math:`A` and the batched vector :math:`x = [x1,...,xN]` consisting
+    - matrix-vector multiplication of :math:`A` and the batched vector :math:`x = [x1, ..., xN]` consisting
       of :math:`N` vectors :math:`x1, x2, ..., xN`. Then, the operation defined by
-      :math:`A @ x := diag(A, A, ..., A) * [x1, x2, ..., xN]^T = [A*x1, A*x2, ..., A*xN]^T`
+      :math:`A @ x := \mathrm{diag}(A, A, ..., A) * [x1, x2, ..., xN]^T` = :math:`[A*x1, A*x2, ..., A*xN]^T`
       can be implemented by the einsum rule ``"i j, ... j -> ... i"``.
 
     - matrix-vector multiplication of a matrix :math:`A` consisting of :math:`N` different matrices
       :math:`A1, A2, ... AN` with one vector :math:`x`. Then, the operation defined by
-      :math:`A @ x: = diag(A1, A2,..., AN) * [x, x, ..., x]^T`
+      :math:`A @ x: = \mathrm{diag}(A1, A2,..., AN) * [x, x, ..., x]^T`
       can be implemented by the einsum rule ``"... i j, j -> ... i"``.
 
     - matrix-vector multiplication of a matrix :math:`A` consisting of :math:`N` different matrices
       :math:`A1, A2, ... AN` with a vector :math:`x = [x1,...,xN]` consisting
       of :math:`N` vectors :math:`x1, x2, ..., xN`. Then, the operation defined by
-      :math:`A @ x: = diag(A1, A2,..., AN) * [x1, x2, ..., xN]^T`
+      :math:`A @ x: = \mathrm{diag}(A1, A2,..., AN) * [x1, x2, ..., xN]^T`
       can be implemented by the einsum rule ``"... i j, ... j -> ... i"``.
       This is the default behavior of the operator.
     """
@@ -62,14 +62,14 @@ class EinsumOp(LinearOperator):
         self.matrix = torch.nn.Parameter(matrix, matrix.requires_grad)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Sum-Multiplication of input `x` with `A`.
+        """Sum-Multiplication of input :math:`x` with :math:`A`.
 
-        `A` and the rule used to perform the sum-product is set at initialization.
+        :math:`A` and the rule used to perform the sum-product is set at initialization.
 
         Parameters
         ----------
         x
-            input tensor to be multiplied with the 'matrix' A
+            input tensor to be multiplied with the 'matrix' :math:`A`.
 
         Returns
         -------
@@ -79,12 +79,12 @@ class EinsumOp(LinearOperator):
         return (y,)
 
     def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor]:
-        """Multiplication of input with the adjoint of `A`.
+        """Multiplication of input with the adjoint of :math:`A`.
 
         Parameters
         ----------
         y
-            tensor to be multiplied with hermitian/adjoint 'matrix' A
+            tensor to be multiplied with hermitian/adjoint 'matrix' :math:`A`
 
         Returns
         -------

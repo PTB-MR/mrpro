@@ -1,9 +1,11 @@
 """Summarize the values of a tensor to a string."""
 
+from collections.abc import Sequence
+
 import torch
 
 
-def summarize_tensorvalues(tensor: torch.Tensor | None, summarization_threshold: int = 7) -> str:
+def summarize_tensorvalues(tensor: torch.Tensor | None | Sequence[float], summarization_threshold: int = 7) -> str:
     """Summarize the values of a tensor to a string.
 
     Returns a string representation of the tensor values. If the tensor is None, the string 'None' is returned.
@@ -26,4 +28,4 @@ def summarize_tensorvalues(tensor: torch.Tensor | None, summarization_threshold:
     else:
         edgeitems = 3
     with torch._tensor_str.printoptions(threshold=summarization_threshold, edgeitems=edgeitems):
-        return torch._tensor_str._tensor_str(tensor, 0)
+        return torch._tensor_str._tensor_str(torch.as_tensor(tensor), 0)

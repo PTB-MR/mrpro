@@ -7,3 +7,14 @@ html {
 .wy-nav-content {
     max-width: 75% !important;
 }
+
+/* new line after each property */
+dl.py.property {
+    display: block !important;
+}
+
+/* example notebooks outputs */
+.output>.highlight {
+    background: #efefef !important;
+    color: inherit !important;
+}

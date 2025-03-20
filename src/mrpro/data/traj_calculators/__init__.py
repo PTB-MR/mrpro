@@ -1,3 +1,5 @@
+"""Classes for calculating k-space trajectories."""
+
 from mrpro.data.traj_calculators.KTrajectoryCalculator import KTrajectoryCalculator
 from mrpro.data.traj_calculators.KTrajectoryRpe import KTrajectoryRpe
 from mrpro.data.traj_calculators.KTrajectorySunflowerGoldenRpe import KTrajectorySunflowerGoldenRpe

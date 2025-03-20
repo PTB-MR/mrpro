@@ -7,6 +7,7 @@ from mrpro.operators import ConstraintsOp
 from tests import RandomGenerator, autodiff_test
 
 
+@pytest.mark.parametrize('beta', [1, 0.5, 2])
 @pytest.mark.parametrize(
     'bounds',
     [
@@ -16,7 +17,7 @@ from tests import RandomGenerator, autodiff_test
         ((-torch.inf, torch.inf),),  # case (-5, 5)
     ],
 )
-def test_constraints_operator_bounds(bounds):
+def test_constraints_operator_bounds(bounds, beta):
     random_generator = RandomGenerator(seed=0)
 
     # random tensor with arbitrary values
@@ -24,7 +25,7 @@ def test_constraints_operator_bounds(bounds):
     x = random_generator.float32_tensor(size=(36,), low=-100.0, high=100.0)
 
     # define constraints operator using the bounds
-    constraints_op = ConstraintsOp(bounds)
+    constraints_op = ConstraintsOp(bounds, beta_sigmoid=beta, beta_softplus=beta)
 
     # transform tensor to be component-wise in the range defined by bounds
     (cx,) = constraints_op(x)
@@ -40,6 +41,7 @@ def test_constraints_operator_bounds(bounds):
         torch.testing.assert_close(cx.max(), torch.tensor(b))
 
 
+@pytest.mark.parametrize('beta', [1, 0.5, 2])
 @pytest.mark.parametrize(
     'bounds',
     [
@@ -50,7 +52,7 @@ def test_constraints_operator_bounds(bounds):
         ((-1.0, None),),  # case (1, \infty)
     ],
 )
-def test_constraints_operator_inverse(bounds):
+def test_constraints_operator_inverse(bounds, beta):
     """Tests if operator inverse inverser the operator."""
 
     random_generator = RandomGenerator(seed=0)
@@ -59,7 +61,7 @@ def test_constraints_operator_inverse(bounds):
     x = random_generator.float32_tensor(size=(36,))
 
     # define constraints operator using the bounds
-    constraints_op = ConstraintsOp(bounds)
+    constraints_op = ConstraintsOp(bounds, beta_sigmoid=beta, beta_softplus=beta)
 
     # transform tensor to be component-wise in the range defined by bounds
     (cx,) = constraints_op(x)
@@ -69,6 +71,7 @@ def test_constraints_operator_inverse(bounds):
     torch.testing.assert_close(xx, x)
 
 
+@pytest.mark.parametrize('beta', [1, 0.5, 2])
 @pytest.mark.parametrize(
     'bounds',
     [
@@ -79,7 +82,7 @@ def test_constraints_operator_inverse(bounds):
         ((-1.0, None),),  # case (1, \infty)
     ],
 )
-def test_constraints_operator_no_nans(bounds):
+def test_constraints_operator_no_nans(bounds, beta):
     """Tests if the operator always returns valid values, never nans."""
 
     random_generator = RandomGenerator(seed=0)
@@ -88,7 +91,7 @@ def test_constraints_operator_no_nans(bounds):
     x = random_generator.float32_tensor(size=(36,), low=-100, high=100)
 
     # define constraints operator using the bounds
-    constraints_op = ConstraintsOp(bounds)
+    constraints_op = ConstraintsOp(bounds, beta_sigmoid=beta, beta_softplus=beta)
 
     # transform tensor to be component-wise in the range defined by bounds
     (cx,) = constraints_op(x)

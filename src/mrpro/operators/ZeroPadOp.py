@@ -14,17 +14,17 @@ class ZeroPadOp(LinearOperator):
     def __init__(self, dim: Sequence[int], original_shape: Sequence[int], padded_shape: Sequence[int]) -> None:
         """Zero Pad Operator class.
 
-        The operator carries out zero-padding if the padded_shape is larger than orig_shape and cropping if the
-        padded_shape is smaller.
+        The operator carries out zero-padding if the `padded_shape` is larger than `orig_shape` and cropping if the
+        `padded_shape` is smaller.
 
         Parameters
         ----------
         dim
             dimensions along which padding should be applied
         original_shape
-            shape of original data along dim, same length as dim
+            shape of original data along dim, same length as `dim`
         padded_shape
-            shape of padded data along dim, same length as dim
+            shape of padded data along dim, same length as `dim`
         """
         if len(dim) != len(original_shape) or len(dim) != len(padded_shape):
             raise ValueError('Dim, orig_shape and padded_shape have to be of same length')

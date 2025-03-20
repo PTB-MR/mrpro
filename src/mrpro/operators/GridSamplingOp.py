@@ -5,7 +5,6 @@ from collections.abc import Callable, Sequence
 from typing import Literal
 
 import torch
-from einops import rearrange
 
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.operators.LinearOperator import LinearOperator
@@ -49,16 +48,16 @@ class AdjointGridSample(torch.autograd.Function):
         y
             tensor in the range of gridsample(x,grid). Should not include batch or channel dimension.
         grid
-            grid in the shape (*y.shape, 2/3)
+            grid in the shape `(*y.shape, 2/3)`
         xshape
-            shape of the domain of gridsample(x,grid), i.e. the shape of x
+            shape of the domain of gridsample(x,grid), i.e. the shape of `x`
         interpolation_mode
             the kind of interpolation used
         padding_mode
             how to pad the input
         align_corners
              if True, the corner pixels of the input and output tensors are aligned,
-             and thus preserving the values at those pixels
+             and thus preserve the values at those pixels
 
         """
         # grid_sampler_and_backward uses integer values instead of strings for the modes
@@ -191,10 +190,10 @@ class GridSamplingOp(LinearOperator):
         Parameters
         ----------
         grid
-            sampling grid. Shape \*batchdim, z,y,x,3 / \*batchdim, y,x,2.
-            Values should be in [-1, 1.]
+            sampling grid. Shape `*batchdim, z,y,x,3` / `*batchdim, y,x,2`.
+            Values should be in ``[-1, 1.]``.
         input_shape
-            Used in the adjoint. The z,y,x shape of the domain of the operator.
+            Used in the adjoint. The z, y, x shape of the domain of the operator.
             If grid has 2 as the last dimension, only y and x will be used.
         interpolation_mode
             mode used for interpolation. bilinear is trilinear in 3D, bicubic is only supported in 2D.
@@ -202,7 +201,7 @@ class GridSamplingOp(LinearOperator):
             how the input of the forward is padded.
         align_corners
             if True, the corner pixels of the input and output tensors are aligned,
-            and thus preserving the values at those pixels
+            and thus preserve the values at those pixels
         """
         super().__init__()
 
@@ -230,7 +229,7 @@ class GridSamplingOp(LinearOperator):
 
         self.interpolation_mode = interpolation_mode
         self.padding_mode = padding_mode
-        self.register_buffer('grid', grid)
+        self.grid = grid
         self.input_shape = input_shape
         self.align_corners = align_corners
 
@@ -238,19 +237,22 @@ class GridSamplingOp(LinearOperator):
         self, x: torch.Tensor, inner: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
     ) -> tuple[torch.Tensor]:
         """Do all the reshaping pre- and post- sampling."""
+        if x.is_complex():
+            # apply to real and imaginary part separately
+            (real,) = self.__reshape_wrapper(x.real, inner)
+            (imag,) = self.__reshape_wrapper(x.imag, inner)
+            return (torch.complex(real, imag),)
+
         # First, we need to do a lot of reshaping ..
         dim = self.grid.shape[-1]
         if x.ndim < dim + 2:
             raise ValueError(
-                f'For a {dim}D sampling operation, x should have at least have {dim+2} dimensions:'
-                f' batch channel {"z y x" if dim==3 else "y x"}.'
+                f'For a {dim}D sampling operation, x should have at least have {dim + 2} dimensions:'
+                f' batch channel {"z y x" if dim == 3 else "y x"}.'
             )
-
-        #   The gridsample operator only works for real data, thus we handle complex inputs as an additional channel
-        x_real = rearrange(torch.view_as_real(x), '... real_imag  -> real_imag ...') if x.is_complex() else x
         shape_grid_batch = self.grid.shape[: -dim - 1]  # the batch dimensions of grid
         n_batchdim = len(shape_grid_batch)
-        shape_x_batch = x_real.shape[:n_batchdim]  # the batch dimensions of the input
+        shape_x_batch = x.shape[:n_batchdim]  # the batch dimensions of the input
         try:
             shape_batch = torch.broadcast_shapes(shape_x_batch, shape_grid_batch)
         except RuntimeError:
@@ -260,12 +262,12 @@ class GridSamplingOp(LinearOperator):
                 f' (shapes are x: {x.shape}, grid: {self.grid.shape}).'
             ) from None
 
-        shape_channels = x_real.shape[n_batchdim:-dim]
+        shape_channels = x.shape[n_batchdim:-dim]
         #   reshape to 3D: (*batch_dim) z y x 3 or 2D: (*batch_dim) y x 2
         grid_flatbatch = self.grid.broadcast_to(*shape_batch, *self.grid.shape[n_batchdim:]).flatten(
             end_dim=n_batchdim - 1
         )
-        x_flatbatch = x_real.broadcast_to(*shape_batch, *x_real.shape[n_batchdim:]).flatten(end_dim=n_batchdim - 1)
+        x_flatbatch = x.broadcast_to(*shape_batch, *x.shape[n_batchdim:]).flatten(end_dim=n_batchdim - 1)
         #   reshape to 3D: (*batch_dim) (*channel_dim) z y x or 2D: (*batch_dim) (*channel_dim) y x
         x_flatbatch_flatchannel = x_flatbatch.flatten(start_dim=1, end_dim=-dim - 1)
 
@@ -274,8 +276,6 @@ class GridSamplingOp(LinearOperator):
 
         # .. and reshape back.
         result = sampled.reshape(*shape_batch, *shape_channels, *sampled.shape[-dim:])
-        if x.is_complex():
-            result = torch.view_as_complex(rearrange(result, 'real_imag ... -> ... real_imag').contiguous())
         return (result,)
 
     def _forward_implementation(

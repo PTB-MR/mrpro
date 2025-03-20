@@ -2,7 +2,8 @@ from typing import Literal, cast
 
 import pytest
 import torch
-from mrpro.operators import ElementaryFunctional, ElementaryProximableFunctional, ProximableFunctional, ScaledFunctional
+from mrpro.operators import ElementaryFunctional, ElementaryProximableFunctional, ProximableFunctional
+from mrpro.operators.Functional import ScaledFunctional, ScaledProximableFunctional
 
 from tests import RandomGenerator
 from tests.operators.functionals.conftest import (
@@ -31,10 +32,8 @@ def test_functional_scaling_forward(
             scale = rng.float32_tensor()
         case 'int':
             scale = 5
-    scaled_f = cast(ProximableFunctional, scale * f)
-    assert isinstance(scaled_f, ScaledFunctional)
-    if isinstance(f, ProximableFunctional):
-        assert isinstance(scaled_f, ProximableFunctional)
+    scaled_f = scale * f
+    assert isinstance(scaled_f, ScaledFunctional | ScaledProximableFunctional)
     torch.testing.assert_close(scaled_f(x)[0], scale * f(x)[0])
 
 

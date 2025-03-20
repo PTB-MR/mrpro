@@ -27,8 +27,9 @@ authors:
       given-names: Andreas
       orcid: 0000-0002-7416-4433
     - affiliation: Physikalisch-Technische Bundesanstalt
-      family-names: Kranich Redshaw
+      family-names: Redshaw Kranich
       given-names: Catarina
+      orcid: 0009-0008-3305-0342
     - affiliation: Physikalisch-Technische Bundesanstalt
       family-names: Lunin
       given-names: Leonid
@@ -47,8 +48,7 @@ authors:
 cff-version: 1.2.0
 date-released: "2024-12-17"
 doi: 10.5281/zenodo.14509598
-license:
-    - apache-2.0
+license: Apache-2.0
 repository-code: https://github.com/PTB-MR/mrpro/
 title: MRpro - PyTorch-based MR image reconstruction and processing package
 type: software
