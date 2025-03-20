@@ -19,7 +19,7 @@ fname = path_data + 'meas_MID00060_FID17529_grpe_seq_sag_long.mrd'
 
 path_data = '/echo/kolbit01/data/GRPE_Charite/2025_01_14/'
 fname = path_data + 'meas_MID00277_FID22434_Test_long_libbalanceCheckOn_phantom.mrd'
-fname = path_data + 'meas_MID00274_FID22431_Test_short_libbalanceCheckOn_phantom.mrd'
+#fname = path_data + 'meas_MID00274_FID22431_Test_short_libbalanceCheckOn_phantom.mrd'
 
 # ### Imports
 import matplotlib.pyplot as plt
@@ -207,7 +207,7 @@ if flag_plot:
 tstart = time.time()
 avg_recon = DirectReconstruction(kdata, csm = None)
 avg_im = avg_recon(kdata)
-csm_maps = CsmData.from_idata_inati(avg_im, smoothing_width = 9)
+csm_maps = CsmData.from_idata_inati(avg_im, smoothing_width = 3)
 print(f'Csm {(time.time()-tstart)/60}min')
 
 if flag_plot:
