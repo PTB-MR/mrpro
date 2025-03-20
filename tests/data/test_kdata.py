@@ -279,7 +279,7 @@ def test_KData_split_k1_into_other(consistently_shaped_kdata, n_other_split: int
     kdata_split = consistently_shaped_kdata.split_k1_into_other(idx_split, other_label)
 
     assert kdata_split.data.shape == (idx_split.shape[0] * n_other, n_coils, n_k2, k1_per_block, n_k0)
-    assert kdata_split.traj.broadcasted_shape == (idx_split.shape[0] * n_other, 1, n_k2, k1_per_block, n_k0)
+    assert kdata_split.traj.shape == (idx_split.shape[0] * n_other, 1, n_k2, k1_per_block, n_k0)
     new_idx = getattr(kdata_split.header.acq_info.idx, other_label)
     assert new_idx.shape == (idx_split.shape[0] * n_other, 1, n_k2, k1_per_block, 1)
 

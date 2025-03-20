@@ -75,7 +75,7 @@ def test_dcf_spiral_traj_voronoi(n_kr: int, n_ki: int, n_ka: int) -> None:
     # nkr points along each spiral arm, nki turns per spiral arm, nka spiral arms
     trajectory = example_traj_spiral_2d(n_kr, n_ki, n_ka)
     dcf = DcfData.from_traj_voronoi(trajectory)
-    assert dcf.data.shape == trajectory.broadcasted_shape
+    assert dcf.data.shape == trajectory.shape
 
 
 def test_dcf_spiral_traj_voronoi_singlespiral() -> None:
@@ -121,4 +121,4 @@ def test_dcf_broadcast() -> None:
     kz = torch.zeros(1, 1, 1, 1, 1)
     trajectory = KTrajectory(kz, ky, kx)
     dcf = DcfData.from_traj_voronoi(trajectory)
-    assert dcf.data.shape == trajectory.broadcasted_shape
+    assert dcf.data.shape == trajectory.shape
