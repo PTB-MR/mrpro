@@ -376,7 +376,7 @@ def test_fourier_op_repr_mixed_fft_nufft():
 
 @pytest.mark.cuda
 def test_fourier_op_cuda() -> None:
-    """Test density compensation operator works on CUDA devices."""
+    """Test Fourier operator works on CUDA devices."""
 
     # Create a trajectory with both Cartesian (on-grid) and non-Cartesian (off-grid) components
     img_shape = (1, 2, 20, 20, 20)
@@ -402,25 +402,25 @@ def test_fourier_op_cuda() -> None:
     # Create on CPU, transfer to GPU, run on GPU
     fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
     fourier_op.cuda()
-    (fourier_op_output,) = fourier_op(x.cuda())
-    assert fourier_op_output.is_cuda
+    (fourier_op_result,) = fourier_op(x.cuda())
+    assert fourier_op_result.is_cuda
 
     # Create on CPU, run on CPU
     fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
-    (fourier_op_output,) = fourier_op(x)
-    assert fourier_op_output.is_cpu
+    (fourier_op_result,) = fourier_op(x)
+    assert fourier_op_result.is_cpu
 
     # Create on GPU, run on GPU
     fourier_op = FourierOp(
         recon_matrix=recon_matrix.cuda(), encoding_matrix=encoding_matrix.cuda(), traj=trajectory.cuda()
     )
-    (fourier_op_output,) = fourier_op(x.cuda())
-    assert fourier_op_output.is_cuda
+    (fourier_op_result,) = fourier_op(x.cuda())
+    assert fourier_op_result.is_cuda
 
     # Create on GPU, transfer to CPU, run on CPU
     fourier_op = FourierOp(
         recon_matrix=recon_matrix.cuda(), encoding_matrix=encoding_matrix.cuda(), traj=trajectory.cuda()
     )
     fourier_op.cpu()
-    (fourier_op_output,) = fourier_op(x)
-    assert fourier_op_output.is_cpu
+    (fourier_op_result,) = fourier_op(x)
+    assert fourier_op_result.is_cpu
