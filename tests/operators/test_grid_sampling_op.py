@@ -20,9 +20,10 @@ def test_grid_sampling_op_dtype(dtype):
 @pytest.mark.parametrize('dim_str', ['2D', '3D'])
 @pytest.mark.parametrize('batched', ['batched', 'non_batched'])
 @pytest.mark.parametrize('channel', ['multi_channel', 'single_channel'])
-def test_grid_sampling_op_dim_batch_channel(dim_str, batched, channel):
+@pytest.mark.parametrize('dtype', ['float32', 'complex64'])
+def test_grid_sampling_op_dim_batch_channel(dim_str, batched, channel, dtype):
     """Test for different dimensions."""
-    _test_grid_sampling_op_adjoint(dim=int(dim_str[0]), batched=batched, channel=channel)
+    _test_grid_sampling_op_adjoint(dim=int(dim_str[0]), batched=batched, channel=channel, dtype=dtype)
 
 
 @pytest.mark.parametrize('interpolation_mode', ['bilinear', 'nearest', 'bicubic'])
