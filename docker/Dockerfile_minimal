@@ -11,13 +11,11 @@ RUN bash install_system.sh && rm install_system.sh
 
 # install mrpro dependencies
 # forces rebuild if either the version or the pyproject.toml changes
-COPY docker/install_dependencies.sh pyproject.toml src/mrpro/VERSION ./
-RUN bash install_dependencies.sh && rm install_dependencies.sh pyproject.toml VERSION
+COPY docker/install_dependencies_minimal.sh ./
+RUN bash install_dependencies_minimal.sh && rm install_dependencies_minimal.sh
 
-# install mrpro
-# forces rebuild on any change in the mrpro directory
 COPY . /mrpro/
-RUN python -m pip install  "/mrpro[notebooks]" --no-cache-dir --upgrade --upgrade-strategy "eager" && rm -rf /mrpro
+RUN python -m pip install "/mrpro[tests]" --no-cache-dir
 
 # set user
 USER runner
