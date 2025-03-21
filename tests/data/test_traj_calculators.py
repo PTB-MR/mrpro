@@ -3,13 +3,14 @@
 import pytest
 import torch
 from einops import rearrange
-from mrpro.data import KData
+from mrpro.data import KData, SpatialDimension
 from mrpro.data.traj_calculators import (
     KTrajectoryCartesian,
     KTrajectoryIsmrmrd,
     KTrajectoryPulseq,
     KTrajectoryRadial2D,
     KTrajectoryRpe,
+    KTrajectorySpiral2D,
     KTrajectorySunflowerGoldenRpe,
 )
 
@@ -195,3 +196,13 @@ def test_KTrajectoryPulseq(pulseq_example_rad_seq) -> None:
 
     torch.testing.assert_close(trajectory.kx.to(torch.float32), kx_test.to(torch.float32), atol=1e-2, rtol=1e-3)
     torch.testing.assert_close(trajectory.ky.to(torch.float32), ky_test.to(torch.float32), atol=1e-2, rtol=1e-3)
+
+
+def test_KTrajectorySpiral():
+    trajectory_calculator = KTrajectorySpiral2D()
+    trajectory = trajectory_calculator(
+        n_k0=1024, k1_idx=torch.arange(4)[None, None, :], encoding_matrix=SpatialDimension(1, 256, 256)
+    )
+    assert trajectory.kz.shape == (1, 1, 1, 1)
+    assert trajectory.ky.shape == (1, 1, 4, 1024)
+    assert trajectory.kx.shape == (1, 1, 4, 1024)
