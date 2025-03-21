@@ -96,41 +96,6 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
         -------
             the reconstruced image.
         """
-
-        def show_dynamic_images(
-            img: torch.Tensor, vmin: float = 0, vmax: float = 0.8, title: str | None = None
-        ) -> None:
-            """Show a few time frames of the dynamic images and a plot along time.
-
-            Parameters
-            ----------
-            img
-                image tensor to be displayed
-            vmin
-                vmin for display
-            vmax
-                vmax for display
-            title
-                figure title
-            """
-            import matplotlib.pyplot as plt
-
-            fig, ax = plt.subplots(1, 4, squeeze=False, figsize=(16, 4))
-            if title:
-                fig.suptitle(title, fontsize=16)
-            for cax in ax.flatten():
-                cax.axis('off')
-            img = img / img.max()
-            for jnd in range(4):
-                if jnd == 3:
-                    ax[0, jnd].imshow(
-                        torch.squeeze(img[..., img.shape[-1] // 2]), vmin=vmin, vmax=vmax, cmap='gray', aspect='auto'
-                    )
-                    ax[0, jnd].set_title('Temporal profile')
-                else:
-                    ax[0, jnd].imshow(torch.squeeze(img[jnd, ...]), vmin=vmin, vmax=vmax, cmap='gray')
-                    ax[0, jnd].set_title(f'Frame {jnd}')
-
         if self.noise is not None:
             kdata = prewhiten_kspace(kdata, self.noise)
 
@@ -146,58 +111,14 @@ class TotalVariationRegularizedReconstruction(DirectReconstruction):
             for dim, weight in enumerate(self.regularization_weights)
             if weight != 0
         ]
-        nabla_operator = unsqueeze_right(
-            self.regularization_weights[finite_difference_dim], kdata.data.ndim
-        ) * FiniteDifferenceOp(dim=finite_difference_dim, mode='forward')
-        l1 = L1NormViewAsReal()
+        nabla_operator = FiniteDifferenceOp(dim=finite_difference_dim, mode='forward')
+        l1 = L1NormViewAsReal(
+            weight=unsqueeze_right(self.regularization_weights[finite_difference_dim], kdata.data.ndim)
+        )
 
         f = ProximableFunctionalSeparableSum(l2, l1)
         g = ZeroFunctional()
         operator = LinearOperatorMatrix(((acquisition_operator,), (nabla_operator,)))
-
-        # Initial value
-        initial_value = acquisition_operator.H(
-            self.dcf.as_operator()(kdata.data)[0] if self.dcf is not None else kdata.data
-        )[0]
-
-        (img_tensor,) = pdhg(
-            f=f, g=g, operator=operator, initial_values=(initial_value,), max_iterations=self.max_iterations
-        )
-        img = IData.from_tensor_and_kheader(img_tensor, kdata.header)
-        return img
-
-    def forward_old(self, kdata: KData) -> IData:
-        """Apply the reconstruction.
-
-        Parameters
-        ----------
-        kdata
-            k-space data to reconstruct.
-
-        Returns
-        -------
-            the reconstruced image.
-        """
-        if self.noise is not None:
-            kdata = prewhiten_kspace(kdata, self.noise)
-
-        # Create the acquisition model A = F S if the CSM S is defined otherwise A = F with the Fourier operator F
-        acquisition_operator = self.fourier_op @ self.csm.as_operator() if self.csm is not None else self.fourier_op
-
-        # L2-norm for the data consistency term
-        l2 = 0.5 * L2NormSquared(target=kdata.data)
-
-        # Finite difference operator and corresponding L1-norm
-        nabla_operator = [
-            (FiniteDifferenceOp(dim=(dim - len(self.regularization_weights),), mode='forward'),)
-            for dim, weight in enumerate(self.regularization_weights)
-            if weight != 0
-        ]
-        l1 = [weight * L1NormViewAsReal() for weight in self.regularization_weights if weight != 0]
-
-        f = ProximableFunctionalSeparableSum(l2, *l1)
-        g = ZeroFunctional()
-        operator = LinearOperatorMatrix(((acquisition_operator,), *nabla_operator))
 
         # Initial value
         initial_value = acquisition_operator.H(

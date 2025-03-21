@@ -125,9 +125,9 @@ acquisition_operator = fourier_operator @ csm_operator
 # #### $f(z) = f(p,q) = f_1(p) + f_2(q) =  \frac{1}{2}\|p  - y\|_2^2 + \lambda \| q \|_1.$
 
 # %%
-regularization_lambda = 0.2
-f_1 = 0.5 * mrpro.operators.functionals.L2NormSquared(target=kdata_24spokes.data, divide_by_n=True)
-f_2 = regularization_lambda * mrpro.operators.functionals.L1NormViewAsReal(divide_by_n=True)
+regularization_lambda = 1e-5
+f_1 = 0.5 * mrpro.operators.functionals.L2NormSquared(target=kdata_24spokes.data)
+f_2 = regularization_lambda * mrpro.operators.functionals.L1NormViewAsReal()
 f = mrpro.operators.ProximableFunctionalSeparableSum(f_1, f_2)
 
 # %% [markdown]
@@ -225,6 +225,35 @@ show_images(
     img_pdhg_24.abs().squeeze(),
     titles=['402 spokes', '24 spokes (direct)', '24 spokes (SENSE)', '24 spokes (PDHG)'],
 )
+
+
+# %% [markdown]
+# ### Ready-made reconstruction algorithm
+# To make our life easier and to avoid the manual setup of the PDHG algorithm with total variation, we can use the
+# `~mrpro.algorithms.reconstruction.TotalVariationRegularizedReconstruction` class. This class
+# takes care of setting up the PDHG algorithm and provides a simple interface to run the reconstruction.
+
+# %%
+tv_reconstruction = mrpro.algorithms.reconstruction.TotalVariationRegularizedReconstruction(
+    kdata_24spokes,
+    csm=direct_reconstruction_24.csm,
+    max_iterations=257,
+    regularization_weights=(regularization_lambda, regularization_lambda),
+)
+img_tv_algo_24 = tv_reconstruction(kdata_24spokes)
+
+show_images(
+    img_pdhg_24.abs().squeeze(),
+    img_tv_algo_24.rss().squeeze(),
+    titles=['24 spokes (PDHG)', '24 spokes (TV Reco)'],
+)
+
+# %% [markdown]
+# We can also check if the results are equal by comparing the actual image data.
+# If the assert statement does not raise an exception, the results are equal.
+
+# %%
+torch.testing.assert_close(img_pdhg_24.data, img_tv_algo_24.data)
 
 # %% [markdown]
 # Hurrah! We have successfully reconstructed an image from 24 spokes using TV-minimization.
