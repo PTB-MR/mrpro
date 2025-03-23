@@ -4,7 +4,9 @@ import dataclasses
 
 import pytest
 import torch
-from mrpro.data import CsmData, SpatialDimension
+from einops import repeat
+from mrpro.data import CsmData, KData, SpatialDimension
+from mrpro.data.traj_calculators.KTrajectoryCartesian import KTrajectoryCartesian
 
 from tests import relative_image_difference
 from tests.algorithms.csm.test_walsh import multi_coil_image
@@ -45,3 +47,11 @@ def test_CsmData_cuda(csm_method, ellipse_phantom, random_kheader) -> None:
 
     # Phase is only relative in csm calculation, therefore only the abs values are compared.
     assert relative_image_difference(torch.abs(csm.data), torch.abs(csm_ref.cuda())) <= 0.01
+
+
+def test_CsmData_walsh_kdata_idata(ismrmrd_cart_single_rep) -> None:
+    """CsmData using Walsh method should be the same for idata and kdata."""
+    kdata = KData.from_file(ismrmrd_cart_single_rep.filename, KTrajectoryCartesian())
+    csm_from_kdata = CsmData.from_kdata_walsh(kdata)
+    csm_from_idata = CsmData.from_idata_walsh(repeat(ismrmrd_cart_single_rep.img_ref, 'other coils z y x', coils=4))
+    torch.testing.assert_close(csm_from_kdata.data, csm_from_idata.data, rtol=1e-5, atol=1e-5)
