@@ -25,14 +25,15 @@ fname = path_data + 'meas_MID00277_FID22434_Test_long_libbalanceCheckOn_phantom.
 import matplotlib.pyplot as plt
 import torch
 import numpy as np
-from einops import rearrange
-from mrpro.data import CsmData, KTrajectory, DcfData, IData, KData
+from einops import rearrange, repeat
+from mrpro.data import CsmData, KTrajectory, DcfData, IData, KData, Rotation
 from mrpro.data.traj_calculators import KTrajectoryRpe, KTrajectoryPulseq
 from mrpro.operators import FourierOp, FastFourierOp, SensitivityOp, IdentityOp, DensityCompensationOp, FiniteDifferenceOp, LinearOperatorMatrix, ProximableFunctionalSeparableSum
 from mrpro.algorithms.optimizers import cg, pdhg
 from mrpro.algorithms.reconstruction import DirectReconstruction, IterativeSENSEReconstruction
 from mrpro.operators.functionals import L1NormViewAsReal, L2NormSquared, ZeroFunctional
 from mrpro.utils import split_idx
+from mrpro.utils import unsqueeze_right
 import os
 import nibabel as nib
 
@@ -116,62 +117,61 @@ def save_image_data(img, suffix):
         img_coronal_sagittal_axial = get_coronal_sagittal_axial_view(img, other=i, z=showz, y=showy, x=showx)
         plt.imsave(os.path.join(path_data,suffix+f'{i}.png'), img_coronal_sagittal_axial, dpi=300, cmap='grey', vmin=0, vmax=0.25)
     
-    
-def reg_it_sense(kdata, csm, dcf, n_iterations=4, reg_weight=0.0, reg_img=0.0):
+
+def tv_reg_reco(kdata, csm, img_initial, reg_weight=0.1, reg_weight_t=0.1, n_iterations=100):
     fourier_operator = FourierOp.from_kdata(kdata)
     csm_operator = SensitivityOp(csm)
     acquisition_operator = fourier_operator @ csm_operator
-    dcf_operator = DensityCompensationOp(dcf)
-
-    right_hand_side = acquisition_operator.H(dcf_operator(kdata.data)[0])[0] + reg_weight * reg_img
-    operator = acquisition_operator.H @ dcf_operator @ acquisition_operator + IdentityOp() * torch.as_tensor(reg_weight)
-    #operator = acquisition_operator.gram + IdentityOp() * torch.as_tensor(reg_weight)
-
-    img = cg(operator, right_hand_side, initial_value=right_hand_side, max_iterations=n_iterations, tolerance=0.0)
-    return img
-
-def tv_denoising(img_target, img_initial, reg_weight=0.1, data_weight=1.0, tv_dim=(-2, -1), n_iterations=100):
+    
+    if img_initial.data.shape[0] == 1:
+        tv_dim = (-3,-2,-1)
+        regularisation_weight = torch.tensor([reg_weight, reg_weight, reg_weight])
+    else:
+        tv_dim = (-5, -3,-2,-1)
+        regularisation_weight = torch.tensor([reg_weight_t, reg_weight, reg_weight, reg_weight])
+        
     nabla_operator = FiniteDifferenceOp(dim=tv_dim, mode='forward')
-
-    l2 = data_weight * 0.5 * L2NormSquared(target=img_target, divide_by_n=True)
-    l1 = reg_weight * L1NormViewAsReal(divide_by_n=True)
+    l2 = 0.5 * L2NormSquared(target=kdata.data)
+    l1 = L1NormViewAsReal(
+            weight=unsqueeze_right(regularisation_weight, kdata.data.ndim)
+        )
 
     f = ProximableFunctionalSeparableSum(l2, l1)
     g = ZeroFunctional()
-    K = LinearOperatorMatrix(((IdentityOp(),), (nabla_operator,)))
+    K = LinearOperatorMatrix(((acquisition_operator,), (nabla_operator,)))
 
-    initial_values = (img_initial,)
-    max_iterations = n_iterations
+    initial_values = (img_initial.data.clone(),)
 
-    (img,) = pdhg(
-        f=f, g=g, operator=K, initial_values=initial_values, max_iterations=max_iterations)
-    return img
+    (img_pdhg,) = pdhg(
+        f=f, g=g, operator=K, initial_values=initial_values, max_iterations=n_iterations)
+    return IData(data=img_pdhg, header=img_initial.header)
 
-def tv_admm(img_initial, kdata, csm, dcf, reg_weight=0.2, data_weight=0.1, tv_it=100, sense_it=10):
-    img_x = img_initial.data.clone()
-    img_z = img_initial.data.clone()
-    img_u = torch.zeros_like(img_z)
+
+def rearrange_k2_k1_into_k1(kdata: KData) -> KData:
+    """Rearrange kdata from (... k2 k1 ...) to (... 1 (k2 k1) ...).
+
+    Parameters
+    ----------
+    kdata
+        K-space data (other coils k2 k1 k0)
+
+    Returns
+    -------
+        K-space data (other coils 1 (k2 k1) k0)
+    """
+    # Rearrange data
+    kdat = rearrange(kdata.data, '... coils k2 k1 k0->... coils 1 (k2 k1) k0')
+
+    # Rearrange trajectory
+    ktraj = rearrange(kdata.traj.as_tensor(), 'dim ... k2 k1 k0-> dim ... 1 (k2 k1) k0')
     
-    if img_x.shape[0] == 1:
-        tv_dim = (-3,-2,-1)
-    else:
-        tv_dim = (-5, -3,-2,-1)
+    header = kdata.header.apply(
+            lambda field: rearrange(field, 'dim ... k2 k1 k0-> dim ... 1 (k2 k1) k0') 
+            if isinstance(field, Rotation | torch.Tensor)
+            else field
+        )
 
-    for outer_iter in range(5):
-        # Denoising
-        tstart = time.time()
-        img_x = tv_denoising(img_z - img_u, img_z, reg_weight=reg_weight/data_weight, data_weight=1.0, tv_dim=tv_dim, n_iterations=tv_it)
-        print(f'It {outer_iter} - PDHG {(time.time()-tstart)/60}min')
-
-        # Iterative SENSE
-        tstart = time.time()
-        img_z = reg_it_sense(kdata, csm, dcf, n_iterations=sense_it, reg_weight=data_weight, reg_img=img_x+img_u)
-        print(f'It {outer_iter} - itSENSE {(time.time()-tstart)/60}min')
-
-        # Update u
-        img_u = img_u + img_x - img_z
-        
-    return IData(data=img_z, header=img_initial.header)
+    return KData(header, kdat, KTrajectory.from_tensor(ktraj))
     
 
 # %% Read data
@@ -200,7 +200,7 @@ kdata = kdata.remove_readout_os()
 
 if flag_plot:
     plt.figure()
-    plt.plot(kdata.traj.ky[0,:10,:,0], kdata.traj.kz[0,:10,:,0], 'ob')
+    plt.plot(kdata.traj.ky[0,0,:10,:,0], kdata.traj.kz[0,0,:10,:,0], 'ob')
 
 # %% Coil maps
 # Calculate coil maps
@@ -228,10 +228,9 @@ itSENSE_recon = IterativeSENSEReconstruction(kdata, csm = csm_maps)
 img_itSENSE = itSENSE_recon.forward(kdata)
 print(f'Average reco itSENSE {(time.time()-tstart)/60}min')
 
-tstart_admm = time.time()
-img_pdhg = tv_admm(img_initial=img_itSENSE, kdata=kdata, csm=csm_maps, dcf=itSENSE_recon.dcf, reg_weight=0.2, data_weight=0.1)
-print(f'Average reco ADMM {(time.time()-tstart_admm)/60}min')
-
+tstart_pdhg = time.time()
+img_pdhg = tv_reg_reco(kdata, csm_maps, img_initial=img_itSENSE, reg_weight=1e-6, n_iterations=100)
+print(f'Average reco PDHG {(time.time()-tstart_pdhg)/60}min')
 
 if flag_plot:
     img_save = []
@@ -245,14 +244,15 @@ if flag_plot:
     plt.imsave(os.path.join(path_data, fname.replace('.mrd', '_average.png')), img_save, dpi=300, cmap='grey', vmin=0, vmax=0.35)
 
 
+
 # %% Respiratory self-navigator
 # We are going to obtain a self-navigator from the k-space centre line ky = kz = 0
 # Find readouts at ky=kz=0
 fft_op_1d = FastFourierOp(dim=(-1,))
 ky0_kz0_idx = torch.where(((kdata.traj.ky == 0) & (kdata.traj.kz == 0)))
-nav_data = kdata.data[ky0_kz0_idx[0],:,ky0_kz0_idx[1],ky0_kz0_idx[2],:]
+nav_data = kdata.data[ky0_kz0_idx[0],:,ky0_kz0_idx[2],ky0_kz0_idx[3],:]
 nav_data = torch.abs(fft_op_1d(nav_data)[0])
-nav_signal_time_in_s = 2.5*kdata.header.acq_info.acquisition_time_stamp[ky0_kz0_idx[0],ky0_kz0_idx[1],ky0_kz0_idx[2]]/1000
+nav_signal_time_in_s = kdata.header.acq_info.acquisition_time_stamp[ky0_kz0_idx[0],0,ky0_kz0_idx[2],ky0_kz0_idx[3],0]
 
 if flag_plot:
     fig, ax = plt.subplots(3,1);
@@ -302,14 +302,14 @@ if flag_plot:
     plt.xlim(0,200)
 
 # Combine k2 and k1
-kdata = kdata.rearrange_k2_k1_into_k1()
+kdata = rearrange_k2_k1_into_k1(kdata)
 
 # Interpolate navigator from k-space center ky=kz=0 to all phase encoding points
-resp_nav_interpolated = np.interp(2.5*kdata.header.acq_info.acquisition_time_stamp[0,0,:,0]/1000, nav_signal_time_in_s[:,0], resp_nav)
+resp_nav_interpolated = np.interp(kdata.header.acq_info.acquisition_time_stamp[0,0,0,:,0], nav_signal_time_in_s, resp_nav)
 
 # %%  Split data into different motion phases
 total_npe = kdata.data.shape[-2]*kdata.data.shape[-3]
-resp_idx = split_idx(torch.argsort(torch.as_tensor(resp_nav_interpolated)), int(total_npe*0.3), int(total_npe*0.15)) # 160*112, 160*50
+resp_idx = split_idx(torch.argsort(torch.as_tensor(resp_nav_interpolated)), int(total_npe*0.22), int(total_npe*0.11)) # 160*112, 160*50
 kdata_resp_resolved = kdata.split_k1_into_other(resp_idx, other_label='repetition')
 
 # %% Motion-resolved reconstruction
@@ -323,9 +323,9 @@ itSENSE_recon_resp_resolved = IterativeSENSEReconstruction(kdata_resp_resolved, 
 img_itSENSE_resp_resolved = itSENSE_recon_resp_resolved.forward(kdata_resp_resolved)
 print(f'Dynamic reco itSENSE {(time.time()-tstart)/60}min')
 
-tstart_admm = time.time()
-img_pdhg_resp_resolved = tv_admm(img_initial=img_itSENSE_resp_resolved, kdata=kdata_resp_resolved, csm=csm_maps, dcf=itSENSE_recon_resp_resolved.dcf, reg_weight=2.0, data_weight=0.1)
-print(f'Dynamic reco ADMM {(time.time()-tstart_admm)/60}min')
+tstart_pdhg = time.time()
+img_pdhg_resp_resolved = tv_reg_reco(kdata_resp_resolved, csm_maps, img_initial=img_itSENSE_resp_resolved, reg_weight=2e-7, reg_weight_t=2e-5, n_iterations=100)
+print(f'Dynamic reco PDHG {(time.time()-tstart_pdhg)/60}min')
 
 
 if flag_plot:
@@ -340,6 +340,8 @@ if flag_plot:
         plt.imshow(img_save, cmap='grey', vmin=0, vmax=0.35)
         plt.imsave(os.path.join(path_data,fname.replace('.mrd', f'_dynamic_{nnd}.png')), img_save, dpi=300, cmap='grey', vmin=0, vmax=0.35)
   
+        
+        
 # %%
 from PIL import Image, GifImagePlugin, ImageEnhance
 GifImagePlugin.LOADING_STRATEGY = GifImagePlugin.LoadingStrategy.RGB_AFTER_DIFFERENT_PALETTE_ONLY
