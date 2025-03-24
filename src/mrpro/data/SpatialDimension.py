@@ -397,11 +397,8 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
 
     def __post_init__(self):
         """Ensure that the data is of matching type and shape."""
-        if not all(isinstance(val, ScalarTypes) for val in self.zyx):
-            self.z = _as_vectortype(self.z)
-            self.y = _as_vectortype(self.y)
-            self.x = _as_vectortype(self.x)
-
+        if not all(isinstance(val, (int | float)) for val in self.zyx):
+            self.z, self.y, self.x = [torch.as_tensor(v) for v in self.zyx]
             try:
                 torch.broadcast_shapes(self.z.shape, self.y.shape, self.x.shape)
             except RuntimeError:
