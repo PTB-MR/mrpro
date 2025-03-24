@@ -221,3 +221,69 @@ def test_non_uniform_fast_fourier_op_repr():
     assert 'Dimension(s) along which NUFFT is applied' in repr_str
     assert 'Reconstructed image size' in repr_str
     assert 'device' in repr_str
+
+
+@pytest.mark.cuda
+def test_non_uniform_fast_fourier_op_cuda() -> None:
+    """Test non-uniform fast Fourier operator works on CUDA devices."""
+
+    # Create a trajectory with non-Cartesian (off-grid) components
+    img_shape = (2, 3, 10, 12, 14)
+    k_shape = (2, 3, 6, 8, 10)
+    nkx = (2, 1, 6, 8, 10)
+    nky = (2, 1, 6, 8, 10)
+    nkz = (2, 1, 6, 8, 10)
+    type_kx = 'non-uniform'
+    type_ky = 'non-uniform'
+    type_kz = 'non-uniform'
+
+    img, trajectory = create_data(img_shape, nkx, nky, nkz, type_kx, type_ky, type_kz)
+
+    recon_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    encoding_matrix = SpatialDimension(
+        int(trajectory.kz.max() - trajectory.kz.min() + 1),
+        int(trajectory.ky.max() - trajectory.ky.min() + 1),
+        int(trajectory.kx.max() - trajectory.kx.min() + 1),
+    )
+
+    # Create on CPU, transfer to GPU, run on GPU
+    nufft_op = NonUniformFastFourierOp(
+        direction=['x', 'y', 'z'],
+        recon_matrix=recon_matrix,
+        encoding_matrix=encoding_matrix,
+        traj=trajectory,
+    )
+    nufft_op.cuda()
+    (nufft_result,) = nufft_op(img.cuda())
+    assert nufft_result.is_cuda
+
+    # Create on CPU, run on CPU
+    nufft_op = NonUniformFastFourierOp(
+        direction=['x', 'y', 'z'],
+        recon_matrix=recon_matrix,
+        encoding_matrix=encoding_matrix,
+        traj=trajectory,
+    )
+    (nufft_result,) = nufft_op(img)
+    assert nufft_result.is_cpu
+
+    # Create on GPU, run on GPU
+    nufft_op = NonUniformFastFourierOp(
+        direction=['x', 'y', 'z'],
+        recon_matrix=recon_matrix.cuda(),
+        encoding_matrix=encoding_matrix.cuda(),
+        traj=trajectory.cuda(),
+    )
+    (nufft_result,) = nufft_op(img.cuda())
+    assert nufft_result.is_cuda
+
+    # Create on GPU, transfer to CPU, run on CPU
+    nufft_op = NonUniformFastFourierOp(
+        direction=['x', 'y', 'z'],
+        recon_matrix=recon_matrix.cuda(),
+        encoding_matrix=encoding_matrix.cuda(),
+        traj=trajectory.cuda(),
+    )
+    nufft_op.cpu()
+    (nufft_result,) = nufft_op(img)
+    assert nufft_result.is_cpu
