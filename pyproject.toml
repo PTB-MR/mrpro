@@ -70,8 +70,9 @@ dependencies = [
     "cufinufft>=2.3.1; platform_system=='Linux'",
     "scipy>=1.12",
     "ptwt>=0.1.8",
-    "typing-extensions>=4.12",
     "torchvision>=0.18.1",
+    "tqdm>=4.60.0",
+    "typing-extensions>=4.12",
 ]
 
 [project.optional-dependencies]
