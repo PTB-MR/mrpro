@@ -238,8 +238,8 @@ def test_spatial_dimension_rmul():
     )
 
 
-def test_spatial_dimension_mul_spatial_dimension_broadcasting():
-    """Test multiplication of SpatialDimension with SpatialDimension which require broadcasting."""
+def test_spatial_dimension_mul_spatial_dimension():
+    """Test multiplication of SpatialDimension with SpatialDimension."""
     spatial_dimension_1 = SpatialDimension(z=1.0, y=2.0, x=3.0)
     spatial_dimension_2 = SpatialDimension(z=4.0, y=5.0, x=6.0)
     spatial_dimension_mul = spatial_dimension_1 * spatial_dimension_2
