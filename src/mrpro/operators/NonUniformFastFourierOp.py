@@ -216,7 +216,8 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             x = x.flatten(end_dim=len(sep_dims_zyx) - 1) if len(sep_dims_zyx) else x[None, :]
             # combine joint_dims
             x = x.flatten(start_dim=1, end_dim=-len(self._direction_zyx) - 1)
-
+            # cufinufft needs c contiguous, otherwise it warns.
+            x = x.contiguous()
             x = torch.vmap(partial(finufft_type2, upsampfac=self.oversampling, modeord=0, isign=-1))(self._omega, x)
             x = x * self.scale
             shape_210 = [self._traj_broadcast_shape[i] for i in self._dimension_210]
@@ -251,7 +252,8 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             x = x.flatten(end_dim=len(sep_dims_210) - 1) if len(sep_dims_210) else x[None, :]
             # combine joint_dims and nufft_dims
             x = x.flatten(start_dim=1, end_dim=-len(self._dimension_210) - 1).flatten(start_dim=2)
-
+            # cufinufft needs c contiguous, otherwise it warns.
+            x = x.contiguous()
             x = torch.vmap(
                 partial(finufft_type1, upsampfac=self.oversampling, modeord=0, isign=1, output_shape=self._im_size)
             )(self._omega, x)
