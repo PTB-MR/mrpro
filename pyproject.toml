@@ -63,7 +63,7 @@ dependencies = [
     "numpy>=1.23, <3.0",
     "torch>=2.3.1",
     "ismrmrd>=1.14.1",
-    "einops",
+    "einops>=0.7.0",
     "pydicom>=3.0.1",
     "pypulseq>=1.4.2",
     "pytorch-finufft>=0.1.0",

@@ -21,15 +21,18 @@ jobs:
         # do not update dependencies
         run: pip install .[tests]
 
-      - name: Install PyTest GitHub Annotation Plugin
-        run: pip install pytest-github-actions-annotate-failures
-
-      - name: Run PyTest and Generate Coverage Report
+      - name: Run PyTest and log output
         # shell bash sets the -o pipefail
         run: |
-          pytest -n 4 -m "not cuda" --junitxml=pytest.xml \
-          --cov-report=term-missing:skip-covered --cov=mrpro | tee pytest-coverage.txt
+          pytest -n 4 -m "not cuda" | tee pytest.log
         shell: bash
+
+      - name: Upload PyTest log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-log-minimal
+          path: pytest.log
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
