@@ -396,13 +396,16 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         return (self.x >= other.x) & (self.y >= other.y) & (self.z >= other.z)
 
     def __post_init__(self):
-        """Ensure that the data is of matching shape."""
-        if not all(isinstance(val, (int | float)) for val in self.zyx):
+        """Ensure that the data is of matching type and shape."""
+        if not all(isinstance(val, ScalarTypes) for val in self.zyx):
+            self.z = _as_vectortype(self.z)
+            self.y = _as_vectortype(self.y)
+            self.x = _as_vectortype(self.x)
+
             try:
-                zyx = [_as_vectortype(v) for v in self.zyx]
-                self.z, self.y, self.x = torch.broadcast_tensors(*zyx)
+                torch.broadcast_shapes(self.z.shape, self.y.shape, self.x.shape)
             except RuntimeError:
-                raise ValueError('The shapes of the tensors do not match') from None
+                raise ValueError('Inconsistent shapes which cannot be broadcasted') from None
 
     @property
     def shape(self) -> torch.Size:
@@ -412,18 +415,8 @@ class SpatialDimension(MoveDataMixin, Generic[T_co]):
         -------
             Empty tuple if x, y, and z are scalar types, otherwise shape
 
-        Raises
-        ------
-            `ValueError` if the shapes are not equal
         """
         if isinstance(self.x, ScalarTypes) and isinstance(self.y, ScalarTypes) and isinstance(self.z, ScalarTypes):
             return torch.Size()
-        elif (
-            isinstance(self.x, VectorTypes)
-            and isinstance(self.y, VectorTypes)
-            and isinstance(self.z, VectorTypes)
-            and self.x.shape == self.y.shape == self.z.shape
-        ):
-            return torch.Size(self.x.shape)
-        else:
-            raise ValueError('Inconsistent shapes')
+        elif isinstance(self.x, VectorTypes) and isinstance(self.y, VectorTypes) and isinstance(self.z, VectorTypes):
+            return torch.broadcast_shapes(self.z.shape, self.y.shape, self.x.shape)
