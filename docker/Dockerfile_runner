@@ -21,7 +21,7 @@ RUN curl -o actions-runner-linux-x64-2.322.0.tar.gz -L $ACTION_RUNNER_URL && tar
 
 RUN ./bin/installdependencies.sh
 COPY docker/runner_entrypoint.sh /actions-runner/entrypoint.sh
-RUN chmod 755 /actions-runner
+RUN chmod -R 755 /actions-runner
 
 RUN mkdir /work && chmod 777 /work
 
