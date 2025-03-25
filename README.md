@@ -8,7 +8,7 @@
 
 </h1><br>
 
-![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)
+![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Coverage Bagde](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/ckolbPTB/48e334a10caf60e6708d7c712e56d241/raw/coverage.json)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14509598.svg)](https://doi.org/10.5281/zenodo.14509598)
@@ -47,11 +47,11 @@ trajectory = mrpro.data.traj_calculators.KTrajectoryIsmrmrd()
 # Load in the Data from the ISMRMRD file
 kdata = mrpro.data.KData.from_file(data_file.name, trajectory)
 # Perform the reconstruction
-reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction.from_kdata(kdata)
+reconstruction = mrpro.algorithms.reconstruction.DirectReconstruction(kdata)
 img = reconstruction(kdata)
 ```
 
-Full example: <https://github.com/PTB-MR/mrpro/blob/main/examples/direct_reconstruction.py>
+Full example: <https://github.com/PTB-MR/mrpro/blob/main/examples/scripts/direct_reconstruction.py>
 
 ### Estimate quantitative parameters
 
@@ -65,10 +65,10 @@ mse = MSE(idata_multi_ti.data.abs())
 functional = mse @ model
 [...]
 # Run optimization
-params_result = adam(functional, [m0_start, t1_start], max_iter=max_iter, lr=lr)
+params_result = adam(functional, [m0_start, t1_start], n_iterations=n_iterations, learning_rate=learning_rate)
 ```
 
-Full example: <https://github.com/PTB-MR/mrpro/blob/main/examples/qmri_sg_challenge_2024_t1.py>
+Full example: <https://github.com/PTB-MR/mrpro/blob/main/examples/scripts/qmri_sg_challenge_2024_t1.py>
 
 ### Pulseq support
 
@@ -79,7 +79,7 @@ The trajectory can be calculated directly from a provided pulseq-file.
 kdata = KData.from_file(data_file.name, KTrajectoryPulseq(seq_path=seq_file.name))
 ```
 
-Full example: <https://github.com/PTB-MR/mrpro/blob/main/examples/pulseq_2d_radial_golden_angle.py>
+Full example: <https://github.com/PTB-MR/mrpro/blob/main/examples/scripts/comparison_trajectory_calculators.py>
 
 ## Contributing
 

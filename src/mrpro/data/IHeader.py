@@ -231,9 +231,9 @@ class IHeader(MoveDataMixin):
             patient_table_position=try_reduce_repeat(header.acq_info.patient_table_position.apply(lambda x: x)),
             acquisition_time_stamp=try_reduce_repeat(header.acq_info.acquisition_time_stamp.mean((-1, -2, -3), True)),
             physiology_time_stamps=PhysiologyTimestamps(
+                try_reduce_repeat(header.acq_info.physiology_time_stamps.timestamp0.mean((-1, -2, -3), True)),
                 try_reduce_repeat(header.acq_info.physiology_time_stamps.timestamp1.mean((-1, -2, -3), True)),
                 try_reduce_repeat(header.acq_info.physiology_time_stamps.timestamp2.mean((-1, -2, -3), True)),
-                try_reduce_repeat(header.acq_info.physiology_time_stamps.timestamp3.mean((-1, -2, -3), True)),
             ),
             idx=ImageIdx.from_acqidx(header.acq_info.idx),
         )

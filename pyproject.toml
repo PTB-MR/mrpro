@@ -56,6 +56,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
@@ -116,7 +117,7 @@ filterwarnings = [
     "ignore:Anomaly Detection has been enabled:UserWarning",                   # torch.autograd
     "ignore:allow_ops_in_compiled_graph failed to import torch:ImportWarning", # einops and dynamo<2.5
 ]
-addopts = "-n auto"
+addopts = "-n auto --dist loadfile --maxprocesses=8"
 markers = ["cuda : Tests only to be run when cuda device is available"]
 
 # MyPy section
