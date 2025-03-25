@@ -11,8 +11,8 @@ RUN bash install_system.sh && rm install_system.sh
 
 # install mrpro dependencies
 # forces rebuild if either the version or the pyproject.toml changes
-COPY docker/minimal-requirements.txt docker/install_dependencies_minimal.sh ./
-RUN bash install_dependencies_minimal.sh && rm install_dependencies_minimal.sh
+COPY docker/minimal-requirements.txt ./
+RUN python -m pip install --no-cache-dir -r minimal-requirements.txt && rm -rf /root/.cache
 
 COPY . /mrpro/
 RUN python -m pip install "/mrpro[tests]" --no-cache-dir
