@@ -10,7 +10,6 @@ from dataclasses import dataclass
 import torch
 
 from mrpro.data.MoveDataMixin import MoveDataMixin
-from mrpro.operators.SignalModel import SignalModel
 from mrpro.utils.reshape import unsqueeze_tensors_right
 from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
 
@@ -176,12 +175,12 @@ def relax_matrix(relaxation_time: torch.Tensor, t1: torch.Tensor, t2: torch.Tens
 
 
 @torch.jit.script
-def relax(state: torch.Tensor, relaxation_matrix: torch.Tensor, t1_recovery: bool = True) -> torch.Tensor:
+def relax(states: torch.Tensor, relaxation_matrix: torch.Tensor, t1_recovery: bool = True) -> torch.Tensor:
     """Propagate EPG states through a period of relaxation and recovery.
 
     Parameters
     ----------
-    state
+    states
         EPG configuration states Fplus, Fminus, Z
     relaxation_matrix
         matrix describing EPG relaxation
@@ -192,11 +191,11 @@ def relax(state: torch.Tensor, relaxation_matrix: torch.Tensor, t1_recovery: boo
     -------
         EPG configuration states after relaxation and recovery
     """
-    state = relaxation_matrix[..., None] * state
+    states = relaxation_matrix[..., None] * states
 
     if t1_recovery:
-        state[..., 2, 0] = state[..., 2, 0] + (1 - relaxation_matrix[..., -1])
-    return state
+        states[..., 2, 0] = states[..., 2, 0] + (1 - relaxation_matrix[..., -1])
+    return states
 
 
 def acquisition(state: torch.Tensor, m0: torch.Tensor) -> torch.Tensor:
@@ -207,7 +206,7 @@ def acquisition(state: torch.Tensor, m0: torch.Tensor) -> torch.Tensor:
 def initial_state(
     shape: Sequence[int], n_states: int = 20, device: torch.device | str = 'cpu', dtype: torch.dtype = torch.complex64
 ) -> torch.Tensor:
-    """Generate initial EPG state.
+    """Generate initial EPG states.
 
     Parameters
     ----------
@@ -226,21 +225,38 @@ def initial_state(
     """
     if n_states < 2:
         raise ValueError('Number of states should be at least 2.')
-    state = torch.zeros(*shape, 3, n_states, device=device, dtype=dtype)
+    states = torch.zeros(*shape, 3, n_states, device=device, dtype=dtype)
     # Start in equilibrium state
-    state[..., :, 0] = torch.tensor((0.0, 0, 1.0))
-    return state
+    states[..., :, 0] = torch.tensor((0.0, 0, 1.0))
+    return states
 
 
 class EPGBlock(TensorAttributeMixin, ABC):
     """Base class for EPG blocks."""
 
-    def __call__(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, Sequence[torch.Tensor]]:
-        """Apply the block."""
-        return super().__call__(state, parameters)
+    def __call__(
+        self, parameters: Parameters, states: torch.Tensor | int = 20
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, ...]]:
+        """Apply the block.
+
+        Parameters
+        ----------
+        parameters
+            Tissue parameters
+        states
+            EPG configuration states.
+            If an integer value, the equilibrium state (0, 0, 1) will be initialized with
+            the given number of EPG configuration states. The number should be large enough to capture the
+            signal dynamics. More states increase the accuracy of the simulation but also the computational cost.
+        """
+        if isinstance(states, int):
+            states = initial_state(
+                parameters.shape, n_states=states, device=parameters.device, dtype=parameters.dtype.to_complex()
+            )
+        return super().__call__(parameters, states)
 
     @abstractmethod
-    def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, Sequence[torch.Tensor]]:
+    def forward(self, parameters: Parameters, states: torch.Tensor) -> tuple[torch.Tensor, tuple[torch.Tensor, ...]]:
         """Apply the block."""
         raise NotImplementedError
 
@@ -267,12 +283,16 @@ class RFBlock(EPGBlock):
         self.flip_angle = torch.as_tensor(flip_angle)
         self.phase = torch.as_tensor(phase)
 
-    def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
+    def forward(
+        self,
+        parameters: Parameters,
+        states: torch.Tensor,
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, ...]]:
         """Apply the RF to the EPG state.
 
         Parameters
         ----------
-        state
+        states
             EPG configuration states
         parameters
             Tissue parameters
@@ -282,7 +302,7 @@ class RFBlock(EPGBlock):
             EPG configuration states after the block and an empty list
         """
         matrix = rf_matrix(self.flip_angle, self.phase, parameters.relative_b1)
-        return rf(state, matrix), []
+        return rf(states, matrix), ()
 
     @property
     def duration(self) -> torch.Tensor:
@@ -293,12 +313,16 @@ class RFBlock(EPGBlock):
 class AcquisitionBlock(EPGBlock):
     """Acquisition block."""
 
-    def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
+    def forward(
+        self,
+        parameters: Parameters,
+        states: torch.Tensor,
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, ...]]:
         """Apply the acquisition block to the EPG state.
 
         Parameters
         ----------
-        state
+        states
             EPG configuration states
         parameters
             Tissue parameters
@@ -307,7 +331,7 @@ class AcquisitionBlock(EPGBlock):
         -------
             EPG configuration states (unchanged) after the block and the acquired signal
         """
-        return state, [acquisition(state, parameters.m0)]
+        return states, (acquisition(states, parameters.m0),)
 
     @property
     def duration(self) -> torch.Tensor:
@@ -318,12 +342,16 @@ class AcquisitionBlock(EPGBlock):
 class GradientDephasingBlock(EPGBlock):
     """Gradient dephasing block."""
 
-    def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:  # noqa: ARG002
+    def forward(
+        self,
+        parameters: Parameters,  # noqa: ARG002
+        states: torch.Tensor,
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, ...]]:
         """Apply the gradient dephasing block to the EPG state.
 
         Parameters
         ----------
-        state
+        states
             EPG configuration states
         parameters
             Tissue parameters
@@ -332,7 +360,7 @@ class GradientDephasingBlock(EPGBlock):
         -------
             EPG configuration states after the block and an empty list
         """
-        return gradient_dephasing(state), []
+        return gradient_dephasing(states), ()
 
     @property
     def duration(self) -> torch.Tensor:
@@ -394,12 +422,16 @@ class FispBlock(EPGBlock):
         """Duration of the block."""
         return self.tr.sum(0)
 
-    def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
+    def forward(
+        self,
+        parameters: Parameters,
+        states: torch.Tensor,
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, ...]]:
         """Apply the FISP block to the EPG state.
 
         Parameters
         ----------
-        state
+        states
             EPG configuration states
         parameters
             Tissue parameters
@@ -414,12 +446,12 @@ class FispBlock(EPGBlock):
             self.flip_angles, self.rf_phases, self.te, self.tr, ndim=parameters.ndim + 1
         )
         for flip_angle, rf_phase, te, tr in zip(*unsqueezed, strict=True):
-            state = rf(state, rf_matrix(flip_angle, rf_phase, parameters.relative_b1))
-            state = relax(state, relax_matrix(te, parameters.t1, parameters.t2))
-            signal.append(acquisition(state, parameters.m0))
-            state = gradient_dephasing(state)
-            state = relax(state, relax_matrix((tr - te), parameters.t1, parameters.t2))
-        return state, signal
+            states = rf(states, rf_matrix(flip_angle, rf_phase, parameters.relative_b1))
+            states = relax(states, relax_matrix(te, parameters.t1, parameters.t2))
+            signal.append(acquisition(states, parameters.m0))
+            states = gradient_dephasing(states)
+            states = relax(states, relax_matrix((tr - te), parameters.t1, parameters.t2))
+        return states, tuple(signal)
 
 
 class InversionBlock(EPGBlock):
@@ -440,12 +472,16 @@ class InversionBlock(EPGBlock):
 
         self.inversion_time = torch.as_tensor(inversion_time)
 
-    def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
+    def forward(
+        self,
+        parameters: Parameters,
+        states: torch.Tensor,
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, ...]]:
         """Apply the inversion block to the EPG state.
 
         Parameters
         ----------
-        state
+        states
             EPG configuration states
         parameters
             Tissue parameters
@@ -454,9 +490,9 @@ class InversionBlock(EPGBlock):
         -------
             EPG configuration states after the block and an empty list
         """
-        state = rf(state, rf_matrix(torch.tensor(torch.pi), torch.tensor(0.0)))
-        state = relax(state, relax_matrix(self.inversion_time, parameters.t1, parameters.t2))
-        return state, []
+        states = rf(states, rf_matrix(torch.tensor(torch.pi), torch.tensor(0.0)))
+        states = relax(states, relax_matrix(self.inversion_time, parameters.t1, parameters.t2))
+        return states, ()
 
     @property
     def duration(self) -> torch.Tensor:
@@ -484,12 +520,16 @@ class T2PrepBlock(EPGBlock):
 
         self.te = torch.as_tensor(te)
 
-    def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
+    def forward(
+        self,
+        parameters: Parameters,
+        states: torch.Tensor,
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, ...]]:
         """Apply the T2 preparation block to the EPG state.
 
         Parameters
         ----------
-        state
+        states
             EPG configuration states
         parameters
             Tissue parameters
@@ -500,14 +540,14 @@ class T2PrepBlock(EPGBlock):
         """
         # 90° pulse -> relaxation during TE/2 -> 180° pulse -> relaxation during TE/2 -> -90° pulse
         te2_relax = relax_matrix(self.te / 2, parameters.t1, parameters.t2)
-        state = rf(state, rf_matrix(torch.tensor(torch.pi / 2), torch.tensor(0.0)))
-        state = relax(state, te2_relax)
-        state = rf(state, rf_matrix(torch.tensor(torch.pi), torch.tensor(torch.pi / 2)))
-        state = relax(state, te2_relax)
-        state = rf(state, rf_matrix(torch.tensor(torch.pi / 2), -torch.tensor(torch.pi)))
+        states = rf(states, rf_matrix(torch.tensor(torch.pi / 2), torch.tensor(0.0)))
+        states = relax(states, te2_relax)
+        states = rf(states, rf_matrix(torch.tensor(torch.pi), torch.tensor(torch.pi / 2)))
+        states = relax(states, te2_relax)
+        states = rf(states, rf_matrix(torch.tensor(torch.pi / 2), -torch.tensor(torch.pi)))
         # Spoiler
-        state = gradient_dephasing(state)
-        return state, []
+        states = gradient_dephasing(states)
+        return states, ()
 
     @property
     def duration(self) -> torch.Tensor:
@@ -529,12 +569,16 @@ class DelayBlock(EPGBlock):
         super().__init__()
         self.delay_time = torch.as_tensor(delay_time)
 
-    def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
+    def forward(
+        self,
+        parameters: Parameters,
+        states: torch.Tensor,
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, ...]]:
         """Apply the delay block to the EPG state.
 
         Parameters
         ----------
-        state
+        states
             EPG configuration states
         parameters
             Tissue parameters
@@ -544,8 +588,8 @@ class DelayBlock(EPGBlock):
             EPG configuration states after the block and an empty list
         """
         (delay_time,) = unsqueeze_tensors_right(self.delay_time, ndim=parameters.ndim)
-        state = relax(state, relax_matrix(delay_time, parameters.t1, parameters.t2))
-        return state, []
+        states = relax(states, relax_matrix(delay_time, parameters.t1, parameters.t2))
+        return states, ()
 
     @property
     def duration(self) -> torch.Tensor:
@@ -562,41 +606,15 @@ class EPGSequence(torch.nn.ModuleList, EPGBlock):
     angles as described in [MA2013]_ Ma, D. et al. Magnetic resonance fingerprinting. Nature 495, 187-192 (2013)
     [http://dx.doi.org/10.1038/nature11971] can be simulated by the following sequence:
      - InversionBlock
-     - FispBlock with flip_angles
+     - FispBlock with varying flip_angles
 
-    Cardiac MRF where a different preparation is done in each cardiac cycle followed by fixed number of RF pulses as
-    described in [HAMI2017]_. It is a four-fold
-    repetition of
-
-                Block 0                   Block 1                   Block 2                     Block 3
-       R-peak                   R-peak                    R-peak                    R-peak                    R-peak
-    ---|-------------------------|-------------------------|-------------------------|-------------------------|-----
-
-            [INV TI=30ms][ACQ]                     [ACQ]     [T2-prep TE=50ms][ACQ]    [T2-prep TE=100ms][ACQ]
-
-    can be simulated as:
-        - InversionBlock with inversion_time=30
-        - FispBlock with 47 flip_angles
-        - DelayBlock with delay_time=1000-(inversion_block.duration + fisp_block.duration)
-
-        - FispBlock with 47 flip_angles
-        - DelayBlock with delay_time=1000-(fisp_block.duration)
-
-        - T2PrepBlock with te=50
-        - FispBlock with 47 flip_angles
-        - DelayBlock with delay_time=1000-(t2_prep_block.duration + fisp_block.duration)
-
-        - T2PrepBlock with te=100
-        - FispBlock with 47 flip_angles
-        - DelayBlock with delay_time=1000-(t2_prep_block.duration + fisp_block.duration)
-
-    See also `CardiacFingerprinting` for an implementation.
+    You can also nest `EPGSequence`, i.e., use it as a block in another`EPGSequence`. This allows to create complex
+    with multiple repetitions of the same blocks. F
 
     References
     ----------
     .. [MA2013] Ma, D et al.(2013) Magnetic resonance fingerprinting. Nature 495 http://dx.doi.org/10.1038/nature11971
-    .. [HAMI2017] Hamilton, J. I. et al. (2017) MR fingerprinting for rapid quantification of myocardial T1, T2, and
-            proton spin density. Magn. Reson. Med. 77 http://doi.wiley.com/10.1002/mrm.26668
+
 
     """
 
@@ -610,15 +628,19 @@ class EPGSequence(torch.nn.ModuleList, EPGBlock):
         """
         torch.nn.ModuleList.__init__(self, blocks)
 
-    def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
-        """Apply the sequence of blocks to the EPG state.
+    def forward(
+        self,
+        parameters: Parameters,
+        states: torch.Tensor,
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, ...]]:
+        """Apply the sequence of blocks to the EPG states.
 
         Parameters
         ----------
-        state
-            EPG configuration states
         parameters
             Tissue parameters
+        states
+            EPG configuration states.
 
         Returns
         -------
@@ -627,9 +649,9 @@ class EPGSequence(torch.nn.ModuleList, EPGBlock):
         signals: list[torch.Tensor] = []
         block: EPGBlock
         for block in self:
-            state, signal = block(state, parameters)
+            states, signal = block(parameters, states)
             signals.extend(signal)
-        return state, signals
+        return states, tuple(signals)
 
     @property
     def duration(self) -> torch.Tensor:
@@ -637,62 +659,10 @@ class EPGSequence(torch.nn.ModuleList, EPGBlock):
         return sum(block.duration for block in self)
 
 
-class EPGSignalModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor | None]):
-    """EPG signal model."""
-
-    def __init__(self, sequence: EPGSequence | Sequence[EPGBlock], n_states: int = 20):
-        """Initialize the EPG signal model.
-
-        Parameters
-        ----------
-        sequence
-            EPG sequence of blocks
-        n_states
-            Number of EPG configuration states. This model uses a fixed number of states for performance reasons.
-            Should be large enough to capture the signal dynamics.
-            More states increase the accuracy of the simulation but also the computational cost.
-        """
-        super().__init__()
-        self.n_states = n_states
-        if not isinstance(sequence, EPGSequence):
-            self.sequence = EPGSequence(sequence)
-        else:
-            self.sequence = sequence
-
-    def forward(
-        self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor, relative_b1: torch.Tensor | None = None
-    ) -> tuple[torch.Tensor]:
-        """Simulate the EPG signal.
-
-        Parameters
-        ----------
-        m0
-            Steady state magnetization (complex)
-        t1
-            T1 relaxation time
-        t2
-            T2 relaxation time
-        relative_b1
-            Relative B1 scaling factor (complex)
-
-        Returns
-        -------
-            Simulated EPG signal with the different acquisitions in the first dimension.
-        """
-        parameters = Parameters(m0, t1, t2, relative_b1)
-        state = initial_state(
-            parameters.shape, n_states=self.n_states, device=parameters.device, dtype=parameters.dtype.to_complex()
-        )
-        _, signals = self.sequence(state, parameters)
-        signal = torch.stack(list(signals), dim=0)
-        return (signal,)
-
-
 __all__ = [
     'AcquisitionBlock',
     'DelayBlock',
     'EPGSequence',
-    'EPGSignalModel',
     'FispBlock',
     'GradientDephasingBlock',
     'InversionBlock',

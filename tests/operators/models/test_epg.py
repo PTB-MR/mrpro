@@ -5,38 +5,69 @@ from collections.abc import Sequence
 import pytest
 import torch
 from mrpro.operators.models import CardiacFingerprinting
-from mrpro.operators.models.EPG import DelayBlock, EPGSequence, EPGSignalModel, FispBlock, InversionBlock, T2PrepBlock
+from mrpro.operators.models.EPG import DelayBlock, EPGSequence, FispBlock, InversionBlock, Parameters, T2PrepBlock
+from mrpro.operators.SignalModel import SignalModel
 from tests import RandomGenerator
 from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 
 
-def create_EpgFisp_model(
-    flip_angles: float | torch.Tensor = torch.pi,
-    rf_phases: float | torch.Tensor = 0,
-    tr: float | torch.Tensor = 0.01,
-    te: float | torch.Tensor = 0.005,
-    n_states: int = 10,
-) -> EPGSignalModel:
-    """Create EPG model for FISP sequence with different preparation blocks."""
-    sequence = EPGSequence()
-    sequence.append(FispBlock(flip_angles, rf_phases, tr, te))
-    return EPGSignalModel(sequence, n_states=n_states)
+class EpgFispModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
+    """An simple EPG Model for testing."""
+
+    def __init__(
+        self,
+        flip_angles: float | torch.Tensor = torch.pi,
+        rf_phases: float | torch.Tensor = 0,
+        tr: float | torch.Tensor = 0.01,
+        te: float | torch.Tensor = 0.005,
+        n_states: int = 10,
+    ):
+        super().__init__()
+        self.sequence = EPGSequence()
+        self.sequence.append(FispBlock(flip_angles, rf_phases, tr, te))
+        self.n_states = n_states
+
+    def forward(
+        self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor, b1_relative: torch.Tensor
+    ) -> tuple[torch.Tensor]:
+        """Simulate the signal.
+
+        Parameters
+        ----------
+        m0
+            Steady state magnetization (complex)
+        t1
+            longitudinal relaxation time T1
+        t2
+            transversal relaxation time T2
+        b1_relative
+            relative B1 scaling (complex)
+
+
+        Returns
+        -------
+            Signal of Fisp sequence.
+        """
+        parameters = Parameters(m0, t1, t2, b1_relative)
+        _, signals = self.sequence(parameters, states=self.n_states)
+        signal = torch.stack(list(signals), dim=0)
+        return (signal,)
 
 
 def test_EpgFisp_not_enough_states() -> None:
     """Verify error for less than 2 states."""
-    epg_model = create_EpgFisp_model(n_states=1)
+    epg_model = EpgFispModel(n_states=1)
     with pytest.raises(ValueError, match='Number of states should be at least 2'):
-        epg_model(torch.ones((1,)), torch.ones((1,)), torch.ones((1,)), None)
+        epg_model(torch.ones((1,)), torch.ones((1,)), torch.ones((1,)), torch.ones((1,)))
 
 
 def test_EpgFisp_parameter_broadcasting() -> None:
     """Verify correct broadcasting of values."""
     te = tr = rf_phases = torch.ones((1,))
     flip_angles = torch.ones((20,))
-    epg_model = create_EpgFisp_model(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
-    m0 = t1 = t2 = torch.randn((30,))
-    (epg_signal,) = epg_model.forward(m0, t1, t2, None)
+    epg_model = EpgFispModel(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
+    m0 = t1 = t2 = b1_relative = torch.randn((30,))
+    (epg_signal,) = epg_model(m0, t1, t2, b1_relative)
     assert epg_signal.shape == (20, 30)
 
 
@@ -45,7 +76,7 @@ def test_EpgFisp_parameter_mismatch() -> None:
     flip_angles = rf_phases = tr = torch.ones((1, 2))
     te = torch.ones((1, 3))
     with pytest.raises(ValueError, match='Shapes of flip_angles'):
-        create_EpgFisp_model(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
+        EpgFispModel(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
 
 
 @SHAPE_VARIATIONS_SIGNAL_MODELS
@@ -61,8 +92,8 @@ def test_EpgFisp_shape(parameter_shape, contrast_dim_shape, signal_shape) -> Non
     m0 = rng.complex64_tensor(parameter_shape)
     relative_b1 = rng.complex64_tensor(parameter_shape)
 
-    model_op = create_EpgFisp_model(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
-    (signal,) = model_op.forward(m0, t1, t2, relative_b1)
+    model_op = EpgFispModel(flip_angles=flip_angles, rf_phases=rf_phases, te=te, tr=tr)
+    (signal,) = model_op(m0, t1, t2, relative_b1)
     assert signal.shape == signal_shape
 
 
@@ -87,8 +118,9 @@ def test_EpgFisp_inversion_recovery() -> None:
         sequence.append(InversionBlock(inversion_time=ti))
         sequence.append(FispBlock(flip_angles=torch.pi / 2, rf_phases=torch.pi / 2, tr=0.007, te=1e-6))
         sequence.append(DelayBlock(delay_time=40))
-    epg_model = EPGSignalModel(sequence)
-    (epg_signal,) = epg_model(m0, t1, t2, None)
+    parameters = Parameters(m0, t1, t2)
+    _, signals = sequence(parameters)
+    epg_signal = torch.stack(list(signals), dim=0)
 
     torch.testing.assert_close(epg_signal, analytical_signal, rtol=1e-3, atol=1e-3)
 
@@ -114,8 +146,9 @@ def test_EpgFisp_t2_preparation() -> None:
         sequence.append(T2PrepBlock(te=te))
         sequence.append(FispBlock(flip_angles=torch.pi / 2, rf_phases=torch.pi / 2, tr=0.007, te=1e-6))
         sequence.append(DelayBlock(delay_time=40))
-    epg_model = EPGSignalModel(sequence)
-    (epg_signal,) = epg_model(m0, t1, t2, None)
+    parameters = Parameters(m0, t1, t2)
+    _, signals = sequence(parameters)
+    epg_signal = torch.stack(list(signals), dim=0)
 
     torch.testing.assert_close(epg_signal, analytical_signal, rtol=1e-3, atol=1e-3)
 
