@@ -85,11 +85,21 @@ def test_spatial_dimension_from_array_wrongshape():
 
 
 def test_spatial_dimension_broadcasting():
-    z = torch.ones(2, 1, 1)
+    """Test broadcasted shape."""
+    z = torch.ones(4, 1, 1)
     y = torch.ones(1, 2, 1)
-    x = torch.ones(1, 1, 2)
+    x = torch.ones(1, 1, 3)
     spatial_dimension = SpatialDimension(z, y, x)
-    assert spatial_dimension.shape == (2, 2, 2)
+    assert spatial_dimension.shape == (4, 2, 3)
+
+
+def test_spatial_dimension_broadcasting_error():
+    """Test error if shape of x,y,z is not broadcastable"""
+    z = torch.ones(4, 1, 1)
+    y = torch.ones(1, 2, 5)
+    x = torch.ones(1, 1, 3)
+    with pytest.raises(ValueError, match='cannot be broadcasted'):
+        _ = SpatialDimension(z, y, x)
 
 
 def test_spatial_dimension_apply_():
