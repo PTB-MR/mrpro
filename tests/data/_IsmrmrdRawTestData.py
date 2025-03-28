@@ -87,6 +87,7 @@ class IsmrmrdRawTestData:
         self.sampling_order = sampling_order
         self.phantom = phantom
         self.n_separate_calibration_lines = n_separate_calibration_lines
+        self.n_noise_samples = 4
 
         rng = RandomGenerator(0)
 
@@ -243,7 +244,7 @@ class IsmrmrdRawTestData:
         scan_counter = 0
 
         # Write out a few noise scans
-        for _ in range(32):
+        for _ in range(self.n_noise_samples):
             noise = self.noise_level * rng.randn_tensor((self.n_coils, n_freq_encoding), dtype=torch.complex64)
             # here's where we would make the noise correlated
             acq.scan_counter = scan_counter

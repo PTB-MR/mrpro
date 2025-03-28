@@ -218,16 +218,23 @@ def test_ktype_along_k210(
 def test_traj_from_ismrmrd(ismrmrd_cart_random_us) -> None:
     """Test reading trajectory from ISMRMRD file."""
     traj = KTrajectory.from_ismrmrd(ismrmrd_cart_random_us.filename)
-    assert traj.kx.shape == (80, 1, 1, 1, 128)
-    assert traj.ky.shape == (80, 1, 1, 1, 1)
+    n_other = (
+        ismrmrd_cart_random_us.matrix_size / ismrmrd_cart_random_us.acceleration * ismrmrd_cart_random_us.repetitions
+        + ismrmrd_cart_random_us.n_noise_samples
+    )
+    n_k0 = ismrmrd_cart_random_us.matrix_size * ismrmrd_cart_random_us.oversampling
+    assert traj.kx.shape == (n_other, 1, 1, 1, n_k0)
+    assert traj.ky.shape == (n_other, 1, 1, 1, 1)
     assert traj.kz.shape == (1, 1, 1, 1, 1)
 
 
 def test_traj_from_ismrmrd_normalize(ismrmrd_rad) -> None:
     """Test reading trajectory from ISMRMRD file with normalization."""
     traj = KTrajectory.from_ismrmrd(ismrmrd_rad.filename, normalize=True)
-    assert traj.kx.shape == (80, 1, 1, 1, 128)
-    assert traj.ky.shape == (80, 1, 1, 1, 128)
+    n_other = ismrmrd_rad.matrix_size / ismrmrd_rad.acceleration * ismrmrd_rad.repetitions + ismrmrd_rad.n_noise_samples
+    n_k0 = ismrmrd_rad.matrix_size * ismrmrd_rad.oversampling
+    assert traj.kx.shape == (n_other, 1, 1, 1, n_k0)
+    assert traj.ky.shape == (n_other, 1, 1, 1, n_k0)
     assert traj.kz.shape == (1, 1, 1, 1, 1)
     assert traj.kx.abs().amax() == ismrmrd_rad.matrix_size * ismrmrd_rad.oversampling / 2
     assert traj.ky.abs().amax() == ismrmrd_rad.matrix_size * ismrmrd_rad.oversampling / 2

@@ -26,3 +26,9 @@ def test_knoise_cpu(random_test_data) -> None:
     assert noise_cpu.data.is_cpu
     assert noise_cuda.data.is_cuda
     torch.testing.assert_close(noise_cpu.data, noise_cuda.data.cpu())
+
+
+def test_knoise_from_file(ismrmrd_cart) -> None:
+    """Get KNoise from ismrmrd file."""
+    noise = KNoise.from_file(ismrmrd_cart.filename)
+    assert noise.data.shape[0] == ismrmrd_cart.n_noise_samples
