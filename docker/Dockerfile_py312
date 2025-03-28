@@ -17,7 +17,7 @@ RUN bash install_dependencies.sh && rm install_dependencies.sh pyproject.toml VE
 # install mrpro
 # forces rebuild on any change in the mrpro directory
 COPY . /mrpro/
-RUN python -m pip install  "/mrpro[notebook]" --no-cache-dir --upgrade --upgrade-strategy "eager" && rm -rf /mrpro
+RUN python -m pip install  "/mrpro[notebooks]" --no-cache-dir --upgrade --upgrade-strategy "eager" && rm -rf /mrpro
 
 # set user
 USER runner
