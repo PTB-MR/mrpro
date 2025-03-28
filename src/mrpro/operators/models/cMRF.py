@@ -2,14 +2,7 @@
 
 import torch
 
-from mrpro.operators.models.EPG import (
-    DelayBlock,
-    EPGSequence,
-    FispBlock,
-    InversionBlock,
-    Parameters,
-    T2PrepBlock,
-)
+from mrpro.operators.models.EPG import DelayBlock, EPGSequence, FispBlock, InversionBlock, Parameters, T2PrepBlock
 from mrpro.operators.SignalModel import SignalModel
 
 
@@ -127,6 +120,6 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             Simulated Cardiac MR Fingerprinting signal with the different acquisitions in the first dimension.
         """
         parameters = Parameters(m0, t1, t2)
-        _, signals = self.sequence(parameters)
-        signal = torch.stack(list(signals), dim=0)
+        _, signals = self.sequence(parameters, states=20)
+        signal = torch.stack(signals, dim=0)
         return (signal,)

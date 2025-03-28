@@ -12,6 +12,8 @@ from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 
 
 class EpgFispModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
+    """An simple EPG Model for testing."""
+
     def __init__(
         self,
         flip_angles: float | torch.Tensor = torch.pi,
@@ -28,7 +30,7 @@ class EpgFispModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.T
     def forward(
         self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor, b1_relative: torch.Tensor
     ) -> tuple[torch.Tensor]:
-        """Simulate the Cardiac MR Fingerprinting signal.
+        """Simulate the signal.
 
         Parameters
         ----------
@@ -47,7 +49,7 @@ class EpgFispModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.T
             Signal of Fisp sequence.
         """
         parameters = Parameters(m0, t1, t2, b1_relative)
-        _, signals = self.sequence(parameters, n_states=self.n_states)
+        _, signals = self.sequence(parameters, states=self.n_states)
         signal = torch.stack(list(signals), dim=0)
         return (signal,)
 
