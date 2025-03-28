@@ -551,45 +551,7 @@ class DelayBlock(EPGBlock):
         return self.delay_time
 
 
-class BlockSequence(torch.nn.ModuleList, EPGBlock):
-    def __init__(self, blocks: Sequence[EPGBlock] = ()) -> None:
-        """Initialize a sequence of EPG blocks.
-
-        Parameters
-        ----------
-        blocks
-            blocks such as RF, delays, acquisitions etc.
-        """
-        torch.nn.ModuleList.__init__(self, blocks)
-
-    def forward(self, state: torch.Tensor, parameters: Parameters) -> tuple[torch.Tensor, list[torch.Tensor]]:
-        """Apply the sequence of blocks to the EPG state.
-
-        Parameters
-        ----------
-        state
-            EPG configuration states
-        parameters
-            Tissue parameters
-
-        Returns
-        -------
-            EPG configuration states after the sequence of blocks and the acquired signals
-        """
-        signals: list[torch.Tensor] = []
-        block: EPGBlock
-        for block in self:
-            state, signal = block(state, parameters)
-            signals.extend(signal)
-        return state, signals
-
-    @property
-    def duration(self) -> torch.Tensor:
-        """Duration of the block."""
-        return sum(block.duration for block in self)
-
-
-class EPGSequence(torch.nn.ModuleList):
+class EPGSequence(torch.nn.ModuleList, EPGBlock):
     """Sequene of EPG blocks.
 
     The sequence as multiple blocks, such as preparation pulses, acquisition blocks and delays.
@@ -600,9 +562,7 @@ class EPGSequence(torch.nn.ModuleList):
      - InversionBlock
      - FispBlock with flip_angles
 
-    Cardiac MRF where a different preparation is done in each cardiac cycle followed by fixed number of RF pulses as
-    described in [HAMI2017]_. It is a four-fold
-    repetition of
+    A more sophisticated MRF Sequence where a different preparations are done in each cardiac cycle, similiar to [HAMI2017]_
 
                 Block 0                   Block 1                   Block 2                     Block 3
        R-peak                   R-peak                    R-peak                    R-peak                    R-peak
@@ -612,21 +572,24 @@ class EPGSequence(torch.nn.ModuleList):
 
     can be simulated as:
         - InversionBlock with inversion_time=30
-        - FispBlock with 47 flip_angles
+        - FispBlock with varying flip_angles
         - DelayBlock with delay_time=1000-(inversion_block.duration + fisp_block.duration)
 
-        - FispBlock with 47 flip_angles
+        - FispBlock with varying flip_angles
         - DelayBlock with delay_time=1000-(fisp_block.duration)
 
         - T2PrepBlock with te=50
-        - FispBlock with 47 flip_angles
+        - FispBlock with varying flip_angles
         - DelayBlock with delay_time=1000-(t2_prep_block.duration + fisp_block.duration)
 
         - T2PrepBlock with te=100
-        - FispBlock with 47 flip_angles
+        - FispBlock with varying flip_angles
         - DelayBlock with delay_time=1000-(t2_prep_block.duration + fisp_block.duration)
 
-    See also `CardiacFingerprinting` for an implementation.
+    You can also nest `EPGSequence`. For example, in the previous example, you could
+    first create 4 separate blocks as `EPGSequence` and add those to the MRF sequence.
+    
+    See also `~mrpro.operators.models.CardiacFingerprinting` for an implementation.
 
     References
     ----------
@@ -647,7 +610,7 @@ class EPGSequence(torch.nn.ModuleList):
         torch.nn.ModuleList.__init__(self, blocks)
 
     def forward(
-        self, parameters: Parameters, state: torch.Tensor | None = None, n_states: int = 20
+        self, parameters: Parameters, state: torch.Tensor | int = 20
     ) -> tuple[torch.Tensor, list[torch.Tensor]]:
         """Apply the sequence of blocks to the EPG state.
 
@@ -656,18 +619,17 @@ class EPGSequence(torch.nn.ModuleList):
         parameters
             Tissue parameters
         state
-            EPG configuration states. If ``None``, the equilibrium state (0, 0, 1) will be initialized.
-        n_states
-            Number of EPG configuration states. This model uses a fixed number of states for performance reasons.
+            EPG configuration states. 
+            If an integer value, the equilibrium state (0, 0, 1) will be initialized with the given number of EPG configuration states. 
+            This model uses a fixed number of states for performance reasons.
             Should be large enough to capture the signal dynamics. More states increase the accuracy of the simulation
-            but also the computational cost. This will only be used if `state` is ``None``.
-
+            but also the computational cost.
 
         Returns
         -------
             EPG configuration states after the sequence of blocks and the acquired signals
         """
-        if state is None:
+        if isinstance(state, int):
             state = initial_state(
                 parameters.shape, n_states=n_states, device=parameters.device, dtype=parameters.dtype.to_complex()
             )

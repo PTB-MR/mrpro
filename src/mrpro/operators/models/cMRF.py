@@ -3,7 +3,6 @@
 import torch
 
 from mrpro.operators.models.EPG import (
-    BlockSequence,
     DelayBlock,
     EPGSequence,
     FispBlock,
@@ -89,7 +88,7 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             raise ValueError(f'Expected 705 acquisition times. Got {acquisition_times.size(-1)}')
         block_time = acquisition_times[::47]  # Start time of each acquisition block. Varies due to heart rate.
         for i in range(block_time.size(-1)):
-            block = BlockSequence()
+            block = EPGSequence()
             match i % 5:
                 case 0:
                     block.append(InversionBlock(0.020))
