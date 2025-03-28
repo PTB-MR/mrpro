@@ -568,6 +568,8 @@ class DelayBlock(EPGBlock):
         """
         super().__init__()
         self.delay_time = torch.as_tensor(delay_time)
+        if (self.delay_time < 0).any():
+            raise ValueError(f'Negative delay time ({self.delay_time.amin()})')
 
     def forward(
         self,

@@ -1,5 +1,7 @@
 """Cardiac MR Fingerprinting signal model (EPG)."""
 
+from collections.abc import Sequence
+
 import torch
 
 from mrpro.operators.models.EPG import DelayBlock, EPGSequence, FispBlock, InversionBlock, Parameters, T2PrepBlock
@@ -9,16 +11,15 @@ from mrpro.operators.SignalModel import SignalModel
 class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
     """Cardiac MR Fingerprinting signal model.
 
-    This model simulates a cardiac MR fingerprinting sequence as described in [HAMI2017]_ using the extended phase
+    This model simulates a cardiac MR fingerprinting sequence as described in [HAMI2020]_ using the extended phase
     graph (`~mrpro.operators.models.EPG`) formalism.
 
-    It is a four-fold repetition of
+    It is a three-fold repetition of
 
-                Block 0                   Block 1                   Block 2                     Block 3
-       R-peak                   R-peak                    R-peak                    R-peak                    R-peak
-    ---|-------------------------|-------------------------|-------------------------|-------------------------|-----
-
-            [INV TI=30ms][ACQ]                     [ACQ]     [T2-prep TE=50ms][ACQ]    [T2-prep TE=100ms][ACQ]
+            Block 0             Block 1                Block 2               Block 3           Block 4
+    R-peak               R-peak                R-peak              R-peak               R-peak
+    |--------------------|--------------------|--------------------|--------------------|----------------------
+      [INV TI=30ms][ACQ]        [ACQ]              [T2-prep 0][ACQ]     [T2-prep 1][ACQ]      [T2-prep 2s][ACQ]
 
 
     ```{note}
@@ -29,24 +30,27 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
     References
     ----------
     .. [HAMI2017] Hamilton, J. I. et al. (2017) MR fingerprinting for rapid quantification of myocardial T1, T2, and
-            proton spin density. Magn. Reson. Med. 77 http://doi.wiley.com/10.1002/mrm.26668
+            proton spin density. Magn. Reson. Med. 77 http://doi.wiley.com/10.1002/mrm.26216
+    .. [HAMI2020]  Hamilton, J.I. et al. (2020) Simultaneous Mapping of T1 and T2 Using Cardiac Magnetic Resonance
+            Fingerprinting in a Cohort of Healthy Subjects at 1.5T. J Magn Reson Imaging, 52: 1044-1052. https://doi.org/10.1002/jmri.27155]
     """
 
     def __init__(
         self,
-        acquisition_times: torch.Tensor,
-        echo_time: float,
-        repetition_time: float,
-        t2_prep_echo_times: tuple[float, float, float],
+        acquisition_times: torch.Tensor | Sequence[int] = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14),
+        echo_time: float = 0.015,
+        repetition_time: float = 0.005,
+        t2_prep_echo_times: tuple[float, float, float] = (0.03, 0.05, 0.08),
     ) -> None:
         """Initialize the Cardiac MR Fingerprinting signal model.
 
         Parameters
         ----------
         acquisition_times
-            Acquisition times in s
-            Times of all acquisitions. Only the first acquisition time of each block is used to determine the
-            heart rate dependent delays.
+            Times of the acquisistions in s.
+            Either 15 values (the first acquisition of each block) or 705 values for all acquisitions.
+            In both cases only the time of the first acquisition of each block will be used to calculate the delays.
+
         echo_time
             TE in s
         repetition_time
@@ -60,27 +64,14 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
         """
         super().__init__()
         self.sequence = EPGSequence()
-        max_flip_angles_deg = [
-            12.5,
-            18.75,
-            25.0,
-            25.0,
-            25.0,
-            12.5,
-            18.75,
-            25.0,
-            25.0,
-            25.0,
-            12.5,
-            18.75,
-            25.0,
-            25.0,
-            25.0,
-        ]
-        if len(acquisition_times) != 705:
-            raise ValueError(f'Expected 705 acquisition times. Got {acquisition_times.size(-1)}')
-        block_time = acquisition_times[::47]  # Start time of each acquisition block. Varies due to heart rate.
-        for i in range(block_time.size(-1)):
+        max_flip_angles_deg = [12.5, 18.75, 25, 25, 25, 12.5, 18.75, 25, 25.0, 25, 12.5, 18.75, 25, 25, 25]
+        if len(acquisition_times) == 15:
+            block_time = torch.as_tensor(acquisition_times)
+        elif len(acquisition_times) == 705:
+            block_time = torch.as_tensor(acquisition_times[::47])
+        else:
+            raise ValueError(f'Invalid number of acquisition times: {len(acquisition_times)}. Must be 15 or 705.')
+        for i in range(15):
             block = EPGSequence()
             match i % 5:
                 case 0:
@@ -97,8 +88,11 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
                 torch.cat((torch.linspace(4, max_flip_angles_deg[i], 16), torch.full((31,), max_flip_angles_deg[i])))
             )
             block.append(FispBlock(flip_angles, 0.0, tr=repetition_time, te=echo_time))
+
             if i > 0:
                 delay = (block_time[i] - block_time[i - 1]) - block.duration
+                if delay < 0:
+                    raise ValueError(f'Block {i} would start before the previous block finished. ')
                 self.sequence.append(DelayBlock(delay))
             self.sequence.append(block)
 
