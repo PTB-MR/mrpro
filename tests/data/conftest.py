@@ -1,17 +1,24 @@
 """PyTest fixtures for the data tests."""
 
+from collections.abc import Callable
+
 import pytest
 import torch
 from ismrmrd import xsd
 from mrpro.data import Rotation, SpatialDimension
+from mrpro.utils import unsqueeze_left
 
 from tests import RandomGenerator
-from tests.conftest import generate_random_data
-from tests.data import DicomTestImage
+from tests.data import DicomTestImage, IsmrmrdRawTestData
 
 
 @pytest.fixture(params=({'seed': 0},))
-def cartesian_grid(request):
+def cartesian_grid(request) -> Callable[[int, int, int, float], tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
+    """Cartesian grid generator.
+
+    Generates a 3D cartesian grid with optional jitter.
+    Shape of the returned tensors is `(1, 1, n_k2, n_k1, n_k0)`.
+    """
     generator = RandomGenerator(request.param['seed'])
 
     def generate(n_k2: int, n_k1: int, n_k0: int, jitter: float) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -23,7 +30,8 @@ def cartesian_grid(request):
             kx = kx + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
             ky = ky + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
             kz = kz + generator.float32_tensor((n_k2, n_k1, n_k0), high=jitter)
-        return kz.unsqueeze(0), ky.unsqueeze(0), kx.unsqueeze(0)
+        kz, ky, kx = (unsqueeze_left(x, 2) for x in (kz, ky, kx))
+        return kz, ky, kx
 
     return generate
 
@@ -62,7 +70,7 @@ def random_test_data(request):
         request.param['n_x'],
     )
     generator = RandomGenerator(seed)
-    test_data = generate_random_data(generator, (n_other, n_coils, n_z, n_y, n_x))
+    test_data = generator.complex64_tensor((n_other, n_coils, n_z, n_y, n_x))
     return test_data
 
 
@@ -208,3 +216,75 @@ def dcm_3d_multi_orientation(ellipse_phantom, tmp_path_factory):
             )
         )
     return dcm_image_data
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_bodycoil_and_surface_coil(ellipse_phantom, tmp_path_factory):
+    """Fully sampled cartesian data set with bodycoil and surface coil data."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        phantom=ellipse_phantom.phantom,
+        add_bodycoil_acquisitions=True,
+    )
+    return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_with_calibration_lines(ellipse_phantom, tmp_path_factory):
+    """Undersampled Cartesian data set with calibration lines."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=1,
+        acceleration=2,
+        phantom=ellipse_phantom.phantom,
+        n_separate_calibration_lines=16,
+    )
+    return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_invalid_reps(tmp_path_factory):
+    """Fully sampled cartesian data set."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        flag_invalid_reps=True,
+    )
+    return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_random_us(ellipse_phantom, tmp_path_factory):
+    """Randomly undersampled cartesian data set with repetitions."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        acceleration=4,
+        sampling_order='random',
+        phantom=ellipse_phantom.phantom,
+    )
+    return ismrmrd_kdata
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_rad(ellipse_phantom, tmp_path_factory):
+    """Data set with uniform radial k-space sampling."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_rad.h5'
+    ismrmrd_data = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=3,
+        phantom=ellipse_phantom.phantom,
+        trajectory_type='radial',
+        acceleration=4,
+    )
+    return ismrmrd_data

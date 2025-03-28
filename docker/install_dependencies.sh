@@ -1,5 +1,5 @@
 # pre-install cpu-version of torch to avoid installation of cuda-version via dependencies
-python -m pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+python -m pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
 #parse dependencies
 python -m pip install --no-cache-dir toml

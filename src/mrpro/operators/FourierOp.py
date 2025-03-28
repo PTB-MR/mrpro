@@ -101,6 +101,8 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
         else:
             self._non_uniform_fast_fourier_op = None
 
+        self._trajectory_info = repr(traj)
+
     @classmethod
     def from_kdata(cls, kdata: KData, recon_shape: SpatialDimension[int] | None = None) -> Self:
         """Create an instance of FourierOp from kdata with default settings.
@@ -156,13 +158,34 @@ class FourierOp(LinearOperator, adjoint_as_backward=True):
 
         if self._non_uniform_fast_fourier_op:
             (x,) = self._non_uniform_fast_fourier_op.adjoint(x)
-
         return (x,)
 
     @property
     def gram(self) -> LinearOperator:
         """Return the gram operator."""
         return FourierGramOp(self)
+
+    def __repr__(self) -> str:
+        """Representation method for Fourier Operator."""
+        string = ''
+        device_omega = None
+        device_cart = None
+
+        if self._nufft_dims and self._non_uniform_fast_fourier_op:
+            nufftop = self._non_uniform_fast_fourier_op
+            string += f'\n{nufftop}\n'
+            device_omega = nufftop._omega.device if nufftop._omega.device is not None else None
+        if self._fft_dims:
+            string += f'\n{self._fast_fourier_op}\n\n{self._cart_sampling_op}\n'
+            device_cart = self._cart_sampling_op._fft_idx.device if self._cart_sampling_op is not None else None
+
+        if device_omega and device_cart:
+            device = device_omega if device_omega == device_cart else 'Different devices'
+        else:
+            device = device_omega or device_cart or 'None'
+
+        out = f'{type(self).__name__} on device: {device}\n{string}\n{self._trajectory_info}'
+        return out
 
 
 class FourierGramOp(LinearOperator):

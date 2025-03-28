@@ -1,5 +1,7 @@
 """Transient steady state signal models."""
 
+from collections.abc import Sequence
+
 import torch
 
 from mrpro.operators.SignalModel import SignalModel
@@ -44,11 +46,11 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
 
     def __init__(
         self,
-        sampling_time: float | torch.Tensor,
+        sampling_time: float | torch.Tensor | Sequence[float],
         repetition_time: float | torch.Tensor,
         m0_scaling_preparation: float | torch.Tensor = 1.0,
         delay_after_preparation: float | torch.Tensor = 0.0,
-    ):
+    ) -> None:
         """Initialize transient steady state signal model.
 
         `repetition_time`, `m0_scaling_preparation` and `delay_after_preparation` can vary for each voxel and will be
@@ -71,17 +73,23 @@ class TransientSteadyStateWithPreparation(SignalModel[torch.Tensor, torch.Tensor
 
         """
         super().__init__()
-        sampling_time = torch.as_tensor(sampling_time)
-        self.sampling_time = torch.nn.Parameter(sampling_time, requires_grad=sampling_time.requires_grad)
-        repetition_time = torch.as_tensor(repetition_time, device=sampling_time.device)
-        self.repetition_time = torch.nn.Parameter(repetition_time, requires_grad=repetition_time.requires_grad)
-        m0_scaling_preparation = torch.as_tensor(m0_scaling_preparation, device=sampling_time.device)
-        self.m0_scaling_preparation = torch.nn.Parameter(
-            m0_scaling_preparation, requires_grad=m0_scaling_preparation.requires_grad
+
+        sampling_time_tensor = torch.as_tensor(sampling_time)
+        self.sampling_time = torch.nn.Parameter(sampling_time_tensor, requires_grad=sampling_time_tensor.requires_grad)
+
+        repetition_time_tensor = torch.as_tensor(repetition_time, device=sampling_time_tensor.device)
+        self.repetition_time = torch.nn.Parameter(
+            repetition_time_tensor, requires_grad=repetition_time_tensor.requires_grad
         )
-        delay_after_preparation = torch.as_tensor(delay_after_preparation, device=sampling_time.device)
+
+        m0_scaling_preparation_tensor = torch.as_tensor(m0_scaling_preparation, device=sampling_time_tensor.device)
+        self.m0_scaling_preparation = torch.nn.Parameter(
+            m0_scaling_preparation_tensor, requires_grad=m0_scaling_preparation_tensor.requires_grad
+        )
+
+        delay_after_preparation_tensor = torch.as_tensor(delay_after_preparation, device=sampling_time_tensor.device)
         self.delay_after_preparation = torch.nn.Parameter(
-            delay_after_preparation, requires_grad=delay_after_preparation.requires_grad
+            delay_after_preparation_tensor, requires_grad=delay_after_preparation_tensor.requires_grad
         )
 
     def forward(self, m0: torch.Tensor, t1: torch.Tensor, flip_angle: torch.Tensor) -> tuple[torch.Tensor,]:

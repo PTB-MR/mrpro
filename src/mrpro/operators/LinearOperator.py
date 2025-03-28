@@ -34,10 +34,10 @@ class _AutogradWrapper(torch.autograd.Function):
     def setup_context(
         ctx: Any,  # noqa: ANN401
         inputs: tuple[Callable[[torch.Tensor], torch.Tensor], Callable[[torch.Tensor], torch.Tensor], torch.Tensor],
-        output: torch.Tensor,
-    ) -> torch.Tensor:
+        _output: torch.Tensor,
+    ) -> None:
         ctx.fw, ctx.bw, x = inputs
-        return output
+        return None
 
     @staticmethod
     def backward(ctx: Any, *grad_output: torch.Tensor) -> tuple[None, None, torch.Tensor]:  # noqa: ANN401
@@ -171,7 +171,8 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
         if max_iterations < 1:
             raise ValueError('The number of iterations should be larger than zero.')
 
-        # check that the norm of the starting value is not zero
+        dim = tuple(dim) if dim is not None else dim  # must be tuple or None for torch.sum
+
         norm_initial_value = torch.linalg.vector_norm(initial_value, dim=dim, keepdim=True)
         if not (norm_initial_value > 0).all():
             if dim is None:
@@ -183,24 +184,23 @@ class LinearOperator(Operator[torch.Tensor, tuple[torch.Tensor]]):
                     should be different from the zero-vector.'
                 )
 
-        # set initial value
-        vector = initial_value
-
         # creaty dummy operator norm value that cannot be correct because by definition, the
         # operator norm is a strictly positive number. This ensures that the first time the
         # change between the old and the new estimate of the operator norm is non-zero and
         # thus prevents the loop from exiting despite a non-correct estimate.
-        op_norm_old = torch.zeros(*tuple([1 for _ in range(vector.ndim)]), device=vector.device)
+        op_norm_old = torch.zeros(*tuple([1 for _ in range(initial_value.ndim)]), device=initial_value.device)
 
-        dim = tuple(dim) if dim is not None else dim
+        gram = self.gram  # self.H@self
+
+        vector = initial_value
         for _ in range(max_iterations):
             # apply the operator to the vector
-            (vector_new,) = self.adjoint(*self(vector))
+            (vector_new,) = gram(vector)
 
             # compute estimate of the operator norm
             product = vector.real * vector_new.real
             if vector.is_complex() and vector_new.is_complex():
-                product += vector.imag * vector_new.imag
+                product = product + vector.imag * vector_new.imag
             op_norm = product.sum(dim, keepdim=True).sqrt()
 
             # check if stopping criterion is fulfillfed; if not continue the iteration

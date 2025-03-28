@@ -1,5 +1,7 @@
 """WASABI signal model for mapping of B0 and B1."""
 
+from collections.abc import Sequence
+
 import torch
 from torch import nn
 
@@ -13,7 +15,7 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
 
     def __init__(
         self,
-        offsets: torch.Tensor,
+        offsets: torch.Tensor | Sequence[float] | float,
         rf_duration: float | torch.Tensor = 0.005,
         b1_nominal: float | torch.Tensor = 3.70e-6,
         gamma: float = GYROMAGNETIC_RATIO_PROTON,
@@ -38,14 +40,13 @@ class WASABI(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
            field-Inhomogeneity correction of CEST MRI data. MRM 77(2). https://doi.org/10.1002/mrm.26133
         """
         super().__init__()
-
-        rf_duration = torch.as_tensor(rf_duration)
-        b1_nominal = torch.as_tensor(b1_nominal)
-
-        # nn.Parameters allow for grad calculation
-        self.offsets = nn.Parameter(offsets, requires_grad=offsets.requires_grad)
-        self.rf_duration = nn.Parameter(rf_duration, requires_grad=rf_duration.requires_grad)
-        self.b1_nominal = nn.Parameter(b1_nominal, requires_grad=b1_nominal.requires_grad)
+        # offsets determines the device
+        offsets_tensor = torch.as_tensor(offsets)
+        self.offsets = nn.Parameter(offsets_tensor, requires_grad=offsets_tensor.requires_grad)
+        rf_duration_tensor = torch.as_tensor(rf_duration, device=offsets_tensor.device)
+        self.rf_duration = nn.Parameter(rf_duration_tensor, requires_grad=rf_duration_tensor.requires_grad)
+        b1_nominal_tensor = torch.as_tensor(b1_nominal, device=offsets_tensor.device)
+        self.b1_nominal = nn.Parameter(b1_nominal_tensor, requires_grad=b1_nominal_tensor.requires_grad)
         self.gamma = gamma
 
     def forward(
