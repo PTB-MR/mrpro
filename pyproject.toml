@@ -72,6 +72,7 @@ dependencies = [
     "ptwt>=0.1.8",
     "typing-extensions>=4.12",
     "torchvision>0.18",
+    "nibabel"
 ]
 
 [project.optional-dependencies]
@@ -143,6 +144,7 @@ module = [
     "pywt.*",
     "torchvision.*",
     "platformdirs",
+    "nibabel",
 ]
 ignore_missing_imports = true
 
