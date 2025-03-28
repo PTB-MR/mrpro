@@ -108,7 +108,7 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
         Parameters
         ----------
         m0
-            Steady state magnetization (complex)
+            steady state magnetization (complex)
         t1
             longitudinal relaxation time T1
         t2
