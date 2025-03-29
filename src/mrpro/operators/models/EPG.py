@@ -76,7 +76,7 @@ def rf_matrix(
     flip_angle
         Flip angle of the RF pulse in rad
     phase
-        Phase of the RF pulse
+        Phase of the RF pulse in rad
     relative_b1
         Scaling of flip angle due to B1 inhomogeneities
 
