@@ -1,10 +1,7 @@
 """Tests for EPG signal models."""
 
-from collections.abc import Sequence
-
 import pytest
 import torch
-from mrpro.operators.models import CardiacFingerprinting
 from mrpro.operators.models.EPG import DelayBlock, EPGSequence, FispBlock, InversionBlock, Parameters, T2PrepBlock
 from mrpro.operators.SignalModel import SignalModel
 from tests import RandomGenerator
@@ -24,7 +21,7 @@ class EpgFispModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.T
     ):
         super().__init__()
         self.sequence = EPGSequence()
-        self.sequence.append(FispBlock(flip_angles, rf_phases, tr, te))
+        self.sequence.append(FispBlock(flip_angles, rf_phases, te, tr))
         self.n_states = n_states
 
     def forward(
@@ -86,7 +83,7 @@ def test_EpgFisp_shape(parameter_shape, contrast_dim_shape, signal_shape) -> Non
     flip_angles = rng.float32_tensor(contrast_dim_shape, low=1e-5, high=5)
     rf_phases = rng.float32_tensor(contrast_dim_shape, low=1e-5, high=0.5)
     te = rng.float32_tensor(contrast_dim_shape, low=1e-5, high=0.01)
-    tr = rng.float32_tensor(contrast_dim_shape, low=1e-5, high=0.05)
+    tr = rng.float32_tensor(contrast_dim_shape, low=0.01, high=0.05)
     t1 = rng.float32_tensor(parameter_shape, low=1e-5, high=5)
     t2 = rng.float32_tensor(parameter_shape, low=1e-5, high=0.5)
     m0 = rng.complex64_tensor(parameter_shape)

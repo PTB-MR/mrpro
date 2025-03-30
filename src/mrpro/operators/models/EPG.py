@@ -419,7 +419,7 @@ class FispBlock(EPGBlock):
                 f'tr ({tr_.shape}) cannot be broadcasted.',
             ) from None
         if (self.te > self.tr).any():
-            raise ValueError(f'echotime ({self.te}) should be smaller than repetitinon time ({self.tr}).')
+            raise ValueError(f'echotime ({self.te}) should be smaller than repetition time ({self.tr}).')
         if (self.te < 0).any():
             raise ValueError(f'Negative echo time ({self.te.amin()}) not allowed.')
 

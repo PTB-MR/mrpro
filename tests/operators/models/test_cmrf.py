@@ -35,7 +35,7 @@ def test_cmrf_autodiff(parameter_shape: Sequence[int] = (2, 1, 3, 4, 2)) -> None
 def test_cmrf_cuda(parameter_shape: Sequence[int] = (2,)) -> None:
     """Test the cMRF model works on cuda devices."""
     rng = RandomGenerator(8)
-    acquisition_times = rng.random_float_tensor(15, low=0.8, high=2).cumsum()
+    acquisition_times = rng.float32_tensor(15, low=0.8, high=2).cumsum(0)
 
     t1 = rng.float32_tensor(parameter_shape, low=1e-5, high=5)
     t2 = rng.float32_tensor(parameter_shape, low=1e-5, high=0.5)
@@ -49,13 +49,13 @@ def test_cmrf_cuda(parameter_shape: Sequence[int] = (2,)) -> None:
     assert signal.isfinite().all()
 
     # Create on GPU and run on GPU
-    model = CardiacFingerprinting(acquisition_times.cuda)
+    model = CardiacFingerprinting(acquisition_times.cuda())
     (signal,) = model(m0.cuda(), t1.cuda(), t2.cuda())
     assert signal.is_cuda
     assert signal.isfinite().all()
 
     # Create on GPU, transfer to CPU and run on CPU
-    model = CardiacFingerprinting(acquisition_times.cuda)
+    model = CardiacFingerprinting(acquisition_times.cuda())
     model.cpu()
     (signal,) = model(m0, t1, t2)
     assert signal.is_cpu
@@ -70,7 +70,7 @@ def test_cmrf_invalid():
         CardiacFingerprinting(acquisition_times=torch.ones(15))
     with pytest.raises(ValueError, match='would start before the previous block finished'):
         CardiacFingerprinting(repetition_time=5.0)
-    with pytest.raises(ValueError, match='should be smaller than repetitinon time'):
+    with pytest.raises(ValueError, match='should be smaller than repetition time'):
         CardiacFingerprinting(echo_time=0.006)
     with pytest.raises(ValueError, match='Negative echo time'):
         CardiacFingerprinting(t2_prep_echo_times=(-0.01, 0.05, 0.08))
