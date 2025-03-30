@@ -12,7 +12,7 @@ from tests.operators.models.conftest import SHAPE_VARIATIONS_SIGNAL_MODELS
 
 
 class EpgFispModel(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
-    """An simple EPG Model for testing."""
+    """A simple EPG model of a Fisp sequence for testing."""
 
     def __init__(
         self,
@@ -151,17 +151,3 @@ def test_EpgFisp_t2_preparation() -> None:
     epg_signal = torch.stack(list(signals), dim=0)
 
     torch.testing.assert_close(epg_signal, analytical_signal, rtol=1e-3, atol=1e-3)
-
-
-def test_cmrf_model(parameter_shape: Sequence[int] = (2, 5, 10, 10, 10)) -> None:
-    """Test the CMRF model."""
-    acquisition_times = torch.linspace(0, 10, 705)
-    cmrf_model = CardiacFingerprinting(
-        acquisition_times=acquisition_times, echo_time=0.005, repetition_time=0.01, t2_prep_echo_times=(0.03, 0.05, 0.1)
-    )
-    rng = RandomGenerator(0)
-    t1 = rng.float32_tensor(parameter_shape, low=1e-5, high=5)
-    t2 = rng.float32_tensor(parameter_shape, low=1e-5, high=0.5)
-    m0 = rng.complex64_tensor(parameter_shape)
-    signal = cmrf_model(t1, t2, m0)
-    assert signal

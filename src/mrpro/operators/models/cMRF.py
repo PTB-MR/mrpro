@@ -11,34 +11,33 @@ from mrpro.operators.SignalModel import SignalModel
 class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor]):
     """Cardiac MR Fingerprinting signal model.
 
-    This model simulates a cardiac MR fingerprinting sequence as described in [HAMI2020]_ using the extended phase
-    graph (`~mrpro.operators.models.EPG`) formalism.
+    This model simulates a cardiac MR fingerprinting sequence as described in [HAMI2017]_ and [HAMI2020]_ using the
+    extended phase graph (`~mrpro.operators.models.EPG`) formalism.
 
-    It is a three-fold repetition of
+    It is a three-fold repetition of::
 
             Block 0             Block 1                Block 2               Block 3           Block 4
-    R-peak               R-peak                R-peak              R-peak               R-peak
-    |--------------------|--------------------|--------------------|--------------------|----------------------
-      [INV TI=30ms][ACQ]        [ACQ]              [T2-prep 0][ACQ]     [T2-prep 1][ACQ]      [T2-prep 2s][ACQ]
+            R-peak               R-peak                R-peak              R-peak               R-peak
+            |--------------------|--------------------|--------------------|--------------------|----------------------
+              [INV TI=30ms][ACQ]        [ACQ]              [T2-prep 0][ACQ]     [T2-prep 1][ACQ]      [T2-prep 2s][ACQ]
 
+    .. note::
 
-    ```{note}
-    This model is on purpose not flexible in all design choices. Instead, consider writing a custom
-    `~mrpro.operators.SignalModel` based on this implementation if you need to simulate a different sequence.
-    ```
+       This model is on purpose not flexible in all design choices. Instead, consider writing a custom
+       `~mrpro.operators.SignalModel` based on this implementation if you need to simulate a different sequence.
 
     References
     ----------
     .. [HAMI2017] Hamilton, J. I. et al. (2017) MR fingerprinting for rapid quantification of myocardial T1, T2, and
-            proton spin density. Magn. Reson. Med. 77 http://doi.wiley.com/10.1002/mrm.26216
-    .. [HAMI2020]  Hamilton, J.I. et al. (2020) Simultaneous Mapping of T1 and T2 Using Cardiac Magnetic Resonance
-            Fingerprinting in a Cohort of Healthy Subjects at 1.5T. J Magn Reson Imaging, 52: 1044-1052. https://doi.org/10.1002/jmri.27155]
+           proton spin density. Magn. Reson. Med. 77 http://doi.wiley.com/10.1002/mrm.26216
+    .. [HAMI2020] Hamilton, J.I. et al. (2020) Simultaneous Mapping of T1 and T2 Using Cardiac Magnetic Resonance
+           Fingerprinting in a Cohort of Healthy Subjects at 1.5T. J Magn Reson Imaging, 52: 1044-1052. https://doi.org/10.1002/jmri.27155
     """
 
     def __init__(
         self,
         acquisition_times: torch.Tensor | Sequence[int] = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14),
-        echo_time: float = 0.015,
+        echo_time: float = 0.0015,
         repetition_time: float = 0.005,
         t2_prep_echo_times: tuple[float, float, float] = (0.03, 0.05, 0.08),
     ) -> None:
@@ -57,10 +56,6 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             TR in s
         t2_prep_echo_times
             Echo times of the three T2 preparation blocks in s
-
-        Returns
-        -------
-            Cardiac MR Fingerprinting signal with the different acquisitions in the first dimension.
         """
         super().__init__()
         self.sequence = EPGSequence()
@@ -91,7 +86,7 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
 
             if i > 0:
                 delay = (block_time[i] - block_time[i - 1]) - block.duration
-                if delay < 0:
+                if (delay < 0).any():
                     raise ValueError(f'Block {i} would start before the previous block finished. ')
                 self.sequence.append(DelayBlock(delay))
             self.sequence.append(block)
@@ -104,9 +99,9 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
         m0
             steady state magnetization (complex)
         t1
-            longitudinal relaxation time T1
+            longitudinal relaxation time T1 in s
         t2
-            transversal relaxation time T2
+            transversal relaxation time T2 in s
 
 
         Returns
