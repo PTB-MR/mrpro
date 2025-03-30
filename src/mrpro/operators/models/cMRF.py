@@ -14,12 +14,14 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
     This model simulates a cardiac MR fingerprinting sequence as described in [HAMI2017]_ and [HAMI2020]_ using the
     extended phase graph (`~mrpro.operators.models.EPG`) formalism.
 
-    It is a three-fold repetition of::
+    It is a three-fold repetition of
 
-            Block 0             Block 1                Block 2               Block 3           Block 4
-            R-peak               R-peak                R-peak              R-peak               R-peak
-            |--------------------|--------------------|--------------------|--------------------|----------------------
-              [INV TI=30ms][ACQ]        [ACQ]              [T2-prep 0][ACQ]     [T2-prep 1][ACQ]      [T2-prep 2s][ACQ]
+    .. code-block:: text
+
+        Block 0          Block 1          Block 2          Block 3          Block 4
+        R-peak           R-peak           R-peak           R-peak           R-peak
+        |----------------|----------------|----------------|----------------|----------------
+         [INV 30ms][ACQ]           [ACQ]   [T2-prep][ACQ]   [T2-prep][ACQ]  [T2-prep][ACQ]
 
     .. note::
 
