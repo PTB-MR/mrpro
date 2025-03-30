@@ -1,4 +1,4 @@
-"""Tests the move to device/dtype functionality of  dataclasses."""
+"""Tests the base Dataclass."""
 
 from dataclasses import field
 
