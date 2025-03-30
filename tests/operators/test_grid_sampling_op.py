@@ -287,6 +287,7 @@ def test_grid_sampling_op_batchdims(grid_batch, u_batch, channel, expected_outpu
 
 @pytest.mark.cuda
 def test_grid_sampling_op_cuda() -> None:
+    """Test grid sampling operator works on CUDA devices."""
     rng = RandomGenerator(0).float32_tensor
     dim = 3
     batch = (2, 3)
