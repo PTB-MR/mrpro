@@ -22,14 +22,13 @@ def test_averageingop_forward() -> None:
     """Test the forward method of the averaging operator."""
     rng = RandomGenerator(seed=1)
     u = rng.complex64_tensor(size=(5, 10))
-    idx = [0, 1, 2], slice(0, 6, 2), torch.tensor([-1, -2, -3]), (False, True, True, False, True, False)
+    idx = [0, 1, 2], slice(0, 6, 2), torch.tensor([-1, -2, -3]), (False, True, True, False, True)
     op = AveragingOp(dim=0, idx=idx, domain_size=5)
     (actual,) = op(u)
     torch.testing.assert_close(actual[0], u[(0, 1, 2),].mean(dim=0))
     torch.testing.assert_close(actual[1], u[(0, 2, 4),].mean(dim=0))
     torch.testing.assert_close(actual[2], u[(-1, -2, -3),].mean(dim=0))
     torch.testing.assert_close(actual[3], u[(1, 2, 4),].mean(dim=0))
-
 
 
 def test_averageingop_no_domain_size() -> None:
