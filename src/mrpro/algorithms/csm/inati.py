@@ -58,11 +58,11 @@ def inati(
     singular_vector = torch.sum(coil_img_roi, dim=-1)  # z y x coils
     singular_vector /= singular_vector.norm(dim=-1, keepdim=True)
     for _ in range(n_power_iterations):
-        singular_vector = einsum(coil_img_cov, singular_vector, '...coils1 coils2,... coils2->... coils1')
+        singular_vector = einsum(coil_img_cov, singular_vector, '... coils1 coils2,... coils2->... coils1')
         singular_vector /= singular_vector.norm(dim=-1, keepdim=True)
 
-    singular_value = einsum(coil_img_roi, singular_vector, '...coils window,...coils->... window')
+    singular_value = einsum(coil_img_roi, singular_vector, '... coils window,... coils->... window')
     phase = singular_value.sum(-1)
-    phase /= phase.abs()  # z y x
+    phase /= phase.abs()
     csm = csm = einsum(singular_vector.conj(), phase, '... coils,...->coils ...')  # coils z y x
     return csm
