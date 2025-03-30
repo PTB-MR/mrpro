@@ -283,3 +283,62 @@ def test_grid_sampling_op_batchdims(grid_batch, u_batch, channel, expected_outpu
     else:
         (result,) = operator(u)
         assert result.shape == (*expected_output, 7, 8, 9)
+
+
+@pytest.mark.cuda
+def test_grid_sampling_op_cuda() -> None:
+    rng = RandomGenerator(0).float32_tensor
+    dim = 3
+    batch = (2, 3)
+    channel = (5, 7)
+    zyx_v = (7, 10, 20)[-dim:]
+    zyx_u = (9, 22, 30)[-dim:]
+    grid = rng((*batch, *zyx_v, dim), -1, 1.0)
+    input_shape = SpatialDimension(z=zyx_u[-3], y=zyx_u[-2], x=zyx_u[-1])
+    u = rng((*batch, *channel, *zyx_u))
+
+    # Create on CPU, transfer to GPU, run on GPU
+    gridsampling_op = GridSamplingOp(
+        grid,
+        input_shape=input_shape,
+        interpolation_mode='bilinear',
+        padding_mode='zeros',
+        align_corners=False,
+    )
+    gridsampling_op.cuda()
+    (forward_u,) = gridsampling_op(u.cuda())
+    assert forward_u.is_cuda
+
+    # Create on CPU, run on CPU
+    gridsampling_op = GridSamplingOp(
+        grid,
+        input_shape=input_shape,
+        interpolation_mode='bilinear',
+        padding_mode='zeros',
+        align_corners=False,
+    )
+    (forward_u,) = gridsampling_op(u)
+    assert forward_u.is_cpu
+
+    # Create on GPU, run on GPU
+    gridsampling_op = GridSamplingOp(
+        grid.cuda(),
+        input_shape=input_shape.cuda(),
+        interpolation_mode='bilinear',
+        padding_mode='zeros',
+        align_corners=False,
+    )
+    (forward_u,) = gridsampling_op(u.cuda())
+    assert forward_u.is_cuda
+
+    # Create on GPU, transfer to CPU, run on CPU
+    gridsampling_op = GridSamplingOp(
+        grid.cuda(),
+        input_shape=input_shape.cuda(),
+        interpolation_mode='bilinear',
+        padding_mode='zeros',
+        align_corners=False,
+    )
+    gridsampling_op.cpu()
+    (forward_u,) = gridsampling_op(u)
+    assert forward_u.is_cpu
