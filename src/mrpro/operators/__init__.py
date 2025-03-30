@@ -19,6 +19,7 @@ from mrpro.operators.LinearOperatorMatrix import LinearOperatorMatrix
 from mrpro.operators.MagnitudeOp import MagnitudeOp
 from mrpro.operators.MultiIdentityOp import MultiIdentityOp
 from mrpro.operators.NonUniformFastFourierOp import NonUniformFastFourierOp
+from mrpro.operators.PatchOp import PatchOp
 from mrpro.operators.PCACompressionOp import PCACompressionOp
 from mrpro.operators.PhaseOp import PhaseOp
 from mrpro.operators.ProximableFunctionalSeparableSum import ProximableFunctionalSeparableSum
@@ -53,6 +54,7 @@ __all__ = [
     "NonUniformFastFourierOp",
     "Operator",
     "PCACompressionOp",
+    "PatchOp",
     "PhaseOp",
     "ProximableFunctional",
     "ProximableFunctionalSeparableSum",
