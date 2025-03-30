@@ -1,4 +1,4 @@
-"""Base class for all dataclasses in the `mrpro` package."""
+"""Base class for all data classes."""
 
 import dataclasses
 from collections.abc import Callable, Iterator, Sequence
@@ -56,8 +56,14 @@ class Dataclass:
 
     __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
 
-    def __init_subclass__(cls, no_new_attributes: bool = True, *args, **kwargs):
-        """Create a new dataclass subclass."""
+    def __init_subclass__(cls, no_new_attributes: bool = True, *args, **kwargs) -> None:  # noqa: D417
+        """Create a new dataclass subclass.
+
+        Parameters
+        ----------
+        no_new_attributes
+            If `True`, new attributes cannot be added to the class after it is created.
+        """
         dataclasses.dataclass(cls)
         super().__init_subclass__(**kwargs)
         child_post_init = vars(cls).get('__post_init__')
@@ -549,7 +555,12 @@ class Dataclass:
             if not hasattr(data, 'shape'):
                 continue
             shapes.append(data.shape)
-        return torch.broadcast_shapes(*shapes)
+        try:
+            return torch.broadcast_shapes(*shapes)
+        except RuntimeError:
+            raise ValueError(
+                'The shapes of the fields are not broadcastable. Found shapes: {shapes} in {self.__class__.__name__}'
+            ) from None
 
     @property
     def dtype(self) -> torch.dtype | None:

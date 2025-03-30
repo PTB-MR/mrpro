@@ -152,6 +152,7 @@ class KData(Dataclass, CheckDataMixin):
                         'Assuming Siemens time stamp format. If this is wrong, consider opening an Issue.',
                         stacklevel=1,
                     )
+                    convert_time_stamp = convert_time_stamp_siemens  # 2.5ms time steps
         else:
             warnings.warn('No vendor information found. Assuming Siemens time stamp format.', stacklevel=1)
             convert_time_stamp = convert_time_stamp_siemens
