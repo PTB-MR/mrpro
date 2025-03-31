@@ -42,14 +42,15 @@ class PatchOp(LinearOperator):
         if len(set(self.dim)) != len(self.dim):
             raise ValueError('Duplicate values in axis are not allowed')
 
-        def check(param: int | Sequence[int], name: str) -> bool:
+        def check(param: int | Sequence[int], name: str) -> tuple[int, ...]:
             if isinstance(param, int):
                 param = (param,) * len(self.dim)
             elif len(param) != len(self.dim):
                 raise ValueError(f'Length mismatch: {name} must have length {len(self.dim)}')
+            else:
+                param = tuple(param)
             if any(val <= 0 for val in param):
                 raise ValueError(f'{name} must be positive')
-            return param
 
         self.patch_size = check(patch_size, 'patch_size')
         self.stride = check(stride, 'stride') if stride is not None else self.patch_size
