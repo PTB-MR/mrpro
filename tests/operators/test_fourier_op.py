@@ -401,26 +401,69 @@ def test_fourier_op_cuda() -> None:
 
     # Create on CPU, transfer to GPU, run on GPU
     fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
-    fourier_op.cuda()
-    (fourier_op_result,) = fourier_op(x.cuda())
-    assert fourier_op_result.is_cuda
+    operator = fourier_op.H @ fourier_op
+    operator.cuda()
+    (result,) = operator(x.cuda())
+    assert result.is_cuda
 
     # Create on CPU, run on CPU
     fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory)
-    (fourier_op_result,) = fourier_op(x)
-    assert fourier_op_result.is_cpu
+    operator = fourier_op.H @ fourier_op
+    (result,) = operator(x)
+    assert result.is_cpu
 
     # Create on GPU, run on GPU
-    fourier_op = FourierOp(
-        recon_matrix=recon_matrix.cuda(), encoding_matrix=encoding_matrix.cuda(), traj=trajectory.cuda()
-    )
-    (fourier_op_result,) = fourier_op(x.cuda())
-    assert fourier_op_result.is_cuda
+    fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory.cuda())
+    operator = fourier_op.H @ fourier_op
+    (result,) = operator(x.cuda())
+    assert result.is_cuda
 
     # Create on GPU, transfer to CPU, run on CPU
-    fourier_op = FourierOp(
-        recon_matrix=recon_matrix.cuda(), encoding_matrix=encoding_matrix.cuda(), traj=trajectory.cuda()
+    fourier_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory.cuda())
+    operator = fourier_op.H @ fourier_op
+    operator.cpu()
+    (result,) = operator(x)
+    assert result.is_cpu
+
+
+@pytest.mark.cuda
+def test_fourier_op_gram_cuda() -> None:
+    """Test gram Fourier operator works on CUDA devices."""
+    # Create a trajectory with both Cartesian (on-grid) and non-Cartesian (off-grid) components
+    img_shape = (1, 2, 20, 20, 20)
+    k_shape = (1, 2, 40, 40, 40)
+    nkx = (1, 1, 1, 1, 40)
+    nky = (1, 1, 1, 40, 1)
+    nkz = (1, 1, 40, 1, 1)
+    type_kx = 'uniform'
+    type_ky = 'uniform'
+    type_kz = 'non-uniform'
+    trajectory = create_traj(nkx, nky, nkz, type_kx, type_ky, type_kz)
+
+    recon_matrix = SpatialDimension(k_shape[-3], k_shape[-2], k_shape[-1])
+    encoding_matrix = SpatialDimension(
+        int(trajectory.kz.max() - trajectory.kz.min() + 1),
+        int(trajectory.ky.max() - trajectory.ky.min() + 1),
+        int(trajectory.kx.max() - trajectory.kx.min() + 1),
     )
-    fourier_op.cpu()
-    (fourier_op_result,) = fourier_op(x)
-    assert fourier_op_result.is_cpu
+
+    random_generator = RandomGenerator(seed=0)
+    x = random_generator.complex64_tensor(size=img_shape)
+
+    # Create FourierOp.gram on CPU, transfer to GPU, run on GPU
+    gram_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory).gram.cuda()
+    operator = gram_op.H @ gram_op
+    (result,) = operator(x.cuda())
+    assert result.is_cuda
+
+    # Create FourierOp.gram on GPU, run on GPU
+    gram_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory).cuda().gram
+    operator = gram_op.H @ gram_op
+    (result,) = operator(x.cuda())
+    assert result.is_cuda
+
+    # Create FourierOp.gram on GPU, transfer to CPU, run on CPU
+    gram_op = FourierOp(recon_matrix=recon_matrix, encoding_matrix=encoding_matrix, traj=trajectory).cuda().gram.cpu()
+    operator = gram_op.H @ gram_op
+    (result,) = operator(x)
+    assert result.is_cpu
