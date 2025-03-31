@@ -51,6 +51,7 @@ class PatchOp(LinearOperator):
                 param = tuple(param)
             if any(val <= 0 for val in param):
                 raise ValueError(f'{name} must be positive')
+            return param
 
         self.patch_size = check(patch_size, 'patch_size')
         self.stride = check(stride, 'stride') if stride is not None else self.patch_size
