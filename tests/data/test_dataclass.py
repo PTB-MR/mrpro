@@ -266,9 +266,9 @@ def test_dataclass_no_new_attributes() -> None:
 
 def test_dataclass_repr() -> None:
     """Test the repr method of the dataclass."""
-    data = B(floattensor=torch.ones(1, 2, 3))
+    data = B()
     actual = repr(data)
-    expected = """B with (broadcasted) shape [1, 2, 3] on device "cpu".
+    expected = """B with (broadcasted) shape [10, 20] on device "cpu".
 Fields:
    child <A>
    module <SharedModule>
