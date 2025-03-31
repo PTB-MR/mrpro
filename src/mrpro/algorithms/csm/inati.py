@@ -64,5 +64,5 @@ def inati(
     singular_value = einsum(coil_img_roi, singular_vector, '... coils window,... coils->... window')
     phase = singular_value.sum(-1)
     phase /= phase.abs()
-    csm = csm = einsum(singular_vector.conj(), phase, '... coils,...->coils ...')  # coils z y x
+    csm = einsum(singular_vector.conj(), phase, '... coils,...->coils ...')  # coils z y x
     return csm
