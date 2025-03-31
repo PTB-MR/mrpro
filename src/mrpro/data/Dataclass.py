@@ -537,7 +537,7 @@ class Dataclass:
             return torch.broadcast_shapes(*shapes)
         except RuntimeError:
             raise ValueError(
-                'The shapes of the fields are not broadcastable. Found shapes: {shapes} in {self.__class__.__name__}'
+                f'The shapes of the fields are not broadcastable. Found shapes: {shapes} in {self.__class__.__name__}'
             ) from None
 
     @property
