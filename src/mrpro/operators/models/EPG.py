@@ -92,7 +92,7 @@ def rf_matrix(
     sina = torch.sin(flip_angle)
     cosa2 = (cosa + 1) / 2
     sina2 = 1 - cosa2
-    ejp = torch.polar(torch.tensor(1.0), phase)
+    ejp = torch.polar(torch.ones_like(phase), phase)
     inv_ejp = 1 / ejp
     new_shape = flip_angle.shape + (3, 3)  # noqa: RUF005 # not supported in torchscript
 
@@ -127,7 +127,7 @@ def rf(state: torch.Tensor, matrix: torch.Tensor) -> torch.Tensor:
     -------
         EPG configuration states after RF pulse. Shape `..., 3 (f_plus, f_minus, z), n`
     """
-    return matrix @ state
+    return matrix.to(state) @ state
 
 
 @torch.jit.script
@@ -192,6 +192,7 @@ def relax(states: torch.Tensor, relaxation_matrix: torch.Tensor, t1_recovery: bo
         EPG configuration states after relaxation and recovery.
         Shape `..., 3 (f_plus, f_minus, z), n`
     """
+    relaxation_matrix = relaxation_matrix.to(states)
     states = relaxation_matrix[..., None] * states
 
     if t1_recovery:
