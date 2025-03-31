@@ -253,9 +253,10 @@ def test_non_uniform_fast_fourier_op_cuda() -> None:
         encoding_matrix=encoding_matrix,
         traj=trajectory,
     )
-    nufft_op.cuda()
-    (nufft_result,) = nufft_op(img.cuda())
-    assert nufft_result.is_cuda
+    operator = nufft_op.H @ nufft_op
+    operator.cuda()
+    (result,) = operator(img.cuda())
+    assert result.is_cuda
 
     # Create on CPU, run on CPU
     nufft_op = NonUniformFastFourierOp(
@@ -264,8 +265,9 @@ def test_non_uniform_fast_fourier_op_cuda() -> None:
         encoding_matrix=encoding_matrix,
         traj=trajectory,
     )
-    (nufft_result,) = nufft_op(img)
-    assert nufft_result.is_cpu
+    operator = nufft_op.H @ nufft_op
+    (result,) = operator(img)
+    assert result.is_cpu
 
     # Create on GPU, run on GPU
     nufft_op = NonUniformFastFourierOp(
@@ -274,8 +276,9 @@ def test_non_uniform_fast_fourier_op_cuda() -> None:
         encoding_matrix=encoding_matrix.cuda(),
         traj=trajectory.cuda(),
     )
-    (nufft_result,) = nufft_op(img.cuda())
-    assert nufft_result.is_cuda
+    operator = nufft_op.H @ nufft_op
+    (result,) = operator(img.cuda())
+    assert result.is_cuda
 
     # Create on GPU, transfer to CPU, run on CPU
     nufft_op = NonUniformFastFourierOp(
@@ -284,6 +287,7 @@ def test_non_uniform_fast_fourier_op_cuda() -> None:
         encoding_matrix=encoding_matrix.cuda(),
         traj=trajectory.cuda(),
     )
-    nufft_op.cpu()
-    (nufft_result,) = nufft_op(img)
-    assert nufft_result.is_cpu
+    operator = nufft_op.H @ nufft_op
+    operator.cpu()
+    (result,) = operator(img)
+    assert result.is_cpu
