@@ -28,6 +28,23 @@ class InconsistentDeviceError(ValueError):
         super().__init__(f'Inconsistent devices found, found at least {", ".join(str(d) for d in devices)}')
 
 
+class InconsistentShapeError(RuntimeError):
+    """Raised if fields are not broadastable.
+
+    The fields cannot be broadasted to a common shape.
+    """
+
+    def __init__(self, *shapes):
+        """Initialize.
+
+        Parameters
+        ----------
+        shapes
+            The shapes of the fields.
+        """
+        super().__init__(f'The shapes of the fields are not broadcastable. Found shapes: {shapes}.')
+
+
 T = TypeVar('T')
 
 
@@ -512,11 +529,16 @@ class Dataclass:
     def shape(self) -> torch.Size:
         """Return the broadcasted shape of all tensor/data fields.
 
-        Each field of this dataclass will be broadcastable to this shape.
+        Each field of this dataclass is broadcastable to this shape.
 
         Returns
         -------
             The broadcasted shape of all fields.
+
+        Raises
+        ------
+        :py:exc:`InconsistentShapeError`
+            If the shapes cannot be broadcasted.
         """
         shapes = []
         for _, data in self.items():
@@ -526,9 +548,7 @@ class Dataclass:
         try:
             return torch.broadcast_shapes(*shapes)
         except RuntimeError:
-            raise ValueError(
-                f'The shapes of the fields are not broadcastable. Found shapes: {shapes} in {self.__class__.__name__}'
-            ) from None
+            raise InconsistentShapeError(*shapes) from None
 
     @property
     def ndim(self) -> int:
