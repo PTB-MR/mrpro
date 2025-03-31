@@ -259,3 +259,19 @@ def test_dataclass_no_new_attributes() -> None:
     data = B()
     with pytest.raises(AttributeError):
         data.doesnotexist = 1  # type: ignore[attr-defined]
+
+
+def test_dataclass_repr() -> None:
+    """Test the repr method of the dataclass."""
+    data = B(floattensor=torch.ones(1, 2, 3))
+    actual = repr(data)
+    expected = """B with (broadcasted) shape [1, 2, 3] on device "cpu".
+Fields:
+   child <A>
+   module <SharedModule>
+   floattensor <Tensor>
+   complextensor <Tensor>
+   inttensor <Tensor>
+   booltensor <Tensor>
+   doubletensor <Tensor>"""
+    assert actual == expected

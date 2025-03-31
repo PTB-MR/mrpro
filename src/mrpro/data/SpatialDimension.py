@@ -421,3 +421,16 @@ class SpatialDimension(Dataclass, Generic[T_co]):
             return torch.Size()
         else:
             return super().shape
+
+    # Note: mypy doesnt't support overloads on properties yet
+    @property
+    def dtype(self) -> torch.dtype | type[int] | type[float]:
+        """Get the (promoted) dtype of the fields."""
+        if isinstance(self.x, VectorTypes) and isinstance(self.y, VectorTypes) and isinstance(self.z, VectorTypes):
+            return torch.promote_types(torch.promote_types(self.x.dtype, self.y.dtype), self.z.dtype)
+        elif isinstance(self.x, int) and isinstance(self.y, int) and isinstance(self.z, int):
+            return int
+        elif isinstance(self.x, int | float) and isinstance(self.y, int | float) and isinstance(self.z, int | float):
+            return float
+        else:
+            raise TypeError('Inconsistent types of the fields.')
