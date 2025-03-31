@@ -228,12 +228,12 @@ def test_slice_projection_op_forward_mode_autodiff(
 @pytest.mark.cuda
 def test_slice_projection_op_cuda() -> None:
     """Test slice projection operator works on CUDA devices."""
-    rng = RandomGenerator(0).float32_tensor
+    rng = RandomGenerator(0)
     input_shape = SpatialDimension(10, 20, 30)
-    slice_rotation = None
-    slice_shift = 0.0
-    slice_profile = 1.0
-    u = rng(input_shape.zyx)
+    slice_rotation = Rotation.random(4)
+    slice_shift = rng.float32_tensor(4)
+    slice_profile = SliceGaussian(1.0)
+    u = rng.float32_tensor(input_shape.zyx)
 
     # Create on CPU, transfer to GPU, run on GPU
     sliceprojection_op = SliceProjectionOp(
@@ -247,36 +247,4 @@ def test_slice_projection_op_cuda() -> None:
     (forward_u,) = sliceprojection_op(u.cuda())
     assert forward_u.is_cuda
 
-    # Create on CPU, run on CPU
-    sliceprojection_op = SliceProjectionOp(
-        input_shape=input_shape,
-        slice_rotation=slice_rotation,
-        slice_shift=slice_shift,
-        slice_profile=slice_profile,
-        optimize_for='forward',
-    )
-    (forward_u,) = sliceprojection_op(u)
-    assert forward_u.is_cpu
-
-    # Create on GPU, run on GPU
-    sliceprojection_op = SliceProjectionOp(
-        input_shape=input_shape.cuda(),
-        slice_rotation=slice_rotation,
-        slice_shift=slice_shift,
-        slice_profile=slice_profile,
-        optimize_for='forward',
-    )
-    (forward_u,) = sliceprojection_op(u.cuda())
-    assert forward_u.is_cuda
-
-    # Create on GPU, transfer to CPU, run on CPU
-    sliceprojection_op = SliceProjectionOp(
-        input_shape=input_shape.cuda(),
-        slice_rotation=slice_rotation,
-        slice_shift=slice_shift,
-        slice_profile=slice_profile,
-        optimize_for='forward',
-    )
-    sliceprojection_op.cpu()
-    (forward_u,) = sliceprojection_op(u)
-    assert forward_u.is_cpu
+    # Creation on GPU is not supported (see docstring)
