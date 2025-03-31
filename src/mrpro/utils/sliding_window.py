@@ -19,6 +19,7 @@ def sliding_window(
     are replaced by window dimensions.
 
     Example:
+
         Input shape (D1, D2, D3, D4, D5), dim=(1, 3), window_shape=(k2, k4)
         Output shape: (n_windows_2, n_windows_4, D1, k2, D3, k4, D5)
 
@@ -37,8 +38,8 @@ def sliding_window(
 
     Returns
     -------
-    A view of the tensor with window dimensions at the front and
-    original sliding axes replaced by kernel dimensions.
+        A view of the tensor with window dimensions at the front and
+        original sliding axes replaced by kernel dimensions.
     """
     ndim = x.ndim
 
