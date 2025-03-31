@@ -4,9 +4,11 @@ from mrpro.operators.Operator import Operator
 from mrpro.operators.LinearOperator import LinearOperator
 from mrpro.operators.Functional import Functional, ProximableFunctional, ElementaryFunctional, ElementaryProximableFunctional, ScaledFunctional, ScaledProximableFunctional
 from mrpro.operators import functionals, models
+from mrpro.operators.AveragingOp import AveragingOp
 from mrpro.operators.CartesianSamplingOp import CartesianSamplingOp
 from mrpro.operators.ConstraintsOp import ConstraintsOp
 from mrpro.operators.DensityCompensationOp import DensityCompensationOp
+from mrpro.operators.DictionaryMatchOp import DictionaryMatchOp
 from mrpro.operators.EinsumOp import EinsumOp
 from mrpro.operators.FastFourierOp import FastFourierOp
 from mrpro.operators.FiniteDifferenceOp import FiniteDifferenceOp
@@ -29,10 +31,13 @@ from mrpro.operators.WaveletOp import WaveletOp
 from mrpro.operators.ZeroPadOp import ZeroPadOp
 from mrpro.operators.ZeroOp import ZeroOp
 
+
 __all__ = [
+    "AveragingOp",
     "CartesianSamplingOp",
     "ConstraintsOp",
     "DensityCompensationOp",
+    "DictionaryMatchOp",
     "EinsumOp",
     "ElementaryFunctional",
     "ElementaryProximableFunctional",
