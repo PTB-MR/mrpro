@@ -13,28 +13,25 @@ def inati(
 ) -> torch.Tensor:
     """Calculate a coil sensitivity map (csm) using the Inati method [INA2013]_ [INA2014]_.
 
-    This is for a single set of coil img. The input should be a tensor with dimensions `(coils, z, y, x)`. The output
-    will have the same dimensions. Either apply this function individually to each set of coil img, or see
+    This is for a single set of coil images. The input should be a tensor with dimensions `(coils, z, y, x)`. The output
+    will have the same dimensions. Either apply this function individually to each set of coil images, or see
     `~mrpro.data.CsmData.from_idata_inati` which performs this operation on a whole dataset.
 
     .. [INA2013] Inati S, Hansen M, Kellman P (2013) A solution to the phase problem in adaptvie coil combination.
        in Proceedings of the 21st Annual Meeting of ISMRM, Salt Lake City, USA, 2672.
 
     .. [INA2014] Inati S, Hansen M (2014) A Fast Optimal Method for Coil Sensitivity Estimation and Adaptive Coil
-       Combination for Complex img. in Proceedings of Joint Annual Meeting ISMRM-ESMRMB, Milan, Italy, 7115.
+       Combination for Complex images. in Proceedings of Joint Annual Meeting ISMRM-ESMRMB, Milan, Italy, 7115.
 
     Parameters
     ----------
     coil_img
-        img for each coil element
+        images for each coil element
     smoothing_width
         Size of the smoothing kernel
     """
     # After 10 power iterations we will have a very good estimate of the singular vector
     n_power_iterations = 10
-
-    # Padding at the edge of the img
-    padding_mode = 'replicate'
 
     if isinstance(smoothing_width, int):
         smoothing_width = SpatialDimension(
@@ -48,7 +45,7 @@ def inati(
     padded_coil_img = torch.nn.functional.pad(
         coil_img,
         (ks_halved[-1], ks_halved[-1], ks_halved[-2], ks_halved[-2], ks_halved[-3], ks_halved[-3]),
-        mode=padding_mode,
+        mode='replicate',
     )
     # Get the voxels in an ROI defined by the smoothing_width around each voxel leading to shape
     # (z y x coils window=prod(smoothing_width))
