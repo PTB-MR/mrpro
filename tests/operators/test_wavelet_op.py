@@ -221,13 +221,13 @@ def test_wavelet_op_cuda() -> None:
 
     # Create on CPU, run on CPU
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name='db4', level=None)
-    operator = wavelet_op.H@wavelet_op
+    operator = wavelet_op.H @ wavelet_op
     (coeff,) = operator(img_tensor)
     assert coeff.is_cpu
 
     # Transfer to GPU, run on GPU
     wavelet_op = WaveletOp(domain_shape=domain_shape, dim=dim, wavelet_name='db4', level=None)
-    operator = wavelet_op.H@wavelet_op
+    operator = wavelet_op.H @ wavelet_op
     operator.cuda()
     (coeff,) = operator(img_tensor.cuda())
     assert coeff.is_cuda

@@ -243,8 +243,9 @@ def test_slice_projection_op_cuda() -> None:
         slice_profile=slice_profile,
         optimize_for='forward',
     )
-    sliceprojection_op.cuda()
-    (forward_u,) = sliceprojection_op(u.cuda())
-    assert forward_u.is_cuda
+    operator = sliceprojection_op.H @ sliceprojection_op
+    operator.cuda()
+    (result,) = operator(u.cuda())
+    assert result.is_cuda
 
     # Creation on GPU is not supported (see docstring)
