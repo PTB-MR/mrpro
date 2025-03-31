@@ -38,10 +38,23 @@ class PatchOp(LinearOperator):
         """
         super().__init__()
         self.dim = (dim,) if isinstance(dim, int) else dim
-        self.patch_size = patch_size
-        self.stride = stride
-        self.dilation = dilation
-        self.domain_size = (domain_size,) if isinstance(domain_size, int) else domain_size
+
+        if len(set(self.dim)) != len(self.dim):
+            raise ValueError('Duplicate values in axis are not allowed')
+
+        def check(param: int | Sequence[int], name: str) -> bool:
+            if isinstance(param, int):
+                param = (param,) * len(self.dim)
+            elif len(param) != len(self.dim):
+                raise ValueError(f'Length mismatch: {name} must have length {len(self.dim)}')
+            if any(val <= 0 for val in param):
+                raise ValueError(f'{name} must be positive')
+            return param
+
+        self.patch_size = check(patch_size, 'patch_size')
+        self.stride = check(stride, 'stride') if stride is not None else self.patch_size
+        self.dilation = check(dilation, 'dilation')
+        self.domain_size = check(domain_size, 'domain_size') if domain_size is not None else None
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Extract patches.
