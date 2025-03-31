@@ -75,7 +75,7 @@ class Dataclass:
         no_new_attributes
             If `True`, new attributes cannot be added to the class after it is created.
         """
-        dataclasses.dataclass(cls, repr=False)  # type: ignore[arg-type]
+        dataclasses.dataclass(cls, repr=False)  # type: ignore[call-overload]
         super().__init_subclass__(**kwargs)
         child_post_init = vars(cls).get('__post_init__')
 
