@@ -34,10 +34,10 @@ class _AutogradWrapper(torch.autograd.Function):
     def setup_context(
         ctx: Any,  # noqa: ANN401
         inputs: tuple[Callable[[torch.Tensor], torch.Tensor], Callable[[torch.Tensor], torch.Tensor], torch.Tensor],
-        output: torch.Tensor,
-    ) -> torch.Tensor:
+        _output: torch.Tensor,
+    ) -> None:
         ctx.fw, ctx.bw, x = inputs
-        return output
+        return None
 
     @staticmethod
     def backward(ctx: Any, *grad_output: torch.Tensor) -> tuple[None, None, torch.Tensor]:  # noqa: ANN401
