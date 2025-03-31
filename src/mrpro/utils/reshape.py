@@ -27,7 +27,8 @@ def unsqueeze_right(x: torch.Tensor, n: int) -> torch.Tensor:
     -------
         unsqueezed tensor (view)
     """
-    return x.reshape(*x.shape, *(n * (1,)))
+    new_shape = list(x.shape) + [1] * n
+    return x.reshape(new_shape)
 
 
 def unsqueeze_left(x: torch.Tensor, n: int) -> torch.Tensor:
@@ -48,7 +49,8 @@ def unsqueeze_left(x: torch.Tensor, n: int) -> torch.Tensor:
     -------
         unsqueezed tensor (view)
     """
-    return x.reshape(*(n * (1,)), *x.shape)
+    new_shape = [1] * n + list(x.shape)
+    return x.reshape(new_shape)
 
 
 def unsqueeze_at(x: torch.Tensor, dim: int, n: int) -> torch.Tensor:
