@@ -55,9 +55,9 @@ def test_negative_window_shape() -> None:
 def test_negative_strides() -> None:
     """Test that negative strides raise an error."""
     data = torch.zeros(2, 3, 4)
-    with pytest.raises(ValueError, match='strides must be positive'):
+    with pytest.raises(ValueError, match='stride must be positive'):
         _ = sliding_window(data, window_shape=(2, 2), dim=(0, 1), stride=(1, -1))
-    with pytest.raises(ValueError, match='strides must be positive'):
+    with pytest.raises(ValueError, match='stride must be positive'):
         _ = sliding_window(data, window_shape=(2, 2), dim=(0, 1), stride=-1)
 
 
