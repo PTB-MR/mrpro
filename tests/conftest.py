@@ -68,8 +68,15 @@ def generate_random_data(generator: RandomGenerator, shape=(32, 256)) -> torch.T
 
 
 @pytest.fixture(scope='session')
-def ellipse_phantom():
+def ellipse_phantom() -> EllipsePhantomTestData:
     return EllipsePhantomTestData()
+
+
+@pytest.fixture(scope='session')
+def ellipse_phantoms() -> list[EllipsePhantomTestData]:
+    """6 different ellipse phantoms."""
+    rng = RandomGenerator(seed=0)
+    return [EllipsePhantomTestData(intensities=rng.float32_tuple(5, low=1, high=10)) for _ in range(6)]
 
 
 @pytest.fixture(params=({'seed': 0, 'n_coils': 32, 'n_samples': 256},))
@@ -240,7 +247,7 @@ def ismrmrd_cart(ellipse_phantom, tmp_path_factory):
     ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
     ismrmrd_kdata = IsmrmrdRawTestData(
         filename=ismrmrd_filename,
-        noise_level=0.0,
+        noise_level=1e-4,
         repetitions=3,
         phantom=ellipse_phantom.phantom,
     )
@@ -254,7 +261,7 @@ def ismrmrd_cart_high_res(ellipse_phantom, tmp_path_factory):
     ismrmrd_kdata = IsmrmrdRawTestData(
         filename=ismrmrd_filename,
         matrix_size=256,
-        noise_level=0.0,
+        noise_level=1e-4,
         repetitions=3,
         phantom=ellipse_phantom.phantom,
     )
