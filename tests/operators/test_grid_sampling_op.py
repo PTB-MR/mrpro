@@ -306,9 +306,10 @@ def test_grid_sampling_op_cuda() -> None:
         padding_mode='zeros',
         align_corners=False,
     )
-    gridsampling_op.cuda()
-    (forward_u,) = gridsampling_op(u.cuda())
-    assert forward_u.is_cuda
+    operator = gridsampling_op.H @ gridsampling_op
+    operator.cuda()
+    (result,) = operator(u.cuda())
+    assert result.is_cuda
 
     # Create on CPU, run on CPU
     gridsampling_op = GridSamplingOp(
@@ -318,8 +319,9 @@ def test_grid_sampling_op_cuda() -> None:
         padding_mode='zeros',
         align_corners=False,
     )
-    (forward_u,) = gridsampling_op(u)
-    assert forward_u.is_cpu
+    operator = gridsampling_op.H @ gridsampling_op
+    (result,) = operator(u)
+    assert result.is_cpu
 
     # Create on GPU, run on GPU
     gridsampling_op = GridSamplingOp(
@@ -329,8 +331,9 @@ def test_grid_sampling_op_cuda() -> None:
         padding_mode='zeros',
         align_corners=False,
     )
-    (forward_u,) = gridsampling_op(u.cuda())
-    assert forward_u.is_cuda
+    operator = gridsampling_op.H @ gridsampling_op
+    (result,) = operator(u.cuda())
+    assert result.is_cuda
 
     # Create on GPU, transfer to CPU, run on CPU
     gridsampling_op = GridSamplingOp(
@@ -340,6 +343,7 @@ def test_grid_sampling_op_cuda() -> None:
         padding_mode='zeros',
         align_corners=False,
     )
-    gridsampling_op.cpu()
-    (forward_u,) = gridsampling_op(u)
-    assert forward_u.is_cpu
+    operator = gridsampling_op.H @ gridsampling_op
+    operator.cpu()
+    (result,) = operator(u)
+    assert result.is_cpu
