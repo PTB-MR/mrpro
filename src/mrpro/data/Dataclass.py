@@ -75,7 +75,7 @@ class Dataclass:
         no_new_attributes
             If `True`, new attributes cannot be added to the class after it is created.
         """
-        dataclasses.dataclass(cls)
+        dataclasses.dataclass(cls, repr=False)  # type: ignore[arg-type]
         super().__init_subclass__(**kwargs)
         child_post_init = vars(cls).get('__post_init__')
 
@@ -574,35 +574,29 @@ class Dataclass:
             ) from None
 
     @property
-    def dtype(self) -> torch.dtype | None:
-        """Return the dtype of the tensors.
+    def ndim(self) -> int:
+        """Return the number of dimensions of the dataclass.
 
-        Looks at each field of a dataclass implementing a dtype attribute,
-        such as `torch.Tensor` or `Dataclass` instances.
-        Returns the promoted dtype of all fields. If no field implements a dtype attribute,
-        `None` is returned.
+        This is the number of dimensions of the broadcasted shape of all fields.
         """
-        dtype: torch.dtype | None = None
-        for _, data in self.items():
-            if hasattr(data, 'dtype'):
-                if dtype is None:
-                    dtype = data.dtype
-                else:
-                    dtype = torch.promote_types(dtype, data.dtype)
-        return dtype
+        return len(self.shape)
 
     # endregion Properties
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Representation method for Dataclass."""
         try:
             device = str(self.device)
         except RuntimeError:
             device = 'mixed'
         name = type(self).__name__
-        return f'{name} with (broadcasted) shape: {list(self.shape)!s} and dtype {self.dtype}\nDevice: {device}.'
+        output = f'{name} with (broadcasted) shape {list(self.shape)!s} on device "{device}".\n'
+        output += 'Fields:\n'
+        output += '\n'.join(
+            f'   {field.name} <{type(getattr(self, field.name)).__name__}>' for field in dataclasses.fields(self)
+        )
+        return output
 
-    # endregion Properties
     # region Indexing
     def __getitem__(self, index: TorchIndexerType | Indexer) -> Self:
         """Index the dataclass."""
