@@ -60,7 +60,7 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
             Echo times of the three T2 preparation blocks in s
         """
         super().__init__()
-        self.sequence = EPGSequence()
+        sequence = EPGSequence()
         max_flip_angles_deg = [12.5, 18.75, 25, 25, 25, 12.5, 18.75, 25, 25.0, 25, 12.5, 18.75, 25, 25, 25]
         if len(acquisition_times) == 15:
             block_time = torch.as_tensor(acquisition_times)
@@ -90,8 +90,9 @@ class CardiacFingerprinting(SignalModel[torch.Tensor, torch.Tensor, torch.Tensor
                 delay = (block_time[i] - block_time[i - 1]) - block.duration
                 if (delay < 0).any():
                     raise ValueError(f'Block {i} would start before the previous block finished. ')
-                self.sequence.append(DelayBlock(delay))
-            self.sequence.append(block)
+                sequence.append(DelayBlock(delay))
+            sequence.append(block)
+        self.sequence = sequence.to(device=block_time.device)
 
     def forward(self, m0: torch.Tensor, t1: torch.Tensor, t2: torch.Tensor) -> tuple[torch.Tensor]:
         """Simulate the Cardiac MR Fingerprinting signal.
