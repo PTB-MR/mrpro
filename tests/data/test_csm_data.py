@@ -1,7 +1,5 @@
 """Tests the CsmData class."""
 
-import dataclasses
-
 import pytest
 import torch
 from mrpro.data import CsmData, KData, SpatialDimension
@@ -21,13 +19,6 @@ def create_matching_idata_kdata(ismrmrd_cart_single_rep):
     fourier_op = FourierOp.from_kdata(kdata)
     kdata = KData(kdata.header, fourier_op(idata.data)[0], traj=kdata.traj)
     return idata, kdata
-
-
-def test_CsmData_is_frozen_dataclass(random_test_data, random_kheader) -> None:
-    """CsmData inherits frozen dataclass property from QData."""
-    csm = CsmData(data=random_test_data, header=random_kheader)
-    with pytest.raises(dataclasses.FrozenInstanceError):
-        csm.data = random_test_data  # type: ignore[misc]
 
 
 @pytest.mark.parametrize('csm_method', [CsmData.from_idata_walsh, CsmData.from_idata_inati])
