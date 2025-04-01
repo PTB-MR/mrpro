@@ -75,6 +75,19 @@ def random_test_data(request):
 
 
 @pytest.fixture(scope='session')
+def dcm_cardiac_2d(ellipse_phantom, tmp_path_factory):
+    """Stack of 2D dicom images for different cardiac phases."""
+    dcm_filename = tmp_path_factory.mktemp('mrpro_cardiac_2d') / 'dicom.dcm'
+    dcm_test = DicomTestImage(
+        filename=dcm_filename,
+        phantom=ellipse_phantom.phantom,
+        cardiac_trigger_delay=100e-3,
+        slice_offset=[0.0, 0.0, 0.0, 0.0, 0.0],
+    )
+    return (dcm_test,)
+
+
+@pytest.fixture(scope='session')
 def dcm_2d(ellipse_phantom, tmp_path_factory):
     """Single 2D dicom image."""
     dcm_filename = tmp_path_factory.mktemp('mrpro_2d') / 'dicom.dcm'
