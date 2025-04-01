@@ -81,7 +81,7 @@ tests = [
     "codecov",
     "pre-commit",
     "pytest",
-    "pytest-cov",
+    "pytest-cov<6.1",
     "pytest-xdist",
 ]
 docs = [
