@@ -10,6 +10,7 @@ from mrpro.utils.indexing import Indexer
 from mrpro.utils.reduce_repeat import reduce_repeat
 from mrpro.utils.zero_pad_or_crop import zero_pad_or_crop
 from mrpro.utils.split_idx import split_idx
+from mrpro.utils.sliding_window import sliding_window
 from mrpro.utils.reshape import broadcast_right, unsqueeze_left, unsqueeze_right, reduce_view, reshape_broadcasted, ravel_multi_index, unsqueeze_tensors_left, unsqueeze_tensors_right, unsqueeze_at, unsqueeze_tensors_at
 from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
 from mrpro.utils.zero_pad_or_crop import zero_pad_or_crop
@@ -24,6 +25,7 @@ __all__ = [
     "reduce_view",
     "reshape_broadcasted",
     "slice_profiles",
+    "sliding_window",
     "smap",
     "split_idx",
     "typing",
