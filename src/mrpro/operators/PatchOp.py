@@ -10,8 +10,9 @@ from mrpro.utils.sliding_window import sliding_window
 
 class PatchOp(LinearOperator):
     """Extract N-dimensional patches using a sliding window view.
-    
-    The adjoint assembles patches to an image."""
+
+    The adjoint assembles patches to an image.
+    """
 
     def __init__(
         self,
@@ -95,17 +96,17 @@ class PatchOp(LinearOperator):
         patches: torch.Tensor,
     ) -> tuple[torch.Tensor,]:
         """Perform the adjoint operation, i.e. assemble the patches.
-        
+
         Parameters
         ----------
         patches
             Patches to assemble. Shape `(n_patches,... patch_size_1, ... patch_size_2, ...)`
-        
+
         Returns
         -------
             Assembled image. The patch dimension will be removed and `patch_size_n` will be replaced by
             `domain_size[n]`, i.e. matching the original image shape.
-        
+
         """
         if self.domain_size is None:
             raise ValueError('Domain size is not set. Please call forward first or set it at initialization.')
