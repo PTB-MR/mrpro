@@ -273,3 +273,16 @@ def ismrmrd_rad(ellipse_phantom, tmp_path_factory):
         acceleration=4,
     )
     return ismrmrd_data
+
+
+@pytest.fixture(scope='session')
+def ismrmrd_cart_single_rep(ellipse_phantom, tmp_path_factory):
+    """Fully sampled cartesian data set."""
+    ismrmrd_filename = tmp_path_factory.mktemp('mrpro') / 'ismrmrd_cart.h5'
+    ismrmrd_kdata = IsmrmrdRawTestData(
+        filename=ismrmrd_filename,
+        noise_level=0.0,
+        repetitions=1,
+        phantom=ellipse_phantom.phantom,
+    )
+    return ismrmrd_kdata
