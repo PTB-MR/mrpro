@@ -38,8 +38,8 @@ def sliding_window(
 
     Returns
     -------
-    A view of the tensor with window dimensions at the front and
-    original sliding dim replaced by kernel dimensions.
+        A view of the tensor with window dimensions at the front and
+        original sliding dim replaced by kernel dimensions.
     """
     ndim = x.ndim
 

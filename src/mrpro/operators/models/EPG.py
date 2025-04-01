@@ -5,17 +5,15 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from dataclasses import dataclass
 
 import torch
 
-from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.Dataclass import Dataclass
 from mrpro.utils.reshape import unsqueeze_tensors_right
 from mrpro.utils.TensorAttributeMixin import TensorAttributeMixin
 
 
-@dataclass
-class Parameters(MoveDataMixin):
+class Parameters(Dataclass):
     """Tissue parameters for EPG simulation."""
 
     m0: torch.Tensor
