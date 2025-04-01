@@ -7,17 +7,10 @@ from copy import deepcopy
 from typing import ClassVar, TypeAlias, cast
 
 import torch
-from typing_extensions import Any, Protocol, Self, TypeVar, dataclass_transform, overload, runtime_checkable
+from typing_extensions import Any, Self, TypeVar, dataclass_transform, overload
 
-from mrpro.utils.indexing import Indexer
+from mrpro.utils.indexing import HasIndex, Indexer
 from mrpro.utils.typing import TorchIndexerType
-
-
-@runtime_checkable
-class HasIndex(Protocol):
-    """Objects that can be indexed with an `Indexer`."""
-
-    def _index(self, index: Indexer) -> Self: ...
 
 
 class InconsistentDeviceError(ValueError):
