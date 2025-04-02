@@ -279,7 +279,7 @@ Fields:
 
 
 def check_broadcastable(actual_shape, expected_shape):
-    """Raise a Runtime Error is actual is not boradcastable to expected."""
+    """Raise a Runtime Error if actual is not boradcastable to expected."""
     torch.empty(actual_shape).broadcast_to(expected_shape)
 
 
