@@ -16,9 +16,9 @@ class NonDifferentiableOperator(LinearOperator, adjoint_as_backward=False):
         tensor = torch.tensor([2 * python_float], dtype=x.dtype)
         return (tensor,)
 
-    def adjoint(self, x):
-        python_float = x.item()  # breaks autograd as floats do not track gradients
-        tensor = torch.tensor([2 * python_float], dtype=x.dtype)
+    def adjoint(self, y):
+        python_float = y.item()  # breaks autograd as floats do not track gradients
+        tensor = torch.tensor([2 * python_float], dtype=y.dtype)
         return (tensor,)
 
 
@@ -30,9 +30,9 @@ class DifferentiableOperator(LinearOperator, adjoint_as_backward=True):
         tensor = torch.tensor([2 * python_float], dtype=x.dtype)
         return (tensor,)
 
-    def adjoint(self, x):
-        python_float = x.item()  # would break autograd as floats do not track gradients
-        tensor = torch.tensor([2 * python_float], dtype=x.dtype)
+    def adjoint(self, y):
+        python_float = y.item()  # would break autograd as floats do not track gradients
+        tensor = torch.tensor([2 * python_float], dtype=y.dtype)
         return (tensor,)
 
 

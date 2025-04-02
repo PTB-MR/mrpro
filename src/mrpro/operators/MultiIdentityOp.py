@@ -14,16 +14,9 @@ class MultiIdentityOp(EndomorphOperator):
 
     @endomorph
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
-        """Identity of input.
+        """Apply MultiIdentityOp.
 
-        Parameters
-        ----------
-        x
-            input tensor
-
-        Returns
-        -------
-            the input tensor
+        Use `operator.__call__`, i.e. call `operator()` instead.
         """
         return x
 

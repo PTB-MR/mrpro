@@ -124,7 +124,7 @@ class CartesianSamplingOp(LinearOperator):
         self._trajectory_shape = traj.shape
         self._sorted_grid_shape = sorted_grid_shape
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Forward operator which selects acquired k-space data from k-space.
 
         Parameters
@@ -136,6 +136,13 @@ class CartesianSamplingOp(LinearOperator):
         Returns
         -------
             Selected k-space data in acquired shape (as described by the trajectory).
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply CartesianSamplingOp.
+
+        Use `operator.__call__`, i.e. call `operator()` instead.
         """
         if self._sorted_grid_shape != SpatialDimension(*x.shape[-3:]):
             raise ValueError('k-space data shape mismatch')
@@ -291,7 +298,7 @@ class CartesianSamplingGramOp(LinearOperator):
         else:
             self._mask = None
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the Gram operator.
 
         Parameters
@@ -302,6 +309,13 @@ class CartesianSamplingGramOp(LinearOperator):
         Returns
         -------
             Output data
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply CartesianSamplingGramOp.
+
+        Use `operator.__call__`, i.e. call `operator()` instead.
         """
         if self._mask is None:
             return (x,)

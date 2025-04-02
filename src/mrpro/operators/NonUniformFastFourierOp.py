@@ -189,17 +189,24 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
         permute_210 = [*sep_dims_210, *joint_dims_other, *self._joint_dims_210, *self._dimension_210]
         return sep_dims_zyx, permute_zyx, sep_dims_210, permute_210
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """NUFFT from image space to k-space.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply Non-uniform FFT to spatial domain data.
 
         Parameters
         ----------
         x
-            coil image data with shape `(... coils z y x)`
+            image data in spatial domain
 
         Returns
         -------
-            coil k-space data with shape `(... coils k2 k1 k0)`
+            k-space data in frequency domain
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply NonUniformFastFourierOp.
+
+        Use `operator.__call__`, i.e. call `operator()` instead.
         """
         if len(self._direction_zyx):
             if x.device.type == 'cpu' and self.oversampling not in (0.0, 1.25, 2.0):
@@ -225,43 +232,43 @@ class NonUniformFastFourierOp(LinearOperator, adjoint_as_backward=True):
             x = x.permute(*unpermute_210)
         return (x,)
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """NUFFT from k-space to image space.
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Adjoint operation that applies the NUFFT of type 1.
 
         Parameters
         ----------
-        x
-            coil k-space data with shape `(... coils k2 k1 k0)`
+        y
+            k-space data in frequency domain
 
         Returns
         -------
-            coil image data with shape `(... coils z y x)`
+            image data in spatial domain
         """
         if len(self._direction_zyx):
-            if x.device.type == 'cpu' and self.oversampling not in (0.0, 1.25, 2.0):
+            if y.device.type == 'cpu' and self.oversampling not in (0.0, 1.25, 2.0):
                 raise ValueError('Only oversampling 1.25 and 2.0 are supported on CPU')
-            elif x.device.type not in ('cuda', 'cpu'):
+            elif y.device.type not in ('cuda', 'cpu'):
                 raise ValueError('Only CPU and CUDA are supported')
             # We rearrange x into (sep_dims, joint_dims, nufft_directions)
-            _, permute_zyx, sep_dims_210, permute_210 = self._separate_joint_dimensions(x.ndim)
+            _, permute_zyx, sep_dims_210, permute_210 = self._separate_joint_dimensions(y.ndim)
             unpermute_zyx = torch.tensor(permute_zyx).argsort().tolist()
 
-            x = x.permute(*permute_210)
-            unflatten_other_shape = x.shape[: -len(self._dimension_210) - 1]  # -1 for coil
+            y = y.permute(*permute_210)
+            unflatten_other_shape = y.shape[: -len(self._dimension_210) - 1]  # -1 for coil
             # combine sep_dims
-            x = x.flatten(end_dim=len(sep_dims_210) - 1) if len(sep_dims_210) else x[None, :]
+            y = y.flatten(end_dim=len(sep_dims_210) - 1) if len(sep_dims_210) else y[None, :]
             # combine joint_dims and nufft_dims
-            x = x.flatten(start_dim=1, end_dim=-len(self._dimension_210) - 1).flatten(start_dim=2)
+            y = y.flatten(start_dim=1, end_dim=-len(self._dimension_210) - 1).flatten(start_dim=2)
             # cufinufft needs c contiguous, otherwise it warns.
-            x = x.contiguous()
-            x = torch.vmap(
+            y = y.contiguous()
+            y = torch.vmap(
                 partial(finufft_type1, upsampfac=self.oversampling, modeord=0, isign=1, output_shape=self._im_size)
-            )(self._omega, x)
-            x = x * self.scale
+            )(self._omega, y)
+            y = y * self.scale
 
-            x = x.reshape(*unflatten_other_shape, -1, *x.shape[-len(self._direction_zyx) :])
-            x = x.permute(*unpermute_zyx)
-        return (x,)
+            y = y.reshape(*unflatten_other_shape, -1, *y.shape[-len(self._direction_zyx) :])
+            y = y.permute(*unpermute_zyx)
+        return (y,)
 
     @property
     def gram(self) -> LinearOperator:
@@ -401,7 +408,7 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
         )
         self.nufft_gram = fft.H * kernel @ fft
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the operator to the input tensor.
 
         Parameters
@@ -409,20 +416,27 @@ class NonUniformFastFourierOpGramOp(LinearOperator):
         x
             input tensor, shape `(..., coils, z, y, x)`
         """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply NonUniformFastFourierOpGramOp.
+
+        Use `operator.__call__`, i.e. call `operator()` instead.
+        """
         if self.nufft_gram is not None:
             (x,) = self.nufft_gram(x)
 
         return (x,)
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
         """Apply the adjoint operator to the input tensor.
 
         Parameters
         ----------
-        x
+        y
             input tensor, shape `(..., coils, k2, k1, k0)`
         """
-        return self.forward(x)
+        return self.forward(y)
 
     @property
     def H(self) -> Self:  # noqa: N802

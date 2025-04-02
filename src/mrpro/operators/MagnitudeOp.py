@@ -10,15 +10,8 @@ class MagnitudeOp(EndomorphOperator):
 
     @endomorph
     def forward(self, *x: torch.Tensor) -> tuple[torch.Tensor, ...]:
-        """Magnitude of tensors.
+        """Apply MagnitudeOp.
 
-        Parameters
-        ----------
-        x
-            input tensors
-
-        Returns
-        -------
-            tensors with magnitude (absolute values) of input tensors
+        Use `operator.__call__`, i.e. call `operator()` instead.
         """
         return tuple([torch.abs(xi) for xi in x])

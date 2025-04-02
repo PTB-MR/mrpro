@@ -34,7 +34,7 @@ class ZeroPadOp(LinearOperator):
         self.original_shape = original_shape
         self.padded_shape = padded_shape
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
         """Pad or crop data.
 
         Parameters
@@ -46,18 +46,25 @@ class ZeroPadOp(LinearOperator):
         -------
             data with shape padded_shape
         """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply ZeroPadOp.
+
+        Use `operator.__call__`, i.e. call `operator()` instead.
+        """
         return (zero_pad_or_crop(x, self.padded_shape, self.dim),)
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Crop or pad data.
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Adjoint operation which crops the padded data back to its original shape.
 
         Parameters
         ----------
-        x
-            data with shape padded_shape
+        y
+            tensor with padded dimensions
 
         Returns
         -------
-            data with shape orig_shape
+            tensor with cropped dimensions
         """
-        return (zero_pad_or_crop(x, self.original_shape, self.dim),)
+        return (zero_pad_or_crop(y, self.original_shape, self.dim),)

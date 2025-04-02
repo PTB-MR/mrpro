@@ -101,7 +101,7 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
             self.inverse_norm_y = torch.cat((self.inverse_norm_y, inverse_norm_y))
         return self
 
-    def forward(self, input_signal: torch.Tensor) -> tuple[Unpack[Tin]]:
+    def __call__(self, input_signal: torch.Tensor) -> tuple[Unpack[Tin]]:
         """Perform dot-product matching.
 
         Given y values as input_signal, the tuple of x values in the dictionary
@@ -117,6 +117,13 @@ class DictionaryMatchOp(Operator[torch.Tensor, tuple[Unpack[Tin]]]):
         -------
         match
             tuple of n tensors with shape (...)
+        """
+        return super().__call__(input_signal)
+
+    def forward(self, input_signal: torch.Tensor) -> tuple[Unpack[Tin]]:
+        """Apply DictionaryMatchOp.
+
+        .. warning:: use `operator.__call__`, i.e. call `operator()` instead.
         """
         if not self.x:
             raise KeyError('No keys in the dictionary. Please first add some x values using `append`.')

@@ -51,8 +51,8 @@ def test_identity_is_neutral():
         def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
             return (x,)
 
-        def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-            return (x,)
+        def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor]:
+            return (y,)
 
     op = DummyLinearOperator()
     identity = IdentityOp()

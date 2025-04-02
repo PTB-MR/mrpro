@@ -4,9 +4,9 @@ from collections.abc import Sequence
 from typing import Literal
 
 import torch
-from ptwt.conv_transform import wavedec, waverec
-from ptwt.conv_transform_2 import wavedec2, waverec2
-from ptwt.conv_transform_3 import wavedec3, waverec3
+from ptwt.conv_transform import waverec
+from ptwt.conv_transform_2 import waverec2
+from ptwt.conv_transform_3 import waverec3
 from pywt import Wavelet
 from pywt._multilevel import _check_level
 
@@ -128,22 +128,25 @@ class WaveletOp(LinearOperator):
                 self.coefficients_shape = self.coefficients_shape[::-1]
                 self.coefficients_shape.insert(0, self.coefficients_shape[0])  # shape of a/aa/aaa term
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
-        """Calculate wavelet coefficients from (image) data.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Transform (image) data to wavelet coefficients.
 
         Parameters
         ----------
         x
-            (Image) data
+            Input data of shape ([*batch], *domain_shape)
 
         Returns
         -------
-            Wavelet coefficients stacked along one dimension
+            Stacked wavelet coefficients with shape
+            ([*batch], coefficient_index, coefficient_pixels)
+        """
+        return super().__call__(x)
 
-        Raises
-        ------
-        ValueError
-            If the dimensions along which wavelets are to be calculated are not unique.
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:
+        """Apply WaveletOp.
+
+        Use `operator.__call__`, i.e. call `operator()` instead.
         """
         # normalize axes to allow negative indexing in input
         dim = tuple(d % x.ndim for d in self._dim)
@@ -181,43 +184,37 @@ class WaveletOp(LinearOperator):
         # move stacked coefficients to first wavelet dimension
         return (coefficients_stack,)
 
-    def adjoint(self, coefficients_stack: torch.Tensor) -> tuple[torch.Tensor]:
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor]:
         """Transform wavelet coefficients to (image) data.
 
         Parameters
         ----------
-        coefficients_stack
-            Wavelet coefficients stacked along one dimension
+        y
+            Stacked wavelet coefficients with shape
+            ([*batch], coefficient_index, coefficient_pixels)
 
         Returns
         -------
-            (Image) data
-
-        Raises
-        ------
-        ValueError
-            If the domain_shape is not defined.
-        ValueError
-            If the dimensions along which wavelets are to be calculated are not unique.
+            Output tensor of shape ([*batch], *domain_shape)
         """
         if self._domain_shape is None:
             raise ValueError('Adjoint requires to define the domain_shape in init()')
 
         # normalize axes to allow negative indexing in input
-        dim = tuple(d % (coefficients_stack.ndim + len(self._dim) - 1) for d in self._dim)
+        dim = tuple(d % (y.ndim + len(self._dim) - 1) for d in self._dim)
         if len(dim) != len(set(dim)):
             raise ValueError(f'Axis must be unique. Normalized axis are {dim}')
 
-        coefficients_stack = torch.moveaxis(coefficients_stack, min(dim), -1)
+        y = torch.moveaxis(y, min(dim), -1)
 
         # the ptwt functions work only for real data, thus we handle complex inputs as an additional channel
-        coefficients_stack_real = (
-            torch.view_as_real(coefficients_stack).moveaxis(-1, 0)
-            if coefficients_stack.is_complex()
-            else coefficients_stack
+        y_real = (
+            torch.view_as_real(y).moveaxis(-1, 0)
+            if y.is_complex()
+            else y
         )
 
-        coefficients_list = self._stacked_tensor_to_coeff(coefficients_stack_real)
+        coefficients_list = self._stacked_tensor_to_coeff(y_real)
 
         if len(self._dim) == 1:
             coeffs_1d = self._undo_format_coeffs_1d(coefficients_list)
@@ -232,7 +229,7 @@ class WaveletOp(LinearOperator):
             raise ValueError(f'Wavelets are only available for 1D, 2D and 3D and not {self._dim}D')
 
         # undo moving of axes
-        if coefficients_stack.is_complex():
+        if y.is_complex():
             data = torch.moveaxis(
                 data, list(range(-len(self._dim), 0)), [d + 1 for d in dim]
             )  # +1 because first dim is real/imag

@@ -46,11 +46,11 @@ class AdjointGridSample(torch.autograd.Function):
         ctx
             Context
         y
-            tensor in the range of gridsample(x,grid). Should not include batch or channel dimension.
+            tensor in the range of gridsample(x, grid). Should not include batch or channel dimension.
         grid
             grid in the shape `(*y.shape, 2/3)`
         xshape
-            shape of the domain of gridsample(x,grid), i.e. the shape of `x`
+            shape of the domain of gridsample(x, grid), i.e. the shape of `x`
         interpolation_mode
             the kind of interpolation used
         padding_mode
@@ -292,10 +292,25 @@ class GridSamplingOp(LinearOperator):
 
         return sampled
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        """Apply the GridSampleOperator.
+    def __call__(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Sample from a grid, i.e., interpolate the input to new coordinates.
 
-        Samples at the location determine by the grid.
+        Parameters
+        ----------
+        x
+            Input tensor of shape ``(*, channels, [spatial])``
+
+        Returns
+        -------
+            Output tensor of shape ``(*, channels, [spatial])``
+            where ``[spatial]`` matches the shape of the grid
+        """
+        return super().__call__(x)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+        """Apply GridSamplingOp.
+
+        Use `operator.__call__`, i.e. call `operator()` instead.
         """
         if (
             (x.shape[-1] != self.input_shape.x)
@@ -309,13 +324,13 @@ class GridSamplingOp(LinearOperator):
         return self.__reshape_wrapper(x, self._forward_implementation)
 
     def _adjoint_implementation(
-        self, x_flatbatch_flatchannel: torch.Tensor, grid_flatbatch: torch.Tensor
+        self, y_flatbatch_flatchannel: torch.Tensor, grid_flatbatch: torch.Tensor
     ) -> torch.Tensor:
         """Apply the actual adjoint after reshaping."""
         dim = self.grid.shape[-1]
-        shape = (*x_flatbatch_flatchannel.shape[:-dim], *self.input_shape.zyx[-dim:])
+        shape = (*y_flatbatch_flatchannel.shape[:-dim], *self.input_shape.zyx[-dim:])
         sampled = AdjointGridSample.apply(
-            x_flatbatch_flatchannel,
+            y_flatbatch_flatchannel,
             grid_flatbatch,
             shape,
             self.interpolation_mode,
@@ -324,6 +339,6 @@ class GridSamplingOp(LinearOperator):
         )[0]
         return sampled
 
-    def adjoint(self, x: torch.Tensor) -> tuple[torch.Tensor]:
+    def adjoint(self, y: torch.Tensor) -> tuple[torch.Tensor]:
         """Apply the adjoint of the GridSampleOperator."""
-        return self.__reshape_wrapper(x, self._adjoint_implementation)
+        return self.__reshape_wrapper(y, self._adjoint_implementation)

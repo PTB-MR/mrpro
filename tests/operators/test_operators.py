@@ -33,9 +33,9 @@ class DummyLinearOperator(LinearOperator):
         """Dummy linear operator."""
         return (self._value @ x,)
 
-    def adjoint(self, x: torch.Tensor):
-        """Dummy adjoint linear operator."""
-        return (self._value.mH @ x,)
+    def adjoint(self, y: torch.Tensor):
+        """Apply adjoint of the operator."""
+        return (self._value.mH @ y,)
 
 
 def test_composition_operator():
