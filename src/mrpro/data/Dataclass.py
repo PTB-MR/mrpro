@@ -9,6 +9,9 @@ from typing import ClassVar, TypeAlias, cast
 import torch
 from typing_extensions import Any, Self, TypeVar, dataclass_transform, overload
 
+from mrpro.utils.indexing import HasIndex, Indexer
+from mrpro.utils.typing import TorchIndexerType
+
 
 class InconsistentDeviceError(ValueError):
     """Raised if the devices of different fields differ.
@@ -80,7 +83,7 @@ class Dataclass:
                 """Set an attribute."""
                 if not hasattr(self, name) and hasattr(self, '_Dataclass__initialized'):
                     raise AttributeError(f'Cannot set attribute {name} on {self.__class__.__name__}')
-                super().__setattr__(name, value)
+                object.__setattr__(self, name, value)
 
             cls.__setattr__ = new_setattr  # type: ignore[method-assign, assignment]
 
@@ -573,3 +576,27 @@ class Dataclass:
             f'   {field.name} <{type(getattr(self, field.name)).__name__}>' for field in dataclasses.fields(self)
         )
         return output
+
+    # region Indexing
+    def __getitem__(self, index: TorchIndexerType | Indexer) -> Self:
+        """Index the dataclass."""
+        indexer = index if isinstance(index, Indexer) else Indexer(self.shape, index)
+        memo: dict[int, Any] = {}
+
+        def apply_index(data: T) -> T:
+            if isinstance(data, torch.Tensor):
+                return cast(T, indexer(data))
+            if isinstance(data, Dataclass):
+                indexed = shallowcopy(data)
+                indexed.apply_(apply_index, memo=memo, recurse=False)
+                return cast(T, indexed)
+            if isinstance(data, HasIndex):
+                # Rotation
+                return cast(T, data._index(indexer))
+            return cast(T, data)
+
+        new = shallowcopy(self)
+        new.apply_(apply_index, memo=memo, recurse=False)
+        return new
+
+    # endregion Indexing
