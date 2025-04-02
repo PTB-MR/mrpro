@@ -41,17 +41,24 @@ class CartesianSamplingOp(LinearOperator):
 
         # Cache as these might take some time to compute
         traj_type_kzyx = traj.type_along_kzyx
+        traj_device = traj.device
         ktraj_tensor = traj.as_tensor()
 
         # If a dimension is irregular or singleton, we will not perform any reordering
         # in it and the shape of data will remain.
         # only dimensions on a cartesian grid will be reordered.
+        # The device of the input trajectory is matched.
         if traj_type_kzyx[-1] == TrajType.ONGRID:  # kx
             kx_idx = ktraj_tensor[-1, ...].round().to(dtype=torch.int64) + sorted_grid_shape.x // 2
         else:
             sorted_grid_shape.x = ktraj_tensor.shape[-1]
             kx_idx = repeat(
-                torch.arange(ktraj_tensor.shape[-1]), 'k0->other coils k2 k1 k0', other=1, coils=1, k2=1, k1=1
+                torch.arange(ktraj_tensor.shape[-1], device=traj_device),
+                'k0->other coils k2 k1 k0',
+                other=1,
+                coils=1,
+                k2=1,
+                k1=1,
             )
 
         if traj_type_kzyx[-2] == TrajType.ONGRID:  # ky
@@ -59,7 +66,12 @@ class CartesianSamplingOp(LinearOperator):
         else:
             sorted_grid_shape.y = ktraj_tensor.shape[-2]
             ky_idx = repeat(
-                torch.arange(ktraj_tensor.shape[-2]), 'k1->other coils k2 k1 k0', other=1, coils=1, k2=1, k0=1
+                torch.arange(ktraj_tensor.shape[-2], device=traj_device),
+                'k1->other coils k2 k1 k0',
+                other=1,
+                coils=1,
+                k2=1,
+                k0=1,
             )
 
         if traj_type_kzyx[-3] == TrajType.ONGRID:  # kz
@@ -67,7 +79,12 @@ class CartesianSamplingOp(LinearOperator):
         else:
             sorted_grid_shape.z = ktraj_tensor.shape[-3]
             kz_idx = repeat(
-                torch.arange(ktraj_tensor.shape[-3]), 'k2->other coils k2 k1 k0', other=1, coils=1, k1=1, k0=1
+                torch.arange(ktraj_tensor.shape[-3], device=traj_device),
+                'k2->other coils k2 k1 k0',
+                other=1,
+                coils=1,
+                k1=1,
+                k0=1,
             )
 
         # 1D indices into a flattened tensor.
@@ -100,11 +117,11 @@ class CartesianSamplingOp(LinearOperator):
         # we can skip the indexing if the data is already sorted
         self._needs_indexing = (
             not torch.all(torch.diff(kidx) == 1)
-            or traj.broadcasted_shape[-3:] != sorted_grid_shape.zyx
+            or traj.shape[-3:] != sorted_grid_shape.zyx
             or self._inside_encoding_matrix_idx is not None
         )
 
-        self._trajectory_shape = traj.broadcasted_shape
+        self._trajectory_shape = traj.shape
         self._sorted_grid_shape = sorted_grid_shape
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor,]:

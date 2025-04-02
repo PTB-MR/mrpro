@@ -1,7 +1,7 @@
 """Acquisition information dataclass."""
 
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field, fields
+from dataclasses import field, fields
 from typing import Literal, TypeAlias, overload
 
 import ismrmrd
@@ -9,7 +9,7 @@ import numpy as np
 import torch
 from typing_extensions import Self
 
-from mrpro.data.MoveDataMixin import MoveDataMixin
+from mrpro.data.Dataclass import Dataclass
 from mrpro.data.Rotation import Rotation
 from mrpro.data.SpatialDimension import SpatialDimension
 from mrpro.utils.reshape import unsqueeze_at, unsqueeze_right
@@ -59,8 +59,7 @@ def _position_factory() -> SpatialDimension[torch.Tensor]:
     )
 
 
-@dataclass(slots=True)
-class AcqIdx(MoveDataMixin):
+class AcqIdx(Dataclass):
     """Acquisition index for each readout."""
 
     k1: torch.Tensor = field(default_factory=_int_factory)
@@ -125,8 +124,7 @@ class AcqIdx(MoveDataMixin):
             raise ValueError('The acquisition index tensors should each have at least 5 dimensions.')
 
 
-@dataclass(slots=True)
-class UserValues(MoveDataMixin):
+class UserValues(Dataclass):
     """User Values used in AcqInfo."""
 
     float0: torch.Tensor = field(default_factory=_float_factory)
@@ -147,8 +145,7 @@ class UserValues(MoveDataMixin):
     int7: torch.Tensor = field(default_factory=_int_factory)
 
 
-@dataclass(slots=True)
-class PhysiologyTimestamps(MoveDataMixin):
+class PhysiologyTimestamps(Dataclass):
     """Time stamps relative to physiological triggering, e.g. ECG, in seconds."""
 
     timestamp0: torch.Tensor = field(default_factory=_float_factory)
@@ -156,8 +153,7 @@ class PhysiologyTimestamps(MoveDataMixin):
     timestamp2: torch.Tensor = field(default_factory=_float_factory)
 
 
-@dataclass(slots=True)
-class AcqInfo(MoveDataMixin):
+class AcqInfo(Dataclass):
     """Acquisition information for each readout."""
 
     idx: AcqIdx = field(default_factory=AcqIdx)

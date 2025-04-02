@@ -109,7 +109,7 @@ def test_KTrajectorySunflowerGoldenRpe() -> None:
         k2_idx=k2_idx,
     )
 
-    assert trajectory.broadcasted_shape == (1, 1, n_k2, n_k1, n_k0)
+    assert trajectory.shape == (1, 1, n_k2, n_k1, n_k0)
 
 
 def test_KTrajectoryCartesian() -> None:
