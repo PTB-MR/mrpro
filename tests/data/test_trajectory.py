@@ -231,7 +231,9 @@ def test_traj_from_ismrmrd(ismrmrd_cart_random_us) -> None:
 def test_traj_from_ismrmrd_normalize(ismrmrd_rad) -> None:
     """Test reading trajectory from ISMRMRD file with normalization."""
     traj = KTrajectory.from_ismrmrd(ismrmrd_rad.filename, normalize=True)
-    n_other = ismrmrd_rad.matrix_size / ismrmrd_rad.acceleration * ismrmrd_rad.repetitions + ismrmrd_rad.n_noise_samples
+    n_other = (
+        ismrmrd_rad.matrix_size // ismrmrd_rad.acceleration * ismrmrd_rad.repetitions + ismrmrd_rad.n_noise_samples
+    )
     n_k0 = ismrmrd_rad.matrix_size * ismrmrd_rad.oversampling
     assert traj.kx.shape == (n_other, 1, 1, 1, n_k0)
     assert traj.ky.shape == (n_other, 1, 1, 1, n_k0)
