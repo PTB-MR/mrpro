@@ -308,9 +308,12 @@ class LinearOperatorMatrix(Operator[Unpack[tuple[torch.Tensor, ...]], tuple[torc
 
         if len(initial_value) != self.shape[1]:
             raise ValueError('Initial value should have the same length as the operator has columns.')
-        norms = torch.tensor(
-            [[_singlenorm(op, iv) for op, iv in zip(row, initial_value, strict=True)] for row in self._operators]
-        )
+        norms = torch.stack(
+            [
+                torch.stack([_singlenorm(op, iv) for op, iv in zip(row, initial_value, strict=True)])
+                for row in self._operators
+            ]
+        ).view(-1, 1)
         norm = norms.square().sum(-2).sqrt().amax(-1).unsqueeze(-1)
         return norm
 
