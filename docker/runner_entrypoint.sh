@@ -8,7 +8,7 @@ export RUNNER_TOKEN=$(echo $payload | jq .token --raw-output)
 ./config.sh \
     --name $(hostname) \
     --token ${RUNNER_TOKEN} \
-    -- labels my-runner \
+    --labels my-runner \
     --url https://github.com/${GITHUB_OWNER} \
     --work "/work" \
     --unattended \
