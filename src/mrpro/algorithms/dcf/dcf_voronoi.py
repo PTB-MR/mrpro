@@ -15,7 +15,7 @@ def _volume(v: ArrayLike):
     return ConvexHull(v).volume
 
 
-def dcf_1d(traj: torch.Tensor) -> torch.Tensor:
+def dcf_1d(traj: torch.Tensor, periodicity: float | None = None) -> torch.Tensor:
     """Calculate sample density compensation function for 1D trajectory.
 
     This function operates on a single `other` sample.
@@ -25,6 +25,8 @@ def dcf_1d(traj: torch.Tensor) -> torch.Tensor:
     ----------
     traj
         k-space positions, 1D tensor
+    periodicity
+        periodicity of the trajectory, if None, the trajectory is assumed to be non-periodic
 
     Returns
     -------
@@ -48,8 +50,12 @@ def dcf_1d(traj: torch.Tensor) -> torch.Tensor:
 
     if (elements := len(traj_sorted)) >= 3:
         central_diff = torch.nn.functional.conv1d(traj_sorted[None, None, :], kernel)[0, 0]
-        first = traj_sorted[1] - traj_sorted[0]
-        last = traj_sorted[-1] - traj_sorted[-2]
+        if periodicity:
+            first = traj_sorted[1] / 2 - (traj_sorted[-1] - periodicity) / 2
+            last = traj_sorted[0] / 2 - (traj_sorted[-2] - periodicity) / 2
+        else:
+            first = traj_sorted[1] - traj_sorted[0]
+            last = traj_sorted[-1] - traj_sorted[-2]
         central_diff = torch.cat((first[None], central_diff, last[None]), -1)
     elif elements == 2:
         diff = traj_sorted[1] - traj_sorted[0]
