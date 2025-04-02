@@ -219,7 +219,7 @@ def test_traj_from_ismrmrd(ismrmrd_cart_random_us) -> None:
     """Test reading trajectory from ISMRMRD file."""
     traj = KTrajectory.from_ismrmrd(ismrmrd_cart_random_us.filename)
     n_other = (
-        ismrmrd_cart_random_us.matrix_size / ismrmrd_cart_random_us.acceleration * ismrmrd_cart_random_us.repetitions
+        ismrmrd_cart_random_us.matrix_size // ismrmrd_cart_random_us.acceleration * ismrmrd_cart_random_us.repetitions
         + ismrmrd_cart_random_us.n_noise_samples
     )
     n_k0 = ismrmrd_cart_random_us.matrix_size * ismrmrd_cart_random_us.oversampling
